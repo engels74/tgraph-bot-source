@@ -6,7 +6,12 @@ from datetime import datetime
 from config.config import DISCORD_TOKEN, CHANNEL_ID, UPDATE_DAYS, IMG_FOLDER, KEEP_DAYS, TIME_RANGE_DAYS
 from graphs.generate_graphs import fetch_all_data, generate_graphs, ensure_folder_exists, cleanup_old_folders
 
-bot = commands.Bot(command_prefix="!")
+# Define intents
+intents = discord.Intents.default()
+intents.messages = True
+intents.guilds = True
+
+bot = commands.Bot(command_prefix="!", intents=intents)
 
 # Post an embed to Discord with the graphs
 async def post_graphs(channel):
@@ -35,7 +40,7 @@ async def delete_bot_messages(channel):
             await message.delete()
 
 # Task to update graphs
-@tasks.loop(days=UPDATE_DAYS)
+@tasks.loop(seconds=UPDATE_DAYS*24*60*60)  # Convert days to seconds
 async def update_graphs():
     channel = bot.get_channel(CHANNEL_ID)
     await delete_bot_messages(channel)
