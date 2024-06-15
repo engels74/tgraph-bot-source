@@ -1,0 +1,10 @@
+# config/config.yml.sample
+TZ: Etc/UTC
+DISCORD_TOKEN: your_discord_bot_token
+CHANNEL_ID: your_channel_id
+UPDATE_DAYS: 7
+IMG_FOLDER: img
+KEEP_DAYS: 7
+TIME_RANGE_DAYS: 30
+TAUTULLI_API_KEY: your_tautulli_api_key
+TAUTULLI_URL: http://your_tautulli_ip:port/api/v2

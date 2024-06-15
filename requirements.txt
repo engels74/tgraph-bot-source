@@ -1,0 +1,5 @@
+discord.py
+matplotlib
+pytz
+requests
+pyyaml
