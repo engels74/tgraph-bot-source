@@ -2,16 +2,9 @@ import os
 import shutil
 import requests
 import matplotlib.pyplot as plt
-from datetime import datetime, timedelta
+from datetime import datetime
 from matplotlib.ticker import MaxNLocator
-
-# Configuration
-TAUTULLI_API_KEY = 'your_tautulli_api_key'
-TAUTULLI_URL = 'http://your_tautulli_ip:port/api/v2'
-DISCORD_WEBHOOK_URL = 'your_discord_webhook_url'
-IMG_FOLDER = 'img'
-KEEP_DAYS = 7  # Number of days of subfolders to keep
-TIME_RANGE_DAYS = 30  # Time range for fetching data in days
+from config.config import TAUTULLI_API_KEY, TAUTULLI_URL, TIME_RANGE_DAYS
 
 # Helper function to fetch data from Tautulli
 def fetch_tautulli_data(cmd, params={}):
@@ -125,16 +118,6 @@ def save_and_post_graph(folder, filename):
     filepath = os.path.join(folder, filename)
     plt.savefig(filepath)
     plt.clf()  # Clear the current figure
-    post_to_discord(filepath)
-
-# Post an image to Discord
-def post_to_discord(filepath):
-    with open(filepath, 'rb') as f:
-        response = requests.post(DISCORD_WEBHOOK_URL, files={'file': f})
-    if response.status_code in [200, 204]:
-        print(f'Successfully posted {os.path.basename(filepath)} to Discord')
-    else:
-        print(f'Failed to post {os.path.basename(filepath)} to Discord: {response.status_code}')
 
 # Ensure the image folder exists
 def ensure_folder_exists(folder):
@@ -147,42 +130,3 @@ def cleanup_old_folders(base_folder, keep_days):
     folders.sort(reverse=True)
     for folder in folders[keep_days:]:
         shutil.rmtree(os.path.join(base_folder, folder))
-
-# Main function
-def main():
-    # Ensure base folder exists
-    ensure_folder_exists(IMG_FOLDER)
-    
-    # Create dated subfolder
-    today = datetime.today().strftime('%Y-%m-%d')
-    dated_folder = os.path.join(IMG_FOLDER, today)
-    ensure_folder_exists(dated_folder)
-    
-    # Fetch data and generate graphs
-    data = fetch_all_data()
-    generate_graphs(data, dated_folder)
-    
-    # Cleanup old folders
-    cleanup_old_folders(IMG_FOLDER, KEEP_DAYS)
-
-if __name__ == '__main__':
-    main()
-
-# Tautulli Graph Bot
-# <https://github.com/engels74/tautulli-graph-bot
-# A script/bot for posting Tautulli graphs to a Discord webhook.
-# Copyright (C) 2024 - engels74
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Affero General Public License as published
-# by the Free Software Foundation, either version 3 of the License, or any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Affero General Public License for more details.
-#
-# You should have received a copy of the GNU Affero General Public License
-# along with this program. If not, see <https://www.gnu.org/licenses/>.
-#
-# Contact: engels74@marx.ps
