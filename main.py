@@ -15,19 +15,34 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 # Post an embed to Discord with the graphs
 async def post_graphs(channel):
-    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    now = datetime.now().strftime('%Y-%m-%d at %H:%M:%S')
+    today = datetime.today().strftime('%Y-%m-%d')
     descriptions = {
-        'daily_play_count.png': f'Daily play count by media type for the last {TIME_RANGE_DAYS} days.',
-        'play_count_by_dayofweek.png': f'Play count by day of the week for the last {TIME_RANGE_DAYS} days.',
-        'play_count_by_hourofday.png': f'Play count by hour of the day for the last {TIME_RANGE_DAYS} days.',
-        'top_10_platforms.png': f'Play count by the top 10 platforms for the last {TIME_RANGE_DAYS} days.',
-        'top_10_users.png': f'Play count by the top 10 users for the last {TIME_RANGE_DAYS} days.'
+        'daily_play_count.png': {
+            'title': 'Daily Play Count by Media Type',
+            'description': f'Displays the daily play count for different media types over the last {TIME_RANGE_DAYS} days.'
+        },
+        'play_count_by_dayofweek.png': {
+            'title': 'Play Count by Day of Week',
+            'description': f'Shows the play count distribution by day of the week for the last {TIME_RANGE_DAYS} days.'
+        },
+        'play_count_by_hourofday.png': {
+            'title': 'Play Count by Hour of Day',
+            'description': f'Illustrates the play count distribution by hour of the day over the last {TIME_RANGE_DAYS} days.'
+        },
+        'top_10_platforms.png': {
+            'title': 'Play Count by Top 10 Platforms',
+            'description': f'Highlights the play count for the top 10 platforms over the last {TIME_RANGE_DAYS} days.'
+        },
+        'top_10_users.png': {
+            'title': 'Play Count by Top 10 Users',
+            'description': f'Displays the play count for the top 10 users over the last {TIME_RANGE_DAYS} days.'
+        }
     }
 
-    today = datetime.today().strftime('%Y-%m-%d')
-    for filename, description in descriptions.items():
+    for filename, details in descriptions.items():
         file_path = os.path.join(IMG_FOLDER, today, filename)
-        embed = Embed(description=description, color=0x3498db)
+        embed = Embed(title=details['title'], description=details['description'], color=0x3498db)
         embed.set_image(url=f"attachment://{filename}")
         embed.set_footer(text=f"Posted on {now}")
         with open(file_path, 'rb') as f:
