@@ -15,4 +15,5 @@ services:
       - TZ=Etc/UTC
     volumes:
       - ./logs:/logs
+      - ./img:/app/img
     restart: unless-stopped
