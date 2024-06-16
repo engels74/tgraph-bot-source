@@ -82,11 +82,11 @@ def generate_graphs(data, folder, translations):
     plt.title(translations['daily_play_count_title'].format(days=config["TIME_RANGE_DAYS"]))
     
     # Set x-axis tick positions and labels
-    plt.gca().xaxis.set_major_locator(plt.MultipleLocator(1))
-    plt.gca().xaxis.set_major_formatter(DateFormatter('%Y-%m-%d'))  # Use DateFormatter from matplotlib.dates
-    plt.gca().xaxis.set_minor_locator(plt.NullLocator())  # Remove minor ticks if present
-    plt.xticks(rotation=45, ha='center')  # Center-align the x-axis labels and rotate them
-    plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))  # Ensure y-axis has only whole numbers
+    ax = plt.gca()
+    ax.set_xticks(dates)
+    ax.set_xticklabels(date_strs, rotation=45, ha='center')  # Center-align the x-axis labels and rotate them
+    ax.xaxis.set_major_formatter(DateFormatter('%Y-%m-%d'))  # Ensure the date format is correct
+    ax.yaxis.set_major_locator(MaxNLocator(integer=True))  # Ensure y-axis has only whole numbers
     plt.legend()
     plt.tight_layout(pad=3)  # Ensure everything fits within the figure and add padding
     save_and_post_graph(folder, 'daily_play_count.png')
