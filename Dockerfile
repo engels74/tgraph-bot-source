@@ -33,17 +33,11 @@ COPY --from=builder /app /app
 # Make Docker /logs volume for log file
 VOLUME /logs
 
-# Set environment variables
+# Set PATH environment variable
 ENV PATH="/app/venv/bin:$PATH"
-ENV TZ=Etc/UTC
-ENV TAUTULLI_API_KEY=your_tautulli_api_key
-ENV TAUTULLI_URL=http://your_tautulli_ip:port/api/v2
-ENV DISCORD_TOKEN=your_discord_bot_token
-ENV CHANNEL_ID=your_channel_id
-ENV UPDATE_DAYS=7
-ENV IMG_FOLDER=img
-ENV KEEP_DAYS=7
-ENV TIME_RANGE_DAYS=30
+
+# Copy config.yml.sample file
+COPY config/config.yml.sample /app/config/config.yml.sample
 
 # Run the app
 CMD ["pm2-runtime", "start", "ecosystem.config.json"]
