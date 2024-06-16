@@ -54,8 +54,14 @@ def generate_graphs(data, folder, translations):
     daily_play_count = data['daily_play_count']['response']['data']
     dates = [datetime.strptime(date, '%Y-%m-%d') for date in daily_play_count['categories']]
     series = daily_play_count['series']
+    
     for serie in series:
         plt.plot(dates, serie['data'], label=serie['name'])
+        
+        # Adding annotations for the top value of each day
+        for i, value in enumerate(serie['data']):
+            plt.text(dates[i], value, f'{value}', ha='center', va='bottom', fontsize=8, color='red')
+
     plt.xlabel(translations['daily_play_count_xlabel'])
     plt.ylabel(translations['daily_play_count_ylabel'])
     plt.title(translations['daily_play_count_title'].format(days=config["TIME_RANGE_DAYS"]))
@@ -70,7 +76,7 @@ def generate_graphs(data, folder, translations):
     save_and_post_graph(folder, 'daily_play_count.png')
     
     plt.figure(figsize=(14, 8))  # Reset figure size for next plot
-    
+
     # Play Count by Day of Week
     play_count_by_dayofweek = data['play_count_by_dayofweek']['response']['data']
     days = list(range(7))  # Use integer values for days of the week
