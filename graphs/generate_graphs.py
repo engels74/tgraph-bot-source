@@ -106,7 +106,7 @@ def generate_graphs(data, folder, translations):
     plt.xlabel(translations['play_count_by_dayofweek_xlabel'])
     plt.ylabel(translations['play_count_by_dayofweek_ylabel'])
     plt.title(translations['play_count_by_dayofweek_title'].format(days=config["TIME_RANGE_DAYS"]))
-    plt.xticks(days, day_labels, rotation=45, ha='right')  # Set x-tick labels to day names and rotate them
+    plt.xticks(days, day_labels, ha='center')  # Set x-tick labels to day names without rotation
     plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
     plt.legend()
     plt.tight_layout(pad=3)
@@ -126,11 +126,13 @@ def generate_graphs(data, folder, translations):
     plt.xlabel(translations['play_count_by_hourofday_xlabel'])
     plt.ylabel(translations['play_count_by_hourofday_ylabel'])
     plt.title(translations['play_count_by_hourofday_title'].format(days=config["TIME_RANGE_DAYS"]))
-    plt.xticks(hours, rotation=45, ha='right')  # Set x-tick labels to hours and rotate them
+    plt.xticks(hours, ha='center')  # Set x-tick labels to hours without rotation
     plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
     plt.legend()
     plt.tight_layout(pad=3)
     save_and_post_graph(folder, 'play_count_by_hourofday.png')
+    
+    plt.figure(figsize=(14, 8))  # Reset figure size for next plot
     
     # Play Count by Top 10 Platforms
     top_10_platforms = data['top_10_platforms']['response']['data']
