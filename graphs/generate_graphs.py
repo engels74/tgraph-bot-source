@@ -52,18 +52,23 @@ def generate_graphs(data, folder, translations):
     
     # Daily Play Count by Media Type
     daily_play_count = data['daily_play_count']['response']['data']
+    
+    # Calculate date range
     end_date = datetime.now(config['timezone'])
     start_date = end_date - timedelta(days=config['TIME_RANGE_DAYS'] - 1)  # Include the end date
     dates = [start_date + timedelta(days=i) for i in range(config['TIME_RANGE_DAYS'])]
+    
+    # Map Tautulli data to this date range
+    date_strs = [date.strftime('%Y-%m-%d') for date in dates]
+    date_data_map = {date: 0 for date in date_strs}
     
     series = daily_play_count['series']
     
     for serie in series:
         complete_data = [0] * len(dates)
-        for i, date in enumerate(dates):
-            date_str = date.strftime('%Y-%m-%d')
-            if date_str in daily_play_count['categories']:
-                complete_data[i] = serie['data'][daily_play_count['categories'].index(date_str)]
+        for i, date in enumerate(date_strs):
+            if date in daily_play_count['categories']:
+                complete_data[i] = serie['data'][daily_play_count['categories'].index(date)]
         plt.plot(dates, complete_data, label=serie['name'])
         
         # Adding annotations for the top value of each day
