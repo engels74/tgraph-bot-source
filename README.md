@@ -1,10 +1,23 @@
 # TGraph Bot (Tautulli Graph Bot)
 
-A script/bot for posting Tautulli graphs to a Discord webhook. This project is designed to run in a Docker container and provides an easy way to share your Plex Media Server statistics on Discord.
+<p align="center">
+  <img src="https://i.imgur.com/L5Tj3nW.png" alt="TGraph Bot"/>
+</p>
 
 ## Description
 
+TGraph Bot is a script/bot for posting Tautulli graphs to a Discord webhook. This project is designed to run in a Docker container and provides an easy way to share your Plex Media Server statistics on Discord.
+
 Tautulli Graph Bot automates the process of generating and posting graphical statistics from Tautulli to a Discord channel using a webhook. This integration helps you keep your community informed about your Plex Media Server's activity and performance.
+
+## Features
+
+- Automatically generates and posts Tautulli graphs to a Discord channel
+- Supports multiple languages (English and Danish) using i18n
+- Runs in a Docker container for easy deployment
+
+## Preview
+<img src="https://i.imgur.com/lHLWpc2.png" width="50%" alt="An example of how it looks">
 
 ## Installation
 
@@ -39,6 +52,7 @@ To get started with Tautulli Graph Bot using Docker, follow these steps:
         - `KEEP_DAYS`: The number of days to keep the images (default is 7 days).
         - `TIME_RANGE_DAYS`: The time range in days for the graphs (default is 30 days).
         - `TZ`: The timezone to use (default is `Etc/UTC`).
+        - `LANGUAGE`: The language to use for the bot (default is `en`). Supported languages: `en` (English), `da` (Danish).
 
 4. **Build and run the Docker container using `docker-compose`:**
     ```sh
@@ -49,6 +63,15 @@ To get started with Tautulli Graph Bot using Docker, follow these steps:
 ## Configuration
 
 The bot is configured using the `config.yml` file. Create a `config.yml` file in the `/config` directory based on the provided `config.yml.sample` file. Update the values in the `config.yml` file with your specific settings.
+
+### Language Support
+
+Tautulli Graph Bot supports multiple languages using i18n. The available languages are defined in the `i18n` directory, with separate YAML files for each language:
+
+- `en.yml`: English language translations
+- `da.yml`: Danish language translations
+
+To set the language for the bot, update the `LANGUAGE` value in the `config.yml` file to the desired language code (`en` for English or `da` for Danish).
 
 ## Docker Compose Configuration
 
