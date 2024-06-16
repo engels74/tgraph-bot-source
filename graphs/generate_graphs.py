@@ -47,7 +47,6 @@ def censor_username(username):
     return username[:half_length] + '*' * (length - half_length)
 
 # Generate graphs
-
 def generate_graphs(data, folder, translations):
     plt.figure(figsize=(14, 8))  # Increase figure size
     
@@ -85,7 +84,8 @@ def generate_graphs(data, folder, translations):
     # Set x-axis tick positions and labels
     plt.gca().xaxis.set_major_locator(plt.MultipleLocator(1))
     plt.gca().xaxis.set_major_formatter(DateFormatter('%Y-%m-%d'))  # Use DateFormatter from matplotlib.dates
-    plt.xticks(rotation=45, ha='right')  # Rotate x-axis labels and align them to the right
+    plt.gca().xaxis.set_minor_locator(plt.NullLocator())  # Remove minor ticks if present
+    plt.xticks(rotation=45, ha='center')  # Center-align the x-axis labels and rotate them
     plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))  # Ensure y-axis has only whole numbers
     plt.legend()
     plt.tight_layout(pad=3)  # Ensure everything fits within the figure and add padding
