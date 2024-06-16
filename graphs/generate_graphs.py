@@ -99,34 +99,38 @@ def generate_graphs(data, folder, translations):
     day_labels = [translations[f'day_{i}'] for i in range(7)]
     series = play_count_by_dayofweek['series']
     for serie in series:
-        plt.plot(days, serie['data'], label=serie['name'])
+        plt.plot(days, serie['data'], label=serie['name'], marker='o')
+        for i, value in enumerate(serie['data']):
+            if value > 0:
+                plt.text(days[i], value + 0.5, f'{value}', ha='center', va='bottom', fontsize=8, color='red')
     plt.xlabel(translations['play_count_by_dayofweek_xlabel'])
     plt.ylabel(translations['play_count_by_dayofweek_ylabel'])
     plt.title(translations['play_count_by_dayofweek_title'].format(days=config["TIME_RANGE_DAYS"]))
     plt.xticks(days, day_labels, rotation=45, ha='right')  # Set x-tick labels to day names and rotate them
-    plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))  # Ensure y-axis has only whole numbers
+    plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
     plt.legend()
-    plt.tight_layout(pad=3)  # Ensure everything fits within the figure and add padding
+    plt.tight_layout(pad=3)
     save_and_post_graph(folder, 'play_count_by_dayofweek.png')
-    
+
     plt.figure(figsize=(14, 8))  # Reset figure size for next plot
-    
+
     # Play Count by Hour of Day
     play_count_by_hourofday = data['play_count_by_hourofday']['response']['data']
     hours = list(range(24))  # Use integer values for hours of the day
     series = play_count_by_hourofday['series']
     for serie in series:
-        plt.plot(hours, serie['data'], label=serie['name'])
+        plt.plot(hours, serie['data'], label=serie['name'], marker='o')
+        for i, value in enumerate(serie['data']):
+            if value > 0:
+                plt.text(hours[i], value + 0.5, f'{value}', ha='center', va='bottom', fontsize=8, color='red')
     plt.xlabel(translations['play_count_by_hourofday_xlabel'])
     plt.ylabel(translations['play_count_by_hourofday_ylabel'])
     plt.title(translations['play_count_by_hourofday_title'].format(days=config["TIME_RANGE_DAYS"]))
-    plt.xticks(hours, rotation=45, ha='right')  # Rotate x-axis labels and align them to the right
-    plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))  # Ensure y-axis has only whole numbers
+    plt.xticks(hours, rotation=45, ha='right')  # Set x-tick labels to hours and rotate them
+    plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
     plt.legend()
-    plt.tight_layout(pad=3)  # Ensure everything fits within the figure and add padding
+    plt.tight_layout(pad=3)
     save_and_post_graph(folder, 'play_count_by_hourofday.png')
-    
-    plt.figure(figsize=(14, 8))  # Reset figure size for next plot
     
     # Play Count by Top 10 Platforms
     top_10_platforms = data['top_10_platforms']['response']['data']
