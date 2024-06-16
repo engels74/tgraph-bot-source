@@ -47,6 +47,7 @@ def censor_username(username):
     return username[:half_length] + '*' * (length - half_length)
 
 # Generate graphs
+
 def generate_graphs(data, folder, translations):
     plt.figure(figsize=(14, 8))  # Increase figure size
     
@@ -70,7 +71,7 @@ def generate_graphs(data, folder, translations):
             if date in date_data_map:
                 date_data_map[date] = value
         complete_data = [date_data_map[date] for date in date_strs]
-        plt.plot(dates, complete_data, label=serie['name'])
+        plt.plot(dates, complete_data, label=serie['name'], marker='o')  # Added marker='o' for better visualization
         
         # Adding annotations for the top value of each day
         for i, value in enumerate(complete_data):
