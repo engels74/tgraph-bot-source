@@ -54,23 +54,23 @@ async def post_graphs(channel):
     today = datetime.today().strftime('%Y-%m-%d')
     descriptions = {
         'daily_play_count.png': {
-            'title': translations['daily_play_count_title'],
+            'title': translations['daily_play_count_title'].format(days=config["TIME_RANGE_DAYS"]),
             'description': translations['daily_play_count_description'].format(days=config["TIME_RANGE_DAYS"])
         },
         'play_count_by_dayofweek.png': {
-            'title': translations['play_count_by_dayofweek_title'],
+            'title': translations['play_count_by_dayofweek_title'].format(days=config["TIME_RANGE_DAYS"]),
             'description': translations['play_count_by_dayofweek_description'].format(days=config["TIME_RANGE_DAYS"])
         },
         'play_count_by_hourofday.png': {
-            'title': translations['play_count_by_hourofday_title'],
+            'title': translations['play_count_by_hourofday_title'].format(days=config["TIME_RANGE_DAYS"]),
             'description': translations['play_count_by_hourofday_description'].format(days=config["TIME_RANGE_DAYS"])
         },
         'top_10_platforms.png': {
-            'title': translations['top_10_platforms_title'],
+            'title': translations['top_10_platforms_title'].format(days=config["TIME_RANGE_DAYS"]),
             'description': translations['top_10_platforms_description'].format(days=config["TIME_RANGE_DAYS"])
         },
         'top_10_users.png': {
-            'title': translations['top_10_users_title'],
+            'title': translations['top_10_users_title'].format(days=config["TIME_RANGE_DAYS"]),
             'description': translations['top_10_users_description'].format(days=config["TIME_RANGE_DAYS"])
         },
         'play_count_by_month.png': {
