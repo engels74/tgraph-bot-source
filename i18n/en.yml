@@ -1,0 +1,54 @@
+# Graph titles
+daily_play_count_title: "Daily Play Count by Media Type (Last {days} days)"
+play_count_by_dayofweek_title: "Play Count by Day of Week (Last {days} days)"
+play_count_by_hourofday_title: "Play Count by Hour of Day (Last {days} days)"
+top_10_platforms_title: "Play Count by Top 10 Platforms (Last {days} days)"
+top_10_users_title: "Play Count by Top 10 Users (Last {days} days)"
+play_count_by_month_title: "Total Play Count by Month (Last 12 months)"
+
+# Graph descriptions
+daily_play_count_description: "Displays the daily play count for different media types over the last {days} days."
+play_count_by_dayofweek_description: "Shows the play count distribution by day of the week for the last {days} days."
+play_count_by_hourofday_description: "Illustrates the play count distribution by hour of the day over the last {days} days."
+top_10_platforms_description: "Highlights the play count for the top 10 platforms over the last {days} days."
+top_10_users_description: "Displays the play count for the top 10 users over the last {days} days."
+play_count_by_month_description: "Shows the total play count by month for the last 12 months, excluding months with zero plays."
+
+# Graph labels
+daily_play_count_xlabel: "Date"
+daily_play_count_ylabel: "Plays"
+play_count_by_dayofweek_xlabel: "Day of Week"
+play_count_by_dayofweek_ylabel: "Plays"
+play_count_by_hourofday_xlabel: "Hour of Day"
+play_count_by_hourofday_ylabel: "Plays"
+top_10_platforms_xlabel: "Platform"
+top_10_platforms_ylabel: "Plays"
+top_10_users_xlabel: "User"
+top_10_users_ylabel: "Plays"
+play_count_by_month_xlabel: "Month"
+play_count_by_month_ylabel: "Total Plays"
+
+# Day labels
+day_0: "Monday"
+day_1: "Tuesday"
+day_2: "Wednesday" 
+day_3: "Thursday"
+day_4: "Friday"
+day_5: "Saturday"
+day_6: "Sunday"
+
+# Log messages
+log_posted_message: "Posted {filename} to Discord"
+log_detecting_old_messages: "Detecting old messages"
+log_deleted_message: "Deleted a message"
+log_ensured_folder_exists: "Ensured image folder exists"
+log_created_dated_folder: "Created dated folder: {folder}"
+log_generated_graphs: "Generated graphs"
+log_cleaned_up_old_folders: "Cleaned up old folders"
+log_bot_logged_in: "Logged in as {name}"
+
+# Embed footer
+embed_footer: "Posted on {now}"
+
+# Other
+no_data_available: "No data available for play_count_by_month"

@@ -5,9 +5,13 @@ import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 from matplotlib.ticker import MaxNLocator
 from config.config import load_config
+from i18n import load_translations
 
 # Load configuration
 config = load_config(os.path.join(os.path.dirname(__file__), '..', 'config', 'config.yml'))
+
+# Load translations
+translations = load_translations(config['LANGUAGE'])
 
 # Helper function to fetch data from Tautulli
 def fetch_tautulli_data(cmd, params={}):
@@ -42,7 +46,7 @@ def censor_username(username):
     return username[:half_length] + '*' * (length - half_length)
 
 # Generate graphs
-def generate_graphs(data, folder):
+def generate_graphs(data, folder, translations):
     plt.figure(figsize=(14, 8))  # Increase figure size
     
     # Daily Play Count by Media Type
@@ -51,9 +55,9 @@ def generate_graphs(data, folder):
     series = daily_play_count['series']
     for serie in series:
         plt.plot(dates, serie['data'], label=serie['name'])
-    plt.xlabel('Date')
-    plt.ylabel('Plays')
-    plt.title(f'Daily Play Count by Media Type (Last {config["TIME_RANGE_DAYS"]} days)')
+    plt.xlabel(translations['daily_play_count_xlabel'])
+    plt.ylabel(translations['daily_play_count_ylabel'])
+    plt.title(translations['daily_play_count_title'].format(days=config["TIME_RANGE_DAYS"]))
     plt.xticks(rotation=45, ha='right')  # Rotate x-axis labels and align them to the right
     plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))  # Ensure y-axis has only whole numbers
     plt.legend()
@@ -65,13 +69,13 @@ def generate_graphs(data, folder):
     # Play Count by Day of Week
     play_count_by_dayofweek = data['play_count_by_dayofweek']['response']['data']
     days = list(range(7))  # Use integer values for days of the week
-    day_labels = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    day_labels = [translations[f'day_{i}'] for i in range(7)]
     series = play_count_by_dayofweek['series']
     for serie in series:
         plt.plot(days, serie['data'], label=serie['name'])
-    plt.xlabel('Day of Week')
-    plt.ylabel('Plays')
-    plt.title(f'Play Count by Day of Week (Last {config["TIME_RANGE_DAYS"]} days)')
+    plt.xlabel(translations['play_count_by_dayofweek_xlabel'])
+    plt.ylabel(translations['play_count_by_dayofweek_ylabel'])
+    plt.title(translations['play_count_by_dayofweek_title'].format(days=config["TIME_RANGE_DAYS"]))
     plt.xticks(days, day_labels, rotation=45, ha='right')  # Set x-tick labels to day names and rotate them
     plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))  # Ensure y-axis has only whole numbers
     plt.legend()
@@ -86,9 +90,9 @@ def generate_graphs(data, folder):
     series = play_count_by_hourofday['series']
     for serie in series:
         plt.plot(hours, serie['data'], label=serie['name'])
-    plt.xlabel('Hour of Day')
-    plt.ylabel('Plays')
-    plt.title(f'Play Count by Hour of Day (Last {config["TIME_RANGE_DAYS"]} days)')
+    plt.xlabel(translations['play_count_by_hourofday_xlabel'])
+    plt.ylabel(translations['play_count_by_hourofday_ylabel'])
+    plt.title(translations['play_count_by_hourofday_title'].format(days=config["TIME_RANGE_DAYS"]))
     plt.xticks(hours, rotation=45, ha='right')  # Rotate x-axis labels and align them to the right
     plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))  # Ensure y-axis has only whole numbers
     plt.legend()
@@ -103,9 +107,9 @@ def generate_graphs(data, folder):
     series = top_10_platforms['series']
     for serie in series:
         plt.bar(platforms, serie['data'], label=serie['name'])
-    plt.xlabel('Platform')
-    plt.ylabel('Plays')
-    plt.title(f'Play Count by Top 10 Platforms (Last {config["TIME_RANGE_DAYS"]} days)')
+    plt.xlabel(translations['top_10_platforms_xlabel'])
+    plt.ylabel(translations['top_10_platforms_ylabel'])
+    plt.title(translations['top_10_platforms_title'].format(days=config["TIME_RANGE_DAYS"]))
     plt.xticks(rotation=45, ha='right')  # Rotate x-axis labels and align them to the right
     plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))  # Ensure y-axis has only whole numbers
     plt.legend()
@@ -121,9 +125,9 @@ def generate_graphs(data, folder):
     censored_users = [censor_username(user) for user in users]
     for serie in series:
         plt.bar(censored_users, serie['data'], label=serie['name'])
-    plt.xlabel('User')
-    plt.ylabel('Plays')
-    plt.title(f'Play Count by Top 10 Users (Last {config["TIME_RANGE_DAYS"]} days)')
+    plt.xlabel(translations['top_10_users_xlabel'])
+    plt.ylabel(translations['top_10_users_ylabel'])
+    plt.title(translations['top_10_users_title'].format(days=config["TIME_RANGE_DAYS"]))
     plt.xticks(rotation=45, ha='right')  # Rotate x-axis labels and align them to the right
     plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))  # Ensure y-axis has only whole numbers
     plt.legend()
@@ -137,7 +141,7 @@ def generate_graphs(data, folder):
     series = play_count_by_month.get('series', [])
 
     if not months or not series:
-        print("No data available for play_count_by_month")
+        print(translations['no_data_available'])
         return
 
     # Prepare data for the stacked bar chart
@@ -168,9 +172,9 @@ def generate_graphs(data, folder):
     plt.bar(bar_positions, filtered_movie_data, width=bar_width, label='Movies')
     plt.bar(bar_positions, filtered_tv_data, width=bar_width, bottom=filtered_movie_data, label='TV')
 
-    plt.xlabel('Month')
-    plt.ylabel('Total Plays')
-    plt.title('Total Play Count by Month (Last 12 months)')
+    plt.xlabel(translations['play_count_by_month_xlabel'])
+    plt.ylabel(translations['play_count_by_month_ylabel'])
+    plt.title(translations['play_count_by_month_title'])
     plt.xticks(bar_positions, filtered_months, rotation=45, ha='right')  # Rotate x-axis labels and align them to the right
     plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))  # Ensure y-axis has only whole numbers
     plt.legend()

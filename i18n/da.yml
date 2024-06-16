@@ -1,0 +1,54 @@
+# Graph titles
+daily_play_count_title: "Dagligt afspilningstal efter medietype (sidste {days} dage)"
+play_count_by_dayofweek_title: "Afspilningstal efter ugedag (sidste {days} dage)"
+play_count_by_hourofday_title: "Afspilningstal efter time på dagen (sidste {days} dage)"
+top_10_platforms_title: "Afspilningstal efter top 10 platforme (sidste {days} dage)"
+top_10_users_title: "Afspilningstal efter top 10 brugere (sidste {days} dage)"
+play_count_by_month_title: "Samlet afspilningstal efter måned (sidste 12 måneder)"
+
+# Graph descriptions
+daily_play_count_description: "Viser det daglige afspilningstal for forskellige medietyper over de sidste {days} dage."
+play_count_by_dayofweek_description: "Viser afspilningstalsfordelingen efter ugedag for de sidste {days} dage."
+play_count_by_hourofday_description: "Illustrerer afspilningstalsfordelingen efter time på dagen over de sidste {days} dage."
+top_10_platforms_description: "Fremhæver afspilningstallet for de top 10 platforme over de sidste {days} dage."
+top_10_users_description: "Viser afspilningstallet for de top 10 brugere over de sidste {days} dage."
+play_count_by_month_description: "Viser det samlede afspilningstal efter måned for de sidste 12 måneder, eksklusive måneder med nul afspilninger."
+
+# Graph labels
+daily_play_count_xlabel: "Dato"
+daily_play_count_ylabel: "Afspilninger"
+play_count_by_dayofweek_xlabel: "Ugedag"
+play_count_by_dayofweek_ylabel: "Afspilninger"
+play_count_by_hourofday_xlabel: "Time på dagen"
+play_count_by_hourofday_ylabel: "Afspilninger"
+top_10_platforms_xlabel: "Platform"
+top_10_platforms_ylabel: "Afspilninger"
+top_10_users_xlabel: "Bruger"
+top_10_users_ylabel: "Afspilninger"
+play_count_by_month_xlabel: "Måned"
+play_count_by_month_ylabel: "Samlede afspilninger"
+
+# Day labels
+day_0: "Mandag"
+day_1: "Tirsdag"
+day_2: "Onsdag" 
+day_3: "Torsdag"
+day_4: "Fredag"
+day_5: "Lørdag"
+day_6: "Søndag"
+
+# Log messages
+log_posted_message: "Sendte {filename} til Discord"
+log_detecting_old_messages: "Finder gamle beskeder"
+log_deleted_message: "Slettede en besked"
+log_ensured_folder_exists: "Sikrede at billedmappen eksisterer"
+log_created_dated_folder: "Oprettede datomærket mappe: {folder}"
+log_generated_graphs: "Genererede grafer"
+log_cleaned_up_old_folders: "Ryddede op i gamle mapper"
+log_bot_logged_in: "Loggede ind som {name}"
+
+# Embed footer
+embed_footer: "Opslået den {now}"
+
+# Other
+no_data_available: "Ingen data tilgængelige for play_count_by_month"

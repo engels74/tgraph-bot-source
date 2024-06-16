@@ -23,7 +23,8 @@ def load_config(config_path):
         'KEEP_DAYS': int(get_config('KEEP_DAYS', 7)),
         'TIME_RANGE_DAYS': int(get_config('TIME_RANGE_DAYS', 30)),
         'TAUTULLI_API_KEY': get_config('TAUTULLI_API_KEY', 'your_tautulli_api_key'),
-        'TAUTULLI_URL': get_config('TAUTULLI_URL', 'http://your_tautulli_ip:port/api/v2')
+        'TAUTULLI_URL': get_config('TAUTULLI_URL', 'http://your_tautulli_ip:port/api/v2'),
+        'LANGUAGE': get_config('LANGUAGE', 'en')
     }
 
     config['timezone'] = pytz.timezone(config['TZ'])

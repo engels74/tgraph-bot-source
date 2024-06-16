@@ -6,6 +6,7 @@ from discord.ext import commands, tasks
 from discord import File, Embed
 from datetime import datetime
 from config.config import load_config
+from i18n import load_translations
 from graphs.generate_graphs import fetch_all_data, generate_graphs, ensure_folder_exists, cleanup_old_folders
 
 # Parse command-line arguments
@@ -16,6 +17,9 @@ args = parser.parse_args()
 
 # Load configuration
 config = load_config(args.config_file)
+
+# Load translations
+translations = load_translations(config['LANGUAGE'])
 
 # Set up logging
 log_directory = os.path.dirname(args.log_file)
@@ -50,28 +54,28 @@ async def post_graphs(channel):
     today = datetime.today().strftime('%Y-%m-%d')
     descriptions = {
         'daily_play_count.png': {
-            'title': 'Daily Play Count by Media Type',
-            'description': f'Displays the daily play count for different media types over the last {config["TIME_RANGE_DAYS"]} days.'
+            'title': translations['daily_play_count_title'],
+            'description': translations['daily_play_count_description'].format(days=config["TIME_RANGE_DAYS"])
         },
         'play_count_by_dayofweek.png': {
-            'title': 'Play Count by Day of Week',
-            'description': f'Shows the play count distribution by day of the week for the last {config["TIME_RANGE_DAYS"]} days.'
+            'title': translations['play_count_by_dayofweek_title'],
+            'description': translations['play_count_by_dayofweek_description'].format(days=config["TIME_RANGE_DAYS"])
         },
         'play_count_by_hourofday.png': {
-            'title': 'Play Count by Hour of Day',
-            'description': f'Illustrates the play count distribution by hour of the day over the last {config["TIME_RANGE_DAYS"]} days.'
+            'title': translations['play_count_by_hourofday_title'],
+            'description': translations['play_count_by_hourofday_description'].format(days=config["TIME_RANGE_DAYS"])
         },
         'top_10_platforms.png': {
-            'title': 'Play Count by Top 10 Platforms',
-            'description': f'Highlights the play count for the top 10 platforms over the last {config["TIME_RANGE_DAYS"]} days.'
+            'title': translations['top_10_platforms_title'],
+            'description': translations['top_10_platforms_description'].format(days=config["TIME_RANGE_DAYS"])
         },
         'top_10_users.png': {
-            'title': 'Play Count by Top 10 Users',
-            'description': f'Displays the play count for the top 10 users over the last {config["TIME_RANGE_DAYS"]} days.'
+            'title': translations['top_10_users_title'],
+            'description': translations['top_10_users_description'].format(days=config["TIME_RANGE_DAYS"])
         },
         'play_count_by_month.png': {
-            'title': 'Total Play Count by Month',
-            'description': f'Shows the total play count by month for the last 12 months, excluding months with zero plays.'
+            'title': translations['play_count_by_month_title'],
+            'description': translations['play_count_by_month_description']
         }
     }
 
@@ -79,18 +83,18 @@ async def post_graphs(channel):
         file_path = os.path.join(config['IMG_FOLDER'], today, filename)
         embed = Embed(title=details['title'], description=details['description'], color=0x3498db)
         embed.set_image(url=f"attachment://{filename}")
-        embed.set_footer(text=f"Posted on {now}")
+        embed.set_footer(text=translations['embed_footer'].format(now=now))
         with open(file_path, 'rb') as f:
             await channel.send(file=File(f, filename), embed=embed)
-            log(f"Posted {filename} to Discord")
+            log(translations['log_posted_message'].format(filename=filename))
 
 # Delete the bot's messages from the channel
 async def delete_bot_messages(channel):
-    log("Detecting old messages")
+    log(translations['log_detecting_old_messages'])
     async for message in channel.history(limit=200):
         if message.author == bot.user:
             await message.delete()
-            log("Deleted a message")
+            log(translations['log_deleted_message'])
 
 # Task to update graphs
 @tasks.loop(seconds=config['UPDATE_DAYS']*24*60*60)  # Convert days to seconds
@@ -99,24 +103,24 @@ async def update_graphs():
     await delete_bot_messages(channel)
 
     ensure_folder_exists(config['IMG_FOLDER'])
-    log("Ensured image folder exists")
+    log(translations['log_ensured_folder_exists'])
 
     today = datetime.today().strftime('%Y-%m-%d')
     dated_folder = os.path.join(config['IMG_FOLDER'], today)
     ensure_folder_exists(dated_folder)
-    log(f"Created dated folder: {dated_folder}")
+    log(translations['log_created_dated_folder'].format(folder=dated_folder))
 
     data = fetch_all_data()
-    generate_graphs(data, dated_folder)
-    log("Generated graphs")
+    generate_graphs(data, dated_folder, translations)
+    log(translations['log_generated_graphs'])
 
     await post_graphs(channel)
     cleanup_old_folders(config['IMG_FOLDER'], config['KEEP_DAYS'])
-    log("Cleaned up old folders")
+    log(translations['log_cleaned_up_old_folders'])
 
 @bot.event
 async def on_ready():
-    log(f'Logged in as {bot.user.name}')
+    log(translations['log_bot_logged_in'].format(name=bot.user.name))
     update_graphs.start()
 
 # Run the bot
