@@ -52,14 +52,22 @@ def generate_graphs(data, folder, translations):
     
     # Daily Play Count by Media Type
     daily_play_count = data['daily_play_count']['response']['data']
-    dates = [datetime.strptime(date, '%Y-%m-%d') for date in daily_play_count['categories']]
+    end_date = datetime.now(config['timezone'])
+    start_date = end_date - timedelta(days=config['TIME_RANGE_DAYS'] - 1)  # Include the end date
+    dates = [start_date + timedelta(days=i) for i in range(config['TIME_RANGE_DAYS'])]
+    
     series = daily_play_count['series']
     
     for serie in series:
-        plt.plot(dates, serie['data'], label=serie['name'])
+        complete_data = [0] * len(dates)
+        for i, date in enumerate(dates):
+            date_str = date.strftime('%Y-%m-%d')
+            if date_str in daily_play_count['categories']:
+                complete_data[i] = serie['data'][daily_play_count['categories'].index(date_str)]
+        plt.plot(dates, complete_data, label=serie['name'])
         
         # Adding annotations for the top value of each day
-        for i, value in enumerate(serie['data']):
+        for i, value in enumerate(complete_data):
             if value > 0:  # Only annotate days with plays
                 plt.text(dates[i], value, f'{value}', ha='center', va='bottom', fontsize=8, color='red')
     
