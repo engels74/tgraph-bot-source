@@ -52,56 +52,84 @@ def generate_graphs(data, folder, translations):
     
     # Daily Play Count by Media Type
     daily_play_count = data['daily_play_count']['response']['data']
-    dates = [datetime.strptime(date, '%Y-%m-%d') for date in daily_play_count['categories']]
+    
+    # Calculate date range
+    end_date = datetime.now(config['timezone'])
+    start_date = end_date - timedelta(days=config['TIME_RANGE_DAYS'] - 1)  # Include the end date
+    dates = [start_date + timedelta(days=i) for i in range(config['TIME_RANGE_DAYS'])]
+    
+    # Map Tautulli data to this date range
+    date_strs = [date.strftime('%Y-%m-%d') for date in dates]
+    date_data_map = {date: 0 for date in date_strs}
+    
     series = daily_play_count['series']
+    
     for serie in series:
-        plt.plot(dates, serie['data'], label=serie['name'])
+        complete_data = [0] * len(dates)
+        for date, value in zip(daily_play_count['categories'], serie['data']):
+            if date in date_data_map:
+                date_data_map[date] = value
+        complete_data = [date_data_map[date] for date in date_strs]
+        plt.plot(dates, complete_data, label=serie['name'], marker='o')  # Added marker='o' for better visualization
+        
+        # Adding annotations for the top value of each day
+        for i, value in enumerate(complete_data):
+            if value > 0:  # Only annotate days with plays
+                plt.text(dates[i], value + 0.5, f'{value}', ha='center', va='bottom', fontsize=8, color='red')  # Adjusted position
+    
     plt.xlabel(translations['daily_play_count_xlabel'])
     plt.ylabel(translations['daily_play_count_ylabel'])
     plt.title(translations['daily_play_count_title'].format(days=config["TIME_RANGE_DAYS"]))
     
     # Set x-axis tick positions and labels
-    plt.gca().xaxis.set_major_locator(plt.MultipleLocator(1))
-    plt.gca().xaxis.set_major_formatter(DateFormatter('%Y-%m-%d'))  # Use DateFormatter from matplotlib.dates
-    plt.xticks(rotation=45, ha='right')  # Rotate x-axis labels and align them to the right
-    plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))  # Ensure y-axis has only whole numbers
+    ax = plt.gca()
+    ax.set_xticks(dates)
+    ax.set_xticklabels(date_strs, rotation=45, ha='right')  # Right-align the x-axis labels and rotate them
+    ax.xaxis.set_major_formatter(DateFormatter('%Y-%m-%d'))  # Ensure the date format is correct
+    ax.yaxis.set_major_locator(MaxNLocator(integer=True))  # Ensure y-axis has only whole numbers
     plt.legend()
     plt.tight_layout(pad=3)  # Ensure everything fits within the figure and add padding
     save_and_post_graph(folder, 'daily_play_count.png')
     
     plt.figure(figsize=(14, 8))  # Reset figure size for next plot
-    
+
     # Play Count by Day of Week
     play_count_by_dayofweek = data['play_count_by_dayofweek']['response']['data']
     days = list(range(7))  # Use integer values for days of the week
     day_labels = [translations[f'day_{i}'] for i in range(7)]
     series = play_count_by_dayofweek['series']
     for serie in series:
-        plt.plot(days, serie['data'], label=serie['name'])
+        plt.plot(days, serie['data'], label=serie['name'], marker='o')
+        for i, value in enumerate(serie['data']):
+            if value > 0:
+                plt.text(days[i], value + 0.5, f'{value}', ha='center', va='bottom', fontsize=8, color='red')
     plt.xlabel(translations['play_count_by_dayofweek_xlabel'])
     plt.ylabel(translations['play_count_by_dayofweek_ylabel'])
     plt.title(translations['play_count_by_dayofweek_title'].format(days=config["TIME_RANGE_DAYS"]))
-    plt.xticks(days, day_labels, rotation=45, ha='right')  # Set x-tick labels to day names and rotate them
-    plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))  # Ensure y-axis has only whole numbers
+    plt.xticks(days, day_labels, ha='center')  # Set x-tick labels to day names without rotation
+    plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
     plt.legend()
-    plt.tight_layout(pad=3)  # Ensure everything fits within the figure and add padding
+    plt.tight_layout(pad=3)
     save_and_post_graph(folder, 'play_count_by_dayofweek.png')
-    
+
     plt.figure(figsize=(14, 8))  # Reset figure size for next plot
-    
+
     # Play Count by Hour of Day
     play_count_by_hourofday = data['play_count_by_hourofday']['response']['data']
     hours = list(range(24))  # Use integer values for hours of the day
     series = play_count_by_hourofday['series']
     for serie in series:
-        plt.plot(hours, serie['data'], label=serie['name'])
+        plt.plot(hours, serie['data'], label=serie['name'], marker='o')
+        for i, value in enumerate(serie['data']):
+            if value > 0:
+                plt.text(hours[i], value + 0.5, f'{value}', ha='center', va='bottom', fontsize=8, color='red')
     plt.xlabel(translations['play_count_by_hourofday_xlabel'])
     plt.ylabel(translations['play_count_by_hourofday_ylabel'])
     plt.title(translations['play_count_by_hourofday_title'].format(days=config["TIME_RANGE_DAYS"]))
-    plt.xticks(hours, rotation=45, ha='right')  # Rotate x-axis labels and align them to the right
-    plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))  # Ensure y-axis has only whole numbers
+    plt.xticks(hours, ha='center')  # Set x-tick labels to hours without rotation
+    plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
     plt.legend()
-    plt.tight_layout(pad=3)  # Ensure everything fits within the figure and add padding
+    plt.tight_layout(pad=3)
     save_and_post_graph(folder, 'play_count_by_hourofday.png')
     
     plt.figure(figsize=(14, 8))  # Reset figure size for next plot
