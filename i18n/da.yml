@@ -1,6 +1,6 @@
 # Grafisk titel
-daily_play_count_title: "Dagligt antal afspilninger efter medietype (sidste {days} dage)"
-play_count_by_dayofweek_title: "Antal afspilninger efter ugedag (sidste {days} dage)"
+daily_play_count_title: "Daglige antal afspilninger pr. medietype (sidste {days} dage)"
+play_count_by_dayofweek_title: "Antal afspilninger pr. ugedag (sidste {days} dage)"
 play_count_by_hourofday_title: "Antal afspilninger pr. time på dagen (sidste {days} dage)"
 top_10_platforms_title: "Antal afspilninger efter top 10-platforme (sidste {days} dage)"
 top_10_users_title: "Antal afspilninger efter top 10 brugere (sidste {days} dage)"
