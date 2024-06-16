@@ -75,7 +75,7 @@ def generate_graphs(data, folder, translations):
         # Adding annotations for the top value of each day
         for i, value in enumerate(complete_data):
             if value > 0:  # Only annotate days with plays
-                plt.text(dates[i], value, f'{value}', ha='center', va='bottom', fontsize=8, color='red')
+                plt.text(dates[i], value + 0.5, f'{value}', ha='center', va='bottom', fontsize=8, color='red')  # Adjusted position
     
     plt.xlabel(translations['daily_play_count_xlabel'])
     plt.ylabel(translations['daily_play_count_ylabel'])
