@@ -66,9 +66,10 @@ def generate_graphs(data, folder, translations):
     
     for serie in series:
         complete_data = [0] * len(dates)
-        for i, date in enumerate(date_strs):
-            if date in daily_play_count['categories']:
-                complete_data[i] = serie['data'][daily_play_count['categories'].index(date)]
+        for date, value in zip(daily_play_count['categories'], serie['data']):
+            if date in date_data_map:
+                date_data_map[date] = value
+        complete_data = [date_data_map[date] for date in date_strs]
         plt.plot(dates, complete_data, label=serie['name'])
         
         # Adding annotations for the top value of each day
