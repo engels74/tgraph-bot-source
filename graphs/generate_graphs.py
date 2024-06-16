@@ -84,7 +84,7 @@ def generate_graphs(data, folder, translations):
     # Set x-axis tick positions and labels
     ax = plt.gca()
     ax.set_xticks(dates)
-    ax.set_xticklabels(date_strs, rotation=45, ha='left')  # Left-align the x-axis labels and rotate them
+    ax.set_xticklabels(date_strs, rotation=45, ha='right')  # Right-align the x-axis labels and rotate them
     ax.xaxis.set_major_formatter(DateFormatter('%Y-%m-%d'))  # Ensure the date format is correct
     ax.yaxis.set_major_locator(MaxNLocator(integer=True))  # Ensure y-axis has only whole numbers
     plt.legend()
