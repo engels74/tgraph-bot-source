@@ -42,7 +42,7 @@ intents = discord.Intents.default()
 intents.messages = True
 intents.guilds = True
 
-bot = commands.Bot(intents=intents)
+bot = commands.Bot(command_prefix="!", intents=intents)
 
 # Function to print log messages with timestamps
 def log(message):
