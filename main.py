@@ -4,12 +4,9 @@ import logging
 import argparse
 import asyncio
 import discord
-from discord.ext import commands, tasks
-from discord import File, Embed
-from datetime import datetime
+from discord.ext import commands
 from config.config import load_config
 from i18n import load_translations
-from graphs.generate_graphs import update_and_post_graphs
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description='TGraph Bot')
@@ -50,31 +47,16 @@ def log(message):
     logger.info(f"{timestamp} - {message}")
     print(f"{timestamp} - {message}")
 
-# Task to update graphs
-@tasks.loop(seconds=config['UPDATE_DAYS']*24*60*60)  # Convert days to seconds
-async def update_graphs_task():
-    await update_and_post_graphs(bot)
-
 @bot.event
 async def on_ready():
-    try:
-        log(translations['log_bot_logged_in'].format(name=bot.user.name))
-        await bot.tree.sync()  # Synchronize slash commands with Discord
-        asyncio.create_task(update_graphs_task())  # Run the update task concurrently
-        asyncio.create_task(update_and_post_graphs(bot))  # Update and post graphs on bot startup
-    except Exception as e:
-        log(f"Error in on_ready event: {str(e)}")
+    log(translations['log_bot_logged_in'].format(name=bot.user.name))
+    await bot.tree.sync()
+    log("Slash commands synced.")
 
 async def main():
     async with bot:
         await bot.load_extension('bot.commands')
         await bot.start(config['DISCORD_TOKEN'])
-
-# Task to update graphs
-async def update_graphs_task():
-    while True:
-        await update_and_post_graphs(bot)
-        await asyncio.sleep(config['UPDATE_DAYS'] * 24 * 60 * 60)  # Convert days to seconds
 
 asyncio.run(main())
 
