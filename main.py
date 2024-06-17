@@ -59,15 +59,21 @@ async def update_graphs_task():
 async def on_ready():
     log(translations['log_bot_logged_in'].format(name=bot.user.name))
     await bot.tree.sync()  # Synchronize slash commands with Discord
-    update_graphs_task.start()
-    await update_and_post_graphs(bot)  # Update and post graphs on bot startup
+    asyncio.create_task(update_graphs_task())  # Run the update task concurrently
+    asyncio.create_task(update_and_post_graphs(bot))  # Update and post graphs on bot startup
 
 async def main():
     async with bot:
         await bot.load_extension('bot.commands')
         await bot.start(config['DISCORD_TOKEN'])
 
-asyncio.run(main())
+# Task to update graphs
+async def update_graphs_task():
+    while True:
+        await update_and_post_graphs(bot)
+        await asyncio.sleep(config['UPDATE_DAYS'] * 24 * 60 * 60)  # Convert days to seconds
+
+bot.run(config['DISCORD_TOKEN'])
 
 # TGraph - Tautulli Graph Bot
 # <https://github.com/engels74/tgraph-bot-source>
