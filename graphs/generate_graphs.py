@@ -150,6 +150,8 @@ def generate_graphs(data, folder, translations):
         series = top_10_platforms['series']
         for serie in series:
             plt.bar(platforms, serie['data'], label=serie['name'])
+            for i, v in enumerate(serie['data']):
+                plt.text(i, v + 0.5, str(v), color='red', fontweight='bold', ha='center', va='bottom')
         plt.xlabel(translations['top_10_platforms_xlabel'])
         plt.ylabel(translations['top_10_platforms_ylabel'])
         plt.title(translations['top_10_platforms_title'].format(days=config["TIME_RANGE_DAYS"]))
@@ -169,6 +171,8 @@ def generate_graphs(data, folder, translations):
         censored_users = [censor_username(user) for user in users]
         for serie in series:
             plt.bar(censored_users, serie['data'], label=serie['name'])
+            for i, v in enumerate(serie['data']):
+                plt.text(i, v + 0.5, str(v), color='red', fontweight='bold', ha='center', va='bottom')
         plt.xlabel(translations['top_10_users_xlabel'])
         plt.ylabel(translations['top_10_users_ylabel'])
         plt.title(translations['top_10_users_title'].format(days=config["TIME_RANGE_DAYS"]))
@@ -216,6 +220,12 @@ def generate_graphs(data, folder, translations):
 
         plt.bar(bar_positions, filtered_movie_data, width=bar_width, label='Movies')
         plt.bar(bar_positions, filtered_tv_data, width=bar_width, bottom=filtered_movie_data, label='TV')
+
+        for i, v in enumerate(filtered_movie_data):
+            plt.text(i, v + 0.5, str(v), color='red', fontweight='bold', ha='center', va='bottom')
+
+        for i, v in enumerate(filtered_tv_data):
+            plt.text(i, v + filtered_movie_data[i] + 0.5, str(v), color='red', fontweight='bold', ha='center', va='bottom')
 
         plt.xlabel(translations['play_count_by_month_xlabel'])
         plt.ylabel(translations['play_count_by_month_ylabel'])
