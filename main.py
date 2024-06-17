@@ -52,32 +52,43 @@ def log(message):
 async def post_graphs(channel):
     now = datetime.now(config['timezone']).strftime('%Y-%m-%d at %H:%M:%S')
     today = datetime.today().strftime('%Y-%m-%d')
-    descriptions = {
-        'daily_play_count.png': {
+    descriptions = {}
+
+    if config['DAILY_PLAY_COUNT']:
+        descriptions['daily_play_count.png'] = {
             'title': translations['daily_play_count_title'].format(days=config["TIME_RANGE_DAYS"]),
             'description': translations['daily_play_count_description'].format(days=config["TIME_RANGE_DAYS"])
-        },
-        'play_count_by_dayofweek.png': {
+        }
+
+    if config['PLAY_COUNT_BY_DAYOFWEEK']:
+        descriptions['play_count_by_dayofweek.png'] = {
             'title': translations['play_count_by_dayofweek_title'].format(days=config["TIME_RANGE_DAYS"]),
             'description': translations['play_count_by_dayofweek_description'].format(days=config["TIME_RANGE_DAYS"])
-        },
-        'play_count_by_hourofday.png': {
+        }
+
+    if config['PLAY_COUNT_BY_HOUROFDAY']:
+        descriptions['play_count_by_hourofday.png'] = {
             'title': translations['play_count_by_hourofday_title'].format(days=config["TIME_RANGE_DAYS"]),
             'description': translations['play_count_by_hourofday_description'].format(days=config["TIME_RANGE_DAYS"])
-        },
-        'top_10_platforms.png': {
+        }
+
+    if config['TOP_10_PLATFORMS']:
+        descriptions['top_10_platforms.png'] = {
             'title': translations['top_10_platforms_title'].format(days=config["TIME_RANGE_DAYS"]),
             'description': translations['top_10_platforms_description'].format(days=config["TIME_RANGE_DAYS"])
-        },
-        'top_10_users.png': {
+        }
+
+    if config['TOP_10_USERS']:
+        descriptions['top_10_users.png'] = {
             'title': translations['top_10_users_title'].format(days=config["TIME_RANGE_DAYS"]),
             'description': translations['top_10_users_description'].format(days=config["TIME_RANGE_DAYS"])
-        },
-        'play_count_by_month.png': {
+        }
+
+    if config['PLAY_COUNT_BY_MONTH']:
+        descriptions['play_count_by_month.png'] = {
             'title': translations['play_count_by_month_title'],
             'description': translations['play_count_by_month_description']
         }
-    }
 
     for filename, details in descriptions.items():
         file_path = os.path.join(config['IMG_FOLDER'], today, filename)
