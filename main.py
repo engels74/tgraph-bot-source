@@ -49,16 +49,9 @@ def log(message):
 
 @bot.event
 async def on_ready():
-    log(translations['log_bot_logged_in'].format(name=bot.user.name))
-    await bot.tree.sync()
-    log("Slash commands synced.")
+    log(f"Logged in as {bot.user.name}")
 
-async def main():
-    async with bot:
-        await bot.load_extension('bot.commands')
-        await bot.start(config['DISCORD_TOKEN'])
-
-asyncio.run(main())
+bot.run(config['DISCORD_TOKEN'])
 
 # TGraph - Tautulli Graph Bot
 # <https://github.com/engels74/tgraph-bot-source>
