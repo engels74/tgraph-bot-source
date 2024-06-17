@@ -1,13 +1,15 @@
+# main.py
 import os
 import logging
 import argparse
+import asyncio
 import discord
 from discord.ext import commands, tasks
 from discord import File, Embed
 from datetime import datetime
 from config.config import load_config
 from i18n import load_translations
-from graphs.generate_graphs import fetch_all_data, generate_graphs, ensure_folder_exists, cleanup_old_folders
+from graphs.generate_graphs import update_and_post_graphs
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description='TGraph Bot')
@@ -40,7 +42,7 @@ intents = discord.Intents.default()
 intents.messages = True
 intents.guilds = True
 
-bot = commands.Bot(command_prefix="!", intents=intents)
+bot = commands.Bot(intents=intents)
 
 # Function to print log messages with timestamps
 def log(message):
@@ -48,94 +50,22 @@ def log(message):
     logger.info(f"{timestamp} - {message}")
     print(f"{timestamp} - {message}")
 
-# Post an embed to Discord with the graphs
-async def post_graphs(channel):
-    now = datetime.now(config['timezone']).strftime('%Y-%m-%d at %H:%M:%S')
-    today = datetime.today().strftime('%Y-%m-%d')
-    descriptions = {}
-
-    if config['DAILY_PLAY_COUNT']:
-        descriptions['daily_play_count.png'] = {
-            'title': translations['daily_play_count_title'].format(days=config["TIME_RANGE_DAYS"]),
-            'description': translations['daily_play_count_description'].format(days=config["TIME_RANGE_DAYS"])
-        }
-
-    if config['PLAY_COUNT_BY_DAYOFWEEK']:
-        descriptions['play_count_by_dayofweek.png'] = {
-            'title': translations['play_count_by_dayofweek_title'].format(days=config["TIME_RANGE_DAYS"]),
-            'description': translations['play_count_by_dayofweek_description'].format(days=config["TIME_RANGE_DAYS"])
-        }
-
-    if config['PLAY_COUNT_BY_HOUROFDAY']:
-        descriptions['play_count_by_hourofday.png'] = {
-            'title': translations['play_count_by_hourofday_title'].format(days=config["TIME_RANGE_DAYS"]),
-            'description': translations['play_count_by_hourofday_description'].format(days=config["TIME_RANGE_DAYS"])
-        }
-
-    if config['TOP_10_PLATFORMS']:
-        descriptions['top_10_platforms.png'] = {
-            'title': translations['top_10_platforms_title'].format(days=config["TIME_RANGE_DAYS"]),
-            'description': translations['top_10_platforms_description'].format(days=config["TIME_RANGE_DAYS"])
-        }
-
-    if config['TOP_10_USERS']:
-        descriptions['top_10_users.png'] = {
-            'title': translations['top_10_users_title'].format(days=config["TIME_RANGE_DAYS"]),
-            'description': translations['top_10_users_description'].format(days=config["TIME_RANGE_DAYS"])
-        }
-
-    if config['PLAY_COUNT_BY_MONTH']:
-        descriptions['play_count_by_month.png'] = {
-            'title': translations['play_count_by_month_title'],
-            'description': translations['play_count_by_month_description']
-        }
-
-    for filename, details in descriptions.items():
-        file_path = os.path.join(config['IMG_FOLDER'], today, filename)
-        embed = Embed(title=details['title'], description=details['description'], color=0x3498db)
-        embed.set_image(url=f"attachment://{filename}")
-        embed.set_footer(text=translations['embed_footer'].format(now=now))
-        with open(file_path, 'rb') as f:
-            await channel.send(file=File(f, filename), embed=embed)
-            log(translations['log_posted_message'].format(filename=filename))
-
-# Delete the bot's messages from the channel
-async def delete_bot_messages(channel):
-    log(translations['log_detecting_old_messages'])
-    async for message in channel.history(limit=200):
-        if message.author == bot.user:
-            await message.delete()
-            log(translations['log_deleted_message'])
-
 # Task to update graphs
 @tasks.loop(seconds=config['UPDATE_DAYS']*24*60*60)  # Convert days to seconds
-async def update_graphs():
-    channel = bot.get_channel(config['CHANNEL_ID'])
-    await delete_bot_messages(channel)
-
-    ensure_folder_exists(config['IMG_FOLDER'])
-    log(translations['log_ensured_folder_exists'])
-
-    today = datetime.today().strftime('%Y-%m-%d')
-    dated_folder = os.path.join(config['IMG_FOLDER'], today)
-    ensure_folder_exists(dated_folder)
-    log(translations['log_created_dated_folder'].format(folder=dated_folder))
-
-    data = fetch_all_data()
-    generate_graphs(data, dated_folder, translations)
-    log(translations['log_generated_graphs'])
-
-    await post_graphs(channel)
-    cleanup_old_folders(config['IMG_FOLDER'], config['KEEP_DAYS'])
-    log(translations['log_cleaned_up_old_folders'])
+async def update_graphs_task():
+    await update_and_post_graphs(bot)
 
 @bot.event
 async def on_ready():
     log(translations['log_bot_logged_in'].format(name=bot.user.name))
-    update_graphs.start()
+    update_graphs_task.start()
 
-# Run the bot
-bot.run(config['DISCORD_TOKEN'])
+async def main():
+    async with bot:
+        await bot.load_extension('bot.commands')
+        await bot.start(config['DISCORD_TOKEN'])
+
+asyncio.run(main())
 
 # TGraph - Tautulli Graph Bot
 # <https://github.com/engels74/tgraph-bot-source>
