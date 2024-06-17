@@ -58,7 +58,9 @@ async def update_graphs_task():
 @bot.event
 async def on_ready():
     log(translations['log_bot_logged_in'].format(name=bot.user.name))
+    await bot.tree.sync()  # Synchronize slash commands with Discord
     update_graphs_task.start()
+    await update_and_post_graphs(bot)  # Update and post graphs on bot startup
 
 async def main():
     async with bot:
