@@ -19,34 +19,50 @@ class Commands(commands.Cog):
         self.bot = bot
         self.start_time = datetime.now()
 
-    @app_commands.command(name="about", description="Information about the bot")
-    async def about(self, interaction: discord.Interaction):
+@app_commands.command(name="about", description="Information about the bot")
+async def about(self, interaction: discord.Interaction):
+    try:
         embed = discord.Embed(title="TGraph Bot", color=0x3498db)
         embed.add_field(name="GitHub", value="https://github.com/engels74/tgraph-bot-source", inline=False)
         embed.add_field(name="License", value="AGPLv3", inline=False)
         await interaction.response.send_message(embed=embed)
+    except Exception as e:
+        log(f"Error in /about command: {str(e)}")
+        await interaction.response.send_message("An error occurred while processing the command.")
 
-    @app_commands.command(name="set_language", description="Set the language for the bot")
-    @app_commands.choices(language=[
-        app_commands.Choice(name=language.split('.')[0], value=language.split('.')[0])
-        for language in os.listdir(os.path.join(os.path.dirname(__file__), '..', 'i18n'))
-    ])
-    async def set_language(self, interaction: discord.Interaction, language: str):
+@app_commands.command(name="set_language", description="Set the language for the bot")
+@app_commands.choices(language=[
+    app_commands.Choice(name=language.split('.')[0], value=language.split('.')[0])
+    for language in os.listdir(os.path.join(os.path.dirname(__file__), '..', 'i18n'))
+])
+async def set_language(self, interaction: discord.Interaction, language: str):
+    try:
         config['LANGUAGE'] = language
         translations = load_translations(language)
         await interaction.response.send_message(f"Language set to {language}")
+    except Exception as e:
+        log(f"Error in /set_language command: {str(e)}")
+        await interaction.response.send_message("An error occurred while processing the command.")
 
-    @app_commands.command(name="update_graphs", description="Update and post the graphs")
-    async def update_graphs(self, interaction: discord.Interaction):
+@app_commands.command(name="update_graphs", description="Update and post the graphs")
+async def update_graphs(self, interaction: discord.Interaction):
+    try:
         await interaction.response.defer()
         await update_and_post_graphs(self.bot)
         await interaction.followup.send("Graphs updated and posted.")
+    except Exception as e:
+        log(f"Error in /update_graphs command: {str(e)}")
+        await interaction.followup.send("An error occurred while processing the command.")
 
-    @app_commands.command(name="uptime", description="Show the bot's uptime")
-    async def uptime(self, interaction: discord.Interaction):
+@app_commands.command(name="uptime", description="Show the bot's uptime")
+async def uptime(self, interaction: discord.Interaction):
+    try:
         current_time = datetime.now()
         uptime = current_time - self.start_time
         await interaction.response.send_message(f"Bot has been running for {uptime}")
+    except Exception as e:
+        log(f"Error in /uptime command: {str(e)}")
+        await interaction.response.send_message("An error occurred while processing the command.")
 
 async def setup(bot):
     await bot.add_cog(Commands(bot))

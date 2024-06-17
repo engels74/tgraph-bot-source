@@ -57,10 +57,13 @@ async def update_graphs_task():
 
 @bot.event
 async def on_ready():
-    log(translations['log_bot_logged_in'].format(name=bot.user.name))
-    await bot.tree.sync()  # Synchronize slash commands with Discord
-    asyncio.create_task(update_graphs_task())  # Run the update task concurrently
-    asyncio.create_task(update_and_post_graphs(bot))  # Update and post graphs on bot startup
+    try:
+        log(translations['log_bot_logged_in'].format(name=bot.user.name))
+        await bot.tree.sync()  # Synchronize slash commands with Discord
+        asyncio.create_task(update_graphs_task())  # Run the update task concurrently
+        asyncio.create_task(update_and_post_graphs(bot))  # Update and post graphs on bot startup
+    except Exception as e:
+        log(f"Error in on_ready event: {str(e)}")
 
 async def main():
     async with bot:
