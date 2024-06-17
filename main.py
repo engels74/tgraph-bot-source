@@ -73,7 +73,7 @@ async def update_graphs_task():
         await update_and_post_graphs(bot)
         await asyncio.sleep(config['UPDATE_DAYS'] * 24 * 60 * 60)  # Convert days to seconds
 
-bot.run(config['DISCORD_TOKEN'])
+asyncio.run(main())
 
 # TGraph - Tautulli Graph Bot
 # <https://github.com/engels74/tgraph-bot-source>
