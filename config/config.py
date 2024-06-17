@@ -30,7 +30,13 @@ def load_config(config_path):
         'PLAY_COUNT_BY_HOUROFDAY': bool(get_config('PLAY_COUNT_BY_HOUROFDAY', True)),
         'TOP_10_PLATFORMS': bool(get_config('TOP_10_PLATFORMS', True)),
         'TOP_10_USERS': bool(get_config('TOP_10_USERS', True)),
-        'PLAY_COUNT_BY_MONTH': bool(get_config('PLAY_COUNT_BY_MONTH', True))
+        'PLAY_COUNT_BY_MONTH': bool(get_config('PLAY_COUNT_BY_MONTH', True)),
+        'ANNOTATE_DAILY_PLAY_COUNT': bool(get_config('ANNOTATE_DAILY_PLAY_COUNT', True)),
+        'ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK': bool(get_config('ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK', True)),
+        'ANNOTATE_PLAY_COUNT_BY_HOUROFDAY': bool(get_config('ANNOTATE_PLAY_COUNT_BY_HOUROFDAY', True)),
+        'ANNOTATE_TOP_10_PLATFORMS': bool(get_config('ANNOTATE_TOP_10_PLATFORMS', True)),
+        'ANNOTATE_TOP_10_USERS': bool(get_config('ANNOTATE_TOP_10_USERS', True)),
+        'ANNOTATE_PLAY_COUNT_BY_MONTH': bool(get_config('ANNOTATE_PLAY_COUNT_BY_MONTH', True))
     }
 
     config['timezone'] = pytz.timezone(config['TZ'])

@@ -80,9 +80,10 @@ def generate_graphs(data, folder, translations):
             plt.plot(dates, complete_data, label=serie['name'], marker='o')  # Added marker='o' for better visualization
             
             # Adding annotations for the top value of each day
-            for i, value in enumerate(complete_data):
-                if value > 0:  # Only annotate days with plays
-                    plt.text(dates[i], value + 0.5, f'{value}', ha='center', va='bottom', fontsize=8, color='red')  # Adjusted position
+            if config['ANNOTATE_DAILY_PLAY_COUNT']:
+                for i, value in enumerate(complete_data):
+                    if value > 0:  # Only annotate days with plays
+                        plt.text(dates[i], value + 0.5, f'{value}', ha='center', va='bottom', fontsize=8, color='red')  # Adjusted position
         
         plt.xlabel(translations['daily_play_count_xlabel'])
         plt.ylabel(translations['daily_play_count_ylabel'])
@@ -108,9 +109,10 @@ def generate_graphs(data, folder, translations):
         series = play_count_by_dayofweek['series']
         for serie in series:
             plt.plot(days, serie['data'], label=serie['name'], marker='o')
-            for i, value in enumerate(serie['data']):
-                if value > 0:
-                    plt.text(days[i], value + 0.5, f'{value}', ha='center', va='bottom', fontsize=8, color='red')
+            if config['ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK']:
+                for i, value in enumerate(serie['data']):
+                    if value > 0:
+                        plt.text(days[i], value + 0.5, f'{value}', ha='center', va='bottom', fontsize=8, color='red')
         plt.xlabel(translations['play_count_by_dayofweek_xlabel'])
         plt.ylabel(translations['play_count_by_dayofweek_ylabel'])
         plt.title(translations['play_count_by_dayofweek_title'].format(days=config["TIME_RANGE_DAYS"]))
@@ -129,9 +131,10 @@ def generate_graphs(data, folder, translations):
         series = play_count_by_hourofday['series']
         for serie in series:
             plt.plot(hours, serie['data'], label=serie['name'], marker='o')
-            for i, value in enumerate(serie['data']):
-                if value > 0:
-                    plt.text(hours[i], value + 0.5, f'{value}', ha='center', va='bottom', fontsize=8, color='red')
+            if config['ANNOTATE_PLAY_COUNT_BY_HOUROFDAY']:
+                for i, value in enumerate(serie['data']):
+                    if value > 0:
+                        plt.text(hours[i], value + 0.5, f'{value}', ha='center', va='bottom', fontsize=8, color='red')
         plt.xlabel(translations['play_count_by_hourofday_xlabel'])
         plt.ylabel(translations['play_count_by_hourofday_ylabel'])
         plt.title(translations['play_count_by_hourofday_title'].format(days=config["TIME_RANGE_DAYS"]))
@@ -150,8 +153,9 @@ def generate_graphs(data, folder, translations):
         series = top_10_platforms['series']
         for serie in series:
             plt.bar(platforms, serie['data'], label=serie['name'])
-            for i, v in enumerate(serie['data']):
-                plt.text(i, v + 0.5, str(v), color='red', fontweight='bold', ha='center', va='bottom')
+            if config['ANNOTATE_TOP_10_PLATFORMS']:
+                for i, v in enumerate(serie['data']):
+                    plt.text(i, v + 0.5, str(v), color='red', fontweight='bold', ha='center', va='bottom')
         plt.xlabel(translations['top_10_platforms_xlabel'])
         plt.ylabel(translations['top_10_platforms_ylabel'])
         plt.title(translations['top_10_platforms_title'].format(days=config["TIME_RANGE_DAYS"]))
@@ -171,8 +175,9 @@ def generate_graphs(data, folder, translations):
         censored_users = [censor_username(user) for user in users]
         for serie in series:
             plt.bar(censored_users, serie['data'], label=serie['name'])
-            for i, v in enumerate(serie['data']):
-                plt.text(i, v + 0.5, str(v), color='red', fontweight='bold', ha='center', va='bottom')
+            if config['ANNOTATE_TOP_10_USERS']:
+                for i, v in enumerate(serie['data']):
+                    plt.text(i, v + 0.5, str(v), color='red', fontweight='bold', ha='center', va='bottom')
         plt.xlabel(translations['top_10_users_xlabel'])
         plt.ylabel(translations['top_10_users_ylabel'])
         plt.title(translations['top_10_users_title'].format(days=config["TIME_RANGE_DAYS"]))
@@ -221,11 +226,12 @@ def generate_graphs(data, folder, translations):
         plt.bar(bar_positions, filtered_movie_data, width=bar_width, label='Movies')
         plt.bar(bar_positions, filtered_tv_data, width=bar_width, bottom=filtered_movie_data, label='TV')
 
-        for i, v in enumerate(filtered_movie_data):
-            plt.text(i, v + 0.5, str(v), color='red', fontweight='bold', ha='center', va='bottom')
+        if config['ANNOTATE_PLAY_COUNT_BY_MONTH']:
+            for i, v in enumerate(filtered_movie_data):
+                plt.text(i, v + 0.5, str(v), color='red', fontweight='bold', ha='center', va='bottom')
 
-        for i, v in enumerate(filtered_tv_data):
-            plt.text(i, v + filtered_movie_data[i] + 0.5, str(v), color='red', fontweight='bold', ha='center', va='bottom')
+            for i, v in enumerate(filtered_tv_data):
+                plt.text(i, v + filtered_movie_data[i] + 0.5, str(v), color='red', fontweight='bold', ha='center', va='bottom')
 
         plt.xlabel(translations['play_count_by_month_xlabel'])
         plt.ylabel(translations['play_count_by_month_ylabel'])
