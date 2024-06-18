@@ -335,5 +335,3 @@ async def delete_bot_messages(channel):
     async for message in channel.history(limit=200):
         if message.author == channel.guild.me:
             await message.delete()
-
-__all__ = ['update_and_post_graphs', 'log']
