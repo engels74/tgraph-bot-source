@@ -51,6 +51,9 @@ def log(message):
 @bot.event
 async def on_ready():
     log(f"Logged in as {bot.user.name}")
+    await bot.load_extension('bot.commands')  # Load the Commands cog
+    await bot.tree.sync()  # Sync application commands with Discord
+    log("Slash commands synced.")
 
 bot.run(config['DISCORD_TOKEN'])
 
