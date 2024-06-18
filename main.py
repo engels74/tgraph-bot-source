@@ -7,6 +7,7 @@ import discord
 from discord.ext import commands
 from config.config import load_config
 from i18n import load_translations
+from datetime import datetime
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description='TGraph Bot')
