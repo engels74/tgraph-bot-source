@@ -1,5 +1,7 @@
 # graphs/generate_graphs.py
 import os
+import discord
+import logging
 import shutil
 import requests
 import matplotlib.pyplot as plt
