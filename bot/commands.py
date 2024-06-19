@@ -24,9 +24,11 @@ class Commands(commands.Cog):
     async def about(self, interaction: discord.Interaction):
         try:
             embed = discord.Embed(title="TGraph Bot", color=0x3498db)
+            embed.add_field(name="Description", value="TGraph Bot is a Discord bot that generates and posts graphs based on Tautulli data. It provides insights into your media server usage, including daily play counts, play counts by day of the week, play counts by hour of the day, top 10 platforms, top 10 users, and play counts by month.", inline=False)
             embed.add_field(name="GitHub", value="https://github.com/engels74/tgraph-bot-source", inline=False)
             embed.add_field(name="License", value="AGPLv3", inline=False)
             await interaction.response.send_message(embed=embed)
+            log(f"Command /about executed by {interaction.user.name}#{interaction.user.discriminator}")
         except Exception as e:
             log(f"Error in /about command: {str(e)}")
             await interaction.response.send_message("An error occurred while processing the command.")
@@ -42,6 +44,7 @@ class Commands(commands.Cog):
             global translations
             translations = load_translations(language)
             await interaction.response.send_message(f"Language set to {language}. The new language will be used for future graph updates.")
+            log(f"Command /set_language executed by {interaction.user.name}#{interaction.user.discriminator}. Language set to {language}")
         except Exception as e:
             log(f"Error in /set_language command: {str(e)}")
             await interaction.response.send_message("An error occurred while processing the command.")
@@ -51,16 +54,11 @@ class Commands(commands.Cog):
         try:
             await interaction.response.defer()
             await update_and_post_graphs(self.bot, translations)
-            try:
-                await interaction.followup.send("Graphs updated and posted.")
-            except discord.errors.NotFound:
-                log("Interaction message deleted. Graphs updated and posted.")
+            log(f"Command /update_graphs executed by {interaction.user.name}#{interaction.user.discriminator}")
+            await interaction.followup.send("Graphs updated and posted.")
         except Exception as e:
             log(f"Error in /update_graphs command: {str(e)}")
-            try:
-                await interaction.followup.send("An error occurred while processing the command.")
-            except discord.errors.NotFound:
-                log("Interaction message not found. An error occurred while processing the command.")
+            await interaction.followup.send("An error occurred while processing the command.")
 
     @app_commands.command(name="uptime", description="Show the bot's uptime")
     async def uptime(self, interaction: discord.Interaction):
@@ -68,6 +66,7 @@ class Commands(commands.Cog):
             current_time = datetime.now()
             uptime = current_time - self.start_time
             await interaction.response.send_message(f"Bot has been running for {uptime}")
+            log(f"Command /uptime executed by {interaction.user.name}#{interaction.user.discriminator}")
         except Exception as e:
             log(f"Error in /uptime command: {str(e)}")
             await interaction.response.send_message("An error occurred while processing the command.")
