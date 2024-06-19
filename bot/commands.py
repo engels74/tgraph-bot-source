@@ -50,10 +50,16 @@ class Commands(commands.Cog):
         try:
             await interaction.response.defer()
             await update_and_post_graphs(self.bot)
-            await interaction.followup.send("Graphs updated and posted.")
+            try:
+                await interaction.followup.send("Graphs updated and posted.")
+            except discord.errors.NotFound:
+                log("Interaction message not found. Graphs updated and posted.")
         except Exception as e:
             log(f"Error in /update_graphs command: {str(e)}")
-            await interaction.followup.send("An error occurred while processing the command.")
+            try:
+                await interaction.followup.send("An error occurred while processing the command.")
+            except discord.errors.NotFound:
+                log("Interaction message not found. An error occurred while processing the command.")
 
     @app_commands.command(name="uptime", description="Show the bot's uptime")
     async def uptime(self, interaction: discord.Interaction):
