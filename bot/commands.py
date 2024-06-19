@@ -54,11 +54,17 @@ class Commands(commands.Cog):
         try:
             await interaction.response.defer()
             await update_and_post_graphs(self.bot, translations)
-            log(f"Command /update_graphs executed by {interaction.user.name}#{interaction.user.discriminator}")
-            await interaction.followup.send("Graphs updated and posted.")
+            try:
+                await interaction.followup.send("Graphs updated and posted.")
+                log(f"Command /update_graphs executed by {interaction.user.name}#{interaction.user.discriminator}. Graphs updated and posted.")
+            except discord.errors.NotFound:
+                log(f"Command /update_graphs executed by {interaction.user.name}#{interaction.user.discriminator}. Interaction message deleted. Graphs updated and posted.")
         except Exception as e:
             log(f"Error in /update_graphs command: {str(e)}")
-            await interaction.followup.send("An error occurred while processing the command.")
+            try:
+                await interaction.followup.send("An error occurred while processing the command.")
+            except discord.errors.NotFound:
+                log(f"Error in /update_graphs command: {str(e)}. Interaction message not found.")
 
     @app_commands.command(name="uptime", description="Show the bot's uptime")
     async def uptime(self, interaction: discord.Interaction):
