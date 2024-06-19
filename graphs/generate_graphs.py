@@ -277,11 +277,11 @@ async def update_and_post_graphs(bot, translations):
     data = fetch_all_data()
     generate_graphs(data, dated_folder, translations)
 
-    await post_graphs(channel)
+    await post_graphs(channel, translations)
     cleanup_old_folders(config['IMG_FOLDER'], config['KEEP_DAYS'])
 
 # New function to post graphs
-async def post_graphs(channel):
+async def post_graphs(channel, translations):
     now = datetime.now(config['timezone']).strftime('%Y-%m-%d at %H:%M:%S')
     today = datetime.today().strftime('%Y-%m-%d')
     descriptions = {}
