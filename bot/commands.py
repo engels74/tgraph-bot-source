@@ -54,7 +54,7 @@ class Commands(commands.Cog):
             try:
                 await interaction.followup.send("Graphs updated and posted.")
             except discord.errors.NotFound:
-                log("Interaction message not found. Graphs updated and posted.")
+                log("Interaction message deleted. Graphs updated and posted.")
         except Exception as e:
             log(f"Error in /update_graphs command: {str(e)}")
             try:
