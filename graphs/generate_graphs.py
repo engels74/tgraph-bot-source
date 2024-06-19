@@ -264,7 +264,7 @@ def cleanup_old_folders(base_folder, keep_days):
         shutil.rmtree(os.path.join(base_folder, folder))
 
 # New function to update and post graphs
-async def update_and_post_graphs(bot):
+async def update_and_post_graphs(bot, translations):
     channel = bot.get_channel(config['CHANNEL_ID'])
     await delete_bot_messages(channel)
 

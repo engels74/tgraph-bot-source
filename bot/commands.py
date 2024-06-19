@@ -39,8 +39,9 @@ class Commands(commands.Cog):
     async def set_language(self, interaction: discord.Interaction, language: str):
         try:
             config['LANGUAGE'] = language
+            global translations
             translations = load_translations(language)
-            await interaction.response.send_message(f"Language set to {language}")
+            await interaction.response.send_message(f"Language set to {language}. The new language will be used for future graph updates.")
         except Exception as e:
             log(f"Error in /set_language command: {str(e)}")
             await interaction.response.send_message("An error occurred while processing the command.")
@@ -49,7 +50,7 @@ class Commands(commands.Cog):
     async def update_graphs(self, interaction: discord.Interaction):
         try:
             await interaction.response.defer()
-            await update_and_post_graphs(self.bot)
+            await update_and_post_graphs(self.bot, translations)
             try:
                 await interaction.followup.send("Graphs updated and posted.")
             except discord.errors.NotFound:
