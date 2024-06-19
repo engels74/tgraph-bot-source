@@ -8,6 +8,8 @@ from discord.ext import commands
 from config.config import load_config
 from i18n import load_translations
 from datetime import datetime
+from bot.commands import translations
+from graphs.generate_graphs import update_and_post_graphs
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description='TGraph Bot')
@@ -55,6 +57,11 @@ async def main():
         await bot.load_extension('bot.commands')  # Load the Commands cog
         await bot.tree.sync()  # Sync application commands with Discord
         log("Slash commands synced.")
+        
+        # Update and post graphs immediately after logging in
+        log("Updating and posting graphs on bot startup...")
+        await update_and_post_graphs(bot, translations)
+        log("Graphs updated and posted on bot startup.")
 
     await bot.start(config['DISCORD_TOKEN'])
 
