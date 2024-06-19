@@ -8,7 +8,6 @@ from discord.ext import commands
 from config.config import load_config
 from i18n import load_translations
 from datetime import datetime
-from bot.commands import translations
 from graphs.generate_graphs import update_and_post_graphs
 
 # Parse command-line arguments
@@ -60,6 +59,7 @@ async def main():
         
         # Update and post graphs immediately after logging in
         log("Updating and posting graphs on bot startup...")
+        from bot.commands import translations
         await update_and_post_graphs(bot, translations)
         log("Graphs updated and posted on bot startup.")
 
