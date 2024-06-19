@@ -1,4 +1,7 @@
+# graphs/generate_graphs.py
 import os
+import discord
+import logging
 import shutil
 import requests
 import matplotlib.pyplot as plt
@@ -259,3 +262,76 @@ def cleanup_old_folders(base_folder, keep_days):
     folders.sort(reverse=True)
     for folder in folders[keep_days:]:
         shutil.rmtree(os.path.join(base_folder, folder))
+
+# New function to update and post graphs
+async def update_and_post_graphs(bot, translations):
+    channel = bot.get_channel(config['CHANNEL_ID'])
+    await delete_bot_messages(channel)
+
+    ensure_folder_exists(config['IMG_FOLDER'])
+
+    today = datetime.today().strftime('%Y-%m-%d')
+    dated_folder = os.path.join(config['IMG_FOLDER'], today)
+    ensure_folder_exists(dated_folder)
+
+    data = fetch_all_data()
+    generate_graphs(data, dated_folder, translations)
+
+    await post_graphs(channel, translations)
+    cleanup_old_folders(config['IMG_FOLDER'], config['KEEP_DAYS'])
+
+# New function to post graphs
+async def post_graphs(channel, translations):
+    now = datetime.now(config['timezone']).strftime('%Y-%m-%d at %H:%M:%S')
+    today = datetime.today().strftime('%Y-%m-%d')
+    descriptions = {}
+
+    if config['DAILY_PLAY_COUNT']:
+        descriptions['daily_play_count.png'] = {
+            'title': translations['daily_play_count_title'].format(days=config["TIME_RANGE_DAYS"]),
+            'description': translations['daily_play_count_description'].format(days=config["TIME_RANGE_DAYS"])
+        }
+
+    if config['PLAY_COUNT_BY_DAYOFWEEK']:
+        descriptions['play_count_by_dayofweek.png'] = {
+            'title': translations['play_count_by_dayofweek_title'].format(days=config["TIME_RANGE_DAYS"]),
+            'description': translations['play_count_by_dayofweek_description'].format(days=config["TIME_RANGE_DAYS"])
+        }
+
+    if config['PLAY_COUNT_BY_HOUROFDAY']:
+        descriptions['play_count_by_hourofday.png'] = {
+            'title': translations['play_count_by_hourofday_title'].format(days=config["TIME_RANGE_DAYS"]),
+            'description': translations['play_count_by_hourofday_description'].format(days=config["TIME_RANGE_DAYS"])
+        }
+
+    if config['TOP_10_PLATFORMS']:
+        descriptions['top_10_platforms.png'] = {
+            'title': translations['top_10_platforms_title'].format(days=config["TIME_RANGE_DAYS"]),
+            'description': translations['top_10_platforms_description'].format(days=config["TIME_RANGE_DAYS"])
+        }
+
+    if config['TOP_10_USERS']:
+        descriptions['top_10_users.png'] = {
+            'title': translations['top_10_users_title'].format(days=config["TIME_RANGE_DAYS"]),
+            'description': translations['top_10_users_description'].format(days=config["TIME_RANGE_DAYS"])
+        }
+
+    if config['PLAY_COUNT_BY_MONTH']:
+        descriptions['play_count_by_month.png'] = {
+            'title': translations['play_count_by_month_title'],
+            'description': translations['play_count_by_month_description']
+        }
+
+    for filename, details in descriptions.items():
+        file_path = os.path.join(config['IMG_FOLDER'], today, filename)
+        embed = discord.Embed(title=details['title'], description=details['description'], color=0x3498db)
+        embed.set_image(url=f"attachment://{filename}")
+        embed.set_footer(text=translations['embed_footer'].format(now=now))
+        with open(file_path, 'rb') as f:
+            await channel.send(file=discord.File(f, filename), embed=embed)
+
+# New function to delete bot messages
+async def delete_bot_messages(channel):
+    async for message in channel.history(limit=200):
+        if message.author == channel.guild.me:
+            await message.delete()
