@@ -35,27 +35,31 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-# Define intents
-intents = discord.Intents.default()
-intents.messages = True
-intents.guilds = True
-
-bot = commands.Bot(command_prefix="!", intents=intents)
-
 # Function to print log messages with timestamps
 def log(message):
     timestamp = datetime.now(config['timezone']).strftime('%Y-%m-%d %H:%M:%S %Z')
     logger.info(f"{timestamp} - {message}")
     print(f"{timestamp} - {message}")
 
-@bot.event
-async def on_ready():
-    log(f"Logged in as {bot.user.name}")
-    await bot.load_extension('bot.commands')  # Load the Commands cog
-    await bot.tree.sync()  # Sync application commands with Discord
-    log("Slash commands synced.")
+async def main():
+    # Define intents
+    intents = discord.Intents.default()
+    intents.messages = True
+    intents.guilds = True
 
-bot.run(config['DISCORD_TOKEN'])
+    bot = commands.Bot(command_prefix="!", intents=intents)
+
+    @bot.event
+    async def on_ready():
+        log(f"Logged in as {bot.user.name}")
+        await bot.load_extension('bot.commands')  # Load the Commands cog
+        await bot.tree.sync()  # Sync application commands with Discord
+        log("Slash commands synced.")
+
+    await bot.start(config['DISCORD_TOKEN'])
+
+if __name__ == "__main__":
+    asyncio.run(main())
 
 # TGraph - Tautulli Graph Bot
 # <https://github.com/engels74/tgraph-bot-source>
