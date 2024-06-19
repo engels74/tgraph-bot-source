@@ -7,6 +7,7 @@ from discord.ext import commands
 from config.config import load_config
 from i18n import load_translations
 from graphs.generate_graphs import update_and_post_graphs
+from main import log
 
 # Load configuration
 config = load_config(os.path.join(os.path.dirname(__file__), '..', 'config', 'config.yml'))
