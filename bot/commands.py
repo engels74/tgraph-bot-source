@@ -36,26 +36,26 @@ class Commands(commands.Cog):
             embed.add_field(name="Description", value="TGraph Bot is a Discord bot that generates and posts graphs based on Tautulli data. It provides insights into your media server usage, including daily play counts, play counts by day of the week, play counts by hour of the day, top 10 platforms, top 10 users, and play counts by month.", inline=False)
             embed.add_field(name="GitHub", value="https://github.com/engels74/tgraph-bot-source", inline=False)
             embed.add_field(name="License", value="AGPLv3", inline=False)
-            await interaction.response.send_message(embed=embed)
+            await interaction.response.send_message(embed=embed, ephemeral=True)
             log(f"Command /about executed by {interaction.user.name}#{interaction.user.discriminator}")
         except Exception as e:
             log(f"Error in /about command: {str(e)}")
-            await interaction.response.send_message("An error occurred while processing the command.")
+            await interaction.response.send_message("An error occurred while processing the command.", ephemeral=True)
 
     @app_commands.command(name="update_graphs", description="Update and post the graphs")
     async def update_graphs(self, interaction: discord.Interaction):
         try:
-            await interaction.response.defer()
+            await interaction.response.defer(ephemeral=True)
             await update_and_post_graphs(self.bot, translations)
             try:
-                await interaction.followup.send("Graphs updated and posted.")
+                await interaction.followup.send("Graphs updated and posted.", ephemeral=True)
                 log(f"Command /update_graphs executed by {interaction.user.name}#{interaction.user.discriminator}. Graphs updated and posted.")
             except discord.errors.NotFound:
                 log(f"Command /update_graphs executed by {interaction.user.name}#{interaction.user.discriminator}. Interaction message deleted. Graphs updated and posted.")
         except Exception as e:
             log(f"Error in /update_graphs command: {str(e)}")
             try:
-                await interaction.followup.send("An error occurred while processing the command.")
+                await interaction.followup.send("An error occurred while processing the command.", ephemeral=True)
             except discord.errors.NotFound:
                 log(f"Error in /update_graphs command: {str(e)}. Interaction message not found.")
 
@@ -64,12 +64,11 @@ class Commands(commands.Cog):
         try:
             current_time = datetime.now()
             uptime = current_time - self.start_time
-            await interaction.response.send_message(f"Bot has been running for {uptime}")
+            await interaction.response.send_message(f"Bot has been running for {uptime}", ephemeral=True)
             log(f"Command /uptime executed by {interaction.user.name}#{interaction.user.discriminator}")
         except Exception as e:
             log(f"Error in /uptime command: {str(e)}")
-            await interaction.response.send_message("An error occurred while processing the command.")
-
+            await interaction.response.send_message("An error occurred while processing the command.", ephemeral=True)
 
     @app_commands.command(name="config", description="View or edit bot configuration")
     @app_commands.choices(action=[
@@ -82,24 +81,24 @@ class Commands(commands.Cog):
             if action == "view":
                 if key:
                     if key in config and key in CONFIG_OPTIONS:
-                        await interaction.response.send_message(f"{key}: {config[key]}")
+                        await interaction.response.send_message(f"{key}: {config[key]}", ephemeral=True)
                     else:
-                        await interaction.response.send_message(f"Invalid or non-configurable key: {key}")
+                        await interaction.response.send_message(f"Invalid or non-configurable key: {key}", ephemeral=True)
                 else:
                     embed = discord.Embed(title="Bot Configuration", color=0x3498db)
                     for k, v in config.items():
                         if k in CONFIG_OPTIONS:
                             embed.add_field(name=k, value=str(v), inline=False)
-                    await interaction.response.send_message(embed=embed)
+                    await interaction.response.send_message(embed=embed, ephemeral=True)
             elif action == "edit":
                 if key is None:
-                    await interaction.response.send_message("Please specify a key to edit.")
+                    await interaction.response.send_message("Please specify a key to edit.", ephemeral=True)
                     return
                 if key not in CONFIG_OPTIONS:
-                    await interaction.response.send_message(f"Invalid or non-configurable key: {key}")
+                    await interaction.response.send_message(f"Invalid or non-configurable key: {key}", ephemeral=True)
                     return
                 if value is None:
-                    await interaction.response.send_message("Please specify a value to set.")
+                    await interaction.response.send_message("Please specify a value to set.", ephemeral=True)
                     return
 
                 # Convert value to appropriate type
@@ -118,14 +117,14 @@ class Commands(commands.Cog):
 
                 # Send response
                 if key in RESTART_REQUIRED_KEYS:
-                    await interaction.response.send_message(f"Configuration updated. Note: Changes to {key} require a bot restart to take effect.")
+                    await interaction.response.send_message(f"Configuration updated. Note: Changes to {key} require a bot restart to take effect.", ephemeral=True)
                 else:
-                    await interaction.response.send_message(f"Configuration updated. {key} set to {value}")
+                    await interaction.response.send_message(f"Configuration updated. {key} set to {value}", ephemeral=True)
 
             log(f"Command /config executed by {interaction.user.name}#{interaction.user.discriminator}")
         except Exception as e:
             log(f"Error in /config command: {str(e)}")
-            await interaction.response.send_message("An error occurred while processing the command.")
+            await interaction.response.send_message("An error occurred while processing the command.", ephemeral=True)
 
 async def setup(bot):
     await bot.add_cog(Commands(bot))
