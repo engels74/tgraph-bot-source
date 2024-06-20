@@ -4,13 +4,13 @@ from datetime import datetime
 import discord
 from discord import app_commands
 from discord.ext import commands
-from config.config import load_config, update_config, RESTART_REQUIRED_KEYS, get_configurable_options
+from config.config import load_config, update_config, RESTART_REQUIRED_KEYS, get_configurable_options, CONFIG_PATH
 from i18n import load_translations
 from graphs.generate_graphs import update_and_post_graphs
 from main import log
 
 # Load configuration
-config = load_config()
+config = load_config(CONFIG_PATH)
 
 # Load translations
 translations = load_translations(config['LANGUAGE'])
@@ -21,7 +21,7 @@ CONFIG_OPTIONS = get_configurable_options()
 class Commands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.start_time = datetime.now()
+        self.start_time = datetime.now().astimezone()
 
     async def cog_load(self):
         log("Commands cog is being loaded...")
@@ -62,7 +62,7 @@ class Commands(commands.Cog):
     @app_commands.command(name="uptime", description="Show the bot's uptime")
     async def uptime(self, interaction: discord.Interaction):
         try:
-            current_time = datetime.now()
+            current_time = datetime.now().astimezone()
             uptime = current_time - self.start_time
             await interaction.response.send_message(f"Bot has been running for {uptime}", ephemeral=True)
             log(f"Command /uptime executed by {interaction.user.name}#{interaction.user.discriminator}")
@@ -78,6 +78,9 @@ class Commands(commands.Cog):
     @app_commands.choices(key=[app_commands.Choice(name=option, value=option) for option in CONFIG_OPTIONS])
     async def config_command(self, interaction: discord.Interaction, action: str, key: str = None, value: str = None):
         try:
+            global config, translations
+            config = load_config(CONFIG_PATH, reload=True)
+            
             if action == "view":
                 if key:
                     if key in config and key in CONFIG_OPTIONS:
@@ -112,7 +115,6 @@ class Commands(commands.Cog):
                 
                 # Reload translations if language changed
                 if key == 'LANGUAGE':
-                    global translations
                     translations = load_translations(value)
 
                 # Send response

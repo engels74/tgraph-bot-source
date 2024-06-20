@@ -15,6 +15,8 @@ Tautulli Graph Bot automates the process of generating and posting graphical sta
 - Automatically generates and posts Tautulli graphs to a Discord channel
 - Supports multiple languages (English and Danish) using i18n
 - Runs in a Docker container for easy deployment
+- Configurable graph options
+- Interactive Discord slash commands for bot management
 
 ## Preview
 <img src="https://i.imgur.com/lHLWpc2.png" width="50%" alt="An example of how it looks">
@@ -23,46 +25,86 @@ Tautulli Graph Bot automates the process of generating and posting graphical sta
 
 To get started with Tautulli Graph Bot using Docker, follow these steps:
 
-1. **Download the docker compose example:**
-    ```sh
-    curl -o /choose/path/to/docker-compose.tgraph.yml https://raw.githubusercontent.com/engels74/tgraph-bot-source/main/docker-compose.example01.yml
+1. **Use this Docker Compose example**
+    ```yaml
+    services:
+      tgraph-bot:
+        container_name: tgraph-bot
+        image: ghcr.io/engels74/tgraph-bot:latest
+        environment:
+          - PUID=1000
+          - PGID=1000
+          - UMASK=002
+          - TZ=Etc/UTC
+        volumes:
+          - /<host_folder_config>:/config
     ```
 
-2. **Edit `docker-compose.yml` with your preferred editor:**
-    ```sh
-    nano /choose/path/to/docker-compose.tgraph.yml
-    ```
-    Replace the placeholder paths with your actual paths for the volume mounts:
-    - `./logs:/logs`: The path where the log files will be stored on the host machine.
-    - `./config/config.yml:/app/config/config.yml`: The path to the `config.yml` file on the host machine.
-    - `./img:/app/img`: The path where the generated graph images will be stored on the host machine.
-
-3. **Create a `config.yml` file:**
+2. **Create a `config.yml` file:**
     - Download the `config.yml.sample` file:
         ```sh
-        curl -o /choose/path/to/config.yml https://raw.githubusercontent.com/engels74/tgraph-bot-source/main/config/config.yml.sample
+        curl -o /<host_folder_config>/config.yml https://raw.githubusercontent.com/engels74/tgraph-bot-source/main/config/config.yml.sample
         ```
-    - Edit the `config.yml` file and replace the placeholder values with your actual settings:
-        - `TAUTULLI_API_KEY`: Your Tautulli API key.
-        - `TAUTULLI_URL`: The URL to your Tautulli instance (e.g., `http://localhost:8181/api/v2`).
-        - `DISCORD_TOKEN`: The token for your Discord bot.
-        - `CHANNEL_ID`: The ID of the Discord channel where you want to post the graphs.
-        - `UPDATE_DAYS`: The interval in days for how often to post the graph (default is 7 days).
-        - `IMG_FOLDER`: The folder where images will be stored (default is `img`).
-        - `KEEP_DAYS`: The number of days to keep the images (default is 7 days).
-        - `TIME_RANGE_DAYS`: The time range in days for the graphs (default is 30 days).
-        - `TZ`: The timezone to use (default is `Etc/UTC`).
-        - `LANGUAGE`: The language to use for the bot (default is `en`). Supported languages: `en` (English), `da` (Danish).
+    - Edit the `config.yml` file and replace the placeholder values with your actual settings.
 
-4. **Build and run the Docker container using `docker-compose`:**
+3. **Run the Docker container using `docker-compose`:**
     ```sh
-    docker-compose -f /choose/path/to/docker-compose.tgraph.yml build
     docker-compose -f /choose/path/to/docker-compose.tgraph.yml up -d
     ```
 
+### Source Code for Docker Container
+
+You can find the source code for the Docker Container here:
+https://github.com/engels74/tgraph-bot
+
 ## Configuration
 
-The bot is configured using the `config.yml` file. Create a `config.yml` file in the `/config` directory based on the provided `config.yml.sample` file. Update the values in the `config.yml` file with your specific settings.
+The bot is configured using the `config.yml` file. Create a `config.yml` file in the `/config` directory based on the provided `config.yml.sample` file. Update the values in the `config.yml` file with your specific settings:
+
+- `TAUTULLI_API_KEY`: Your Tautulli API key.
+- `TAUTULLI_URL`: The URL to your Tautulli instance (e.g., `http://localhost:8181/api/v2`).
+- `DISCORD_TOKEN`: The token for your Discord bot.
+- `CHANNEL_ID`: The ID of the Discord channel where you want to post the graphs.
+- `UPDATE_DAYS`: The interval in days for how often to post the graph (default is 7 days).
+- `IMG_FOLDER`: The folder where images will be stored (default is `img`).
+- `KEEP_DAYS`: The number of days to keep the images (default is 7 days).
+- `TIME_RANGE_DAYS`: The time range in days for the graphs (default is 30 days).
+- `LANGUAGE`: The language to use for the bot (default is `en`). Supported languages: `en` (English), `da` (Danish).
+
+### Graph Options
+
+- `ENABLE_DAILY_PLAY_COUNT`: Enable/disable daily play count graph (default is true)
+- `ENABLE_PLAY_COUNT_BY_DAYOFWEEK`: Enable/disable play count by day of week graph (default is true)
+- `ENABLE_PLAY_COUNT_BY_HOUROFDAY`: Enable/disable play count by hour of day graph (default is true)
+- `ENABLE_TOP_10_PLATFORMS`: Enable/disable top 10 platforms graph (default is true)
+- `ENABLE_TOP_10_USERS`: Enable/disable top 10 users graph (default is true)
+- `ENABLE_PLAY_COUNT_BY_MONTH`: Enable/disable play count by month graph (default is true)
+
+### Annotation Options
+
+- `ANNOTATE_DAILY_PLAY_COUNT`: Enable/disable annotations on daily play count graph (default is true)
+- `ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK`: Enable/disable annotations on play count by day of week graph (default is true)
+- `ANNOTATE_PLAY_COUNT_BY_HOUROFDAY`: Enable/disable annotations on play count by hour of day graph (default is true)
+- `ANNOTATE_TOP_10_PLATFORMS`: Enable/disable annotations on top 10 platforms graph (default is true)
+- `ANNOTATE_TOP_10_USERS`: Enable/disable annotations on top 10 users graph (default is true)
+- `ANNOTATE_PLAY_COUNT_BY_MONTH`: Enable/disable annotations on play count by month graph (default is true)
+
+## Slash Commands
+
+TGraph Bot supports the following slash commands:
+
+- `/about`: Displays information about the bot, including its description, GitHub repository, and license.
+- `/update_graphs`: Manually triggers the bot to update and post the graphs.
+- `/uptime`: Shows how long the bot has been running.
+- `/config`: Allows viewing or editing the bot's configuration.
+  - Usage: `/config <action> [key] [value]`
+  - Actions:
+    - `view`: Shows all configuration options or a specific key if provided.
+    - `edit`: Edits a specific configuration key with the provided value.
+
+To use these commands, simply type them in any channel where the bot is present. The bot will respond with the requested information or action.
+
+Note: The `/config` command responses are only visible to the user who issued the command to protect sensitive information.
 
 ### Language Support
 
@@ -72,23 +114,6 @@ Tautulli Graph Bot supports multiple languages using i18n. The available languag
 - `da.yml`: Danish language translations
 
 To set the language for the bot, update the `LANGUAGE` value in the `config.yml` file to the desired language code (`en` for English or `da` for Danish).
-
-## Docker Compose Configuration
-
-Here's an example of how your `docker-compose.yml` file should be set up:
-
-```yaml
-services:
-  tgraph-bot:
-    build: https://github.com/engels74/tgraph-bot-source.git
-    image: tgraph-bot:latest
-    container_name: tgraph-bot
-    volumes:
-      - ./logs:/logs
-      - ./config/config.yml:/app/config/config.yml
-      - ./img:/app/img
-    restart: unless-stopped
-```
 
 ## Creating a Discord Bot
 

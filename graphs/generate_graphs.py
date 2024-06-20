@@ -8,18 +8,22 @@ import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 from matplotlib.ticker import MaxNLocator
 from matplotlib.dates import DateFormatter
-from config.config import load_config
+from config.config import load_config, CONFIG_PATH
 from i18n import load_translations
 
 # Load configuration
-config = load_config(os.path.join(os.path.dirname(__file__), '..', 'config', 'config.yml'))
+config = load_config(CONFIG_PATH)
 
 # Load translations
-translations = load_translations(config['LANGUAGE'])
+try:
+    translations = load_translations(config['LANGUAGE'])
+except Exception as e:
+    logging.error(f"Error loading translations: {str(e)}. Falling back to English.")
+    translations = load_translations('en')
 
 # Helper function to fetch data from Tautulli
 def fetch_tautulli_data(cmd, params={}):
-    now = datetime.now(config['timezone'])
+    now = datetime.now().astimezone()
     start_date = now - timedelta(days=config['TIME_RANGE_DAYS'])
     params.update({
         'apikey': config['TAUTULLI_API_KEY'],
@@ -57,14 +61,15 @@ def censor_username(username):
 
 # Generate graphs
 def generate_graphs(data, folder, translations):
+    global config
+    
     if config['ENABLE_DAILY_PLAY_COUNT']:
-        plt.figure(figsize=(14, 8))  # Increase figure size
-        
+        plt.figure(figsize=(14, 8))
         # Daily Play Count by Media Type
         daily_play_count = data['daily_play_count']['response']['data']
         
         # Calculate date range
-        end_date = datetime.now(config['timezone'])
+        end_date = datetime.now().astimezone()
         start_date = end_date - timedelta(days=config['TIME_RANGE_DAYS'] - 1)  # Include the end date
         dates = [start_date + timedelta(days=i) for i in range(config['TIME_RANGE_DAYS'])]
         
@@ -80,13 +85,13 @@ def generate_graphs(data, folder, translations):
                 if date in date_data_map:
                     date_data_map[date] = value
             complete_data = [date_data_map[date] for date in date_strs]
-            plt.plot(dates, complete_data, label=serie['name'], marker='o')  # Added marker='o' for better visualization
+            plt.plot(dates, complete_data, label=serie['name'], marker='o')
             
             # Adding annotations for the top value of each day
             if config['ANNOTATE_DAILY_PLAY_COUNT']:
                 for i, value in enumerate(complete_data):
                     if value > 0:  # Only annotate days with plays
-                        plt.text(dates[i], value + 0.5, f'{value}', ha='center', va='bottom', fontsize=8, color='red')  # Adjusted position
+                        plt.text(dates[i], value + 0.5, f'{value}', ha='center', va='bottom', fontsize=8, color='red')
         
         plt.xlabel(translations['daily_play_count_xlabel'])
         plt.ylabel(translations['daily_play_count_ylabel'])
@@ -95,19 +100,19 @@ def generate_graphs(data, folder, translations):
         # Set x-axis tick positions and labels
         ax = plt.gca()
         ax.set_xticks(dates)
-        ax.set_xticklabels(date_strs, rotation=45, ha='right')  # Right-align the x-axis labels and rotate them
-        ax.xaxis.set_major_formatter(DateFormatter('%Y-%m-%d'))  # Ensure the date format is correct
-        ax.yaxis.set_major_locator(MaxNLocator(integer=True))  # Ensure y-axis has only whole numbers
+        ax.set_xticklabels(date_strs, rotation=45, ha='right')
+        ax.xaxis.set_major_formatter(DateFormatter('%Y-%m-%d'))
+        ax.yaxis.set_major_locator(MaxNLocator(integer=True))
         plt.legend()
-        plt.tight_layout(pad=3)  # Ensure everything fits within the figure and add padding
+        plt.tight_layout(pad=3)
         save_and_post_graph(folder, 'daily_play_count.png')
-        
-        plt.figure(figsize=(14, 8))  # Reset figure size for next plot
+        plt.close()
 
     if config['ENABLE_PLAY_COUNT_BY_DAYOFWEEK']:
+        plt.figure(figsize=(14, 8))
         # Play Count by Day of Week
         play_count_by_dayofweek = data['play_count_by_dayofweek']['response']['data']
-        days = list(range(7))  # Use integer values for days of the week
+        days = list(range(7))
         day_labels = [translations[f'day_{i}'] for i in range(7)]
         series = play_count_by_dayofweek['series']
         for serie in series:
@@ -119,18 +124,18 @@ def generate_graphs(data, folder, translations):
         plt.xlabel(translations['play_count_by_dayofweek_xlabel'])
         plt.ylabel(translations['play_count_by_dayofweek_ylabel'])
         plt.title(translations['play_count_by_dayofweek_title'].format(days=config["TIME_RANGE_DAYS"]))
-        plt.xticks(days, day_labels, ha='center')  # Set x-tick labels to day names without rotation
+        plt.xticks(days, day_labels, ha='center')
         plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
         plt.legend()
         plt.tight_layout(pad=3)
         save_and_post_graph(folder, 'play_count_by_dayofweek.png')
-
-        plt.figure(figsize=(14, 8))  # Reset figure size for next plot
+        plt.close()
 
     if config['ENABLE_PLAY_COUNT_BY_HOUROFDAY']:
+        plt.figure(figsize=(14, 8))
         # Play Count by Hour of Day
         play_count_by_hourofday = data['play_count_by_hourofday']['response']['data']
-        hours = list(range(24))  # Use integer values for hours of the day
+        hours = list(range(24))
         series = play_count_by_hourofday['series']
         for serie in series:
             plt.plot(hours, serie['data'], label=serie['name'], marker='o')
@@ -141,15 +146,15 @@ def generate_graphs(data, folder, translations):
         plt.xlabel(translations['play_count_by_hourofday_xlabel'])
         plt.ylabel(translations['play_count_by_hourofday_ylabel'])
         plt.title(translations['play_count_by_hourofday_title'].format(days=config["TIME_RANGE_DAYS"]))
-        plt.xticks(hours, ha='center')  # Set x-tick labels to hours without rotation
+        plt.xticks(hours, ha='center')
         plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
         plt.legend()
         plt.tight_layout(pad=3)
         save_and_post_graph(folder, 'play_count_by_hourofday.png')
-        
-        plt.figure(figsize=(14, 8))  # Reset figure size for next plot
+        plt.close()
 
     if config['ENABLE_TOP_10_PLATFORMS']:
+        plt.figure(figsize=(14, 8))
         # Play Count by Top 10 Platforms
         top_10_platforms = data['top_10_platforms']['response']['data']
         platforms = top_10_platforms['categories']
@@ -162,15 +167,15 @@ def generate_graphs(data, folder, translations):
         plt.xlabel(translations['top_10_platforms_xlabel'])
         plt.ylabel(translations['top_10_platforms_ylabel'])
         plt.title(translations['top_10_platforms_title'].format(days=config["TIME_RANGE_DAYS"]))
-        plt.xticks(rotation=45, ha='right')  # Rotate x-axis labels and align them to the right
-        plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))  # Ensure y-axis has only whole numbers
+        plt.xticks(rotation=45, ha='right')
+        plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
         plt.legend()
-        plt.tight_layout(pad=3)  # Ensure everything fits within the figure and add padding
+        plt.tight_layout(pad=3)
         save_and_post_graph(folder, 'top_10_platforms.png')
-        
-        plt.figure(figsize=(14, 8))  # Reset figure size for next plot
+        plt.close()
 
     if config['ENABLE_TOP_10_USERS']:
+        plt.figure(figsize=(14, 8))
         # Play Count by Top 10 Users
         top_10_users = data['top_10_users']['response']['data']
         users = top_10_users['categories']
@@ -184,13 +189,15 @@ def generate_graphs(data, folder, translations):
         plt.xlabel(translations['top_10_users_xlabel'])
         plt.ylabel(translations['top_10_users_ylabel'])
         plt.title(translations['top_10_users_title'].format(days=config["TIME_RANGE_DAYS"]))
-        plt.xticks(rotation=45, ha='right')  # Rotate x-axis labels and align them to the right
-        plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))  # Ensure y-axis has only whole numbers
+        plt.xticks(rotation=45, ha='right')
+        plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
         plt.legend()
-        plt.tight_layout(pad=3)  # Ensure everything fits within the figure and add padding
+        plt.tight_layout(pad=3)
         save_and_post_graph(folder, 'top_10_users.png')
+        plt.close()
 
     if config['ENABLE_PLAY_COUNT_BY_MONTH']:
+        plt.figure(figsize=(14, 8))
         # Play Count by Month (Last 12 months)
         play_count_by_month = data['play_count_by_month']['response']['data']
 
@@ -222,8 +229,7 @@ def generate_graphs(data, folder, translations):
                 filtered_tv_data.append(tv_data[i])
 
         # Plot the stacked bar chart
-        plt.figure(figsize=(14, 8))  # Increase figure size
-        bar_width = 0.4  # Width of the bars
+        bar_width = 0.4
         bar_positions = range(len(filtered_months))
 
         plt.bar(bar_positions, filtered_movie_data, width=bar_width, label='Movies')
@@ -239,11 +245,12 @@ def generate_graphs(data, folder, translations):
         plt.xlabel(translations['play_count_by_month_xlabel'])
         plt.ylabel(translations['play_count_by_month_ylabel'])
         plt.title(translations['play_count_by_month_title'])
-        plt.xticks(bar_positions, filtered_months, rotation=45, ha='right')  # Rotate x-axis labels and align them to the right
-        plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))  # Ensure y-axis has only whole numbers
+        plt.xticks(bar_positions, filtered_months, rotation=45, ha='right')
+        plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
         plt.legend()
-        plt.tight_layout(pad=3)  # Ensure everything fits within the figure and add padding
+        plt.tight_layout(pad=3)
         save_and_post_graph(folder, 'play_count_by_month.png')
+        plt.close()
 
 # Save and post graph to Discord
 def save_and_post_graph(folder, filename):
@@ -263,26 +270,34 @@ def cleanup_old_folders(base_folder, keep_days):
     for folder in folders[keep_days:]:
         shutil.rmtree(os.path.join(base_folder, folder))
 
-# New function to update and post graphs
+# Function to update and post graphs
 async def update_and_post_graphs(bot, translations):
+    # Reload configuration
+    global config
+    config = load_config(CONFIG_PATH, reload=True)
+    
     channel = bot.get_channel(config['CHANNEL_ID'])
     await delete_bot_messages(channel)
 
-    ensure_folder_exists(config['IMG_FOLDER'])
+    try:
+        ensure_folder_exists(config['IMG_FOLDER'])
 
-    today = datetime.today().strftime('%Y-%m-%d')
-    dated_folder = os.path.join(config['IMG_FOLDER'], today)
-    ensure_folder_exists(dated_folder)
+        today = datetime.today().strftime('%Y-%m-%d')
+        dated_folder = os.path.join(config['IMG_FOLDER'], today)
+        ensure_folder_exists(dated_folder)
 
-    data = fetch_all_data()
-    generate_graphs(data, dated_folder, translations)
+        data = fetch_all_data()
+        generate_graphs(data, dated_folder, translations)
 
-    await post_graphs(channel, translations)
-    cleanup_old_folders(config['IMG_FOLDER'], config['KEEP_DAYS'])
+        await post_graphs(channel, translations)
+        cleanup_old_folders(config['IMG_FOLDER'], config['KEEP_DAYS'])
+    except Exception as e:
+        logging.error(f"Error in update_and_post_graphs: {str(e)}")
+        raise
 
-# New function to post graphs
+# Function to post graphs
 async def post_graphs(channel, translations):
-    now = datetime.now(config['timezone']).strftime('%Y-%m-%d at %H:%M:%S')
+    now = datetime.now().astimezone().strftime('%Y-%m-%d at %H:%M:%S')
     today = datetime.today().strftime('%Y-%m-%d')
     descriptions = {}
 
@@ -330,7 +345,7 @@ async def post_graphs(channel, translations):
         with open(file_path, 'rb') as f:
             await channel.send(file=discord.File(f, filename), embed=embed)
 
-# New function to delete bot messages
+# Function to delete bot messages
 async def delete_bot_messages(channel):
     async for message in channel.history(limit=200):
         if message.author == channel.guild.me:
