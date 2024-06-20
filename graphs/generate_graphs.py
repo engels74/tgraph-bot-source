@@ -33,17 +33,17 @@ def fetch_tautulli_data(cmd, params={}):
 # Fetch data
 def fetch_all_data():
     data = {}
-    if config['DAILY_PLAY_COUNT']:
+    if config['ENABLE_DAILY_PLAY_COUNT']:
         data['daily_play_count'] = fetch_tautulli_data('get_plays_by_date', {'time_range': config['TIME_RANGE_DAYS']})
-    if config['PLAY_COUNT_BY_DAYOFWEEK']:
+    if config['ENABLE_PLAY_COUNT_BY_DAYOFWEEK']:
         data['play_count_by_dayofweek'] = fetch_tautulli_data('get_plays_by_dayofweek', {'time_range': config['TIME_RANGE_DAYS']})
-    if config['PLAY_COUNT_BY_HOUROFDAY']:
+    if config['ENABLE_PLAY_COUNT_BY_HOUROFDAY']:
         data['play_count_by_hourofday'] = fetch_tautulli_data('get_plays_by_hourofday', {'time_range': config['TIME_RANGE_DAYS']})
-    if config['TOP_10_PLATFORMS']:
+    if config['ENABLE_TOP_10_PLATFORMS']:
         data['top_10_platforms'] = fetch_tautulli_data('get_plays_by_top_10_platforms', {'time_range': config['TIME_RANGE_DAYS']})
-    if config['TOP_10_USERS']:
+    if config['ENABLE_TOP_10_USERS']:
         data['top_10_users'] = fetch_tautulli_data('get_plays_by_top_10_users', {'time_range': config['TIME_RANGE_DAYS']})
-    if config['PLAY_COUNT_BY_MONTH']:
+    if config['ENABLE_PLAY_COUNT_BY_MONTH']:
         data['play_count_by_month'] = fetch_tautulli_data('get_plays_per_month', {'time_range': 12, 'y_axis': 'plays'})  # Last 12 months
     return data
 
@@ -286,37 +286,37 @@ async def post_graphs(channel, translations):
     today = datetime.today().strftime('%Y-%m-%d')
     descriptions = {}
 
-    if config['DAILY_PLAY_COUNT']:
+    if config['ENABLE_DAILY_PLAY_COUNT']:
         descriptions['daily_play_count.png'] = {
             'title': translations['daily_play_count_title'].format(days=config["TIME_RANGE_DAYS"]),
             'description': translations['daily_play_count_description'].format(days=config["TIME_RANGE_DAYS"])
         }
 
-    if config['PLAY_COUNT_BY_DAYOFWEEK']:
+    if config['ENABLE_PLAY_COUNT_BY_DAYOFWEEK']:
         descriptions['play_count_by_dayofweek.png'] = {
             'title': translations['play_count_by_dayofweek_title'].format(days=config["TIME_RANGE_DAYS"]),
             'description': translations['play_count_by_dayofweek_description'].format(days=config["TIME_RANGE_DAYS"])
         }
 
-    if config['PLAY_COUNT_BY_HOUROFDAY']:
+    if config['ENABLE_PLAY_COUNT_BY_HOUROFDAY']:
         descriptions['play_count_by_hourofday.png'] = {
             'title': translations['play_count_by_hourofday_title'].format(days=config["TIME_RANGE_DAYS"]),
             'description': translations['play_count_by_hourofday_description'].format(days=config["TIME_RANGE_DAYS"])
         }
 
-    if config['TOP_10_PLATFORMS']:
+    if config['ENABLE_TOP_10_PLATFORMS']:
         descriptions['top_10_platforms.png'] = {
             'title': translations['top_10_platforms_title'].format(days=config["TIME_RANGE_DAYS"]),
             'description': translations['top_10_platforms_description'].format(days=config["TIME_RANGE_DAYS"])
         }
 
-    if config['TOP_10_USERS']:
+    if config['ENABLE_TOP_10_USERS']:
         descriptions['top_10_users.png'] = {
             'title': translations['top_10_users_title'].format(days=config["TIME_RANGE_DAYS"]),
             'description': translations['top_10_users_description'].format(days=config["TIME_RANGE_DAYS"])
         }
 
-    if config['PLAY_COUNT_BY_MONTH']:
+    if config['ENABLE_PLAY_COUNT_BY_MONTH']:
         descriptions['play_count_by_month.png'] = {
             'title': translations['play_count_by_month_title'],
             'description': translations['play_count_by_month_description']
