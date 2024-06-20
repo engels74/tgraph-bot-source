@@ -8,11 +8,10 @@ CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'config.yml')
 # Define the configuration options that should be configurable via Discord
 CONFIGURABLE_OPTIONS = [
     'TZ', 'UPDATE_DAYS', 'KEEP_DAYS', 'TIME_RANGE_DAYS', 'LANGUAGE',
-    'DAILY_PLAY_COUNT', 'PLAY_COUNT_BY_DAYOFWEEK', 'PLAY_COUNT_BY_HOUROFDAY',
-    'TOP_10_PLATFORMS', 'TOP_10_USERS', 'PLAY_COUNT_BY_MONTH',
-    'ANNOTATE_DAILY_PLAY_COUNT', 'ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK',
-    'ANNOTATE_PLAY_COUNT_BY_HOUROFDAY', 'ANNOTATE_TOP_10_PLATFORMS',
-    'ANNOTATE_TOP_10_USERS', 'ANNOTATE_PLAY_COUNT_BY_MONTH'
+    'ENABLE_DAILY_PLAY_COUNT', 'ENABLE_PLAY_COUNT_BY_DAYOFWEEK', 'ENABLE_PLAY_COUNT_BY_HOUROFDAY',
+    'ENABLE_TOP_10_PLATFORMS', 'ENABLE_TOP_10_USERS', 'ENABLE_PLAY_COUNT_BY_MONTH',
+    'ANNOTATE_DAILY_PLAY_COUNT', 'ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK', 'ANNOTATE_PLAY_COUNT_BY_HOUROFDAY',
+    'ANNOTATE_TOP_10_PLATFORMS', 'ANNOTATE_TOP_10_USERS', 'ANNOTATE_PLAY_COUNT_BY_MONTH'
 ]
 
 def load_config(config_path=CONFIG_PATH):
@@ -37,12 +36,12 @@ def load_config(config_path=CONFIG_PATH):
         'TAUTULLI_API_KEY': get_config('TAUTULLI_API_KEY', 'your_tautulli_api_key'),
         'TAUTULLI_URL': get_config('TAUTULLI_URL', 'http://your_tautulli_ip:port/api/v2'),
         'LANGUAGE': get_config('LANGUAGE', 'en'),
-        'DAILY_PLAY_COUNT': bool(get_config('DAILY_PLAY_COUNT', True)),
-        'PLAY_COUNT_BY_DAYOFWEEK': bool(get_config('PLAY_COUNT_BY_DAYOFWEEK', True)),
-        'PLAY_COUNT_BY_HOUROFDAY': bool(get_config('PLAY_COUNT_BY_HOUROFDAY', True)),
-        'TOP_10_PLATFORMS': bool(get_config('TOP_10_PLATFORMS', True)),
-        'TOP_10_USERS': bool(get_config('TOP_10_USERS', True)),
-        'PLAY_COUNT_BY_MONTH': bool(get_config('PLAY_COUNT_BY_MONTH', True)),
+        'ENABLE_DAILY_PLAY_COUNT': bool(get_config('ENABLE_DAILY_PLAY_COUNT', True)),
+        'ENABLE_PLAY_COUNT_BY_DAYOFWEEK': bool(get_config('ENABLE_PLAY_COUNT_BY_DAYOFWEEK', True)),
+        'ENABLE_PLAY_COUNT_BY_HOUROFDAY': bool(get_config('ENABLE_PLAY_COUNT_BY_HOUROFDAY', True)),
+        'ENABLE_TOP_10_PLATFORMS': bool(get_config('ENABLE_TOP_10_PLATFORMS', True)),
+        'ENABLE_TOP_10_USERS': bool(get_config('ENABLE_TOP_10_USERS', True)),
+        'ENABLE_PLAY_COUNT_BY_MONTH': bool(get_config('ENABLE_PLAY_COUNT_BY_MONTH', True)),
         'ANNOTATE_DAILY_PLAY_COUNT': bool(get_config('ANNOTATE_DAILY_PLAY_COUNT', True)),
         'ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK': bool(get_config('ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK', True)),
         'ANNOTATE_PLAY_COUNT_BY_HOUROFDAY': bool(get_config('ANNOTATE_PLAY_COUNT_BY_HOUROFDAY', True)),

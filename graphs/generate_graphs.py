@@ -57,7 +57,7 @@ def censor_username(username):
 
 # Generate graphs
 def generate_graphs(data, folder, translations):
-    if config['DAILY_PLAY_COUNT']:
+    if config['ENABLE_DAILY_PLAY_COUNT']:
         plt.figure(figsize=(14, 8))  # Increase figure size
         
         # Daily Play Count by Media Type
@@ -104,7 +104,7 @@ def generate_graphs(data, folder, translations):
         
         plt.figure(figsize=(14, 8))  # Reset figure size for next plot
 
-    if config['PLAY_COUNT_BY_DAYOFWEEK']:
+    if config['ENABLE_PLAY_COUNT_BY_DAYOFWEEK']:
         # Play Count by Day of Week
         play_count_by_dayofweek = data['play_count_by_dayofweek']['response']['data']
         days = list(range(7))  # Use integer values for days of the week
@@ -127,7 +127,7 @@ def generate_graphs(data, folder, translations):
 
         plt.figure(figsize=(14, 8))  # Reset figure size for next plot
 
-    if config['PLAY_COUNT_BY_HOUROFDAY']:
+    if config['ENABLE_PLAY_COUNT_BY_HOUROFDAY']:
         # Play Count by Hour of Day
         play_count_by_hourofday = data['play_count_by_hourofday']['response']['data']
         hours = list(range(24))  # Use integer values for hours of the day
@@ -149,7 +149,7 @@ def generate_graphs(data, folder, translations):
         
         plt.figure(figsize=(14, 8))  # Reset figure size for next plot
 
-    if config['TOP_10_PLATFORMS']:
+    if config['ENABLE_TOP_10_PLATFORMS']:
         # Play Count by Top 10 Platforms
         top_10_platforms = data['top_10_platforms']['response']['data']
         platforms = top_10_platforms['categories']
@@ -170,7 +170,7 @@ def generate_graphs(data, folder, translations):
         
         plt.figure(figsize=(14, 8))  # Reset figure size for next plot
 
-    if config['TOP_10_USERS']:
+    if config['ENABLE_TOP_10_USERS']:
         # Play Count by Top 10 Users
         top_10_users = data['top_10_users']['response']['data']
         users = top_10_users['categories']
@@ -190,7 +190,7 @@ def generate_graphs(data, folder, translations):
         plt.tight_layout(pad=3)  # Ensure everything fits within the figure and add padding
         save_and_post_graph(folder, 'top_10_users.png')
 
-    if config['PLAY_COUNT_BY_MONTH']:
+    if config['ENABLE_PLAY_COUNT_BY_MONTH']:
         # Play Count by Month (Last 12 months)
         play_count_by_month = data['play_count_by_month']['response']['data']
 
