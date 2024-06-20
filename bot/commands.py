@@ -4,7 +4,7 @@ from datetime import datetime
 import discord
 from discord import app_commands
 from discord.ext import commands
-from config.config import load_config, update_config, RESTART_REQUIRED_KEYS
+from config.config import load_config, update_config, RESTART_REQUIRED_KEYS, get_configurable_options
 from i18n import load_translations
 from graphs.generate_graphs import update_and_post_graphs
 from main import log
@@ -14,6 +14,9 @@ config = load_config()
 
 # Load translations
 translations = load_translations(config['LANGUAGE'])
+
+# Get configurable options
+CONFIG_OPTIONS = get_configurable_options()
 
 class Commands(commands.Cog):
     def __init__(self, bot):
@@ -67,26 +70,36 @@ class Commands(commands.Cog):
             log(f"Error in /uptime command: {str(e)}")
             await interaction.response.send_message("An error occurred while processing the command.")
 
+
     @app_commands.command(name="config", description="View or edit bot configuration")
     @app_commands.choices(action=[
         app_commands.Choice(name="View", value="view"),
         app_commands.Choice(name="Edit", value="edit")
     ])
+    @app_commands.choices(key=[app_commands.Choice(name=option, value=option) for option in CONFIG_OPTIONS])
     async def config_command(self, interaction: discord.Interaction, action: str, key: str = None, value: str = None):
         try:
             if action == "view":
-                embed = discord.Embed(title="Bot Configuration", color=0x3498db)
-                for k, v in config.items():
-                    if k != 'timezone':
-                        embed.add_field(name=k, value=str(v), inline=False)
-                await interaction.response.send_message(embed=embed)
+                if key:
+                    if key in config and key in CONFIG_OPTIONS:
+                        await interaction.response.send_message(f"{key}: {config[key]}")
+                    else:
+                        await interaction.response.send_message(f"Invalid or non-configurable key: {key}")
+                else:
+                    embed = discord.Embed(title="Bot Configuration", color=0x3498db)
+                    for k, v in config.items():
+                        if k in CONFIG_OPTIONS:
+                            embed.add_field(name=k, value=str(v), inline=False)
+                    await interaction.response.send_message(embed=embed)
             elif action == "edit":
-                if key is None or value is None:
-                    await interaction.response.send_message("Both key and value must be provided for editing.")
+                if key is None:
+                    await interaction.response.send_message("Please specify a key to edit.")
                     return
-                
-                if key not in config:
-                    await interaction.response.send_message(f"Invalid configuration key: {key}")
+                if key not in CONFIG_OPTIONS:
+                    await interaction.response.send_message(f"Invalid or non-configurable key: {key}")
+                    return
+                if value is None:
+                    await interaction.response.send_message("Please specify a value to set.")
                     return
 
                 # Convert value to appropriate type

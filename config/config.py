@@ -5,6 +5,16 @@ import pytz
 
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'config.yml')
 
+# Define the configuration options that should be configurable via Discord
+CONFIGURABLE_OPTIONS = [
+    'TZ', 'UPDATE_DAYS', 'KEEP_DAYS', 'TIME_RANGE_DAYS', 'LANGUAGE',
+    'DAILY_PLAY_COUNT', 'PLAY_COUNT_BY_DAYOFWEEK', 'PLAY_COUNT_BY_HOUROFDAY',
+    'TOP_10_PLATFORMS', 'TOP_10_USERS', 'PLAY_COUNT_BY_MONTH',
+    'ANNOTATE_DAILY_PLAY_COUNT', 'ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK',
+    'ANNOTATE_PLAY_COUNT_BY_HOUROFDAY', 'ANNOTATE_TOP_10_PLATFORMS',
+    'ANNOTATE_TOP_10_USERS', 'ANNOTATE_PLAY_COUNT_BY_MONTH'
+]
+
 def load_config(config_path=CONFIG_PATH):
     if os.path.exists(config_path):
         with open(config_path, 'r') as file:
@@ -60,3 +70,7 @@ def update_config(key, value):
 
 # List of keys that require a bot restart when changed
 RESTART_REQUIRED_KEYS = ['TAUTULLI_API_KEY', 'TAUTULLI_URL', 'DISCORD_TOKEN', 'IMG_FOLDER']
+
+# Function to get configurable options
+def get_configurable_options():
+    return CONFIGURABLE_OPTIONS
