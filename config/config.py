@@ -59,23 +59,30 @@ def save_config(config, config_path=CONFIG_PATH):
     # Remove 'timezone' key as it's not part of the original config
     config_to_save = {k: v for k, v in config.items() if k != 'timezone'}
     
-    # If the config file already exists, update it while preserving structure
     if os.path.exists(config_path):
         with open(config_path, 'r') as file:
-            existing_config = yaml.safe_load(file)
-        
-        # Update existing config with new values
+            lines = file.readlines()
+
+        # Update existing lines
+        for i, line in enumerate(lines):
+            if ':' in line:
+                key, _ = line.split(':', 1)
+                key = key.strip()
+                if key in config_to_save:
+                    lines[i] = f"{key}: {config_to_save[key]}\n"
+                    del config_to_save[key]
+
+        # Append any new keys at the end
         for key, value in config_to_save.items():
-            if key in existing_config:
-                existing_config[key] = value
-        
-        # Write updated config back to file
+            lines.append(f"{key}: {value}\n")
+
         with open(config_path, 'w') as file:
-            yaml.dump(existing_config, file, default_flow_style=False, sort_keys=False)
+            file.writelines(lines)
     else:
         # If the file doesn't exist, create it with the new config
         with open(config_path, 'w') as file:
-            yaml.dump(config_to_save, file, default_flow_style=False, sort_keys=False)
+            for key, value in config_to_save.items():
+                file.write(f"{key}: {value}\n")
 
 def update_config(key, value):
     config = load_config()
