@@ -3,7 +3,9 @@ import os
 import yaml
 import pytz
 
-def load_config(config_path):
+CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'config.yml')
+
+def load_config(config_path=CONFIG_PATH):
     if os.path.exists(config_path):
         with open(config_path, 'r') as file:
             config_vars = yaml.safe_load(file)
@@ -42,3 +44,19 @@ def load_config(config_path):
     config['timezone'] = pytz.timezone(config['TZ'])
 
     return config
+
+def save_config(config, config_path=CONFIG_PATH):
+    # Remove 'timezone' key as it's not part of the original config
+    config_to_save = {k: v for k, v in config.items() if k != 'timezone'}
+    
+    with open(config_path, 'w') as file:
+        yaml.dump(config_to_save, file)
+
+def update_config(key, value):
+    config = load_config()
+    config[key] = value
+    save_config(config)
+    return config
+
+# List of keys that require a bot restart when changed
+RESTART_REQUIRED_KEYS = ['TAUTULLI_API_KEY', 'TAUTULLI_URL', 'DISCORD_TOKEN', 'IMG_FOLDER']

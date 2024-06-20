@@ -17,7 +17,7 @@ parser.add_argument('--log-file', type=str, default='logs/tgraphbot.log', help='
 args = parser.parse_args()
 
 # Load configuration
-config = load_config(args.config_file)
+config = load_config()
 
 # Load translations
 translations = load_translations(config['LANGUAGE'])

@@ -4,13 +4,13 @@ from datetime import datetime
 import discord
 from discord import app_commands
 from discord.ext import commands
-from config.config import load_config
+from config.config import load_config, update_config, RESTART_REQUIRED_KEYS
 from i18n import load_translations
 from graphs.generate_graphs import update_and_post_graphs
-from main import log, config
+from main import log
 
 # Load configuration
-config = load_config(os.path.join(os.path.dirname(__file__), '..', 'config', 'config.yml'))
+config = load_config()
 
 # Load translations
 translations = load_translations(config['LANGUAGE'])
@@ -31,22 +31,6 @@ class Commands(commands.Cog):
             log(f"Command /about executed by {interaction.user.name}#{interaction.user.discriminator}")
         except Exception as e:
             log(f"Error in /about command: {str(e)}")
-            await interaction.response.send_message("An error occurred while processing the command.")
-
-    @app_commands.command(name="set_language", description="Set the language for the bot")
-    @app_commands.choices(language=[
-        app_commands.Choice(name=language.split('.')[0], value=language.split('.')[0])
-        for language in os.listdir(os.path.join(os.path.dirname(__file__), '..', 'i18n'))
-    ])
-    async def set_language(self, interaction: discord.Interaction, language: str):
-        try:
-            config['LANGUAGE'] = language
-            global translations
-            translations = load_translations(language)
-            await interaction.response.send_message(f"Language set to {language}. The new language will be used for future graph updates.")
-            log(f"Command /set_language executed by {interaction.user.name}#{interaction.user.discriminator}. Language set to {language}")
-        except Exception as e:
-            log(f"Error in /set_language command: {str(e)}")
             await interaction.response.send_message("An error occurred while processing the command.")
 
     @app_commands.command(name="update_graphs", description="Update and post the graphs")
@@ -75,6 +59,53 @@ class Commands(commands.Cog):
             log(f"Command /uptime executed by {interaction.user.name}#{interaction.user.discriminator}")
         except Exception as e:
             log(f"Error in /uptime command: {str(e)}")
+            await interaction.response.send_message("An error occurred while processing the command.")
+
+    @app_commands.command(name="bot_config", description="View or edit bot configuration")
+    @app_commands.choices(action=[
+        app_commands.Choice(name="View", value="view"),
+        app_commands.Choice(name="Edit", value="edit")
+    ])
+    async def bot_config(self, interaction: discord.Interaction, action: str, key: str = None, value: str = None):
+        try:
+            if action == "view":
+                embed = discord.Embed(title="Bot Configuration", color=0x3498db)
+                for k, v in config.items():
+                    if k != 'timezone':
+                        embed.add_field(name=k, value=str(v), inline=False)
+                await interaction.response.send_message(embed=embed)
+            elif action == "edit":
+                if key is None or value is None:
+                    await interaction.response.send_message("Both key and value must be provided for editing.")
+                    return
+                
+                if key not in config:
+                    await interaction.response.send_message(f"Invalid configuration key: {key}")
+                    return
+
+                # Convert value to appropriate type
+                if isinstance(config[key], bool):
+                    value = value.lower() == 'true'
+                elif isinstance(config[key], int):
+                    value = int(value)
+
+                # Update configuration
+                new_config = update_config(key, value)
+                
+                # Reload translations if language changed
+                if key == 'LANGUAGE':
+                    global translations
+                    translations = load_translations(value)
+
+                # Send response
+                if key in RESTART_REQUIRED_KEYS:
+                    await interaction.response.send_message(f"Configuration updated. Note: Changes to {key} require a bot restart to take effect.")
+                else:
+                    await interaction.response.send_message(f"Configuration updated. {key} set to {value}")
+
+            log(f"Command /bot_config executed by {interaction.user.name}#{interaction.user.discriminator}")
+        except Exception as e:
+            log(f"Error in /bot_config command: {str(e)}")
             await interaction.response.send_message("An error occurred while processing the command.")
 
 async def setup(bot):
