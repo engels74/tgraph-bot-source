@@ -3,7 +3,18 @@ import os
 import yaml
 import pytz
 
-def load_config(config_path):
+CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'config.yml')
+
+# Define the configuration options that should be configurable via Discord
+CONFIGURABLE_OPTIONS = [
+    'TZ', 'UPDATE_DAYS', 'KEEP_DAYS', 'TIME_RANGE_DAYS', 'LANGUAGE',
+    'ENABLE_DAILY_PLAY_COUNT', 'ENABLE_PLAY_COUNT_BY_DAYOFWEEK', 'ENABLE_PLAY_COUNT_BY_HOUROFDAY',
+    'ENABLE_TOP_10_PLATFORMS', 'ENABLE_TOP_10_USERS', 'ENABLE_PLAY_COUNT_BY_MONTH',
+    'ANNOTATE_DAILY_PLAY_COUNT', 'ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK', 'ANNOTATE_PLAY_COUNT_BY_HOUROFDAY',
+    'ANNOTATE_TOP_10_PLATFORMS', 'ANNOTATE_TOP_10_USERS', 'ANNOTATE_PLAY_COUNT_BY_MONTH'
+]
+
+def load_config(config_path=CONFIG_PATH):
     if os.path.exists(config_path):
         with open(config_path, 'r') as file:
             config_vars = yaml.safe_load(file)
@@ -25,12 +36,12 @@ def load_config(config_path):
         'TAUTULLI_API_KEY': get_config('TAUTULLI_API_KEY', 'your_tautulli_api_key'),
         'TAUTULLI_URL': get_config('TAUTULLI_URL', 'http://your_tautulli_ip:port/api/v2'),
         'LANGUAGE': get_config('LANGUAGE', 'en'),
-        'DAILY_PLAY_COUNT': bool(get_config('DAILY_PLAY_COUNT', True)),
-        'PLAY_COUNT_BY_DAYOFWEEK': bool(get_config('PLAY_COUNT_BY_DAYOFWEEK', True)),
-        'PLAY_COUNT_BY_HOUROFDAY': bool(get_config('PLAY_COUNT_BY_HOUROFDAY', True)),
-        'TOP_10_PLATFORMS': bool(get_config('TOP_10_PLATFORMS', True)),
-        'TOP_10_USERS': bool(get_config('TOP_10_USERS', True)),
-        'PLAY_COUNT_BY_MONTH': bool(get_config('PLAY_COUNT_BY_MONTH', True)),
+        'ENABLE_DAILY_PLAY_COUNT': bool(get_config('ENABLE_DAILY_PLAY_COUNT', True)),
+        'ENABLE_PLAY_COUNT_BY_DAYOFWEEK': bool(get_config('ENABLE_PLAY_COUNT_BY_DAYOFWEEK', True)),
+        'ENABLE_PLAY_COUNT_BY_HOUROFDAY': bool(get_config('ENABLE_PLAY_COUNT_BY_HOUROFDAY', True)),
+        'ENABLE_TOP_10_PLATFORMS': bool(get_config('ENABLE_TOP_10_PLATFORMS', True)),
+        'ENABLE_TOP_10_USERS': bool(get_config('ENABLE_TOP_10_USERS', True)),
+        'ENABLE_PLAY_COUNT_BY_MONTH': bool(get_config('ENABLE_PLAY_COUNT_BY_MONTH', True)),
         'ANNOTATE_DAILY_PLAY_COUNT': bool(get_config('ANNOTATE_DAILY_PLAY_COUNT', True)),
         'ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK': bool(get_config('ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK', True)),
         'ANNOTATE_PLAY_COUNT_BY_HOUROFDAY': bool(get_config('ANNOTATE_PLAY_COUNT_BY_HOUROFDAY', True)),
@@ -42,3 +53,45 @@ def load_config(config_path):
     config['timezone'] = pytz.timezone(config['TZ'])
 
     return config
+
+def save_config(config, config_path=CONFIG_PATH):
+    # Remove 'timezone' key as it's not part of the original config
+    config_to_save = {k: v for k, v in config.items() if k != 'timezone'}
+    
+    if os.path.exists(config_path):
+        with open(config_path, 'r') as file:
+            lines = file.readlines()
+
+        # Update existing lines
+        for i, line in enumerate(lines):
+            if ':' in line:
+                key, _ = line.split(':', 1)
+                key = key.strip()
+                if key in config_to_save:
+                    lines[i] = f"{key}: {config_to_save[key]}\n"
+                    del config_to_save[key]
+
+        # Append any new keys at the end
+        for key, value in config_to_save.items():
+            lines.append(f"{key}: {value}\n")
+
+        with open(config_path, 'w') as file:
+            file.writelines(lines)
+    else:
+        # If the file doesn't exist, create it with the new config
+        with open(config_path, 'w') as file:
+            for key, value in config_to_save.items():
+                file.write(f"{key}: {value}\n")
+
+def update_config(key, value):
+    config = load_config()
+    config[key] = value
+    save_config(config)
+    return config
+
+# List of keys that require a bot restart when changed
+RESTART_REQUIRED_KEYS = ['TAUTULLI_API_KEY', 'TAUTULLI_URL', 'DISCORD_TOKEN', 'IMG_FOLDER']
+
+# Function to get configurable options
+def get_configurable_options():
+    return CONFIGURABLE_OPTIONS

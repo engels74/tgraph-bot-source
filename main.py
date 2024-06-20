@@ -30,16 +30,16 @@ if not os.path.exists(log_directory):
 logging.basicConfig(
     filename=args.log_file,
     level=logging.INFO,
-    format='%(asctime)s %(message)s',
+    format='%(asctime)s %(levelname)s: %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S %Z'
 )
 
 logger = logging.getLogger(__name__)
 
 # Function to print log messages with timestamps
-def log(message):
+def log(message, level=logging.INFO):
     timestamp = datetime.now(config['timezone']).strftime('%Y-%m-%d %H:%M:%S %Z')
-    logger.info(f"{timestamp} - {message}")
+    logger.log(level, message)
     print(f"{timestamp} - {message}")
 
 async def main():
@@ -53,17 +53,27 @@ async def main():
     @bot.event
     async def on_ready():
         log(f"Logged in as {bot.user.name}")
-        await bot.load_extension('bot.commands')  # Load the Commands cog
-        await bot.tree.sync()  # Sync application commands with Discord
-        log("Slash commands synced.")
-        
-        # Update and post graphs immediately after logging in
-        log("Updating and posting graphs on bot startup...")
-        from bot.commands import translations
-        await update_and_post_graphs(bot, translations)
-        log("Graphs updated and posted on bot startup.")
+        try:
+            log("Loading bot commands...")
+            await bot.load_extension('bot.commands')
+            log("Bot commands loaded successfully.")
+            
+            log("Syncing application commands...")
+            await bot.tree.sync()
+            log("Application commands synced successfully.")
+            
+            # Update and post graphs immediately after logging in
+            log("Updating and posting graphs on bot startup...")
+            from bot.commands import translations
+            await update_and_post_graphs(bot, translations)
+            log("Graphs updated and posted on bot startup.")
+        except Exception as e:
+            log(f"Error during startup: {str(e)}", level=logging.ERROR)
 
-    await bot.start(config['DISCORD_TOKEN'])
+    try:
+        await bot.start(config['DISCORD_TOKEN'])
+    except Exception as e:
+        log(f"Error starting the bot: {str(e)}", level=logging.ERROR)
 
 if __name__ == "__main__":
     asyncio.run(main())
