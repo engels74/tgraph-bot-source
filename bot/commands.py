@@ -20,6 +20,12 @@ class Commands(commands.Cog):
         self.bot = bot
         self.start_time = datetime.now()
 
+    async def cog_load(self):
+        log("Commands cog is being loaded...")
+        for command in self.get_app_commands():
+            log(f"Registering command: {command.name}")
+        log("Commands cog loaded successfully.")
+
     @app_commands.command(name="about", description="Information about the bot")
     async def about(self, interaction: discord.Interaction):
         try:
@@ -110,3 +116,4 @@ class Commands(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(Commands(bot))
+    log("Commands cog has been set up.")
