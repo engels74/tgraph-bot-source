@@ -67,12 +67,12 @@ class Commands(commands.Cog):
             log(f"Error in /uptime command: {str(e)}")
             await interaction.response.send_message("An error occurred while processing the command.")
 
-    @app_commands.command(name="bot_config", description="View or edit bot configuration")
+    @app_commands.command(name="config", description="View or edit bot configuration")
     @app_commands.choices(action=[
         app_commands.Choice(name="View", value="view"),
         app_commands.Choice(name="Edit", value="edit")
     ])
-    async def bot_config(self, interaction: discord.Interaction, action: str, key: str = None, value: str = None):
+    async def config_command(self, interaction: discord.Interaction, action: str, key: str = None, value: str = None):
         try:
             if action == "view":
                 embed = discord.Embed(title="Bot Configuration", color=0x3498db)
@@ -109,9 +109,9 @@ class Commands(commands.Cog):
                 else:
                     await interaction.response.send_message(f"Configuration updated. {key} set to {value}")
 
-            log(f"Command /bot_config executed by {interaction.user.name}#{interaction.user.discriminator}")
+            log(f"Command /config executed by {interaction.user.name}#{interaction.user.discriminator}")
         except Exception as e:
-            log(f"Error in /bot_config command: {str(e)}")
+            log(f"Error in /config command: {str(e)}")
             await interaction.response.send_message("An error occurred while processing the command.")
 
 async def setup(bot):
