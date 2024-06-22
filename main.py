@@ -10,6 +10,7 @@ from config.config import load_config, CONFIG_PATH
 from i18n import load_translations
 from datetime import datetime
 from graphs.generate_graphs import update_and_post_graphs
+from graphs.generate_graphs_user import generate_user_graphs
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description='TGraph Bot')
