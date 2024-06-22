@@ -145,8 +145,8 @@ async def my_stats(self, interaction: discord.Interaction, email: str):
             await dm_channel.send(file=discord.File(graph_file))
 
         # Update cooldowns
-        self.user_cooldowns[user_id] = datetime.now() + timedelta(minutes=5)
-        self.global_cooldown = datetime.now() + timedelta(seconds=60)
+        self.user_cooldowns[user_id] = datetime.now() + timedelta(minutes=config['MY_STATS_COOLDOWN_MINUTES'])
+        self.global_cooldown = datetime.now() + timedelta(seconds=config['MY_STATS_GLOBAL_COOLDOWN_SECONDS'])
 
         await interaction.followup.send(translations['my_stats_success'], ephemeral=True)
         log(f"Command /my_stats executed by {interaction.user.name}#{interaction.user.discriminator}")
