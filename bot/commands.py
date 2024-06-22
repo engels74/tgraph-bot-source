@@ -40,7 +40,7 @@ class Commands(commands.Cog):
             embed.add_field(name="Description", value="TGraph Bot is a Discord bot that generates and posts graphs based on Tautulli data. It provides insights into your media server usage, including daily play counts, play counts by day of the week, play counts by hour of the day, top 10 platforms, top 10 users, and play counts by month.", inline=False)
             embed.add_field(name="GitHub", value="https://github.com/engels74/tgraph-bot-source", inline=False)
             embed.add_field(name="License", value="AGPLv3", inline=False)
-            await interaction.response.send_message(translations['error_processing_command'], ephemeral=True)
+            await interaction.response.send_message(embed=embed, ephemeral=True)
             log(f"Command /about executed by {interaction.user.name}#{interaction.user.discriminator}")
         except Exception as e:
             log(f"Error in /about command: {str(e)}")
@@ -104,59 +104,59 @@ class Commands(commands.Cog):
             log(f"Error in /config command: {str(e)}")
             await interaction.followup.send(translations['error_processing_command'], ephemeral=True)
 
-@app_commands.command(name="my_stats", description=translations['my_stats_command_description'])
-async def my_stats(self, interaction: discord.Interaction, email: str):
-    # Check global cooldown
-    if datetime.now() < self.global_cooldown:
-        remaining = int((self.global_cooldown - datetime.now()).total_seconds())
-        await interaction.response.send_message(
-            translations['rate_limit_global'].format(time=f"<t:{int((datetime.now() + timedelta(seconds=remaining)).timestamp())}:R>"),
-            ephemeral=True
-        )
-        return
-
-    # Check user cooldown
-    user_id = str(interaction.user.id)
-    if user_id in self.user_cooldowns and datetime.now() < self.user_cooldowns[user_id]:
-        remaining = int((self.user_cooldowns[user_id] - datetime.now()).total_seconds())
-        await interaction.response.send_message(
-            translations['rate_limit_user'].format(time=f"<t:{int((datetime.now() + timedelta(seconds=remaining)).timestamp())}:R>"),
-            ephemeral=True
-        )
-        return
-
-    await interaction.response.defer(ephemeral=True)
-
-    try:
-        tautulli_user_id = self.get_user_id_from_email(email)
-        if not tautulli_user_id:
-            await interaction.followup.send(translations['my_stats_no_user_found'], ephemeral=True)
+    @app_commands.command(name="my_stats", description=translations['my_stats_command_description'])
+    async def my_stats(self, interaction: discord.Interaction, email: str):
+        # Check global cooldown
+        if datetime.now() < self.global_cooldown:
+            remaining = int((self.global_cooldown - datetime.now()).total_seconds())
+            await interaction.response.send_message(
+                translations['rate_limit_global'].format(time=f"<t:{int((datetime.now() + timedelta(seconds=remaining)).timestamp())}:R>"),
+                ephemeral=True
+            )
             return
 
-        graph_files = generate_user_graphs(tautulli_user_id, config, translations)
-        
-        if not graph_files:
-            await interaction.followup.send(translations['my_stats_generate_failed'], ephemeral=True)
+        # Check user cooldown
+        user_id = str(interaction.user.id)
+        if user_id in self.user_cooldowns and datetime.now() < self.user_cooldowns[user_id]:
+            remaining = int((self.user_cooldowns[user_id] - datetime.now()).total_seconds())
+            await interaction.response.send_message(
+                translations['rate_limit_user'].format(time=f"<t:{int((datetime.now() + timedelta(seconds=remaining)).timestamp())}:R>"),
+                ephemeral=True
+            )
             return
 
-        # Send graphs via PM
-        dm_channel = await interaction.user.create_dm()
-        for graph_file in graph_files:
-            await dm_channel.send(file=discord.File(graph_file))
+        await interaction.response.defer(ephemeral=True)
 
-        # Update cooldowns
-        self.user_cooldowns[user_id] = datetime.now() + timedelta(minutes=config['MY_STATS_COOLDOWN_MINUTES'])
-        self.global_cooldown = datetime.now() + timedelta(seconds=config['MY_STATS_GLOBAL_COOLDOWN_SECONDS'])
+        try:
+            tautulli_user_id = self.get_user_id_from_email(email)
+            if not tautulli_user_id:
+                await interaction.followup.send(translations['my_stats_no_user_found'], ephemeral=True)
+                return
 
-        await interaction.followup.send(translations['my_stats_success'], ephemeral=True)
-        log(f"Command /my_stats executed by {interaction.user.name}#{interaction.user.discriminator}")
+            graph_files = generate_user_graphs(tautulli_user_id, config, translations)
+            
+            if not graph_files:
+                await interaction.followup.send(translations['my_stats_generate_failed'], ephemeral=True)
+                return
 
-    except Exception as e:
-        log(f"Error in /my_stats command: {str(e)}")
-        await interaction.followup.send(
-            translations['my_stats_error'],
-            ephemeral=True
-        )
+            # Send graphs via PM
+            dm_channel = await interaction.user.create_dm()
+            for graph_file in graph_files:
+                await dm_channel.send(file=discord.File(graph_file))
+
+            # Update cooldowns
+            self.user_cooldowns[user_id] = datetime.now() + timedelta(minutes=config['MY_STATS_COOLDOWN_MINUTES'])
+            self.global_cooldown = datetime.now() + timedelta(seconds=config['MY_STATS_GLOBAL_COOLDOWN_SECONDS'])
+
+            await interaction.followup.send(translations['my_stats_success'], ephemeral=True)
+            log(f"Command /my_stats executed by {interaction.user.name}#{interaction.user.discriminator}")
+
+        except Exception as e:
+            log(f"Error in /my_stats command: {str(e)}")
+            await interaction.followup.send(
+                translations['my_stats_error'],
+                ephemeral=True
+            )
 
     @app_commands.command(name="update_graphs", description="Update and post the graphs")
     async def update_graphs(self, interaction: discord.Interaction):
