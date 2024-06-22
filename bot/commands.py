@@ -128,12 +128,9 @@ class Commands(commands.Cog):
         await interaction.response.defer(ephemeral=True)
 
         try:
-            log(f"Retrieving user ID for email: {email}")
             tautulli_user_id = self.get_user_id_from_email(email)
-            log(f"User ID retrieved: {tautulli_user_id}")
 
             if not tautulli_user_id:
-                log(f"No user found for email: {email}")
                 await interaction.followup.send(translations['my_stats_no_user_found'], ephemeral=True)
                 return
 
@@ -198,11 +195,9 @@ class Commands(commands.Cog):
 
     def get_user_id_from_email(self, email):
         if not email:
-            log(f"Error: Email is empty or None")
             return None
 
         try:
-            log(f"Sending API request to retrieve users")
             response = requests.get(
                 f"{config['TAUTULLI_URL']}/api/v2",
                 params={
@@ -211,19 +206,12 @@ class Commands(commands.Cog):
                 }
             )
             response.raise_for_status()
-            log(f"API response status code: {response.status_code}")
-            log(f"API response content: {response.text}")
-
             users = response.json()['response']['data']
-            log(f"Retrieved {len(users)} users from API")
 
             for user in users:
-                log(f"Checking user: {user}")
                 if user.get('email') and user['email'].lower() == email.lower():
-                    log(f"Found matching user ID: {user['user_id']}")
                     return user['user_id']
 
-            log(f"No user found with email: {email}")
             return None
         except Exception as e:
             log(f"Error fetching user ID from email: {str(e)}")
