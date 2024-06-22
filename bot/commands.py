@@ -128,28 +128,38 @@ class Commands(commands.Cog):
         await interaction.response.defer(ephemeral=True)
 
         try:
+            log(f"Retrieving user ID for email: {email}")
             tautulli_user_id = self.get_user_id_from_email(email)
+            log(f"User ID retrieved: {tautulli_user_id}")
+
             if not tautulli_user_id:
+                log(f"No user found for email: {email}")
                 await interaction.followup.send(translations['my_stats_no_user_found'], ephemeral=True)
                 return
 
+            log(f"Generating user graphs for user ID: {tautulli_user_id}")
             graph_files = generate_user_graphs(tautulli_user_id, config, translations)
-            
+            log(f"Generated {len(graph_files)} graph files")
+
             if not graph_files:
+                log("Failed to generate user graphs")
                 await interaction.followup.send(translations['my_stats_generate_failed'], ephemeral=True)
                 return
 
             # Send graphs via PM
+            log("Sending graphs via PM")
             dm_channel = await interaction.user.create_dm()
             for graph_file in graph_files:
+                log(f"Sending graph file: {graph_file}")
                 await dm_channel.send(file=discord.File(graph_file))
 
             # Update cooldowns
+            log("Updating cooldowns")
             self.user_cooldowns[user_id] = datetime.now() + timedelta(minutes=config['MY_STATS_COOLDOWN_MINUTES'])
             self.global_cooldown = datetime.now() + timedelta(seconds=config['MY_STATS_GLOBAL_COOLDOWN_SECONDS'])
 
             await interaction.followup.send(translations['my_stats_success'], ephemeral=True)
-            log(f"Command /my_stats executed by {interaction.user.name}#{interaction.user.discriminator}")
+            log(f"Command /my_stats executed successfully by {interaction.user.name}#{interaction.user.discriminator}")
 
         except Exception as e:
             log(f"Error in /my_stats command: {str(e)}")
@@ -187,7 +197,12 @@ class Commands(commands.Cog):
             await interaction.followup.send(translations['error_processing_command'], ephemeral=True)
 
     def get_user_id_from_email(self, email):
+        if not email:
+            log(f"Error: Email is empty or None")
+            return None
+
         try:
+            log(f"Sending API request to retrieve users")
             response = requests.get(
                 f"{config['TAUTULLI_URL']}/api/v2",
                 params={
@@ -196,12 +211,19 @@ class Commands(commands.Cog):
                 }
             )
             response.raise_for_status()
+            log(f"API response status code: {response.status_code}")
+            log(f"API response content: {response.text}")
+
             users = response.json()['response']['data']
-            
+            log(f"Retrieved {len(users)} users from API")
+
             for user in users:
-                if user['email'].lower() == email.lower():
+                log(f"Checking user: {user}")
+                if user.get('email') and user['email'].lower() == email.lower():
+                    log(f"Found matching user ID: {user['user_id']}")
                     return user['user_id']
-            
+
+            log(f"No user found with email: {email}")
             return None
         except Exception as e:
             log(f"Error fetching user ID from email: {str(e)}")
