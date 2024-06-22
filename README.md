@@ -144,4 +144,4 @@ To post messages to Discord, you need to create a bot and obtain its token.
     - Copy the generated URL and paste it into your browser to invite the bot to your server.
 
 ## License
-This project is licensed under the AGPLv3 License. See the [LICENSE] file for details.
+This project is licensed under the AGPLv3 License. See the [LICENSE](LICENSE) file for details.
