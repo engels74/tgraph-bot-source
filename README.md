@@ -13,10 +13,13 @@ Tautulli Graph Bot automates the process of generating and posting graphical sta
 ## Features
 
 - Automatically generates and posts Tautulli graphs to a Discord channel
-- Supports multiple languages (English and Danish) using i18n
+- Supports multiple languages (currently English and Danish) using i18n
 - Runs in a Docker container for easy deployment
-- Configurable graph options
-- Interactive Discord slash commands for bot management
+- Configurable graph options with ability to enable/disable specific graphs
+- Interactive Discord slash commands for bot management and user statistics
+- User-specific graph generation (with rate limiting)
+- Customizable update intervals and data retention periods
+- Annotation options for each graph type
 
 ## Preview
 <img src="https://i.imgur.com/lHLWpc2.png" width="50%" alt="An example of how it looks">
@@ -70,6 +73,8 @@ The bot is configured using the `config.yml` file. Create a `config.yml` file in
 - `KEEP_DAYS`: The number of days to keep the images (default is 7 days).
 - `TIME_RANGE_DAYS`: The time range in days for the graphs (default is 30 days).
 - `LANGUAGE`: The language to use for the bot (default is `en`). Supported languages: `en` (English), `da` (Danish).
+- `MY_STATS_COOLDOWN_MINUTES`: The cooldown period in minutes for individual users using the /my_stats command (default is 5 minutes).
+- `MY_STATS_GLOBAL_COOLDOWN_SECONDS`: The global cooldown period in seconds between any two uses of the /my_stats command (default is 60 seconds).
 
 ### Graph Options
 
@@ -88,6 +93,11 @@ The bot is configured using the `config.yml` file. Create a `config.yml` file in
 - `ANNOTATE_TOP_10_PLATFORMS`: Enable/disable annotations on top 10 platforms graph (default is true)
 - `ANNOTATE_TOP_10_USERS`: Enable/disable annotations on top 10 users graph (default is true)
 - `ANNOTATE_PLAY_COUNT_BY_MONTH`: Enable/disable annotations on play count by month graph (default is true)
+
+### My Stats Options
+
+- `MY_STATS_COOLDOWN_MINUTES`: The cooldown period in minutes for individual users using the `/my_stats` command (default is 5 minutes)
+- `MY_STATS_GLOBAL_COOLDOWN_SECONDS`: The global cooldown period in seconds between any two uses of the `/my_stats` command (default is 60 seconds)
 
 ## Slash Commands
 
