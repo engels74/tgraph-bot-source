@@ -52,3 +52,20 @@ embed_footer: "Posted on {now}"
 
 # Other
 no_data_available: "No data available for play_count_by_month"
+
+# /my_stats command
+my_stats_command_description: "Get your personal Plex statistics"
+my_stats_email_prompt: "Enter your Plex email address"
+my_stats_success: "Your personal statistics have been sent via private message."
+my_stats_no_user_found: "No user found with that email address."
+my_stats_generate_failed: "Failed to generate graphs. Please try again later."
+my_stats_error: "An error occurred while generating your statistics. Please try again later or contact the administrator if the problem persists."
+
+# Rate limiting messages
+rate_limit_global: "This command is on global cooldown. Please try again {time}."
+rate_limit_user: "You can use this command again {time}."
+
+# Error messages
+error_fetching_data: "Error fetching data from Tautulli API"
+error_generating_graph: "Error generating graph: {graph_type}"
+error_processing_command: "An error occurred while processing the command."

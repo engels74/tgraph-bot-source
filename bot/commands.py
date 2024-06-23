@@ -1,13 +1,15 @@
 # bot/commands.py
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 import discord
 from discord import app_commands
 from discord.ext import commands
 from config.config import load_config, update_config, RESTART_REQUIRED_KEYS, get_configurable_options, CONFIG_PATH
 from i18n import load_translations
 from graphs.generate_graphs import update_and_post_graphs
+from graphs.generate_graphs_user import generate_user_graphs
 from main import log
+import requests
 
 # Load configuration
 config = load_config(CONFIG_PATH)
@@ -22,6 +24,8 @@ class Commands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.start_time = datetime.now().astimezone()
+        self.user_cooldowns = {}
+        self.global_cooldown = datetime.now()
 
     async def cog_load(self):
         log("Commands cog is being loaded...")
@@ -40,35 +44,7 @@ class Commands(commands.Cog):
             log(f"Command /about executed by {interaction.user.name}#{interaction.user.discriminator}")
         except Exception as e:
             log(f"Error in /about command: {str(e)}")
-            await interaction.response.send_message("An error occurred while processing the command.", ephemeral=True)
-
-    @app_commands.command(name="update_graphs", description="Update and post the graphs")
-    async def update_graphs(self, interaction: discord.Interaction):
-        try:
-            await interaction.response.defer(ephemeral=True)
-            await update_and_post_graphs(self.bot, translations)
-            try:
-                await interaction.followup.send("Graphs updated and posted.", ephemeral=True)
-                log(f"Command /update_graphs executed by {interaction.user.name}#{interaction.user.discriminator}. Graphs updated and posted.")
-            except discord.errors.NotFound:
-                log(f"Command /update_graphs executed by {interaction.user.name}#{interaction.user.discriminator}. Interaction message deleted. Graphs updated and posted.")
-        except Exception as e:
-            log(f"Error in /update_graphs command: {str(e)}")
-            try:
-                await interaction.followup.send("An error occurred while processing the command.", ephemeral=True)
-            except discord.errors.NotFound:
-                log(f"Error in /update_graphs command: {str(e)}. Interaction message not found.")
-
-    @app_commands.command(name="uptime", description="Show the bot's uptime")
-    async def uptime(self, interaction: discord.Interaction):
-        try:
-            current_time = datetime.now().astimezone()
-            uptime = current_time - self.start_time
-            await interaction.response.send_message(f"Bot has been running for {uptime}", ephemeral=True)
-            log(f"Command /uptime executed by {interaction.user.name}#{interaction.user.discriminator}")
-        except Exception as e:
-            log(f"Error in /uptime command: {str(e)}")
-            await interaction.response.send_message("An error occurred while processing the command.", ephemeral=True)
+            await interaction.response.send_message(translations['error_processing_command'], ephemeral=True)
 
     @app_commands.command(name="config", description="View or edit bot configuration")
     @app_commands.choices(action=[
@@ -126,7 +102,124 @@ class Commands(commands.Cog):
             log(f"Command /config executed by {interaction.user.name}#{interaction.user.discriminator}")
         except Exception as e:
             log(f"Error in /config command: {str(e)}")
-            await interaction.response.send_message("An error occurred while processing the command.", ephemeral=True)
+            await interaction.followup.send(translations['error_processing_command'], ephemeral=True)
+
+    @app_commands.command(name="my_stats", description=translations['my_stats_command_description'])
+    async def my_stats(self, interaction: discord.Interaction, email: str):
+        # Check global cooldown
+        if datetime.now() < self.global_cooldown:
+            remaining = int((self.global_cooldown - datetime.now()).total_seconds())
+            await interaction.response.send_message(
+                translations['rate_limit_global'].format(time=f"<t:{int((datetime.now() + timedelta(seconds=remaining)).timestamp())}:R>"),
+                ephemeral=True
+            )
+            return
+
+        # Check user cooldown
+        user_id = str(interaction.user.id)
+        if user_id in self.user_cooldowns and datetime.now() < self.user_cooldowns[user_id]:
+            remaining = int((self.user_cooldowns[user_id] - datetime.now()).total_seconds())
+            await interaction.response.send_message(
+                translations['rate_limit_user'].format(time=f"<t:{int((datetime.now() + timedelta(seconds=remaining)).timestamp())}:R>"),
+                ephemeral=True
+            )
+            return
+
+        await interaction.response.defer(ephemeral=True)
+
+        try:
+            # Reload configuration
+            global config
+            config = load_config(CONFIG_PATH, reload=True)
+            
+            tautulli_user_id = self.get_user_id_from_email(email)
+
+            if not tautulli_user_id:
+                await interaction.followup.send(translations['my_stats_no_user_found'], ephemeral=True)
+                return
+
+            log(f"Generating user graphs for user ID: {tautulli_user_id}")
+            graph_files = generate_user_graphs(tautulli_user_id, config, translations)
+            log(f"Generated {len(graph_files)} graph files")
+
+            if not graph_files:
+                log("Failed to generate user graphs")
+                await interaction.followup.send(translations['my_stats_generate_failed'], ephemeral=True)
+                return
+
+            # Send graphs via PM
+            log("Sending graphs via PM")
+            dm_channel = await interaction.user.create_dm()
+            for graph_file in graph_files:
+                log(f"Sending graph file: {graph_file}")
+                await dm_channel.send(file=discord.File(graph_file))
+
+            # Update cooldowns
+            log("Updating cooldowns")
+            self.user_cooldowns[user_id] = datetime.now() + timedelta(minutes=config['MY_STATS_COOLDOWN_MINUTES'])
+            self.global_cooldown = datetime.now() + timedelta(seconds=config['MY_STATS_GLOBAL_COOLDOWN_SECONDS'])
+
+            await interaction.followup.send(translations['my_stats_success'], ephemeral=True)
+            log(f"Command /my_stats executed successfully by {interaction.user.name}#{interaction.user.discriminator}")
+
+        except Exception as e:
+            log(f"Error in /my_stats command: {str(e)}")
+            await interaction.followup.send(
+                translations['my_stats_error'],
+                ephemeral=True
+            )
+
+    @app_commands.command(name="update_graphs", description="Update and post the graphs")
+    async def update_graphs(self, interaction: discord.Interaction):
+        try:
+            await interaction.response.defer(ephemeral=True)
+            await update_and_post_graphs(self.bot, translations)
+            try:
+                await interaction.followup.send("Graphs updated and posted.", ephemeral=True)
+                log(f"Command /update_graphs executed by {interaction.user.name}#{interaction.user.discriminator}. Graphs updated and posted.")
+            except discord.errors.NotFound:
+                log(f"Command /update_graphs executed by {interaction.user.name}#{interaction.user.discriminator}. Interaction message deleted. Graphs updated and posted.")
+        except Exception as e:
+            log(f"Error in /update_graphs command: {str(e)}")
+            try:
+                await interaction.followup.send("An error occurred while processing the command.", ephemeral=True)
+            except discord.errors.NotFound:
+                log(f"Error in /update_graphs command: {str(e)}. Interaction message not found.")
+
+    @app_commands.command(name="uptime", description="Show the bot's uptime")
+    async def uptime(self, interaction: discord.Interaction):
+        try:
+            current_time = datetime.now().astimezone()
+            uptime = current_time - self.start_time
+            await interaction.response.send_message(f"Bot has been running for {uptime}", ephemeral=True)
+            log(f"Command /uptime executed by {interaction.user.name}#{interaction.user.discriminator}")
+        except Exception as e:
+            log(f"Error in /uptime command: {str(e)}")
+            await interaction.followup.send(translations['error_processing_command'], ephemeral=True)
+
+    def get_user_id_from_email(self, email):
+        if not email:
+            return None
+
+        try:
+            response = requests.get(
+                f"{config['TAUTULLI_URL']}/api/v2",
+                params={
+                    "apikey": config['TAUTULLI_API_KEY'],
+                    "cmd": "get_users"
+                }
+            )
+            response.raise_for_status()
+            users = response.json()['response']['data']
+
+            for user in users:
+                if user.get('email') and user['email'].lower() == email.lower():
+                    return user['user_id']
+
+            return None
+        except Exception as e:
+            log(f"Error fetching user ID from email: {str(e)}")
+            return None
 
 async def setup(bot):
     await bot.add_cog(Commands(bot))

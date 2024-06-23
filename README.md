@@ -101,10 +101,23 @@ TGraph Bot supports the following slash commands:
   - Actions:
     - `view`: Shows all configuration options or a specific key if provided.
     - `edit`: Edits a specific configuration key with the provided value.
+- `/my_stats`: Generates and sends personalized graphs based on the user's Tautulli data.
+  - Usage: `/my_stats <email>`
+  - This command generates graphs specific to the user and sends them via direct message.
+  - The `<email>` parameter should match the email associated with the user's Plex account in Tautulli.
 
 To use these commands, simply type them in any channel where the bot is present. The bot will respond with the requested information or action.
 
-Note: The `/config` command responses are only visible to the user who issued the command to protect sensitive information.
+Note: The `/config` command responses are only visible to the user who issued the command to protect sensitive information. The `/my_stats` command sends the graphs via direct message to ensure user privacy.
+
+### Rate Limiting
+
+The `/my_stats` command is subject to rate limiting to prevent abuse:
+
+- There's a cooldown period for each user after using the command.
+- There's also a global cooldown that affects all users.
+
+If a user attempts to use the command too frequently, they will receive a message indicating when they can use the command again.
 
 ### Language Support
 

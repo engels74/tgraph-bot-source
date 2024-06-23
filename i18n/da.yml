@@ -52,3 +52,20 @@ embed_footer: "Indsendt den {now}"
 
 # Andet
 no_data_available: "Ingen data tilgængelige for play_count_by_month"
+
+# /my_stats kommandoen
+my_stats_command_description: "Få dine personlige Plex-statistikker"
+my_stats_email_prompt: "Indtast din Plex-e-mailadresse"
+my_stats_succes: "Dine personlige statistikker er blevet sendt via en privat besked."
+my_stats_no_user_found: "Ingen bruger fundet med den e-mailadresse."
+my_stats_generate_failed: "Kunne ikke generere grafer. Prøv venligst igen senere."
+my_stats_error: "Der opstod en fejl under genereringen af dine statistikker. Prøv igen senere, eller kontakt administratoren, hvis problemet fortsætter."
+
+# Meddelelser om begrænsning
+rate_limit_global: "Denne kommando er på global nedkøling. Prøv venligst igen {time}."
+rate_limit_user: "Du kan bruge denne kommando igen {time}."
+
+# Fejlmeddelelser
+error_fetching_data: "Fejl ved hentning af data fra Tautulli API"
+error_generating_graph: "Fejl ved generering af graf: {graph_type}"
+error_processing_command: "Der opstod en fejl under behandlingen af kommandoen."
