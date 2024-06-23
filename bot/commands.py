@@ -91,6 +91,7 @@ class Commands(commands.Cog):
                 
                 # Reload translations if language changed
                 if key == 'LANGUAGE':
+                    global translations
                     translations = load_translations(value)
 
                 # Send response

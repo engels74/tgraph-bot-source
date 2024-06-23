@@ -2,7 +2,7 @@
 daily_play_count_title: "Dagligt antal afspilninger pr. medietype (sidste {days} dage)"
 play_count_by_dayofweek_title: "Antal afspilninger pr. ugedag (sidste {days} dage)"
 play_count_by_hourofday_title: "Antal afspilninger pr. time på dagen (sidste {days} dage)"
-top_10_platforme_title: "Antal afspilninger efter top 10-platforme (sidste {days} dage)"
+top_10_platforms_title: "Antal afspilninger efter top 10-platforme (sidste {days} dage)"
 top_10_users_title: "Antal afspilninger efter top 10 brugere (sidste {days} dage)"
 play_count_by_month_title: "Samlet antal afspilninger pr. måned (sidste 12 måneder)"
 
@@ -10,8 +10,8 @@ play_count_by_month_title: "Samlet antal afspilninger pr. måned (sidste 12 mån
 daily_play_count_description: "Viser det daglige antal afspilninger for forskellige medietyper i løbet af de sidste {days} dage."
 play_count_by_dayofweek_description: "Viser fordelingen af antal afspilninger efter ugedag for de sidste {days} dage."
 play_count_by_hourofday_description: "Viser fordelingen af antal afspilninger pr. time i løbet af de sidste {days} dage."
-top_10_platforms_description: "Fremhæver antallet af afspilninger på de 10 største platforme i løbet af de sidste {days}."
-top_10_users_description: "Viser antallet af afspilninger for de 10 største brugere i løbet af de sidste {days}."
+top_10_platforms_description: "Fremhæver antallet af afspilninger på de 10 største platforme i løbet af de sidste {days} dage."
+top_10_users_description: "Viser antallet af afspilninger for de 10 største brugere i løbet af de sidste {days} dage."
 play_count_by_month_description: "Viser det samlede antal afspilninger pr. måned for de sidste 12 måneder, undtagen måneder med nul afspilninger."
 
 # Graf-etiketter
@@ -63,7 +63,7 @@ log_error_during_startup: "Fejl under opstart: {error}"
 log_error_starting_bot: "Fejl ved start af robotten: {error}"
 log_commands_cog_setup: "Kommandokoggen er blevet sat op."
 log_command_executed: "Kommando /{command} udført af {user}"
-log_command_error: "Fejl i kommandoen /{kommando}: {error}"
+log_command_error: "Fejl i kommandoen /{command}: {error}"
 log_generating_user_graphs: "Genererer brugergrafer for bruger-ID: {user_id}"
 log_generated_graph_files: "Genererede {antal} graffiler"
 log_sending_graphs_pm: "Afsendelse af grafer via PM"
