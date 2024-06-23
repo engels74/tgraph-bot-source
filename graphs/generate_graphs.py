@@ -187,9 +187,9 @@ def generate_graphs(data, folder, translations):
             if config['ANNOTATE_TOP_10_USERS']:
                 for i, v in enumerate(serie['data']):
                     plt.text(i, v + 0.5, str(v), color='red', fontweight='bold', ha='center', va='bottom')
-        plt.xlabel(translations['top_10_users_xlabel'])
-        plt.ylabel(translations['top_10_users_ylabel'])
-        plt.title(translations['top_10_users_title'].format(days=config["TIME_RANGE_DAYS"]))
+        plt.xlabel(translations['top_10_users_xlabel'], fontweight='bold')
+        plt.ylabel(translations['top_10_users_ylabel'], fontweight='bold')
+        plt.title(translations['top_10_users_title'].format(days=config["TIME_RANGE_DAYS"]), fontweight='bold')
         plt.xticks(rotation=45, ha='right')
         plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
         plt.legend()
