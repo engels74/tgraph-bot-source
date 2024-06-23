@@ -56,7 +56,7 @@ no_data_available: "Ingen data tilgængelige for play_count_by_month"
 # /my_stats kommandoen
 my_stats_command_description: "Få dine personlige Plex-statistikker"
 my_stats_email_prompt: "Indtast din Plex-e-mailadresse"
-my_stats_succes: "Dine personlige statistikker er blevet sendt via en privat besked."
+my_stats_success: "Dine personlige statistikker er blevet sendt via en privat besked."
 my_stats_no_user_found: "Ingen bruger fundet med den e-mailadresse."
 my_stats_generate_failed: "Kunne ikke generere grafer. Prøv venligst igen senere."
 my_stats_error: "Der opstod en fejl under genereringen af dine statistikker. Prøv igen senere, eller kontakt administratoren, hvis problemet fortsætter."
