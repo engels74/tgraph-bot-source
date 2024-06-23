@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 from matplotlib.ticker import MaxNLocator
 from matplotlib.dates import DateFormatter
+from matplotlib.font_manager import FontProperties
 from graphs.generate_graphs import fetch_tautulli_data, ensure_folder_exists, censor_username
 import logging
 
@@ -63,9 +64,9 @@ def generate_daily_play_count(user_id, folder, config, translations):
                 if value > 0:
                     plt.text(dates[i], value + 0.5, f'{value}', ha='center', va='bottom', fontsize=8, color='red')
     
-    plt.xlabel(translations['daily_play_count_xlabel'])
-    plt.ylabel(translations['daily_play_count_ylabel'])
-    plt.title(translations['daily_play_count_title'].format(days=config["TIME_RANGE_DAYS"]))
+    plt.xlabel(translations['daily_play_count_xlabel'], fontweight='bold')
+    plt.ylabel(translations['daily_play_count_ylabel'], fontweight='bold')
+    plt.title(translations['daily_play_count_title'].format(days=config["TIME_RANGE_DAYS"]), fontweight='bold')
     
     ax = plt.gca()
     ax.set_xticks(dates)
@@ -100,9 +101,9 @@ def generate_play_count_by_dayofweek(user_id, folder, config, translations):
                 if value > 0:
                     plt.text(days[i], value + 0.5, f'{value}', ha='center', va='bottom', fontsize=8, color='red')
     
-    plt.xlabel(translations['play_count_by_dayofweek_xlabel'])
-    plt.ylabel(translations['play_count_by_dayofweek_ylabel'])
-    plt.title(translations['play_count_by_dayofweek_title'].format(days=config["TIME_RANGE_DAYS"]))
+    plt.xlabel(translations['play_count_by_dayofweek_xlabel'], fontweight='bold')
+    plt.ylabel(translations['play_count_by_dayofweek_ylabel'], fontweight='bold')
+    plt.title(translations['play_count_by_dayofweek_title'].format(days=config["TIME_RANGE_DAYS"]), fontweight='bold')
     plt.xticks(days, day_labels, ha='center')
     plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
     plt.legend()
@@ -132,9 +133,9 @@ def generate_play_count_by_hourofday(user_id, folder, config, translations):
                 if value > 0:
                     plt.text(hours[i], value + 0.5, f'{value}', ha='center', va='bottom', fontsize=8, color='red')
     
-    plt.xlabel(translations['play_count_by_hourofday_xlabel'])
-    plt.ylabel(translations['play_count_by_hourofday_ylabel'])
-    plt.title(translations['play_count_by_hourofday_title'].format(days=config["TIME_RANGE_DAYS"]))
+    plt.xlabel(translations['play_count_by_hourofday_xlabel'], fontweight='bold')
+    plt.ylabel(translations['play_count_by_hourofday_ylabel'], fontweight='bold')
+    plt.title(translations['play_count_by_hourofday_title'].format(days=config["TIME_RANGE_DAYS"]), fontweight='bold')
     plt.xticks(hours, ha='center')
     plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
     plt.legend()
@@ -163,9 +164,9 @@ def generate_top_10_platforms(user_id, folder, config, translations):
             for i, v in enumerate(serie['data']):
                 plt.text(i, v + 0.5, str(v), color='red', fontweight='bold', ha='center', va='bottom')
     
-    plt.xlabel(translations['top_10_platforms_xlabel'])
-    plt.ylabel(translations['top_10_platforms_ylabel'])
-    plt.title(translations['top_10_platforms_title'].format(days=config["TIME_RANGE_DAYS"]))
+    plt.xlabel(translations['top_10_platforms_xlabel'], fontweight='bold')
+    plt.ylabel(translations['top_10_platforms_ylabel'], fontweight='bold')
+    plt.title(translations['top_10_platforms_title'].format(days=config["TIME_RANGE_DAYS"]), fontweight='bold')
     plt.xticks(rotation=45, ha='right')
     plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
     plt.legend()
@@ -225,9 +226,9 @@ def generate_play_count_by_month(user_id, folder, config, translations):
         for i, v in enumerate(filtered_tv_data):
             plt.text(i, v + filtered_movie_data[i] + 0.5, str(v), color='red', fontweight='bold', ha='center', va='bottom')
 
-    plt.xlabel(translations['play_count_by_month_xlabel'])
-    plt.ylabel(translations['play_count_by_month_ylabel'])
-    plt.title(translations['play_count_by_month_title'])
+    plt.xlabel(translations['play_count_by_month_xlabel'], fontweight='bold')
+    plt.ylabel(translations['play_count_by_month_ylabel'], fontweight='bold')
+    plt.title(translations['play_count_by_month_title'], fontweight='bold')
     plt.xticks(bar_positions, filtered_months, rotation=45, ha='right')
     plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
     plt.legend()
