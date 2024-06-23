@@ -62,6 +62,7 @@ async def main():
 
     @bot.event
     async def on_ready():
+        global translations
         log(translations['log_bot_logged_in'].format(name=bot.user.name))
         try:
             log(translations['log_loading_bot_commands'])
@@ -74,7 +75,6 @@ async def main():
             
             # Update and post graphs immediately after logging in
             log(translations['log_updating_posting_graphs_startup'])
-            from bot.commands import translations
             await update_and_post_graphs(bot, translations)
             log(translations['log_graphs_updated_posted_startup'])
         except Exception as e:
