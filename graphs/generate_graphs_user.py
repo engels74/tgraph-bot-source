@@ -29,7 +29,7 @@ def generate_user_graphs(user_id, config, translations):
     if config['ENABLE_PLAY_COUNT_BY_MONTH']:
         graph_files.append(generate_play_count_by_month(user_id, user_folder, config, translations))
 
-    return graph_files
+    return [file for file in graph_files if file is not None]
 
 def generate_daily_play_count(user_id, folder, config, translations):
     plt.figure(figsize=(14, 8))

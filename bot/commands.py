@@ -128,6 +128,10 @@ class Commands(commands.Cog):
         await interaction.response.defer(ephemeral=True)
 
         try:
+            # Reload configuration
+            global config
+            config = load_config(CONFIG_PATH, reload=True)
+            
             tautulli_user_id = self.get_user_id_from_email(email)
 
             if not tautulli_user_id:
