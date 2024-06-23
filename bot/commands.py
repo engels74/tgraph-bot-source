@@ -53,8 +53,8 @@ class Commands(commands.Cog):
     ])
     @app_commands.choices(key=[app_commands.Choice(name=option, value=option) for option in CONFIG_OPTIONS])
     async def config_command(self, interaction: discord.Interaction, action: str, key: str = None, value: str = None):
+        global config, translations
         try:
-            global config, translations
             config = load_config(CONFIG_PATH, reload=True)
             
             if action == "view":
@@ -91,7 +91,6 @@ class Commands(commands.Cog):
                 
                 # Reload translations if language changed
                 if key == 'LANGUAGE':
-                    global translations
                     translations = load_translations(value)
 
                 # Send response
