@@ -62,28 +62,28 @@ async def main():
 
     @bot.event
     async def on_ready():
-        log(f"Logged in as {bot.user.name}")
+        log(translations['log_bot_logged_in'].format(name=bot.user.name))
         try:
-            log("Loading bot commands...")
+            log(translations['log_loading_bot_commands'])
             await bot.load_extension('bot.commands')
-            log("Bot commands loaded successfully.")
+            log(translations['log_bot_commands_loaded'])
             
-            log("Syncing application commands...")
+            log(translations['log_syncing_application_commands'])
             await bot.tree.sync()
-            log("Application commands synced successfully.")
+            log(translations['log_application_commands_synced'])
             
             # Update and post graphs immediately after logging in
-            log("Updating and posting graphs on bot startup...")
+            log(translations['log_updating_posting_graphs_startup'])
             from bot.commands import translations
             await update_and_post_graphs(bot, translations)
-            log("Graphs updated and posted on bot startup.")
+            log(translations['log_graphs_updated_posted_startup'])
         except Exception as e:
-            log(f"Error during startup: {str(e)}", level=logging.ERROR)
+            log(translations['log_error_during_startup'].format(error=str(e)), level=logging.ERROR)
 
     try:
         await bot.start(config['DISCORD_TOKEN'])
     except Exception as e:
-        log(f"Error starting the bot: {str(e)}", level=logging.ERROR)
+        log(translations['log_error_starting_bot'].format(error=str(e)), level=logging.ERROR)
 
 if __name__ == "__main__":
     asyncio.run(main())

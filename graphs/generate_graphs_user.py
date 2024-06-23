@@ -8,6 +8,7 @@ from matplotlib.dates import DateFormatter
 from matplotlib.font_manager import FontProperties
 from graphs.generate_graphs import fetch_tautulli_data, ensure_folder_exists, censor_username
 import logging
+from i18n import load_translations
 
 def generate_user_graphs(user_id, config, translations):
     graph_files = []
@@ -37,7 +38,7 @@ def generate_daily_play_count(user_id, folder, config, translations):
     data = fetch_tautulli_data('get_plays_by_date', {'time_range': config['TIME_RANGE_DAYS'], 'user_id': user_id})
     
     if not data or 'data' not in data['response']:
-        logging.error(f"Failed to fetch daily play count data for user {user_id}")
+        logging.error(translations['error_fetch_daily_play_count'].format(user_id=user_id))
         return None
 
     daily_play_count = data['response']['data']
@@ -86,7 +87,7 @@ def generate_play_count_by_dayofweek(user_id, folder, config, translations):
     data = fetch_tautulli_data('get_plays_by_dayofweek', {'time_range': config['TIME_RANGE_DAYS'], 'user_id': user_id})
     
     if not data or 'data' not in data['response']:
-        logging.error(f"Failed to fetch play count by day of week data for user {user_id}")
+        logging.error(translations['error_fetch_play_count_dayofweek'].format(user_id=user_id))
         return None
 
     play_count_by_dayofweek = data['response']['data']
@@ -119,7 +120,7 @@ def generate_play_count_by_hourofday(user_id, folder, config, translations):
     data = fetch_tautulli_data('get_plays_by_hourofday', {'time_range': config['TIME_RANGE_DAYS'], 'user_id': user_id})
     
     if not data or 'data' not in data['response']:
-        logging.error(f"Failed to fetch play count by hour of day data for user {user_id}")
+        logging.error(translations['error_fetch_play_count_hourofday'].format(user_id=user_id))
         return None
 
     play_count_by_hourofday = data['response']['data']
@@ -151,7 +152,7 @@ def generate_top_10_platforms(user_id, folder, config, translations):
     data = fetch_tautulli_data('get_plays_by_top_10_platforms', {'time_range': config['TIME_RANGE_DAYS'], 'user_id': user_id})
     
     if not data or 'data' not in data['response']:
-        logging.error(f"Failed to fetch top 10 platforms data for user {user_id}")
+        logging.error(translations['error_fetch_top_10_platforms'].format(user_id=user_id))
         return None
 
     top_10_platforms = data['response']['data']
@@ -182,7 +183,7 @@ def generate_play_count_by_month(user_id, folder, config, translations):
     data = fetch_tautulli_data('get_plays_per_month', {'time_range': 12, 'y_axis': 'plays', 'user_id': user_id})
     
     if not data or 'data' not in data['response']:
-        logging.error(f"Failed to fetch play count by month data for user {user_id}")
+        logging.error(translations['error_fetch_play_count_month'].format(user_id=user_id))
         return None
 
     play_count_by_month = data['response']['data']
@@ -191,7 +192,7 @@ def generate_play_count_by_month(user_id, folder, config, translations):
     series = play_count_by_month.get('series', [])
 
     if not months or not series:
-        logging.warning(translations['no_data_available'])
+        logging.warning(translations['graphs_no_monthly_data'])
         return None
 
     movie_data = [0] * len(months)

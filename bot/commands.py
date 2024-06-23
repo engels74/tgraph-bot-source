@@ -28,25 +28,25 @@ class Commands(commands.Cog):
         self.global_cooldown = datetime.now()
 
     async def cog_load(self):
-        log("Commands cog is being loaded...")
+        log(translations['log_commands_cog_loading'])
         for command in self.get_app_commands():
-            log(f"Registering command: {command.name}")
-        log("Commands cog loaded successfully.")
+            log(translations['log_registering_command'].format(command_name=command.name))
+        log(translations['log_commands_cog_loaded'])
 
-    @app_commands.command(name="about", description="Information about the bot")
+    @app_commands.command(name="about", description=translations['about_command_description'])
     async def about(self, interaction: discord.Interaction):
         try:
             embed = discord.Embed(title="TGraph Bot", color=0x3498db)
-            embed.add_field(name="Description", value="TGraph Bot is a Discord bot that generates and posts graphs based on Tautulli data. It provides insights into your media server usage, including daily play counts, play counts by day of the week, play counts by hour of the day, top 10 platforms, top 10 users, and play counts by month.", inline=False)
-            embed.add_field(name="GitHub", value="https://github.com/engels74/tgraph-bot-source", inline=False)
-            embed.add_field(name="License", value="AGPLv3", inline=False)
+            embed.add_field(name="Description", value=translations['about_description'], inline=False)
+            embed.add_field(name=translations['about_github'], value="https://github.com/engels74/tgraph-bot-source", inline=False)
+            embed.add_field(name=translations['about_license'], value="AGPLv3", inline=False)
             await interaction.response.send_message(embed=embed, ephemeral=True)
-            log(f"Command /about executed by {interaction.user.name}#{interaction.user.discriminator}")
+            log(translations['log_command_executed'].format(command="about", user=f"{interaction.user.name}#{interaction.user.discriminator}"))
         except Exception as e:
-            log(f"Error in /about command: {str(e)}")
+            log(translations['log_command_error'].format(command="about", error=str(e)))
             await interaction.response.send_message(translations['error_processing_command'], ephemeral=True)
 
-    @app_commands.command(name="config", description="View or edit bot configuration")
+    @app_commands.command(name="config", description=translations['config_command_description'])
     @app_commands.choices(action=[
         app_commands.Choice(name="View", value="view"),
         app_commands.Choice(name="Edit", value="edit")
@@ -62,7 +62,7 @@ class Commands(commands.Cog):
                     if key in config and key in CONFIG_OPTIONS:
                         await interaction.response.send_message(f"{key}: {config[key]}", ephemeral=True)
                     else:
-                        await interaction.response.send_message(f"Invalid or non-configurable key: {key}", ephemeral=True)
+                        await interaction.response.send_message(translations['config_view_invalid_key'].format(key=key), ephemeral=True)
                 else:
                     embed = discord.Embed(title="Bot Configuration", color=0x3498db)
                     for k, v in config.items():
@@ -71,13 +71,13 @@ class Commands(commands.Cog):
                     await interaction.response.send_message(embed=embed, ephemeral=True)
             elif action == "edit":
                 if key is None:
-                    await interaction.response.send_message("Please specify a key to edit.", ephemeral=True)
+                    await interaction.response.send_message(translations['config_edit_specify_key'], ephemeral=True)
                     return
                 if key not in CONFIG_OPTIONS:
-                    await interaction.response.send_message(f"Invalid or non-configurable key: {key}", ephemeral=True)
+                    await interaction.response.send_message(translations['config_view_invalid_key'].format(key=key), ephemeral=True)
                     return
                 if value is None:
-                    await interaction.response.send_message("Please specify a value to set.", ephemeral=True)
+                    await interaction.response.send_message(translations['config_edit_specify_value'], ephemeral=True)
                     return
 
                 # Convert value to appropriate type
@@ -95,13 +95,13 @@ class Commands(commands.Cog):
 
                 # Send response
                 if key in RESTART_REQUIRED_KEYS:
-                    await interaction.response.send_message(f"Configuration updated. Note: Changes to {key} require a bot restart to take effect.", ephemeral=True)
+                    await interaction.response.send_message(translations['config_updated_restart'].format(key=key), ephemeral=True)
                 else:
-                    await interaction.response.send_message(f"Configuration updated. {key} set to {value}", ephemeral=True)
+                    await interaction.response.send_message(translations['config_updated'].format(key=key, value=value), ephemeral=True)
 
-            log(f"Command /config executed by {interaction.user.name}#{interaction.user.discriminator}")
+            log(translations['log_command_executed'].format(command="config", user=f"{interaction.user.name}#{interaction.user.discriminator}"))
         except Exception as e:
-            log(f"Error in /config command: {str(e)}")
+            log(translations['log_command_error'].format(command="config", error=str(e)))
             await interaction.followup.send(translations['error_processing_command'], ephemeral=True)
 
     @app_commands.command(name="my_stats", description=translations['my_stats_command_description'])
@@ -138,63 +138,65 @@ class Commands(commands.Cog):
                 await interaction.followup.send(translations['my_stats_no_user_found'], ephemeral=True)
                 return
 
-            log(f"Generating user graphs for user ID: {tautulli_user_id}")
+            log(translations['log_generating_user_graphs'].format(user_id=tautulli_user_id))
             graph_files = generate_user_graphs(tautulli_user_id, config, translations)
-            log(f"Generated {len(graph_files)} graph files")
+            log(translations['log_generated_graph_files'].format(count=len(graph_files)))
 
             if not graph_files:
-                log("Failed to generate user graphs")
+                log(translations['my_stats_generate_failed'])
                 await interaction.followup.send(translations['my_stats_generate_failed'], ephemeral=True)
                 return
 
             # Send graphs via PM
-            log("Sending graphs via PM")
+            log(translations['log_sending_graphs_pm'])
             dm_channel = await interaction.user.create_dm()
             for graph_file in graph_files:
-                log(f"Sending graph file: {graph_file}")
+                log(translations['log_sending_graph_file'].format(file=graph_file))
                 await dm_channel.send(file=discord.File(graph_file))
 
             # Update cooldowns
-            log("Updating cooldowns")
+            log(translations['log_updating_cooldowns'])
             self.user_cooldowns[user_id] = datetime.now() + timedelta(minutes=config['MY_STATS_COOLDOWN_MINUTES'])
             self.global_cooldown = datetime.now() + timedelta(seconds=config['MY_STATS_GLOBAL_COOLDOWN_SECONDS'])
 
             await interaction.followup.send(translations['my_stats_success'], ephemeral=True)
-            log(f"Command /my_stats executed successfully by {interaction.user.name}#{interaction.user.discriminator}")
+            log(translations['log_command_executed'].format(command="my_stats", user=f"{interaction.user.name}#{interaction.user.discriminator}"))
 
         except Exception as e:
-            log(f"Error in /my_stats command: {str(e)}")
+            log(translations['log_command_error'].format(command="my_stats", error=str(e)))
             await interaction.followup.send(
                 translations['my_stats_error'],
                 ephemeral=True
             )
 
-    @app_commands.command(name="update_graphs", description="Update and post the graphs")
+    @app_commands.command(name="update_graphs", description=translations['update_graphs_command_description'])
     async def update_graphs(self, interaction: discord.Interaction):
         try:
             await interaction.response.defer(ephemeral=True)
             await update_and_post_graphs(self.bot, translations)
             try:
-                await interaction.followup.send("Graphs updated and posted.", ephemeral=True)
-                log(f"Command /update_graphs executed by {interaction.user.name}#{interaction.user.discriminator}. Graphs updated and posted.")
+                await interaction.followup.send(translations['update_graphs_success'], ephemeral=True)
+                log(translations['log_command_executed'].format(command="update_graphs", user=f"{interaction.user.name}#{interaction.user.discriminator}"))
+                log(translations['log_graphs_updated_posted'])
             except discord.errors.NotFound:
-                log(f"Command /update_graphs executed by {interaction.user.name}#{interaction.user.discriminator}. Interaction message deleted. Graphs updated and posted.")
+                log(translations['log_command_executed'].format(command="update_graphs", user=f"{interaction.user.name}#{interaction.user.discriminator}"))
+                log(translations['log_graphs_updated_posted'])
         except Exception as e:
-            log(f"Error in /update_graphs command: {str(e)}")
+            log(translations['log_command_error'].format(command="update_graphs", error=str(e)))
             try:
-                await interaction.followup.send("An error occurred while processing the command.", ephemeral=True)
+                await interaction.followup.send(translations['update_graphs_error'], ephemeral=True)
             except discord.errors.NotFound:
-                log(f"Error in /update_graphs command: {str(e)}. Interaction message not found.")
+                log(translations['log_command_error'].format(command="update_graphs", error=str(e)))
 
-    @app_commands.command(name="uptime", description="Show the bot's uptime")
+    @app_commands.command(name="uptime", description=translations['uptime_command_description'])
     async def uptime(self, interaction: discord.Interaction):
         try:
             current_time = datetime.now().astimezone()
             uptime = current_time - self.start_time
-            await interaction.response.send_message(f"Bot has been running for {uptime}", ephemeral=True)
-            log(f"Command /uptime executed by {interaction.user.name}#{interaction.user.discriminator}")
+            await interaction.response.send_message(translations['uptime_response'].format(uptime=uptime), ephemeral=True)
+            log(translations['log_command_executed'].format(command="uptime", user=f"{interaction.user.name}#{interaction.user.discriminator}"))
         except Exception as e:
-            log(f"Error in /uptime command: {str(e)}")
+            log(translations['log_command_error'].format(command="uptime", error=str(e)))
             await interaction.followup.send(translations['error_processing_command'], ephemeral=True)
 
     def get_user_id_from_email(self, email):
@@ -218,9 +220,9 @@ class Commands(commands.Cog):
 
             return None
         except Exception as e:
-            log(f"Error fetching user ID from email: {str(e)}")
+            log(translations['error_fetching_user_id'].format(error=str(e)))
             return None
 
 async def setup(bot):
     await bot.add_cog(Commands(bot))
-    log("Commands cog has been set up.")
+    log(translations['log_commands_cog_setup'])
