@@ -1,5 +1,4 @@
 # graphs/generate_graphs_user.py
-
 import os
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
@@ -10,30 +9,36 @@ from graphs.generate_graphs import fetch_tautulli_data, ensure_folder_exists, ce
 import logging
 from i18n import load_translations
 
-def generate_user_graphs(user_id, config, translations):
+# Initialize translations globally
+translations = None
+
+def generate_user_graphs(user_id, config, current_translations):
+    global translations
+    translations = current_translations
+
     graph_files = []
     today = datetime.today().strftime('%Y-%m-%d')
     user_folder = os.path.join(config['IMG_FOLDER'], today, f"user_{user_id}")
     ensure_folder_exists(user_folder)
 
     if config['ENABLE_DAILY_PLAY_COUNT']:
-        graph_files.append(generate_daily_play_count(user_id, user_folder, config, translations))
+        graph_files.append(generate_daily_play_count(user_id, user_folder, config))
     
     if config['ENABLE_PLAY_COUNT_BY_DAYOFWEEK']:
-        graph_files.append(generate_play_count_by_dayofweek(user_id, user_folder, config, translations))
+        graph_files.append(generate_play_count_by_dayofweek(user_id, user_folder, config))
     
     if config['ENABLE_PLAY_COUNT_BY_HOUROFDAY']:
-        graph_files.append(generate_play_count_by_hourofday(user_id, user_folder, config, translations))
+        graph_files.append(generate_play_count_by_hourofday(user_id, user_folder, config))
     
     if config['ENABLE_TOP_10_PLATFORMS']:
-        graph_files.append(generate_top_10_platforms(user_id, user_folder, config, translations))
+        graph_files.append(generate_top_10_platforms(user_id, user_folder, config))
     
     if config['ENABLE_PLAY_COUNT_BY_MONTH']:
-        graph_files.append(generate_play_count_by_month(user_id, user_folder, config, translations))
+        graph_files.append(generate_play_count_by_month(user_id, user_folder, config))
 
     return [file for file in graph_files if file is not None]
 
-def generate_daily_play_count(user_id, folder, config, translations):
+def generate_daily_play_count(user_id, folder, config):
     plt.figure(figsize=(14, 8))
     data = fetch_tautulli_data('get_plays_by_date', {'time_range': config['TIME_RANGE_DAYS'], 'user_id': user_id})
     
@@ -82,7 +87,7 @@ def generate_daily_play_count(user_id, folder, config, translations):
     plt.close()
     return filepath
 
-def generate_play_count_by_dayofweek(user_id, folder, config, translations):
+def generate_play_count_by_dayofweek(user_id, folder, config):
     plt.figure(figsize=(14, 8))
     data = fetch_tautulli_data('get_plays_by_dayofweek', {'time_range': config['TIME_RANGE_DAYS'], 'user_id': user_id})
     
@@ -115,7 +120,7 @@ def generate_play_count_by_dayofweek(user_id, folder, config, translations):
     plt.close()
     return filepath
 
-def generate_play_count_by_hourofday(user_id, folder, config, translations):
+def generate_play_count_by_hourofday(user_id, folder, config):
     plt.figure(figsize=(14, 8))
     data = fetch_tautulli_data('get_plays_by_hourofday', {'time_range': config['TIME_RANGE_DAYS'], 'user_id': user_id})
     
@@ -147,7 +152,7 @@ def generate_play_count_by_hourofday(user_id, folder, config, translations):
     plt.close()
     return filepath
 
-def generate_top_10_platforms(user_id, folder, config, translations):
+def generate_top_10_platforms(user_id, folder, config):
     plt.figure(figsize=(14, 8))
     data = fetch_tautulli_data('get_plays_by_top_10_platforms', {'time_range': config['TIME_RANGE_DAYS'], 'user_id': user_id})
     
@@ -178,7 +183,7 @@ def generate_top_10_platforms(user_id, folder, config, translations):
     plt.close()
     return filepath
 
-def generate_play_count_by_month(user_id, folder, config, translations):
+def generate_play_count_by_month(user_id, folder, config):
     plt.figure(figsize=(14, 8))
     data = fetch_tautulli_data('get_plays_per_month', {'time_range': 12, 'y_axis': 'plays', 'user_id': user_id})
     

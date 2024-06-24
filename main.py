@@ -78,12 +78,22 @@ async def main():
             await update_and_post_graphs(bot, translations)
             log(translations['log_graphs_updated_posted_startup'])
         except Exception as e:
-            log(translations['log_error_during_startup'].format(error=str(e)), level=logging.ERROR)
+            log(translations['log_error_during_startup'].format(error=str(e)))
+            raise
 
     try:
         await bot.start(config['DISCORD_TOKEN'])
     except Exception as e:
-        log(translations['log_error_starting_bot'].format(error=str(e)), level=logging.ERROR)
+        log(translations['log_error_starting_bot'].format(error=str(e)))
+
+def update_translations(new_translations):
+    global translations
+    translations = new_translations
+    # Update translations in other modules
+    from graphs import generate_graphs
+    generate_graphs.translations = new_translations
+    from graphs import generate_graphs_user
+    generate_graphs_user.translations = new_translations
 
 if __name__ == "__main__":
     asyncio.run(main())
