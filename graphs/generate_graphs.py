@@ -15,12 +15,8 @@ from i18n import load_translations
 # Load configuration
 config = load_config(CONFIG_PATH)
 
-# Load translations
-try:
-    translations = load_translations(config['LANGUAGE'])
-except Exception as e:
-    logging.error(f"Error loading translations: {str(e)}. Falling back to English.")
-    translations = load_translations('en')
+# Initialize translations globally
+translations = load_translations(config['LANGUAGE'])
 
 # Helper function to fetch data from Tautulli
 def fetch_tautulli_data(cmd, params={}):
@@ -61,8 +57,10 @@ def censor_username(username):
     return username[:half_length] + '*' * (length - half_length)
 
 # Generate graphs
-def generate_graphs(data, folder, translations):
-    global config
+def generate_graphs(data, folder, current_translations):
+    global config, translations
+    translations = current_translations
+    config = load_config(CONFIG_PATH, reload=True)
     
     if config['ENABLE_DAILY_PLAY_COUNT']:
         plt.figure(figsize=(14, 8))
@@ -258,11 +256,13 @@ def save_and_post_graph(folder, filename):
     filepath = os.path.join(folder, filename)
     plt.savefig(filepath)
     plt.clf()  # Clear the current figure
+    logging.info(translations['log_posted_message'].format(filename=filename))
 
 # Ensure the image folder exists
 def ensure_folder_exists(folder):
     if not os.path.exists(folder):
         os.makedirs(folder)
+    logging.info(translations['log_ensured_folder_exists'])
 
 # Cleanup old folders
 def cleanup_old_folders(base_folder, keep_days):
@@ -270,11 +270,12 @@ def cleanup_old_folders(base_folder, keep_days):
     folders.sort(reverse=True)
     for folder in folders[keep_days:]:
         shutil.rmtree(os.path.join(base_folder, folder))
+    logging.info(translations['log_cleaned_up_old_folders'])
 
 # Function to update and post graphs
-async def update_and_post_graphs(bot, translations):
-    # Reload configuration
-    global config
+async def update_and_post_graphs(bot, current_translations):
+    global config, translations
+    translations = current_translations
     config = load_config(CONFIG_PATH, reload=True)
     
     channel = bot.get_channel(config['CHANNEL_ID'])
@@ -293,7 +294,7 @@ async def update_and_post_graphs(bot, translations):
         await post_graphs(channel, translations)
         cleanup_old_folders(config['IMG_FOLDER'], config['KEEP_DAYS'])
     except Exception as e:
-        logging.error(f"Error in update_and_post_graphs: {str(e)}")
+        logging.error(translations['error_update_post_graphs'].format(error=str(e)))
         raise
 
 # Function to post graphs
