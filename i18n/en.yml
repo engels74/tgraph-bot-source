@@ -38,7 +38,7 @@ day_5: "Saturday"
 day_6: "Sunday"
 
 # Embed footer
-embed_footer: "Posted on {now}"
+embed_footer: "Posted on {now} - Next: {next_update}"
 
 # Graph generation messages
 graphs_no_data_available: "No data available for play_count_by_month"
@@ -109,10 +109,14 @@ config_edit_specify_key: "Please specify a key to edit."
 config_edit_specify_value: "Please specify a value to set."
 config_updated_restart: "Configuration updated. Note: Changes to {key} require a bot restart to take effect."
 config_updated: "Configuration updated. {key} set to {value}"
-update_graphs_success: "Graphs updated and posted."
+update_graphs_success: "Graphs updated and posted. Next update: {next_update}"
 update_graphs_error: "An error occurred while processing the command."
 uptime_response: "Bot has been running for {uptime}"
 
 # Rate limiting messages
 rate_limit_global: "This command is on global cooldown. Please try again {time}."
 rate_limit_user: "You can use this command again {time}."
+
+# Update messages
+log_auto_update_started: "Automatic graph update started."
+log_auto_update_completed: "Automatic graph update completed."

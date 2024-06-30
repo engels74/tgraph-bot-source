@@ -291,14 +291,14 @@ async def update_and_post_graphs(bot, current_translations):
         data = fetch_all_data()
         generate_graphs(data, dated_folder, translations)
 
-        await post_graphs(channel, bot.img_folder, translations)
+        await post_graphs(channel, bot.img_folder, translations, bot.update_tracker)
         cleanup_old_folders(bot.img_folder, config['KEEP_DAYS'])
     except Exception as e:
         logging.error(translations['error_update_post_graphs'].format(error=str(e)))
         raise
 
 # Function to post graphs
-async def post_graphs(channel, img_folder, translations):
+async def post_graphs(channel, img_folder, translations, update_tracker):
     now = datetime.now().astimezone().strftime('%Y-%m-%d at %H:%M:%S')
     today = datetime.today().strftime('%Y-%m-%d')
     descriptions = {}
@@ -339,11 +339,12 @@ async def post_graphs(channel, img_folder, translations):
             'description': translations['play_count_by_month_description']
         }
 
+    next_update = f"<t:{update_tracker.get_next_update_timestamp()}:R>"
     for filename, details in descriptions.items():
         file_path = os.path.join(img_folder, today, filename)
         embed = discord.Embed(title=details['title'], description=details['description'], color=0x3498db)
         embed.set_image(url=f"attachment://{filename}")
-        embed.set_footer(text=translations['embed_footer'].format(now=now))
+        embed.set_footer(text=translations['embed_footer'].format(now=now, next_update=next_update))
         with open(file_path, 'rb') as f:
             await channel.send(file=discord.File(f, filename), embed=embed)
 

@@ -38,7 +38,7 @@ day_5: "Lørdag"
 day_6: "Søndag"
 
 # Indlejring af footer
-embed_footer: "Indsendt den {now}"
+embed_footer: "Indsendt den {now} - Næste: {next_update}"
 
 # Meddelelser om grafgenerering
 graphs_no_data_available: "Ingen data tilgængelige for play_count_by_month"
@@ -109,10 +109,14 @@ config_edit_specify_key: "Angiv venligst en nøgle, der skal redigeres."
 config_edit_specify_value: "Angiv en værdi, der skal indstilles."
 config_updated_restart: "Konfiguration opdateret. Bemærk: Ændringer i {key} kræver en genstart af botten for at træde i kraft."
 config_updated: "Konfiguration opdateret. {key} sat til {value}"
-update_graphs_success: "Grafer opdateret og sendt."
+update_graphs_success: "Grafer opdateret og sendt. Næste opdatering: {next_update}"
 update_graphs_error: "Der opstod en fejl under behandlingen af kommandoen."
 uptime_response: "Bot har kørt i {uptime}"
 
 # Beskeder om hastighedsbegrænsning
 rate_limit_global: "Denne kommando er på global nedkøling. Prøv venligst igen {time}."
 rate_limit_user: "Du kan bruge denne kommando igen {time}."
+
+# Opdaterings-beskeder
+log_auto_update_started: "Automatisk grafopdatering startet."
+log_auto_update_completed: "Automatisk grafopdatering afsluttet."

@@ -184,8 +184,10 @@ class Commands(commands.Cog):
         try:
             await interaction.response.defer(ephemeral=True)
             await update_and_post_graphs(self.bot, self.translations)
+            self.bot.update_tracker.update()  # Update the tracker after manual update
             try:
-                await interaction.followup.send(self.translations['update_graphs_success'], ephemeral=True)
+                next_update = f"<t:{self.bot.update_tracker.get_next_update_timestamp()}:R>"
+                await interaction.followup.send(self.translations['update_graphs_success'].format(next_update=next_update), ephemeral=True)
                 log(self.translations['log_command_executed'].format(command="update_graphs", user=f"{interaction.user.name}#{interaction.user.discriminator}"))
                 log(self.translations['log_graphs_updated_posted'])
             except discord.errors.NotFound:

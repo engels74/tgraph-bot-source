@@ -11,6 +11,7 @@ from i18n import load_translations
 from datetime import datetime
 from graphs.generate_graphs import update_and_post_graphs
 from graphs.generate_graphs_user import generate_user_graphs
+from bot.update_tracker import create_update_tracker
 
 # Get the CONFIG_DIR from environment variable, default to '/config' if not set
 CONFIG_DIR = os.environ.get('CONFIG_DIR', '/config')
@@ -60,6 +61,9 @@ def log(message, level=logging.INFO):
 # Log that folders have been created
 log(translations['log_ensured_folders_exist'])
 
+# Create UpdateTracker instance
+update_tracker = create_update_tracker(args.data_folder, config['UPDATE_DAYS'])
+
 async def main():
     # Define intents
     intents = discord.Intents.default()
@@ -69,6 +73,7 @@ async def main():
     bot = commands.Bot(command_prefix="!", intents=intents)
     bot.data_folder = args.data_folder
     bot.img_folder = img_folder
+    bot.update_tracker = update_tracker
 
     @bot.event
     async def on_ready():
@@ -86,7 +91,11 @@ async def main():
             # Update and post graphs immediately after logging in
             log(translations['log_updating_posting_graphs_startup'])
             await update_and_post_graphs(bot, translations)
+            bot.update_tracker.reset()  # Reset the update tracker after initial update
             log(translations['log_graphs_updated_posted_startup'])
+
+            # Schedule regular updates
+            bot.loop.create_task(schedule_updates(bot))
         except Exception as e:
             log(translations['log_error_during_startup'].format(error=str(e)))
             raise
@@ -95,6 +104,15 @@ async def main():
         await bot.start(config['DISCORD_TOKEN'])
     except Exception as e:
         log(translations['log_error_starting_bot'].format(error=str(e)))
+
+async def schedule_updates(bot):
+    while True:
+        if bot.update_tracker.is_update_due():
+            log(translations['log_auto_update_started'])
+            await update_and_post_graphs(bot, translations)
+            bot.update_tracker.update()
+            log(translations['log_auto_update_completed'])
+        await asyncio.sleep(3600)  # Check every hour
 
 def update_translations(new_translations):
     global translations
