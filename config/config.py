@@ -24,7 +24,7 @@ CONFIGURABLE_OPTIONS = [
 # Global variable to store the configuration
 config = None
 
-def load_config(config_path=CONFIG_PATH, img_folder='img', reload=False):
+def load_config(config_path=CONFIG_PATH, reload=False):
     global config
     if reload or config is None:
         if os.path.exists(config_path):
@@ -62,13 +62,6 @@ def load_config(config_path=CONFIG_PATH, img_folder='img', reload=False):
             'MY_STATS_GLOBAL_COOLDOWN_SECONDS': int(get_config('MY_STATS_GLOBAL_COOLDOWN_SECONDS', 60))
         }
 
-        # Handle IMG_FOLDER
-        img_folder_config = get_config('IMG_FOLDER', img_folder)
-        if os.path.isabs(img_folder_config):
-            config['IMG_FOLDER'] = img_folder_config
-        else:
-            config['IMG_FOLDER'] = os.path.abspath(os.path.join(os.path.dirname(config_path), img_folder_config))
-
     return config
 
 def save_config(config, config_path=CONFIG_PATH):
@@ -105,7 +98,7 @@ def update_config(key, value):
     return config
 
 # List of keys that require a bot restart when changed
-RESTART_REQUIRED_KEYS = ['TAUTULLI_API_KEY', 'TAUTULLI_URL', 'DISCORD_TOKEN', 'IMG_FOLDER']
+RESTART_REQUIRED_KEYS = ['TAUTULLI_API_KEY', 'TAUTULLI_URL', 'DISCORD_TOKEN']
 
 # Function to get configurable options
 def get_configurable_options():

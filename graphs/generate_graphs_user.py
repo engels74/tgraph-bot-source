@@ -12,13 +12,13 @@ from i18n import load_translations
 # Initialize translations globally
 translations = None
 
-def generate_user_graphs(user_id, config, current_translations):
+def generate_user_graphs(user_id, img_folder, config, current_translations):
     global translations
     translations = current_translations
 
     graph_files = []
     today = datetime.today().strftime('%Y-%m-%d')
-    user_folder = os.path.join(config['IMG_FOLDER'], today, f"user_{user_id}")
+    user_folder = os.path.join(img_folder, today, f"user_{user_id}")
     ensure_folder_exists(user_folder)
 
     if config['ENABLE_DAILY_PLAY_COUNT']:

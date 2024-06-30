@@ -149,7 +149,7 @@ class Commands(commands.Cog):
                 return
 
             log(self.translations['log_generating_user_graphs'].format(user_id=tautulli_user_id))
-            graph_files = generate_user_graphs(tautulli_user_id, config, self.translations)
+            graph_files = generate_user_graphs(tautulli_user_id, self.bot.img_folder, config, self.translations)
             log(self.translations['log_generated_graph_files'].format(count=len(graph_files)))
 
             if not graph_files:
