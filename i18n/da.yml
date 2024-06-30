@@ -38,7 +38,8 @@ day_5: "Lørdag"
 day_6: "Søndag"
 
 # Indlejring af footer
-embed_footer: "Indsendt den {now} - Næste: {next_update}"
+embed_footer: "Indsendt den {nu}"
+next_update: "Næste opdatering: {next_update}"
 
 # Meddelelser om grafgenerering
 graphs_no_data_available: "Ingen data tilgængelige for play_count_by_month"
@@ -70,7 +71,7 @@ log_generated_graph_files: "Genererede {count} graffiler"
 log_sending_graphs_pm: "Afsendelse af grafer via PM"
 log_sending_graph_file: "Afsendelse af graffil: {file}"
 log_updating_cooldowns: "Opdatering af nedkølingstid"
-log_graphs_updated_posted: "Grafer opdateret og postet."
+log_graphs_updated_posted: "Grafer opdateret og postet. Næste opdatering: {next_update}"
 log_commands_cog_loading: "Kommandoer er ved at blive indlæst ..."
 log_registering_command: "Registrerer kommando: {command_name}"
 log_commands_cog_loaded: "Kommandokog indlæst med succes."
@@ -119,4 +120,6 @@ rate_limit_user: "Du kan bruge denne kommando igen {time}."
 
 # Opdaterings-beskeder
 log_auto_update_started: "Automatisk grafopdatering startet."
-log_auto_update_completed: "Automatisk grafopdatering afsluttet."
+log_auto_update_completed: "Automatisk grafopdatering gennemført. Næste opdatering: {next_update}"
+log_manual_update_started: "Manuel grafopdatering startet."
+log_manual_update_completed: "Manuel grafopdatering afsluttet."

@@ -183,22 +183,17 @@ class Commands(commands.Cog):
     async def update_graphs(self, interaction: discord.Interaction):
         try:
             await interaction.response.defer(ephemeral=True)
+            log(self.translations['log_manual_update_started'])
             await update_and_post_graphs(self.bot, self.translations)
-            self.bot.update_tracker.update()  # Update the tracker after manual update
-            try:
-                next_update = f"<t:{self.bot.update_tracker.get_next_update_timestamp()}:R>"
-                await interaction.followup.send(self.translations['update_graphs_success'].format(next_update=next_update), ephemeral=True)
-                log(self.translations['log_command_executed'].format(command="update_graphs", user=f"{interaction.user.name}#{interaction.user.discriminator}"))
-                log(self.translations['log_graphs_updated_posted'])
-            except discord.errors.NotFound:
-                log(self.translations['log_command_executed'].format(command="update_graphs", user=f"{interaction.user.name}#{interaction.user.discriminator}"))
-                log(self.translations['log_graphs_updated_posted'])
+            self.bot.update_tracker.update()
+            next_update = f"<t:{self.bot.update_tracker.get_next_update_timestamp()}:R>"
+            log(self.translations['log_manual_update_completed'])
+            await interaction.followup.send(self.translations['update_graphs_success'].format(next_update=next_update), ephemeral=True)
+            log(self.translations['log_command_executed'].format(command="update_graphs", user=f"{interaction.user.name}#{interaction.user.discriminator}"))
+            log(self.translations['log_graphs_updated_posted'].format(next_update=next_update))
         except Exception as e:
             log(self.translations['log_command_error'].format(command="update_graphs", error=str(e)))
-            try:
-                await interaction.followup.send(self.translations['update_graphs_error'], ephemeral=True)
-            except discord.errors.NotFound:
-                log(self.translations['log_command_error'].format(command="update_graphs", error=str(e)))
+            await interaction.followup.send(self.translations['update_graphs_error'], ephemeral=True)
 
     @app_commands.command(name="uptime", description=translations['uptime_command_description'])
     async def uptime(self, interaction: discord.Interaction):

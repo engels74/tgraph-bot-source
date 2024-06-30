@@ -301,6 +301,7 @@ async def update_and_post_graphs(bot, current_translations):
 async def post_graphs(channel, img_folder, translations, update_tracker):
     now = datetime.now().astimezone().strftime('%Y-%m-%d at %H:%M:%S')
     today = datetime.today().strftime('%Y-%m-%d')
+    next_update = f"<t:{update_tracker.get_next_update_timestamp()}:R>"
     descriptions = {}
 
     if config['ENABLE_DAILY_PLAY_COUNT']:
@@ -339,12 +340,15 @@ async def post_graphs(channel, img_folder, translations, update_tracker):
             'description': translations['play_count_by_month_description']
         }
 
-    next_update = f"<t:{update_tracker.get_next_update_timestamp()}:R>"
     for filename, details in descriptions.items():
         file_path = os.path.join(img_folder, today, filename)
-        embed = discord.Embed(title=details['title'], description=details['description'], color=0x3498db)
+        embed = discord.Embed(
+            title=details['title'],
+            description=f"{details['description']}\n\n{translations['next_update'].format(next_update=next_update)}",
+            color=0x3498db
+        )
         embed.set_image(url=f"attachment://{filename}")
-        embed.set_footer(text=translations['embed_footer'].format(now=now, next_update=next_update))
+        embed.set_footer(text=translations['embed_footer'].format(now=now))
         with open(file_path, 'rb') as f:
             await channel.send(file=discord.File(f, filename), embed=embed)
 
