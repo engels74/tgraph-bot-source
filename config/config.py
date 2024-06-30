@@ -4,9 +4,12 @@ import yaml
 import argparse
 from datetime import datetime, timezone
 
+# Get the CONFIG_DIR from environment variable, default to current directory if not set
+CONFIG_DIR = os.environ.get('CONFIG_DIR', os.getcwd())
+
 # Get the config file path from command-line arguments
 parser = argparse.ArgumentParser()
-parser.add_argument('--config-file', type=str, default='config/config.yml', help='Path to the configuration file')
+parser.add_argument('--config-file', type=str, default=os.path.join(CONFIG_DIR, 'config.yml'), help='Path to the configuration file')
 args, _ = parser.parse_known_args()
 
 CONFIG_PATH = args.config_file
