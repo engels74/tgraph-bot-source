@@ -19,7 +19,7 @@ CONFIG_DIR = os.environ.get('CONFIG_DIR', '/config')
 parser = argparse.ArgumentParser(description='TGraph Bot')
 parser.add_argument('--config-file', type=str, default=os.path.join(CONFIG_DIR, 'config.yml'), help='Path to the configuration file')
 parser.add_argument('--log-file', type=str, default=os.path.join(CONFIG_DIR, 'logs', 'tgraphbot.log'), help='Path to the log file')
-parser.add_argument('--img-folder', type=str, default=os.path.join(CONFIG_DIR, 'data', 'img'), help='Path to the image folder')
+parser.add_argument('--data-folder', type=str, default=os.path.join(CONFIG_DIR, 'data'), help='Path to the data folder')
 args = parser.parse_args()
 
 # Load configuration
@@ -29,12 +29,16 @@ config = load_config(args.config_file)
 translations = load_translations(config['LANGUAGE'])
 
 # Set up logging
-def ensure_folders_exist(log_file, img_folder):
-    for folder in [os.path.dirname(log_file), img_folder]:
+def ensure_folders_exist(log_file, data_folder, img_folder):
+    for folder in [os.path.dirname(log_file), data_folder, img_folder]:
         if not os.path.exists(folder):
             os.makedirs(folder)
+    logging.info(translations['log_ensured_folders_exist'])
 
-ensure_folders_exist(args.log_file, args.img_folder)
+# Set up img_folder
+img_folder = os.path.join(args.data_folder, 'img')
+
+ensure_folders_exist(args.log_file, args.data_folder, img_folder)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -59,7 +63,8 @@ async def main():
     intents.guilds = True
 
     bot = commands.Bot(command_prefix="!", intents=intents)
-    bot.img_folder = args.img_folder  # Make img_folder accessible to the bot instance
+    bot.data_folder = args.data_folder
+    bot.img_folder = img_folder
 
     @bot.event
     async def on_ready():
