@@ -38,7 +38,7 @@ day_5: "Lørdag"
 day_6: "Søndag"
 
 # Indlejring af footer
-embed_footer: "Indsendt den {nu}"
+embed_footer: "Indsendt den {now}"
 next_update: "Næste opdatering: {next_update}"
 
 # Meddelelser om grafgenerering
