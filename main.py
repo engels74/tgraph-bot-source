@@ -28,18 +28,19 @@ config = load_config(args.config_file)
 # Load translations
 translations = load_translations(config['LANGUAGE'])
 
-# Set up logging
-def ensure_folders_exist(log_file, data_folder, img_folder):
-    for folder in [os.path.dirname(log_file), data_folder, img_folder]:
-        if not os.path.exists(folder):
-            os.makedirs(folder)
-    logging.info(translations['log_ensured_folders_exist'])
-
 # Set up img_folder
 img_folder = os.path.join(args.data_folder, 'img')
 
-ensure_folders_exist(args.log_file, args.data_folder, img_folder)
+# Function to create necessary folders
+def create_folders(log_file, data_folder, img_folder):
+    for folder in [os.path.dirname(log_file), data_folder, img_folder]:
+        if not os.path.exists(folder):
+            os.makedirs(folder)
 
+# Create necessary folders
+create_folders(args.log_file, args.data_folder, img_folder)
+
+# Set up logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -55,6 +56,9 @@ logger = logging.getLogger(__name__)
 def log(message, level=logging.INFO):
     timestamp = datetime.now().astimezone().strftime('%Y-%m-%d %H:%M:%S %Z')
     logger.log(level, message)
+
+# Log that folders have been created
+log(translations['log_ensured_folders_exist'])
 
 async def main():
     # Define intents
