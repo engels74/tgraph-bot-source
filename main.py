@@ -6,36 +6,41 @@ import argparse
 import asyncio
 import discord
 from discord.ext import commands
-from config.config import load_config, CONFIG_PATH
+from config.config import load_config
 from i18n import load_translations
 from datetime import datetime
 from graphs.generate_graphs import update_and_post_graphs
 from graphs.generate_graphs_user import generate_user_graphs
 
+# Get the CONFIG_DIR from environment variable, default to '/config' if not set
+CONFIG_DIR = os.environ.get('CONFIG_DIR', '/config')
+
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description='TGraph Bot')
-parser.add_argument('--config-file', type=str, default='config/config.yml', help='Path to the configuration file')
-parser.add_argument('--log-file', type=str, default='logs/tgraphbot.log', help='Path to the log file')
-parser.add_argument('--img-folder', type=str, default='img', help='Path to the image folder')
+parser.add_argument('--config-file', type=str, default=os.path.join(CONFIG_DIR, 'config.yml'), help='Path to the configuration file')
+parser.add_argument('--log-file', type=str, default=os.path.join(CONFIG_DIR, 'logs', 'tgraphbot.log'), help='Path to the log file')
+parser.add_argument('--data-folder', type=str, default=os.path.join(CONFIG_DIR, 'data'), help='Path to the data folder')
 args = parser.parse_args()
 
 # Load configuration
-config = load_config(args.config_file, args.img_folder)
+config = load_config(args.config_file)
 
 # Load translations
 translations = load_translations(config['LANGUAGE'])
 
+# Set up img_folder
+img_folder = os.path.join(args.data_folder, 'img')
+
+# Function to create necessary folders
+def create_folders(log_file, data_folder, img_folder):
+    for folder in [os.path.dirname(log_file), data_folder, img_folder]:
+        if not os.path.exists(folder):
+            os.makedirs(folder)
+
+# Create necessary folders
+create_folders(args.log_file, args.data_folder, img_folder)
+
 # Set up logging
-def ensure_folders_exist(log_file, img_folder):
-    log_directory = os.path.dirname(log_file)
-    if not os.path.exists(log_directory):
-        os.makedirs(log_directory)
-        
-    if not os.path.exists(img_folder):
-        os.makedirs(img_folder)
-
-ensure_folders_exist(args.log_file, args.img_folder)
-
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -52,6 +57,9 @@ def log(message, level=logging.INFO):
     timestamp = datetime.now().astimezone().strftime('%Y-%m-%d %H:%M:%S %Z')
     logger.log(level, message)
 
+# Log that folders have been created
+log(translations['log_ensured_folders_exist'])
+
 async def main():
     # Define intents
     intents = discord.Intents.default()
@@ -59,6 +67,8 @@ async def main():
     intents.guilds = True
 
     bot = commands.Bot(command_prefix="!", intents=intents)
+    bot.data_folder = args.data_folder
+    bot.img_folder = img_folder
 
     @bot.event
     async def on_ready():
