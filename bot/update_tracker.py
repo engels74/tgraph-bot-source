@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 class UpdateTracker:
     def __init__(self, data_folder, config):
         self.data_folder = data_folder
-        self.config = config
+        self.config = config if isinstance(config, dict) else {'UPDATE_DAYS': config}
         self.tracker_file = os.path.join(data_folder, 'update_tracker.json')
         self.last_update = None
         self.next_update = None
@@ -44,7 +44,10 @@ class UpdateTracker:
         return datetime.now() >= self.next_update
 
     def update_config(self, new_config):
-        self.config = new_config
+        if isinstance(new_config, dict):
+            self.config.update(new_config)
+        else:
+            self.config['UPDATE_DAYS'] = new_config
         self.reset()
 
 def create_update_tracker(data_folder, config):
