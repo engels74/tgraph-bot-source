@@ -4,9 +4,9 @@ import json
 from datetime import datetime, timedelta
 
 class UpdateTracker:
-    def __init__(self, data_folder, update_days):
+    def __init__(self, data_folder, config):
         self.data_folder = data_folder
-        self.update_days = update_days
+        self.config = config
         self.tracker_file = os.path.join(data_folder, 'update_tracker.json')
         self.last_update = None
         self.next_update = None
@@ -31,7 +31,7 @@ class UpdateTracker:
 
     def reset(self):
         self.last_update = datetime.now()
-        self.next_update = self.last_update + timedelta(days=self.update_days)
+        self.next_update = self.last_update + timedelta(days=self.config['UPDATE_DAYS'])
         self.save_tracker()
 
     def update(self):
@@ -43,5 +43,9 @@ class UpdateTracker:
     def is_update_due(self):
         return datetime.now() >= self.next_update
 
-def create_update_tracker(data_folder, update_days):
-    return UpdateTracker(data_folder, update_days)
+    def update_config(self, new_config):
+        self.config = new_config
+        self.reset()
+
+def create_update_tracker(data_folder, config):
+    return UpdateTracker(data_folder, config)

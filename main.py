@@ -73,7 +73,7 @@ async def main():
     bot = commands.Bot(command_prefix="!", intents=intents)
     bot.data_folder = args.data_folder
     bot.img_folder = img_folder
-    bot.update_tracker = update_tracker
+    bot.update_tracker = create_update_tracker(args.data_folder, config)
 
     @bot.event
     async def on_ready():
