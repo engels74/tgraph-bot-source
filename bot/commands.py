@@ -90,10 +90,6 @@ class Commands(commands.Cog):
                 # Update configuration
                 new_config = update_config(key, value)
                 
-                # Update the update tracker if UPDATE_DAYS has changed
-                if key == 'UPDATE_DAYS':
-                    self.bot.update_tracker.update_config(new_config)
-
                 # Reload translations if language changed
                 if key == 'LANGUAGE':
                     self.translations = load_translations(value)

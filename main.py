@@ -62,7 +62,7 @@ def log(message, level=logging.INFO):
 log(translations['log_ensured_folders_exist'])
 
 # Create UpdateTracker instance
-update_tracker = create_update_tracker(args.data_folder, config)
+update_tracker = create_update_tracker(args.data_folder, config['UPDATE_DAYS'])
 
 async def main():
     # Define intents
@@ -73,7 +73,7 @@ async def main():
     bot = commands.Bot(command_prefix="!", intents=intents)
     bot.data_folder = args.data_folder
     bot.img_folder = img_folder
-    bot.update_tracker = create_update_tracker(args.data_folder, config)
+    bot.update_tracker = update_tracker
 
     @bot.event
     async def on_ready():
