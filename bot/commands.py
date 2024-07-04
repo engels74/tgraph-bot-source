@@ -91,7 +91,10 @@ class Commands(commands.Cog):
                 new_config = update_config(key, value)
                 
                 # Update the bot's update_tracker with the new config
-                self.bot.update_tracker.update_config(new_config)
+                try:
+                    self.bot.update_tracker.update_config(new_config)
+                except Exception as e:
+                    log(f"Error updating tracker config: {str(e)}")
                 
                 # Reload translations if language changed
                 if key == 'LANGUAGE':
@@ -103,7 +106,11 @@ class Commands(commands.Cog):
                 if key in RESTART_REQUIRED_KEYS:
                     await interaction.response.send_message(self.translations['config_updated_restart'].format(key=key), ephemeral=True)
                 else:
-                    next_update = f"<t:{self.bot.update_tracker.get_next_update_timestamp()}:R>"
+                    try:
+                        next_update = f"<t:{self.bot.update_tracker.get_next_update_timestamp()}:R>"
+                    except Exception as e:
+                        log(f"Error getting next update timestamp: {str(e)}")
+                        next_update = "Unknown"
                     await interaction.response.send_message(
                         self.translations['config_updated'].format(key=key, value=value) + 
                         f"\n{self.translations['next_update'].format(next_update=next_update)}",
@@ -195,14 +202,21 @@ class Commands(commands.Cog):
             
             # Reload config and update the tracker
             config = load_config(CONFIG_PATH, reload=True)
-            self.bot.update_tracker.update_config(config)
+            try:
+                self.bot.update_tracker.update_config(config)
+            except Exception as e:
+                log(f"Error updating tracker config: {str(e)}")
             
             # Perform the graph update
             await update_and_post_graphs(self.bot, self.translations)
             
             # Update the tracker and get the next update time
             self.bot.update_tracker.update()
-            next_update = f"<t:{self.bot.update_tracker.get_next_update_timestamp()}:R>"
+            try:
+                next_update = f"<t:{self.bot.update_tracker.get_next_update_timestamp()}:R>"
+            except Exception as e:
+                log(f"Error getting next update timestamp: {str(e)}")
+                next_update = "Unknown"
             
             log(self.translations['log_manual_update_completed'])
             await interaction.followup.send(self.translations['update_graphs_success'].format(next_update=next_update), ephemeral=True)
