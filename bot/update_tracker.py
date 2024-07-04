@@ -22,7 +22,7 @@ class UpdateTracker:
         if os.path.exists(self.tracker_file):
             with open(self.tracker_file, 'r') as f:
                 data = json.load(f)
-                self.last_update = datetime.fromisoformat(data['last_update'])
+                self.last_update = datetime.fromisoformat(data['last_update']).replace(microsecond=0)
                 self.next_update = self.calculate_next_update(self.last_update)
             logging.info(self.translations['tracker_file_loaded'].format(last_update=self.last_update, next_update=self.next_update))
         else:
@@ -30,7 +30,7 @@ class UpdateTracker:
             logging.info(self.translations['no_tracker_file_found'])
 
     def reset(self):
-        self.last_update = datetime.now()
+        self.last_update = datetime.now().replace(microsecond=0)
         self.next_update = self.calculate_next_update(self.last_update)
         self.save_tracker()
         logging.info(self.translations['tracker_reset'].format(last_update=self.last_update, next_update=self.next_update))
@@ -48,7 +48,7 @@ class UpdateTracker:
 
     def calculate_next_update(self, from_date):
         next_update = from_date + timedelta(days=self.get_update_days())
-        return next_update
+        return next_update.replace(microsecond=0)
 
     def get_next_update_readable(self):
         return self.next_update.strftime('%Y-%m-%d %H:%M:%S')
@@ -57,7 +57,7 @@ class UpdateTracker:
         return f"<t:{int(self.next_update.timestamp())}:R>"
 
     def is_update_due(self):
-        now = datetime.now()
+        now = datetime.now().replace(microsecond=0)
         is_due = now >= self.next_update
         logging.info(self.translations['update_due_check'].format(now=now, next_update=self.next_update, is_due=is_due))
         return is_due
