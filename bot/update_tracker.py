@@ -39,10 +39,10 @@ class UpdateTracker:
         self.reset()
 
     def update_config(self, new_config):
-        old_update_days = self.get_update_days()
+        old_value = self.get_update_days()
         self.config = new_config
-        new_update_days = self.get_update_days()
-        logging.info(self.translations['config_updated'].format(old_days=old_update_days, new_days=new_update_days))
+        new_value = self.get_update_days()
+        logging.info(self.translations['config_updated'].format(key='UPDATE_DAYS', old_value=old_value, new_value=new_value))
         self.next_update = self.calculate_next_update(self.last_update)
         self.save_tracker()
 

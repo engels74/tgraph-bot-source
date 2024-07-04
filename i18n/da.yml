@@ -125,6 +125,5 @@ update_tracker_initialized: "UpdateTracker initialiseret med UPDATE_DAYS: {updat
 tracker_file_loaded: "Indlæst tracker-fil. Sidste opdatering: {last_update}, Næste opdatering: {next_update}"
 no_tracker_file_found: "Ingen sporingsfil fundet. Nulstil til nuværende tidspunkt."
 tracker_reset: "Nulstil tracker. Sidste opdatering: {last_update}, Næste opdatering: {next_update}"
-config_updated: "Konfig opdateret. UPDATE_DAYS ændret fra {old_days} til {new_days}"
-update_due_check: "Tjekker, om opdateringen er forfalden. Nu: {now}, Næste opdatering: {next_update}, Forfalder: {is_due}"
+update_due_check: "Tjekker, om opdateringen er forfalden. Nu: {now}, Next update: {next_update}, Forfalder: {is_due}"
 tracker_file_saved: "Gemt tracker-fil. Sidste opdatering: {last_update}, Næste opdatering: {next_update}"
