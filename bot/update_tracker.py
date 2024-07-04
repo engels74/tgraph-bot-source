@@ -12,7 +12,10 @@ class UpdateTracker:
         self.last_update = None
         self.next_update = None
         self.load_tracker()
-        logging.info(f"UpdateTracker initialized with UPDATE_DAYS: {self.config['UPDATE_DAYS']}")
+        logging.info(f"UpdateTracker initialized with UPDATE_DAYS: {self.get_update_days()}")
+
+    def get_update_days(self):
+        return self.config.get('UPDATE_DAYS', 7)  # Default to 7 if not found
 
     def load_tracker(self):
         if os.path.exists(self.tracker_file):
@@ -36,17 +39,17 @@ class UpdateTracker:
         self.reset()
 
     def update_config(self, new_config):
-        old_update_days = self.config['UPDATE_DAYS']
+        old_update_days = self.get_update_days()
         self.config = new_config
-        new_update_days = self.config['UPDATE_DAYS']
+        new_update_days = self.get_update_days()
         logging.info(f"Config updated. UPDATE_DAYS changed from {old_update_days} to {new_update_days}")
         self.next_update = self.calculate_next_update(self.last_update)
         self.save_tracker()
         logging.info(f"Next update recalculated: {self.next_update}")
 
     def calculate_next_update(self, from_date):
-        next_update = from_date + timedelta(days=self.config['UPDATE_DAYS'])
-        logging.info(f"Calculated next update: {next_update} (UPDATE_DAYS: {self.config['UPDATE_DAYS']})")
+        next_update = from_date + timedelta(days=self.get_update_days())
+        logging.info(f"Calculated next update: {next_update} (UPDATE_DAYS: {self.get_update_days()})")
         return next_update
 
     def get_next_update_timestamp(self):

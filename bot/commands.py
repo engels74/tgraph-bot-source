@@ -82,9 +82,9 @@ class Commands(commands.Cog):
                     return
 
                 # Convert value to appropriate type
-                if isinstance(config[key], bool):
+                if isinstance(config.get(key), bool):
                     value = value.lower() == 'true'
-                elif isinstance(config[key], int):
+                elif isinstance(config.get(key), int):
                     value = int(value)
 
                 # Update configuration
