@@ -92,7 +92,14 @@ async def main():
             log(translations['log_updating_posting_graphs_startup'])
             log(translations['log_manual_update_started'])
             await update_and_post_graphs(bot, translations)
-            bot.update_tracker.reset()  # Reset the update tracker after initial update
+            
+            # Update the tracker's last_update time and calculate next_update
+            bot.update_tracker.last_update = datetime.now()
+            bot.update_tracker.next_update = bot.update_tracker.calculate_next_update(bot.update_tracker.last_update)
+            
+            # Save the tracker once after both operations
+            bot.update_tracker.save_tracker()
+            
             next_update = f"<t:{bot.update_tracker.get_next_update_timestamp()}:R>"
             log(translations['log_manual_update_completed'])
             log(translations['log_graphs_updated_posted'].format(next_update=next_update))
