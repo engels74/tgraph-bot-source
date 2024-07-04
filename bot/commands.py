@@ -192,11 +192,18 @@ class Commands(commands.Cog):
         try:
             await interaction.response.defer(ephemeral=True)
             log(self.translations['log_manual_update_started'])
-            config = load_config(CONFIG_PATH, reload=True)  # Reload config
-            self.bot.update_tracker.update_config(config)  # Update the tracker with the new config
+            
+            # Reload config and update the tracker
+            config = load_config(CONFIG_PATH, reload=True)
+            self.bot.update_tracker.update_config(config)
+            
+            # Perform the graph update
             await update_and_post_graphs(self.bot, self.translations)
+            
+            # Update the tracker and get the next update time
             self.bot.update_tracker.update()
             next_update = f"<t:{self.bot.update_tracker.get_next_update_timestamp()}:R>"
+            
             log(self.translations['log_manual_update_completed'])
             await interaction.followup.send(self.translations['update_graphs_success'].format(next_update=next_update), ephemeral=True)
             log(self.translations['log_command_executed'].format(command="update_graphs", user=f"{interaction.user.name}#{interaction.user.discriminator}"))
