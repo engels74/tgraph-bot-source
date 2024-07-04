@@ -50,8 +50,11 @@ class UpdateTracker:
         next_update = from_date + timedelta(days=self.get_update_days())
         return next_update
 
-    def get_next_update_timestamp(self):
-        return int(self.next_update.timestamp())
+    def get_next_update_readable(self):
+        return self.next_update.strftime('%Y-%m-%d %H:%M:%S')
+
+    def get_next_update_discord(self):
+        return f"<t:{int(self.next_update.timestamp())}:R>"
 
     def is_update_due(self):
         now = datetime.now()

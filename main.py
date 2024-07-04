@@ -100,9 +100,9 @@ async def main():
             # Save the tracker once after both operations
             bot.update_tracker.save_tracker()
             
-            next_update = f"<t:{bot.update_tracker.get_next_update_timestamp()}:R>"
+            next_update_log = bot.update_tracker.get_next_update_readable()
             log(translations['log_manual_update_completed'])
-            log(translations['log_graphs_updated_posted'].format(next_update=next_update))
+            log(translations['log_graphs_updated_posted'].format(next_update=next_update_log))
 
             # Schedule regular updates
             bot.loop.create_task(schedule_updates(bot))
@@ -122,8 +122,8 @@ async def schedule_updates(bot):
             config = load_config(args.config_file, reload=True)  # Reload config
             await update_and_post_graphs(bot, translations)
             bot.update_tracker.update()
-            next_update = f"<t:{bot.update_tracker.get_next_update_timestamp()}:R>"
-            log(translations['log_auto_update_completed'].format(next_update=next_update))
+            next_update_log = bot.update_tracker.get_next_update_readable()
+            log(translations['log_auto_update_completed'].format(next_update=next_update_log))
         await asyncio.sleep(3600)  # Check every hour
 
 def update_translations(new_translations):

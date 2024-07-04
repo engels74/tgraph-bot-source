@@ -292,6 +292,8 @@ async def update_and_post_graphs(bot, current_translations):
         generate_graphs(data, dated_folder, translations)
 
         await post_graphs(channel, bot.img_folder, translations, bot.update_tracker)
+        next_update_log = bot.update_tracker.get_next_update_readable()
+        logging.info(translations['log_graphs_updated_posted'].format(next_update=next_update_log))
         cleanup_old_folders(bot.img_folder, config['KEEP_DAYS'])
     except Exception as e:
         logging.error(translations['error_update_post_graphs'].format(error=str(e)))
@@ -301,7 +303,7 @@ async def update_and_post_graphs(bot, current_translations):
 async def post_graphs(channel, img_folder, translations, update_tracker):
     now = datetime.now().astimezone().strftime('%Y-%m-%d at %H:%M:%S')
     today = datetime.today().strftime('%Y-%m-%d')
-    next_update = f"<t:{update_tracker.get_next_update_timestamp()}:R>"
+    next_update_discord = update_tracker.get_next_update_discord()
     descriptions = {}
 
     if config['ENABLE_DAILY_PLAY_COUNT']:
@@ -344,7 +346,7 @@ async def post_graphs(channel, img_folder, translations, update_tracker):
         file_path = os.path.join(img_folder, today, filename)
         embed = discord.Embed(
             title=details['title'],
-            description=f"{details['description']}\n\n{translations['next_update'].format(next_update=next_update)}",
+            description=f"{details['description']}\n\n{translations['next_update'].format(next_update=next_update_discord)}",
             color=0x3498db
         )
         embed.set_image(url=f"attachment://{filename}")
