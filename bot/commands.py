@@ -184,6 +184,7 @@ class Commands(commands.Cog):
         try:
             await interaction.response.defer(ephemeral=True)
             log(self.translations['log_manual_update_started'])
+            config = load_config(CONFIG_PATH, reload=True)  # Reload config
             await update_and_post_graphs(self.bot, self.translations)
             self.bot.update_tracker.update()
             next_update = f"<t:{self.bot.update_tracker.get_next_update_timestamp()}:R>"

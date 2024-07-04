@@ -62,7 +62,7 @@ def log(message, level=logging.INFO):
 log(translations['log_ensured_folders_exist'])
 
 # Create UpdateTracker instance
-update_tracker = create_update_tracker(args.data_folder, config['UPDATE_DAYS'])
+update_tracker = create_update_tracker(args.data_folder, config)
 
 async def main():
     # Define intents
@@ -90,12 +90,12 @@ async def main():
             
             # Update and post graphs immediately after logging in
             log(translations['log_updating_posting_graphs_startup'])
-            log(translations['log_manual_update_started'])  # New line
+            log(translations['log_manual_update_started'])
             await update_and_post_graphs(bot, translations)
             bot.update_tracker.reset()  # Reset the update tracker after initial update
             next_update = f"<t:{bot.update_tracker.get_next_update_timestamp()}:R>"
-            log(translations['log_manual_update_completed'])  # New line
-            log(translations['log_graphs_updated_posted'].format(next_update=next_update))  # Modified line
+            log(translations['log_manual_update_completed'])
+            log(translations['log_graphs_updated_posted'].format(next_update=next_update))
 
             # Schedule regular updates
             bot.loop.create_task(schedule_updates(bot))
@@ -112,6 +112,7 @@ async def schedule_updates(bot):
     while True:
         if bot.update_tracker.is_update_due():
             log(translations['log_auto_update_started'])
+            config = load_config(args.config_file, reload=True)  # Reload config
             await update_and_post_graphs(bot, translations)
             bot.update_tracker.update()
             next_update = f"<t:{bot.update_tracker.get_next_update_timestamp()}:R>"
