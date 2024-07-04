@@ -88,6 +88,7 @@ class Commands(commands.Cog):
                     value = int(value)
 
                 # Update configuration
+                old_value = config.get(key, "N/A")
                 new_config = update_config(key, value)
                 
                 # Update the bot's update_tracker with the new config
@@ -113,7 +114,7 @@ class Commands(commands.Cog):
                         log(f"Error getting next update timestamp: {str(e)}")
                         next_update = "Unknown"
                     await interaction.response.send_message(
-                        self.translations['config_updated'].format(key=key, value=value) + 
+                        self.translations['config_updated'].format(key=key, old_value=old_value, new_value=value) + 
                         f"\n{self.translations['next_update'].format(next_update=next_update)}",
                         ephemeral=True
                     )
