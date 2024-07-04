@@ -75,6 +75,8 @@ log_graphs_updated_posted: "Grafer opdateret og postet. Næste opdatering: {next
 log_commands_cog_loading: "Kommandoer er ved at blive indlæst ..."
 log_registering_command: "Registrerer kommando: {command_name}"
 log_commands_cog_loaded: "Kommandokog indlæst med succes."
+log_manual_update_started: "Manuel grafopdatering startet."
+log_manual_update_completed: "Manuel grafopdatering afsluttet."
 
 # Fejlmeddelelser
 error_fetching_data: "Fejl ved hentning af data fra Tautulli API"
@@ -118,8 +120,11 @@ uptime_response: "Bot har kørt i {uptime}"
 rate_limit_global: "Denne kommando er på global nedkøling. Prøv venligst igen {time}."
 rate_limit_user: "Du kan bruge denne kommando igen {time}."
 
-# Opdaterings-beskeder
-log_auto_update_started: "Automatisk grafopdatering startet."
-log_auto_update_completed: "Automatisk grafopdatering gennemført. Næste opdatering: {next_update}"
-log_manual_update_started: "Manuel grafopdatering startet."
-log_manual_update_completed: "Manuel grafopdatering afsluttet."
+# UpdateTracker-meddelelser
+update_tracker_initialized: "UpdateTracker initialiseret med UPDATE_DAYS: {update_days}"
+tracker_file_loaded: "Indlæst tracker-fil. Sidste opdatering: {last_update}, Næste opdatering: {next_update}"
+no_tracker_file_found: "Ingen sporingsfil fundet. Nulstil til nuværende tidspunkt."
+tracker_reset: "Nulstil tracker. Sidste opdatering: {last_update}, Næste opdatering: {next_update}"
+config_updated: "Konfig opdateret. UPDATE_DAYS ændret fra {old_days} til {new_days}"
+update_due_check: "Tjekker, om opdateringen er forfalden. Nu: {now}, Næste opdatering: {next_update}, Forfalder: {is_due}"
+tracker_file_saved: "Gemt tracker-fil. Sidste opdatering: {last_update}, Næste opdatering: {next_update}"

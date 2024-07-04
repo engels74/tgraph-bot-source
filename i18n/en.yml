@@ -75,6 +75,8 @@ log_graphs_updated_posted: "Graphs updated and posted. Next update: {next_update
 log_commands_cog_loading: "Commands cog is being loaded..."
 log_registering_command: "Registering command: {command_name}"
 log_commands_cog_loaded: "Commands cog loaded successfully."
+log_manual_update_started: "Manual graph update started."
+log_manual_update_completed: "Manual graph update completed."
 
 # Error messages
 error_fetching_data: "Error fetching data from Tautulli API"
@@ -118,8 +120,11 @@ uptime_response: "Bot has been running for {uptime}"
 rate_limit_global: "This command is on global cooldown. Please try again {time}."
 rate_limit_user: "You can use this command again {time}."
 
-# Update messages
-log_auto_update_started: "Automatic graph update started."
-log_auto_update_completed: "Automatic graph update completed. Next update: {next_update}"
-log_manual_update_started: "Manual graph update started."
-log_manual_update_completed: "Manual graph update completed."
+# UpdateTracker messages
+update_tracker_initialized: "UpdateTracker initialized with UPDATE_DAYS: {update_days}"
+tracker_file_loaded: "Loaded tracker file. Last update: {last_update}, Next update: {next_update}"
+no_tracker_file_found: "No tracker file found. Reset to current time."
+tracker_reset: "Reset tracker. Last update: {last_update}, Next update: {next_update}"
+config_updated: "Config updated. UPDATE_DAYS changed from {old_days} to {new_days}"
+update_due_check: "Checking if update is due. Now: {now}, Next update: {next_update}, Is due: {is_due}"
+tracker_file_saved: "Saved tracker file. Last update: {last_update}, Next update: {next_update}"

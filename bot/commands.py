@@ -93,6 +93,7 @@ class Commands(commands.Cog):
                 # Update the bot's update_tracker with the new config
                 try:
                     self.bot.update_tracker.update_config(new_config)
+                    self.bot.update_tracker.reset()  # Force a reset to use the new UPDATE_DAYS value
                 except Exception as e:
                     log(f"Error updating tracker config: {str(e)}")
                 
@@ -107,7 +108,7 @@ class Commands(commands.Cog):
                     await interaction.response.send_message(self.translations['config_updated_restart'].format(key=key), ephemeral=True)
                 else:
                     try:
-                        next_update = f"<t:{self.bot.update_tracker.get_next_update_timestamp()}:R>"
+                        next_update = self.bot.update_tracker.next_update.strftime('%Y-%m-%d %H:%M:%S')
                     except Exception as e:
                         log(f"Error getting next update timestamp: {str(e)}")
                         next_update = "Unknown"
@@ -213,7 +214,7 @@ class Commands(commands.Cog):
             # Update the tracker and get the next update time
             self.bot.update_tracker.update()
             try:
-                next_update = f"<t:{self.bot.update_tracker.get_next_update_timestamp()}:R>"
+                next_update = self.bot.update_tracker.next_update.strftime('%Y-%m-%d %H:%M:%S')
             except Exception as e:
                 log(f"Error getting next update timestamp: {str(e)}")
                 next_update = "Unknown"
