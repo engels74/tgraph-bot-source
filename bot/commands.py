@@ -90,6 +90,9 @@ class Commands(commands.Cog):
                 # Update configuration
                 new_config = update_config(key, value)
                 
+                # Update the bot's update_tracker with the new config
+                self.bot.update_tracker.update_config(new_config)
+                
                 # Reload translations if language changed
                 if key == 'LANGUAGE':
                     self.translations = load_translations(value)
@@ -100,7 +103,12 @@ class Commands(commands.Cog):
                 if key in RESTART_REQUIRED_KEYS:
                     await interaction.response.send_message(self.translations['config_updated_restart'].format(key=key), ephemeral=True)
                 else:
-                    await interaction.response.send_message(self.translations['config_updated'].format(key=key, value=value), ephemeral=True)
+                    next_update = f"<t:{self.bot.update_tracker.get_next_update_timestamp()}:R>"
+                    await interaction.response.send_message(
+                        self.translations['config_updated'].format(key=key, value=value) + 
+                        f"\n{self.translations['next_update'].format(next_update=next_update)}",
+                        ephemeral=True
+                    )
 
             log(self.translations['log_command_executed'].format(command="config", user=f"{interaction.user.name}#{interaction.user.discriminator}"))
         except Exception as e:
@@ -185,6 +193,7 @@ class Commands(commands.Cog):
             await interaction.response.defer(ephemeral=True)
             log(self.translations['log_manual_update_started'])
             config = load_config(CONFIG_PATH, reload=True)  # Reload config
+            self.bot.update_tracker.update_config(config)  # Update the tracker with the new config
             await update_and_post_graphs(self.bot, self.translations)
             self.bot.update_tracker.update()
             next_update = f"<t:{self.bot.update_tracker.get_next_update_timestamp()}:R>"

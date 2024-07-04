@@ -30,10 +30,12 @@ class UpdateTracker:
     def update(self):
         self.reset()
 
+    def update_config(self, new_config):
+        self.config = new_config
+        self.reset()  # This will use the new config to calculate the next update time
+
     def get_next_update_timestamp(self):
-        # Always recalculate based on last_update and current UPDATE_DAYS
-        next_update = self.last_update + timedelta(days=self.config['UPDATE_DAYS'])
-        return int(next_update.timestamp())
+        return int(self.next_update.timestamp())
 
     def is_update_due(self):
         # Always check against current time and UPDATE_DAYS
