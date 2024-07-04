@@ -82,13 +82,21 @@ class Commands(commands.Cog):
                     return
 
                 # Convert value to appropriate type
-                if isinstance(config[key], bool):
+                if isinstance(config.get(key), bool):
                     value = value.lower() == 'true'
-                elif isinstance(config[key], int):
+                elif isinstance(config.get(key), int):
                     value = int(value)
 
                 # Update configuration
+                old_value = config.get(key, "N/A")
                 new_config = update_config(key, value)
+                
+                # Update the bot's update_tracker with the new config
+                try:
+                    self.bot.update_tracker.update_config(new_config)
+                    self.bot.update_tracker.reset()  # Force a reset to use the new UPDATE_DAYS value
+                except Exception as e:
+                    log(f"Error updating tracker config: {str(e)}")
                 
                 # Reload translations if language changed
                 if key == 'LANGUAGE':
@@ -100,7 +108,16 @@ class Commands(commands.Cog):
                 if key in RESTART_REQUIRED_KEYS:
                     await interaction.response.send_message(self.translations['config_updated_restart'].format(key=key), ephemeral=True)
                 else:
-                    await interaction.response.send_message(self.translations['config_updated'].format(key=key, value=value), ephemeral=True)
+                    try:
+                        next_update = self.bot.update_tracker.next_update.strftime('%Y-%m-%d %H:%M:%S')
+                    except Exception as e:
+                        log(f"Error getting next update timestamp: {str(e)}")
+                        next_update = "Unknown"
+                    await interaction.response.send_message(
+                        self.translations['config_updated'].format(key=key, old_value=old_value, new_value=value) + 
+                        f"\n{self.translations['next_update'].format(next_update=next_update)}",
+                        ephemeral=True
+                    )
 
             log(self.translations['log_command_executed'].format(command="config", user=f"{interaction.user.name}#{interaction.user.discriminator}"))
         except Exception as e:
@@ -183,20 +200,33 @@ class Commands(commands.Cog):
     async def update_graphs(self, interaction: discord.Interaction):
         try:
             await interaction.response.defer(ephemeral=True)
-            await update_and_post_graphs(self.bot, self.translations)
+            log(self.translations['log_manual_update_started'])
+            
+            # Reload config and update the tracker
+            config = load_config(CONFIG_PATH, reload=True)
             try:
-                await interaction.followup.send(self.translations['update_graphs_success'], ephemeral=True)
-                log(self.translations['log_command_executed'].format(command="update_graphs", user=f"{interaction.user.name}#{interaction.user.discriminator}"))
-                log(self.translations['log_graphs_updated_posted'])
-            except discord.errors.NotFound:
-                log(self.translations['log_command_executed'].format(command="update_graphs", user=f"{interaction.user.name}#{interaction.user.discriminator}"))
-                log(self.translations['log_graphs_updated_posted'])
+                self.bot.update_tracker.update_config(config)
+            except Exception as e:
+                log(f"Error updating tracker config: {str(e)}")
+            
+            # Perform the graph update
+            await update_and_post_graphs(self.bot, self.translations)
+            
+            # Update the tracker and get the next update time
+            self.bot.update_tracker.update()
+            try:
+                next_update = self.bot.update_tracker.next_update.strftime('%Y-%m-%d %H:%M:%S')
+            except Exception as e:
+                log(f"Error getting next update timestamp: {str(e)}")
+                next_update = "Unknown"
+            
+            log(self.translations['log_manual_update_completed'])
+            await interaction.followup.send(self.translations['update_graphs_success'].format(next_update=next_update), ephemeral=True)
+            log(self.translations['log_command_executed'].format(command="update_graphs", user=f"{interaction.user.name}#{interaction.user.discriminator}"))
+            log(self.translations['log_graphs_updated_posted'].format(next_update=next_update))
         except Exception as e:
             log(self.translations['log_command_error'].format(command="update_graphs", error=str(e)))
-            try:
-                await interaction.followup.send(self.translations['update_graphs_error'], ephemeral=True)
-            except discord.errors.NotFound:
-                log(self.translations['log_command_error'].format(command="update_graphs", error=str(e)))
+            await interaction.followup.send(self.translations['update_graphs_error'], ephemeral=True)
 
     @app_commands.command(name="uptime", description=translations['uptime_command_description'])
     async def uptime(self, interaction: discord.Interaction):

@@ -39,6 +39,7 @@ day_6: "Søndag"
 
 # Indlejring af footer
 embed_footer: "Indsendt den {now}"
+next_update: "Næste opdatering: {next_update}"
 
 # Meddelelser om grafgenerering
 graphs_no_data_available: "Ingen data tilgængelige for play_count_by_month"
@@ -70,10 +71,12 @@ log_generated_graph_files: "Genererede {count} graffiler"
 log_sending_graphs_pm: "Afsendelse af grafer via PM"
 log_sending_graph_file: "Afsendelse af graffil: {file}"
 log_updating_cooldowns: "Opdatering af nedkølingstid"
-log_graphs_updated_posted: "Grafer opdateret og postet."
+log_graphs_updated_posted: "Grafer opdateret og postet. Næste opdatering: {next_update}"
 log_commands_cog_loading: "Kommandoer er ved at blive indlæst ..."
 log_registering_command: "Registrerer kommando: {command_name}"
 log_commands_cog_loaded: "Kommandokog indlæst med succes."
+log_manual_update_started: "Manuel grafopdatering startet."
+log_manual_update_completed: "Manuel grafopdatering afsluttet."
 
 # Fejlmeddelelser
 error_fetching_data: "Fejl ved hentning af data fra Tautulli API"
@@ -108,11 +111,19 @@ config_view_invalid_key: "Ugyldig eller ikke-konfigurerbar nøgle: {key}"
 config_edit_specify_key: "Angiv venligst en nøgle, der skal redigeres."
 config_edit_specify_value: "Angiv en værdi, der skal indstilles."
 config_updated_restart: "Konfiguration opdateret. Bemærk: Ændringer i {key} kræver en genstart af botten for at træde i kraft."
-config_updated: "Konfiguration opdateret. {key} sat til {value}"
-update_graphs_success: "Grafer opdateret og sendt."
+config_updated: "Konfiguration opdateret. {key} ændret fra {old_value} til {new_value}"
+update_graphs_success: "Grafer opdateret og sendt. Næste opdatering: {next_update}"
 update_graphs_error: "Der opstod en fejl under behandlingen af kommandoen."
 uptime_response: "Bot har kørt i {uptime}"
 
 # Beskeder om hastighedsbegrænsning
 rate_limit_global: "Denne kommando er på global nedkøling. Prøv venligst igen {time}."
 rate_limit_user: "Du kan bruge denne kommando igen {time}."
+
+# UpdateTracker-meddelelser
+update_tracker_initialized: "UpdateTracker initialiseret med UPDATE_DAYS: {update_days}"
+tracker_file_loaded: "Indlæst tracker-fil. Sidste opdatering: {last_update}, Næste opdatering: {next_update}"
+no_tracker_file_found: "Ingen sporingsfil fundet. Nulstil til nuværende tidspunkt."
+tracker_reset: "Nulstil tracker. Sidste opdatering: {last_update}, Næste opdatering: {next_update}"
+update_due_check: "Tjekker, om opdateringen er forfalden. Nu: {now}, Next update: {next_update}, Forfalder: {is_due}"
+tracker_file_saved: "Gemt tracker-fil. Sidste opdatering: {last_update}, Næste opdatering: {next_update}"

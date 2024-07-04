@@ -37,8 +37,9 @@ day_4: "Friday"
 day_5: "Saturday"
 day_6: "Sunday"
 
-# Embed footer
+# Embed footer and next update
 embed_footer: "Posted on {now}"
+next_update: "Next update: {next_update}"
 
 # Graph generation messages
 graphs_no_data_available: "No data available for play_count_by_month"
@@ -70,10 +71,12 @@ log_generated_graph_files: "Generated {count} graph files"
 log_sending_graphs_pm: "Sending graphs via PM"
 log_sending_graph_file: "Sending graph file: {file}"
 log_updating_cooldowns: "Updating cooldowns"
-log_graphs_updated_posted: "Graphs updated and posted."
+log_graphs_updated_posted: "Graphs updated and posted. Next update: {next_update}"
 log_commands_cog_loading: "Commands cog is being loaded..."
 log_registering_command: "Registering command: {command_name}"
 log_commands_cog_loaded: "Commands cog loaded successfully."
+log_manual_update_started: "Manual graph update started."
+log_manual_update_completed: "Manual graph update completed."
 
 # Error messages
 error_fetching_data: "Error fetching data from Tautulli API"
@@ -108,11 +111,19 @@ config_view_invalid_key: "Invalid or non-configurable key: {key}"
 config_edit_specify_key: "Please specify a key to edit."
 config_edit_specify_value: "Please specify a value to set."
 config_updated_restart: "Configuration updated. Note: Changes to {key} require a bot restart to take effect."
-config_updated: "Configuration updated. {key} set to {value}"
-update_graphs_success: "Graphs updated and posted."
+config_updated: "Configuration updated. {key} changed from {old_value} to {new_value}"
+update_graphs_success: "Graphs updated and posted. Next update: {next_update}"
 update_graphs_error: "An error occurred while processing the command."
 uptime_response: "Bot has been running for {uptime}"
 
 # Rate limiting messages
 rate_limit_global: "This command is on global cooldown. Please try again {time}."
 rate_limit_user: "You can use this command again {time}."
+
+# UpdateTracker messages
+update_tracker_initialized: "UpdateTracker initialized with UPDATE_DAYS: {update_days}"
+tracker_file_loaded: "Loaded tracker file. Last update: {last_update}, Next update: {next_update}"
+no_tracker_file_found: "No tracker file found. Reset to current time."
+tracker_reset: "Reset tracker. Last update: {last_update}, Next update: {next_update}"
+update_due_check: "Checking if update is due. Now: {now}, Next update: {next_update}, Is due: {is_due}"
+tracker_file_saved: "Saved tracker file. Last update: {last_update}, Next update: {next_update}"
