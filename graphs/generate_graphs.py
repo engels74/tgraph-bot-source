@@ -49,7 +49,9 @@ def fetch_all_data():
     return data
 
 # Censor usernames
-def censor_username(username):
+def censor_username(username, should_censor):
+    if not should_censor:
+        return username
     length = len(username)
     if length <= 2:
         return '*' * length
@@ -179,7 +181,7 @@ def generate_graphs(data, folder, current_translations):
         top_10_users = data['top_10_users']['response']['data']
         users = top_10_users['categories']
         series = top_10_users['series']
-        censored_users = [censor_username(user) for user in users]
+        censored_users = [censor_username(user, config['CENSOR_USERNAMES']) for user in users]
         for serie in series:
             plt.bar(censored_users, serie['data'], label=serie['name'])
             if config['ANNOTATE_TOP_10_USERS']:
