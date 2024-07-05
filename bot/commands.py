@@ -104,20 +104,22 @@ class Commands(commands.Cog):
                     translations = self.translations
                     self.update_translations()
 
+                # Prepare response message
+                response_message = self.translations['config_updated'].format(key=key, old_value=old_value, new_value=value)
+
+                # Add next update info only for relevant keys
+                if key in ['UPDATE_DAYS']:
+                    try:
+                        next_update = self.bot.update_tracker.next_update.strftime('%Y-%m-%d %H:%M:%S')
+                        response_message += f"\n{self.translations['next_update'].format(next_update=next_update)}"
+                    except Exception as e:
+                        log(f"Error getting next update timestamp: {str(e)}")
+
                 # Send response
                 if key in RESTART_REQUIRED_KEYS:
                     await interaction.response.send_message(self.translations['config_updated_restart'].format(key=key), ephemeral=True)
                 else:
-                    try:
-                        next_update = self.bot.update_tracker.next_update.strftime('%Y-%m-%d %H:%M:%S')
-                    except Exception as e:
-                        log(f"Error getting next update timestamp: {str(e)}")
-                        next_update = "Unknown"
-                    await interaction.response.send_message(
-                        self.translations['config_updated'].format(key=key, old_value=old_value, new_value=value) + 
-                        f"\n{self.translations['next_update'].format(next_update=next_update)}",
-                        ephemeral=True
-                    )
+                    await interaction.response.send_message(response_message, ephemeral=True)
 
             log(self.translations['log_command_executed'].format(command="config", user=f"{interaction.user.name}#{interaction.user.discriminator}"))
         except Exception as e:
