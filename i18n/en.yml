@@ -77,6 +77,8 @@ log_registering_command: "Registering command: {command_name}"
 log_commands_cog_loaded: "Commands cog loaded successfully."
 log_manual_update_started: "Manual graph update started."
 log_manual_update_completed: "Manual graph update completed."
+log_auto_update_started: "Automatic graph update started."
+log_auto_update_completed: "Automatic graph update completed. Next update: {next_update}"
 
 # Error messages
 error_fetching_data: "Error fetching data from Tautulli API"
