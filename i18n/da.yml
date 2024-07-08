@@ -77,6 +77,8 @@ log_registering_command: "Registrerer kommando: {command_name}"
 log_commands_cog_loaded: "Kommandokog indlæst med succes."
 log_manual_update_started: "Manuel grafopdatering startet."
 log_manual_update_completed: "Manuel grafopdatering afsluttet."
+log_auto_update_started: "Automatisk grafopdatering startet."
+log_auto_update_completed: "Automatisk grafopdatering afsluttet. Næste opdatering: {next_update}"
 
 # Fejlmeddelelser
 error_fetching_data: "Fejl ved hentning af data fra Tautulli API"
