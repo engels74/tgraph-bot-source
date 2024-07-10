@@ -293,7 +293,11 @@ async def update_and_post_graphs(bot, current_translations):
         data = fetch_all_data()
         generate_graphs(data, dated_folder, translations)
 
-        await post_graphs(channel, bot.img_folder, translations, bot.update_tracker)
+        # Update the tracker before posting graphs
+        bot.update_tracker.update()
+        next_update = bot.update_tracker.next_update
+
+        await post_graphs(channel, bot.img_folder, translations, next_update)
         next_update_log = bot.update_tracker.get_next_update_readable()
         logging.info(translations['log_graphs_updated_posted'].format(next_update=next_update_log))
         cleanup_old_folders(bot.img_folder, config['KEEP_DAYS'])
@@ -302,10 +306,10 @@ async def update_and_post_graphs(bot, current_translations):
         raise
 
 # Function to post graphs
-async def post_graphs(channel, img_folder, translations, update_tracker):
+async def post_graphs(channel, img_folder, translations, next_update):
     now = datetime.now().astimezone().strftime('%Y-%m-%d at %H:%M:%S')
     today = datetime.today().strftime('%Y-%m-%d')
-    next_update_discord = update_tracker.get_next_update_discord()
+    next_update_discord = f"<t:{int(next_update.timestamp())}:R>"
     descriptions = {}
 
     if config['ENABLE_DAILY_PLAY_COUNT']:
