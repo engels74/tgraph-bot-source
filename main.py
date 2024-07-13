@@ -6,6 +6,7 @@ import argparse
 import asyncio
 import discord
 from discord.ext import commands
+from aiohttp import ClientConnectorError, ServerDisconnectedError
 from config.config import load_config
 from i18n import load_translations
 from datetime import datetime
@@ -64,16 +65,36 @@ log(translations['log_ensured_folders_exist'])
 # Create UpdateTracker instance
 update_tracker = create_update_tracker(args.data_folder, config, translations)
 
+class TGraphBot(commands.Bot):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.data_folder = kwargs.pop('data_folder', None)
+        self.img_folder = kwargs.pop('img_folder', None)
+        self.update_tracker = kwargs.pop('update_tracker', None)
+
+    async def on_error(self, event_method, *args, **kwargs):
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        if isinstance(exc_value, (ClientConnectorError, ServerDisconnectedError)):
+            log(translations['log_connection_issue'].format(error=str(exc_value)), level=logging.WARNING)
+        else:
+            log(translations['log_error_in_event'].format(event=event_method, error=str(exc_value)), level=logging.ERROR)
+
+    async def on_connect(self):
+        log(translations['log_bot_connected'])
+
+    async def on_disconnect(self):
+        log(translations['log_bot_disconnected'], level=logging.WARNING)
+
+    async def on_resume(self):
+        log(translations['log_bot_resumed'])
+
 async def main():
     # Define intents
     intents = discord.Intents.default()
     intents.messages = True
     intents.guilds = True
 
-    bot = commands.Bot(command_prefix="!", intents=intents)
-    bot.data_folder = args.data_folder
-    bot.img_folder = img_folder
-    bot.update_tracker = update_tracker
+    bot = TGraphBot(command_prefix="!", intents=intents, data_folder=args.data_folder, img_folder=img_folder, update_tracker=update_tracker)
 
     @bot.event
     async def on_ready():

@@ -80,6 +80,13 @@ log_manual_update_completed: "Manual graph update completed."
 log_auto_update_started: "Automatic graph update started."
 log_auto_update_completed: "Automatic graph update completed. Next update: {next_update}"
 
+# New logging messages for improved error handling
+log_connection_issue: "Connection issue detected: {error}. Attempting to reconnect..."
+log_error_in_event: "An error occurred in {event}: {error}"
+log_bot_connected: "Bot has connected to Discord."
+log_bot_disconnected: "Bot has disconnected from Discord. Attempting to reconnect..."
+log_bot_resumed: "Bot has resumed its session."
+
 # Error messages
 error_fetching_data: "Error fetching data from Tautulli API"
 error_generating_graph: "Error generating graph: {graph_type}"
