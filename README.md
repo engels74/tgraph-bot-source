@@ -6,9 +6,9 @@
 
 ## Description
 
-TGraph Bot is a script/bot for posting Tautulli graphs to a Discord webhook. This project is designed to run in a Docker container and provides an easy way to share your Plex Media Server statistics on Discord.
+TGraph Bot is a script/bot for posting Tautulli graphs to a Discord channel. It's designed to run in a Docker container and provides an easy way to share your Plex Media Server statistics on Discord.
 
-Tautulli Graph Bot automates the process of generating and posting graphical statistics from Tautulli to a Discord channel using a webhook. This integration helps you keep your community informed about your Plex Media Server's activity and performance.
+Tautulli Graph Bot automates the process of generating and posting graphical statistics from Tautulli to a Discord channel of your choice. This integration helps you keep your community informed about your Plex Media Server's activity and performance.
 
 ## Features
 
@@ -22,7 +22,7 @@ Tautulli Graph Bot automates the process of generating and posting graphical sta
 - Annotation options for each graph type
 
 ## Preview
-<img src="https://i.imgur.com/lHLWpc2.png" width="50%" alt="An example of how it looks">
+<img src="https://i.imgur.com/UmzyUgW.png" width="50%" alt="An example of how it looks">
 
 ## Installation
 
@@ -78,12 +78,18 @@ The bot is configured using the `config.yml` file. Create a `config.yml` file in
 
 ### Graph Options
 
+- `CENSOR_USERNAMES`: Enable/disable censoring of usernames in the top 10 users graph (default is true).
 - `ENABLE_DAILY_PLAY_COUNT`: Enable/disable daily play count graph (default is true)
 - `ENABLE_PLAY_COUNT_BY_DAYOFWEEK`: Enable/disable play count by day of week graph (default is true)
 - `ENABLE_PLAY_COUNT_BY_HOUROFDAY`: Enable/disable play count by hour of day graph (default is true)
 - `ENABLE_TOP_10_PLATFORMS`: Enable/disable top 10 platforms graph (default is true)
 - `ENABLE_TOP_10_USERS`: Enable/disable top 10 users graph (default is true)
 - `ENABLE_PLAY_COUNT_BY_MONTH`: Enable/disable play count by month graph (default is true)
+
+### Graph colors
+- `TV_COLOR`: The color to use for TV shows in graphs (default is '#1f77b4', a shade of blue).
+- `MOVIE_COLOR`: The color to use for movies in graphs (default is '#ff7f0e', a shade of orange).
+- See [here](https://matplotlib.org/stable/users/explain/colors/colors.html) for more options. 
 
 ### Annotation Options
 
