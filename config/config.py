@@ -55,6 +55,8 @@ def load_config(config_path=CONFIG_PATH, reload=False):
             'ENABLE_TOP_10_PLATFORMS': bool(get_config('ENABLE_TOP_10_PLATFORMS', True)),
             'ENABLE_TOP_10_USERS': bool(get_config('ENABLE_TOP_10_USERS', True)),
             'ENABLE_PLAY_COUNT_BY_MONTH': bool(get_config('ENABLE_PLAY_COUNT_BY_MONTH', True)),
+            'TV_COLOR': get_config('TV_COLOR', '#1f77b4'),
+            'MOVIE_COLOR': get_config('MOVIE_COLOR', '#ff7f0e'),
             'ANNOTATE_DAILY_PLAY_COUNT': bool(get_config('ANNOTATE_DAILY_PLAY_COUNT', True)),
             'ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK': bool(get_config('ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK', True)),
             'ANNOTATE_PLAY_COUNT_BY_HOUROFDAY': bool(get_config('ANNOTATE_PLAY_COUNT_BY_HOUROFDAY', True)),
