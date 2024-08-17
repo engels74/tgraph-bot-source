@@ -18,6 +18,10 @@ config = load_config(CONFIG_PATH)
 # Initialize translations globally
 translations = load_translations(config['LANGUAGE'])
 
+# Define consistent colors
+TV_COLOR = 'blue'
+MOVIE_COLOR = 'orange'
+
 # Helper function to fetch data from Tautulli
 def fetch_tautulli_data(cmd, params={}):
     now = datetime.now().astimezone()
@@ -86,7 +90,8 @@ def generate_graphs(data, folder, current_translations):
                 if date in date_data_map:
                     date_data_map[date] = value
             complete_data = [date_data_map[date] for date in date_strs]
-            plt.plot(dates, complete_data, label=serie['name'], marker='o')
+            color = TV_COLOR if serie['name'] == 'TV' else MOVIE_COLOR
+            plt.plot(dates, complete_data, label=serie['name'], marker='o', color=color)
             
             # Adding annotations for the top value of each day
             if config['ANNOTATE_DAILY_PLAY_COUNT']:
@@ -117,7 +122,8 @@ def generate_graphs(data, folder, current_translations):
         day_labels = [translations[f'day_{i}'] for i in range(7)]
         series = play_count_by_dayofweek['series']
         for serie in series:
-            plt.plot(days, serie['data'], label=serie['name'], marker='o')
+            color = TV_COLOR if serie['name'] == 'TV' else MOVIE_COLOR
+            plt.plot(days, serie['data'], label=serie['name'], marker='o', color=color)
             if config['ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK']:
                 for i, value in enumerate(serie['data']):
                     if value > 0:
@@ -139,7 +145,8 @@ def generate_graphs(data, folder, current_translations):
         hours = list(range(24))
         series = play_count_by_hourofday['series']
         for serie in series:
-            plt.plot(hours, serie['data'], label=serie['name'], marker='o')
+            color = TV_COLOR if serie['name'] == 'TV' else MOVIE_COLOR
+            plt.plot(hours, serie['data'], label=serie['name'], marker='o', color=color)
             if config['ANNOTATE_PLAY_COUNT_BY_HOUROFDAY']:
                 for i, value in enumerate(serie['data']):
                     if value > 0:
@@ -161,7 +168,8 @@ def generate_graphs(data, folder, current_translations):
         platforms = top_10_platforms['categories']
         series = top_10_platforms['series']
         for serie in series:
-            plt.bar(platforms, serie['data'], label=serie['name'])
+            color = TV_COLOR if serie['name'] == 'TV' else MOVIE_COLOR
+            plt.bar(platforms, serie['data'], label=serie['name'], color=color)
             if config['ANNOTATE_TOP_10_PLATFORMS']:
                 for i, v in enumerate(serie['data']):
                     plt.text(i, v + 0.5, str(v), color='red', fontweight='bold', ha='center', va='bottom')
@@ -201,8 +209,8 @@ def generate_graphs(data, folder, current_translations):
         censored_users = [censor_username(user, config['CENSOR_USERNAMES']) for user in sorted_users]
 
         # Plot the sorted data
-        plt.bar(censored_users, sorted_tv_data, label='TV')
-        plt.bar(censored_users, sorted_movie_data, bottom=sorted_tv_data, label='Movies')
+        plt.bar(censored_users, sorted_movie_data, label='Movies', color=MOVIE_COLOR)  # Movies at the bottom
+        plt.bar(censored_users, sorted_tv_data, bottom=sorted_movie_data, label='TV', color=TV_COLOR)  # TV on top
 
         if config['ANNOTATE_TOP_10_USERS']:
             for i, (tv, movie) in enumerate(zip(sorted_tv_data, sorted_movie_data)):
@@ -255,10 +263,10 @@ def generate_graphs(data, folder, current_translations):
         bar_width = 0.4
         bar_positions = range(len(filtered_months))
 
-        plt.bar(bar_positions, filtered_movie_data, width=bar_width, label='Movies')
-        plt.bar(bar_positions, filtered_tv_data, width=bar_width, bottom=filtered_movie_data, label='TV')
+        plt.bar(bar_positions, filtered_movie_data, width=bar_width, label='Movies', color=MOVIE_COLOR)
+        plt.bar(bar_positions, filtered_tv_data, width=bar_width, bottom=filtered_movie_data, label='TV', color=TV_COLOR)
 
-        if config['ANNOTATE_PLAY_COUNT_BY_MONTH']:
+if config['ANNOTATE_PLAY_COUNT_BY_MONTH']:
             for i, v in enumerate(filtered_movie_data):
                 plt.text(i, v + 0.5, str(v), color='red', fontweight='bold', ha='center', va='bottom')
 
