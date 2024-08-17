@@ -209,6 +209,16 @@ def generate_graphs(data, folder, current_translations):
                 total = tv + movie
                 plt.text(i, total + 0.5, str(total), color='red', fontweight='bold', ha='center', va='bottom')
 
+        plt.xlabel(translations['top_10_users_xlabel'], fontweight='bold')
+        plt.ylabel(translations['top_10_users_ylabel'], fontweight='bold')
+        plt.title(translations['top_10_users_title'].format(days=config["TIME_RANGE_DAYS"]), fontweight='bold')
+        plt.xticks(rotation=45, ha='right')
+        plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
+        plt.legend()
+        plt.tight_layout(pad=3)
+        save_and_post_graph(folder, 'top_10_users.png')
+        plt.close()
+
     if config['ENABLE_PLAY_COUNT_BY_MONTH']:
         plt.figure(figsize=(14, 8))
         # Play Count by Month (Last 12 months)
