@@ -19,8 +19,8 @@ config = load_config(CONFIG_PATH)
 translations = load_translations(config['LANGUAGE'])
 
 # Define consistent colors
-TV_COLOR = '#1f77b4'
-MOVIE_COLOR = '#ff7f0e'
+TV_COLOR = config['TV_COLOR']
+MOVIE_COLOR = config['MOVIE_COLOR']
 
 # Helper function to fetch data from Tautulli
 def fetch_tautulli_data(cmd, params={}):
@@ -67,6 +67,10 @@ def generate_graphs(data, folder, current_translations):
     global config, translations
     translations = current_translations
     config = load_config(CONFIG_PATH, reload=True)
+    
+    # Use the updated color variables
+    TV_COLOR = config['TV_COLOR']
+    MOVIE_COLOR = config['MOVIE_COLOR']
     
     if config['ENABLE_DAILY_PLAY_COUNT']:
         plt.figure(figsize=(14, 8))
