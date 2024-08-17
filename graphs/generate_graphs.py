@@ -19,8 +19,8 @@ config = load_config(CONFIG_PATH)
 translations = load_translations(config['LANGUAGE'])
 
 # Define consistent colors
-TV_COLOR = 'blue'
-MOVIE_COLOR = 'orange'
+TV_COLOR = '#1f77b4'
+MOVIE_COLOR = '#ff7f0e'
 
 # Helper function to fetch data from Tautulli
 def fetch_tautulli_data(cmd, params={}):
