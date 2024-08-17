@@ -267,21 +267,21 @@ def generate_graphs(data, folder, current_translations):
         plt.bar(bar_positions, filtered_tv_data, width=bar_width, bottom=filtered_movie_data, label='TV', color=TV_COLOR)
 
         if config['ANNOTATE_PLAY_COUNT_BY_MONTH']:
-                    for i, v in enumerate(filtered_movie_data):
-                        plt.text(i, v + 0.5, str(v), color='red', fontweight='bold', ha='center', va='bottom')
+            for i, v in enumerate(filtered_movie_data):
+                plt.text(i, v + 0.5, str(v), color='red', fontweight='bold', ha='center', va='bottom')
 
-                    for i, v in enumerate(filtered_tv_data):
-                        plt.text(i, v + filtered_movie_data[i] + 0.5, str(v), color='red', fontweight='bold', ha='center', va='bottom')
+            for i, v in enumerate(filtered_tv_data):
+                plt.text(i, v + filtered_movie_data[i] + 0.5, str(v), color='red', fontweight='bold', ha='center', va='bottom')
 
-                plt.xlabel(translations['play_count_by_month_xlabel'], fontweight='bold')
-                plt.ylabel(translations['play_count_by_month_ylabel'], fontweight='bold')
-                plt.title(translations['play_count_by_month_title'], fontweight='bold')
-                plt.xticks(bar_positions, filtered_months, rotation=45, ha='right')
-                plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
-                plt.legend()
-                plt.tight_layout(pad=3)
-                save_and_post_graph(folder, 'play_count_by_month.png')
-                plt.close()
+        plt.xlabel(translations['play_count_by_month_xlabel'], fontweight='bold')
+        plt.ylabel(translations['play_count_by_month_ylabel'], fontweight='bold')
+        plt.title(translations['play_count_by_month_title'], fontweight='bold')
+        plt.xticks(bar_positions, filtered_months, rotation=45, ha='right')
+        plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
+        plt.legend()
+        plt.tight_layout(pad=3)
+        save_and_post_graph(folder, 'play_count_by_month.png')
+        plt.close()
 
 # Save and post graph to Discord
 def save_and_post_graph(folder, filename):
