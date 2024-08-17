@@ -181,21 +181,33 @@ def generate_graphs(data, folder, current_translations):
         top_10_users = data['top_10_users']['response']['data']
         users = top_10_users['categories']
         series = top_10_users['series']
-        censored_users = [censor_username(user, config['CENSOR_USERNAMES']) for user in users]
-        for serie in series:
-            plt.bar(censored_users, serie['data'], label=serie['name'])
-            if config['ANNOTATE_TOP_10_USERS']:
-                for i, v in enumerate(serie['data']):
-                    plt.text(i, v + 0.5, str(v), color='red', fontweight='bold', ha='center', va='bottom')
-        plt.xlabel(translations['top_10_users_xlabel'], fontweight='bold')
-        plt.ylabel(translations['top_10_users_ylabel'], fontweight='bold')
-        plt.title(translations['top_10_users_title'].format(days=config["TIME_RANGE_DAYS"]), fontweight='bold')
-        plt.xticks(rotation=45, ha='right')
-        plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
-        plt.legend()
-        plt.tight_layout(pad=3)
-        save_and_post_graph(folder, 'top_10_users.png')
-        plt.close()
+
+        # Combine TV and movie play counts for each user
+        combined_data = []
+        for i, user in enumerate(users):
+            tv_plays = series[0]['data'][i] if series[0]['name'] == 'TV' else series[1]['data'][i]
+            movie_plays = series[1]['data'][i] if series[1]['name'] == 'Movies' else series[0]['data'][i]
+            total_plays = tv_plays + movie_plays
+            combined_data.append((user, tv_plays, movie_plays, total_plays))
+
+        # Sort users by total play count, descending
+        combined_data.sort(key=lambda x: x[3], reverse=True)
+
+        # Reconstruct data for plotting
+        sorted_users = [item[0] for item in combined_data]
+        sorted_tv_data = [item[1] for item in combined_data]
+        sorted_movie_data = [item[2] for item in combined_data]
+
+        censored_users = [censor_username(user, config['CENSOR_USERNAMES']) for user in sorted_users]
+
+        # Plot the sorted data
+        plt.bar(censored_users, sorted_tv_data, label='TV')
+        plt.bar(censored_users, sorted_movie_data, bottom=sorted_tv_data, label='Movies')
+
+        if config['ANNOTATE_TOP_10_USERS']:
+            for i, (tv, movie) in enumerate(zip(sorted_tv_data, sorted_movie_data)):
+                total = tv + movie
+                plt.text(i, total + 0.5, str(total), color='red', fontweight='bold', ha='center', va='bottom')
 
     if config['ENABLE_PLAY_COUNT_BY_MONTH']:
         plt.figure(figsize=(14, 8))
