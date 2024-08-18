@@ -4,10 +4,8 @@ import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 from matplotlib.ticker import MaxNLocator
 from matplotlib.dates import DateFormatter
-from matplotlib.font_manager import FontProperties
-from graphs.generate_graphs import fetch_tautulli_data, ensure_folder_exists, censor_username
+from graphs.generate_graphs import fetch_tautulli_data, ensure_folder_exists
 import logging
-from i18n import load_translations
 
 # Initialize translations globally
 translations = None

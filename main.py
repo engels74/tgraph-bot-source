@@ -11,7 +11,6 @@ from config.config import load_config
 from i18n import load_translations
 from datetime import datetime
 from graphs.generate_graphs import update_and_post_graphs
-from graphs.generate_graphs_user import generate_user_graphs
 from bot.update_tracker import create_update_tracker
 
 # Get the CONFIG_DIR from environment variable, default to '/config' if not set
@@ -56,7 +55,7 @@ logger = logging.getLogger(__name__)
 
 # Function to print log messages with timestamps
 def log(message, level=logging.INFO):
-    timestamp = datetime.now().astimezone().strftime('%Y-%m-%d %H:%M:%S %Z')
+    datetime.now().astimezone().strftime('%Y-%m-%d %H:%M:%S %Z')
     logger.log(level, message)
 
 # Log that folders have been created
@@ -140,7 +139,7 @@ async def schedule_updates(bot):
     while True:
         if bot.update_tracker.is_update_due():
             log(translations['log_auto_update_started'])
-            config = load_config(args.config_file, reload=True)  # Reload config
+            load_config(args.config_file, reload=True)  # Reload config
             await update_and_post_graphs(bot, translations)
             bot.update_tracker.update()
             next_update_log = bot.update_tracker.get_next_update_readable()

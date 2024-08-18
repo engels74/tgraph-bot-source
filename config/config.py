@@ -2,7 +2,6 @@
 import os
 import yaml
 import argparse
-from datetime import datetime, timezone
 
 # Get the CONFIG_DIR from environment variable, default to current directory if not set
 CONFIG_DIR = os.environ.get('CONFIG_DIR', os.getcwd())

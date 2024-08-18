@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 from matplotlib.ticker import MaxNLocator
 from matplotlib.dates import DateFormatter
-from matplotlib.font_manager import FontProperties
 from config.config import load_config, CONFIG_PATH
 from i18n import load_translations
 

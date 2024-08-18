@@ -1,5 +1,4 @@
 # bot/commands.py
-import os
 from datetime import datetime, timedelta
 import discord
 from discord import app_commands
