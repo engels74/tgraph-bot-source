@@ -32,16 +32,8 @@ def format_hex_color(color):
     # Remove any existing quotes and spaces
     color = color.strip().strip('"\'')
     
-    # Check if it's a valid hex color
-    if re.match(r'^#(?:[0-9a-fA-F]{3}){1,2}$', color):
-        # Return the color wrapped in double quotes
-        return f'"{color}"'
-    elif re.match(r'^[0-9a-fA-F]{6}$', color):
-        # If it's a valid hex color without #, add it and wrap in quotes
-        return f'"#{color}"'
-    else:
-        # If it's not a hex color, return as is (might be a named color)
-        return color
+    # Always wrap the color in double quotes, regardless of its validity
+    return f'"{color}"'
 
 def load_config(config_path=CONFIG_PATH, reload=False):
     global config
