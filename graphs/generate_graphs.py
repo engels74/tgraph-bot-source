@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 from matplotlib.ticker import MaxNLocator
 from matplotlib.dates import DateFormatter
-from matplotlib.font_manager import FontProperties
 from config.config import load_config, CONFIG_PATH
 from i18n import load_translations
 
@@ -19,8 +18,8 @@ config = load_config(CONFIG_PATH)
 translations = load_translations(config['LANGUAGE'])
 
 # Define consistent colors
-TV_COLOR = config['TV_COLOR']
-MOVIE_COLOR = config['MOVIE_COLOR']
+TV_COLOR = config['TV_COLOR'].strip('"')
+MOVIE_COLOR = config['MOVIE_COLOR'].strip('"')
 
 # Helper function to fetch data from Tautulli
 def fetch_tautulli_data(cmd, params={}):
@@ -69,8 +68,8 @@ def generate_graphs(data, folder, current_translations):
     config = load_config(CONFIG_PATH, reload=True)
     
     # Use the updated color variables
-    TV_COLOR = config['TV_COLOR']
-    MOVIE_COLOR = config['MOVIE_COLOR']
+    TV_COLOR = config['TV_COLOR'].strip('"')
+    MOVIE_COLOR = config['MOVIE_COLOR'].strip('"')
     
     if config['ENABLE_DAILY_PLAY_COUNT']:
         plt.figure(figsize=(14, 8))

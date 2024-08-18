@@ -7,11 +7,10 @@ import asyncio
 import discord
 from discord.ext import commands
 from aiohttp import ClientConnectorError, ServerDisconnectedError
-from config.config import load_config
+from config.config import load_config, sanitize_config_file
 from i18n import load_translations
 from datetime import datetime
 from graphs.generate_graphs import update_and_post_graphs
-from graphs.generate_graphs_user import generate_user_graphs
 from bot.update_tracker import create_update_tracker
 
 # Get the CONFIG_DIR from environment variable, default to '/config' if not set
@@ -23,6 +22,10 @@ parser.add_argument('--config-file', type=str, default=os.path.join(CONFIG_DIR, 
 parser.add_argument('--log-file', type=str, default=os.path.join(CONFIG_DIR, 'logs', 'tgraphbot.log'), help='Path to the log file')
 parser.add_argument('--data-folder', type=str, default=os.path.join(CONFIG_DIR, 'data'), help='Path to the data folder')
 args = parser.parse_args()
+
+# Sanitize the config file
+if sanitize_config_file():
+    print("Config file was updated with properly formatted color values.")
 
 # Load configuration
 config = load_config(args.config_file)
@@ -56,7 +59,7 @@ logger = logging.getLogger(__name__)
 
 # Function to print log messages with timestamps
 def log(message, level=logging.INFO):
-    timestamp = datetime.now().astimezone().strftime('%Y-%m-%d %H:%M:%S %Z')
+    datetime.now().astimezone().strftime('%Y-%m-%d %H:%M:%S %Z')
     logger.log(level, message)
 
 # Log that folders have been created
@@ -140,7 +143,7 @@ async def schedule_updates(bot):
     while True:
         if bot.update_tracker.is_update_due():
             log(translations['log_auto_update_started'])
-            config = load_config(args.config_file, reload=True)  # Reload config
+            load_config(args.config_file, reload=True)  # Reload config
             await update_and_post_graphs(bot, translations)
             bot.update_tracker.update()
             next_update_log = bot.update_tracker.get_next_update_readable()

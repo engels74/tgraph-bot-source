@@ -2,7 +2,6 @@
 import os
 import yaml
 import argparse
-from datetime import datetime, timezone
 
 # Get the CONFIG_DIR from environment variable, default to current directory if not set
 CONFIG_DIR = os.environ.get('CONFIG_DIR', os.getcwd())
@@ -28,6 +27,12 @@ CONFIGURABLE_OPTIONS = [
 # Global variable to store the configuration
 config = None
 
+def format_color_value(value):
+    # Remove any existing quotes and spaces
+    value = value.strip().strip('"\'')
+    # Always wrap the value in double quotes
+    return f'"{value}"'
+
 def load_config(config_path=CONFIG_PATH, reload=False):
     global config
     if reload or config is None:
@@ -39,7 +44,10 @@ def load_config(config_path=CONFIG_PATH, reload=False):
 
         # Function to get the value from config.yml or environment variable
         def get_config(key, default=None):
-            return config_vars.get(key, os.getenv(key, default))
+            value = config_vars.get(key, os.getenv(key, default))
+            if key in ['TV_COLOR', 'MOVIE_COLOR']:
+                return format_color_value(str(value))
+            return value
 
         config = {
             'DISCORD_TOKEN': get_config('DISCORD_TOKEN', 'your_discord_bot_token'),
@@ -72,37 +80,59 @@ def load_config(config_path=CONFIG_PATH, reload=False):
     return config
 
 def save_config(config, config_path=CONFIG_PATH):
-    if os.path.exists(config_path):
-        with open(config_path, 'r') as file:
-            lines = file.readlines()
+    with open(config_path, 'r') as file:
+        lines = file.readlines()
 
-        # Update existing lines
-        for i, line in enumerate(lines):
-            if ':' in line:
-                key, _ = line.split(':', 1)
-                key = key.strip()
-                if key in config:
-                    lines[i] = f"{key}: {config[key]}\n"
-                    del config[key]
+    # Update existing lines
+    for i, line in enumerate(lines):
+        if ':' in line:
+            key, _ = line.split(':', 1)
+            key = key.strip()
+            if key in config:
+                value = config[key]
+                if key in ['TV_COLOR', 'MOVIE_COLOR']:
+                    value = format_color_value(str(value))
+                lines[i] = f"{key}: {value}\n"
+                del config[key]
 
-        # Append any new keys at the end
-        for key, value in config.items():
-            lines.append(f"{key}: {value}\n")
+    # Append any new keys at the end
+    for key, value in config.items():
+        if key in ['TV_COLOR', 'MOVIE_COLOR']:
+            value = format_color_value(str(value))
+        lines.append(f"{key}: {value}\n")
 
-        with open(config_path, 'w') as file:
-            file.writelines(lines)
-    else:
-        # If the file doesn't exist, create it with the new config
-        with open(config_path, 'w') as file:
-            for key, value in config.items():
-                file.write(f"{key}: {value}\n")
+    with open(config_path, 'w') as file:
+        file.writelines(lines)
 
 def update_config(key, value):
     global config
     config = load_config(reload=True)
+    
+    if key in ['TV_COLOR', 'MOVIE_COLOR']:
+        value = format_color_value(str(value))
+    
     config[key] = value
     save_config(config)
     return config
+
+def sanitize_config_file():
+    with open(CONFIG_PATH, 'r') as file:
+        lines = file.readlines()
+
+    updated = False
+    for i, line in enumerate(lines):
+        if 'COLOR:' in line:
+            key, value = line.split(':', 1)
+            formatted_value = format_color_value(value.strip())
+            if formatted_value != value.strip():
+                lines[i] = f"{key}: {formatted_value}\n"
+                updated = True
+
+    if updated:
+        with open(CONFIG_PATH, 'w') as file:
+            file.writelines(lines)
+
+    return updated
 
 # List of keys that require a bot restart when changed
 RESTART_REQUIRED_KEYS = ['TAUTULLI_API_KEY', 'TAUTULLI_URL', 'DISCORD_TOKEN']
