@@ -2,7 +2,6 @@
 import os
 import yaml
 import argparse
-import re
 
 # Get the CONFIG_DIR from environment variable, default to current directory if not set
 CONFIG_DIR = os.environ.get('CONFIG_DIR', os.getcwd())
@@ -28,12 +27,11 @@ CONFIGURABLE_OPTIONS = [
 # Global variable to store the configuration
 config = None
 
-def format_hex_color(color):
+def format_color_value(value):
     # Remove any existing quotes and spaces
-    color = color.strip().strip('"\'')
-    
-    # Always wrap the color in double quotes, regardless of its validity
-    return f'"{color}"'
+    value = value.strip().strip('"\'')
+    # Always wrap the value in double quotes
+    return f'"{value}"'
 
 def load_config(config_path=CONFIG_PATH, reload=False):
     global config
@@ -47,8 +45,8 @@ def load_config(config_path=CONFIG_PATH, reload=False):
         # Function to get the value from config.yml or environment variable
         def get_config(key, default=None):
             value = config_vars.get(key, os.getenv(key, default))
-            if key in ['TV_COLOR', 'MOVIE_COLOR'] and value is not None:
-                return format_hex_color(value)
+            if key in ['TV_COLOR', 'MOVIE_COLOR']:
+                return format_color_value(str(value))
             return value
 
         config = {
@@ -93,14 +91,14 @@ def save_config(config, config_path=CONFIG_PATH):
             if key in config:
                 value = config[key]
                 if key in ['TV_COLOR', 'MOVIE_COLOR']:
-                    value = format_hex_color(value)
+                    value = format_color_value(str(value))
                 lines[i] = f"{key}: {value}\n"
                 del config[key]
 
     # Append any new keys at the end
     for key, value in config.items():
         if key in ['TV_COLOR', 'MOVIE_COLOR']:
-            value = format_hex_color(value)
+            value = format_color_value(str(value))
         lines.append(f"{key}: {value}\n")
 
     with open(config_path, 'w') as file:
@@ -111,7 +109,7 @@ def update_config(key, value):
     config = load_config(reload=True)
     
     if key in ['TV_COLOR', 'MOVIE_COLOR']:
-        value = format_hex_color(value)
+        value = format_color_value(str(value))
     
     config[key] = value
     save_config(config)
@@ -125,7 +123,7 @@ def sanitize_config_file():
     for i, line in enumerate(lines):
         if 'COLOR:' in line:
             key, value = line.split(':', 1)
-            formatted_value = format_hex_color(value.strip())
+            formatted_value = format_color_value(value.strip())
             if formatted_value != value.strip():
                 lines[i] = f"{key}: {formatted_value}\n"
                 updated = True
