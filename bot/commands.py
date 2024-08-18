@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import discord
 from discord import app_commands
 from discord.ext import commands
-from config.config import load_config, update_config, RESTART_REQUIRED_KEYS, get_configurable_options, CONFIG_PATH
+from config.config import load_config, update_config, RESTART_REQUIRED_KEYS, get_configurable_options, CONFIG_PATH, format_hex_color
 from i18n import load_translations
 from graphs.generate_graphs import update_and_post_graphs
 from graphs.generate_graphs_user import generate_user_graphs
@@ -85,6 +85,8 @@ class Commands(commands.Cog):
                     value = value.lower() == 'true'
                 elif isinstance(config.get(key), int):
                     value = int(value)
+                elif key in ['TV_COLOR', 'MOVIE_COLOR']:
+                    value = format_hex_color(value)
 
                 # Update configuration
                 old_value = config.get(key, "N/A")

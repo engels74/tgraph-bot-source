@@ -7,7 +7,7 @@ import asyncio
 import discord
 from discord.ext import commands
 from aiohttp import ClientConnectorError, ServerDisconnectedError
-from config.config import load_config
+from config.config import load_config, sanitize_config_file
 from i18n import load_translations
 from datetime import datetime
 from graphs.generate_graphs import update_and_post_graphs
@@ -22,6 +22,10 @@ parser.add_argument('--config-file', type=str, default=os.path.join(CONFIG_DIR, 
 parser.add_argument('--log-file', type=str, default=os.path.join(CONFIG_DIR, 'logs', 'tgraphbot.log'), help='Path to the log file')
 parser.add_argument('--data-folder', type=str, default=os.path.join(CONFIG_DIR, 'data'), help='Path to the data folder')
 args = parser.parse_args()
+
+# Sanitize the config file
+if sanitize_config_file():
+    print("Config file was updated with properly formatted color values.")
 
 # Load configuration
 config = load_config(args.config_file)
