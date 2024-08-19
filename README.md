@@ -4,6 +4,23 @@
   <img src="https://i.imgur.com/L5Tj3nW.png" alt="TGraph Bot"/>
 </p>
 
+## Table of Contents
+- [Description](#description)
+- [Features](#features)
+- [Preview](#preview)
+- [Installation](#installation)
+- [Configuration](#configuration)
+  - [Graph Options](#graph-options)
+  - [Graph Colors](#graph-colors)
+  - [Annotation Options](#annotation-options)
+  - [My Stats Options](#my-stats-options)
+- [Slash Commands](#slash-commands)
+  - [Rate Limiting](#rate-limiting)
+- [Managing Bot Permissions](#managing-bot-permissions)
+- [Language Support](#language-support)
+- [Creating a Discord Bot](#creating-a-discord-bot)
+- [License](#license)
+
 ## Description
 
 TGraph Bot is a script/bot for posting Tautulli graphs to a Discord channel. It's designed to run in a Docker container and provides an easy way to share your Plex Media Server statistics on Discord.
@@ -73,8 +90,6 @@ The bot is configured using the `config.yml` file. Create a `config.yml` file in
 - `KEEP_DAYS`: The number of days to keep the images (default is 7 days).
 - `TIME_RANGE_DAYS`: The time range in days for the graphs (default is 30 days).
 - `LANGUAGE`: The language to use for the bot (default is `en`). Supported languages: `en` (English), `da` (Danish).
-- `MY_STATS_COOLDOWN_MINUTES`: The cooldown period in minutes for individual users using the /my_stats command (default is 5 minutes).
-- `MY_STATS_GLOBAL_COOLDOWN_SECONDS`: The global cooldown period in seconds between any two uses of the /my_stats command (default is 60 seconds).
 
 ### Graph Options
 
@@ -86,9 +101,9 @@ The bot is configured using the `config.yml` file. Create a `config.yml` file in
 - `ENABLE_TOP_10_USERS`: Enable/disable top 10 users graph (default is true)
 - `ENABLE_PLAY_COUNT_BY_MONTH`: Enable/disable play count by month graph (default is true)
 
-### Graph colors
-- `TV_COLOR`: The color to use for TV shows in graphs (default is '#1f77b4', a shade of blue).
-- `MOVIE_COLOR`: The color to use for movies in graphs (default is '#ff7f0e', a shade of orange).
+### Graph Colors
+- `TV_COLOR`: The color to use for TV shows in graphs (default is "#1f77b4", a shade of blue).
+- `MOVIE_COLOR`: The color to use for movies in graphs (default is "#ff7f0e", a shade of orange).
 - See [here](https://matplotlib.org/stable/users/explain/colors/colors.html) for more options. 
 
 ### Annotation Options
@@ -135,7 +150,40 @@ The `/my_stats` command is subject to rate limiting to prevent abuse:
 
 If a user attempts to use the command too frequently, they will receive a message indicating when they can use the command again.
 
-### Language Support
+## Managing Bot Permissions
+
+TGraph Bot uses Discord's built-in Integrations system for managing command permissions. This allows server administrators to control access to sensitive commands like `/config` and `/update_graphs` directly through Discord's interface. Here's how to set it up:
+
+1. **Access Server Settings**: 
+   - Open your Discord server where TGraph Bot is installed.
+   - Click on the server name to open the dropdown menu.
+   - Select "Server Settings".
+
+2. **Navigate to Integrations**:
+   - In the left sidebar of Server Settings, find and click on "Integrations".
+
+3. **Locate TGraph Bot**:
+   - In the Integrations page, find TGraph Bot in the list of bots.
+   - Click on the bot to expand its settings.
+
+4. **Manage Command Permissions**:
+   - Look for the "Command Permissions" section.
+   - Here, you'll see a list of all the bot's slash commands, including `/config`, `/my_stats` and `/update_graphs`.
+   - For each command, you can specify which roles or users have permission to use it.
+
+5. **Set Permissions**:
+   - Click on a command (e.g., `/config`).
+   - Use the interface to add roles or users who should have access to this command.
+   - It's recommended to restrict `/config` and `/update_graphs` to trusted roles only.
+
+6. **Save Changes**:
+   - Make sure to save your changes after setting permissions for each command.
+
+By using Discord's Integrations, you'll have granular control over who can use each of TGraph Bot's commands.
+
+**Note:** If no specific permissions are set for a command, it will be accessible to all users who can see and use slash commands in the server. Always ensure sensitive commands are properly restricted.
+
+## Language Support
 
 Tautulli Graph Bot supports multiple languages using i18n. The available languages are defined in the `i18n` directory, with separate YAML files for each language:
 
