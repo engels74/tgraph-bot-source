@@ -19,24 +19,29 @@ def generate_user_graphs(user_id, img_folder, config, current_translations):
     user_folder = os.path.join(img_folder, today, f"user_{user_id}")
     ensure_folder_exists(user_folder)
 
+    # Define colors
+    TV_COLOR = config['TV_COLOR'].strip('"')
+    MOVIE_COLOR = config['MOVIE_COLOR'].strip('"')
+    ANNOTATION_COLOR = config['ANNOTATION_COLOR'].strip('"')
+
     if config['ENABLE_DAILY_PLAY_COUNT']:
-        graph_files.append(generate_daily_play_count(user_id, user_folder, config))
+        graph_files.append(generate_daily_play_count(user_id, user_folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR))
     
     if config['ENABLE_PLAY_COUNT_BY_DAYOFWEEK']:
-        graph_files.append(generate_play_count_by_dayofweek(user_id, user_folder, config))
+        graph_files.append(generate_play_count_by_dayofweek(user_id, user_folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR))
     
     if config['ENABLE_PLAY_COUNT_BY_HOUROFDAY']:
-        graph_files.append(generate_play_count_by_hourofday(user_id, user_folder, config))
+        graph_files.append(generate_play_count_by_hourofday(user_id, user_folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR))
     
     if config['ENABLE_TOP_10_PLATFORMS']:
-        graph_files.append(generate_top_10_platforms(user_id, user_folder, config))
+        graph_files.append(generate_top_10_platforms(user_id, user_folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR))
     
     if config['ENABLE_PLAY_COUNT_BY_MONTH']:
-        graph_files.append(generate_play_count_by_month(user_id, user_folder, config))
+        graph_files.append(generate_play_count_by_month(user_id, user_folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR))
 
     return [file for file in graph_files if file is not None]
 
-def generate_daily_play_count(user_id, folder, config):
+def generate_daily_play_count(user_id, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR):
     plt.figure(figsize=(14, 8))
     data = fetch_tautulli_data('get_plays_by_date', {'time_range': config['TIME_RANGE_DAYS'], 'user_id': user_id})
     
@@ -61,12 +66,13 @@ def generate_daily_play_count(user_id, folder, config):
             if date in date_data_map:
                 date_data_map[date] = value
         complete_data = [date_data_map[date] for date in date_strs]
-        plt.plot(dates, complete_data, label=serie['name'], marker='o')
+        color = TV_COLOR if serie['name'] == 'TV' else MOVIE_COLOR
+        plt.plot(dates, complete_data, label=serie['name'], marker='o', color=color)
         
         if config['ANNOTATE_DAILY_PLAY_COUNT']:
             for i, value in enumerate(complete_data):
                 if value > 0:
-                    plt.text(dates[i], value + 0.5, f'{value}', ha='center', va='bottom', fontsize=8, color='red')
+                    plt.text(dates[i], value + 0.5, f'{value}', ha='center', va='bottom', fontsize=8, color=ANNOTATION_COLOR)
     
     plt.xlabel(translations['daily_play_count_xlabel'], fontweight='bold')
     plt.ylabel(translations['daily_play_count_ylabel'], fontweight='bold')
@@ -85,7 +91,7 @@ def generate_daily_play_count(user_id, folder, config):
     plt.close()
     return filepath
 
-def generate_play_count_by_dayofweek(user_id, folder, config):
+def generate_play_count_by_dayofweek(user_id, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR):
     plt.figure(figsize=(14, 8))
     data = fetch_tautulli_data('get_plays_by_dayofweek', {'time_range': config['TIME_RANGE_DAYS'], 'user_id': user_id})
     
@@ -99,11 +105,12 @@ def generate_play_count_by_dayofweek(user_id, folder, config):
     series = play_count_by_dayofweek['series']
     
     for serie in series:
-        plt.plot(days, serie['data'], label=serie['name'], marker='o')
+        color = TV_COLOR if serie['name'] == 'TV' else MOVIE_COLOR
+        plt.plot(days, serie['data'], label=serie['name'], marker='o', color=color)
         if config['ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK']:
             for i, value in enumerate(serie['data']):
                 if value > 0:
-                    plt.text(days[i], value + 0.5, f'{value}', ha='center', va='bottom', fontsize=8, color='red')
+                    plt.text(days[i], value + 0.5, f'{value}', ha='center', va='bottom', fontsize=8, color=ANNOTATION_COLOR)
     
     plt.xlabel(translations['play_count_by_dayofweek_xlabel'], fontweight='bold')
     plt.ylabel(translations['play_count_by_dayofweek_ylabel'], fontweight='bold')
@@ -118,7 +125,7 @@ def generate_play_count_by_dayofweek(user_id, folder, config):
     plt.close()
     return filepath
 
-def generate_play_count_by_hourofday(user_id, folder, config):
+def generate_play_count_by_hourofday(user_id, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR):
     plt.figure(figsize=(14, 8))
     data = fetch_tautulli_data('get_plays_by_hourofday', {'time_range': config['TIME_RANGE_DAYS'], 'user_id': user_id})
     
@@ -131,11 +138,12 @@ def generate_play_count_by_hourofday(user_id, folder, config):
     series = play_count_by_hourofday['series']
     
     for serie in series:
-        plt.plot(hours, serie['data'], label=serie['name'], marker='o')
+        color = TV_COLOR if serie['name'] == 'TV' else MOVIE_COLOR
+        plt.plot(hours, serie['data'], label=serie['name'], marker='o', color=color)
         if config['ANNOTATE_PLAY_COUNT_BY_HOUROFDAY']:
             for i, value in enumerate(serie['data']):
                 if value > 0:
-                    plt.text(hours[i], value + 0.5, f'{value}', ha='center', va='bottom', fontsize=8, color='red')
+                    plt.text(hours[i], value + 0.5, f'{value}', ha='center', va='bottom', fontsize=8, color=ANNOTATION_COLOR)
     
     plt.xlabel(translations['play_count_by_hourofday_xlabel'], fontweight='bold')
     plt.ylabel(translations['play_count_by_hourofday_ylabel'], fontweight='bold')
@@ -150,7 +158,7 @@ def generate_play_count_by_hourofday(user_id, folder, config):
     plt.close()
     return filepath
 
-def generate_top_10_platforms(user_id, folder, config):
+def generate_top_10_platforms(user_id, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR):
     plt.figure(figsize=(14, 8))
     data = fetch_tautulli_data('get_plays_by_top_10_platforms', {'time_range': config['TIME_RANGE_DAYS'], 'user_id': user_id})
     
@@ -163,10 +171,11 @@ def generate_top_10_platforms(user_id, folder, config):
     series = top_10_platforms['series']
     
     for serie in series:
-        plt.bar(platforms, serie['data'], label=serie['name'])
+        color = TV_COLOR if serie['name'] == 'TV' else MOVIE_COLOR
+        plt.bar(platforms, serie['data'], label=serie['name'], color=color)
         if config['ANNOTATE_TOP_10_PLATFORMS']:
             for i, v in enumerate(serie['data']):
-                plt.text(i, v + 0.5, str(v), color='red', fontweight='bold', ha='center', va='bottom')
+                plt.text(i, v + 0.5, str(v), color=ANNOTATION_COLOR, fontweight='bold', ha='center', va='bottom')
     
     plt.xlabel(translations['top_10_platforms_xlabel'], fontweight='bold')
     plt.ylabel(translations['top_10_platforms_ylabel'], fontweight='bold')
@@ -181,7 +190,7 @@ def generate_top_10_platforms(user_id, folder, config):
     plt.close()
     return filepath
 
-def generate_play_count_by_month(user_id, folder, config):
+def generate_play_count_by_month(user_id, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR):
     plt.figure(figsize=(14, 8))
     data = fetch_tautulli_data('get_plays_per_month', {'time_range': 12, 'y_axis': 'plays', 'user_id': user_id})
     
@@ -220,15 +229,15 @@ def generate_play_count_by_month(user_id, folder, config):
     bar_width = 0.4
     bar_positions = range(len(filtered_months))
 
-    plt.bar(bar_positions, filtered_movie_data, width=bar_width, label='Movies')
-    plt.bar(bar_positions, filtered_tv_data, width=bar_width, bottom=filtered_movie_data, label='TV')
+    plt.bar(bar_positions, filtered_movie_data, width=bar_width, label='Movies', color=MOVIE_COLOR)
+    plt.bar(bar_positions, filtered_tv_data, width=bar_width, bottom=filtered_movie_data, label='TV', color=TV_COLOR)
 
     if config['ANNOTATE_PLAY_COUNT_BY_MONTH']:
         for i, v in enumerate(filtered_movie_data):
-            plt.text(i, v + 0.5, str(v), color='red', fontweight='bold', ha='center', va='bottom')
+            plt.text(i, v + 0.5, str(v), color=ANNOTATION_COLOR, fontweight='bold', ha='center', va='bottom')
 
         for i, v in enumerate(filtered_tv_data):
-            plt.text(i, v + filtered_movie_data[i] + 0.5, str(v), color='red', fontweight='bold', ha='center', va='bottom')
+            plt.text(i, v + filtered_movie_data[i] + 0.5, str(v), color=ANNOTATION_COLOR, fontweight='bold', ha='center', va='bottom')
 
     plt.xlabel(translations['play_count_by_month_xlabel'], fontweight='bold')
     plt.ylabel(translations['play_count_by_month_ylabel'], fontweight='bold')
