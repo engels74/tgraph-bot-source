@@ -104,6 +104,7 @@ The bot is configured using the `config.yml` file. Create a `config.yml` file in
 ### Graph Colors
 - `TV_COLOR`: The color to use for TV shows in graphs (default is "#1f77b4", a shade of blue).
 - `MOVIE_COLOR`: The color to use for movies in graphs (default is "#ff7f0e", a shade of orange).
+- `ANNOTATION_COLOR`: The color to use for number annotations on graphs (default is "#ff0000", red).
 - See [here](https://matplotlib.org/stable/users/explain/colors/colors.html) for more options. 
 
 ### Annotation Options
