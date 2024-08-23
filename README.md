@@ -30,13 +30,13 @@ Tautulli Graph Bot automates the process of generating and posting graphical sta
 ## Features
 
 - Automatically generates and posts Tautulli graphs to a Discord channel
-- Supports multiple languages (currently English and Danish) using i18n
-- Runs in a Docker container for easy deployment
-- Configurable graph options with ability to enable/disable specific graphs
-- Interactive Discord slash commands for bot management and user statistics
-- User-specific graph generation (with rate limiting)
-- Customizable update intervals and data retention periods
 - Annotation options for each graph type
+- Configurable graph options with ability to enable/disable specific graphs
+- Customizable update intervals and data retention periods
+- Interactive Discord slash commands for bot management and user statistics
+- Runs in a Docker container for easy deployment
+- Supports multiple languages (currently English and Danish) using i18n
+- User-specific graph generation (with rate limiting options)
 
 ## Preview
 <img src="https://i.imgur.com/UmzyUgW.png" width="50%" alt="An example of how it looks">
@@ -153,34 +153,22 @@ If a user attempts to use the command too frequently, they will receive a messag
 
 ## Managing Bot Permissions
 
-TGraph Bot uses Discord's built-in Integrations system for managing command permissions. This allows server administrators to control access to sensitive commands like `/config` and `/update_graphs` directly through Discord's interface. Here's how to set it up:
+TGraph Bot uses Discord's built-in Integrations system for managing command permissions and includes an automatic permission checker. This allows server administrators to control access to sensitive commands like `/config` and `/update_graphs` directly through Discord's interface, while also providing insights into the current permission setup. Here's how it works:
 
-1. **Access Server Settings**: 
-   - Open your Discord server where TGraph Bot is installed.
-   - Click on the server name to open the dropdown menu.
-   - Select "Server Settings".
+1. **Automatic Permission Checking**:
+   - Upon startup, the bot checks and logs the current permission settings for all commands across all servers it's in.
+   - This helps identify any potential security risks, such as sensitive commands being accessible to all users.
+   - It looks like this: [Preview Image](https://i.imgur.com/VIzl1ne.png)
 
-2. **Navigate to Integrations**:
-   - In the left sidebar of Server Settings, find and click on "Integrations".
+2. **Permission Reports**:
+   - The bot generates detailed reports of command permissions, which are logged to the console and logfile.
+   - These reports show which roles or users have access to each command, helping to ensure proper access control.
 
-3. **Locate TGraph Bot**:
-   - In the Integrations page, find TGraph Bot in the list of bots.
-   - Click on the bot to expand its settings.
-
-4. **Manage Command Permissions**:
-   - Look for the "Command Permissions" section.
-   - Here, you'll see a list of all the bot's slash commands, including `/config`, `/my_stats` and `/update_graphs`.
-   - For each command, you can specify which roles or users have permission to use it.
-
-5. **Set Permissions**:
-   - Click on a command (e.g., `/config`).
-   - Use the interface to add roles or users who should have access to this command.
-   - It's recommended to restrict `/config` and `/update_graphs` to trusted roles only.
-
-6. **Save Changes**:
-   - Make sure to save your changes after setting permissions for each command.
-
-By using Discord's Integrations, you'll have granular control over who can use each of TGraph Bot's commands.
+3. **Setting Up Permissions**:
+   - Access your Discord server settings and navigate to the Integrations section.
+   - Find TGraph Bot in the list and click to expand its settings.
+   - In the "Command Permissions" section, you can specify which roles or users have permission to use each command.
+   - It's recommended to restrict sensitive commands like `/config`, `/my_stats` `/update_graphs` to trusted roles only.
 
 **Note:** If no specific permissions are set for a command, it will be accessible to all users who can see and use slash commands in the server. Always ensure sensitive commands are properly restricted.
 
