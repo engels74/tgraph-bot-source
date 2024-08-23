@@ -21,7 +21,7 @@ CONFIGURABLE_OPTIONS = [
     'ANNOTATE_DAILY_PLAY_COUNT', 'ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK', 'ANNOTATE_PLAY_COUNT_BY_HOUROFDAY',
     'ANNOTATE_TOP_10_PLATFORMS', 'ANNOTATE_TOP_10_USERS', 'ANNOTATE_PLAY_COUNT_BY_MONTH',
     'MY_STATS_COOLDOWN_MINUTES', 'MY_STATS_GLOBAL_COOLDOWN_SECONDS',
-    'TV_COLOR', 'MOVIE_COLOR'
+    'TV_COLOR', 'MOVIE_COLOR', 'ANNOTATION_COLOR'
 ]
 
 # Global variable to store the configuration
@@ -66,6 +66,7 @@ def load_config(config_path=CONFIG_PATH, reload=False):
             'ENABLE_PLAY_COUNT_BY_MONTH': bool(get_config('ENABLE_PLAY_COUNT_BY_MONTH', True)),
             'TV_COLOR': get_config('TV_COLOR', '#1f77b4'),
             'MOVIE_COLOR': get_config('MOVIE_COLOR', '#ff7f0e'),
+            'ANNOTATION_COLOR': get_config('ANNOTATION_COLOR', '#ff0000'),
             'ANNOTATE_DAILY_PLAY_COUNT': bool(get_config('ANNOTATE_DAILY_PLAY_COUNT', True)),
             'ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK': bool(get_config('ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK', True)),
             'ANNOTATE_PLAY_COUNT_BY_HOUROFDAY': bool(get_config('ANNOTATE_PLAY_COUNT_BY_HOUROFDAY', True)),

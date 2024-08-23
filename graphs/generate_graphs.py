@@ -20,6 +20,7 @@ translations = load_translations(config['LANGUAGE'])
 # Define consistent colors
 TV_COLOR = config['TV_COLOR'].strip('"')
 MOVIE_COLOR = config['MOVIE_COLOR'].strip('"')
+ANNOTATION_COLOR = config['ANNOTATION_COLOR'].strip('"')
 
 # Helper function to fetch data from Tautulli
 def fetch_tautulli_data(cmd, params={}):
@@ -70,6 +71,7 @@ def generate_graphs(data, folder, current_translations):
     # Use the updated color variables
     TV_COLOR = config['TV_COLOR'].strip('"')
     MOVIE_COLOR = config['MOVIE_COLOR'].strip('"')
+    ANNOTATION_COLOR = config['ANNOTATION_COLOR'].strip('"')
     
     if config['ENABLE_DAILY_PLAY_COUNT']:
         plt.figure(figsize=(14, 8))
@@ -100,7 +102,7 @@ def generate_graphs(data, folder, current_translations):
             if config['ANNOTATE_DAILY_PLAY_COUNT']:
                 for i, value in enumerate(complete_data):
                     if value > 0:  # Only annotate days with plays
-                        plt.text(dates[i], value + 0.5, f'{value}', ha='center', va='bottom', fontsize=8, color='red')
+                        plt.text(dates[i], value + 0.5, f'{value}', ha='center', va='bottom', fontsize=8, color=ANNOTATION_COLOR)
         
         plt.xlabel(translations['daily_play_count_xlabel'], fontweight='bold')
         plt.ylabel(translations['daily_play_count_ylabel'], fontweight='bold')
@@ -130,7 +132,7 @@ def generate_graphs(data, folder, current_translations):
             if config['ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK']:
                 for i, value in enumerate(serie['data']):
                     if value > 0:
-                        plt.text(days[i], value + 0.5, f'{value}', ha='center', va='bottom', fontsize=8, color='red')
+                        plt.text(days[i], value + 0.5, f'{value}', ha='center', va='bottom', fontsize=8, color=ANNOTATION_COLOR)
         plt.xlabel(translations['play_count_by_dayofweek_xlabel'], fontweight='bold')
         plt.ylabel(translations['play_count_by_dayofweek_ylabel'], fontweight='bold')
         plt.title(translations['play_count_by_dayofweek_title'].format(days=config["TIME_RANGE_DAYS"]), fontweight='bold')
@@ -153,7 +155,7 @@ def generate_graphs(data, folder, current_translations):
             if config['ANNOTATE_PLAY_COUNT_BY_HOUROFDAY']:
                 for i, value in enumerate(serie['data']):
                     if value > 0:
-                        plt.text(hours[i], value + 0.5, f'{value}', ha='center', va='bottom', fontsize=8, color='red')
+                        plt.text(hours[i], value + 0.5, f'{value}', ha='center', va='bottom', fontsize=8, color=ANNOTATION_COLOR)
         plt.xlabel(translations['play_count_by_hourofday_xlabel'], fontweight='bold')
         plt.ylabel(translations['play_count_by_hourofday_ylabel'], fontweight='bold')
         plt.title(translations['play_count_by_hourofday_title'].format(days=config["TIME_RANGE_DAYS"]), fontweight='bold')
@@ -175,7 +177,7 @@ def generate_graphs(data, folder, current_translations):
             plt.bar(platforms, serie['data'], label=serie['name'], color=color)
             if config['ANNOTATE_TOP_10_PLATFORMS']:
                 for i, v in enumerate(serie['data']):
-                    plt.text(i, v + 0.5, str(v), color='red', fontweight='bold', ha='center', va='bottom')
+                    plt.text(i, v + 0.5, str(v), color=ANNOTATION_COLOR, fontweight='bold', ha='center', va='bottom')
         plt.xlabel(translations['top_10_platforms_xlabel'], fontweight='bold')
         plt.ylabel(translations['top_10_platforms_ylabel'], fontweight='bold')
         plt.title(translations['top_10_platforms_title'].format(days=config["TIME_RANGE_DAYS"]), fontweight='bold')
@@ -218,7 +220,7 @@ def generate_graphs(data, folder, current_translations):
         if config['ANNOTATE_TOP_10_USERS']:
             for i, (tv, movie) in enumerate(zip(sorted_tv_data, sorted_movie_data)):
                 total = tv + movie
-                plt.text(i, total + 0.5, str(total), color='red', fontweight='bold', ha='center', va='bottom')
+                plt.text(i, total + 0.5, str(total), color=ANNOTATION_COLOR, fontweight='bold', ha='center', va='bottom')
 
         plt.xlabel(translations['top_10_users_xlabel'], fontweight='bold')
         plt.ylabel(translations['top_10_users_ylabel'], fontweight='bold')
@@ -271,10 +273,10 @@ def generate_graphs(data, folder, current_translations):
 
         if config['ANNOTATE_PLAY_COUNT_BY_MONTH']:
             for i, v in enumerate(filtered_movie_data):
-                plt.text(i, v + 0.5, str(v), color='red', fontweight='bold', ha='center', va='bottom')
+                plt.text(i, v + 0.5, str(v), color=ANNOTATION_COLOR, fontweight='bold', ha='center', va='bottom')
 
             for i, v in enumerate(filtered_tv_data):
-                plt.text(i, v + filtered_movie_data[i] + 0.5, str(v), color='red', fontweight='bold', ha='center', va='bottom')
+                plt.text(i, v + filtered_movie_data[i] + 0.5, str(v), color=ANNOTATION_COLOR, fontweight='bold', ha='center', va='bottom')
 
         plt.xlabel(translations['play_count_by_month_xlabel'], fontweight='bold')
         plt.ylabel(translations['play_count_by_month_ylabel'], fontweight='bold')
