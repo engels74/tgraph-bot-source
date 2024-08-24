@@ -168,7 +168,7 @@ TGraph Bot uses Discord's built-in Integrations system for managing command perm
    - Access your Discord server settings and navigate to the Integrations section.
    - Find TGraph Bot in the list and click to expand its settings.
    - In the "Command Permissions" section, you can specify which roles or users have permission to use each command.
-   - It's recommended to restrict sensitive commands like `/config`, `/my_stats` `/update_graphs` to trusted roles only.
+   - It's recommended to restrict sensitive commands like `/config`, `/my_stats` and `/update_graphs` to trusted roles only.
 
 **Note:** If no specific permissions are set for a command, it will be accessible to all users who can see and use slash commands in the server. Always ensure sensitive commands are properly restricted.
 
