@@ -21,6 +21,7 @@
   - [Docker Compose](#docker-compose)
   - [Unraid Community Application](#unraid-community-application)
 - [Configuration](#configuration)
+  - [Bot Options](#bot-options)
   - [Graph Options](#graph-options)
   - [Graph Colors](#graph-colors)
   - [Annotation Options](#annotation-options)
@@ -105,6 +106,8 @@ https://github.com/engels74/tgraph-bot
 ## Configuration
 
 The bot is configured using the `config.yml` file. Create a `config.yml` file in the `/config` directory based on the provided `config.yml.sample` file. Update the values in the `config.yml` file with your specific settings:
+
+### Bot Options
 
 - `TAUTULLI_API_KEY`: Your Tautulli API key.
 - `TAUTULLI_URL`: The URL to your Tautulli instance (e.g., `http://localhost:8181/api/v2`).
