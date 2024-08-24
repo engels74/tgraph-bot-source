@@ -1,7 +1,6 @@
 # bot/permission_checker.py
 import discord
-from discord import app_commands
-from typing import Dict, List, Optional
+from typing import Dict, List
 import logging
 import textwrap
 
