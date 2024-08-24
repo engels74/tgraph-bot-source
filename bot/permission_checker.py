@@ -58,18 +58,31 @@ async def check_command_permissions(bot: discord.Client, guild: discord.Guild, t
                 no_permissions_set = False
                 roles_and_users = []
                 for perm in permissions:
-                    if perm['type'] == 1:  # 1 is for roles
-                        role = guild.get_role(int(perm['id']))
-                        if role:
-                            roles_and_users.append(f"{role.name} ({'Allowed' if perm['permission'] else 'Denied'})")
-                    elif perm['type'] == 2:  # 2 is for users
-                        user = await bot.fetch_user(int(perm['id']))
-                        if user:
-                            roles_and_users.append(f"{user.name} ({'Allowed' if perm['permission'] else 'Denied'})")
-                    elif perm['type'] == 3:  # 3 is for channels
-                        channel = guild.get_channel(int(perm['id']))
-                        if channel:
-                            roles_and_users.append(f"#{channel.name} ({'Allowed' if perm['permission'] else 'Denied'})")
+                    try:
+                        if perm['type'] == 1:  # 1 is for roles
+                            role = guild.get_role(int(perm['id']))
+                            if role:
+                                roles_and_users.append(f"{role.name} ({'Allowed' if perm['permission'] else 'Denied'})")
+                            else:
+                                logging.warning(f"Role with ID {perm['id']} not found in guild {guild.name}")
+                        elif perm['type'] == 2:  # 2 is for users
+                            user = await bot.fetch_user(int(perm['id']))
+                            if user:
+                                roles_and_users.append(f"{user.name} ({'Allowed' if perm['permission'] else 'Denied'})")
+                            else:
+                                logging.warning(f"User with ID {perm['id']} not found")
+                        elif perm['type'] == 3:  # 3 is for channels
+                            channel = guild.get_channel(int(perm['id']))
+                            if channel:
+                                roles_and_users.append(f"#{channel.name} ({'Allowed' if perm['permission'] else 'Denied'})")
+                            else:
+                                logging.warning(f"Channel with ID {perm['id']} not found in guild {guild.name}")
+                    except discord.errors.HTTPException as e:
+                        logging.error(f"HTTP error when fetching entity with ID {perm['id']}: {str(e)}")
+                    except discord.errors.NotFound:
+                        logging.warning(f"Entity with ID {perm['id']} not found")
+                    except Exception as e:
+                        logging.error(f"Unexpected error when processing permission for ID {perm['id']}: {str(e)}")
                 
                 if roles_and_users:
                     rows.append([permission_name, ', '.join(roles_and_users)])
