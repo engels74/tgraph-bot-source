@@ -12,6 +12,7 @@ from i18n import load_translations
 from datetime import datetime
 from graphs.generate_graphs import update_and_post_graphs
 from bot.update_tracker import create_update_tracker
+from bot.permission_checker import check_permissions_all_guilds
 
 # Get the CONFIG_DIR from environment variable, default to '/config' if not set
 CONFIG_DIR = os.environ.get('CONFIG_DIR', '/config')
@@ -94,8 +95,8 @@ class TGraphBot(commands.Bot):
 async def main():
     # Define intents
     intents = discord.Intents.default()
-    intents.messages = True
     intents.guilds = True
+    intents.messages = True
 
     bot = TGraphBot(command_prefix="!", intents=intents, data_folder=args.data_folder, img_folder=img_folder, update_tracker=update_tracker)
 
@@ -111,6 +112,15 @@ async def main():
             log(translations['log_syncing_application_commands'])
             await bot.tree.sync()
             log(translations['log_application_commands_synced'])
+            
+            # Delay the permission check
+            log(translations['log_waiting_before_permission_check'])
+            await asyncio.sleep(5)
+            
+            # Check command permissions
+            log(translations['log_checking_command_permissions'])
+            await check_permissions_all_guilds(bot, translations)
+            log(translations['log_command_permissions_checked'])
             
             # Update and post graphs immediately after logging in
             log(translations['log_updating_posting_graphs_startup'])
