@@ -4,11 +4,22 @@
   <img src="https://i.imgur.com/L5Tj3nW.png" alt="TGraph Bot"/>
 </p>
 
-## Table of Contents
+<p align="center">
+  <a href="https://github.com/engels74/tgraph-bot-source/releases"><img src="https://img.shields.io/github/v/tag/engels74/tgraph-bot-source?sort=semver" alt="GitHub tag (SemVer)"></a>
+  <a href="https://github.com/engels74/tgraph-bot/blob/master/LICENSE"><img src="https://img.shields.io/badge/License%20(Image)-GPL--3.0-orange" alt="License (Image)"></a>
+  <a href="https://github.com/engels74/tgraph-bot-source/blob/main/LICENSE"><img src="https://img.shields.io/badge/License%20(Source)-AGPL--3.0-orange" alt="License (Source)"></a>
+  <a href="https://hub.docker.com/r/engels74/tgraph-bot"><img src="https://img.shields.io/docker/pulls/engels74/tgraph-bot.svg" alt="Docker Pulls"></a>
+  <a href="https://github.com/engels74/tgraph-bot-source/stargazers"><img src="https://img.shields.io/github/stars/engels74/tgraph-bot-source.svg" alt="GitHub Stars"></a>
+  <a href="https://endsoftwarepatents.org/innovating-without-patents"><img style="height: 20px;" src="https://static.fsf.org/nosvn/esp/logos/patent-free.svg"></a>
+</p>
+
+## 📋 Table of Contents
 - [Description](#description)
 - [Features](#features)
 - [Preview](#preview)
 - [Installation](#installation)
+  - [Docker Compose](#docker-compose)
+  - [Unraid Community Application](#unraid-community-application)
 - [Configuration](#configuration)
   - [Graph Options](#graph-options)
   - [Graph Colors](#graph-colors)
@@ -43,6 +54,8 @@ Tautulli Graph Bot automates the process of generating and posting graphical sta
 
 ## Installation
 
+### Docker Compose
+
 To get started with Tautulli Graph Bot using Docker, follow these steps:
 
 1. **Use this Docker Compose example**
@@ -71,6 +84,18 @@ To get started with Tautulli Graph Bot using Docker, follow these steps:
     ```sh
     docker-compose -f /choose/path/to/docker-compose.tgraph.yml up -d
     ```
+
+### Unraid Community Application
+
+TGraph Bot is also available as an Unraid Community Application, making it easy to install and manage on Unraid systems:
+
+1. Open the Unraid Apps tab.
+2. Search for "TGraph Bot" in the available applications.
+3. Click on the TGraph Bot application.
+4. Click "Install" to add TGraph Bot to your Unraid system.
+
+You can find the TGraph Bot application in the Unraid Community Applications here:
+[TGraph Bot on Unraid Community Apps](https://unraid.net/community/apps?q=tgraph#r)
 
 ### Source Code for Docker Container
 
