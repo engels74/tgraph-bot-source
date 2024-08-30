@@ -45,7 +45,7 @@ def load_config(config_path=CONFIG_PATH, reload=False):
         # Function to get the value from config.yml or environment variable
         def get_config(key, default=None):
             value = config_vars.get(key, os.getenv(key, default))
-            if key in ['TV_COLOR', 'MOVIE_COLOR']:
+            if key in ['TV_COLOR', 'MOVIE_COLOR', 'ANNOTATION_COLOR']:
                 return format_color_value(str(value))
             return value
 
@@ -91,14 +91,14 @@ def save_config(config, config_path=CONFIG_PATH):
             key = key.strip()
             if key in config:
                 value = config[key]
-                if key in ['TV_COLOR', 'MOVIE_COLOR']:
+                if key in ['TV_COLOR', 'MOVIE_COLOR', 'ANNOTATION_COLOR']:
                     value = format_color_value(str(value))
                 lines[i] = f"{key}: {value}\n"
                 del config[key]
 
     # Append any new keys at the end
     for key, value in config.items():
-        if key in ['TV_COLOR', 'MOVIE_COLOR']:
+        if key in ['TV_COLOR', 'MOVIE_COLOR', 'ANNOTATION_COLOR']:
             value = format_color_value(str(value))
         lines.append(f"{key}: {value}\n")
 
