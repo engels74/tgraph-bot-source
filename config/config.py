@@ -109,7 +109,7 @@ def update_config(key, value):
     global config
     config = load_config(reload=True)
     
-    if key in ['TV_COLOR', 'MOVIE_COLOR']:
+    if key in ['TV_COLOR', 'MOVIE_COLOR', 'ANNOTATION_COLOR']:
         value = format_color_value(str(value))
     
     config[key] = value
