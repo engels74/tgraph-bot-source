@@ -1,8 +1,8 @@
 ---
 name: Bug report
 about: Create a report to help us improve TGraph Bot
-title: '[BUG] '
-labels: 'bug'
+title: "[BUG] "
+labels: bug
 assignees: ''
 
 ---
