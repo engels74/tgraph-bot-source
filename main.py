@@ -158,7 +158,7 @@ async def schedule_updates(bot):
             bot.update_tracker.update()
             next_update_log = bot.update_tracker.get_next_update_readable()
             log(translations['log_auto_update_completed'].format(next_update=next_update_log))
-        await asyncio.sleep(3600)  # Check every hour
+        await asyncio.sleep(60)  # Check every minute
 
 def update_translations(new_translations):
     global translations
@@ -189,4 +189,4 @@ if __name__ == "__main__":
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
-# Contact: engels74@marx.ps
+# Contact: engels74@tuta.io

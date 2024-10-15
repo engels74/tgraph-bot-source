@@ -87,10 +87,24 @@ class Commands(commands.Cog):
                     value = int(value)
                 elif key in ['TV_COLOR', 'MOVIE_COLOR']:
                     value = format_color_value(value)
+                elif key == 'FIXED_UPDATE_TIME':
+                    # Validate FIXED_UPDATE_TIME format
+                    if value.upper() == 'XX:XX':
+                        parsed_value = None
+                    else:
+                        try:
+                            parsed_value = datetime.strptime(value, "%H:%M").time()
+                        except ValueError:
+                            await interaction.response.send_message(
+                                self.translations['error_invalid_fixed_time'].format(value=value),
+                                ephemeral=True
+                            )
+                            return
+                    value = parsed_value
 
                 # Update configuration
                 old_value = config.get(key, "N/A")
-                new_config = update_config(key, value)
+                new_config = update_config(key, value, self.translations)
                 
                 # Update the bot's update_tracker with the new config
                 try:
@@ -106,10 +120,16 @@ class Commands(commands.Cog):
                     self.update_translations()
 
                 # Prepare response message
-                response_message = self.translations['config_updated'].format(key=key, old_value=old_value, new_value=value)
+                if key == 'FIXED_UPDATE_TIME':
+                    if value is None:
+                        response_message = self.translations['config_updated_fixed_time_disabled'].format(key=key)
+                    else:
+                        response_message = self.translations['config_updated'].format(key=key, old_value=old_value, new_value=value.strftime("%H:%M"))
+                else:
+                    response_message = self.translations['config_updated'].format(key=key, old_value=old_value, new_value=value)
 
                 # Add next update info only for relevant keys
-                if key in ['UPDATE_DAYS']:
+                if key in ['UPDATE_DAYS', 'FIXED_UPDATE_TIME']:
                     try:
                         next_update = self.bot.update_tracker.next_update.strftime('%Y-%m-%d %H:%M:%S')
                         response_message += f"\n{self.translations['next_update'].format(next_update=next_update)}"
@@ -125,7 +145,11 @@ class Commands(commands.Cog):
             log(self.translations['log_command_executed'].format(command="config", user=f"{interaction.user.name}#{interaction.user.discriminator}"))
         except Exception as e:
             log(self.translations['log_command_error'].format(command="config", error=str(e)))
-            await interaction.followup.send(self.translations['error_processing_command'], ephemeral=True)
+            try:
+                await interaction.followup.send(self.translations['error_processing_command'], ephemeral=True)
+            except discord.errors.NotFound:
+                # If the followup fails, try to send a new message
+                await interaction.channel.send(self.translations['error_processing_command'], delete_after=10)
 
     def update_translations(self):
         # Update translations in other modules
