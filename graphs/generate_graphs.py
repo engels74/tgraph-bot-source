@@ -283,7 +283,7 @@ def save_and_post_graph(folder, filename):
     logging.info(translations['log_posted_message'].format(filename=filename))
 
 # Ensure the image folder exists
-def ensure_folder_exists(folder):
+def ensure_folder_exists(folder, translations):
     if not os.path.exists(folder):
         os.makedirs(folder)
     logging.info(translations['log_ensured_folder_exists'])
@@ -308,7 +308,7 @@ async def update_and_post_graphs(bot, current_translations, current_config):
     await delete_bot_messages(channel)
 
     try:
-        ensure_folder_exists(bot.img_folder)
+        ensure_folder_exists(bot.img_folder, translations)
 
         today = datetime.today().strftime('%Y-%m-%d')
         dated_folder = os.path.join(bot.img_folder, today)

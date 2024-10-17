@@ -128,7 +128,7 @@ async def main():
             log(bot.translations['log_updating_posting_graphs_startup'])
             log(bot.translations['log_manual_update_started'])
             bot.config = load_config(args.config_file, reload=True)  # Reload config here
-            await update_and_post_graphs(bot, bot.translations, bot.config)
+            await update_and_post_graphs(self, self.translations, self.config)
             
             # Update the tracker's last_update time and calculate next_update
             bot.update_tracker.last_update = datetime.now()
