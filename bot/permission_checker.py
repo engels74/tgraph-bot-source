@@ -1,8 +1,8 @@
 # bot/permission_checker.py
 import discord
-from typing import Dict, List
 import logging
 import textwrap
+from typing import Dict, List
 
 def create_table(headers: List[str], rows: List[List[str]], column_widths: List[int]) -> str:
     def format_cell(content, width):

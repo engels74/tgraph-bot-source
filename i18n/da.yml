@@ -157,8 +157,16 @@ tracker_file_loaded: "Indlæst tracker-fil. Sidste opdatering: {last_update}, N�
 tracker_file_saved: "Gemt tracker-fil. Sidste opdatering: {last_update}, Næste opdatering: {next_update}"
 tracker_reset: "Nulstil tracker. Sidste opdatering: {last_update}, Næste opdatering: {next_update}"
 update_due_check: "Tjekker, om opdateringen er forfalden. Nu: {now}, Next update: {next_update}, Forfalder: {is_due}"
-update_tracker_initialized: "UpdateTracker initialiseret med UPDATE_DAYS: {update_days}"
+update_tracker_initialized: "UpdateTracker initialiseret med UPDATE_DAYS: {update_days}, FIXED_UPDATE_TIME: {fixed_time}"
+
+# Configuration
+config_updated_days_and_time: "Konfiguration opdateret. UPDATE_DAYS ændret fra {update_days_old} til {update_days_new}, FIXED_UPDATE_TIME ændret fra {fixed_time_old} til {fixed_time_new}"
+
+# Error Messages
+error_invalid_fixed_time: "Ugyldigt tidsformat for FIXED_UPDATE_TIME: {value}. Brug venligst HH:MM-format eller 'XX:XX' for at deaktivere."
+config_updated_fixed_time_disabled: "Konfiguration opdateret. {key} er blevet deaktiveret (sat til XX:XX)."
 
 # Miscellaneous
 graphs_no_data_available: "Ingen data tilgængelige for play_count_by_month"
 graphs_no_monthly_data: "Ingen data tilgængelige for antal afspilninger pr. måned"
+fixed_time_not_set: "Ikke indstillet"

@@ -1,18 +1,18 @@
 # main.py
-import os
-import logging
-import sys
 import argparse
 import asyncio
 import discord
-from discord.ext import commands
+import logging
+import os
+import sys
 from aiohttp import ClientConnectorError, ServerDisconnectedError
-from config.config import load_config, sanitize_config_file
-from i18n import load_translations
-from datetime import datetime
-from graphs.generate_graphs import update_and_post_graphs
-from bot.update_tracker import create_update_tracker
 from bot.permission_checker import check_permissions_all_guilds
+from bot.update_tracker import create_update_tracker
+from config.config import load_config, sanitize_config_file
+from datetime import datetime
+from discord.ext import commands
+from graphs.generate_graphs import update_and_post_graphs
+from i18n import load_translations
 
 # Get the CONFIG_DIR from environment variable, default to '/config' if not set
 CONFIG_DIR = os.environ.get('CONFIG_DIR', '/config')
@@ -158,7 +158,7 @@ async def schedule_updates(bot):
             bot.update_tracker.update()
             next_update_log = bot.update_tracker.get_next_update_readable()
             log(translations['log_auto_update_completed'].format(next_update=next_update_log))
-        await asyncio.sleep(3600)  # Check every hour
+        await asyncio.sleep(60)  # Check every minute
 
 def update_translations(new_translations):
     global translations
@@ -189,4 +189,4 @@ if __name__ == "__main__":
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
-# Contact: engels74@marx.ps
+# Contact: engels74@tuta.io

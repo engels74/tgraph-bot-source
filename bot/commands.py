@@ -1,14 +1,14 @@
 # bot/commands.py
-from datetime import datetime, timedelta
 import discord
+import requests
+from config.config import load_config, update_config, RESTART_REQUIRED_KEYS, get_configurable_options, CONFIG_PATH, format_color_value
+from datetime import datetime, timedelta
 from discord import app_commands
 from discord.ext import commands
-from config.config import load_config, update_config, RESTART_REQUIRED_KEYS, get_configurable_options, CONFIG_PATH, format_color_value
-from i18n import load_translations
 from graphs.generate_graphs import update_and_post_graphs
 from graphs.generate_graphs_user import generate_user_graphs
+from i18n import load_translations
 from main import log
-import requests
 
 # Load configuration
 config = load_config(CONFIG_PATH)
@@ -87,10 +87,24 @@ class Commands(commands.Cog):
                     value = int(value)
                 elif key in ['TV_COLOR', 'MOVIE_COLOR']:
                     value = format_color_value(value)
+                elif key == 'FIXED_UPDATE_TIME':
+                    # Validate FIXED_UPDATE_TIME format
+                    if value.upper() == 'XX:XX':
+                        parsed_value = None
+                    else:
+                        try:
+                            parsed_value = datetime.strptime(value, "%H:%M").time()
+                        except ValueError:
+                            await interaction.response.send_message(
+                                self.translations['error_invalid_fixed_time'].format(value=value),
+                                ephemeral=True
+                            )
+                            return
+                    value = parsed_value
 
                 # Update configuration
                 old_value = config.get(key, "N/A")
-                new_config = update_config(key, value)
+                new_config = update_config(key, value, self.translations)
                 
                 # Update the bot's update_tracker with the new config
                 try:
@@ -106,10 +120,16 @@ class Commands(commands.Cog):
                     self.update_translations()
 
                 # Prepare response message
-                response_message = self.translations['config_updated'].format(key=key, old_value=old_value, new_value=value)
+                if key == 'FIXED_UPDATE_TIME':
+                    if value is None:
+                        response_message = self.translations['config_updated_fixed_time_disabled'].format(key=key)
+                    else:
+                        response_message = self.translations['config_updated'].format(key=key, old_value=old_value, new_value=value.strftime("%H:%M"))
+                else:
+                    response_message = self.translations['config_updated'].format(key=key, old_value=old_value, new_value=value)
 
                 # Add next update info only for relevant keys
-                if key in ['UPDATE_DAYS']:
+                if key in ['UPDATE_DAYS', 'FIXED_UPDATE_TIME']:
                     try:
                         next_update = self.bot.update_tracker.next_update.strftime('%Y-%m-%d %H:%M:%S')
                         response_message += f"\n{self.translations['next_update'].format(next_update=next_update)}"
@@ -125,7 +145,16 @@ class Commands(commands.Cog):
             log(self.translations['log_command_executed'].format(command="config", user=f"{interaction.user.name}#{interaction.user.discriminator}"))
         except Exception as e:
             log(self.translations['log_command_error'].format(command="config", error=str(e)))
-            await interaction.followup.send(self.translations['error_processing_command'], ephemeral=True)
+            error_message = self.translations['error_processing_command']
+            try:
+                if interaction.response.is_done():
+                    await interaction.followup.send(error_message, ephemeral=True)
+                else:
+                    await interaction.response.send_message(error_message, ephemeral=True)
+            except discord.errors.HTTPException as http_err:
+                log(f"Failed to send error message: {str(http_err)}")
+            except Exception as inner_e:
+                log(f"Unexpected error when sending error message: {str(inner_e)}")
 
     def update_translations(self):
         # Update translations in other modules

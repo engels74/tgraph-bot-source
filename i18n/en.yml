@@ -157,8 +157,16 @@ tracker_file_loaded: "Loaded tracker file. Last update: {last_update}, Next upda
 tracker_file_saved: "Saved tracker file. Last update: {last_update}, Next update: {next_update}"
 tracker_reset: "Reset tracker. Last update: {last_update}, Next update: {next_update}"
 update_due_check: "Checking if update is due. Now: {now}, Next update: {next_update}, Is due: {is_due}"
-update_tracker_initialized: "UpdateTracker initialized with UPDATE_DAYS: {update_days}"
+update_tracker_initialized: "UpdateTracker initialized with UPDATE_DAYS: {update_days}, FIXED_UPDATE_TIME: {fixed_time}"
+
+# Configuration
+config_updated_days_and_time: "Configuration updated. UPDATE_DAYS changed from {update_days_old} to {update_days_new}, FIXED_UPDATE_TIME changed from {fixed_time_old} to {fixed_time_new}"
+
+# Error Messages
+error_invalid_fixed_time: "Invalid time format for FIXED_UPDATE_TIME: {value}. Please use HH:MM format or 'XX:XX' to disable."
+config_updated_fixed_time_disabled: "Configuration updated. {key} has been disabled (set to XX:XX)."
 
 # Miscellaneous
 graphs_no_data_available: "No data available for play_count_by_month"
 graphs_no_monthly_data: "No data available for play count by month"
+fixed_time_not_set: "Not set"
