@@ -88,30 +88,18 @@ class Commands(commands.Cog):
                 elif key in ['TV_COLOR', 'MOVIE_COLOR']:
                     value = format_color_value(value)
                 elif key == 'FIXED_UPDATE_TIME':
-                    # Validate FIXED_UPDATE_TIME format
-                    if value.upper() == 'XX:XX':
-                        parsed_value = None
-                    else:
-                        try:
-                            parsed_value = datetime.strptime(value, "%H:%M").time()
-                        except ValueError:
-                            await interaction.response.send_message(
-                                self.translations['error_invalid_fixed_time'].format(value=value),
-                                ephemeral=True
-                            )
-                            return
-                    value = parsed_value
+                    try:
+                        value = self.validate_fixed_update_time(value)
+                    except ValueError as e:
+                        await interaction.response.send_message(str(e), ephemeral=True)
+                        return
 
                 # Update configuration
                 old_value = config.get(key, "N/A")
                 new_config = update_config(key, value, self.translations)
                 
                 # Update the bot's update_tracker with the new config
-                try:
-                    self.bot.update_tracker.update_config(new_config)
-                    self.bot.update_tracker.reset()  # Force a reset to use the new UPDATE_DAYS value
-                except Exception as e:
-                    log(f"Error updating tracker config: {str(e)}")
+                self._sync_update_tracker(new_config)
                 
                 # Reload translations if language changed
                 if key == 'LANGUAGE':
@@ -145,16 +133,7 @@ class Commands(commands.Cog):
             log(self.translations['log_command_executed'].format(command="config", user=f"{interaction.user.name}#{interaction.user.discriminator}"))
         except Exception as e:
             log(self.translations['log_command_error'].format(command="config", error=str(e)))
-            error_message = self.translations['error_processing_command']
-            try:
-                if interaction.response.is_done():
-                    await interaction.followup.send(error_message, ephemeral=True)
-                else:
-                    await interaction.response.send_message(error_message, ephemeral=True)
-            except discord.errors.HTTPException as http_err:
-                log(f"Failed to send error message: {str(http_err)}")
-            except Exception as inner_e:
-                log(f"Unexpected error when sending error message: {str(inner_e)}")
+            await self._send_error_message(interaction, self.translations['error_processing_command'])
 
     def update_translations(self):
         # Update translations in other modules
@@ -236,10 +215,7 @@ class Commands(commands.Cog):
             
             # Reload config and update the tracker
             config = load_config(CONFIG_PATH, reload=True)
-            try:
-                self.bot.update_tracker.update_config(config)
-            except Exception as e:
-                log(f"Error updating tracker config: {str(e)}")
+            self._sync_update_tracker(config)
             
             # Perform the graph update
             await update_and_post_graphs(self.bot, self.translations)
@@ -294,6 +270,32 @@ class Commands(commands.Cog):
         except Exception as e:
             log(self.translations['error_fetching_user_id'].format(error=str(e)))
             return None
+
+    def validate_fixed_update_time(self, value):
+        if value.upper() == 'XX:XX':
+            return None
+        try:
+            return datetime.strptime(value, "%H:%M").time()
+        except ValueError:
+            raise ValueError(f"Invalid time format: {value}. Use HH:MM or XX:XX to disable.")
+
+    def _sync_update_tracker(self, new_config):
+        try:
+            self.bot.update_tracker.update_config(new_config)
+            self.bot.update_tracker.reset()
+        except Exception as e:
+            log(f"Error updating tracker config: {str(e)}")
+
+    async def _send_error_message(self, interaction, error_message):
+        try:
+            if interaction.response.is_done():
+                await interaction.followup.send(error_message, ephemeral=True)
+            else:
+                await interaction.response.send_message(error_message, ephemeral=True)
+        except discord.errors.HTTPException as http_err:
+            log(f"Failed to send error message: {str(http_err)}")
+        except Exception as inner_e:
+            log(f"Unexpected error when sending error message: {str(inner_e)}")
 
 async def setup(bot):
     await bot.add_cog(Commands(bot))

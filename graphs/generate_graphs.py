@@ -38,18 +38,17 @@ def fetch_tautulli_data(cmd, params={}):
 # Fetch data
 def fetch_all_data():
     data = {}
-    if config['ENABLE_DAILY_PLAY_COUNT']:
-        data['daily_play_count'] = fetch_tautulli_data('get_plays_by_date', {'time_range': config['TIME_RANGE_DAYS']})
-    if config['ENABLE_PLAY_COUNT_BY_DAYOFWEEK']:
-        data['play_count_by_dayofweek'] = fetch_tautulli_data('get_plays_by_dayofweek', {'time_range': config['TIME_RANGE_DAYS']})
-    if config['ENABLE_PLAY_COUNT_BY_HOUROFDAY']:
-        data['play_count_by_hourofday'] = fetch_tautulli_data('get_plays_by_hourofday', {'time_range': config['TIME_RANGE_DAYS']})
-    if config['ENABLE_TOP_10_PLATFORMS']:
-        data['top_10_platforms'] = fetch_tautulli_data('get_plays_by_top_10_platforms', {'time_range': config['TIME_RANGE_DAYS']})
-    if config['ENABLE_TOP_10_USERS']:
-        data['top_10_users'] = fetch_tautulli_data('get_plays_by_top_10_users', {'time_range': config['TIME_RANGE_DAYS']})
-    if config['ENABLE_PLAY_COUNT_BY_MONTH']:
-        data['play_count_by_month'] = fetch_tautulli_data('get_plays_per_month', {'time_range': 12, 'y_axis': 'plays'})  # Last 12 months
+    features = [
+        ('ENABLE_DAILY_PLAY_COUNT', 'daily_play_count', 'get_plays_by_date', {'time_range': config['TIME_RANGE_DAYS']}),
+        ('ENABLE_PLAY_COUNT_BY_DAYOFWEEK', 'play_count_by_dayofweek', 'get_plays_by_dayofweek', {'time_range': config['TIME_RANGE_DAYS']}),
+        ('ENABLE_PLAY_COUNT_BY_HOUROFDAY', 'play_count_by_hourofday', 'get_plays_by_hourofday', {'time_range': config['TIME_RANGE_DAYS']}),
+        ('ENABLE_TOP_10_PLATFORMS', 'top_10_platforms', 'get_plays_by_top_10_platforms', {'time_range': config['TIME_RANGE_DAYS']}),
+        ('ENABLE_TOP_10_USERS', 'top_10_users', 'get_plays_by_top_10_users', {'time_range': config['TIME_RANGE_DAYS']}),
+        ('ENABLE_PLAY_COUNT_BY_MONTH', 'play_count_by_month', 'get_plays_per_month', {'time_range': 12, 'y_axis': 'plays'}),
+    ]
+    for flag, key, cmd, params in features:
+        if config[flag]:
+            data[key] = fetch_tautulli_data(cmd, params)
     return data
 
 # Censor usernames
@@ -63,8 +62,8 @@ def censor_username(username, should_censor):
     return username[:half_length] + '*' * (length - half_length)
 
 # Generate graphs
-def generate_graphs(data, folder, current_translations):
-    global config, translations
+def generate_graphs(data, folder, current_translations, current_config):
+    config = current_config
     translations = current_translations
     config = load_config(CONFIG_PATH, reload=True)
     
@@ -292,7 +291,7 @@ def generate_graphs(data, folder, current_translations):
 def save_and_post_graph(folder, filename):
     filepath = os.path.join(folder, filename)
     plt.savefig(filepath)
-    plt.clf()  # Clear the current figure
+    plt.close()  # Close the figure to release memory
     logging.info(translations['log_posted_message'].format(filename=filename))
 
 # Ensure the image folder exists
@@ -306,12 +305,15 @@ def cleanup_old_folders(base_folder, keep_days):
     folders = [f for f in os.listdir(base_folder) if os.path.isdir(os.path.join(base_folder, f))]
     folders.sort(reverse=True)
     for folder in folders[keep_days:]:
-        shutil.rmtree(os.path.join(base_folder, folder))
+        try:
+            shutil.rmtree(os.path.join(base_folder, folder))
+        except Exception as e:
+            logging.error(f"Error deleting folder {folder}: {str(e)}")
     logging.info(translations['log_cleaned_up_old_folders'])
 
 # Function to update and post graphs
 async def update_and_post_graphs(bot, current_translations):
-    global config, translations
+    config = load_config(CONFIG_PATH, reload=True)
     translations = current_translations
     config = load_config(CONFIG_PATH, reload=True)
     
@@ -343,7 +345,7 @@ async def update_and_post_graphs(bot, current_translations):
 # Function to post graphs
 async def post_graphs(channel, img_folder, translations, next_update):
     now = datetime.now().astimezone().strftime('%Y-%m-%d at %H:%M:%S')
-    today = datetime.today().strftime('%Y-%m-%d')
+    today = datetime.now().astimezone().strftime('%Y-%m-%d')
     next_update_discord = f"<t:{int(next_update.timestamp())}:R>"
     descriptions = {}
 

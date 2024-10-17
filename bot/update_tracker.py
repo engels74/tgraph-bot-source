@@ -90,14 +90,10 @@ class UpdateTracker:
 
         if fixed_time:
             next_update = next_update.replace(hour=fixed_time.hour, minute=fixed_time.minute, second=0, microsecond=0)
-            
-            # If the calculated next_update is in the past, add UPDATE_DAYS
-            while next_update <= datetime.now():
-                next_update += timedelta(days=update_days)
-        else:
-            # If no fixed time, just ensure it's in the future
-            while next_update <= datetime.now():
-                next_update += timedelta(days=update_days)
+        
+        # Ensure next_update is in the future
+        while next_update <= datetime.now():
+            next_update += timedelta(days=update_days)
 
         return next_update
 

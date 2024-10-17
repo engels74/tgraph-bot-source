@@ -91,8 +91,12 @@ def load_config(config_path=CONFIG_PATH, reload=False, translations=None):
 
     # Load existing configuration first
     if os.path.exists(config_path):
-        with open(config_path, 'r') as file:
-            config_vars = yaml.safe_load(file)
+        try:
+            with open(config_path, 'r') as file:
+                config_vars = yaml.safe_load(file)
+        except (IOError, yaml.YAMLError) as e:
+            logging.error(f"Error loading configuration: {e}")
+            config_vars = {}
     else:
         config_vars = {}
     
@@ -162,10 +166,9 @@ def save_config(config, config_path=CONFIG_PATH, default_config=None):
         for new_key in new_keys:
             insert_index = len(existing_keys)
             for i, existing_key in enumerate(existing_keys):
-                if existing_key in default_order:
-                    if default_order[new_key] < default_order[existing_key]:
-                        insert_index = i
-                        break
+                if existing_key in default_order and default_order[new_key] < default_order[existing_key]:
+                    insert_index = i
+                    break
             existing_keys.insert(insert_index, new_key)
             updated_lines[new_key] = format_value(new_key, config[new_key])
 
