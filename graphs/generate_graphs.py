@@ -301,6 +301,7 @@ def cleanup_old_folders(base_folder, keep_days):
 
 # Function to update and post graphs
 async def update_and_post_graphs(bot, current_translations, current_config):
+    logging.info(f"[DEBUG] update_and_post_graphs called with translations: {current_translations is not None}")
     translations = current_translations
     config = current_config
     

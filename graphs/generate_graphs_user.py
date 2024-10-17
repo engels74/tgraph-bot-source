@@ -8,6 +8,7 @@ from matplotlib.dates import DateFormatter
 from matplotlib.ticker import MaxNLocator
 
 def generate_user_graphs(user_id, img_folder, config, current_translations):
+    logging.info(f"[DEBUG] generate_user_graphs called with translations: {current_translations is not None}")
     graph_files = []
     today = datetime.today().strftime('%Y-%m-%d')
     user_folder = os.path.join(img_folder, today, f"user_{user_id}")

@@ -137,6 +137,8 @@ class Commands(commands.Cog):
 
     @app_commands.command(name="my_stats")
     async def my_stats(self, interaction: discord.Interaction, email: str):
+        logging.info(f"[DEBUG] my_stats command called, self.translations exists: {hasattr(self, 'translations')}")
+        logging.info(f"[DEBUG] my_stats command called, self.translations is not None: {self.translations is not None}")
         # Check global cooldown
         if datetime.now() < self.global_cooldown:
             remaining = int((self.global_cooldown - datetime.now()).total_seconds())
@@ -202,6 +204,8 @@ class Commands(commands.Cog):
     @app_commands.command(name="update_graphs")
     async def update_graphs(self, interaction: discord.Interaction):
         try:
+            logging.info(f"[DEBUG] update_graphs command called, self.bot.translations exists: {hasattr(self.bot, 'translations')}")
+            logging.info(f"[DEBUG] update_graphs command called, self.bot.translations is not None: {self.bot.translations is not None}")
             await interaction.response.defer(ephemeral=True)
             logging.info(self.translations['log_manual_update_started'])
             

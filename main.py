@@ -102,6 +102,7 @@ async def main():
 
     bot = TGraphBot(command_prefix="!", intents=intents, data_folder=args.data_folder, img_folder=img_folder, 
                     update_tracker=update_tracker, config=config, translations=translations)
+    logging.info(f"[DEBUG] Bot created with translations: {bot.translations is not None}")
 
     @bot.event
     async def on_ready():
@@ -128,6 +129,8 @@ async def main():
             log(bot.translations['log_updating_posting_graphs_startup'])
             log(bot.translations['log_manual_update_started'])
             bot.config = load_config(args.config_file, reload=True)  # Reload config here
+            logging.info(f"[DEBUG] In on_ready, bot.translations exists: {hasattr(bot, 'translations')}")
+            logging.info(f"[DEBUG] In on_ready, bot.translations is not None: {bot.translations is not None}")
             await update_and_post_graphs(bot, bot.translations, bot.config)
             
             # Update the tracker's last_update time and calculate next_update
@@ -157,6 +160,8 @@ async def schedule_updates(bot):
         if bot.update_tracker.is_update_due():
             log(bot.translations['log_auto_update_started'])
             bot.config = load_config(args.config_file, reload=True)  # Reload config here
+            logging.info(f"[DEBUG] In schedule_updates, bot.translations exists: {hasattr(bot, 'translations')}")
+            logging.info(f"[DEBUG] In schedule_updates, bot.translations is not None: {bot.translations is not None}")
             await update_and_post_graphs(bot, bot.translations, bot.config)
             bot.update_tracker.update()
             next_update_log = bot.update_tracker.get_next_update_readable()
