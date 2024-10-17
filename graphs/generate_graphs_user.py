@@ -7,7 +7,6 @@ from graphs.generate_graphs import fetch_tautulli_data, ensure_folder_exists
 from matplotlib.dates import DateFormatter
 from matplotlib.ticker import MaxNLocator
 
-
 # Initialize translations globally
 translations = None
 
@@ -44,7 +43,7 @@ def generate_user_graphs(user_id, img_folder, config, current_translations):
 
 def generate_daily_play_count(user_id, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR):
     plt.figure(figsize=(14, 8))
-    data = fetch_tautulli_data('get_plays_by_date', {'time_range': config['TIME_RANGE_DAYS'], 'user_id': user_id})
+    data = fetch_tautulli_data('get_plays_by_date', {'time_range': config['TIME_RANGE_DAYS'], 'user_id': user_id}, config)
     
     if not data or 'data' not in data['response']:
         logging.error(translations['error_fetch_daily_play_count'].format(user_id=user_id))
@@ -94,7 +93,7 @@ def generate_daily_play_count(user_id, folder, config, TV_COLOR, MOVIE_COLOR, AN
 
 def generate_play_count_by_dayofweek(user_id, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR):
     plt.figure(figsize=(14, 8))
-    data = fetch_tautulli_data('get_plays_by_dayofweek', {'time_range': config['TIME_RANGE_DAYS'], 'user_id': user_id})
+    data = fetch_tautulli_data('get_plays_by_dayofweek', {'time_range': config['TIME_RANGE_DAYS'], 'user_id': user_id}, config)
     
     if not data or 'data' not in data['response']:
         logging.error(translations['error_fetch_play_count_dayofweek'].format(user_id=user_id))
@@ -128,7 +127,7 @@ def generate_play_count_by_dayofweek(user_id, folder, config, TV_COLOR, MOVIE_CO
 
 def generate_play_count_by_hourofday(user_id, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR):
     plt.figure(figsize=(14, 8))
-    data = fetch_tautulli_data('get_plays_by_hourofday', {'time_range': config['TIME_RANGE_DAYS'], 'user_id': user_id})
+    data = fetch_tautulli_data('get_plays_by_hourofday', {'time_range': config['TIME_RANGE_DAYS'], 'user_id': user_id}, config)
     
     if not data or 'data' not in data['response']:
         logging.error(translations['error_fetch_play_count_hourofday'].format(user_id=user_id))
@@ -161,7 +160,7 @@ def generate_play_count_by_hourofday(user_id, folder, config, TV_COLOR, MOVIE_CO
 
 def generate_top_10_platforms(user_id, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR):
     plt.figure(figsize=(14, 8))
-    data = fetch_tautulli_data('get_plays_by_top_10_platforms', {'time_range': config['TIME_RANGE_DAYS'], 'user_id': user_id})
+    data = fetch_tautulli_data('get_plays_by_top_10_platforms', {'time_range': config['TIME_RANGE_DAYS'], 'user_id': user_id}, config)
     
     if not data or 'data' not in data['response']:
         logging.error(translations['error_fetch_top_10_platforms'].format(user_id=user_id))
@@ -193,7 +192,7 @@ def generate_top_10_platforms(user_id, folder, config, TV_COLOR, MOVIE_COLOR, AN
 
 def generate_play_count_by_month(user_id, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR):
     plt.figure(figsize=(14, 8))
-    data = fetch_tautulli_data('get_plays_per_month', {'time_range': 12, 'y_axis': 'plays', 'user_id': user_id})
+    data = fetch_tautulli_data('get_plays_per_month', {'time_range': 12, 'y_axis': 'plays', 'user_id': user_id}, config)
     
     if not data or 'data' not in data['response']:
         logging.error(translations['error_fetch_play_count_month'].format(user_id=user_id))

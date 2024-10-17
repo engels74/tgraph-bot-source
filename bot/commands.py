@@ -10,12 +10,6 @@ from graphs.generate_graphs_user import generate_user_graphs
 from i18n import load_translations
 from main import log
 
-# Load configuration
-config = load_config(CONFIG_PATH)
-
-# Load translations
-translations = load_translations(config['LANGUAGE'])
-
 # Get configurable options
 CONFIG_OPTIONS = get_configurable_options()
 
@@ -25,7 +19,8 @@ class Commands(commands.Cog):
         self.start_time = datetime.now().astimezone()
         self.user_cooldowns = {}
         self.global_cooldown = datetime.now()
-        self.translations = translations
+        self.config = load_config(CONFIG_PATH)
+        self.translations = load_translations(self.config['LANGUAGE'])
 
     async def cog_load(self):
         log(self.translations['log_commands_cog_loading'])
@@ -53,19 +48,18 @@ class Commands(commands.Cog):
     ])
     @app_commands.choices(key=[app_commands.Choice(name=option, value=option) for option in CONFIG_OPTIONS])
     async def config_command(self, interaction: discord.Interaction, action: str, key: str = None, value: str = None):
-        global config, translations
         try:
-            config = load_config(CONFIG_PATH, reload=True)
+            self.config = load_config(CONFIG_PATH, reload=True)
             
             if action == "view":
                 if key:
-                    if key in config and key in CONFIG_OPTIONS:
-                        await interaction.response.send_message(f"{key}: {config[key]}", ephemeral=True)
+                    if key in self.config and key in CONFIG_OPTIONS:
+                        await interaction.response.send_message(f"{key}: {self.config[key]}", ephemeral=True)
                     else:
                         await interaction.response.send_message(self.translations['config_view_invalid_key'].format(key=key), ephemeral=True)
                 else:
                     embed = discord.Embed(title="Bot Configuration", color=0x3498db)
-                    for k, v in config.items():
+                    for k, v in self.config.items():
                         if k in CONFIG_OPTIONS:
                             embed.add_field(name=k, value=str(v), inline=False)
                     await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -81,11 +75,11 @@ class Commands(commands.Cog):
                     return
 
                 # Convert value to appropriate type
-                if isinstance(config.get(key), bool):
+                if isinstance(self.config.get(key), bool):
                     value = value.lower() == 'true'
-                elif isinstance(config.get(key), int):
+                elif isinstance(self.config.get(key), int):
                     value = int(value)
-                elif key in ['TV_COLOR', 'MOVIE_COLOR']:
+                elif key in ['TV_COLOR', 'MOVIE_COLOR', 'ANNOTATION_COLOR']:
                     value = format_color_value(value)
                 elif key == 'FIXED_UPDATE_TIME':
                     try:
@@ -95,16 +89,15 @@ class Commands(commands.Cog):
                         return
 
                 # Update configuration
-                old_value = config.get(key, "N/A")
-                new_config = update_config(key, value, self.translations)
+                old_value = self.config.get(key, "N/A")
+                self.config = update_config(key, value, self.translations)
                 
                 # Update the bot's update_tracker with the new config
-                self._sync_update_tracker(new_config)
+                self._sync_update_tracker(self.config)
                 
                 # Reload translations if language changed
                 if key == 'LANGUAGE':
                     self.translations = load_translations(value)
-                    translations = self.translations
                     self.update_translations()
 
                 # Prepare response message
@@ -167,8 +160,7 @@ class Commands(commands.Cog):
 
         try:
             # Reload configuration
-            global config
-            config = load_config(CONFIG_PATH, reload=True)
+            self.config = load_config(CONFIG_PATH, reload=True)
             
             tautulli_user_id = self.get_user_id_from_email(email)
 
@@ -177,7 +169,7 @@ class Commands(commands.Cog):
                 return
 
             log(self.translations['log_generating_user_graphs'].format(user_id=tautulli_user_id))
-            graph_files = generate_user_graphs(tautulli_user_id, self.bot.img_folder, config, self.translations)
+            graph_files = generate_user_graphs(tautulli_user_id, self.bot.img_folder, self.config, self.translations)
             log(self.translations['log_generated_graph_files'].format(count=len(graph_files)))
 
             if not graph_files:
@@ -194,8 +186,8 @@ class Commands(commands.Cog):
 
             # Update cooldowns
             log(self.translations['log_updating_cooldowns'])
-            self.user_cooldowns[user_id] = datetime.now() + timedelta(minutes=config['MY_STATS_COOLDOWN_MINUTES'])
-            self.global_cooldown = datetime.now() + timedelta(seconds=config['MY_STATS_GLOBAL_COOLDOWN_SECONDS'])
+            self.user_cooldowns[user_id] = datetime.now() + timedelta(minutes=self.config['MY_STATS_COOLDOWN_MINUTES'])
+            self.global_cooldown = datetime.now() + timedelta(seconds=self.config['MY_STATS_GLOBAL_COOLDOWN_SECONDS'])
 
             await interaction.followup.send(self.translations['my_stats_success'], ephemeral=True)
             log(self.translations['log_command_executed'].format(command="my_stats", user=f"{interaction.user.name}#{interaction.user.discriminator}"))
@@ -214,11 +206,11 @@ class Commands(commands.Cog):
             log(self.translations['log_manual_update_started'])
             
             # Reload config and update the tracker
-            config = load_config(CONFIG_PATH, reload=True)
-            self._sync_update_tracker(config)
+            self.config = load_config(CONFIG_PATH, reload=True)
+            self._sync_update_tracker(self.config)
             
             # Perform the graph update
-            await update_and_post_graphs(self.bot, self.translations)
+            await update_and_post_graphs(self.bot, self.translations, self.config)
             
             # Update the tracker and get the next update time
             self.bot.update_tracker.update()
@@ -253,9 +245,9 @@ class Commands(commands.Cog):
 
         try:
             response = requests.get(
-                f"{config['TAUTULLI_URL']}/api/v2",
+                f"{self.config['TAUTULLI_URL']}/api/v2",
                 params={
-                    "apikey": config['TAUTULLI_API_KEY'],
+                    "apikey": self.config['TAUTULLI_API_KEY'],
                     "cmd": "get_users"
                 }
             )

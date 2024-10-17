@@ -11,9 +11,6 @@ from i18n import load_translations
 from matplotlib.dates import DateFormatter
 from matplotlib.ticker import MaxNLocator
 
-# Load configuration
-config = load_config(CONFIG_PATH)
-
 # Initialize translations globally
 translations = load_translations(config['LANGUAGE'])
 
@@ -23,7 +20,7 @@ MOVIE_COLOR = config['MOVIE_COLOR'].strip('"')
 ANNOTATION_COLOR = config['ANNOTATION_COLOR'].strip('"')
 
 # Helper function to fetch data from Tautulli
-def fetch_tautulli_data(cmd, params={}):
+def fetch_tautulli_data(cmd, params={}, config=None):
     now = datetime.now().astimezone()
     start_date = now - timedelta(days=config['TIME_RANGE_DAYS'])
     params.update({
@@ -36,7 +33,7 @@ def fetch_tautulli_data(cmd, params={}):
     return response.json()
 
 # Fetch data
-def fetch_all_data():
+def fetch_all_data(config):
     data = {}
     features = [
         ('ENABLE_DAILY_PLAY_COUNT', 'daily_play_count', 'get_plays_by_date', {'time_range': config['TIME_RANGE_DAYS']}),
@@ -48,7 +45,7 @@ def fetch_all_data():
     ]
     for flag, key, cmd, params in features:
         if config[flag]:
-            data[key] = fetch_tautulli_data(cmd, params)
+            data[key] = fetch_tautulli_data(cmd, params, config)
     return data
 
 # Censor usernames
@@ -312,10 +309,9 @@ def cleanup_old_folders(base_folder, keep_days):
     logging.info(translations['log_cleaned_up_old_folders'])
 
 # Function to update and post graphs
-async def update_and_post_graphs(bot, current_translations):
-    config = load_config(CONFIG_PATH, reload=True)
+async def update_and_post_graphs(bot, current_translations, current_config):
     translations = current_translations
-    config = load_config(CONFIG_PATH, reload=True)
+    config = current_config
     
     channel = bot.get_channel(config['CHANNEL_ID'])
     await delete_bot_messages(channel)
@@ -327,14 +323,14 @@ async def update_and_post_graphs(bot, current_translations):
         dated_folder = os.path.join(bot.img_folder, today)
         ensure_folder_exists(dated_folder)
 
-        data = fetch_all_data()
-        generate_graphs(data, dated_folder, translations)
+        data = fetch_all_data(config)
+        generate_graphs(data, dated_folder, translations, config)
 
         # Update the tracker before posting graphs
         bot.update_tracker.update()
         next_update = bot.update_tracker.next_update
 
-        await post_graphs(channel, bot.img_folder, translations, next_update)
+        await post_graphs(channel, bot.img_folder, translations, next_update, config)
         next_update_log = bot.update_tracker.get_next_update_readable()
         logging.info(translations['log_graphs_updated_posted'].format(next_update=next_update_log))
         cleanup_old_folders(bot.img_folder, config['KEEP_DAYS'])
@@ -343,7 +339,7 @@ async def update_and_post_graphs(bot, current_translations):
         raise
 
 # Function to post graphs
-async def post_graphs(channel, img_folder, translations, next_update):
+async def post_graphs(channel, img_folder, translations, next_update, config):
     now = datetime.now().astimezone().strftime('%Y-%m-%d at %H:%M:%S')
     today = datetime.now().astimezone().strftime('%Y-%m-%d')
     next_update_discord = f"<t:{int(next_update.timestamp())}:R>"
