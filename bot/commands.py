@@ -21,6 +21,7 @@ class Commands(commands.Cog):
         self.global_cooldown = datetime.now()
         self.config = load_config(CONFIG_PATH)
         self.translations = translations
+        logging.info(f"[DEBUG] Commands cog initialized with translations: {self.translations is not None}")
 
     async def cog_load(self):
         logging.info(self.translations['log_commands_cog_loading'])

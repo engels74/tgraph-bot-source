@@ -52,6 +52,8 @@ def censor_username(username, should_censor):
 
 # Generate graphs
 def generate_graphs(data, folder, current_translations, current_config):
+    logging.info(f"[DEBUG] generate_graphs called with translations: {current_translations is not None}")
+    logging.info(f"[DEBUG] generate_graphs translations content: {current_translations}")
     config = current_config
     translations = current_translations
     
@@ -302,6 +304,7 @@ def cleanup_old_folders(base_folder, keep_days):
 # Function to update and post graphs
 async def update_and_post_graphs(bot, current_translations, current_config):
     logging.info(f"[DEBUG] update_and_post_graphs called with translations: {current_translations is not None}")
+    logging.info(f"[DEBUG] update_and_post_graphs translations content: {current_translations}")
     translations = current_translations
     config = current_config
     
