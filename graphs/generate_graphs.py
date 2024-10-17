@@ -11,14 +11,6 @@ from i18n import load_translations
 from matplotlib.dates import DateFormatter
 from matplotlib.ticker import MaxNLocator
 
-# Initialize translations globally
-translations = load_translations(config['LANGUAGE'])
-
-# Define consistent colors
-TV_COLOR = config['TV_COLOR'].strip('"')
-MOVIE_COLOR = config['MOVIE_COLOR'].strip('"')
-ANNOTATION_COLOR = config['ANNOTATION_COLOR'].strip('"')
-
 # Helper function to fetch data from Tautulli
 def fetch_tautulli_data(cmd, params={}, config=None):
     now = datetime.now().astimezone()
@@ -62,9 +54,8 @@ def censor_username(username, should_censor):
 def generate_graphs(data, folder, current_translations, current_config):
     config = current_config
     translations = current_translations
-    config = load_config(CONFIG_PATH, reload=True)
     
-    # Use the updated color variables
+    # Defining color variables
     TV_COLOR = config['TV_COLOR'].strip('"')
     MOVIE_COLOR = config['MOVIE_COLOR'].strip('"')
     ANNOTATION_COLOR = config['ANNOTATION_COLOR'].strip('"')
@@ -337,7 +328,6 @@ async def update_and_post_graphs(bot, current_translations, current_config):
     except Exception as e:
         logging.error(translations['error_update_post_graphs'].format(error=str(e)))
         raise
-
 # Function to post graphs
 async def post_graphs(channel, img_folder, translations, next_update, config):
     now = datetime.now().astimezone().strftime('%Y-%m-%d at %H:%M:%S')

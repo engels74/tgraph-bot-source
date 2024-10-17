@@ -126,7 +126,7 @@ async def main():
             log(translations['log_updating_posting_graphs_startup'])
             log(translations['log_manual_update_started'])
             config = load_config(CONFIG_PATH, reload=True)  # Reload config here
-            await update_and_post_graphs(bot, translations, config)  # Pass config here
+            await update_and_post_graphs(bot, translations, config)  # Pass translations and config here
             
             # Update the tracker's last_update time and calculate next_update
             bot.update_tracker.last_update = datetime.now()
@@ -155,7 +155,7 @@ async def schedule_updates(bot):
         if bot.update_tracker.is_update_due():
             log(translations['log_auto_update_started'])
             config = load_config(CONFIG_PATH, reload=True)  # Reload config here
-            await update_and_post_graphs(bot, translations, config)  # Pass config here
+            await update_and_post_graphs(bot, translations, config)  # Pass translations and config here
             bot.update_tracker.update()
             next_update_log = bot.update_tracker.get_next_update_readable()
             log(translations['log_auto_update_completed'].format(next_update=next_update_log))
