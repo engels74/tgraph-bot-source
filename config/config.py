@@ -207,7 +207,14 @@ def update_config(key, value, translations):
     if key in ['TV_COLOR', 'MOVIE_COLOR', 'ANNOTATION_COLOR']:
         value = format_color_value(str(value))
     elif key == 'FIXED_UPDATE_TIME':
-        value = parse_time(value, translations)
+        if value.upper() == 'XX:XX':
+            value = None
+        else:
+            try:
+                value = datetime.strptime(value, "%H:%M").time()
+            except ValueError:
+                logging.error(translations['error_invalid_fixed_time'].format(value=value))
+                return config
     
     config[key] = value
     save_config(config)
