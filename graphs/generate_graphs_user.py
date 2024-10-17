@@ -7,13 +7,7 @@ from graphs.generate_graphs import fetch_tautulli_data, ensure_folder_exists
 from matplotlib.dates import DateFormatter
 from matplotlib.ticker import MaxNLocator
 
-# Initialize translations globally
-translations = None
-
 def generate_user_graphs(user_id, img_folder, config, current_translations):
-    global translations
-    translations = current_translations
-
     graph_files = []
     today = datetime.today().strftime('%Y-%m-%d')
     user_folder = os.path.join(img_folder, today, f"user_{user_id}")
@@ -25,23 +19,23 @@ def generate_user_graphs(user_id, img_folder, config, current_translations):
     ANNOTATION_COLOR = config['ANNOTATION_COLOR'].strip('"')
 
     if config['ENABLE_DAILY_PLAY_COUNT']:
-        graph_files.append(generate_daily_play_count(user_id, user_folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR))
+        graph_files.append(generate_daily_play_count(user_id, user_folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, current_translations))
     
     if config['ENABLE_PLAY_COUNT_BY_DAYOFWEEK']:
-        graph_files.append(generate_play_count_by_dayofweek(user_id, user_folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR))
+        graph_files.append(generate_play_count_by_dayofweek(user_id, user_folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, current_translations))
     
     if config['ENABLE_PLAY_COUNT_BY_HOUROFDAY']:
-        graph_files.append(generate_play_count_by_hourofday(user_id, user_folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR))
+        graph_files.append(generate_play_count_by_hourofday(user_id, user_folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, current_translations))
     
     if config['ENABLE_TOP_10_PLATFORMS']:
-        graph_files.append(generate_top_10_platforms(user_id, user_folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR))
+        graph_files.append(generate_top_10_platforms(user_id, user_folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, current_translations))
     
     if config['ENABLE_PLAY_COUNT_BY_MONTH']:
-        graph_files.append(generate_play_count_by_month(user_id, user_folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR))
+        graph_files.append(generate_play_count_by_month(user_id, user_folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, current_translations))
 
     return [file for file in graph_files if file is not None]
 
-def generate_daily_play_count(user_id, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR):
+def generate_daily_play_count(user_id, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, translations):
     plt.figure(figsize=(14, 8))
     data = fetch_tautulli_data('get_plays_by_date', {'time_range': config['TIME_RANGE_DAYS'], 'user_id': user_id}, config)
     
@@ -91,7 +85,7 @@ def generate_daily_play_count(user_id, folder, config, TV_COLOR, MOVIE_COLOR, AN
     plt.close()
     return filepath
 
-def generate_play_count_by_dayofweek(user_id, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR):
+def generate_play_count_by_dayofweek(user_id, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, translations):
     plt.figure(figsize=(14, 8))
     data = fetch_tautulli_data('get_plays_by_dayofweek', {'time_range': config['TIME_RANGE_DAYS'], 'user_id': user_id}, config)
     
@@ -125,7 +119,7 @@ def generate_play_count_by_dayofweek(user_id, folder, config, TV_COLOR, MOVIE_CO
     plt.close()
     return filepath
 
-def generate_play_count_by_hourofday(user_id, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR):
+def generate_play_count_by_hourofday(user_id, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, translations):
     plt.figure(figsize=(14, 8))
     data = fetch_tautulli_data('get_plays_by_hourofday', {'time_range': config['TIME_RANGE_DAYS'], 'user_id': user_id}, config)
     
@@ -158,7 +152,7 @@ def generate_play_count_by_hourofday(user_id, folder, config, TV_COLOR, MOVIE_CO
     plt.close()
     return filepath
 
-def generate_top_10_platforms(user_id, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR):
+def generate_top_10_platforms(user_id, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, translations):
     plt.figure(figsize=(14, 8))
     data = fetch_tautulli_data('get_plays_by_top_10_platforms', {'time_range': config['TIME_RANGE_DAYS'], 'user_id': user_id}, config)
     
@@ -190,7 +184,7 @@ def generate_top_10_platforms(user_id, folder, config, TV_COLOR, MOVIE_COLOR, AN
     plt.close()
     return filepath
 
-def generate_play_count_by_month(user_id, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR):
+def generate_play_count_by_month(user_id, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, translations):
     plt.figure(figsize=(14, 8))
     data = fetch_tautulli_data('get_plays_per_month', {'time_range': 12, 'y_axis': 'plays', 'user_id': user_id}, config)
     
