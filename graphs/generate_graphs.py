@@ -105,7 +105,7 @@ def generate_graphs(data, folder, current_translations, current_config):
         ax.yaxis.set_major_locator(MaxNLocator(integer=True))
         plt.legend()
         plt.tight_layout(pad=3)
-        save_and_post_graph(folder, 'daily_play_count.png')
+        save_and_post_graph(folder, 'daily_play_count.png', translations)
         plt.close()
 
     if config['ENABLE_PLAY_COUNT_BY_DAYOFWEEK']:
@@ -129,7 +129,7 @@ def generate_graphs(data, folder, current_translations, current_config):
         plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
         plt.legend()
         plt.tight_layout(pad=3)
-        save_and_post_graph(folder, 'play_count_by_dayofweek.png')
+        save_and_post_graph(folder, 'play_count_by_dayofweek.png', translations)
         plt.close()
 
     if config['ENABLE_PLAY_COUNT_BY_HOUROFDAY']:
@@ -152,7 +152,7 @@ def generate_graphs(data, folder, current_translations, current_config):
         plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
         plt.legend()
         plt.tight_layout(pad=3)
-        save_and_post_graph(folder, 'play_count_by_hourofday.png')
+        save_and_post_graph(folder, 'play_count_by_hourofday.png', translations)
         plt.close()
 
     if config['ENABLE_TOP_10_PLATFORMS']:
@@ -174,7 +174,7 @@ def generate_graphs(data, folder, current_translations, current_config):
         plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
         plt.legend()
         plt.tight_layout(pad=3)
-        save_and_post_graph(folder, 'top_10_platforms.png')
+        save_and_post_graph(folder, 'top_10_platforms.png', translations)
         plt.close()
 
     if config['ENABLE_TOP_10_USERS']:
@@ -218,7 +218,7 @@ def generate_graphs(data, folder, current_translations, current_config):
         plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
         plt.legend()
         plt.tight_layout(pad=3)
-        save_and_post_graph(folder, 'top_10_users.png')
+        save_and_post_graph(folder, 'top_10_users.png', translations)
         plt.close()
 
     if config['ENABLE_PLAY_COUNT_BY_MONTH']:
@@ -274,11 +274,11 @@ def generate_graphs(data, folder, current_translations, current_config):
         plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
         plt.legend()
         plt.tight_layout(pad=3)
-        save_and_post_graph(folder, 'play_count_by_month.png')
+        save_and_post_graph(folder, 'play_count_by_month.png', translations)
         plt.close()
 
 # Save and post graph to Discord
-def save_and_post_graph(folder, filename):
+def save_and_post_graph(folder, filename, translations):
     filepath = os.path.join(folder, filename)
     plt.savefig(filepath)
     plt.close()  # Close the figure to release memory
@@ -291,7 +291,7 @@ def ensure_folder_exists(folder, translations):
     logging.info(translations['log_ensured_folder_exists'])
 
 # Cleanup old folders
-def cleanup_old_folders(base_folder, keep_days):
+def cleanup_old_folders(base_folder, keep_days, translations):
     folders = [f for f in os.listdir(base_folder) if os.path.isdir(os.path.join(base_folder, f))]
     folders.sort(reverse=True)
     for folder in folders[keep_days:]:
@@ -328,7 +328,7 @@ async def update_and_post_graphs(bot, current_translations, current_config):
         await post_graphs(channel, bot.img_folder, translations, next_update, config)
         next_update_log = bot.update_tracker.get_next_update_readable()
         logging.info(translations['log_graphs_updated_posted'].format(next_update=next_update_log))
-        cleanup_old_folders(bot.img_folder, config['KEEP_DAYS'])
+        cleanup_old_folders(bot.img_folder, config['KEEP_DAYS'], translations)
     except Exception as e:
         logging.error(translations['error_update_post_graphs'].format(error=str(e)))
         raise
