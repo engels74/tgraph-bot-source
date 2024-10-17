@@ -313,7 +313,7 @@ async def update_and_post_graphs(bot, current_translations, current_config):
 
         today = datetime.today().strftime('%Y-%m-%d')
         dated_folder = os.path.join(bot.img_folder, today)
-        ensure_folder_exists(dated_folder)
+        ensure_folder_exists(dated_folder, translations)
 
         data = fetch_all_data(config)
         generate_graphs(data, dated_folder, translations, config)
