@@ -51,7 +51,7 @@ def parse_time(value, translations):
     try:
         return datetime.strptime(value, "%H:%M").time()
     except ValueError:
-        print(translations['error_invalid_fixed_time'].format(value=value))
+        logging.error(translations['error_invalid_fixed_time'].format(value=value))
         return None
 
 def load_config(config_path=CONFIG_PATH, reload=False, translations=None):

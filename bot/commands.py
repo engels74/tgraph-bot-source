@@ -145,11 +145,16 @@ class Commands(commands.Cog):
             log(self.translations['log_command_executed'].format(command="config", user=f"{interaction.user.name}#{interaction.user.discriminator}"))
         except Exception as e:
             log(self.translations['log_command_error'].format(command="config", error=str(e)))
+            error_message = self.translations['error_processing_command']
             try:
-                await interaction.followup.send(self.translations['error_processing_command'], ephemeral=True)
-            except discord.errors.NotFound:
-                # If the followup fails, try to send a new message
-                await interaction.channel.send(self.translations['error_processing_command'], delete_after=10)
+                if interaction.response.is_done():
+                    await interaction.followup.send(error_message, ephemeral=True)
+                else:
+                    await interaction.response.send_message(error_message, ephemeral=True)
+            except discord.errors.HTTPException as http_err:
+                log(f"Failed to send error message: {str(http_err)}")
+            except Exception as inner_e:
+                log(f"Unexpected error when sending error message: {str(inner_e)}")
 
     def update_translations(self):
         # Update translations in other modules

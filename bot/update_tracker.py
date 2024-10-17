@@ -19,10 +19,21 @@ class UpdateTracker:
         ))
 
     def get_update_days(self):
-        return self.config.get('UPDATE_DAYS', 7)  # Default to 7 if not found
+        update_days = self.config.get('UPDATE_DAYS', 7)  # Default to 7 if not found
+        if update_days <= 0:
+            raise ValueError("UPDATE_DAYS must be a positive integer")
+        return update_days
 
     def get_fixed_update_time(self):
-        return self.config.get('FIXED_UPDATE_TIME')
+        fixed_time_str = self.config.get('FIXED_UPDATE_TIME')
+        if fixed_time_str:
+            try:
+                fixed_time = datetime.strptime(fixed_time_str, "%H:%M").time()
+                return fixed_time
+            except ValueError:
+                logging.error(f"Invalid FIXED_UPDATE_TIME format: {fixed_time_str}")
+                return None
+        return None
 
     def get_fixed_update_time_str(self):
         fixed_time = self.get_fixed_update_time()
