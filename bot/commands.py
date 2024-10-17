@@ -1,14 +1,14 @@
 # bot/commands.py
-from datetime import datetime, timedelta
 import discord
+import requests
+from config.config import load_config, update_config, RESTART_REQUIRED_KEYS, get_configurable_options, CONFIG_PATH, format_color_value
+from datetime import datetime, timedelta
 from discord import app_commands
 from discord.ext import commands
-from config.config import load_config, update_config, RESTART_REQUIRED_KEYS, get_configurable_options, CONFIG_PATH, format_color_value
-from i18n import load_translations
 from graphs.generate_graphs import update_and_post_graphs
 from graphs.generate_graphs_user import generate_user_graphs
+from i18n import load_translations
 from main import log
-import requests
 
 # Load configuration
 config = load_config(CONFIG_PATH)

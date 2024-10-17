@@ -1,18 +1,18 @@
 # main.py
-import os
-import logging
-import sys
 import argparse
 import asyncio
 import discord
-from discord.ext import commands
+import logging
+import os
+import sys
 from aiohttp import ClientConnectorError, ServerDisconnectedError
-from config.config import load_config, sanitize_config_file
-from i18n import load_translations
-from datetime import datetime
-from graphs.generate_graphs import update_and_post_graphs
-from bot.update_tracker import create_update_tracker
 from bot.permission_checker import check_permissions_all_guilds
+from bot.update_tracker import create_update_tracker
+from config.config import load_config, sanitize_config_file
+from datetime import datetime
+from discord.ext import commands
+from graphs.generate_graphs import update_and_post_graphs
+from i18n import load_translations
 
 # Get the CONFIG_DIR from environment variable, default to '/config' if not set
 CONFIG_DIR = os.environ.get('CONFIG_DIR', '/config')

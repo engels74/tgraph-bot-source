@@ -1,7 +1,8 @@
 # config/config.py
+import argparse
+import logging
 import os
 import yaml
-import argparse
 from datetime import datetime, time
 from i18n import load_translations
 
@@ -56,48 +57,52 @@ def parse_time(value, translations):
 
 def load_config(config_path=CONFIG_PATH, reload=False, translations=None):
     global config
-    if translations is None:
-        translations = load_translations(config.get('LANGUAGE', 'en') if config else 'en')
     
+    # Define default configuration in the same order as config.yml.sample
+    default_config = {
+        'TAUTULLI_API_KEY': 'your_tautulli_api_key',
+        'TAUTULLI_URL': 'http://your_tautulli_ip:port/api/v2',
+        'DISCORD_TOKEN': 'your_discord_bot_token',
+        'CHANNEL_ID': 0,
+        'UPDATE_DAYS': 7,
+        'FIXED_UPDATE_TIME': '"XX:XX"',
+        'KEEP_DAYS': 7,
+        'TIME_RANGE_DAYS': 30,
+        'LANGUAGE': 'en',
+        'CENSOR_USERNAMES': True,
+        'ENABLE_DAILY_PLAY_COUNT': True,
+        'ENABLE_PLAY_COUNT_BY_DAYOFWEEK': True,
+        'ENABLE_PLAY_COUNT_BY_HOUROFDAY': True,
+        'ENABLE_TOP_10_PLATFORMS': True,
+        'ENABLE_TOP_10_USERS': True,
+        'ENABLE_PLAY_COUNT_BY_MONTH': True,
+        'TV_COLOR': '"#1f77b4"',
+        'MOVIE_COLOR': '"#ff7f0e"',
+        'ANNOTATION_COLOR': '"#ff0000"',
+        'ANNOTATE_DAILY_PLAY_COUNT': True,
+        'ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK': True,
+        'ANNOTATE_PLAY_COUNT_BY_HOUROFDAY': True,
+        'ANNOTATE_TOP_10_PLATFORMS': True,
+        'ANNOTATE_TOP_10_USERS': True,
+        'ANNOTATE_PLAY_COUNT_BY_MONTH': True,
+        'MY_STATS_COOLDOWN_MINUTES': 5,
+        'MY_STATS_GLOBAL_COOLDOWN_SECONDS': 60
+    }
+
+    # Load existing configuration first
+    if os.path.exists(config_path):
+        with open(config_path, 'r') as file:
+            config_vars = yaml.safe_load(file)
+    else:
+        config_vars = {}
+    
+    # Now we can safely get the language
+    language = config_vars.get('LANGUAGE', 'en')
+    
+    if translations is None:
+        translations = load_translations(language)
+
     if reload or config is None:
-        # Define default configuration in the same order as config.yml.sample
-        default_config = {
-            'TAUTULLI_API_KEY': 'your_tautulli_api_key',
-            'TAUTULLI_URL': 'http://your_tautulli_ip:port/api/v2',
-            'DISCORD_TOKEN': 'your_discord_bot_token',
-            'CHANNEL_ID': 0,
-            'UPDATE_DAYS': 7,
-            'FIXED_UPDATE_TIME': '"XX:XX"',
-            'KEEP_DAYS': 7,
-            'TIME_RANGE_DAYS': 30,
-            'LANGUAGE': 'en',
-            'CENSOR_USERNAMES': True,
-            'ENABLE_DAILY_PLAY_COUNT': True,
-            'ENABLE_PLAY_COUNT_BY_DAYOFWEEK': True,
-            'ENABLE_PLAY_COUNT_BY_HOUROFDAY': True,
-            'ENABLE_TOP_10_PLATFORMS': True,
-            'ENABLE_TOP_10_USERS': True,
-            'ENABLE_PLAY_COUNT_BY_MONTH': True,
-            'TV_COLOR': '"#1f77b4"',
-            'MOVIE_COLOR': '"#ff7f0e"',
-            'ANNOTATION_COLOR': '"#ff0000"',
-            'ANNOTATE_DAILY_PLAY_COUNT': True,
-            'ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK': True,
-            'ANNOTATE_PLAY_COUNT_BY_HOUROFDAY': True,
-            'ANNOTATE_TOP_10_PLATFORMS': True,
-            'ANNOTATE_TOP_10_USERS': True,
-            'ANNOTATE_PLAY_COUNT_BY_MONTH': True,
-            'MY_STATS_COOLDOWN_MINUTES': 5,
-            'MY_STATS_GLOBAL_COOLDOWN_SECONDS': 60
-        }
-
-        # Load existing configuration
-        if os.path.exists(config_path):
-            with open(config_path, 'r') as file:
-                config_vars = yaml.safe_load(file)
-        else:
-            config_vars = {}
-
         # Update config_vars with any missing keys from default_config
         updated = False
         for key, value in default_config.items():

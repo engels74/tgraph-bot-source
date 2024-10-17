@@ -1,8 +1,8 @@
 # bot/update_tracker.py
-import os
 import json
-from datetime import datetime, timedelta, time
 import logging
+import os
+from datetime import datetime, timedelta
 
 class UpdateTracker:
     def __init__(self, data_folder, config, translations):

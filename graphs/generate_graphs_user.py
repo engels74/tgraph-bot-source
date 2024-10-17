@@ -1,11 +1,12 @@
 # graphs/generate_graphs_user.py
-import os
-import matplotlib.pyplot as plt
-from datetime import datetime, timedelta
-from matplotlib.ticker import MaxNLocator
-from matplotlib.dates import DateFormatter
-from graphs.generate_graphs import fetch_tautulli_data, ensure_folder_exists
 import logging
+import matplotlib.pyplot as plt
+import os
+from datetime import datetime, timedelta
+from graphs.generate_graphs import fetch_tautulli_data, ensure_folder_exists
+from matplotlib.dates import DateFormatter
+from matplotlib.ticker import MaxNLocator
+
 
 # Initialize translations globally
 translations = None

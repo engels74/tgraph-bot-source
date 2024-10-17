@@ -1,15 +1,15 @@
 # graphs/generate_graphs.py
-import os
 import discord
 import logging
-import shutil
-import requests
 import matplotlib.pyplot as plt
-from datetime import datetime, timedelta
-from matplotlib.ticker import MaxNLocator
-from matplotlib.dates import DateFormatter
+import os
+import requests
+import shutil
 from config.config import load_config, CONFIG_PATH
+from datetime import datetime, timedelta
 from i18n import load_translations
+from matplotlib.dates import DateFormatter
+from matplotlib.ticker import MaxNLocator
 
 # Load configuration
 config = load_config(CONFIG_PATH)
