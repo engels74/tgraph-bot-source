@@ -328,6 +328,7 @@ async def update_and_post_graphs(bot, current_translations, current_config):
     except Exception as e:
         logging.error(translations['error_update_post_graphs'].format(error=str(e)))
         raise
+
 # Function to post graphs
 async def post_graphs(channel, img_folder, translations, next_update, config):
     now = datetime.now().astimezone().strftime('%Y-%m-%d at %H:%M:%S')

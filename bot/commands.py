@@ -1,5 +1,6 @@
 # bot/commands.py
 import discord
+import logging
 import requests
 from config.config import load_config, update_config, RESTART_REQUIRED_KEYS, get_configurable_options, CONFIG_PATH, format_color_value
 from datetime import datetime, timedelta
@@ -8,27 +9,26 @@ from discord.ext import commands
 from graphs.generate_graphs import update_and_post_graphs
 from graphs.generate_graphs_user import generate_user_graphs
 from i18n import load_translations
-from main import log
 
 # Get configurable options
 CONFIG_OPTIONS = get_configurable_options()
 
 class Commands(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot, translations):
         self.bot = bot
         self.start_time = datetime.now().astimezone()
         self.user_cooldowns = {}
         self.global_cooldown = datetime.now()
         self.config = load_config(CONFIG_PATH)
-        self.translations = load_translations(self.config['LANGUAGE'])
+        self.translations = translations
 
     async def cog_load(self):
-        log(self.translations['log_commands_cog_loading'])
+        logging.info(self.translations['log_commands_cog_loading'])
         for command in self.get_app_commands():
-            log(self.translations['log_registering_command'].format(command_name=command.name))
-        log(self.translations['log_commands_cog_loaded'])
+            logging.info(self.translations['log_registering_command'].format(command_name=command.name))
+        logging.info(self.translations['log_commands_cog_loaded'])
 
-    @app_commands.command(name="about", description=translations['about_command_description'])
+    @app_commands.command(name="about")
     async def about(self, interaction: discord.Interaction):
         try:
             embed = discord.Embed(title="TGraph Bot", color=0x3498db)
@@ -36,12 +36,12 @@ class Commands(commands.Cog):
             embed.add_field(name=self.translations['about_github'], value="https://github.com/engels74/tgraph-bot-source", inline=False)
             embed.add_field(name=self.translations['about_license'], value="AGPLv3", inline=False)
             await interaction.response.send_message(embed=embed, ephemeral=True)
-            log(self.translations['log_command_executed'].format(command="about", user=f"{interaction.user.name}#{interaction.user.discriminator}"))
+            logging.info(self.translations['log_command_executed'].format(command="about", user=f"{interaction.user.name}#{interaction.user.discriminator}"))
         except Exception as e:
-            log(self.translations['log_command_error'].format(command="about", error=str(e)))
+            logging.error(self.translations['log_command_error'].format(command="about", error=str(e)))
             await interaction.response.send_message(self.translations['error_processing_command'], ephemeral=True)
 
-    @app_commands.command(name="config", description=translations['config_command_description'])
+    @app_commands.command(name="config")
     @app_commands.choices(action=[
         app_commands.Choice(name="View", value="view"),
         app_commands.Choice(name="Edit", value="edit")
@@ -115,7 +115,7 @@ class Commands(commands.Cog):
                         next_update = self.bot.update_tracker.next_update.strftime('%Y-%m-%d %H:%M:%S')
                         response_message += f"\n{self.translations['next_update'].format(next_update=next_update)}"
                     except Exception as e:
-                        log(f"Error getting next update timestamp: {str(e)}")
+                        logging.error(f"Error getting next update timestamp: {str(e)}")
 
                 # Send response
                 if key in RESTART_REQUIRED_KEYS:
@@ -123,9 +123,9 @@ class Commands(commands.Cog):
                 else:
                     await interaction.response.send_message(response_message, ephemeral=True)
 
-            log(self.translations['log_command_executed'].format(command="config", user=f"{interaction.user.name}#{interaction.user.discriminator}"))
+            logging.info(self.translations['log_command_executed'].format(command="config", user=f"{interaction.user.name}#{interaction.user.discriminator}"))
         except Exception as e:
-            log(self.translations['log_command_error'].format(command="config", error=str(e)))
+            logging.error(self.translations['log_command_error'].format(command="config", error=str(e)))
             await self._send_error_message(interaction, self.translations['error_processing_command'])
 
     def update_translations(self):
@@ -135,7 +135,7 @@ class Commands(commands.Cog):
         from graphs import generate_graphs_user
         generate_graphs_user.translations = self.translations
 
-    @app_commands.command(name="my_stats", description=translations['my_stats_command_description'])
+    @app_commands.command(name="my_stats")
     async def my_stats(self, interaction: discord.Interaction, email: str):
         # Check global cooldown
         if datetime.now() < self.global_cooldown:
@@ -168,42 +168,42 @@ class Commands(commands.Cog):
                 await interaction.followup.send(self.translations['my_stats_no_user_found'], ephemeral=True)
                 return
 
-            log(self.translations['log_generating_user_graphs'].format(user_id=tautulli_user_id))
+            logging.info(self.translations['log_generating_user_graphs'].format(user_id=tautulli_user_id))
             graph_files = generate_user_graphs(tautulli_user_id, self.bot.img_folder, self.config, self.translations)
-            log(self.translations['log_generated_graph_files'].format(count=len(graph_files)))
+            logging.info(self.translations['log_generated_graph_files'].format(count=len(graph_files)))
 
             if not graph_files:
-                log(self.translations['my_stats_generate_failed'])
+                logging.warning(self.translations['my_stats_generate_failed'])
                 await interaction.followup.send(self.translations['my_stats_generate_failed'], ephemeral=True)
                 return
 
             # Send graphs via PM
-            log(self.translations['log_sending_graphs_pm'])
+            logging.info(self.translations['log_sending_graphs_pm'])
             dm_channel = await interaction.user.create_dm()
             for graph_file in graph_files:
-                log(self.translations['log_sending_graph_file'].format(file=graph_file))
+                logging.info(self.translations['log_sending_graph_file'].format(file=graph_file))
                 await dm_channel.send(file=discord.File(graph_file))
 
             # Update cooldowns
-            log(self.translations['log_updating_cooldowns'])
+            logging.info(self.translations['log_updating_cooldowns'])
             self.user_cooldowns[user_id] = datetime.now() + timedelta(minutes=self.config['MY_STATS_COOLDOWN_MINUTES'])
             self.global_cooldown = datetime.now() + timedelta(seconds=self.config['MY_STATS_GLOBAL_COOLDOWN_SECONDS'])
 
             await interaction.followup.send(self.translations['my_stats_success'], ephemeral=True)
-            log(self.translations['log_command_executed'].format(command="my_stats", user=f"{interaction.user.name}#{interaction.user.discriminator}"))
+            logging.info(self.translations['log_command_executed'].format(command="my_stats", user=f"{interaction.user.name}#{interaction.user.discriminator}"))
 
         except Exception as e:
-            log(self.translations['log_command_error'].format(command="my_stats", error=str(e)))
+            logging.error(self.translations['log_command_error'].format(command="my_stats", error=str(e)))
             await interaction.followup.send(
                 self.translations['my_stats_error'],
                 ephemeral=True
             )
 
-    @app_commands.command(name="update_graphs", description=translations['update_graphs_command_description'])
+    @app_commands.command(name="update_graphs")
     async def update_graphs(self, interaction: discord.Interaction):
         try:
             await interaction.response.defer(ephemeral=True)
-            log(self.translations['log_manual_update_started'])
+            logging.info(self.translations['log_manual_update_started'])
             
             # Reload config and update the tracker
             self.config = load_config(CONFIG_PATH, reload=True)
@@ -217,26 +217,26 @@ class Commands(commands.Cog):
             try:
                 next_update = self.bot.update_tracker.next_update.strftime('%Y-%m-%d %H:%M:%S')
             except Exception as e:
-                log(f"Error getting next update timestamp: {str(e)}")
+                logging.error(f"Error getting next update timestamp: {str(e)}")
                 next_update = "Unknown"
             
-            log(self.translations['log_manual_update_completed'])
+            logging.info(self.translations['log_manual_update_completed'])
             await interaction.followup.send(self.translations['update_graphs_success'].format(next_update=next_update), ephemeral=True)
-            log(self.translations['log_command_executed'].format(command="update_graphs", user=f"{interaction.user.name}#{interaction.user.discriminator}"))
-            log(self.translations['log_graphs_updated_posted'].format(next_update=next_update))
+            logging.info(self.translations['log_command_executed'].format(command="update_graphs", user=f"{interaction.user.name}#{interaction.user.discriminator}"))
+            logging.info(self.translations['log_graphs_updated_posted'].format(next_update=next_update))
         except Exception as e:
-            log(self.translations['log_command_error'].format(command="update_graphs", error=str(e)))
+            logging.error(self.translations['log_command_error'].format(command="update_graphs", error=str(e)))
             await interaction.followup.send(self.translations['update_graphs_error'], ephemeral=True)
 
-    @app_commands.command(name="uptime", description=translations['uptime_command_description'])
+    @app_commands.command(name="uptime")
     async def uptime(self, interaction: discord.Interaction):
         try:
             current_time = datetime.now().astimezone()
             uptime = current_time - self.start_time
             await interaction.response.send_message(self.translations['uptime_response'].format(uptime=uptime), ephemeral=True)
-            log(self.translations['log_command_executed'].format(command="uptime", user=f"{interaction.user.name}#{interaction.user.discriminator}"))
+            logging.info(self.translations['log_command_executed'].format(command="uptime", user=f"{interaction.user.name}#{interaction.user.discriminator}"))
         except Exception as e:
-            log(self.translations['log_command_error'].format(command="uptime", error=str(e)))
+            logging.error(self.translations['log_command_error'].format(command="uptime", error=str(e)))
             await interaction.followup.send(self.translations['error_processing_command'], ephemeral=True)
 
     def get_user_id_from_email(self, email):
@@ -260,7 +260,7 @@ class Commands(commands.Cog):
 
             return None
         except Exception as e:
-            log(self.translations['error_fetching_user_id'].format(error=str(e)))
+            logging.error(self.translations['error_fetching_user_id'].format(error=str(e)))
             return None
 
     def validate_fixed_update_time(self, value):
@@ -276,7 +276,7 @@ class Commands(commands.Cog):
             self.bot.update_tracker.update_config(new_config)
             self.bot.update_tracker.reset()
         except Exception as e:
-            log(f"Error updating tracker config: {str(e)}")
+            logging.error(f"Error updating tracker config: {str(e)}")
 
     async def _send_error_message(self, interaction, error_message):
         try:
@@ -285,10 +285,12 @@ class Commands(commands.Cog):
             else:
                 await interaction.response.send_message(error_message, ephemeral=True)
         except discord.errors.HTTPException as http_err:
-            log(f"Failed to send error message: {str(http_err)}")
+            logging.error(f"Failed to send error message: {str(http_err)}")
         except Exception as inner_e:
-            log(f"Unexpected error when sending error message: {str(inner_e)}")
+            logging.error(f"Unexpected error when sending error message: {str(inner_e)}")
 
 async def setup(bot):
-    await bot.add_cog(Commands(bot))
-    log(translations['log_commands_cog_setup'])
+    config = load_config(CONFIG_PATH)
+    translations = load_translations(config['LANGUAGE'])
+    await bot.add_cog(Commands(bot, translations))
+    logging.info(translations['log_commands_cog_setup'])

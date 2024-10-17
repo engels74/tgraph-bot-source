@@ -60,8 +60,8 @@ logger = logging.getLogger(__name__)
 
 # Function to print log messages with timestamps
 def log(message, level=logging.INFO):
-    datetime.now().astimezone().strftime('%Y-%m-%d %H:%M:%S %Z')
-    logger.log(level, message)
+    timestamp = datetime.now().astimezone().strftime('%Y-%m-%d %H:%M:%S %Z')
+    logger.log(level, f"{timestamp} - {message}")
 
 # Log that folders have been created
 log(translations['log_ensured_folders_exist'])
@@ -75,22 +75,24 @@ class TGraphBot(commands.Bot):
         self.data_folder = kwargs.pop('data_folder', None)
         self.img_folder = kwargs.pop('img_folder', None)
         self.update_tracker = kwargs.pop('update_tracker', None)
+        self.config = kwargs.pop('config', None)
+        self.translations = kwargs.pop('translations', None)
 
     async def on_error(self, event_method, *args, **kwargs):
         exc_type, exc_value, exc_traceback = sys.exc_info()
         if isinstance(exc_value, (ClientConnectorError, ServerDisconnectedError)):
-            log(translations['log_connection_issue'].format(error=str(exc_value)), level=logging.WARNING)
+            log(self.translations['log_connection_issue'].format(error=str(exc_value)), level=logging.WARNING)
         else:
-            log(translations['log_error_in_event'].format(event=event_method, error=str(exc_value)), level=logging.ERROR)
+            log(self.translations['log_error_in_event'].format(event=event_method, error=str(exc_value)), level=logging.ERROR)
 
     async def on_connect(self):
-        log(translations['log_bot_connected'])
+        log(self.translations['log_bot_connected'])
 
     async def on_disconnect(self):
-        log(translations['log_bot_disconnected'], level=logging.WARNING)
+        log(self.translations['log_bot_disconnected'], level=logging.WARNING)
 
     async def on_resume(self):
-        log(translations['log_bot_resumed'])
+        log(self.translations['log_bot_resumed'])
 
 async def main():
     # Define intents
@@ -98,35 +100,35 @@ async def main():
     intents.guilds = True
     intents.messages = True
 
-    bot = TGraphBot(command_prefix="!", intents=intents, data_folder=args.data_folder, img_folder=img_folder, update_tracker=update_tracker)
+    bot = TGraphBot(command_prefix="!", intents=intents, data_folder=args.data_folder, img_folder=img_folder, 
+                    update_tracker=update_tracker, config=config, translations=translations)
 
     @bot.event
     async def on_ready():
-        global translations
-        log(translations['log_bot_logged_in'].format(name=bot.user.name))
+        log(bot.translations['log_bot_logged_in'].format(name=bot.user.name))
         try:
-            log(translations['log_loading_bot_commands'])
+            log(bot.translations['log_loading_bot_commands'])
             await bot.load_extension('bot.commands')
-            log(translations['log_bot_commands_loaded'])
+            log(bot.translations['log_bot_commands_loaded'])
             
-            log(translations['log_syncing_application_commands'])
+            log(bot.translations['log_syncing_application_commands'])
             await bot.tree.sync()
-            log(translations['log_application_commands_synced'])
+            log(bot.translations['log_application_commands_synced'])
             
             # Delay the permission check
-            log(translations['log_waiting_before_permission_check'])
+            log(bot.translations['log_waiting_before_permission_check'])
             await asyncio.sleep(5)
             
             # Check command permissions
-            log(translations['log_checking_command_permissions'])
-            await check_permissions_all_guilds(bot, translations)
-            log(translations['log_command_permissions_checked'])
+            log(bot.translations['log_checking_command_permissions'])
+            await check_permissions_all_guilds(bot, bot.translations)
+            log(bot.translations['log_command_permissions_checked'])
             
             # Update and post graphs immediately after logging in
-            log(translations['log_updating_posting_graphs_startup'])
-            log(translations['log_manual_update_started'])
-            config = load_config(CONFIG_PATH, reload=True)  # Reload config here
-            await update_and_post_graphs(bot, translations, config)  # Pass translations and config here
+            log(bot.translations['log_updating_posting_graphs_startup'])
+            log(bot.translations['log_manual_update_started'])
+            bot.config = load_config(args.config_file, reload=True)  # Reload config here
+            await update_and_post_graphs(bot, bot.translations, bot.config)
             
             # Update the tracker's last_update time and calculate next_update
             bot.update_tracker.last_update = datetime.now()
@@ -136,39 +138,30 @@ async def main():
             bot.update_tracker.save_tracker()
             
             next_update_log = bot.update_tracker.get_next_update_readable()
-            log(translations['log_manual_update_completed'])
-            log(translations['log_graphs_updated_posted'].format(next_update=next_update_log))
+            log(bot.translations['log_manual_update_completed'])
+            log(bot.translations['log_graphs_updated_posted'].format(next_update=next_update_log))
 
             # Schedule regular updates
             bot.loop.create_task(schedule_updates(bot))
         except Exception as e:
-            log(translations['log_error_during_startup'].format(error=str(e)))
+            log(bot.translations['log_error_during_startup'].format(error=str(e)))
             raise
 
     try:
         await bot.start(config['DISCORD_TOKEN'])
     except Exception as e:
-        log(translations['log_error_starting_bot'].format(error=str(e)))
+        log(bot.translations['log_error_starting_bot'].format(error=str(e)))
 
 async def schedule_updates(bot):
     while True:
         if bot.update_tracker.is_update_due():
-            log(translations['log_auto_update_started'])
-            config = load_config(CONFIG_PATH, reload=True)  # Reload config here
-            await update_and_post_graphs(bot, translations, config)  # Pass translations and config here
+            log(bot.translations['log_auto_update_started'])
+            bot.config = load_config(args.config_file, reload=True)  # Reload config here
+            await update_and_post_graphs(bot, bot.translations, bot.config)
             bot.update_tracker.update()
             next_update_log = bot.update_tracker.get_next_update_readable()
-            log(translations['log_auto_update_completed'].format(next_update=next_update_log))
+            log(bot.translations['log_auto_update_completed'].format(next_update=next_update_log))
         await asyncio.sleep(60)  # Check every minute
-
-def update_translations(new_translations):
-    global translations
-    translations = new_translations
-    # Update translations in other modules
-    from graphs import generate_graphs
-    generate_graphs.translations = new_translations
-    from graphs import generate_graphs_user
-    generate_graphs_user.translations = new_translations
 
 if __name__ == "__main__":
     asyncio.run(main())
