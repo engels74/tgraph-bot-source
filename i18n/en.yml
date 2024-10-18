@@ -98,9 +98,7 @@ warning_message: "WARNING"
 
 # Logging
 log_application_commands_synced: "Application commands synced successfully."
-log_auto_update_completed: "Auto update completed. Next update: {next_update}"
 log_auto_update_completed: "Automatic graph update completed. Next update: {next_update}"
-log_auto_update_started: "Auto update started"
 log_auto_update_started: "Automatic graph update started."
 log_bot_commands_loaded: "Bot commands loaded successfully."
 log_bot_connected: "Bot has connected to Discord."

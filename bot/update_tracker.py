@@ -39,8 +39,8 @@ class UpdateTracker:
             try:
                 return datetime.strptime(fixed_time, "%H:%M").time()
             except ValueError:
-                logging.error(f"Invalid FIXED_UPDATE_TIME format: {fixed_time}")
-                return None
+                logging.error(f"Invalid FIXED_UPDATE_TIME format: {fixed_time}, error: {e}")
+                raise TypeError(f"FIXED_UPDATE_TIME must be None, a time object, or a string in '%H:%M' format, got {type(fixed_time)}")
         logging.error(f"Unexpected FIXED_UPDATE_TIME type: {type(fixed_time)}")
         return None
 
