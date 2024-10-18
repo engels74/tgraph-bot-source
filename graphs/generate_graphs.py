@@ -1,4 +1,5 @@
 # graphs/generate_graphs.py
+import asyncio
 import discord
 import logging
 import matplotlib.pyplot as plt
