@@ -47,23 +47,27 @@ class Commands(commands.Cog):
                 command.description = self.translations[translation_key]
         logging.info(self.translations["log_command_descriptions_updated"])
 
+    def _create_about_embed(self):
+        embed = discord.Embed(title="TGraph Bot", color=0x3498DB)
+        embed.add_field(
+            name="Description",
+            value=self.translations["about_description"],
+            inline=False,
+        )
+        embed.add_field(
+            name=self.translations["about_github"],
+            value="https://github.com/engels74/tgraph-bot-source",
+            inline=False,
+        )
+        embed.add_field(
+            name=self.translations["about_license"], value="AGPLv3", inline=False
+        )
+        return embed
+
     @app_commands.command(name="about")
     async def about(self, interaction: discord.Interaction):
         try:
-            embed = discord.Embed(title="TGraph Bot", color=0x3498DB)
-            embed.add_field(
-                name="Description",
-                value=self.translations["about_description"],
-                inline=False,
-            )
-            embed.add_field(
-                name=self.translations["about_github"],
-                value="https://github.com/engels74/tgraph-bot-source",
-                inline=False,
-            )
-            embed.add_field(
-                name=self.translations["about_license"], value="AGPLv3", inline=False
-            )
+            embed = self._create_about_embed()
             await interaction.response.send_message(embed=embed, ephemeral=True)
             logging.info(
                 self.translations["log_command_executed"].format(
@@ -177,7 +181,7 @@ class Commands(commands.Cog):
             try:
                 return self._validate_fixed_update_time(value)
             except ValueError as e:
-                raise ValueError(f"Invalid FIXED_UPDATE_TIME: {str(e)}")
+                raise ValueError(str(e))
         return value
 
     def _validate_fixed_update_time(self, value):
@@ -193,7 +197,7 @@ class Commands(commands.Cog):
     def _update_translations_if_needed(self, key: str, value: str):
         if key == "LANGUAGE":
             self.translations = load_translations(value)
-            self.update_translations()
+            self.update_command_descriptions()
 
     def _prepare_response_message(self, key: str, old_value: str, new_value: str) -> str:
         if key == "FIXED_UPDATE_TIME":
@@ -215,8 +219,7 @@ class Commands(commands.Cog):
         else:
             await interaction.response.send_message(message, ephemeral=True)
 
-    @app_commands.command(name="my_stats")
-    async def my_stats(self, interaction: discord.Interaction, email: str):
+    async def _check_cooldowns(self, interaction: discord.Interaction):
         # Check global cooldown
         if datetime.now() < self.global_cooldown:
             remaining = int((self.global_cooldown - datetime.now()).total_seconds())
@@ -226,23 +229,25 @@ class Commands(commands.Cog):
                 ),
                 ephemeral=True,
             )
-            return
+            return False
 
         # Check user cooldown
         user_id = str(interaction.user.id)
-        if (
-            user_id in self.user_cooldowns
-            and datetime.now() < self.user_cooldowns[user_id]
-        ):
-            remaining = int(
-                (self.user_cooldowns[user_id] - datetime.now()).total_seconds()
-            )
+        if user_id in self.user_cooldowns and datetime.now() < self.user_cooldowns[user_id]:
+            remaining = int((self.user_cooldowns[user_id] - datetime.now()).total_seconds())
             await interaction.response.send_message(
                 self.translations["rate_limit_user"].format(
                     time=f"<t:{int((datetime.now() + timedelta(seconds=remaining)).timestamp())}:R>"
                 ),
                 ephemeral=True,
             )
+            return False
+
+        return True
+
+    @app_commands.command(name="my_stats")
+    async def my_stats(self, interaction: discord.Interaction, email: str):
+        if not await self._check_cooldowns(interaction):
             return
 
         await interaction.response.defer(ephemeral=True)
@@ -291,7 +296,7 @@ class Commands(commands.Cog):
 
             # Update cooldowns
             logging.info(self.translations["log_updating_cooldowns"])
-            self.user_cooldowns[user_id] = datetime.now() + timedelta(
+            self.user_cooldowns[str(interaction.user.id)] = datetime.now() + timedelta(
                 minutes=self.config["MY_STATS_COOLDOWN_MINUTES"]
             )
             self.global_cooldown = datetime.now() + timedelta(
@@ -437,7 +442,7 @@ class Commands(commands.Cog):
                 f"Unexpected error when sending error message: {str(inner_e)}"
             )
 
-    def update_translations(self):
+    def update_command_descriptions(self):
         # Update translations in other modules
         from graphs import generate_graphs
         generate_graphs.translations = self.translations
