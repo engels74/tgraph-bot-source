@@ -30,6 +30,15 @@ class Commands(commands.Cog):
         self.config = load_config(CONFIG_PATH)
         self.translations = translations
 
+    def get_app_commands(self):
+        return [
+            self.about,
+            self.config_command,
+            self.my_stats,
+            self.update_graphs,
+            self.uptime,
+        ]
+
     async def cog_load(self):
         logging.info(self.translations["log_commands_cog_loading"])
         for command in self.get_app_commands():
@@ -146,7 +155,9 @@ class Commands(commands.Cog):
                     embed.add_field(name=k, value=str(v), inline=False)
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    async def _handle_edit_config(self, interaction: discord.Interaction, key: str, value: str):
+    async def _handle_edit_config(
+        self, interaction: discord.Interaction, key: str, value: str
+    ):
         if key is None or value is None:
             await interaction.response.send_message(
                 self.translations["config_edit_specify_key_value"], ephemeral=True
@@ -199,10 +210,14 @@ class Commands(commands.Cog):
             self.translations = load_translations(value)
             self.update_command_descriptions()
 
-    def _prepare_response_message(self, key: str, old_value: str, new_value: str) -> str:
+    def _prepare_response_message(
+        self, key: str, old_value: str, new_value: str
+    ) -> str:
         if key == "FIXED_UPDATE_TIME":
             if new_value is None:
-                return self.translations["config_updated_fixed_time_disabled"].format(key=key)
+                return self.translations["config_updated_fixed_time_disabled"].format(
+                    key=key
+                )
             return self.translations["config_updated"].format(
                 key=key, old_value=old_value, new_value=new_value.strftime("%H:%M")
             )
@@ -210,7 +225,9 @@ class Commands(commands.Cog):
             key=key, old_value=old_value, new_value=new_value
         )
 
-    async def _send_config_update_response(self, interaction: discord.Interaction, key: str, message: str):
+    async def _send_config_update_response(
+        self, interaction: discord.Interaction, key: str, message: str
+    ):
         if key in RESTART_REQUIRED_KEYS:
             await interaction.response.send_message(
                 self.translations["config_updated_restart"].format(key=key),
@@ -233,8 +250,13 @@ class Commands(commands.Cog):
 
         # Check user cooldown
         user_id = str(interaction.user.id)
-        if user_id in self.user_cooldowns and datetime.now() < self.user_cooldowns[user_id]:
-            remaining = int((self.user_cooldowns[user_id] - datetime.now()).total_seconds())
+        if (
+            user_id in self.user_cooldowns
+            and datetime.now() < self.user_cooldowns[user_id]
+        ):
+            remaining = int(
+                (self.user_cooldowns[user_id] - datetime.now()).total_seconds()
+            )
             await interaction.response.send_message(
                 self.translations["rate_limit_user"].format(
                     time=f"<t:{int((datetime.now() + timedelta(seconds=remaining)).timestamp())}:R>"
@@ -441,13 +463,6 @@ class Commands(commands.Cog):
             logging.error(
                 f"Unexpected error when sending error message: {str(inner_e)}"
             )
-
-    def update_command_descriptions(self):
-        # Update translations in other modules
-        from graphs import generate_graphs
-        generate_graphs.translations = self.translations
-        from graphs import generate_graphs_user
-        generate_graphs_user.translations = self.translations
 
 
 async def setup(bot):

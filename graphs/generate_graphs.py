@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from matplotlib.dates import DateFormatter
 from matplotlib.ticker import MaxNLocator
 
+
 def fetch_tautulli_data(cmd, params=None, config=None):
     now = datetime.now().astimezone()
     if params is None:
@@ -25,12 +26,25 @@ def fetch_tautulli_data(cmd, params=None, config=None):
     response = requests.get(config["TAUTULLI_URL"], params=params)
     return response.json()
 
-def fetch_and_validate_data(cmd, params, config, error_message, translations):
-    data = fetch_tautulli_data(cmd, params, config)
+
+def fetch_and_validate_data(api_action, params, config, error_message, translations, required_keys=None):
+    data = fetch_tautulli_data(api_action, params, config)
+    if data is None:
+        logging.error(translations["error_fetching_data"])
+        return None
     if not data or "response" not in data or "data" not in data["response"]:
         logging.error(translations[error_message])
         return None
-    return data["response"]["data"]
+    data_content = data["response"]["data"]
+    if required_keys:
+        for key in required_keys:
+            if key not in data_content:
+                logging.error(
+                    translations["error_missing_key"].format(key=key, api_action=api_action)
+                )
+                return None
+    return data_content
+
 
 def fetch_all_data(config, translations):
     data = {}
@@ -41,6 +55,7 @@ def fetch_all_data(config, translations):
             "get_plays_by_date",
             {"time_range": config["TIME_RANGE_DAYS"]},
             "error_fetch_daily_play_count",
+            ["series"],
         ),
         (
             "ENABLE_PLAY_COUNT_BY_DAYOFWEEK",
@@ -48,6 +63,7 @@ def fetch_all_data(config, translations):
             "get_plays_by_dayofweek",
             {"time_range": config["TIME_RANGE_DAYS"]},
             "error_fetch_play_count_dayofweek",
+            ["series"],
         ),
         (
             "ENABLE_PLAY_COUNT_BY_HOUROFDAY",
@@ -55,6 +71,7 @@ def fetch_all_data(config, translations):
             "get_plays_by_hourofday",
             {"time_range": config["TIME_RANGE_DAYS"]},
             "error_fetch_play_count_hourofday",
+            ["series"],
         ),
         (
             "ENABLE_TOP_10_PLATFORMS",
@@ -62,6 +79,7 @@ def fetch_all_data(config, translations):
             "get_plays_by_top_10_platforms",
             {"time_range": config["TIME_RANGE_DAYS"]},
             "error_fetch_top_10_platforms",
+            ["categories", "series"],
         ),
         (
             "ENABLE_TOP_10_USERS",
@@ -69,6 +87,7 @@ def fetch_all_data(config, translations):
             "get_plays_by_top_10_users",
             {"time_range": config["TIME_RANGE_DAYS"]},
             "error_fetch_top_10_users",
+            ["categories", "series"],
         ),
         (
             "ENABLE_PLAY_COUNT_BY_MONTH",
@@ -76,12 +95,16 @@ def fetch_all_data(config, translations):
             "get_plays_per_month",
             {"time_range": 12, "y_axis": "plays"},
             "error_fetch_play_count_month",
+            ["categories", "series"],
         ),
     ]
-    for flag, key, cmd, params, error_msg in features:
+    for flag, key, cmd, params, error_msg, required_keys in features:
         if config[flag]:
-            data[key] = fetch_and_validate_data(cmd, params, config, error_msg, translations)
+            data[key] = fetch_and_validate_data(
+                cmd, params, config, error_msg, translations, required_keys
+            )
     return data
+
 
 def get_series_color(series_name, TV_COLOR, MOVIE_COLOR):
     if series_name == "TV":
@@ -90,6 +113,7 @@ def get_series_color(series_name, TV_COLOR, MOVIE_COLOR):
         return MOVIE_COLOR
     else:
         return "#1f77b4"
+
 
 def censor_username(username, should_censor):
     if not should_censor:
@@ -100,6 +124,7 @@ def censor_username(username, should_censor):
     half_length = length // 2
     return username[:half_length] + "*" * (length - half_length)
 
+
 def generate_graphs(data, folder, current_translations, current_config):
     config = current_config
     translations = current_translations
@@ -109,36 +134,47 @@ def generate_graphs(data, folder, current_translations, current_config):
     ANNOTATION_COLOR = config["ANNOTATION_COLOR"].strip('"')
 
     if config["ENABLE_DAILY_PLAY_COUNT"]:
-        generate_daily_play_count_graph(data, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, translations)
+        generate_daily_play_count_graph(
+            data, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, translations
+        )
 
     if config["ENABLE_PLAY_COUNT_BY_DAYOFWEEK"]:
-        generate_play_count_by_dayofweek_graph(data, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, translations)
+        generate_play_count_by_dayofweek_graph(
+            data, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, translations
+        )
 
     if config["ENABLE_PLAY_COUNT_BY_HOUROFDAY"]:
-        generate_play_count_by_hourofday_graph(data, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, translations)
+        generate_play_count_by_hourofday_graph(
+            data, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, translations
+        )
 
     if config["ENABLE_TOP_10_PLATFORMS"]:
-        generate_top_10_platforms_graph(data, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, translations)
+        generate_top_10_platforms_graph(
+            data, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, translations
+        )
 
     if config["ENABLE_TOP_10_USERS"]:
-        generate_top_10_users_graph(data, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, translations)
+        generate_top_10_users_graph(
+            data, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, translations
+        )
 
     if config["ENABLE_PLAY_COUNT_BY_MONTH"]:
-        generate_play_count_by_month_graph(data, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, translations)
+        generate_play_count_by_month_graph(
+            data, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, translations
+        )
 
-def generate_daily_play_count_graph(data, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, translations):
+
+def generate_daily_play_count_graph(
+    data, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, translations
+):
     plt.figure(figsize=(14, 8))
     daily_play_count = data["daily_play_count"]
 
-    if "series" not in daily_play_count:
-        logging.error(translations["error_missing_series_daily_play_count"])
+    if not daily_play_count:
+        logging.warning(translations["warning_empty_series_daily_play_count"])
         return
 
     series = daily_play_count["series"]
-
-    if not series:
-        logging.warning(translations["warning_empty_series_daily_play_count"])
-        return
 
     end_date = datetime.now().astimezone()
     start_date = end_date - timedelta(days=config["TIME_RANGE_DAYS"] - 1)
@@ -186,19 +222,18 @@ def generate_daily_play_count_graph(data, folder, config, TV_COLOR, MOVIE_COLOR,
     save_and_post_graph(folder, "daily_play_count.png", translations)
     plt.close()
 
-def generate_play_count_by_dayofweek_graph(data, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, translations):
+
+def generate_play_count_by_dayofweek_graph(
+    data, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, translations
+):
     plt.figure(figsize=(14, 8))
     play_count_by_dayofweek = data["play_count_by_dayofweek"]
 
-    if "series" not in play_count_by_dayofweek:
-        logging.error(translations["error_missing_series_play_count_by_dayofweek"])
+    if not play_count_by_dayofweek:
+        logging.warning(translations["warning_empty_series_play_count_by_dayofweek"])
         return
 
     series = play_count_by_dayofweek["series"]
-
-    if not series:
-        logging.warning(translations["warning_empty_series_play_count_by_dayofweek"])
-        return
 
     days = list(range(7))
     day_labels = [translations[f"day_{i}"] for i in range(7)]
@@ -222,7 +257,9 @@ def generate_play_count_by_dayofweek_graph(data, folder, config, TV_COLOR, MOVIE
     plt.xlabel(translations["play_count_by_dayofweek_xlabel"], fontweight="bold")
     plt.ylabel(translations["play_count_by_dayofweek_ylabel"], fontweight="bold")
     plt.title(
-        translations["play_count_by_dayofweek_title"].format(days=config["TIME_RANGE_DAYS"]),
+        translations["play_count_by_dayofweek_title"].format(
+            days=config["TIME_RANGE_DAYS"]
+        ),
         fontweight="bold",
     )
     plt.xticks(days, day_labels, ha="center")
@@ -232,19 +269,18 @@ def generate_play_count_by_dayofweek_graph(data, folder, config, TV_COLOR, MOVIE
     save_and_post_graph(folder, "play_count_by_dayofweek.png", translations)
     plt.close()
 
-def generate_play_count_by_hourofday_graph(data, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, translations):
+
+def generate_play_count_by_hourofday_graph(
+    data, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, translations
+):
     plt.figure(figsize=(14, 8))
     play_count_by_hourofday = data["play_count_by_hourofday"]
 
-    if "series" not in play_count_by_hourofday:
-        logging.error(translations["error_missing_series_play_count_by_hourofday"])
+    if not play_count_by_hourofday:
+        logging.warning(translations["warning_empty_series_play_count_by_hourofday"])
         return
 
     series = play_count_by_hourofday["series"]
-
-    if not series:
-        logging.warning(translations["warning_empty_series_play_count_by_hourofday"])
-        return
 
     hours = list(range(24))
 
@@ -267,7 +303,9 @@ def generate_play_count_by_hourofday_graph(data, folder, config, TV_COLOR, MOVIE
     plt.xlabel(translations["play_count_by_hourofday_xlabel"], fontweight="bold")
     plt.ylabel(translations["play_count_by_hourofday_ylabel"], fontweight="bold")
     plt.title(
-        translations["play_count_by_hourofday_title"].format(days=config["TIME_RANGE_DAYS"]),
+        translations["play_count_by_hourofday_title"].format(
+            days=config["TIME_RANGE_DAYS"]
+        ),
         fontweight="bold",
     )
     plt.xticks(hours, ha="center")
@@ -277,20 +315,19 @@ def generate_play_count_by_hourofday_graph(data, folder, config, TV_COLOR, MOVIE
     save_and_post_graph(folder, "play_count_by_hourofday.png", translations)
     plt.close()
 
-def generate_top_10_platforms_graph(data, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, translations):
+
+def generate_top_10_platforms_graph(
+    data, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, translations
+):
     plt.figure(figsize=(14, 8))
     top_10_platforms = data["top_10_platforms"]
 
-    if "categories" not in top_10_platforms or "series" not in top_10_platforms:
-        logging.error(translations["error_missing_data_top_10_platforms"])
+    if not top_10_platforms:
+        logging.warning(translations["warning_empty_series_top_10_platforms"])
         return
 
     platforms = top_10_platforms["categories"]
     series = top_10_platforms["series"]
-
-    if not series:
-        logging.warning(translations["warning_empty_series_top_10_platforms"])
-        return
 
     for serie in series:
         color = get_series_color(serie["name"], TV_COLOR, MOVIE_COLOR)
@@ -320,25 +357,30 @@ def generate_top_10_platforms_graph(data, folder, config, TV_COLOR, MOVIE_COLOR,
     save_and_post_graph(folder, "top_10_platforms.png", translations)
     plt.close()
 
-def generate_top_10_users_graph(data, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, translations):
+
+def generate_top_10_users_graph(
+    data, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, translations
+):
     plt.figure(figsize=(14, 8))
     top_10_users = data["top_10_users"]
 
-    if "categories" not in top_10_users or "series" not in top_10_users:
-        logging.error(translations["error_missing_data_top_10_users"])
+    if not top_10_users:
+        logging.warning(translations["warning_empty_series_top_10_users"])
         return
 
     users = top_10_users["categories"]
     series = top_10_users["series"]
 
-    if not series:
-        logging.warning(translations["warning_empty_series_top_10_users"])
-        return
-
     combined_data = []
     for i, user in enumerate(users):
-        tv_plays = series[0]["data"][i] if series[0]["name"] == "TV" else series[1]["data"][i]
-        movie_plays = series[1]["data"][i] if series[1]["name"] == "Movies" else series[0]["data"][i]
+        tv_plays = (
+            series[0]["data"][i] if series[0]["name"] == "TV" else series[1]["data"][i]
+        )
+        movie_plays = (
+            series[1]["data"][i]
+            if series[1]["name"] == "Movies"
+            else series[0]["data"][i]
+        )
         total_plays = tv_plays + movie_plays
         combined_data.append((user, tv_plays, movie_plays, total_plays))
 
@@ -352,9 +394,7 @@ def generate_top_10_users_graph(data, folder, config, TV_COLOR, MOVIE_COLOR, ANN
         censor_username(user, config["CENSOR_USERNAMES"]) for user in sorted_users
     ]
 
-    plt.bar(
-        censored_users, sorted_movie_data, label="Movies", color=MOVIE_COLOR
-    )
+    plt.bar(censored_users, sorted_movie_data, label="Movies", color=MOVIE_COLOR)
     plt.bar(
         censored_users,
         sorted_tv_data,
@@ -389,20 +429,19 @@ def generate_top_10_users_graph(data, folder, config, TV_COLOR, MOVIE_COLOR, ANN
     save_and_post_graph(folder, "top_10_users.png", translations)
     plt.close()
 
-def generate_play_count_by_month_graph(data, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, translations):
+
+def generate_play_count_by_month_graph(
+    data, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, translations
+):
     plt.figure(figsize=(14, 8))
     play_count_by_month = data["play_count_by_month"]
 
-    if "categories" not in play_count_by_month or "series" not in play_count_by_month:
-        logging.error(translations["error_missing_data_play_count_by_month"])
+    if not play_count_by_month:
+        logging.warning(translations["warning_empty_data_play_count_by_month"])
         return
 
     months = play_count_by_month["categories"]
     series = play_count_by_month["series"]
-
-    if not months or not series:
-        logging.warning(translations["warning_empty_data_play_count_by_month"])
-        return
 
     movie_data = [0] * len(months)
     tv_data = [0] * len(months)
@@ -479,16 +518,19 @@ def generate_play_count_by_month_graph(data, folder, config, TV_COLOR, MOVIE_COL
     save_and_post_graph(folder, "play_count_by_month.png", translations)
     plt.close()
 
+
 def save_and_post_graph(folder, filename, translations):
     filepath = os.path.join(folder, filename)
     plt.savefig(filepath)
     plt.close()  # Close the figure to release memory
     logging.info(translations["log_posted_message"].format(filename=filename))
 
+
 def ensure_folder_exists(folder, translations):
     if not os.path.exists(folder):
         os.makedirs(folder)
     logging.info(translations["log_ensured_folder_exists"])
+
 
 def cleanup_old_folders(base_folder, keep_days, translations):
     folders = [
@@ -503,6 +545,7 @@ def cleanup_old_folders(base_folder, keep_days, translations):
         except Exception as e:
             logging.error(f"Error deleting folder {folder}: {str(e)}")
     logging.info(translations["log_cleaned_up_old_folders"])
+
 
 async def update_and_post_graphs(bot, current_translations, current_config):
     translations = current_translations
@@ -536,6 +579,7 @@ async def update_and_post_graphs(bot, current_translations, current_config):
     except Exception as e:
         logging.error(translations["error_update_post_graphs"].format(error=str(e)))
         raise
+
 
 async def post_graphs(channel, img_folder, translations, next_update, config):
     now = datetime.now().astimezone().strftime("%Y-%m-%d at %H:%M:%S")
@@ -610,6 +654,7 @@ async def post_graphs(channel, img_folder, translations, next_update, config):
         embed.set_footer(text=translations["embed_footer"].format(now=now))
         with open(file_path, "rb") as f:
             await channel.send(file=discord.File(f, filename), embed=embed)
+
 
 async def delete_bot_messages(channel):
     async for message in channel.history(limit=200):

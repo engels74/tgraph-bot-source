@@ -7,6 +7,7 @@ from graphs.generate_graphs import fetch_tautulli_data, ensure_folder_exists
 from matplotlib.dates import DateFormatter
 from matplotlib.ticker import MaxNLocator
 
+
 def fetch_and_validate_data(api_action, params, config, error_message, translations):
     data = fetch_tautulli_data(api_action, params, config)
     if not data or "data" not in data["response"]:
@@ -14,11 +15,12 @@ def fetch_and_validate_data(api_action, params, config, error_message, translati
         return None
     return data["response"]["data"]
 
+
 def generate_user_graphs(user_id, img_folder, config, current_translations):
     graph_files = []
     today = datetime.today().strftime("%Y-%m-%d")
     user_folder = os.path.join(img_folder, today, f"user_{user_id}")
-    ensure_folder_exists(user_folder)
+    ensure_folder_exists(user_folder, current_translations)
 
     # Define colors
     TV_COLOR = config["TV_COLOR"].strip('"')
@@ -92,6 +94,7 @@ def generate_user_graphs(user_id, img_folder, config, current_translations):
 
     return [file for file in graph_files if file is not None]
 
+
 def generate_daily_play_count(
     user_id, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, translations
 ):
@@ -101,14 +104,16 @@ def generate_daily_play_count(
         {"time_range": config["TIME_RANGE_DAYS"], "user_id": user_id},
         config,
         translations["error_fetch_daily_play_count_user"].format(user_id=user_id),
-        translations
+        translations,
     )
     if daily_play_count is None:
         return None
 
     if "series" not in daily_play_count:
         logging.error(
-            translations["error_missing_series_daily_play_count"].format(user_id=user_id)
+            translations["error_missing_series_daily_play_count"].format(
+                user_id=user_id
+            )
         )
         return None
 
@@ -116,7 +121,9 @@ def generate_daily_play_count(
 
     if not series:
         logging.warning(
-            translations["warning_empty_series_daily_play_count"].format(user_id=user_id)
+            translations["warning_empty_series_daily_play_count"].format(
+                user_id=user_id
+            )
         )
         return None
 
@@ -169,6 +176,7 @@ def generate_daily_play_count(
     plt.close()
     return filepath
 
+
 def generate_play_count_by_dayofweek(
     user_id, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, translations
 ):
@@ -178,14 +186,16 @@ def generate_play_count_by_dayofweek(
         {"time_range": config["TIME_RANGE_DAYS"], "user_id": user_id},
         config,
         translations["error_fetch_play_count_dayofweek_user"].format(user_id=user_id),
-        translations
+        translations,
     )
     if play_count_by_dayofweek is None:
         return None
 
     if "series" not in play_count_by_dayofweek:
         logging.error(
-            translations["error_missing_series_play_count_by_dayofweek"].format(user_id=user_id)
+            translations["error_missing_series_play_count_by_dayofweek"].format(
+                user_id=user_id
+            )
         )
         return None
 
@@ -195,7 +205,9 @@ def generate_play_count_by_dayofweek(
 
     if not series:
         logging.warning(
-            translations["warning_empty_series_play_count_by_dayofweek"].format(user_id=user_id)
+            translations["warning_empty_series_play_count_by_dayofweek"].format(
+                user_id=user_id
+            )
         )
         return None
 
@@ -233,6 +245,7 @@ def generate_play_count_by_dayofweek(
     plt.close()
     return filepath
 
+
 def generate_play_count_by_hourofday(
     user_id, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, translations
 ):
@@ -242,14 +255,16 @@ def generate_play_count_by_hourofday(
         {"time_range": config["TIME_RANGE_DAYS"], "user_id": user_id},
         config,
         translations["error_fetch_play_count_hourofday_user"].format(user_id=user_id),
-        translations
+        translations,
     )
     if play_count_by_hourofday is None:
         return None
 
     if "series" not in play_count_by_hourofday:
         logging.error(
-            translations["error_missing_series_play_count_by_hourofday"].format(user_id=user_id)
+            translations["error_missing_series_play_count_by_hourofday"].format(
+                user_id=user_id
+            )
         )
         return None
 
@@ -258,7 +273,9 @@ def generate_play_count_by_hourofday(
 
     if not series:
         logging.warning(
-            translations["warning_empty_series_play_count_by_hourofday"].format(user_id=user_id)
+            translations["warning_empty_series_play_count_by_hourofday"].format(
+                user_id=user_id
+            )
         )
         return None
 
@@ -296,6 +313,7 @@ def generate_play_count_by_hourofday(
     plt.close()
     return filepath
 
+
 def generate_top_10_platforms(
     user_id, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, translations
 ):
@@ -305,7 +323,7 @@ def generate_top_10_platforms(
         {"time_range": config["TIME_RANGE_DAYS"], "user_id": user_id},
         config,
         translations["error_fetch_top_10_platforms_user"].format(user_id=user_id),
-        translations
+        translations,
     )
     if top_10_platforms is None:
         return None
@@ -321,7 +339,9 @@ def generate_top_10_platforms(
 
     if not series:
         logging.warning(
-            translations["warning_empty_series_top_10_platforms"].format(user_id=user_id)
+            translations["warning_empty_series_top_10_platforms"].format(
+                user_id=user_id
+            )
         )
         return None
 
@@ -356,6 +376,7 @@ def generate_top_10_platforms(
     plt.close()
     return filepath
 
+
 def generate_play_count_by_month(
     user_id, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, translations
 ):
@@ -365,14 +386,16 @@ def generate_play_count_by_month(
         {"time_range": 12, "y_axis": "plays", "user_id": user_id},
         config,
         translations["error_fetch_play_count_month_user"].format(user_id=user_id),
-        translations
+        translations,
     )
     if play_count_by_month is None:
         return None
 
     if "categories" not in play_count_by_month or "series" not in play_count_by_month:
         logging.error(
-            translations["error_missing_data_play_count_by_month"].format(user_id=user_id)
+            translations["error_missing_data_play_count_by_month"].format(
+                user_id=user_id
+            )
         )
         return None
 
@@ -380,7 +403,11 @@ def generate_play_count_by_month(
     series = play_count_by_month["series"]
 
     if not months or not series:
-        logging.warning(translations["warning_empty_data_play_count_by_month"].format(user_id=user_id))
+        logging.warning(
+            translations["warning_empty_data_play_count_by_month"].format(
+                user_id=user_id
+            )
+        )
         return None
 
     movie_data = [0] * len(months)
@@ -403,7 +430,11 @@ def generate_play_count_by_month(
             filtered_tv_data.append(tv_data[i])
 
     if not filtered_months:
-        logging.warning(translations["warning_no_play_data_play_count_by_month"].format(user_id=user_id))
+        logging.warning(
+            translations["warning_no_play_data_play_count_by_month"].format(
+                user_id=user_id
+            )
+        )
         return None
 
     bar_width = 0.4
