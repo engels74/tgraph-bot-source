@@ -30,6 +30,15 @@ class Commands(commands.Cog):
         self.config = load_config(CONFIG_PATH)
         self.translations = translations
 
+    def get_app_commands(self):
+        return [
+            self.about,
+            self.config_command,
+            self.my_stats,
+            self.update_graphs,
+            self.uptime
+        ]
+
     async def cog_load(self):
         logging.info(self.translations["log_commands_cog_loading"])
         for command in self.get_app_commands():
