@@ -465,4 +465,5 @@ async def setup(bot):
     commands_cog = Commands(bot, translations)
     await bot.add_cog(commands_cog)
     commands_cog.update_command_descriptions()
+    await bot.tree.sync()  # Add this line to force a resync
     logging.info(translations["log_commands_cog_setup"])
