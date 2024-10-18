@@ -20,7 +20,7 @@ def generate_user_graphs(user_id, img_folder, config, current_translations):
     graph_files = []
     today = datetime.today().strftime("%Y-%m-%d")
     user_folder = os.path.join(img_folder, today, f"user_{user_id}")
-    ensure_folder_exists(user_folder)
+    ensure_folder_exists(user_folder, current_translations)
 
     # Define colors
     TV_COLOR = config["TV_COLOR"].strip('"')
