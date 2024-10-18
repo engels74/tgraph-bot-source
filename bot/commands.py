@@ -464,14 +464,6 @@ class Commands(commands.Cog):
                 f"Unexpected error when sending error message: {str(inner_e)}"
             )
 
-    def update_command_descriptions(self):
-        # Update translations in other modules
-        from graphs import generate_graphs
-        generate_graphs.translations = self.translations
-        from graphs import generate_graphs_user
-        generate_graphs_user.translations = self.translations
-
-
 async def setup(bot):
     logging.info("[DEBUG] Setup function called")
     config = load_config(CONFIG_PATH)
