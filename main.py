@@ -195,21 +195,45 @@ async def main():
 
 
 async def schedule_updates(bot):
+    last_status = False
+    last_next_update = None
+
     while True:
-        if bot.update_tracker.is_update_due():
-            log(bot.translations["log_auto_update_started"])
-            bot.config = load_config(
-                args.config_file, reload=True
-            )  # Reload config here
+        current_status = bot.update_tracker.is_update_due()
+        current_next_update = bot.update_tracker.next_update
+
+        # Log if status changed from not due to due
+        if current_status and not last_status:
+            logging.info(
+                bot.translations["log_update_now_due"].format(
+                    current_time=datetime.now()
+                )
+            )
+
+        # Log if next update time changed
+        if current_next_update != last_next_update:
+            logging.info(
+                bot.translations["log_next_update_changed"].format(
+                    next_update=current_next_update
+                )
+            )
+
+        if current_status:
+            logging.info(bot.translations["log_auto_update_started"])
+            bot.config = load_config(args.config_file, reload=True)
             await update_and_post_graphs(bot, bot.translations, bot.config)
             bot.update_tracker.update()
             next_update_log = bot.update_tracker.get_next_update_readable()
-            log(
+            logging.info(
                 bot.translations["log_auto_update_completed"].format(
                     next_update=next_update_log
                 )
             )
-        await asyncio.sleep(60)  # Check every minute
+
+        last_status = current_status
+        last_next_update = current_next_update
+
+        await asyncio.sleep(60)
 
 
 if __name__ == "__main__":

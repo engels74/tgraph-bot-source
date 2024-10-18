@@ -28,7 +28,9 @@ def fetch_tautulli_data(cmd, params=None, config=None):
     return response.json()
 
 
-def fetch_and_validate_data(api_action, params, config, error_message, translations, required_keys=None):
+def fetch_and_validate_data(
+    api_action, params, config, error_message, translations, required_keys=None
+):
     data = fetch_tautulli_data(api_action, params, config)
     if data is None:
         logging.error(translations["error_fetching_data"])
@@ -41,7 +43,9 @@ def fetch_and_validate_data(api_action, params, config, error_message, translati
         for key in required_keys:
             if key not in data_content:
                 logging.error(
-                    translations["error_missing_key"].format(key=key, api_action=api_action)
+                    translations["error_missing_key"].format(
+                        key=key, api_action=api_action
+                    )
                 )
                 return None
     return data_content
