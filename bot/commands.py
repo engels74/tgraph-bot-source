@@ -104,107 +104,9 @@ class Commands(commands.Cog):
             self.config = load_config(CONFIG_PATH, reload=True)
 
             if action == "view":
-                if key:
-                    if key in self.config and key in CONFIG_OPTIONS:
-                        await interaction.response.send_message(
-                            f"{key}: {self.config[key]}", ephemeral=True
-                        )
-                    else:
-                        await interaction.response.send_message(
-                            self.translations["config_view_invalid_key"].format(
-                                key=key
-                            ),
-                            ephemeral=True,
-                        )
-                else:
-                    embed = discord.Embed(title="Bot Configuration", color=0x3498DB)
-                    for k, v in self.config.items():
-                        if k in CONFIG_OPTIONS:
-                            embed.add_field(name=k, value=str(v), inline=False)
-                    await interaction.response.send_message(embed=embed, ephemeral=True)
+                await self._handle_view_config(interaction, key)
             elif action == "edit":
-                if key is None:
-                    await interaction.response.send_message(
-                        self.translations["config_edit_specify_key"], ephemeral=True
-                    )
-                    return
-                if key not in CONFIG_OPTIONS:
-                    await interaction.response.send_message(
-                        self.translations["config_view_invalid_key"].format(key=key),
-                        ephemeral=True,
-                    )
-                    return
-                if value is None:
-                    await interaction.response.send_message(
-                        self.translations["config_edit_specify_value"], ephemeral=True
-                    )
-                    return
-
-                # Convert value to appropriate type
-                if isinstance(self.config.get(key), bool):
-                    value = value.lower() == "true"
-                elif isinstance(self.config.get(key), int):
-                    value = int(value)
-                elif key in ["TV_COLOR", "MOVIE_COLOR", "ANNOTATION_COLOR"]:
-                    value = format_color_value(value)
-                elif key == "FIXED_UPDATE_TIME":
-                    try:
-                        value = self.validate_fixed_update_time(value)
-                    except ValueError:
-                        await interaction.response.send_message(
-                            self.translations["error_invalid_fixed_time"], ephemeral=True
-                        )
-                        return
-
-                # Update configuration
-                old_value = self.config.get(key, "N/A")
-                self.config = update_config(key, value, self.translations)
-
-                # Update the bot's update_tracker with the new config
-                self._sync_update_tracker(self.config)
-
-                # Reload translations if language changed
-                if key == "LANGUAGE":
-                    self.translations = load_translations(value)
-                    self.update_translations()
-
-                # Prepare response message
-                if key == "FIXED_UPDATE_TIME":
-                    if value is None:
-                        response_message = self.translations[
-                            "config_updated_fixed_time_disabled"
-                        ].format(key=key)
-                    else:
-                        response_message = self.translations["config_updated"].format(
-                            key=key,
-                            old_value=old_value,
-                            new_value=value.strftime("%H:%M"),
-                        )
-                else:
-                    response_message = self.translations["config_updated"].format(
-                        key=key, old_value=old_value, new_value=value
-                    )
-
-                # Add next update info only for relevant keys
-                if key in ["UPDATE_DAYS", "FIXED_UPDATE_TIME"]:
-                    try:
-                        next_update = self.bot.update_tracker.next_update.strftime(
-                            "%Y-%m-%d %H:%M:%S"
-                        )
-                        response_message += f"\n{self.translations['next_update'].format(next_update=next_update)}"
-                    except Exception as e:
-                        logging.error(f"Error getting next update timestamp: {str(e)}")
-
-                # Send response
-                if key in RESTART_REQUIRED_KEYS:
-                    await interaction.response.send_message(
-                        self.translations["config_updated_restart"].format(key=key),
-                        ephemeral=True,
-                    )
-                else:
-                    await interaction.response.send_message(
-                        response_message, ephemeral=True
-                    )
+                await self._handle_edit_config(interaction, key, value)
 
             logging.info(
                 self.translations["log_command_executed"].format(
@@ -222,14 +124,89 @@ class Commands(commands.Cog):
                 interaction, self.translations["error_processing_command"]
             )
 
-    def update_translations(self):
-        # Update translations in other modules
-        from graphs import generate_graphs
+    async def _handle_view_config(self, interaction: discord.Interaction, key: str):
+        if key:
+            if key in self.config and key in CONFIG_OPTIONS:
+                await interaction.response.send_message(
+                    f"{key}: {self.config[key]}", ephemeral=True
+                )
+            else:
+                await interaction.response.send_message(
+                    self.translations["config_view_invalid_key"].format(key=key),
+                    ephemeral=True,
+                )
+        else:
+            embed = discord.Embed(title="Bot Configuration", color=0x3498DB)
+            for k, v in self.config.items():
+                if k in CONFIG_OPTIONS:
+                    embed.add_field(name=k, value=str(v), inline=False)
+            await interaction.response.send_message(embed=embed, ephemeral=True)
 
-        generate_graphs.translations = self.translations
-        from graphs import generate_graphs_user
+    async def _handle_edit_config(self, interaction: discord.Interaction, key: str, value: str):
+        if key is None or value is None:
+            await interaction.response.send_message(
+                self.translations["config_edit_specify_key_value"], ephemeral=True
+            )
+            return
 
-        generate_graphs_user.translations = self.translations
+        if key not in CONFIG_OPTIONS:
+            await interaction.response.send_message(
+                self.translations["config_view_invalid_key"].format(key=key),
+                ephemeral=True,
+            )
+            return
+
+        old_value = self.config.get(key, "N/A")
+        new_value = self._process_config_value(key, value)
+        self.config = update_config(key, new_value, self.translations)
+
+        self._sync_update_tracker(self.config)
+        self._update_translations_if_needed(key, new_value)
+
+        response_message = self._prepare_response_message(key, old_value, new_value)
+        await self._send_config_update_response(interaction, key, response_message)
+
+    def _process_config_value(self, key: str, value: str):
+        if isinstance(self.config.get(key), bool):
+            return value.lower() == "true"
+        elif isinstance(self.config.get(key), int):
+            return int(value)
+        elif key in ["TV_COLOR", "MOVIE_COLOR", "ANNOTATION_COLOR"]:
+            return format_color_value(value)
+        elif key == "FIXED_UPDATE_TIME":
+            return self._validate_fixed_update_time(value)
+        return value
+
+    def _validate_fixed_update_time(self, value: str):
+        try:
+            return self.validate_fixed_update_time(value)
+        except ValueError:
+            raise ValueError(self.translations["error_invalid_fixed_time"])
+
+    def _update_translations_if_needed(self, key: str, value: str):
+        if key == "LANGUAGE":
+            self.translations = load_translations(value)
+            self.update_translations()
+
+    def _prepare_response_message(self, key: str, old_value: str, new_value: str) -> str:
+        if key == "FIXED_UPDATE_TIME":
+            if new_value is None:
+                return self.translations["config_updated_fixed_time_disabled"].format(key=key)
+            return self.translations["config_updated"].format(
+                key=key, old_value=old_value, new_value=new_value.strftime("%H:%M")
+            )
+        return self.translations["config_updated"].format(
+            key=key, old_value=old_value, new_value=new_value
+        )
+
+    async def _send_config_update_response(self, interaction: discord.Interaction, key: str, message: str):
+        if key in RESTART_REQUIRED_KEYS:
+            await interaction.response.send_message(
+                self.translations["config_updated_restart"].format(key=key),
+                ephemeral=True,
+            )
+        else:
+            await interaction.response.send_message(message, ephemeral=True)
 
     @app_commands.command(name="my_stats")
     async def my_stats(self, interaction: discord.Interaction, email: str):
@@ -441,7 +418,7 @@ class Commands(commands.Cog):
         except ValueError:
             raise ValueError(
                 f"Invalid time format: {value}. Use HH:MM or XX:XX to disable."
-            ) from ValueError
+            )
 
     def _sync_update_tracker(self, new_config):
         try:
@@ -462,6 +439,13 @@ class Commands(commands.Cog):
             logging.error(
                 f"Unexpected error when sending error message: {str(inner_e)}"
             )
+
+    def update_translations(self):
+        # Update translations in other modules
+        from graphs import generate_graphs
+        generate_graphs.translations = self.translations
+        from graphs import generate_graphs_user
+        generate_graphs_user.translations = self.translations
 
 
 async def setup(bot):
