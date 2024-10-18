@@ -174,14 +174,21 @@ class Commands(commands.Cog):
         elif key in ["TV_COLOR", "MOVIE_COLOR", "ANNOTATION_COLOR"]:
             return format_color_value(value)
         elif key == "FIXED_UPDATE_TIME":
-            return self._validate_fixed_update_time(value)
+            try:
+                return self._validate_fixed_update_time(value)
+            except ValueError as e:
+                raise ValueError(f"Invalid FIXED_UPDATE_TIME: {str(e)}")
         return value
 
-    def _validate_fixed_update_time(self, value: str):
+    def _validate_fixed_update_time(self, value):
+        if value.upper() == "XX:XX":
+            return None
         try:
-            return self.validate_fixed_update_time(value)
-        except ValueError:
-            raise ValueError(self.translations["error_invalid_fixed_time"])
+            return datetime.strptime(value, "%H:%M").time()
+        except ValueError as err:
+            raise ValueError(
+                f"Invalid time format: {value}. Use HH:MM or XX:XX to disable."
+            ) from err
 
     def _update_translations_if_needed(self, key: str, value: str):
         if key == "LANGUAGE":
@@ -409,16 +416,6 @@ class Commands(commands.Cog):
                 self.translations["error_fetching_user_id"].format(error=str(e))
             )
             return None
-
-    def validate_fixed_update_time(self, value):
-        if value.upper() == "XX:XX":
-            return None
-        try:
-            return datetime.strptime(value, "%H:%M").time()
-        except ValueError:
-            raise ValueError(
-                f"Invalid time format: {value}. Use HH:MM or XX:XX to disable."
-            )
 
     def _sync_update_tracker(self, new_config):
         try:
