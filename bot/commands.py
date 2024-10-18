@@ -61,8 +61,9 @@ class Commands(commands.Cog):
             translation_key = f"{command.name}_command_description"
             logging.info(f"[DEBUG] Looking for translation key: {translation_key}")
             if translation_key in self.translations:
-                command.description = self.translations[translation_key]
-                logging.info(f"[DEBUG] Updated description for /{command.name}: {command.description}")
+                new_description = self.translations[translation_key]
+                command.description = new_description
+                logging.info(f"[DEBUG] Updated description for /{command.name}: {new_description}")
             else:
                 logging.info(f"[DEBUG] No translation found for /{command.name}")
             logging.info(f"[DEBUG] Final description for /{command.name}: {command.description}")
