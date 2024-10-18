@@ -2,7 +2,7 @@
 import json
 import logging
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 
 
 class UpdateTracker:
@@ -28,23 +28,25 @@ class UpdateTracker:
         return update_days
 
     def get_fixed_update_time(self):
-        fixed_time_str = self.config.get("FIXED_UPDATE_TIME")
-        if fixed_time_str:
-            try:
-                fixed_time = datetime.strptime(fixed_time_str, "%H:%M").time()
-                return fixed_time
-            except ValueError:
-                logging.error(f"Invalid FIXED_UPDATE_TIME format: {fixed_time_str}")
+        fixed_time = self.config.get("FIXED_UPDATE_TIME")
+        if fixed_time is None:
+            return None
+        if isinstance(fixed_time, time):
+            return fixed_time
+        if isinstance(fixed_time, str):
+            if fixed_time.upper() == "XX:XX":
                 return None
-        return None
+            try:
+                return datetime.strptime(fixed_time, "%H:%M").time()
+            except ValueError as e:
+                logging.error(f"Invalid FIXED_UPDATE_TIME format: {fixed_time}, error: {e}")
+                raise TypeError(f"FIXED_UPDATE_TIME must be None, a time object, or a string in '%H:%M' format, got {type(fixed_time)}")
+        logging.error(f"Unexpected FIXED_UPDATE_TIME type: {type(fixed_time)}")
+        raise TypeError(f"FIXED_UPDATE_TIME must be None, a time object, or a string in '%H:%M' format, got {type(fixed_time)}")
 
     def get_fixed_update_time_str(self):
         fixed_time = self.get_fixed_update_time()
-        return (
-            fixed_time.strftime("%H:%M")
-            if fixed_time
-            else self.translations["fixed_time_not_set"]
-        )
+        return fixed_time.strftime("%H:%M") if fixed_time else "XX:XX"
 
     def load_tracker(self):
         if os.path.exists(self.tracker_file):
