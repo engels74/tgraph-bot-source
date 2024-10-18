@@ -29,8 +29,6 @@ class Commands(commands.Cog):
         self.global_cooldown = datetime.now()
         self.config = load_config(CONFIG_PATH)
         self.translations = translations
-        logging.info("[DEBUG] Commands class initialized")
-        logging.info(f"[DEBUG] Loaded translations: {self.translations}")
 
     def get_app_commands(self):
         return [
@@ -42,7 +40,6 @@ class Commands(commands.Cog):
         ]
 
     async def cog_load(self):
-        logging.info("[DEBUG] Cog load started")
         logging.info(self.translations["log_commands_cog_loading"])
         for command in self.get_app_commands():
             logging.info(
@@ -50,23 +47,13 @@ class Commands(commands.Cog):
                     command_name=command.name
                 )
             )
-            logging.info(f"[DEBUG] Command /{command.name} description: {command.description}")
         logging.info(self.translations["log_commands_cog_loaded"])
-        logging.info("[DEBUG] Cog load completed")
 
     def update_command_descriptions(self):
-        logging.info("[DEBUG] Updating command descriptions")
-        logging.info(f"[DEBUG] Available translations keys: {self.translations.keys()}")
         for command in self.get_app_commands():
             translation_key = f"{command.name}_command_description"
-            logging.info(f"[DEBUG] Looking for translation key: {translation_key}")
             if translation_key in self.translations:
-                new_description = self.translations[translation_key]
-                command.description = new_description
-                logging.info(f"[DEBUG] Updated description for /{command.name}: {new_description}")
-            else:
-                logging.info(f"[DEBUG] No translation found for /{command.name}")
-            logging.info(f"[DEBUG] Final description for /{command.name}: {command.description}")
+                command.description = self.translations[translation_key]
         logging.info(self.translations["log_command_descriptions_updated"])
 
     def _create_about_embed(self):
@@ -465,13 +452,9 @@ class Commands(commands.Cog):
             )
 
 async def setup(bot):
-    logging.info("[DEBUG] Setup function called")
     config = load_config(CONFIG_PATH)
     translations = load_translations(config["LANGUAGE"])
     commands_cog = Commands(bot, translations)
     await bot.add_cog(commands_cog)
-    logging.info("[DEBUG] Cog added to bot")
     commands_cog.update_command_descriptions()
-    logging.info("[DEBUG] Command descriptions updated")
     logging.info(translations["log_commands_cog_setup"])
-    logging.info("[DEBUG] Setup function completed")
