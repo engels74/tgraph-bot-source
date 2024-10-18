@@ -7,6 +7,12 @@ from graphs.generate_graphs import fetch_tautulli_data, ensure_folder_exists
 from matplotlib.dates import DateFormatter
 from matplotlib.ticker import MaxNLocator
 
+def fetch_and_validate_data(api_action, params, config, error_message, translations):
+    data = fetch_tautulli_data(api_action, params, config)
+    if not data or "data" not in data["response"]:
+        logging.error(error_message)
+        return None
+    return data["response"]["data"]
 
 def generate_user_graphs(user_id, img_folder, config, current_translations):
     graph_files = []
@@ -86,24 +92,33 @@ def generate_user_graphs(user_id, img_folder, config, current_translations):
 
     return [file for file in graph_files if file is not None]
 
-
 def generate_daily_play_count(
     user_id, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, translations
 ):
     plt.figure(figsize=(14, 8))
-    data = fetch_tautulli_data(
+    daily_play_count = fetch_and_validate_data(
         "get_plays_by_date",
         {"time_range": config["TIME_RANGE_DAYS"], "user_id": user_id},
         config,
+        translations["error_fetch_daily_play_count_user"].format(user_id=user_id),
+        translations
     )
+    if daily_play_count is None:
+        return None
 
-    if not data or "data" not in data["response"]:
+    if "series" not in daily_play_count:
         logging.error(
-            translations["error_fetch_daily_play_count"].format(user_id=user_id)
+            translations["error_missing_series_daily_play_count"].format(user_id=user_id)
         )
         return None
 
-    daily_play_count = data["response"]["data"]
+    series = daily_play_count["series"]
+
+    if not series:
+        logging.warning(
+            translations["warning_empty_series_daily_play_count"].format(user_id=user_id)
+        )
+        return None
 
     end_date = datetime.now().astimezone()
     start_date = end_date - timedelta(days=config["TIME_RANGE_DAYS"] - 1)
@@ -111,8 +126,6 @@ def generate_daily_play_count(
 
     date_strs = [date.strftime("%Y-%m-%d") for date in dates]
     date_data_map = {date: 0 for date in date_strs}
-
-    series = daily_play_count["series"]
 
     for serie in series:
         complete_data = [0] * len(dates)
@@ -156,27 +169,35 @@ def generate_daily_play_count(
     plt.close()
     return filepath
 
-
 def generate_play_count_by_dayofweek(
     user_id, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, translations
 ):
     plt.figure(figsize=(14, 8))
-    data = fetch_tautulli_data(
+    play_count_by_dayofweek = fetch_and_validate_data(
         "get_plays_by_dayofweek",
         {"time_range": config["TIME_RANGE_DAYS"], "user_id": user_id},
         config,
+        translations["error_fetch_play_count_dayofweek_user"].format(user_id=user_id),
+        translations
     )
+    if play_count_by_dayofweek is None:
+        return None
 
-    if not data or "data" not in data["response"]:
+    if "series" not in play_count_by_dayofweek:
         logging.error(
-            translations["error_fetch_play_count_dayofweek"].format(user_id=user_id)
+            translations["error_missing_series_play_count_by_dayofweek"].format(user_id=user_id)
         )
         return None
 
-    play_count_by_dayofweek = data["response"]["data"]
     days = list(range(7))
     day_labels = [translations[f"day_{i}"] for i in range(7)]
     series = play_count_by_dayofweek["series"]
+
+    if not series:
+        logging.warning(
+            translations["warning_empty_series_play_count_by_dayofweek"].format(user_id=user_id)
+        )
+        return None
 
     for serie in series:
         color = TV_COLOR if serie["name"] == "TV" else MOVIE_COLOR
@@ -212,26 +233,34 @@ def generate_play_count_by_dayofweek(
     plt.close()
     return filepath
 
-
 def generate_play_count_by_hourofday(
     user_id, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, translations
 ):
     plt.figure(figsize=(14, 8))
-    data = fetch_tautulli_data(
+    play_count_by_hourofday = fetch_and_validate_data(
         "get_plays_by_hourofday",
         {"time_range": config["TIME_RANGE_DAYS"], "user_id": user_id},
         config,
+        translations["error_fetch_play_count_hourofday_user"].format(user_id=user_id),
+        translations
     )
+    if play_count_by_hourofday is None:
+        return None
 
-    if not data or "data" not in data["response"]:
+    if "series" not in play_count_by_hourofday:
         logging.error(
-            translations["error_fetch_play_count_hourofday"].format(user_id=user_id)
+            translations["error_missing_series_play_count_by_hourofday"].format(user_id=user_id)
         )
         return None
 
-    play_count_by_hourofday = data["response"]["data"]
     hours = list(range(24))
     series = play_count_by_hourofday["series"]
+
+    if not series:
+        logging.warning(
+            translations["warning_empty_series_play_count_by_hourofday"].format(user_id=user_id)
+        )
+        return None
 
     for serie in series:
         color = TV_COLOR if serie["name"] == "TV" else MOVIE_COLOR
@@ -267,26 +296,34 @@ def generate_play_count_by_hourofday(
     plt.close()
     return filepath
 
-
 def generate_top_10_platforms(
     user_id, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, translations
 ):
     plt.figure(figsize=(14, 8))
-    data = fetch_tautulli_data(
+    top_10_platforms = fetch_and_validate_data(
         "get_plays_by_top_10_platforms",
         {"time_range": config["TIME_RANGE_DAYS"], "user_id": user_id},
         config,
+        translations["error_fetch_top_10_platforms_user"].format(user_id=user_id),
+        translations
     )
+    if top_10_platforms is None:
+        return None
 
-    if not data or "data" not in data["response"]:
+    if "categories" not in top_10_platforms or "series" not in top_10_platforms:
         logging.error(
-            translations["error_fetch_top_10_platforms"].format(user_id=user_id)
+            translations["error_missing_data_top_10_platforms"].format(user_id=user_id)
         )
         return None
 
-    top_10_platforms = data["response"]["data"]
     platforms = top_10_platforms["categories"]
     series = top_10_platforms["series"]
+
+    if not series:
+        logging.warning(
+            translations["warning_empty_series_top_10_platforms"].format(user_id=user_id)
+        )
+        return None
 
     for serie in series:
         color = TV_COLOR if serie["name"] == "TV" else MOVIE_COLOR
@@ -319,30 +356,31 @@ def generate_top_10_platforms(
     plt.close()
     return filepath
 
-
 def generate_play_count_by_month(
     user_id, folder, config, TV_COLOR, MOVIE_COLOR, ANNOTATION_COLOR, translations
 ):
     plt.figure(figsize=(14, 8))
-    data = fetch_tautulli_data(
+    play_count_by_month = fetch_and_validate_data(
         "get_plays_per_month",
         {"time_range": 12, "y_axis": "plays", "user_id": user_id},
         config,
+        translations["error_fetch_play_count_month_user"].format(user_id=user_id),
+        translations
     )
+    if play_count_by_month is None:
+        return None
 
-    if not data or "data" not in data["response"]:
+    if "categories" not in play_count_by_month or "series" not in play_count_by_month:
         logging.error(
-            translations["error_fetch_play_count_month"].format(user_id=user_id)
+            translations["error_missing_data_play_count_by_month"].format(user_id=user_id)
         )
         return None
 
-    play_count_by_month = data["response"]["data"]
-
-    months = play_count_by_month.get("categories", [])
-    series = play_count_by_month.get("series", [])
+    months = play_count_by_month["categories"]
+    series = play_count_by_month["series"]
 
     if not months or not series:
-        logging.warning(translations["graphs_no_monthly_data"])
+        logging.warning(translations["warning_empty_data_play_count_by_month"].format(user_id=user_id))
         return None
 
     movie_data = [0] * len(months)
@@ -363,6 +401,10 @@ def generate_play_count_by_month(
             filtered_months.append(months[i])
             filtered_movie_data.append(movie_data[i])
             filtered_tv_data.append(tv_data[i])
+
+    if not filtered_months:
+        logging.warning(translations["warning_no_play_data_play_count_by_month"].format(user_id=user_id))
+        return None
 
     bar_width = 0.4
     bar_positions = range(len(filtered_months))

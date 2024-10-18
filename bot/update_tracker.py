@@ -10,7 +10,7 @@ class UpdateTracker:
         self.data_folder = data_folder
         self.config = config
         self.translations = translations
-        self.tracker_file = os.path.join(data_folder, "update_tracker.json")
+        self.tracker_file = os.path.join(self.data_folder, "update_tracker.json")
         self.last_update = None
         self.next_update = None
         self.load_tracker()

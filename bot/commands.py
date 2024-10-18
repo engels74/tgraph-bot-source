@@ -77,8 +77,8 @@ class Commands(commands.Cog):
                     command="about", error=str(e)
                 )
             )
-            await interaction.response.send_message(
-                self.translations["error_processing_command"], ephemeral=True
+            await self._send_error_message(
+                interaction, self.translations["error_processing_command"]
             )
 
     @app_commands.command(name="config")
@@ -150,8 +150,10 @@ class Commands(commands.Cog):
                 elif key == "FIXED_UPDATE_TIME":
                     try:
                         value = self.validate_fixed_update_time(value)
-                    except ValueError as e:
-                        await interaction.response.send_message(str(e), ephemeral=True)
+                    except ValueError:
+                        await interaction.response.send_message(
+                            self.translations["error_invalid_fixed_time"], ephemeral=True
+                        )
                         return
 
                 # Update configuration
@@ -328,8 +330,8 @@ class Commands(commands.Cog):
                     command="my_stats", error=str(e)
                 )
             )
-            await interaction.followup.send(
-                self.translations["my_stats_error"], ephemeral=True
+            await self._send_error_message(
+                interaction, self.translations["my_stats_error"]
             )
 
     @app_commands.command(name="update_graphs")
@@ -379,8 +381,8 @@ class Commands(commands.Cog):
                     command="update_graphs", error=str(e)
                 )
             )
-            await interaction.followup.send(
-                self.translations["update_graphs_error"], ephemeral=True
+            await self._send_error_message(
+                interaction, self.translations["update_graphs_error"]
             )
 
     @app_commands.command(name="uptime")
@@ -404,8 +406,8 @@ class Commands(commands.Cog):
                     command="uptime", error=str(e)
                 )
             )
-            await interaction.followup.send(
-                self.translations["error_processing_command"], ephemeral=True
+            await self._send_error_message(
+                interaction, self.translations["error_processing_command"]
             )
 
     def get_user_id_from_email(self, email):
@@ -439,7 +441,7 @@ class Commands(commands.Cog):
         except ValueError:
             raise ValueError(
                 f"Invalid time format: {value}. Use HH:MM or XX:XX to disable."
-            )
+            ) from ValueError
 
     def _sync_update_tracker(self, new_config):
         try:
