@@ -1,3 +1,5 @@
+# i18n/da.yml
+
 # General
 embed_footer: "Indsendt den {now}"
 next_update: "Næste opdatering: {next_update}"
@@ -120,6 +122,7 @@ log_deleted_message: "Har slettet en besked"
 log_detecting_old_messages: "Registrerer gamle beskeder"
 log_ensured_folder_exists: "Sikret, at billedmappen findes"
 log_ensured_folders_exist: "Sikret, at alle nødvendige mapper eksisterer"
+log_entering_main_function: "Begynder på hovedfunktion"
 log_error_during_startup: "Fejl under opstart: {error}"
 log_error_in_event: "Der opstod en fejl i {event}: {error}"
 log_error_starting_bot: "Fejl ved start af robotten: {error}"
@@ -137,6 +140,7 @@ log_registering_command: "Registrerer kommando: {command_name}"
 log_sending_graph_file: "Afsendelse af graffil: {file}"
 log_sending_graphs_pm: "Afsendelse af grafer via PM"
 log_syncing_application_commands: "Synkroniserer programkommandoer ..."
+log_tgraphbot_initialized: "TGraphBot initialiseret"
 log_update_now_due: "Opdatering er nu forfalden. Nuværende tidspunkt: {current_time}"
 log_updating_cooldowns: "Opdatering af nedkølingstid"
 log_updating_posting_graphs_startup: "Opdatering og udstationering af grafer ved bot-opstart ..."

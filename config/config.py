@@ -2,8 +2,9 @@
 import argparse
 import logging
 import os
-import yaml
+from typing import Dict, Any, List
 from datetime import datetime, time
+from ruamel.yaml import YAML
 from i18n import load_translations
 
 # Get the CONFIG_DIR from environment variable, default to '/config' if not set
@@ -49,48 +50,34 @@ CONFIGURABLE_OPTIONS = [
 ]
 
 # Global variable to store the configuration
-config = None
+config: Dict[str, Any] = {}
 
+def format_color_value(value: str) -> str:
+    return value.strip().strip('"\'')
 
-def format_color_value(value):
-    # Remove any existing quotes and spaces
-    value = value.strip().strip("\"'")
-    # Always wrap the value in double quotes
-    return f'"{value}"'
+def format_time_value(value: str) -> str:
+    return value.strip().strip('"\'')
 
-
-def format_time_value(value):
-    # Remove any existing quotes and spaces
-    value = str(value).strip().strip("\"'")
-    # Always wrap the value in double quotes
-    return f'"{value}"'
-
-
-def parse_time(value, translations):
-    if not value:
-        return None
-    # Remove quotes if present
-    value = value.strip("\"'")
-    if value.upper() == "XX:XX":
+def parse_time(value: str, translations: Dict[str, str]) -> time:
+    if not value or value.upper() == "XX:XX":
         return None
     try:
-        return datetime.strptime(value, "%H:%M").time()
+        return datetime.strptime(value.strip("\"'"), "%H:%M").time()
     except ValueError:
         logging.error(translations["error_invalid_fixed_time"].format(value=value))
         return None
 
-
-def load_config(config_path=CONFIG_PATH, reload=False, translations=None):
+def load_config(config_path: str = CONFIG_PATH, reload: bool = False, translations: Dict[str, str] = None) -> Dict[str, Any]:
     global config
 
-    # Define default configuration in the same order as config.yml.sample
+    # Define default configuration
     default_config = {
         "TAUTULLI_API_KEY": "your_tautulli_api_key",
         "TAUTULLI_URL": "http://your_tautulli_ip:port/api/v2",
         "DISCORD_TOKEN": "your_discord_bot_token",
         "CHANNEL_ID": 0,
         "UPDATE_DAYS": 7,
-        "FIXED_UPDATE_TIME": '"XX:XX"',
+        "FIXED_UPDATE_TIME": "XX:XX",
         "KEEP_DAYS": 7,
         "TIME_RANGE_DAYS": 30,
         "LANGUAGE": "en",
@@ -101,9 +88,9 @@ def load_config(config_path=CONFIG_PATH, reload=False, translations=None):
         "ENABLE_TOP_10_PLATFORMS": True,
         "ENABLE_TOP_10_USERS": True,
         "ENABLE_PLAY_COUNT_BY_MONTH": True,
-        "TV_COLOR": '"#1f77b4"',
-        "MOVIE_COLOR": '"#ff7f0e"',
-        "ANNOTATION_COLOR": '"#ff0000"',
+        "TV_COLOR": "#1f77b4",
+        "MOVIE_COLOR": "#ff7f0e",
+        "ANNOTATION_COLOR": "#ff0000",
         "ANNOTATE_DAILY_PLAY_COUNT": True,
         "ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK": True,
         "ANNOTATE_PLAY_COUNT_BY_HOUROFDAY": True,
@@ -114,179 +101,68 @@ def load_config(config_path=CONFIG_PATH, reload=False, translations=None):
         "MY_STATS_GLOBAL_COOLDOWN_SECONDS": 60,
     }
 
-    # Load existing configuration first
-    if os.path.exists(config_path):
-        try:
-            with open(config_path, "r") as file:
-                config_vars = yaml.safe_load(file)
-        except (IOError, yaml.YAMLError) as e:
-            logging.error(f"Error loading configuration: {e}")
-            config_vars = {}
-    else:
-        config_vars = {}
+    if reload or not config:
+        if translations is None:
+            translations = load_translations(default_config["LANGUAGE"])
 
-    # Now we can safely get the language
-    language = config_vars.get("LANGUAGE", "en")
+        yaml = YAML()
+        yaml.preserve_quotes = True
+        yaml.indent(mapping=2, sequence=4, offset=2)
 
-    if translations is None:
-        translations = load_translations(language)
+        # Load existing config or use default
+        if os.path.exists(config_path):
+            with open(config_path, 'r') as file:
+                user_config = yaml.load(file)
+        else:
+            user_config = {}
 
-    if reload or config is None:
-        # Update config_vars with any missing keys from default_config
-        updated = False
-        for key, value in default_config.items():
-            if key not in config_vars:
-                config_vars[key] = value
-                updated = True
+        # Merge configurations
+        merged_config = default_config.copy()
+        merged_config.update(user_config)
 
-        # If the configuration was updated, save it back to the file
-        if updated:
-            save_config(config_vars, config_path, default_config)
+        # Process special config values
+        for key in ["TV_COLOR", "MOVIE_COLOR", "ANNOTATION_COLOR"]:
+            merged_config[key] = format_color_value(str(merged_config[key]))
+        
+        if "FIXED_UPDATE_TIME" in merged_config:
+            merged_config["FIXED_UPDATE_TIME"] = format_time_value(str(merged_config["FIXED_UPDATE_TIME"]))
 
-        # Function to get the value from config.yml or environment variable
-        def get_config(key, default=None):
-            value = config_vars.get(key, os.getenv(key, default))
-            if key in ["TV_COLOR", "MOVIE_COLOR", "ANNOTATION_COLOR"]:
-                return format_color_value(str(value))
-            elif key == "FIXED_UPDATE_TIME":
-                return parse_time(value, translations)
-            return value
-
-        # Build the final configuration dictionary
-        config = {key: get_config(key, value) for key, value in default_config.items()}
+        config = merged_config
+        save_config(config, config_path)
 
     return config
 
+def save_config(config: Dict[str, Any], config_path: str = CONFIG_PATH) -> None:
+    yaml = YAML()
+    yaml.preserve_quotes = True
+    yaml.indent(mapping=2, sequence=4, offset=2)
+    
+    with open(config_path, 'w') as file:
+        yaml.dump(config, file)
 
-def save_config(config, config_path=CONFIG_PATH, default_config=None):
-    if default_config is None:
-        default_config = config
-
-    # Create a lookup for the order of keys in default_config
-    default_order = {key: index for index, key in enumerate(default_config.keys())}
-
-    if os.path.exists(config_path):
-        with open(config_path, "r") as file:
-            lines = file.readlines()
-
-        # Create a dictionary to store the updated lines and their order
-        updated_lines = {}
-        existing_keys = []
-        for line in lines:
-            stripped_line = line.strip()
-            if ":" in stripped_line and not stripped_line.startswith("#"):
-                key = stripped_line.split(":", 1)[0].strip()
-                existing_keys.append(key)
-                if key in config:
-                    value = config[key]
-                    updated_lines[key] = format_value(key, value)
-            else:
-                # Preserve comments and empty lines
-                existing_keys.append(line)
-                updated_lines[line] = line
-
-        # Add new keys from config that are not in the existing file
-        new_keys = [
-            key for key in default_config if key not in existing_keys and key in config
-        ]
-
-        # Find the correct position for new keys based on default_config order
-        for new_key in new_keys:
-            insert_index = len(existing_keys)
-            for i, existing_key in enumerate(existing_keys):
-                if (
-                    existing_key in default_order
-                    and default_order[new_key] < default_order[existing_key]
-                ):
-                    insert_index = i
-                    break
-            existing_keys.insert(insert_index, new_key)
-            updated_lines[new_key] = format_value(new_key, config[new_key])
-
-        # Write the updated config back to the file
-        with open(config_path, "w") as file:
-            for key in existing_keys:
-                file.write(updated_lines[key])
-                if not updated_lines[key].endswith("\n"):
-                    file.write("\n")
-    else:
-        # If the file doesn't exist, create it with all config options
-        with open(config_path, "w") as file:
-            file.write("# config/config.yml\n")
-            for key in default_config:
-                if key in config:
-                    file.write(format_value(key, config[key]))
-                    file.write("\n")
-
-
-def format_value(key, value):
-    if key in ["TV_COLOR", "MOVIE_COLOR", "ANNOTATION_COLOR"]:
-        return f"{key}: {format_color_value(str(value))}"
-    elif key == "FIXED_UPDATE_TIME":
-        if isinstance(value, time):
-            return f"{key}: {format_time_value(value.strftime('%H:%M'))}"
-        elif value is None:
-            return f'{key}: "XX:XX"'
-        else:
-            return f"{key}: {format_time_value(str(value))}"
-    else:
-        return f"{key}: {value}"
-
-
-def update_config(key, value, translations):
+def update_config(key: str, value: Any, translations: Dict[str, str]) -> str:
     global config
     config = load_config(reload=True, translations=translations)
 
     if key in ["TV_COLOR", "MOVIE_COLOR", "ANNOTATION_COLOR"]:
         value = format_color_value(str(value))
     elif key == "FIXED_UPDATE_TIME":
-        if isinstance(value, str):
-            if value.upper() == "XX:XX":
-                value = None
-            else:
-                try:
-                    value = datetime.strptime(value, "%H:%M").time()
-                except ValueError:
-                    logging.error(
-                        translations["error_invalid_fixed_time"].format(value=value)
-                    )
-                    return config
-        elif not isinstance(value, time) and value is not None:
-            logging.error(translations["error_invalid_fixed_time"].format(value=value))
-            return config
+        value = format_time_value(str(value))
 
+    old_value = config.get(key, "N/A")
     config[key] = value
     save_config(config)
-    return config
 
+    if key == "FIXED_UPDATE_TIME":
+        if value.upper() == "XX:XX":
+            return translations["config_updated_fixed_time_disabled"].format(key=key)
+        return translations["config_updated"].format(
+            key=key, old_value=old_value, new_value=value
+        )
+    return translations["config_updated"].format(key=key, old_value=old_value, new_value=value)
 
-def sanitize_config_file():
-    with open(CONFIG_PATH, "r") as file:
-        lines = file.readlines()
-
-    updated = False
-    for i, line in enumerate(lines):
-        if "COLOR:" in line or "FIXED_UPDATE_TIME:" in line:
-            key, value = line.split(":", 1)
-            if "COLOR" in key:
-                formatted_value = format_color_value(value.strip())
-            else:  # FIXED_UPDATE_TIME
-                formatted_value = format_time_value(value.strip())
-            if formatted_value != value.strip():
-                lines[i] = f"{key}: {formatted_value}\n"
-                updated = True
-
-    if updated:
-        with open(CONFIG_PATH, "w") as file:
-            file.writelines(lines)
-
-    return updated
-
+def get_configurable_options() -> List[str]:
+    return CONFIGURABLE_OPTIONS
 
 # List of keys that require a bot restart when changed
 RESTART_REQUIRED_KEYS = ["TAUTULLI_API_KEY", "TAUTULLI_URL", "DISCORD_TOKEN"]
-
-
-# Function to get configurable options
-def get_configurable_options():
-    return CONFIGURABLE_OPTIONS

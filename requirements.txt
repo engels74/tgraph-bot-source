@@ -1,4 +1,7 @@
+aiohttp
+cachetools
 discord.py
 matplotlib
 pyyaml
 requests
+ruamel.yaml
