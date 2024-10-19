@@ -31,13 +31,13 @@ TGraph Bot is a Discord bot that automatically generates and posts Tautulli grap
 
 For detailed information on setting up and using TGraph Bot, please refer to our [Wiki](https://github.com/engels74/tgraph-bot-source/wiki). Here's what you'll find:
 
-- [🛠️ Installation](https://github.com/engels74/tgraph-bot-source/wiki/01.-Installation)
-- [⚙️ Configuration](https://github.com/engels74/tgraph-bot-source/wiki/02.-Configuration)
-- [🔧 Slash Commands](https://github.com/engels74/tgraph-bot-source/wiki/03.-Slash-Commands)
-- [🔐 Managing Bot Permissions](https://github.com/engels74/tgraph-bot-source/wiki/04.-Managing-Bot-Permissions)
-- [🌐 Language Support](https://github.com/engels74/tgraph-bot-source/wiki/05.-Language-Support)
-- [🤖 Creating a Discord Bot](https://github.com/engels74/tgraph-bot-source/wiki/06.-Creating-a-Discord-Bot)
-- [🔧Troubleshooting](https://github.com/engels74/tgraph-bot-source/wiki/07.-Troubleshooting)
+- [🛠️ Installation](https://github.com/engels74/tgraph-bot/wiki/01.-Installation)
+- [⚙️ Configuration](https://github.com/engels74/tgraph-bot/wiki/02.-Configuration)
+- [🔧 Slash Commands](https://github.com/engels74/tgraph-bot/wiki/03.-Slash-Commands)
+- [🔐 Managing Bot Permissions](https://github.com/engels74/tgraph-bot/wiki/04.-Managing-Bot-Permissions)
+- [🌐 Language Support](https://github.com/engels74/tgraph-bot/wiki/05.-Language-Support)
+- [🤖 Creating a Discord Bot](https://github.com/engels74/tgraph-bot/wiki/06.-Creating-a-Discord-Bot)
+- [🔧Troubleshooting](https://github.com/engels74/tgraph-bot/wiki/07.-Troubleshooting)
 
 ## ❓ Need Help?
 
