@@ -1,30 +1,98 @@
 # i18n.py
+import logging
 import os
-import yaml
+from typing import Dict, List
+from ruamel.yaml import YAML, YAMLError
 
+class TranslationKeyError(Exception):
+    pass
 
-def load_translations(language):
+def load_translations(language: str) -> Dict[str, str]:
+    """
+    Load translations for the specified language.
+    
+    :param language: The language code to load translations for
+    :return: A dictionary of translations
+    :raises TranslationKeyError: If the language file is not found or if there are missing keys
+    """
     # Get the directory of the current script (i18n.py)
     current_dir = os.path.dirname(os.path.abspath(__file__))
 
-    # Construct the absolute path to the language file
+    # Construct the absolute path to the language file in the i18n subfolder
     file_path = os.path.join(current_dir, "i18n", f"{language}.yml")
+    reference_path = os.path.join(current_dir, "i18n", "en.yml")
 
+    yaml = YAML(typ='safe')
+    
     try:
         with open(file_path, "r", encoding="utf-8") as file:
-            return yaml.safe_load(file)
-    except FileNotFoundError:
-        print(
-            f"Warning: Translation file for {language} not found. Falling back to English."
-        )
-        # Fallback to English if the requested language file is not found
-        fallback_path = os.path.join(current_dir, "i18n", "en.yml")
-        with open(fallback_path, "r", encoding="utf-8") as file:
-            return yaml.safe_load(file)
+            translations = yaml.load(file)
+        
+        with open(reference_path, "r", encoding="utf-8") as file:
+            reference_translations = yaml.load(file)
+        
+        # Check for missing keys
+        missing_keys = set(reference_translations.keys()) - set(translations.keys())
+        if missing_keys:
+            raise TranslationKeyError(f"Missing translation keys in {language}.yml: {', '.join(missing_keys)}")
+        
+        logging.info(f"Loaded translations for language: {language}")
+        return translations
+    except FileNotFoundError as err:
+        raise TranslationKeyError(f"Translation file for {language} not found. Looked in: {file_path}") from err
+    except YAMLError as err:
+        raise TranslationKeyError(f"Error parsing YAML in {file_path}: {str(err)}") from err
 
-
-# You might want to add a function to list available languages
-def get_available_languages():
+def get_available_languages() -> List[str]:
+    """
+    Get a list of available language codes.
+    
+    :return: A list of available language codes
+    """
     current_dir = os.path.dirname(os.path.abspath(__file__))
     i18n_dir = os.path.join(current_dir, "i18n")
     return [f.split(".")[0] for f in os.listdir(i18n_dir) if f.endswith(".yml")]
+
+def validate_translations(translations: Dict[str, str], reference_lang: str = "en") -> List[str]:
+    """
+    Validate the completeness of translations against a reference language.
+    
+    :param translations: The translations to validate
+    :param reference_lang: The reference language to compare against (default: "en")
+    :return: A list of missing translation keys
+    """
+    reference_translations = load_translations(reference_lang)
+    missing_keys = []
+    
+    for key in reference_translations:
+        if key not in translations:
+            missing_keys.append(key)
+    
+    return missing_keys
+
+def update_translations(bot, language: str) -> None:
+    """
+    Update bot's translations and command descriptions.
+    
+    :param bot: The bot instance
+    :param language: The language code to update to
+    :raises TranslationKeyError: If the language is not available
+    """
+    available_languages = get_available_languages()
+    if language not in available_languages:
+        raise TranslationKeyError(
+            f"Language '{language}' not available. Available languages: {', '.join(available_languages)}"
+        )
+
+    bot.translations = load_translations(language)
+    
+    # Update command descriptions
+    for command in bot.tree.walk_commands():
+        translation_key = f"{command.name}_command_description"
+        try:
+            command.description = bot.translations[translation_key]
+        except KeyError:
+            logging.warning(f"Missing translation for command description: {translation_key}")
+            # Keep existing description as fallback
+    
+    logging.info(f"Updated bot translations and command descriptions to language: {language}")

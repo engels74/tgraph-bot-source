@@ -1,292 +1,340 @@
 # config/config.py
-import argparse
-import logging
+
+"""
+Main configuration interface for TGraph Bot.
+Provides a clean API for configuration management while encapsulating implementation details.
+"""
+
 import os
-import yaml
-from datetime import datetime, time
-from i18n import load_translations
+import logging
+import fcntl
+import tempfile
+from typing import Dict, Any, Optional, TypedDict, Literal, cast
+from functools import lru_cache
 
-# Get the CONFIG_DIR from environment variable, default to '/config' if not set
-CONFIG_DIR = os.environ.get("CONFIG_DIR", "/config")
-
-# Get the config file path from command-line arguments
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    "--config-file",
-    type=str,
-    default=os.path.join(CONFIG_DIR, "config.yml"),
-    help="Path to the configuration file",
+from .modules.loader import (
+    load_yaml_config,
+    save_yaml_config,
+    get_config_path,
+    ConfigLoadError,
 )
-args, _ = parser.parse_known_args()
+from .modules.validator import validate_config_value
+from .modules.sanitizer import sanitize_config_value
+from .modules.options import (
+    CONFIGURABLE_OPTIONS,
+    RESTART_REQUIRED_KEYS,
+    get_option_metadata
+)
+from .modules.constants import (
+    CONFIG_SECTIONS,
+    CONFIG_CATEGORIES,
+    get_category_keys,
+    get_category_display_name
+)
 
-CONFIG_PATH = args.config_file
+# Use environment variable or default path
+CONFIG_PATH = get_config_path()
 
-# Define the configuration options that should be configurable via Discord
-CONFIGURABLE_OPTIONS = [
-    "LANGUAGE",
-    "UPDATE_DAYS",
-    "FIXED_UPDATE_TIME",
-    "KEEP_DAYS",
-    "TIME_RANGE_DAYS",
-    "CENSOR_USERNAMES",
-    "ENABLE_DAILY_PLAY_COUNT",
-    "ENABLE_PLAY_COUNT_BY_DAYOFWEEK",
-    "ENABLE_PLAY_COUNT_BY_HOUROFDAY",
-    "ENABLE_TOP_10_PLATFORMS",
-    "ENABLE_TOP_10_USERS",
-    "ENABLE_PLAY_COUNT_BY_MONTH",
-    "ANNOTATE_DAILY_PLAY_COUNT",
-    "ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK",
-    "ANNOTATE_PLAY_COUNT_BY_HOUROFDAY",
-    "ANNOTATE_TOP_10_PLATFORMS",
-    "ANNOTATE_TOP_10_USERS",
-    "ANNOTATE_PLAY_COUNT_BY_MONTH",
-    "MY_STATS_COOLDOWN_MINUTES",
-    "MY_STATS_GLOBAL_COOLDOWN_SECONDS",
-    "TV_COLOR",
-    "MOVIE_COLOR",
-    "ANNOTATION_COLOR",
-]
+# Configuration Schema
+class ConfigSchema(TypedDict):
+    TAUTULLI_API_KEY: str
+    TAUTULLI_URL: str
+    DISCORD_TOKEN: str
+    CHANNEL_ID: int
+    UPDATE_DAYS: int
+    FIXED_UPDATE_TIME: str
+    KEEP_DAYS: int
+    TIME_RANGE_DAYS: int
+    LANGUAGE: Literal['en', 'da']
+    CENSOR_USERNAMES: bool
+    ENABLE_DAILY_PLAY_COUNT: bool
+    ENABLE_PLAY_COUNT_BY_DAYOFWEEK: bool
+    ENABLE_PLAY_COUNT_BY_HOUROFDAY: bool
+    ENABLE_TOP_10_PLATFORMS: bool
+    ENABLE_TOP_10_USERS: bool
+    ENABLE_PLAY_COUNT_BY_MONTH: bool
+    TV_COLOR: str
+    MOVIE_COLOR: str
+    ANNOTATION_COLOR: str
+    ANNOTATION_OUTLINE_COLOR: str
+    ENABLE_ANNOTATION_OUTLINE: bool
+    CONFIG_COOLDOWN_MINUTES: int
+    CONFIG_GLOBAL_COOLDOWN_SECONDS: int
+    UPDATE_GRAPHS_COOLDOWN_MINUTES: int
+    UPDATE_GRAPHS_GLOBAL_COOLDOWN_SECONDS: int
+    MY_STATS_COOLDOWN_MINUTES: int
+    MY_STATS_GLOBAL_COOLDOWN_SECONDS: int
 
-# Global variable to store the configuration
-config = None
+# Error Classes
+class ConfigError(Exception):
+    """Base exception for configuration-related errors."""
+    pass
 
+class ConfigValidationError(ConfigError):
+    """Raised when configuration validation fails."""
+    pass
 
-def format_color_value(value):
-    # Remove any existing quotes and spaces
-    value = value.strip().strip("\"'")
-    # Always wrap the value in double quotes
-    return f'"{value}"'
+class ConfigUpdateError(ConfigError):
+    """Raised when configuration update fails."""
+    pass
 
+class ConfigKeyError(ConfigError):
+    """Raised when accessing non-existent configuration keys."""
+    pass
 
-def format_time_value(value):
-    # Remove any existing quotes and spaces
-    value = str(value).strip().strip("\"'")
-    # Always wrap the value in double quotes
-    return f'"{value}"'
+def get_categorized_config(config: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+    """
+    Organize configuration values by category.
+    
+    Args:
+        config: The configuration dictionary
+        
+    Returns:
+        Dictionary mapping categories to their configuration values
+    """
+    categorized = {}
+    for category in CONFIG_CATEGORIES:
+        keys = get_category_keys(category)
+        category_config = {
+            key: config[key] for key in keys 
+            if key in config and key in CONFIGURABLE_OPTIONS
+        }
+        if category_config:  # Only include categories with configurable values
+            categorized[category] = category_config
+    return categorized
 
+def validate_config_schema(config: Dict[str, Any]) -> None:
+    """
+    Validate configuration against schema.
+    
+    Args:
+        config: Configuration dictionary to validate
+        
+    Raises:
+        ConfigValidationError: If validation fails
+    """
+    if not isinstance(config, dict):
+        raise ConfigValidationError("Configuration must be a dictionary")
 
-def parse_time(value, translations):
-    if not value:
-        return None
-    # Remove quotes if present
-    value = value.strip("\"'")
-    if value.upper() == "XX:XX":
-        return None
-    try:
-        return datetime.strptime(value, "%H:%M").time()
-    except ValueError:
-        logging.error(translations["error_invalid_fixed_time"].format(value=value))
-        return None
-
-
-def load_config(config_path=CONFIG_PATH, reload=False, translations=None):
-    global config
-
-    # Define default configuration in the same order as config.yml.sample
-    default_config = {
-        "TAUTULLI_API_KEY": "your_tautulli_api_key",
-        "TAUTULLI_URL": "http://your_tautulli_ip:port/api/v2",
-        "DISCORD_TOKEN": "your_discord_bot_token",
-        "CHANNEL_ID": 0,
-        "UPDATE_DAYS": 7,
-        "FIXED_UPDATE_TIME": '"XX:XX"',
-        "KEEP_DAYS": 7,
-        "TIME_RANGE_DAYS": 30,
-        "LANGUAGE": "en",
-        "CENSOR_USERNAMES": True,
-        "ENABLE_DAILY_PLAY_COUNT": True,
-        "ENABLE_PLAY_COUNT_BY_DAYOFWEEK": True,
-        "ENABLE_PLAY_COUNT_BY_HOUROFDAY": True,
-        "ENABLE_TOP_10_PLATFORMS": True,
-        "ENABLE_TOP_10_USERS": True,
-        "ENABLE_PLAY_COUNT_BY_MONTH": True,
-        "TV_COLOR": '"#1f77b4"',
-        "MOVIE_COLOR": '"#ff7f0e"',
-        "ANNOTATION_COLOR": '"#ff0000"',
-        "ANNOTATE_DAILY_PLAY_COUNT": True,
-        "ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK": True,
-        "ANNOTATE_PLAY_COUNT_BY_HOUROFDAY": True,
-        "ANNOTATE_TOP_10_PLATFORMS": True,
-        "ANNOTATE_TOP_10_USERS": True,
-        "ANNOTATE_PLAY_COUNT_BY_MONTH": True,
-        "MY_STATS_COOLDOWN_MINUTES": 5,
-        "MY_STATS_GLOBAL_COOLDOWN_SECONDS": 60,
+    # Required fields and their types
+    required_fields = {
+        'TAUTULLI_API_KEY': str,
+        'TAUTULLI_URL': str,
+        'DISCORD_TOKEN': str,
+        'CHANNEL_ID': int,
+        'UPDATE_DAYS': int,
+        'FIXED_UPDATE_TIME': str,
     }
 
-    # Load existing configuration first
-    if os.path.exists(config_path):
-        try:
-            with open(config_path, "r") as file:
-                config_vars = yaml.safe_load(file)
-        except (IOError, yaml.YAMLError) as e:
-            logging.error(f"Error loading configuration: {e}")
-            config_vars = {}
-    else:
-        config_vars = {}
+    for field, expected_type in required_fields.items():
+        if field not in config:
+            raise ConfigValidationError(f"Missing required field: {field}")
+        if not isinstance(config[field], expected_type):
+            raise ConfigValidationError(
+                f"Invalid type for {field}: expected {expected_type.__name__}, "
+                f"got {type(config[field]).__name__}"
+            )
 
-    # Now we can safely get the language
-    language = config_vars.get("LANGUAGE", "en")
+    # Validate values by category
+    for category in CONFIG_CATEGORIES:
+        for key in get_category_keys(category):
+            if key in config and not validate_config_value(key, config[key]):
+                raise ConfigValidationError(
+                    f"Invalid value for {key} in category {get_category_display_name(category)}: {config[key]}"
+                )
 
-    if translations is None:
-        translations = load_translations(language)
+def load_config(config_path: Optional[str] = None, reload: bool = False) -> ConfigSchema:
+    """
+    Load and validate the bot configuration.
+    
+    Args:
+        config_path: Optional path to config file
+        reload: Whether to force reload from disk
+        
+    Returns:
+        The loaded and validated configuration
+        
+    Raises:
+        ConfigError: If configuration cannot be loaded or is invalid
+    """
+    try:
+        path = config_path or CONFIG_PATH
+        config = load_yaml_config(path)
+        
+        # Validate schema
+        validate_config_schema(config)
+        
+        # Clear cache if reloading
+        if reload:
+            invalidate_config_cache()
+        
+        return cast(ConfigSchema, config)
+    except (ConfigLoadError, ConfigValidationError) as e:
+        logging.error(f"Failed to load configuration: {str(e)}")
+        raise
+    except Exception as e:
+        logging.error(f"Unexpected error loading configuration: {str(e)}")
+        raise ConfigError(f"Configuration load failed: {str(e)}") from e
 
-    if reload or config is None:
-        # Update config_vars with any missing keys from default_config
-        updated = False
-        for key, value in default_config.items():
-            if key not in config_vars:
-                config_vars[key] = value
-                updated = True
-
-        # If the configuration was updated, save it back to the file
-        if updated:
-            save_config(config_vars, config_path, default_config)
-
-        # Function to get the value from config.yml or environment variable
-        def get_config(key, default=None):
-            value = config_vars.get(key, os.getenv(key, default))
-            if key in ["TV_COLOR", "MOVIE_COLOR", "ANNOTATION_COLOR"]:
-                return format_color_value(str(value))
-            elif key == "FIXED_UPDATE_TIME":
-                return parse_time(value, translations)
-            return value
-
-        # Build the final configuration dictionary
-        config = {key: get_config(key, value) for key, value in default_config.items()}
-
-    return config
-
-
-def save_config(config, config_path=CONFIG_PATH, default_config=None):
-    if default_config is None:
-        default_config = config
-
-    # Create a lookup for the order of keys in default_config
-    default_order = {key: index for index, key in enumerate(default_config.keys())}
-
-    if os.path.exists(config_path):
-        with open(config_path, "r") as file:
-            lines = file.readlines()
-
-        # Create a dictionary to store the updated lines and their order
-        updated_lines = {}
-        existing_keys = []
-        for line in lines:
-            stripped_line = line.strip()
-            if ":" in stripped_line and not stripped_line.startswith("#"):
-                key = stripped_line.split(":", 1)[0].strip()
-                existing_keys.append(key)
-                if key in config:
-                    value = config[key]
-                    updated_lines[key] = format_value(key, value)
-            else:
-                # Preserve comments and empty lines
-                existing_keys.append(line)
-                updated_lines[line] = line
-
-        # Add new keys from config that are not in the existing file
-        new_keys = [
-            key for key in default_config if key not in existing_keys and key in config
-        ]
-
-        # Find the correct position for new keys based on default_config order
-        for new_key in new_keys:
-            insert_index = len(existing_keys)
-            for i, existing_key in enumerate(existing_keys):
-                if (
-                    existing_key in default_order
-                    and default_order[new_key] < default_order[existing_key]
-                ):
-                    insert_index = i
-                    break
-            existing_keys.insert(insert_index, new_key)
-            updated_lines[new_key] = format_value(new_key, config[new_key])
-
-        # Write the updated config back to the file
-        with open(config_path, "w") as file:
-            for key in existing_keys:
-                file.write(updated_lines[key])
-                if not updated_lines[key].endswith("\n"):
-                    file.write("\n")
-    else:
-        # If the file doesn't exist, create it with all config options
-        with open(config_path, "w") as file:
-            file.write("# config/config.yml\n")
-            for key in default_config:
-                if key in config:
-                    file.write(format_value(key, config[key]))
-                    file.write("\n")
-
-
-def format_value(key, value):
-    if key in ["TV_COLOR", "MOVIE_COLOR", "ANNOTATION_COLOR"]:
-        return f"{key}: {format_color_value(str(value))}"
-    elif key == "FIXED_UPDATE_TIME":
-        if isinstance(value, time):
-            return f"{key}: {format_time_value(value.strftime('%H:%M'))}"
-        elif value is None:
-            return f'{key}: "XX:XX"'
-        else:
-            return f"{key}: {format_time_value(str(value))}"
-    else:
-        return f"{key}: {value}"
-
-
-def update_config(key, value, translations):
-    global config
-    config = load_config(reload=True, translations=translations)
-
-    if key in ["TV_COLOR", "MOVIE_COLOR", "ANNOTATION_COLOR"]:
-        value = format_color_value(str(value))
-    elif key == "FIXED_UPDATE_TIME":
-        if isinstance(value, str):
-            if value.upper() == "XX:XX":
-                value = None
-            else:
+def update_config(key: str, value: Any, translations: Dict[str, str]) -> str:
+    """
+    Update a configuration value with atomic file operations.
+    
+    Args:
+        key: Configuration key to update
+        value: New value to set
+        translations: Translation strings
+        
+    Returns:
+        Message indicating the result of the update
+        
+    Raises:
+        ConfigUpdateError: If the update fails
+    """
+    try:
+        # Create a temporary file in the same directory
+        config_dir = os.path.dirname(CONFIG_PATH)
+        with tempfile.NamedTemporaryFile(mode='w', dir=config_dir, delete=False) as temp_file:
+            # Load and modify configuration
+            with open(CONFIG_PATH, 'r') as config_file:
+                # Acquire exclusive lock
+                fcntl.flock(config_file.fileno(), fcntl.LOCK_EX)
                 try:
-                    value = datetime.strptime(value, "%H:%M").time()
-                except ValueError:
-                    logging.error(
-                        translations["error_invalid_fixed_time"].format(value=value)
+                    config = load_yaml_config(CONFIG_PATH)
+                    
+                    # Validate and sanitize
+                    if not validate_config_value(key, value):
+                        raise ValueError(f"Invalid value for {key}: {value}")
+                        
+                    sanitized_value = sanitize_config_value(key, value)
+                    old_value = config.get(key)
+                    config[key] = sanitized_value
+                    
+                    # Write to temp file
+                    save_yaml_config(config, temp_file.name)
+                    
+                    # Atomic rename
+                    os.replace(temp_file.name, CONFIG_PATH)
+                    
+                    # Clear cache
+                    invalidate_config_cache()
+                    
+                    # Return appropriate message
+                    if key == "FIXED_UPDATE_TIME" and str(sanitized_value).upper() == "XX:XX":
+                        return translations["config_updated_fixed_time_disabled"].format(key=key)
+                    
+                    if key in RESTART_REQUIRED_KEYS:
+                        return translations["config_updated_restart"].format(key=key)
+                    
+                    return translations["config_updated"].format(
+                        key=key,
+                        old_value=old_value,
+                        new_value=sanitized_value
                     )
-                    return config
-        elif not isinstance(value, time) and value is not None:
-            logging.error(translations["error_invalid_fixed_time"].format(value=value))
-            return config
+                finally:
+                    # Release lock
+                    fcntl.flock(config_file.fileno(), fcntl.LOCK_UN)
+                    
+    except Exception as e:
+        logging.error(f"Failed to update configuration: {str(e)}")
+        raise ConfigUpdateError(f"Configuration update failed: {str(e)}") from e
 
-    config[key] = value
-    save_config(config)
-    return config
+@lru_cache(maxsize=128)
+def get_config_value(key: str) -> Any:
+    """
+    Get a specific configuration value with caching.
+    
+    Args:
+        key: The configuration key to retrieve
+        
+    Returns:
+        The configuration value
+        
+    Raises:
+        ConfigKeyError: If the key doesn't exist
+    """
+    try:
+        config = load_config()
+        if key not in config:
+            raise ConfigKeyError(f"Configuration key not found: {key}")
+        return config[key]
+    except ConfigError as e:
+        logging.error(f"Failed to get configuration value: {str(e)}")
+        raise
 
+def get_config_metadata(key: str) -> Dict[str, Any]:
+    """
+    Get metadata for a configuration key.
+    
+    Args:
+        key: The configuration key
+        
+    Returns:
+        Dictionary containing option metadata
+        
+    Raises:
+        ConfigKeyError: If the key doesn't exist
+    """
+    try:
+        return get_option_metadata(key)
+    except KeyError as e:
+        raise ConfigKeyError(str(e)) from e
 
-def sanitize_config_file():
-    with open(CONFIG_PATH, "r") as file:
-        lines = file.readlines()
+def invalidate_config_cache() -> None:
+    """Invalidate the configuration cache."""
+    get_config_value.cache_clear()
 
-    updated = False
-    for i, line in enumerate(lines):
-        if "COLOR:" in line or "FIXED_UPDATE_TIME:" in line:
-            key, value = line.split(":", 1)
-            if "COLOR" in key:
-                formatted_value = format_color_value(value.strip())
-            else:  # FIXED_UPDATE_TIME
-                formatted_value = format_time_value(value.strip())
-            if formatted_value != value.strip():
-                lines[i] = f"{key}: {formatted_value}\n"
-                updated = True
+def get_category_config(config: Dict[str, Any], category: str) -> Dict[str, Any]:
+    """
+    Get all configuration values for a specific category.
+    
+    Args:
+        config: The configuration dictionary
+        category: The category name
+        
+    Returns:
+        Dictionary of configuration values for the category
+    """
+    return {
+        key: config[key] 
+        for key in get_category_keys(category) 
+        if key in config
+    }
 
-    if updated:
-        with open(CONFIG_PATH, "w") as file:
-            file.writelines(lines)
+def get_config_structure() -> Dict[str, Dict[str, Any]]:
+    """
+    Get the configuration structure organized by category.
+    
+    Returns:
+        Dictionary mapping categories to their configuration metadata
+    """
+    return {
+        category: {
+            'display_name': get_category_display_name(category),
+            'keys': get_category_keys(category)
+        }
+        for category in CONFIG_CATEGORIES
+    }
 
-    return updated
-
-
-# List of keys that require a bot restart when changed
-RESTART_REQUIRED_KEYS = ["TAUTULLI_API_KEY", "TAUTULLI_URL", "DISCORD_TOKEN"]
-
-
-# Function to get configurable options
-def get_configurable_options():
-    return CONFIGURABLE_OPTIONS
+# Export public interface
+__all__ = [
+    'load_config',
+    'update_config',
+    'get_config_value',
+    'get_config_metadata',
+    'get_categorized_config',
+    'get_category_config',
+    'get_config_structure',
+    'invalidate_config_cache',
+    'CONFIGURABLE_OPTIONS',
+    'RESTART_REQUIRED_KEYS',
+    'CONFIG_SECTIONS',
+    'CONFIG_CATEGORIES',
+    'CONFIG_PATH',
+    'ConfigSchema',
+    'ConfigError',
+    'ConfigLoadError',
+    'ConfigValidationError',
+    'ConfigUpdateError',
+    'ConfigKeyError',
+]

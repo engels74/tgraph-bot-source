@@ -1,18 +1,19 @@
 # bot/permission_checker.py
+
 import discord
 import logging
+from typing import Dict, List, Set
 import textwrap
-from typing import Dict, List
-
 
 def create_table(
     headers: List[str], rows: List[List[str]], column_widths: List[int]
 ) -> str:
-    def format_cell(content, width):
+    """Create a formatted table string."""
+    def format_cell(content: str, width: int) -> str:
         return " " + content.ljust(width - 2) + " "
 
-    def create_separator(widths, corner="+", line="-"):
-        return corner + corner.join(line * (w) for w in widths) + corner
+    def create_separator(widths: List[int], corner: str = "+", line: str = "-") -> str:
+        return corner + corner.join(line * w for w in widths) + corner
 
     table = [create_separator(column_widths)]
     table.append(
@@ -41,126 +42,211 @@ def create_table(
 
     return "\n".join(table)
 
-
-async def check_command_permissions(
-    bot: discord.Client, guild: discord.Guild, translations: Dict[str, str]
-) -> None:
+async def get_registered_commands(
+    bot: discord.Client, 
+    guild: discord.Guild
+) -> Dict[str, discord.app_commands.Command]:
+    """Get all registered commands for a guild."""
     try:
         global_commands = await bot.tree.fetch_commands()
         guild_commands = await bot.tree.fetch_commands(guild=guild)
-        all_commands = global_commands + guild_commands
-        command_id_map = {str(cmd.id): cmd.name for cmd in all_commands}
+        
+        command_map = {}
+        for cmd in global_commands + guild_commands:
+            command_map[str(cmd.id)] = cmd
+            
+        return command_map
+    except discord.HTTPException as e:
+        logging.error(f"Failed to fetch commands: {e}")
+        return {}
 
+async def resolve_permission_entities(
+    bot: discord.Client,
+    guild: discord.Guild,
+    permissions: List[Dict],
+    show_unknown: bool = False
+) -> List[str]:
+    """
+    Resolve permission entities to their names.
+    
+    Parameters
+    ----------
+    bot : discord.Client
+        The bot instance
+    guild : discord.Guild
+        The guild to resolve entities for
+    permissions : List[Dict]
+        List of permission dictionaries
+    show_unknown : bool
+        Whether to show unknown entities in the output
+    """
+    entities = []
+    for perm in permissions:
+        try:
+            entity_id = int(perm["id"])
+            permission_allowed = "Allowed" if perm["permission"] else "Denied"
+
+            if perm["type"] == 1:  # Role
+                if role := guild.get_role(entity_id):
+                    entities.append(f"{role.name} ({permission_allowed})")
+                elif show_unknown:
+                    logging.debug(f"Role {entity_id} not found in guild {guild.name}")
+                    entities.append(f"Unknown Role {entity_id} ({permission_allowed})")
+
+            elif perm["type"] == 2:  # User
+                try:
+                    user = await bot.fetch_user(entity_id)
+                    entities.append(f"{user.name} ({permission_allowed})")
+                except discord.NotFound:
+                    if show_unknown:
+                        logging.debug(f"User {entity_id} not found")
+                        entities.append(f"Unknown User {entity_id} ({permission_allowed})")
+
+            elif perm["type"] == 3:  # Channel
+                if channel := guild.get_channel(entity_id):
+                    entities.append(f"#{channel.name} ({permission_allowed})")
+                elif show_unknown:
+                    logging.debug(f"Channel {entity_id} not found in guild {guild.name}")
+                    entities.append(f"Unknown Channel {entity_id} ({permission_allowed})")
+
+        except Exception as e:
+            logging.error(f"Error resolving permission entity {perm['id']}: {e}")
+            if show_unknown:
+                entities.append(f"Error resolving entity {perm['id']}")
+
+    return entities
+
+async def check_command_permissions(
+    bot: discord.Client,
+    guild: discord.Guild,
+    translations: Dict[str, str],
+    show_unknown: bool = False
+) -> None:
+    """
+    Check and log command permissions for a guild.
+    
+    Parameters
+    ----------
+    bot : discord.Client
+        The bot instance
+    guild : discord.Guild
+        The guild to check permissions for
+    translations : Dict[str, str]
+        Translation strings
+    show_unknown : bool
+        Whether to show unknown command entries in the output
+    """
+    try:
+        command_map = await get_registered_commands(bot, guild)
         guild_permissions = await bot.http.get_guild_application_command_permissions(
             bot.application_id, guild.id
         )
 
         headers = [translations["permission_entity"], translations["accessible_by"]]
-        rows = []
+        all_rows = []
+        bot_permissions_row = None
         no_permissions_set = True
+        commands_with_permissions: Set[str] = set()
 
+        # Process permissions
         for command_permissions in guild_permissions:
-            command_id = command_permissions["id"]
-
-            if command_id == str(bot.application_id):
-                permission_name = translations["bot_overall_permissions"]
-            else:
-                command_name = command_id_map.get(
-                    command_id, translations["unknown_command"]
-                )
-                permission_name = f"/{command_name}"
-
+            command_id = str(command_permissions["id"])
             permissions = command_permissions.get("permissions", [])
+
+            # Handle bot overall permissions separately
+            if command_id == str(bot.application_id):
+                if permissions:
+                    # Pass show_unknown to resolve_permission_entities
+                    entities = await resolve_permission_entities(bot, guild, permissions, show_unknown)
+                    if entities:  # Only add if there are resolved entities
+                        bot_permissions_row = [
+                            translations["bot_overall_permissions"],
+                            ", ".join(entities)
+                        ]
+                continue
+
+            # Skip unknown commands unless show_unknown is True
+            if command_id not in command_map:
+                if show_unknown:
+                    logging.debug(f"Found legacy permission entry for command ID: {command_id}")
+                    permission_name = f"{translations['unknown_command']} (ID: {command_id})"
+                else:
+                    continue
+            else:
+                command = command_map[command_id]
+                permission_name = f"/{command.name}"
+                commands_with_permissions.add(command.name)
+
             if permissions:
                 no_permissions_set = False
-                roles_and_users = []
-                for perm in permissions:
-                    try:
-                        if perm["type"] == 1:  # 1 is for roles
-                            role = guild.get_role(int(perm["id"]))
-                            if role:
-                                roles_and_users.append(
-                                    f"{role.name} ({'Allowed' if perm['permission'] else 'Denied'})"
-                                )
-                            else:
-                                logging.warning(
-                                    f"Role with ID {perm['id']} not found in guild {guild.name}"
-                                )
-                        elif perm["type"] == 2:  # 2 is for users
-                            user = await bot.fetch_user(int(perm["id"]))
-                            if user:
-                                roles_and_users.append(
-                                    f"{user.name} ({'Allowed' if perm['permission'] else 'Denied'})"
-                                )
-                            else:
-                                logging.warning(f"User with ID {perm['id']} not found")
-                        elif perm["type"] == 3:  # 3 is for channels
-                            channel = guild.get_channel(int(perm["id"]))
-                            if channel:
-                                roles_and_users.append(
-                                    f"#{channel.name} ({'Allowed' if perm['permission'] else 'Denied'})"
-                                )
-                            else:
-                                logging.warning(
-                                    f"Channel with ID {perm['id']} not found in guild {guild.name}"
-                                )
-                    except discord.errors.HTTPException as e:
-                        logging.error(
-                            f"HTTP error when fetching entity with ID {perm['id']}: {str(e)}"
-                        )
-                    except discord.errors.NotFound:
-                        logging.warning(f"Entity with ID {perm['id']} not found")
-                    except Exception as e:
-                        logging.error(
-                            f"Unexpected error when processing permission for ID {perm['id']}: {str(e)}"
-                        )
-
-                if roles_and_users:
-                    rows.append([permission_name, ", ".join(roles_and_users)])
+                entities = await resolve_permission_entities(bot, guild, permissions)
+                if entities:
+                    all_rows.append([permission_name, ", ".join(entities)])
                 else:
-                    rows.append(
-                        [
-                            permission_name,
-                            translations["no_specific_permissions_assigned"],
-                        ]
-                    )
+                    all_rows.append([
+                        permission_name,
+                        translations["no_specific_permissions_assigned"],
+                    ])
             else:
-                rows.append(
-                    [permission_name, translations["accessible_to_all_members"]]
-                )
+                all_rows.append([
+                    permission_name,
+                    translations["accessible_to_all_members"]
+                ])
 
-        if no_permissions_set:
+        # Add commands without explicit permissions
+        for cmd in command_map.values():
+            if cmd.name not in commands_with_permissions:
+                all_rows.append([
+                    f"/{cmd.name}",
+                    translations["accessible_to_all_members"]
+                ])
+
+        # Sort rows alphabetically by command name
+        all_rows.sort(key=lambda x: x[0].lower())
+
+        # Combine rows with bot permissions at top
+        final_rows = []
+        if bot_permissions_row:
+            final_rows.append(bot_permissions_row)
+        final_rows.extend(all_rows)
+
+        # Handle case where no permissions are set
+        if no_permissions_set and not final_rows:  # Only add warning if no other rows exist
             logging.warning(
                 translations["no_permissions_set_warning"].format(guild_name=guild.name)
             )
-            rows.append(
-                [
-                    translations["warning_message"],
-                    translations["no_permissions_set_message"],
-                ]
-            )
+            final_rows.append([
+                translations["warning_message"],
+                translations["no_permissions_set_message"],
+            ])
 
-        column_widths = [30, 50]  # Adjust these values as needed
-        table = create_table(headers, rows, column_widths)
-        logging.info(
-            translations["permissions_for_guild"].format(
-                guild_name=guild.name, table="\n" + table
-            )
-        )
-
-        # Check for critical commands with no specific permissions
-        critical_commands = ["config", "update_graphs"]
+        # Check critical commands
+        critical_commands = {"config", "update_graphs"}
         for command in critical_commands:
-            if not any(
-                command in row[0]
-                for row in rows
-                if row[1] != translations["accessible_to_all_members"]
-            ):
+            if command not in commands_with_permissions:
                 logging.warning(
                     translations["critical_command_no_permissions"].format(
                         command=command, guild=guild.name
                     )
                 )
+            elif any(
+                command in row[0] and row[1] == translations["accessible_to_all_members"]
+                for row in final_rows
+            ):
+                logging.warning(
+                    translations["critical_command_all_access"].format(
+                        command=command, guild=guild.name
+                    )
+                )
+
+        # Create and log the table
+        column_widths = [30, 50]
+        table = create_table(headers, final_rows, column_widths)
+        logging.info(
+            translations["permissions_for_guild"].format(
+                guild_name=guild.name, table="\n" + table
+            )
+        )
 
     except discord.HTTPException as e:
         logging.error(
@@ -171,9 +257,22 @@ async def check_command_permissions(
     except Exception as e:
         logging.error(f"Unexpected error in check_command_permissions: {str(e)}")
 
-
 async def check_permissions_all_guilds(
-    bot: discord.Client, translations: Dict[str, str]
+    bot: discord.Client,
+    translations: Dict[str, str],
+    show_unknown: bool = False
 ) -> None:
+    """
+    Check permissions for all guilds the bot is in.
+    
+    Parameters
+    ----------
+    bot : discord.Client
+        The bot instance
+    translations : Dict[str, str]
+        Translation strings
+    show_unknown : bool
+        Whether to show unknown command entries in the output
+    """
     for guild in bot.guilds:
-        await check_command_permissions(bot, guild, translations)
+        await check_command_permissions(bot, guild, translations, show_unknown)
