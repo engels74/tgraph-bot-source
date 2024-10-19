@@ -41,7 +41,7 @@ For detailed information on setting up and using TGraph Bot, please refer to our
 
 ## ❓ Need Help?
 
-If you encounter any issues, have questions, or need further assistance, please feel free to [create an issue](https://github.com/engels74/tgraph-bot-source/issues) on our GitHub repository. We're here to help!
+If you encounter any issues, have questions, or need further assistance, please feel free to [create an issue](https://github.com/engels74/tgraph-bot/issues) on our GitHub repository. We're here to help!
 
 ## 📜 License
 
