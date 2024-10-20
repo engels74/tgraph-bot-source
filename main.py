@@ -70,10 +70,20 @@ def create_folders(log_file, data_folder, img_folder):
     for folder in [os.path.dirname(log_file), data_folder, img_folder]:
         if not os.path.exists(folder):
             os.makedirs(folder)
-    print(f"Created folders: {os.path.dirname(log_file)}, {data_folder}, {img_folder}")
+        print(f"Folder exists: {folder}")
+        print(f"Folder permissions: {oct(os.stat(folder).st_mode)[-3:]}")
+    print(f"Created/checked folders: {os.path.dirname(log_file)}, {data_folder}, {img_folder}")
 
 # Create necessary folders
 create_folders(args.log_file, args.data_folder, IMG_FOLDER)
+
+# Try to write directly to the log file
+try:
+    with open(args.log_file, 'a') as f:
+        f.write(f"Test write at {datetime.now()}\n")
+    print(f"Successfully wrote to log file: {args.log_file}")
+except Exception as e:
+    print(f"Error writing to log file: {e}")
 
 # Set up logging
 logging.basicConfig(
@@ -95,7 +105,11 @@ logger.error("This is a test error message")
 
 print(f"Logging to file: {args.log_file}")
 print(f"Log file exists: {os.path.exists(args.log_file)}")
-print(f"Log file size: {os.path.getsize(args.log_file) if os.path.exists(args.log_file) else 'File does not exist'}")
+if os.path.exists(args.log_file):
+    print(f"Log file size: {os.path.getsize(args.log_file)}")
+    print(f"Log file permissions: {oct(os.stat(args.log_file).st_mode)[-3:]}")
+else:
+    print("Log file does not exist")
 
 # Modified function to use print in addition to logger.log
 def log(message, level=logging.INFO):
