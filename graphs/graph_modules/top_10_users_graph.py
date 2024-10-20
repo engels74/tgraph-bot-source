@@ -8,8 +8,8 @@ from datetime import datetime
 from matplotlib.ticker import MaxNLocator
 
 class Top10UsersGraph(BaseGraph):
-    def __init__(self, config: Dict[str, Any], translations: Dict[str, str]):
-        super().__init__(config, translations)
+    def __init__(self, config: Dict[str, Any], translations: Dict[str, str], img_folder: str):
+        super().__init__(config, translations, img_folder)
         self.graph_type = "top_10_users"
 
     async def fetch_data(self, data_fetcher, user_id: str = None) -> Dict[str, Any]:
@@ -102,7 +102,7 @@ class Top10UsersGraph(BaseGraph):
 
         today = datetime.today().strftime("%Y-%m-%d")
         file_name = "top_10_users.png"
-        file_path = f"{self.config['IMG_FOLDER']}/{today}/{file_name}"
+        file_path = os.path.join(self.img_folder, today, file_name)
         self.save(file_path)
 
         return file_path
