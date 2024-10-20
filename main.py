@@ -86,16 +86,25 @@ except Exception as e:
     print(f"Error writing to log file: {e}")
 
 # Set up logging
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.FileHandler(args.log_file, mode='a', encoding='utf-8'),
-        logging.StreamHandler(sys.stdout)
-    ],
-)
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
 
-logger = logging.getLogger(__name__)
+# Create file handler
+file_handler = logging.FileHandler(args.log_file, mode='a', encoding='utf-8')
+file_handler.setLevel(logging.DEBUG)
+
+# Create console handler
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setLevel(logging.DEBUG)
+
+# Create formatter
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+console_handler.setFormatter(formatter)
+
+# Add handlers to logger
+logger.addHandler(file_handler)
+logger.addHandler(console_handler)
 
 # Test file logging
 logger.debug("This is a test debug message")
@@ -111,10 +120,8 @@ if os.path.exists(args.log_file):
 else:
     print("Log file does not exist")
 
-# Modified function to use print in addition to logger.log
+# Modified function to use logger directly
 def log(message, level=logging.INFO):
-    timestamp = datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S %Z")
-    print(f"{timestamp} - {logging.getLevelName(level)} - {message}")
     logger.log(level, message)
 
 # Log that folders have been created
