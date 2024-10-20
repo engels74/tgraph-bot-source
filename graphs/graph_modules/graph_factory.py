@@ -10,9 +10,10 @@ from .top_10_users_graph import Top10UsersGraph
 from .play_count_by_month_graph import PlayCountByMonthGraph
 
 class GraphFactory:
-    def __init__(self, config: Dict[str, Any], translations: Dict[str, str]):
+    def __init__(self, config: Dict[str, Any], translations: Dict[str, str], img_folder: str):
         self.config = config
         self.translations = translations
+        self.img_folder = img_folder  # Add this line
         self.graph_classes: Dict[str, Type[BaseGraph]] = {
             "daily_play_count": DailyPlayCountGraph,
             "play_count_by_dayofweek": PlayCountByDayOfWeekGraph,
@@ -34,7 +35,7 @@ class GraphFactory:
         if graph_class is None:
             raise ValueError(f"Invalid graph type: {graph_type}")
         
-        return graph_class(self.config, self.translations)
+        return graph_class(self.config, self.translations, self.img_folder)
 
     def create_all_graphs(self) -> Dict[str, BaseGraph]:
         """
@@ -46,7 +47,7 @@ class GraphFactory:
         for graph_type, graph_class in self.graph_classes.items():
             config_key = f"ENABLE_{graph_type.upper()}"
             if self.config.get(config_key, False):
-                enabled_graphs[graph_type] = graph_class(self.config, self.translations)
+                enabled_graphs[graph_type] = graph_class(self.config, self.translations, self.img_folder)
         
         return enabled_graphs
 

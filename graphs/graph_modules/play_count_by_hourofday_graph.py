@@ -4,12 +4,13 @@ from .base_graph import BaseGraph
 from .utils import get_color
 from typing import Dict, Any
 import logging
+import os
 from datetime import datetime
 from matplotlib.ticker import MaxNLocator
 
 class PlayCountByHourOfDayGraph(BaseGraph):
-    def __init__(self, config: Dict[str, Any], translations: Dict[str, str]):
-        super().__init__(config, translations)
+    def __init__(self, config: Dict[str, Any], translations: Dict[str, str], img_folder: str):
+        super().__init__(config, translations, img_folder)
         self.graph_type = "play_count_by_hourofday"
 
     async def fetch_data(self, data_fetcher, user_id: str = None) -> Dict[str, Any]:
@@ -84,7 +85,7 @@ class PlayCountByHourOfDayGraph(BaseGraph):
 
         today = datetime.today().strftime("%Y-%m-%d")
         file_name = f"play_count_by_hourofday{'_' + user_id if user_id else ''}.png"
-        file_path = f"{self.config['IMG_FOLDER']}/{today}/{file_name}"
+        file_path = os.path.join(self.img_folder, today, file_name)
         self.save(file_path)
 
         return file_path

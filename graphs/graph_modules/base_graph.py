@@ -6,9 +6,10 @@ from typing import Dict, Any
 import logging
 
 class BaseGraph(ABC):
-    def __init__(self, config: Dict[str, Any], translations: Dict[str, str]):
+    def __init__(self, config: Dict[str, Any], translations: Dict[str, str], img_folder: str):
         self.config = config
         self.translations = translations
+        self.img_folder = img_folder  # Add this line
         self.plt = plt
         self.figure = None
         self.ax = None

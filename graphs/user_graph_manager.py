@@ -13,7 +13,7 @@ class UserGraphManager:
         self.config = config
         self.translations = translations
         self.img_folder = img_folder
-        self.graph_factory = GraphFactory(config, translations)
+        self.graph_factory = GraphFactory(config, translations, img_folder)  # Pass img_folder here
         self.data_fetcher = DataFetcher(config)
 
     async def generate_user_graphs(self, user_id: str) -> List[str]:

@@ -4,13 +4,14 @@ from .base_graph import BaseGraph
 from .utils import get_date_range, format_date, get_color
 from typing import Dict, Any
 import logging
+import os
 from datetime import datetime, timedelta
 from matplotlib.dates import DateFormatter
 from matplotlib.ticker import MaxNLocator
 
 class DailyPlayCountGraph(BaseGraph):
-    def __init__(self, config: Dict[str, Any], translations: Dict[str, str]):
-        super().__init__(config, translations)
+    def __init__(self, config: Dict[str, Any], translations: Dict[str, str], img_folder: str):
+        super().__init__(config, translations, img_folder)
         self.graph_type = "daily_play_count"
 
     async def fetch_data(self, data_fetcher, user_id: str = None) -> Dict[str, Any]:
@@ -95,7 +96,7 @@ class DailyPlayCountGraph(BaseGraph):
 
         today = datetime.today().strftime("%Y-%m-%d")
         file_name = f"daily_play_count{'_' + user_id if user_id else ''}.png"
-        file_path = f"{self.config['IMG_FOLDER']}/{today}/{file_name}"
+        file_path = os.path.join(self.img_folder, today, file_name)  # Use os.path.join and self.img_folder
         self.save(file_path)
 
         return file_path
