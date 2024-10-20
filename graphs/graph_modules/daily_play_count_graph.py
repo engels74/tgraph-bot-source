@@ -4,6 +4,7 @@ from .base_graph import BaseGraph
 from .utils import get_date_range, format_date, get_color
 from typing import Dict, Any
 import logging
+import os
 from datetime import datetime, timedelta
 from matplotlib.dates import DateFormatter
 from matplotlib.ticker import MaxNLocator

@@ -4,6 +4,7 @@ from .base_graph import BaseGraph
 from .utils import censor_username
 from typing import Dict, Any
 import logging
+import os
 from datetime import datetime
 from matplotlib.ticker import MaxNLocator
 
