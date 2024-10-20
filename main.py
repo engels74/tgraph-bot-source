@@ -102,7 +102,7 @@ class TGraphBot(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.data_folder = kwargs.pop("data_folder", None)
-        self.img_folder = kwargs.pop("img_folder", None)
+        self.img_folder = os.path.join(self.data_folder, "img")  # Set img_folder directly
         self.update_tracker = kwargs.pop("update_tracker", None)
         self.config = kwargs.pop("config", None)
         self.translations = kwargs.pop("translations", None)
@@ -145,7 +145,6 @@ async def main():
         command_prefix="!",
         intents=intents,
         data_folder=args.data_folder,
-        img_folder=IMG_FOLDER,
         update_tracker=update_tracker,
         config=config,
         translations=translations,
