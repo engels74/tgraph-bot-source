@@ -55,11 +55,8 @@ print(f"Data folder path: {args.data_folder}")
 config = load_config(args.config_file)
 
 # Set up img_folder (inside data_folder)
-img_folder = os.path.join(args.data_folder, "img")
-print(f"IMG_FOLDER path: {img_folder}")
-
-# Add IMG_FOLDER to config
-config['IMG_FOLDER'] = img_folder
+IMG_FOLDER = os.path.join(args.data_folder, "img")
+print(f"IMG_FOLDER path: {IMG_FOLDER}")
 
 # Load translations
 try:
@@ -75,7 +72,7 @@ def create_folders(log_file, data_folder, img_folder):
             os.makedirs(folder)
 
 # Create necessary folders
-create_folders(args.log_file, args.data_folder, img_folder)
+create_folders(args.log_file, args.data_folder, IMG_FOLDER)
 
 # Set up logging
 logging.basicConfig(
@@ -148,7 +145,7 @@ async def main():
         command_prefix="!",
         intents=intents,
         data_folder=args.data_folder,
-        img_folder=img_folder,
+        img_folder=IMG_FOLDER,
         update_tracker=update_tracker,
         config=config,
         translations=translations,
@@ -175,7 +172,6 @@ async def main():
 
             log(bot.translations["log_updating_posting_graphs_startup"], logging.WARNING)
             bot.config = load_config(args.config_file, reload=True)
-            bot.config['IMG_FOLDER'] = img_folder  # Ensure IMG_FOLDER is in the reloaded config
             
             channel = bot.get_channel(bot.config["CHANNEL_ID"])
             if channel:
@@ -208,7 +204,6 @@ async def schedule_updates(bot):
         if bot.update_tracker.is_update_due():
             log(bot.translations["log_auto_update_started"], logging.WARNING)
             bot.config = load_config(args.config_file, reload=True)
-            bot.config['IMG_FOLDER'] = img_folder  # Ensure IMG_FOLDER is in the reloaded config
             
             channel = bot.get_channel(bot.config["CHANNEL_ID"])
             if channel:
