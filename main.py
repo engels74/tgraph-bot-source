@@ -70,6 +70,7 @@ def create_folders(log_file, data_folder, img_folder):
     for folder in [os.path.dirname(log_file), data_folder, img_folder]:
         if not os.path.exists(folder):
             os.makedirs(folder)
+    print(f"Created folders: {os.path.dirname(log_file)}, {data_folder}, {img_folder}")
 
 # Create necessary folders
 create_folders(args.log_file, args.data_folder, IMG_FOLDER)
@@ -85,6 +86,16 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
+
+# Test file logging
+logger.debug("This is a test debug message")
+logger.info("This is a test info message")
+logger.warning("This is a test warning message")
+logger.error("This is a test error message")
+
+print(f"Logging to file: {args.log_file}")
+print(f"Log file exists: {os.path.exists(args.log_file)}")
+print(f"Log file size: {os.path.getsize(args.log_file) if os.path.exists(args.log_file) else 'File does not exist'}")
 
 # Modified function to use print in addition to logger.log
 def log(message, level=logging.INFO):
