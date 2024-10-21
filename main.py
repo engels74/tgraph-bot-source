@@ -63,6 +63,19 @@ def create_folders(log_file, data_folder, img_folder):
 create_folders(args.log_file, args.data_folder, IMG_FOLDER)
 
 # Set up logging
+class StreamToLogger(object):
+    def __init__(self, logger, log_level=logging.INFO):
+        self.logger = logger
+        self.log_level = log_level
+        self.linebuf = ''
+
+    def write(self, buf):
+        for line in buf.rstrip().splitlines():
+            self.logger.log(self.log_level, line.rstrip())
+
+    def flush(self):
+        pass
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -73,6 +86,10 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger('tgraphbot')
+
+# Redirect stdout and stderr to the logger
+sys.stdout = StreamToLogger(logger, logging.INFO)
+sys.stderr = StreamToLogger(logger, logging.ERROR)
 
 # Log that folders have been created
 logger.info(translations["log_ensured_folders_exist"])
