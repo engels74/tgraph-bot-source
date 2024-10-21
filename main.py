@@ -15,21 +15,6 @@ from graphs.graph_manager import GraphManager
 from graphs.user_graph_manager import UserGraphManager
 from i18n import load_translations, TranslationKeyError
 
-# Set up basic logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    handlers=[logging.FileHandler(os.path.join(os.environ.get("CONFIG_DIR", "/config"), "logs", "tgraphbot.log")), 
-              logging.StreamHandler(sys.stdout)],
-)
-
-logger = logging.getLogger(__name__)
-
-# Function to print log messages with timestamps
-def log(message, level=logging.INFO):
-    timestamp = datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S %Z")
-    logger.log(level, f"{timestamp} - {message}")
-
 # Get the CONFIG_DIR from environment variable, default to '/config' if not set
 CONFIG_DIR = os.environ.get("CONFIG_DIR", "/config")
 
@@ -61,6 +46,13 @@ config = load_config(args.config_file)
 # Set up img_folder (inside data_folder)
 IMG_FOLDER = os.path.join(args.data_folder, "img")
 
+# Load translations
+try:
+    translations = load_translations(config["LANGUAGE"])
+except TranslationKeyError as e:
+    print(f"Error loading translations: {e}")
+    sys.exit(1)
+
 # Function to create necessary folders
 def create_folders(log_file, data_folder, img_folder):
     for folder in [os.path.dirname(log_file), data_folder, img_folder]:
@@ -70,12 +62,30 @@ def create_folders(log_file, data_folder, img_folder):
 # Create necessary folders
 create_folders(args.log_file, args.data_folder, IMG_FOLDER)
 
-# Load translations
-try:
-    translations = load_translations(config["LANGUAGE"])
-except TranslationKeyError as e:
-    print(f"Error loading translations: {e}")
-    sys.exit(1)
+# Set up logging
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+# Create file handler
+file_handler = logging.FileHandler(args.log_file, mode='a', encoding='utf-8')
+file_handler.setLevel(logging.INFO)
+
+# Create console handler
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setLevel(logging.INFO)
+
+# Create formatter
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+console_handler.setFormatter(formatter)
+
+# Add handlers to logger
+logger.addHandler(file_handler)
+logger.addHandler(console_handler)
+
+# Modified function to use logger directly
+def log(message, level=logging.INFO):
+    logger.log(level, message)
 
 # Log that folders have been created
 log(translations["log_ensured_folders_exist"])
@@ -85,12 +95,12 @@ update_tracker = create_update_tracker(args.data_folder, config, translations)
 
 class TGraphBot(commands.Bot):
     def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.data_folder = kwargs.pop("data_folder", None)
         self.img_folder = os.path.join(self.data_folder, "img")  # Set img_folder directly
         self.update_tracker = kwargs.pop("update_tracker", None)
         self.config = kwargs.pop("config", None)
         self.translations = kwargs.pop("translations", None)
-        super().__init__(*args, **kwargs)
         self.graph_manager = GraphManager(self.config, self.translations, self.img_folder)
         self.user_graph_manager = UserGraphManager(self.config, self.translations, self.img_folder)
         log(self.translations["log_tgraphbot_initialized"])
@@ -207,7 +217,7 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except Exception as e:
-        logger.exception("An error occurred in main")
+        logging.exception("An error occurred in main")
 
 # TGraph - Tautulli Graph Bot
 # <https://github.com/engels74/tgraph-bot-source>
