@@ -63,21 +63,22 @@ def create_folders(log_file, data_folder, img_folder):
 create_folders(args.log_file, args.data_folder, IMG_FOLDER)
 
 # Set up logging
-logger = logging.getLogger()
+logger = logging.getLogger('tgraphbot')
 logger.setLevel(logging.INFO)
+
+# Remove any existing handlers
+for handler in logger.handlers[:]:
+    logger.removeHandler(handler)
 
 file_handler = logging.FileHandler(args.log_file)
 stream_handler = logging.StreamHandler(sys.stdout)
 
-formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 file_handler.setFormatter(formatter)
 stream_handler.setFormatter(formatter)
 
 logger.addHandler(file_handler)
 logger.addHandler(stream_handler)
-
-# Disable propagation to prevent duplicate logs
-logger.propagate = False
 
 # Modified function to use logger directly
 def log(message, level=logging.INFO):
@@ -213,7 +214,7 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except Exception as e:
-        logging.exception("An error occurred in main")
+        logger.exception("An error occurred in main")
 
 # TGraph - Tautulli Graph Bot
 # <https://github.com/engels74/tgraph-bot-source>
