@@ -30,13 +30,6 @@ def log(message, level=logging.INFO):
     timestamp = datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S %Z")
     logger.log(level, f"{timestamp} - {message}")
 
-# Load translations
-try:
-    translations = load_translations(config["LANGUAGE"])
-except TranslationKeyError as e:
-    print(f"Error loading translations: {e}")
-    sys.exit(1)
-
 # Get the CONFIG_DIR from environment variable, default to '/config' if not set
 CONFIG_DIR = os.environ.get("CONFIG_DIR", "/config")
 
@@ -76,6 +69,13 @@ def create_folders(log_file, data_folder, img_folder):
 
 # Create necessary folders
 create_folders(args.log_file, args.data_folder, IMG_FOLDER)
+
+# Load translations
+try:
+    translations = load_translations(config["LANGUAGE"])
+except TranslationKeyError as e:
+    print(f"Error loading translations: {e}")
+    sys.exit(1)
 
 # Log that folders have been created
 log(translations["log_ensured_folders_exist"])
