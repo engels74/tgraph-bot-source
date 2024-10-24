@@ -5,6 +5,7 @@ import os
 from typing import Dict, Any, List, Union
 from datetime import datetime, time
 from ruamel.yaml import YAML
+from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 from i18n import load_translations
 
@@ -54,40 +55,24 @@ CONFIGURABLE_OPTIONS = [
 RESTART_REQUIRED_KEYS = ["TAUTULLI_API_KEY", "TAUTULLI_URL", "DISCORD_TOKEN"]
 
 # Global variable to store the configuration
-config: Dict[str, Any] = {}
+config: CommentedMap = CommentedMap()
 
 def sanitize_color_value(value: str) -> str:
     """
     Sanitize color value to ensure proper format with single set of double quotes.
-    
-    :param value: The color value to sanitize
-    :return: Properly formatted color value
     """
-    # Strip any existing quotes and whitespace
     clean_value = value.strip().strip('"\'')
-    
-    # Ensure the value starts with #
     if not clean_value.startswith('#'):
         clean_value = f'#{clean_value}'
-    
-    # Return as DoubleQuotedScalarString for proper YAML formatting
     return DoubleQuotedScalarString(clean_value)
 
 def sanitize_time_value(value: str) -> Union[str, DoubleQuotedScalarString]:
     """
     Sanitize time value to ensure proper format (HH:MM or XX:XX).
-    
-    :param value: The time value to sanitize
-    :return: Properly formatted time value
     """
-    # Strip any existing quotes and whitespace
     clean_value = value.strip().strip('"\'')
-    
-    # Handle disabled time (XX:XX)
     if clean_value.upper() == 'XX:XX':
         return DoubleQuotedScalarString('XX:XX')
-    
-    # Validate time format
     try:
         time_obj = datetime.strptime(clean_value, "%H:%M").time()
         return DoubleQuotedScalarString(time_obj.strftime("%H:%M"))
@@ -95,14 +80,64 @@ def sanitize_time_value(value: str) -> Union[str, DoubleQuotedScalarString]:
         logging.error(f"Invalid time format: {value}. Using 'XX:XX' as fallback.")
         return DoubleQuotedScalarString('XX:XX')
 
-def load_config(config_path: str = CONFIG_PATH, reload: bool = False, translations: Dict[str, str] = None) -> Dict[str, Any]:
+def create_default_config() -> CommentedMap:
+    """
+    Create a default configuration with comments and structure.
+    """
+    cfg = CommentedMap()
+    
+    # Add header comment
+    cfg.yaml_set_start_comment('config/config.yml.sample')
+    
+    # Basic settings
+    cfg['TAUTULLI_API_KEY'] = ''
+    cfg['TAUTULLI_URL'] = ''
+    cfg['DISCORD_TOKEN'] = ''
+    cfg['CHANNEL_ID'] = 0
+    cfg['UPDATE_DAYS'] = 7
+    cfg['FIXED_UPDATE_TIME'] = DoubleQuotedScalarString('XX:XX')
+    cfg['KEEP_DAYS'] = 7
+    cfg['TIME_RANGE_DAYS'] = 30
+    cfg['LANGUAGE'] = 'en'
+    
+    # Add newline before Graph options
+    cfg.yaml_set_comment_before_after_key('LANGUAGE', before='\n')
+    
+    # Graph options section
+    cfg.yaml_set_comment_before_after_key('CENSOR_USERNAMES', before='Graph options')
+    cfg['CENSOR_USERNAMES'] = True
+    cfg['ENABLE_DAILY_PLAY_COUNT'] = True
+    cfg['ENABLE_PLAY_COUNT_BY_DAYOFWEEK'] = True
+    cfg['ENABLE_PLAY_COUNT_BY_HOUROFDAY'] = True
+    cfg['ENABLE_TOP_10_PLATFORMS'] = True
+    cfg['ENABLE_TOP_10_USERS'] = True
+    cfg['ENABLE_PLAY_COUNT_BY_MONTH'] = True
+    
+    # Graph colors section
+    cfg.yaml_set_comment_before_after_key('TV_COLOR', before='\nGraph colors')
+    cfg['TV_COLOR'] = DoubleQuotedScalarString('#1f77b4')
+    cfg['MOVIE_COLOR'] = DoubleQuotedScalarString('#ff7f0e')
+    cfg['ANNOTATION_COLOR'] = DoubleQuotedScalarString('#ff0000')
+    
+    # Annotation options section
+    cfg.yaml_set_comment_before_after_key('ANNOTATE_DAILY_PLAY_COUNT', before='\nAnnotation options')
+    cfg['ANNOTATE_DAILY_PLAY_COUNT'] = True
+    cfg['ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK'] = True
+    cfg['ANNOTATE_PLAY_COUNT_BY_HOUROFDAY'] = True
+    cfg['ANNOTATE_TOP_10_PLATFORMS'] = True
+    cfg['ANNOTATE_TOP_10_USERS'] = True
+    cfg['ANNOTATE_PLAY_COUNT_BY_MONTH'] = True
+    
+    # My Stats command options section
+    cfg.yaml_set_comment_before_after_key('MY_STATS_COOLDOWN_MINUTES', before='\nMy Stats command options')
+    cfg['MY_STATS_COOLDOWN_MINUTES'] = 5
+    cfg['MY_STATS_GLOBAL_COOLDOWN_SECONDS'] = 60
+    
+    return cfg
+
+def load_config(config_path: str = CONFIG_PATH, reload: bool = False, translations: Dict[str, str] = None) -> CommentedMap:
     """
     Load and sanitize configuration from YAML file.
-    
-    :param config_path: Path to the configuration file
-    :param reload: Whether to force reload the configuration
-    :param translations: Translation dictionary
-    :return: Sanitized configuration dictionary
     """
     global config
 
@@ -115,72 +150,45 @@ def load_config(config_path: str = CONFIG_PATH, reload: bool = False, translatio
         yaml.indent(mapping=2, sequence=4, offset=2)
         yaml.width = 4096  # Prevent line wrapping
 
-        # Define default configuration with proper formatting
-        default_config = {
-            "TAUTULLI_API_KEY": "",
-            "TAUTULLI_URL": "",
-            "DISCORD_TOKEN": "",
-            "CHANNEL_ID": 0,
-            "UPDATE_DAYS": 7,
-            "FIXED_UPDATE_TIME": DoubleQuotedScalarString("XX:XX"),
-            "KEEP_DAYS": 7,
-            "TIME_RANGE_DAYS": 30,
-            "LANGUAGE": "en",
-            "CENSOR_USERNAMES": True,
-            "ENABLE_DAILY_PLAY_COUNT": True,
-            "ENABLE_PLAY_COUNT_BY_DAYOFWEEK": True,
-            "ENABLE_PLAY_COUNT_BY_HOUROFDAY": True,
-            "ENABLE_TOP_10_PLATFORMS": True,
-            "ENABLE_TOP_10_USERS": True,
-            "ENABLE_PLAY_COUNT_BY_MONTH": True,
-            "TV_COLOR": DoubleQuotedScalarString("#1f77b4"),
-            "MOVIE_COLOR": DoubleQuotedScalarString("#ff7f0e"),
-            "ANNOTATION_COLOR": DoubleQuotedScalarString("#ff0000"),
-            "ANNOTATE_DAILY_PLAY_COUNT": True,
-            "ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK": True,
-            "ANNOTATE_PLAY_COUNT_BY_HOUROFDAY": True,
-            "ANNOTATE_TOP_10_PLATFORMS": True,
-            "ANNOTATE_TOP_10_USERS": True,
-            "ANNOTATE_PLAY_COUNT_BY_MONTH": True,
-            "MY_STATS_COOLDOWN_MINUTES": 5,
-            "MY_STATS_GLOBAL_COOLDOWN_SECONDS": 60,
-        }
+        # Create default config with proper structure and comments
+        default_config = create_default_config()
 
-        # Load existing config or create new one
+        # Load existing config if it exists
         if os.path.exists(config_path):
             with open(config_path, 'r', encoding='utf-8') as file:
                 user_config = yaml.load(file)
-        else:
-            user_config = {}
-
-        # Merge configurations
-        merged_config = default_config.copy()
-        if user_config:
-            for key, value in user_config.items():
-                if key in merged_config:
-                    merged_config[key] = value
+            
+            if user_config:
+                # Update default config with user values while preserving comments and structure
+                for key in default_config:
+                    if key in user_config:
+                        default_config[key] = user_config[key]
+                
+                # Preserve any additional comments from user config
+                if isinstance(user_config, CommentedMap):
+                    default_config.ca.update(user_config.ca)
 
         # Sanitize special values
-        merged_config["FIXED_UPDATE_TIME"] = sanitize_time_value(str(merged_config["FIXED_UPDATE_TIME"]))
+        default_config["FIXED_UPDATE_TIME"] = sanitize_time_value(str(default_config["FIXED_UPDATE_TIME"]))
         for color_key in ["TV_COLOR", "MOVIE_COLOR", "ANNOTATION_COLOR"]:
-            merged_config[color_key] = sanitize_color_value(str(merged_config[color_key]))
+            default_config[color_key] = sanitize_color_value(str(default_config[color_key]))
 
-        config = merged_config
+        config = default_config
         save_config(config, config_path)
 
     return config
 
-def save_config(config: Dict[str, Any], config_path: str = CONFIG_PATH) -> None:
+def save_config(config: CommentedMap, config_path: str = CONFIG_PATH) -> None:
     """
     Save configuration to YAML file while preserving formatting.
-    
-    :param config: Configuration dictionary to save
-    :param config_path: Path to save the configuration file
     """
     yaml = YAML()
     yaml.preserve_quotes = True
     yaml.indent(mapping=2, sequence=4, offset=2)
     yaml.width = 4096  # Prevent line wrapping
+    
+    # Ensure the directory exists
+    os.makedirs(os.path.dirname(config_path), exist_ok=True)
     
     with open(config_path, 'w', encoding='utf-8') as file:
         yaml.dump(config, file)
@@ -188,11 +196,6 @@ def save_config(config: Dict[str, Any], config_path: str = CONFIG_PATH) -> None:
 def update_config(key: str, value: Any, translations: Dict[str, str]) -> str:
     """
     Update configuration value and save to file.
-    
-    :param key: Configuration key to update
-    :param value: New value to set
-    :param translations: Translation dictionary
-    :return: Response message about the update
     """
     global config
     config = load_config(reload=True, translations=translations)
@@ -219,7 +222,5 @@ def update_config(key: str, value: Any, translations: Dict[str, str]) -> str:
 def get_configurable_options() -> List[str]:
     """
     Get list of configurable options.
-    
-    :return: List of configuration keys that can be modified via Discord
     """
     return CONFIGURABLE_OPTIONS
