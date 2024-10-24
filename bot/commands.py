@@ -1,7 +1,15 @@
 # bot/commands.py
 import discord
 import logging
-from config.config import load_config, update_config, RESTART_REQUIRED_KEYS, get_configurable_options, CONFIG_PATH
+from config.config import (
+    load_config, 
+    update_config, 
+    RESTART_REQUIRED_KEYS, 
+    get_configurable_options,
+    CONFIG_PATH,
+    sanitize_time_value,
+    sanitize_color_value
+)
 from datetime import datetime, timedelta
 from discord import app_commands
 from discord.ext import commands
@@ -99,6 +107,7 @@ class Commands(commands.Cog):
         key: Optional[str] = None,
         value: Optional[str] = None,
     ):
+        """Handle the /config command."""
         try:
             self.config = load_config(CONFIG_PATH, reload=True)
 
@@ -124,10 +133,18 @@ class Commands(commands.Cog):
             )
 
     async def _handle_view_config(self, interaction: discord.Interaction, key: Optional[str]):
+        """Handle viewing configuration values."""
         if key:
             if key in self.config and key in CONFIG_OPTIONS:
+                # Format the value for display
+                value = self.config[key]
+                if isinstance(value, (str, int, float, bool)):
+                    display_value = str(value).strip('"\'')  # Remove quotes for display
+                else:
+                    display_value = str(value)
+                
                 await interaction.response.send_message(
-                    f"{key}: {self.config[key]}", ephemeral=True
+                    f"{key}: {display_value}", ephemeral=True
                 )
             else:
                 await interaction.response.send_message(
@@ -138,15 +155,27 @@ class Commands(commands.Cog):
             embed = discord.Embed(title="Bot Configuration", color=0x3498DB)
             for k, v in self.config.items():
                 if k in CONFIG_OPTIONS:
-                    embed.add_field(name=k, value=str(v), inline=False)
+                    # Format the value for display
+                    if isinstance(v, (str, int, float, bool)):
+                        display_value = str(v).strip('"\'')  # Remove quotes for display
+                    else:
+                        display_value = str(v)
+                    embed.add_field(name=k, value=display_value, inline=False)
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
     async def _handle_edit_config(
         self, interaction: discord.Interaction, key: Optional[str], value: Optional[str]
     ):
-        if key is None or value is None:
+        """Handle editing configuration values."""
+        if key is None:
             await interaction.response.send_message(
                 self.translations["config_edit_specify_key"], ephemeral=True
+            )
+            return
+
+        if value is None:
+            await interaction.response.send_message(
+                self.translations["config_edit_specify_value"], ephemeral=True
             )
             return
 
@@ -157,16 +186,61 @@ class Commands(commands.Cog):
             )
             return
 
-        response_message = update_config(key, value, self.translations)
-        
-        if key in RESTART_REQUIRED_KEYS:
-            response_message = self.translations["config_updated_restart"].format(key=key)
-        
-        await interaction.response.send_message(response_message, ephemeral=True)
+        # Pre-process value based on the key type
+        try:
+            if key in ["TV_COLOR", "MOVIE_COLOR", "ANNOTATION_COLOR"]:
+                if not value.startswith("#"):
+                    await interaction.response.send_message(
+                        f"Color value must start with '#'. Example: #ff0000", 
+                        ephemeral=True
+                    )
+                    return
+            elif key == "FIXED_UPDATE_TIME":
+                if value.upper() != "XX:XX":
+                    try:
+                        datetime.strptime(value, "%H:%M")
+                    except ValueError:
+                        await interaction.response.send_message(
+                            "Invalid time format. Please use HH:MM format (e.g., 14:30) or XX:XX to disable.", 
+                            ephemeral=True
+                        )
+                        return
+            elif key in ["UPDATE_DAYS", "KEEP_DAYS", "TIME_RANGE_DAYS", 
+                        "MY_STATS_COOLDOWN_MINUTES", "MY_STATS_GLOBAL_COOLDOWN_SECONDS"]:
+                try:
+                    value = int(value)
+                    if value <= 0:
+                        await interaction.response.send_message(
+                            f"{key} must be a positive number.", 
+                            ephemeral=True
+                        )
+                        return
+                except ValueError:
+                    await interaction.response.send_message(
+                        f"{key} must be a number.", 
+                        ephemeral=True
+                    )
+                    return
+            elif key.startswith(("ENABLE_", "ANNOTATE_", "CENSOR_")):
+                value = value.lower() in ['true', '1', 'yes', 'on']
 
-        if key == "LANGUAGE":
-            self.translations = load_translations(value)
-            self.update_command_descriptions()
+            response_message = update_config(key, value, self.translations)
+        
+            if key in RESTART_REQUIRED_KEYS:
+                response_message = self.translations["config_updated_restart"].format(key=key)
+            
+            await interaction.response.send_message(response_message, ephemeral=True)
+
+            if key == "LANGUAGE":
+                self.translations = load_translations(value)
+                self.update_command_descriptions()
+
+        except Exception as e:
+            logging.error(f"Error updating config value: {str(e)}")
+            await interaction.response.send_message(
+                f"Error updating configuration: {str(e)}", 
+                ephemeral=True
+            )
 
     @app_commands.command(name="my_stats")
     async def my_stats(self, interaction: discord.Interaction, email: str):
