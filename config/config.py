@@ -86,25 +86,25 @@ def create_default_config() -> CommentedMap:
     """
     cfg = CommentedMap()
     
-    # Add header comment
-    cfg.yaml_set_start_comment('config/config.yml.sample')
+    # Basic settings with header comment
+    cfg.yaml_set_start_comment('config/config.yml.sample\n')
     
-    # Basic settings
-    cfg['TAUTULLI_API_KEY'] = ''
-    cfg['TAUTULLI_URL'] = ''
-    cfg['DISCORD_TOKEN'] = ''
-    cfg['CHANNEL_ID'] = 0
+    cfg['TAUTULLI_API_KEY'] = 'your_tautulli_api_key'
+    cfg['TAUTULLI_URL'] = 'http://your_tautulli_ip:port/api/v2'
+    cfg['DISCORD_TOKEN'] = 'your_discord_bot_token'
+    cfg['CHANNEL_ID'] = 'your_channel_id'
     cfg['UPDATE_DAYS'] = 7
     cfg['FIXED_UPDATE_TIME'] = DoubleQuotedScalarString('XX:XX')
     cfg['KEEP_DAYS'] = 7
     cfg['TIME_RANGE_DAYS'] = 30
     cfg['LANGUAGE'] = 'en'
-    
-    # Add newline before Graph options
-    cfg.yaml_set_comment_before_after_key('LANGUAGE', before='\n')
-    
-    # Graph options section
-    cfg.yaml_set_comment_before_after_key('CENSOR_USERNAMES', before='Graph options')
+
+    # Add newline and comment before Graph options section
+    cfg.yaml_set_comment_before_after_key(
+        'CENSOR_USERNAMES', 
+        before='\n# Graph options',
+        after=None
+    )
     cfg['CENSOR_USERNAMES'] = True
     cfg['ENABLE_DAILY_PLAY_COUNT'] = True
     cfg['ENABLE_PLAY_COUNT_BY_DAYOFWEEK'] = True
@@ -112,27 +112,39 @@ def create_default_config() -> CommentedMap:
     cfg['ENABLE_TOP_10_PLATFORMS'] = True
     cfg['ENABLE_TOP_10_USERS'] = True
     cfg['ENABLE_PLAY_COUNT_BY_MONTH'] = True
-    
-    # Graph colors section
-    cfg.yaml_set_comment_before_after_key('TV_COLOR', before='\nGraph colors')
+
+    # Add newline and comment before Graph colors section
+    cfg.yaml_set_comment_before_after_key(
+        'TV_COLOR', 
+        before='\n# Graph colors',
+        after=None
+    )
     cfg['TV_COLOR'] = DoubleQuotedScalarString('#1f77b4')
     cfg['MOVIE_COLOR'] = DoubleQuotedScalarString('#ff7f0e')
     cfg['ANNOTATION_COLOR'] = DoubleQuotedScalarString('#ff0000')
-    
-    # Annotation options section
-    cfg.yaml_set_comment_before_after_key('ANNOTATE_DAILY_PLAY_COUNT', before='\nAnnotation options')
+
+    # Add newline and comment before Annotation options section
+    cfg.yaml_set_comment_before_after_key(
+        'ANNOTATE_DAILY_PLAY_COUNT', 
+        before='\n# Annotation options',
+        after=None
+    )
     cfg['ANNOTATE_DAILY_PLAY_COUNT'] = True
     cfg['ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK'] = True
     cfg['ANNOTATE_PLAY_COUNT_BY_HOUROFDAY'] = True
     cfg['ANNOTATE_TOP_10_PLATFORMS'] = True
     cfg['ANNOTATE_TOP_10_USERS'] = True
     cfg['ANNOTATE_PLAY_COUNT_BY_MONTH'] = True
-    
-    # My Stats command options section
-    cfg.yaml_set_comment_before_after_key('MY_STATS_COOLDOWN_MINUTES', before='\nMy Stats command options')
+
+    # Add newline and comment before My Stats command options section
+    cfg.yaml_set_comment_before_after_key(
+        'MY_STATS_COOLDOWN_MINUTES', 
+        before='\n# My Stats command options',
+        after=None
+    )
     cfg['MY_STATS_COOLDOWN_MINUTES'] = 5
     cfg['MY_STATS_GLOBAL_COOLDOWN_SECONDS'] = 60
-    
+
     return cfg
 
 def load_config(config_path: str = CONFIG_PATH, reload: bool = False, translations: Dict[str, str] = None) -> CommentedMap:
@@ -150,30 +162,24 @@ def load_config(config_path: str = CONFIG_PATH, reload: bool = False, translatio
         yaml.indent(mapping=2, sequence=4, offset=2)
         yaml.width = 4096  # Prevent line wrapping
 
-        # Create default config with proper structure and comments
-        default_config = create_default_config()
-
         # Load existing config if it exists
         if os.path.exists(config_path):
             with open(config_path, 'r', encoding='utf-8') as file:
-                user_config = yaml.load(file)
-            
-            if user_config:
-                # Update default config with user values while preserving comments and structure
-                for key in default_config:
-                    if key in user_config:
-                        default_config[key] = user_config[key]
+                config = yaml.load(file)
                 
-                # Preserve any additional comments from user config
-                if isinstance(user_config, CommentedMap):
-                    default_config.ca.update(user_config.ca)
+                # If loaded config is None or not a CommentedMap, create new one
+                if config is None or not isinstance(config, CommentedMap):
+                    config = create_default_config()
+        else:
+            config = create_default_config()
 
-        # Sanitize special values
-        default_config["FIXED_UPDATE_TIME"] = sanitize_time_value(str(default_config["FIXED_UPDATE_TIME"]))
-        for color_key in ["TV_COLOR", "MOVIE_COLOR", "ANNOTATION_COLOR"]:
-            default_config[color_key] = sanitize_color_value(str(default_config[color_key]))
+        # Sanitize special values while preserving the CommentedMap structure
+        if isinstance(config, CommentedMap):
+            config["FIXED_UPDATE_TIME"] = sanitize_time_value(str(config["FIXED_UPDATE_TIME"]))
+            for color_key in ["TV_COLOR", "MOVIE_COLOR", "ANNOTATION_COLOR"]:
+                if color_key in config:
+                    config[color_key] = sanitize_color_value(str(config[color_key]))
 
-        config = default_config
         save_config(config, config_path)
 
     return config
