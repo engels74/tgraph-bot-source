@@ -6,12 +6,14 @@ import logging
 import os
 import sys
 from aiohttp import ClientConnectorError, ServerDisconnectedError
+from bot.extensions import load_extensions
 from bot.permission_checker import check_permissions_all_guilds
 from bot.update_tracker import create_update_tracker
 from config.config import load_config
 from datetime import datetime
 from discord.ext import commands
 from graphs.graph_manager import GraphManager
+from graphs.graph_modules.data_fetcher import DataFetcher
 from graphs.user_graph_manager import UserGraphManager
 from i18n import load_translations, TranslationKeyError
 
@@ -52,7 +54,7 @@ IMG_FOLDER = os.path.join(args.data_folder, "img")
 # Create necessary folders before setting up logging
 create_folders(args.log_file, args.data_folder, IMG_FOLDER)
 
-# Set up logging - using a simpler, more robust configuration
+# Set up logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -94,10 +96,28 @@ class TGraphBot(commands.Bot):
         self.img_folder = os.path.join(self.data_folder, "img")
         self.update_tracker = kwargs.pop("update_tracker", None)
         self.config = kwargs.pop("config", None)
+        self.config_path = kwargs.pop("config_path", None)
         self.translations = kwargs.pop("translations", None)
         self.graph_manager = GraphManager(self.config, self.translations, self.img_folder)
         self.user_graph_manager = UserGraphManager(self.config, self.translations, self.img_folder)
+        self.data_fetcher = DataFetcher(self.config)
         log(self.translations["log_tgraphbot_initialized"])
+
+    async def setup_hook(self):
+        """Initialize the bot's state after login."""
+        try:
+            # Load command extensions
+            await load_extensions(self)
+            logging.info(self.translations["log_bot_commands_loaded"])
+
+            # Sync application commands
+            logging.info(self.translations["log_syncing_application_commands"])
+            await self.tree.sync()
+            logging.info(self.translations["log_application_commands_synced"])
+
+        except Exception as e:
+            log(f"Error in setup_hook: {str(e)}", logging.ERROR)
+            raise
 
     async def on_error(self, event_method, *args, **kwargs):
         exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -123,83 +143,57 @@ class TGraphBot(commands.Bot):
     async def on_resume(self):
         log(self.translations["log_bot_resumed"])
 
-async def main():
-    log(translations["log_entering_main_function"])
-    # Define intents
-    intents = discord.Intents.default()
-    intents.guilds = True
-    intents.messages = True
-
-    bot = TGraphBot(
-        command_prefix="!",
-        intents=intents,
-        data_folder=args.data_folder,
-        update_tracker=update_tracker,
-        config=config,
-        translations=translations,
-    )
-
-    @bot.event
-    async def on_ready():
-        log(bot.translations["log_bot_logged_in"].format(name=bot.user.name))
+    async def on_ready(self):
+        log(self.translations["log_bot_logged_in"].format(name=self.user.name))
         try:
-            log(bot.translations["log_loading_bot_commands"])
-            await bot.load_extension("bot.commands")
-            log(bot.translations["log_bot_commands_loaded"])
-
-            log(bot.translations["log_syncing_application_commands"])
-            await bot.tree.sync()
-            log(bot.translations["log_application_commands_synced"])
-
-            log(bot.translations["log_waiting_before_permission_check"])
+            # Check permissions after a short delay
+            log(self.translations["log_waiting_before_permission_check"])
             await asyncio.sleep(5)
 
-            log(bot.translations["log_checking_command_permissions"])
-            await check_permissions_all_guilds(bot, bot.translations)
-            log(bot.translations["log_command_permissions_checked"])
+            log(self.translations["log_checking_command_permissions"])
+            await check_permissions_all_guilds(self, self.translations)
+            log(self.translations["log_command_permissions_checked"])
 
-            log(bot.translations["log_updating_posting_graphs_startup"])
-            bot.config = load_config(args.config_file, reload=True)
+            # Initial graph update
+            log(self.translations["log_updating_posting_graphs_startup"])
+            self.config = load_config(self.config_path, reload=True)
             
-            channel = bot.get_channel(bot.config["CHANNEL_ID"])
+            channel = self.get_channel(self.config["CHANNEL_ID"])
             if channel:
-                await bot.graph_manager.delete_old_messages(channel)
-                graph_files = await bot.graph_manager.generate_and_save_graphs()
+                await self.graph_manager.delete_old_messages(channel)
+                graph_files = await self.graph_manager.generate_and_save_graphs()
                 if graph_files:
-                    await bot.graph_manager.post_graphs(channel, graph_files)
+                    await self.graph_manager.post_graphs(channel, graph_files)
             else:
-                log(bot.translations["log_channel_not_found"].format(
-                    channel_id=bot.config["CHANNEL_ID"]
+                log(self.translations["log_channel_not_found"].format(
+                    channel_id=self.config["CHANNEL_ID"]
                 ), logging.ERROR)
 
-            bot.update_tracker.last_update = datetime.now()
-            bot.update_tracker.next_update = bot.update_tracker.calculate_next_update(
-                bot.update_tracker.last_update
+            # Update the tracker
+            self.update_tracker.last_update = datetime.now()
+            self.update_tracker.next_update = self.update_tracker.calculate_next_update(
+                self.update_tracker.last_update
             )
-            bot.update_tracker.save_tracker()
+            self.update_tracker.save_tracker()
 
-            next_update_log = bot.update_tracker.get_next_update_readable()
-            log(bot.translations["log_graphs_updated_posted"].format(
+            next_update_log = self.update_tracker.get_next_update_readable()
+            log(self.translations["log_graphs_updated_posted"].format(
                 next_update=next_update_log
             ))
 
-            bot.loop.create_task(schedule_updates(bot))
+            # Start update scheduling
+            self.loop.create_task(schedule_updates(self))
+
         except Exception as e:
-            log(bot.translations["log_error_during_startup"].format(error=str(e)), 
+            log(self.translations["log_error_during_startup"].format(error=str(e)), 
                 logging.ERROR)
             raise
-
-    try:
-        await bot.start(config["DISCORD_TOKEN"])
-    except Exception as e:
-        log(bot.translations["log_error_starting_bot"].format(error=str(e)), 
-            logging.ERROR)
 
 async def schedule_updates(bot):
     while True:
         if bot.update_tracker.is_update_due():
             log(bot.translations["log_auto_update_started"])
-            bot.config = load_config(args.config_file, reload=True)
+            bot.config = load_config(bot.config_path, reload=True)
             
             channel = bot.get_channel(bot.config["CHANNEL_ID"])
             if channel:
@@ -218,6 +212,29 @@ async def schedule_updates(bot):
                 next_update=next_update_log
             ))
         await asyncio.sleep(60)
+
+async def main():
+    log(translations["log_entering_main_function"])
+    # Define intents
+    intents = discord.Intents.default()
+    intents.guilds = True
+    intents.messages = True
+
+    bot = TGraphBot(
+        command_prefix="!",
+        intents=intents,
+        data_folder=args.data_folder,
+        update_tracker=update_tracker,
+        config=config,
+        config_path=args.config_file,
+        translations=translations,
+    )
+
+    try:
+        await bot.start(config["DISCORD_TOKEN"])
+    except Exception as e:
+        log(bot.translations["log_error_starting_bot"].format(error=str(e)), 
+            logging.ERROR)
 
 if __name__ == "__main__":
     try:
