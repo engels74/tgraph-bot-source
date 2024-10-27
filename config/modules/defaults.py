@@ -52,7 +52,11 @@ def create_default_config() -> CommentedMap:
     cfg['ANNOTATE_TOP_10_USERS'] = True
     cfg['ANNOTATE_PLAY_COUNT_BY_MONTH'] = True
     
-    # My Stats command options
+    # Command cooldown options
+    cfg['CONFIG_COOLDOWN_MINUTES'] = 1  
+    cfg['CONFIG_GLOBAL_COOLDOWN_SECONDS'] = 30 
+    cfg['UPDATE_GRAPHS_COOLDOWN_MINUTES'] = 5  
+    cfg['UPDATE_GRAPHS_GLOBAL_COOLDOWN_SECONDS'] = 60 
     cfg['MY_STATS_COOLDOWN_MINUTES'] = 5
     cfg['MY_STATS_GLOBAL_COOLDOWN_SECONDS'] = 60
     

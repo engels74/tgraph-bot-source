@@ -29,6 +29,10 @@ CONFIGURABLE_OPTIONS = [
     "ANNOTATE_PLAY_COUNT_BY_MONTH",
     "MY_STATS_COOLDOWN_MINUTES",
     "MY_STATS_GLOBAL_COOLDOWN_SECONDS",
+    "CONFIG_COOLDOWN_MINUTES",             
+    "CONFIG_GLOBAL_COOLDOWN_SECONDS",      
+    "UPDATE_GRAPHS_COOLDOWN_MINUTES",      
+    "UPDATE_GRAPHS_GLOBAL_COOLDOWN_SECONDS",
     "TV_COLOR",
     "MOVIE_COLOR",
     "ANNOTATION_COLOR",
@@ -88,9 +92,13 @@ CONFIG_SECTIONS = {
             "ANNOTATE_PLAY_COUNT_BY_MONTH",
         ],
     },
-    "stats_options": {
-        "header": "\n# My Stats command options",
+    "cooldown_options": {
+        "header": "\n# Command cooldown options",
         "keys": [
+            "CONFIG_COOLDOWN_MINUTES",
+            "CONFIG_GLOBAL_COOLDOWN_SECONDS",
+            "UPDATE_GRAPHS_COOLDOWN_MINUTES",
+            "UPDATE_GRAPHS_GLOBAL_COOLDOWN_SECONDS",
             "MY_STATS_COOLDOWN_MINUTES",
             "MY_STATS_GLOBAL_COOLDOWN_SECONDS",
         ],
@@ -219,7 +227,28 @@ OPTION_METADATA = {
         "description": "Show value annotations on monthly play count graph",
     },
     
-    # Stats options
+    # Cooldown options
+    "CONFIG_COOLDOWN_MINUTES": {
+        "type": int,
+        "min": 1,
+        "description": "Minutes between config command uses per user",
+    },
+    "CONFIG_GLOBAL_COOLDOWN_SECONDS": {
+        "type": int,
+        "min": 1,
+        "description": "Seconds between any config command uses",
+    },
+    "UPDATE_GRAPHS_COOLDOWN_MINUTES": {
+        "type": int,
+        "min": 1,
+        "description": "Minutes between update_graphs command uses per user",
+    },
+    "UPDATE_GRAPHS_GLOBAL_COOLDOWN_SECONDS": {
+        "type": int,
+        "min": 1,
+        "description": "Seconds between any update_graphs command uses",
+    },
+    
     "MY_STATS_COOLDOWN_MINUTES": {
         "type": int,
         "min": 1,

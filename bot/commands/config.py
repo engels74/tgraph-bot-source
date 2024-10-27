@@ -56,8 +56,12 @@ class ConfigCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
         value : Optional[str]
             New value to set (for edit action)
         """
-        # Add cooldown check since this is a privileged command
-        if not await self.check_cooldowns(interaction, 1, 30):  # 1 min user, 30 sec global
+        # Add cooldown check using configurable values
+        if not await self.check_cooldowns(
+            interaction,
+            self.config["CONFIG_COOLDOWN_MINUTES"],
+            self.config["CONFIG_GLOBAL_COOLDOWN_SECONDS"]
+        ):
             return
 
         try:
@@ -70,7 +74,11 @@ class ConfigCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
             await self.log_command(interaction, f"config_{action}")
             
             # Update cooldowns after successful execution
-            self.update_cooldowns(str(interaction.user.id), 1, 30)
+            self.update_cooldowns(
+                str(interaction.user.id),
+                self.config["CONFIG_COOLDOWN_MINUTES"],
+                self.config["CONFIG_GLOBAL_COOLDOWN_SECONDS"]
+            )
 
         except Exception as e:
             # For configuration-specific errors, we want custom handling

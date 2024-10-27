@@ -34,8 +34,12 @@ class UpdateGraphsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
         interaction : discord.Interaction
             The interaction instance
         """
-        # Check cooldowns since this is a resource-intensive operation
-        if not await self.check_cooldowns(interaction, 5, 60):  # 5 min user, 1 min global
+        # Check cooldowns using configurable values
+        if not await self.check_cooldowns(
+            interaction,
+            self.config["UPDATE_GRAPHS_COOLDOWN_MINUTES"],
+            self.config["UPDATE_GRAPHS_GLOBAL_COOLDOWN_SECONDS"]
+        ):
             return
             
         try:
@@ -85,8 +89,12 @@ class UpdateGraphsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
             # Log completion
             logging.info(self.translations["log_manual_update_completed"])
             
-            # Update cooldowns after successful execution
-            self.update_cooldowns(str(interaction.user.id), 5, 60)
+            # Update cooldowns after successful execution using configurable values
+            self.update_cooldowns(
+                str(interaction.user.id),
+                self.config["UPDATE_GRAPHS_COOLDOWN_MINUTES"],
+                self.config["UPDATE_GRAPHS_GLOBAL_COOLDOWN_SECONDS"]
+            )
 
             # Log the command execution
             await self.log_command(interaction, "update_graphs")
