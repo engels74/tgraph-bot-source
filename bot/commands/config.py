@@ -82,32 +82,6 @@ class ConfigCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
                 # For other errors, let the mixin handle it
                 raise e
 
-    @config.autocomplete('action')
-    async def action_autocomplete(
-        self,
-        interaction: discord.Interaction,
-        current: str,
-    ) -> list[app_commands.Choice[str]]:
-        """Provide autocomplete choices for action parameter.
-
-        Parameters
-        ----------
-        interaction : discord.Interaction
-            The interaction instance
-        current : str
-            The current input value
-
-        Returns
-        -------
-        list[app_commands.Choice[str]]
-            List of autocomplete choices
-        """
-        choices = ["view", "edit"]
-        return [
-            app_commands.Choice(name=choice, value=choice)
-            for choice in choices if current.lower() in choice.lower()
-        ]
-
     @config.autocomplete('key')
     async def key_autocomplete(
         self,
