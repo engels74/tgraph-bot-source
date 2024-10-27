@@ -24,38 +24,64 @@ def validate_config_value(key: str, value: Any) -> bool:
     try:
         metadata = get_option_metadata(key)
         
-        # Check required values
-        if metadata.get("required", False) and value is None:
-            return False
+        # Handle None values
+        if value is None:
+            return not metadata.get("required", False)
             
-        # Type validation
-        if not isinstance(value, metadata["type"]) and value is not None:
-            # Special case for string-like values
-            if metadata["type"] is str and not hasattr(value, "__str__"):
-                return False
-            # Special case for integer values that might be float
-            if metadata["type"] is int and not isinstance(value, (int, float)):
-                return False
+        # Type-specific validation
+        value_type = metadata["type"]
         
-        # Format-specific validation
-        if "format" in metadata:
-            if metadata["format"] == "hex":
-                return _validate_color(value)
-            elif metadata["format"] == "HH:MM":
-                return _validate_time(value)
+        # Special handling for numeric types from slash commands
+        if value_type in (int, float):
+            try:
+                # Convert string to number if needed
+                if isinstance(value, str):
+                    if value_type is int:
+                        value = int(float(value))  # Handle potential decimal strings
+                    else:
+                        value = float(value)
+                        
+                # Check minimum value constraint
+                if "min" in metadata and value < metadata["min"]:
+                    return False
+                    
+                # Check maximum value constraint    
+                if "max" in metadata and value > metadata["max"]:
+                    return False
+                    
+                return True
                 
-        # Range validation for numeric values
-        if isinstance(value, (int, float)):
-            if "min" in metadata and value < metadata["min"]:
-                return False
-            if "max" in metadata and value > metadata["max"]:
+            except (ValueError, TypeError):
                 return False
                 
-        # Allowed values validation
-        if "allowed_values" in metadata and value not in metadata["allowed_values"]:
-            return False
+        # Boolean validation
+        if value_type is bool:
+            if isinstance(value, str):
+                return value.lower() in ['true', 'false', '1', '0', 'yes', 'no', 'on', 'off']
+            return isinstance(value, bool)
             
-        return True
+        # String validation with format checking
+        if value_type is str:
+            if not isinstance(value, (str, int, float, bool)):
+                return False
+                
+            # Convert to string for format validation    
+            str_value = str(value).strip('"\'')
+            
+            if "format" in metadata:
+                if metadata["format"] == "hex":
+                    return _validate_color(str_value)
+                elif metadata["format"] == "HH:MM":
+                    return _validate_time(str_value)
+                    
+            # Check allowed values if specified
+            if "allowed_values" in metadata:
+                return str_value in metadata["allowed_values"]
+                
+            return True
+            
+        # Default type checking
+        return isinstance(value, value_type)
         
     except Exception:
         return False
@@ -154,16 +180,24 @@ def validate_integer_range(value: int, minimum: Optional[int] = None, maximum: O
     Returns:
         True if valid, False otherwise
     """
-    if not isinstance(value, int):
-        return False
+    try:
+        # Handle string input from slash commands
+        if isinstance(value, str):
+            value = int(float(value))
+            
+        if not isinstance(value, int):
+            return False
+            
+        if minimum is not None and value < minimum:
+            return False
+            
+        if maximum is not None and value > maximum:
+            return False
+            
+        return True
         
-    if minimum is not None and value < minimum:
+    except (ValueError, TypeError):
         return False
-        
-    if maximum is not None and value > maximum:
-        return False
-        
-    return True
 
 def validate_language(value: str) -> bool:
     """

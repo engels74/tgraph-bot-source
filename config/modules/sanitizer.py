@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import Any, Dict, Optional
 import logging
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
-from .options import get_option_metadata
+from .options import get_option_metadata, CONFIG_SECTIONS
 
 def sanitize_config_value(key: str, value: Any) -> Any:
     """
@@ -56,15 +56,7 @@ def sanitize_config_value(key: str, value: Any) -> Any:
         return _get_default_for_type(key)
 
 def _sanitize_boolean(value: Any) -> bool:
-    """
-    Convert a value to boolean.
-    
-    Args:
-        value: The value to convert
-        
-    Returns:
-        The boolean value
-    """
+    """Convert a value to boolean while preserving formatting."""
     if isinstance(value, bool):
         return value
     if isinstance(value, str):
@@ -72,34 +64,22 @@ def _sanitize_boolean(value: Any) -> bool:
     return bool(value)
 
 def _sanitize_integer(value: Any, minimum: Optional[int] = None) -> int:
-    """
-    Convert a value to integer and apply minimum constraint if specified.
-    
-    Args:
-        value: The value to convert
-        minimum: Optional minimum value
-        
-    Returns:
-        The sanitized integer
-    """
+    """Convert a value to integer and apply minimum constraint."""
     try:
-        result = int(float(str(value)))
+        if isinstance(value, str):
+            # Handle potential decimal strings
+            value = int(float(value))
+        else:
+            value = int(value)
+            
         if minimum is not None:
-            result = max(minimum, result)
-        return result
+            value = max(minimum, value)
+        return value
     except (ValueError, TypeError):
         return minimum if minimum is not None else 0
 
 def _sanitize_color(value: str) -> DoubleQuotedScalarString:
-    """
-    Sanitize a color value to proper hex format.
-    
-    Args:
-        value: The color value to sanitize
-        
-    Returns:
-        A properly formatted color string
-    """
+    """Sanitize a color value to proper hex format."""
     color = str(value).strip().strip('"\'')
     if not color.startswith('#'):
         color = f'#{color}'
@@ -111,15 +91,7 @@ def _sanitize_color(value: str) -> DoubleQuotedScalarString:
     return DoubleQuotedScalarString(color)
 
 def _sanitize_time(value: str) -> DoubleQuotedScalarString:
-    """
-    Sanitize a time value to HH:MM format.
-    
-    Args:
-        value: The time value to sanitize
-        
-    Returns:
-        A properly formatted time string
-    """
+    """Sanitize a time value to HH:MM format."""
     time_str = str(value).strip().strip('"\'').upper()
     if time_str == "XX:XX":
         return DoubleQuotedScalarString("XX:XX")
@@ -130,27 +102,11 @@ def _sanitize_time(value: str) -> DoubleQuotedScalarString:
         return DoubleQuotedScalarString("XX:XX")
 
 def _sanitize_string(value: Any) -> str:
-    """
-    Convert a value to string and clean it up.
-    
-    Args:
-        value: The value to convert to string
-        
-    Returns:
-        A cleaned string
-    """
+    """Convert a value to string and clean it up."""
     return str(value).strip().strip('"\'')
 
 def _get_default_for_type(key: str) -> Any:
-    """
-    Get a safe default value based on the option's type.
-    
-    Args:
-        key: The configuration key
-        
-    Returns:
-        A safe default value for the key's type
-    """
+    """Get a safe default value based on the option's type."""
     metadata = get_option_metadata(key)
     value_type = metadata["type"]
     
@@ -177,12 +133,27 @@ def validate_and_sanitize_config(config: Dict[str, Any]) -> Dict[str, Any]:
         A new dictionary with all values sanitized
     """
     sanitized = {}
+    
+    # Process sections in order
+    for section in CONFIG_SECTIONS:
+        section_data = CONFIG_SECTIONS[section]
+        for key in section_data['keys']:
+            if key in config:
+                try:
+                    sanitized[key] = sanitize_config_value(key, config[key])
+                except Exception as e:
+                    logging.error(f"Error sanitizing {key}: {str(e)}")
+                    sanitized[key] = _get_default_for_type(key)
+    
+    # Handle any remaining keys not in sections
     for key, value in config.items():
-        try:
-            sanitized[key] = sanitize_config_value(key, value)
-        except Exception as e:
-            logging.error(f"Error sanitizing {key}: {str(e)}")
-            sanitized[key] = _get_default_for_type(key)
+        if key not in sanitized:
+            try:
+                sanitized[key] = sanitize_config_value(key, value)
+            except Exception as e:
+                logging.error(f"Error sanitizing {key}: {str(e)}")
+                sanitized[key] = _get_default_for_type(key)
+                
     return sanitized
 
 def format_value_for_display(key: str, value: Any) -> str:

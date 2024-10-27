@@ -15,6 +15,7 @@ from config.modules.validator import validate_config_value
 from config.modules.sanitizer import sanitize_config_value
 from config.config import CONFIGURABLE_OPTIONS, RESTART_REQUIRED_KEYS
 from config.modules.options import get_option_metadata
+from config.modules.loader import load_yaml_config, update_config_value, save_yaml_config
 from utils.command_utils import CommandMixin, ErrorHandlerMixin
 
 class ConfigCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
@@ -229,15 +230,21 @@ class ConfigCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
                 )
                 return
 
+            # Load current config preserving structure
+            config = load_yaml_config(self.bot.config_path)
+            old_value = config.get(key)
+            
             # Sanitize the value
             sanitized_value = sanitize_config_value(key, value)
-            old_value = self.config.get(key)
             
-            # Update config
+            # Update the specific value while preserving structure
+            update_config_value(config, key, sanitized_value)
+            
+            # Save the updated config
+            save_yaml_config(config, self.bot.config_path)
+            
+            # Update the bot's config reference
             self.config[key] = sanitized_value
-            
-            # Save configuration
-            self._save_config()
 
             # Prepare response message
             if key == "FIXED_UPDATE_TIME" and str(sanitized_value).upper() == "XX:XX":
@@ -283,11 +290,6 @@ class ConfigCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
             return 0 <= hours < 24 and 0 <= minutes < 60
         except (ValueError, TypeError):
             return False
-
-    def _save_config(self) -> None:
-        """Save the current configuration to disk."""
-        from config.config import save_yaml_config
-        save_yaml_config(self.config, self.bot.config_path)
 
     def _load_translations(self, language: str) -> dict:
         """Load translations for the specified language.
