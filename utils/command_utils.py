@@ -26,8 +26,12 @@ class CommandMixin:
         Returns:
             bool: True if command can proceed, False if on cooldown
         """
-        # Check global cooldown
-        if datetime.now() < self.global_cooldown:
+        # Skip cooldown checks if either value is 0 or negative
+        if global_seconds <= 0 and user_minutes <= 0:
+            return True
+            
+        # Check global cooldown only if global_seconds is positive
+        if global_seconds > 0 and datetime.now() < self.global_cooldown:
             remaining = int((self.global_cooldown - datetime.now()).total_seconds())
             await interaction.response.send_message(
                 self.translations["rate_limit_global"].format(
@@ -37,22 +41,23 @@ class CommandMixin:
             )
             return False
 
-        # Check user cooldown
-        user_id = str(interaction.user.id)
-        if (
-            user_id in self.user_cooldowns
-            and datetime.now() < self.user_cooldowns[user_id]
-        ):
-            remaining = int(
-                (self.user_cooldowns[user_id] - datetime.now()).total_seconds()
-            )
-            await interaction.response.send_message(
-                self.translations["rate_limit_user"].format(
-                    time=f"<t:{int((datetime.now() + timedelta(seconds=remaining)).timestamp())}:R>"
-                ),
-                ephemeral=True,
-            )
-            return False
+        # Check user cooldown only if user_minutes is positive
+        if user_minutes > 0:
+            user_id = str(interaction.user.id)
+            if (
+                user_id in self.user_cooldowns
+                and datetime.now() < self.user_cooldowns[user_id]
+            ):
+                remaining = int(
+                    (self.user_cooldowns[user_id] - datetime.now()).total_seconds()
+                )
+                await interaction.response.send_message(
+                    self.translations["rate_limit_user"].format(
+                        time=f"<t:{int((datetime.now() + timedelta(seconds=remaining)).timestamp())}:R>"
+                    ),
+                    ephemeral=True,
+                )
+                return False
 
         return True
 
@@ -65,12 +70,15 @@ class CommandMixin:
             user_minutes: Minutes for user-specific cooldown
             global_seconds: Seconds for global cooldown
         """
-        self.user_cooldowns[user_id] = datetime.now() + timedelta(
-            minutes=user_minutes
-        )
-        self.global_cooldown = datetime.now() + timedelta(
-            seconds=global_seconds
-        )
+        # Only update cooldowns if the respective values are positive
+        if user_minutes > 0:
+            self.user_cooldowns[user_id] = datetime.now() + timedelta(
+                minutes=user_minutes
+            )
+        if global_seconds > 0:
+            self.global_cooldown = datetime.now() + timedelta(
+                seconds=global_seconds
+            )
 
     async def log_command(self, interaction: discord.Interaction, command_name: str) -> None:
         """

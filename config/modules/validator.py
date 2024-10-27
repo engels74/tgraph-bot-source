@@ -41,7 +41,11 @@ def validate_config_value(key: str, value: Any) -> bool:
                     else:
                         value = float(value)
                         
-                # Check minimum value constraint
+                # Special handling for cooldown values - allow zero and negative
+                if key.endswith(("_COOLDOWN_MINUTES", "_COOLDOWN_SECONDS")):
+                    return True  # All numeric values are valid for cooldowns
+                        
+                # Check minimum value constraint for non-cooldown values
                 if "min" in metadata and value < metadata["min"]:
                     return False
                     
@@ -187,6 +191,10 @@ def validate_integer_range(value: int, minimum: Optional[int] = None, maximum: O
             
         if not isinstance(value, int):
             return False
+            
+        # Special handling for cooldown values
+        if minimum == 0:  # This indicates it's a cooldown value
+            return True  # Accept any integer for cooldowns
             
         if minimum is not None and value < minimum:
             return False

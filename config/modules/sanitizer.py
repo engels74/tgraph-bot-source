@@ -40,7 +40,7 @@ def sanitize_config_value(key: str, value: Any) -> Any:
         if value_type is bool:
             return _sanitize_boolean(value)
         elif value_type is int:
-            return _sanitize_integer(value, metadata.get("min"))
+            return _sanitize_integer(value, metadata.get("min"), key)
         elif value_type is str:
             if "format" in metadata:
                 if metadata["format"] == "hex":
@@ -63,8 +63,11 @@ def _sanitize_boolean(value: Any) -> bool:
         return value.lower() in ['true', '1', 'yes', 'on', 't', 'y']
     return bool(value)
 
-def _sanitize_integer(value: Any, minimum: Optional[int] = None) -> int:
-    """Convert a value to integer and apply minimum constraint."""
+def _sanitize_integer(value: Any, minimum: Optional[int] = None, key: str = None) -> int:
+    """
+    Convert a value to integer and apply minimum constraint.
+    Special handling for cooldown values to allow zero/negative values.
+    """
     try:
         if isinstance(value, str):
             # Handle potential decimal strings
@@ -72,10 +75,19 @@ def _sanitize_integer(value: Any, minimum: Optional[int] = None) -> int:
         else:
             value = int(value)
             
+        # For cooldown settings, allow zero and negative values
+        if key and (key.endswith('_COOLDOWN_MINUTES') or key.endswith('_COOLDOWN_SECONDS')):
+            return value
+            
+        # For non-cooldown settings, apply minimum constraint
         if minimum is not None:
             value = max(minimum, value)
+            
         return value
     except (ValueError, TypeError):
+        # Return appropriate default based on whether it's a cooldown setting
+        if key and (key.endswith('_COOLDOWN_MINUTES') or key.endswith('_COOLDOWN_SECONDS')):
+            return 0  # Default to disabled for cooldowns
         return minimum if minimum is not None else 0
 
 def _sanitize_color(value: str) -> DoubleQuotedScalarString:
@@ -109,6 +121,10 @@ def _get_default_for_type(key: str) -> Any:
     """Get a safe default value based on the option's type."""
     metadata = get_option_metadata(key)
     value_type = metadata["type"]
+    
+    # Special handling for cooldown settings
+    if key.endswith(('_COOLDOWN_MINUTES', '_COOLDOWN_SECONDS')):
+        return 0  # Default to disabled for cooldowns
     
     if value_type is bool:
         return True

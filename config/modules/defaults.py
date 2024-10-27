@@ -52,13 +52,14 @@ def create_default_config() -> CommentedMap:
     cfg['ANNOTATE_TOP_10_USERS'] = True
     cfg['ANNOTATE_PLAY_COUNT_BY_MONTH'] = True
     
-    # Command cooldown options
-    cfg['CONFIG_COOLDOWN_MINUTES'] = 1  
-    cfg['CONFIG_GLOBAL_COOLDOWN_SECONDS'] = 30 
-    cfg['UPDATE_GRAPHS_COOLDOWN_MINUTES'] = 5  
-    cfg['UPDATE_GRAPHS_GLOBAL_COOLDOWN_SECONDS'] = 60 
-    cfg['MY_STATS_COOLDOWN_MINUTES'] = 5
-    cfg['MY_STATS_GLOBAL_COOLDOWN_SECONDS'] = 60
+    # Command cooldown options - Added comments about cooldown behavior
+    # Setting any cooldown to 0 or negative will disable that cooldown
+    cfg['CONFIG_COOLDOWN_MINUTES'] = 1  # Set to 0 to disable per-user cooldown
+    cfg['CONFIG_GLOBAL_COOLDOWN_SECONDS'] = 30  # Set to 0 to disable global cooldown
+    cfg['UPDATE_GRAPHS_COOLDOWN_MINUTES'] = 5  # Set to 0 to disable per-user cooldown
+    cfg['UPDATE_GRAPHS_GLOBAL_COOLDOWN_SECONDS'] = 60  # Set to 0 to disable global cooldown
+    cfg['MY_STATS_COOLDOWN_MINUTES'] = 5  # Set to 0 to disable per-user cooldown
+    cfg['MY_STATS_GLOBAL_COOLDOWN_SECONDS'] = 60  # Set to 0 to disable global cooldown
     
     return cfg
 
@@ -138,6 +139,7 @@ def reset_to_default(config: CommentedMap, key: str) -> None:
 def merge_with_defaults(user_config: Dict[str, Any]) -> CommentedMap:
     """
     Merge a user configuration with default values, ensuring all required settings exist.
+    Special handling for cooldown values to preserve user's zero/negative values.
     
     Args:
         user_config: The user's configuration dictionary
@@ -151,8 +153,41 @@ def merge_with_defaults(user_config: Dict[str, Any]) -> CommentedMap:
     merged = CommentedMap()
     for key, value in defaults.items():
         if key in user_config:
-            merged[key] = user_config[key]
+            # Special handling for cooldown values
+            if key.endswith(('_COOLDOWN_MINUTES', '_COOLDOWN_SECONDS')):
+                # Preserve user's cooldown value even if zero or negative
+                merged[key] = user_config[key]
+            else:
+                merged[key] = user_config[key]
         else:
             merged[key] = value
             
     return merged
+
+def get_cooldown_keys() -> list:
+    """
+    Get a list of all cooldown-related configuration keys.
+    
+    Returns:
+        List of cooldown configuration keys
+    """
+    return [
+        'CONFIG_COOLDOWN_MINUTES',
+        'CONFIG_GLOBAL_COOLDOWN_SECONDS',
+        'UPDATE_GRAPHS_COOLDOWN_MINUTES',
+        'UPDATE_GRAPHS_GLOBAL_COOLDOWN_SECONDS',
+        'MY_STATS_COOLDOWN_MINUTES',
+        'MY_STATS_GLOBAL_COOLDOWN_SECONDS'
+    ]
+
+def is_cooldown_key(key: str) -> bool:
+    """
+    Check if a configuration key is related to cooldowns.
+    
+    Args:
+        key: The configuration key to check
+        
+    Returns:
+        True if the key is a cooldown setting, False otherwise
+    """
+    return key.endswith(('_COOLDOWN_MINUTES', '_COOLDOWN_SECONDS'))

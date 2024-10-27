@@ -9,7 +9,7 @@ class BaseGraph(ABC):
     def __init__(self, config: Dict[str, Any], translations: Dict[str, str], img_folder: str):
         self.config = config
         self.translations = translations
-        self.img_folder = img_folder  # Add this line
+        self.img_folder = img_folder
         self.plt = plt
         self.figure = None
         self.ax = None
@@ -51,6 +51,10 @@ class BaseGraph(ABC):
         :param figsize: A tuple containing the width and height of the figure
         """
         self.figure, self.ax = plt.subplots(figsize=figsize)
+        # Set font properties for all text elements
+        plt.rcParams['font.weight'] = 'normal'
+        plt.rcParams['axes.titleweight'] = 'bold'
+        plt.rcParams['axes.labelweight'] = 'bold'
 
     def add_title(self, title: str):
         """
@@ -58,7 +62,7 @@ class BaseGraph(ABC):
         
         :param title: The title of the graph
         """
-        self.ax.set_title(title, fontweight="bold")
+        self.ax.set_title(title, fontweight="bold", pad=20)
 
     def add_labels(self, xlabel: str, ylabel: str):
         """
@@ -67,8 +71,8 @@ class BaseGraph(ABC):
         :param xlabel: The label for the x-axis
         :param ylabel: The label for the y-axis
         """
-        self.ax.set_xlabel(xlabel, fontweight="bold")
-        self.ax.set_ylabel(ylabel, fontweight="bold")
+        self.ax.set_xlabel(xlabel, fontweight="bold", labelpad=10)
+        self.ax.set_ylabel(ylabel, fontweight="bold", labelpad=10)
 
     def add_legend(self):
         """

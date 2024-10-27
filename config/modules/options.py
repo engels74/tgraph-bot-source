@@ -227,37 +227,36 @@ OPTION_METADATA = {
         "description": "Show value annotations on monthly play count graph",
     },
     
-    # Cooldown options
+    # Cooldown options - Updated to allow zero/negative values
     "CONFIG_COOLDOWN_MINUTES": {
         "type": int,
-        "min": 1,
-        "description": "Minutes between config command uses per user",
+        "min": 0,  # Changed from 1 to 0
+        "description": "Minutes between config command uses per user (0 to disable)",
     },
     "CONFIG_GLOBAL_COOLDOWN_SECONDS": {
         "type": int,
-        "min": 1,
-        "description": "Seconds between any config command uses",
+        "min": 0,  # Changed from 1 to 0
+        "description": "Seconds between any config command uses (0 to disable)",
     },
     "UPDATE_GRAPHS_COOLDOWN_MINUTES": {
         "type": int,
-        "min": 1,
-        "description": "Minutes between update_graphs command uses per user",
+        "min": 0,  # Changed from 1 to 0
+        "description": "Minutes between update_graphs command uses per user (0 to disable)",
     },
     "UPDATE_GRAPHS_GLOBAL_COOLDOWN_SECONDS": {
         "type": int,
-        "min": 1,
-        "description": "Seconds between any update_graphs command uses",
+        "min": 0,  # Changed from 1 to 0
+        "description": "Seconds between any update_graphs command uses (0 to disable)",
     },
-    
     "MY_STATS_COOLDOWN_MINUTES": {
         "type": int,
-        "min": 1,
-        "description": "Minutes between personal stats requests",
+        "min": 0,  # Changed from 1 to 0
+        "description": "Minutes between personal stats requests (0 to disable)",
     },
     "MY_STATS_GLOBAL_COOLDOWN_SECONDS": {
         "type": int,
-        "min": 1,
-        "description": "Seconds between any stats requests",
+        "min": 0,  # Changed from 1 to 0
+        "description": "Seconds between any stats requests (0 to disable)",
     },
 }
 
