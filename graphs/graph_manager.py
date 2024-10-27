@@ -3,7 +3,7 @@
 import logging
 import os
 from datetime import datetime
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from .graph_modules.graph_factory import GraphFactory
 from .graph_modules.data_fetcher import DataFetcher
 from .graph_modules.utils import ensure_folder_exists, cleanup_old_folders
@@ -44,9 +44,7 @@ class GraphManager:
         return [file_path for _, file_path in graph_files]
 
     def cleanup_old_graph_folders(self):
-        """
-        Clean up old graph folders based on the KEEP_DAYS configuration.
-        """
+        """Clean up old graph folders based on the KEEP_DAYS configuration."""
         cleanup_old_folders(self.img_folder, self.config["KEEP_DAYS"], self.translations)
 
     async def delete_old_messages(self, channel: discord.TextChannel):
@@ -65,18 +63,16 @@ class GraphManager:
         except Exception as e:
             logging.error(self.translations["error_delete_messages"].format(error=str(e)))
 
-    def create_embed(self, graph_type: str, next_update_timestamp: int) -> discord.Embed:
+    def create_embed(self, graph_type: str, update_tracker: Optional[Any] = None) -> discord.Embed:
         """
         Create a Discord embed for a graph.
         
         :param graph_type: The type of graph being posted
-        :param next_update_timestamp: Unix timestamp for the next update
+        :param update_tracker: Optional UpdateTracker instance for timestamp handling
         :return: A Discord embed object
         """
-        # Remove 'ENABLE_' prefix and convert to lowercase for translation key lookup
         clean_type = graph_type.replace('ENABLE_', '').lower()
         
-        # Get title and description from translations
         title = self.translations.get(f"{clean_type}_title", "").format(
             days=self.config["TIME_RANGE_DAYS"]
         )
@@ -84,29 +80,37 @@ class GraphManager:
             days=self.config["TIME_RANGE_DAYS"]
         )
 
-        # Add next update to description
-        description = f"{description}\n\n{self.translations['next_update'].format(next_update=f'<t:{next_update_timestamp}:R>')}"
+        # Always use the update_tracker's discord timestamp if available
+        if update_tracker:
+            next_update_str = update_tracker.get_next_update_discord()
+            logging.info(f"Using update tracker timestamp for embed: {next_update_str}")
+        else:
+            # Fallback calculation should match update_tracker's method
+            next_update = datetime.now().timestamp() + (self.config["UPDATE_DAYS"] * 86400)
+            next_update_str = f"<t:{int(next_update)}:R>"
+            logging.info(f"Using fallback timestamp for embed: {next_update_str}")
 
-        # Create embed
+        description = f"{description}\n\n{self.translations['next_update'].format(next_update=next_update_str)}"
+
         embed = discord.Embed(
             title=title,
             description=description,
             color=discord.Color.blue()
         )
 
-        # Add footer with timestamp
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         footer_text = self.translations['embed_footer'].format(now=now)
         embed.set_footer(text=footer_text)
 
         return embed
 
-    async def post_graphs(self, channel: discord.TextChannel, graph_files: List[str]):
+    async def post_graphs(self, channel: discord.TextChannel, graph_files: List[str], update_tracker: Optional[Any] = None):
         """
         Post graphs to the specified Discord channel with embeds.
         
         :param channel: The Discord channel to post graphs to
         :param graph_files: List of graph file paths to post
+        :param update_tracker: Optional UpdateTracker instance for timestamp handling
         """
         try:
             enabled_graphs = {
@@ -114,21 +118,14 @@ class GraphManager:
                 if k.startswith("ENABLE_") and v
             }
             
-            # Get next update timestamp
-            next_update_timestamp = int(datetime.now().timestamp()) + (self.config["UPDATE_DAYS"] * 86400)  # Default fallback
-            if hasattr(self, 'update_tracker'):
-                next_update_timestamp = int(self.update_tracker.next_update.timestamp())
-            
-            # Map file paths to their graph types
             graph_types = list(enabled_graphs.keys())
             graph_pairs = list(zip(graph_types, graph_files))
 
             for graph_type, file_path in graph_pairs:
                 try:
-                    # Create embed for this graph
-                    embed = self.create_embed(graph_type, next_update_timestamp)
+                    # Create embed with update_tracker
+                    embed = self.create_embed(graph_type, update_tracker)
                     
-                    # Create file object and send message
                     with open(file_path, 'rb') as f:
                         file = discord.File(f, filename=os.path.basename(file_path))
                         embed.set_image(url=f"attachment://{os.path.basename(file_path)}")

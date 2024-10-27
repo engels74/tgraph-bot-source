@@ -163,7 +163,7 @@ class TGraphBot(commands.Bot):
                 await self.graph_manager.delete_old_messages(channel)
                 graph_files = await self.graph_manager.generate_and_save_graphs()
                 if graph_files:
-                    await self.graph_manager.post_graphs(channel, graph_files)
+                    await self.graph_manager.post_graphs(channel, graph_files, self.update_tracker)
             else:
                 log(self.translations["log_channel_not_found"].format(
                     channel_id=self.config["CHANNEL_ID"]
@@ -200,7 +200,7 @@ async def schedule_updates(bot):
                 await bot.graph_manager.delete_old_messages(channel)
                 graph_files = await bot.graph_manager.generate_and_save_graphs()
                 if graph_files:
-                    await bot.graph_manager.post_graphs(channel, graph_files)
+                    await bot.graph_manager.post_graphs(channel, graph_files, bot.update_tracker)
             else:
                 log(bot.translations["log_channel_not_found"].format(
                     channel_id=bot.config["CHANNEL_ID"]

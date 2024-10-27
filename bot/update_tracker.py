@@ -13,6 +13,9 @@ class UpdateTracker:
         self.tracker_file = os.path.join(self.data_folder, "update_tracker.json")
         self.last_update: Optional[datetime] = None
         self.next_update: Optional[datetime] = None
+        self.last_check: Optional[datetime] = None
+        self.last_log_time: Optional[datetime] = None
+        self.log_threshold = timedelta(hours=1)
         self.load_tracker()
         logging.info(
             self.translations["update_tracker_initialized"].format(
@@ -22,7 +25,7 @@ class UpdateTracker:
         )
 
     def get_update_days(self) -> int:
-        update_days = self.config.get("UPDATE_DAYS", 7)  # Default to 7 if not found
+        update_days = self.config.get("UPDATE_DAYS", 7)
         if update_days <= 0:
             raise ValueError("UPDATE_DAYS must be a positive integer")
         return update_days
@@ -32,6 +35,7 @@ class UpdateTracker:
         if isinstance(fixed_time, time):
             return fixed_time
         elif isinstance(fixed_time, str):
+            fixed_time = fixed_time.strip('"\'')
             if fixed_time.upper() == "XX:XX":
                 return None
             try:
@@ -49,12 +53,13 @@ class UpdateTracker:
             with open(self.tracker_file, "r") as f:
                 data = json.load(f)
                 self.last_update = datetime.fromisoformat(data["last_update"])
-                self.next_update = self.calculate_next_update(self.last_update)
-            logging.info(
-                self.translations["tracker_file_loaded"].format(
-                    last_update=self.last_update, next_update=self.next_update
+                self.next_update = datetime.fromisoformat(data["next_update"])
+                logging.info(
+                    self.translations["tracker_file_loaded"].format(
+                        last_update=self.last_update,
+                        next_update=self.next_update
+                    )
                 )
-            )
         else:
             self.reset()
             logging.info(self.translations["no_tracker_file_found"])
@@ -65,9 +70,30 @@ class UpdateTracker:
         self.save_tracker()
         logging.info(
             self.translations["tracker_reset"].format(
-                last_update=self.last_update, next_update=self.next_update
+                last_update=self.last_update,
+                next_update=self.next_update
             )
         )
+
+    def calculate_next_update(self, from_date: datetime) -> datetime:
+        update_days = self.get_update_days()
+        fixed_time = self.get_fixed_update_time()
+        now = datetime.now().replace(microsecond=0)
+
+        # Calculate base date (tomorrow)
+        next_update = now.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=update_days)
+        
+        # Set the fixed time
+        if fixed_time:
+            next_update = next_update.replace(
+                hour=fixed_time.hour,
+                minute=fixed_time.minute
+            )
+
+        # Debug the calculation
+        logging.info(f"Next update calculation: Input {from_date}, Days {update_days}, Fixed time {fixed_time}, Result {next_update}")
+        
+        return next_update
 
     def update(self) -> None:
         self.last_update = datetime.now().replace(microsecond=0)
@@ -91,37 +117,57 @@ class UpdateTracker:
         self.next_update = self.calculate_next_update(self.last_update)
         self.save_tracker()
 
-    def calculate_next_update(self, from_date: datetime) -> datetime:
-        update_days = self.get_update_days()
-        fixed_time = self.get_fixed_update_time()
-
-        next_update = from_date + timedelta(days=update_days)
-
-        if fixed_time:
-            next_update = next_update.replace(
-                hour=fixed_time.hour, minute=fixed_time.minute, second=0, microsecond=0
-            )
-
-        # Ensure next_update is in the future
-        while next_update <= datetime.now():
-            next_update += timedelta(days=update_days)
-
-        return next_update
-
     def get_next_update_readable(self) -> str:
         return self.next_update.strftime("%Y-%m-%d %H:%M:%S")
 
     def get_next_update_discord(self) -> str:
-        return f"<t:{int(self.next_update.timestamp())}:R>"
+        """Get Discord timestamp for next update."""
+        timestamp = int(self.next_update.timestamp())
+        test_time = datetime.fromtimestamp(timestamp)
+        logging.debug("Discord timestamp debug:")
+        logging.debug(f" - Next update datetime: {self.next_update}")
+        logging.debug(f" - Calculated timestamp: {timestamp}")
+        logging.debug(f" - Test conversion back: {test_time}")
+        return f"<t:{timestamp}:R>"
+
+    def should_log_check(self, now: datetime) -> bool:
+        if self.last_log_time is None:
+            return True
+
+        time_until_update = self.next_update - now
+        
+        if time_until_update <= self.log_threshold:
+            return (now - self.last_log_time) >= timedelta(minutes=15)
+        
+        if time_until_update > timedelta(days=1):
+            return (now - self.last_log_time) >= timedelta(days=1)
+        
+        return (now - self.last_log_time) >= timedelta(hours=1)
 
     def is_update_due(self) -> bool:
         now = datetime.now().replace(microsecond=0)
         is_due = now >= self.next_update
-        logging.info(
-            self.translations["update_due_check"].format(
-                now=now, next_update=self.next_update, is_due=is_due
-            )
-        )
+
+        if self.should_log_check(now):
+            time_until_update = self.next_update - now
+            if time_until_update > timedelta(days=1):
+                logging.debug(
+                    self.translations["update_due_check"].format(
+                        now=now,
+                        next_update=self.next_update,
+                        is_due=is_due
+                    )
+                )
+            else:
+                logging.info(
+                    self.translations["update_due_check"].format(
+                        now=now,
+                        next_update=self.next_update,
+                        is_due=is_due
+                    )
+                )
+            self.last_log_time = now
+
         return is_due
 
     def save_tracker(self) -> None:
@@ -133,7 +179,8 @@ class UpdateTracker:
             json.dump(data, f)
         logging.info(
             self.translations["tracker_file_saved"].format(
-                last_update=self.last_update, next_update=self.next_update
+                last_update=self.last_update,
+                next_update=self.next_update
             )
         )
 

@@ -80,7 +80,7 @@ class UpdateGraphsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
                 return
 
             # Post the new graphs
-            await self.bot.graph_manager.post_graphs(channel, graph_files)
+            await self.bot.graph_manager.post_graphs(channel, graph_files, self.bot.update_tracker)
 
             # Update the tracker
             self.bot.update_tracker.update()
@@ -102,7 +102,7 @@ class UpdateGraphsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
             # Send success message
             await interaction.followup.send(
                 self.translations["update_graphs_success"].format(
-                    next_update=f"<t:{int(self.bot.update_tracker.next_update.timestamp())}:R>"
+                    next_update=self.bot.update_tracker.get_next_update_discord() 
                 ),
                 ephemeral=True
             )
