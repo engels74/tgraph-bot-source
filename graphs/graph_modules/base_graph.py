@@ -2,6 +2,7 @@
 
 from abc import ABC, abstractmethod
 import matplotlib.pyplot as plt
+from matplotlib import patheffects
 from typing import Dict, Any
 import logging
 
@@ -104,31 +105,53 @@ class BaseGraph(ABC):
 
     def get_color(self, series_name: str) -> str:
         """
-        Get the color for a given series name.
+        Get the color for TV shows or Movies.
         
-        :param series_name: The name of the series
+        :param series_name: The media type ('TV' or 'Movies')
         :return: The color code for the series
+        :raises ValueError: If series_name is not 'TV' or 'Movies'
         """
         if series_name == "TV":
             return self.config["TV_COLOR"].strip('"')
         elif series_name == "Movies":
             return self.config["MOVIE_COLOR"].strip('"')
-        else:
-            return "#1f77b4"  # Default color
+        raise ValueError(f"Invalid series name: {series_name}. Must be 'TV' or 'Movies'")
 
-    def annotate(self, x, y, text, color: str = None):
+    def annotate(self, x, y, text):
         """
-        Add an annotation to the graph.
+        Add an annotation to the graph with configurable color and outline.
+        The appearance is controlled by ANNOTATION_COLOR, ENABLE_ANNOTATION_OUTLINE,
+        and ANNOTATION_OUTLINE_COLOR in the configuration.
         
         :param x: The x-coordinate of the annotation
         :param y: The y-coordinate of the annotation
         :param text: The text of the annotation
-        :param color: The color of the annotation text
         """
-        if color is None:
-            color = self.config["ANNOTATION_COLOR"].strip('"')
-        self.ax.annotate(text, (x, y), xytext=(0, 5), textcoords="offset points",
-                         ha="center", va="bottom", fontsize=8, color=color)
+        # Get annotation color (defaults to white)
+        text_color = self.config["ANNOTATION_COLOR"].strip('"')
+
+        # Create the annotation with default settings
+        annotation_params = {
+            "text": text,
+            "xy": (x, y),
+            "xytext": (0, 5),
+            "textcoords": "offset points",
+            "ha": "center",
+            "va": "bottom",
+            "fontsize": 8,
+            "color": text_color,
+            "weight": 'bold'  # Always use bold for better visibility
+        }
+
+        # Add outline effects if enabled
+        if self.config["ENABLE_ANNOTATION_OUTLINE"]:
+            outline_color = self.config["ANNOTATION_OUTLINE_COLOR"].strip('"')
+            annotation_params["path_effects"] = [
+                patheffects.Stroke(linewidth=1, foreground=outline_color),
+                patheffects.Normal()
+            ]
+
+        self.ax.annotate(**annotation_params)
 
     @abstractmethod
     def generate(self, data_fetcher, user_id: str = None) -> str:

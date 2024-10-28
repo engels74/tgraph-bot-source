@@ -21,6 +21,7 @@ CONFIGURABLE_OPTIONS = [
     "ENABLE_TOP_10_PLATFORMS",
     "ENABLE_TOP_10_USERS",
     "ENABLE_PLAY_COUNT_BY_MONTH",
+    "ENABLE_ANNOTATION_OUTLINE",  # Keep in configurable options
     "ANNOTATE_DAILY_PLAY_COUNT",
     "ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK",
     "ANNOTATE_PLAY_COUNT_BY_HOUROFDAY",
@@ -36,6 +37,7 @@ CONFIGURABLE_OPTIONS = [
     "TV_COLOR",
     "MOVIE_COLOR",
     "ANNOTATION_COLOR",
+    "ANNOTATION_OUTLINE_COLOR",
 ]
 
 # Keys that require a bot restart when changed
@@ -78,7 +80,9 @@ CONFIG_SECTIONS = {
         "keys": [
             "TV_COLOR",
             "MOVIE_COLOR",
-            "ANNOTATION_COLOR"
+            "ANNOTATION_COLOR",
+            "ANNOTATION_OUTLINE_COLOR",
+            "ENABLE_ANNOTATION_OUTLINE",
         ],
     },
     "annotation_options": {
@@ -195,11 +199,6 @@ OPTION_METADATA = {
         "format": "hex",
         "description": "Color for movie data in graphs",
     },
-    "ANNOTATION_COLOR": {
-        "type": str,
-        "format": "hex",
-        "description": "Color for annotations in graphs",
-    },
     
     # Annotation options (all boolean)
     "ANNOTATE_DAILY_PLAY_COUNT": {
@@ -226,36 +225,53 @@ OPTION_METADATA = {
         "type": bool,
         "description": "Show value annotations on monthly play count graph",
     },
+    "ANNOTATION_COLOR": {
+        "type": str,
+        "format": "hex",
+        "description": "Color for graph annotations (default: white)",
+    },
     
-    # Cooldown options - Updated to allow zero/negative values
+    # Outline options
+    "ANNOTATION_OUTLINE_COLOR": {
+        "type": str,
+        "format": "hex",
+        "description": "Color for annotation text outline (default: black)",
+    },
+    
+    "ENABLE_ANNOTATION_OUTLINE": {
+        "type": bool,
+        "description": "Enable outline around annotation text for better visibility",
+    },
+    
+    # Cooldown options
     "CONFIG_COOLDOWN_MINUTES": {
         "type": int,
-        "min": 0,  # Changed from 1 to 0
+        "min": 0,
         "description": "Minutes between config command uses per user (0 to disable)",
     },
     "CONFIG_GLOBAL_COOLDOWN_SECONDS": {
         "type": int,
-        "min": 0,  # Changed from 1 to 0
+        "min": 0,
         "description": "Seconds between any config command uses (0 to disable)",
     },
     "UPDATE_GRAPHS_COOLDOWN_MINUTES": {
         "type": int,
-        "min": 0,  # Changed from 1 to 0
+        "min": 0,
         "description": "Minutes between update_graphs command uses per user (0 to disable)",
     },
     "UPDATE_GRAPHS_GLOBAL_COOLDOWN_SECONDS": {
         "type": int,
-        "min": 0,  # Changed from 1 to 0
+        "min": 0,
         "description": "Seconds between any update_graphs command uses (0 to disable)",
     },
     "MY_STATS_COOLDOWN_MINUTES": {
         "type": int,
-        "min": 0,  # Changed from 1 to 0
+        "min": 0,
         "description": "Minutes between personal stats requests (0 to disable)",
     },
     "MY_STATS_GLOBAL_COOLDOWN_SECONDS": {
         "type": int,
-        "min": 0,  # Changed from 1 to 0
+        "min": 0,
         "description": "Seconds between any stats requests (0 to disable)",
     },
 }

@@ -38,11 +38,13 @@ def create_default_config() -> CommentedMap:
     cfg['ENABLE_TOP_10_PLATFORMS'] = True
     cfg['ENABLE_TOP_10_USERS'] = True
     cfg['ENABLE_PLAY_COUNT_BY_MONTH'] = True
+    cfg['ENABLE_ANNOTATION_OUTLINE'] = True  # New option for annotation outline
     
     # Graph colors
     cfg['TV_COLOR'] = DoubleQuotedScalarString('#1f77b4')
     cfg['MOVIE_COLOR'] = DoubleQuotedScalarString('#ff7f0e')
-    cfg['ANNOTATION_COLOR'] = DoubleQuotedScalarString('#ff0000')
+    cfg['ANNOTATION_COLOR'] = DoubleQuotedScalarString('#ffffff')  # Changed to white
+    cfg['ANNOTATION_OUTLINE_COLOR'] = DoubleQuotedScalarString('#000000')  # New option for black outline
     
     # Annotation options
     cfg['ANNOTATE_DAILY_PLAY_COUNT'] = True
@@ -52,14 +54,13 @@ def create_default_config() -> CommentedMap:
     cfg['ANNOTATE_TOP_10_USERS'] = True
     cfg['ANNOTATE_PLAY_COUNT_BY_MONTH'] = True
     
-    # Command cooldown options - Added comments about cooldown behavior
-    # Setting any cooldown to 0 or negative will disable that cooldown
-    cfg['CONFIG_COOLDOWN_MINUTES'] = 1  # Set to 0 to disable per-user cooldown
-    cfg['CONFIG_GLOBAL_COOLDOWN_SECONDS'] = 30  # Set to 0 to disable global cooldown
-    cfg['UPDATE_GRAPHS_COOLDOWN_MINUTES'] = 5  # Set to 0 to disable per-user cooldown
-    cfg['UPDATE_GRAPHS_GLOBAL_COOLDOWN_SECONDS'] = 60  # Set to 0 to disable global cooldown
-    cfg['MY_STATS_COOLDOWN_MINUTES'] = 5  # Set to 0 to disable per-user cooldown
-    cfg['MY_STATS_GLOBAL_COOLDOWN_SECONDS'] = 60  # Set to 0 to disable global cooldown
+    # Command cooldown options
+    cfg['CONFIG_COOLDOWN_MINUTES'] = 1
+    cfg['CONFIG_GLOBAL_COOLDOWN_SECONDS'] = 30
+    cfg['UPDATE_GRAPHS_COOLDOWN_MINUTES'] = 5
+    cfg['UPDATE_GRAPHS_GLOBAL_COOLDOWN_SECONDS'] = 60
+    cfg['MY_STATS_COOLDOWN_MINUTES'] = 5
+    cfg['MY_STATS_GLOBAL_COOLDOWN_SECONDS'] = 60
     
     return cfg
 
