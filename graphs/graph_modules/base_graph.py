@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 import matplotlib.pyplot as plt
 from matplotlib import patheffects
-from typing import Dict, Any
+from typing import Dict, Any, Tuple
 import logging
 
 class BaseGraph(ABC):
@@ -11,7 +11,6 @@ class BaseGraph(ABC):
         self.config = config
         self.translations = translations
         self.img_folder = img_folder
-        self.plt = plt
         self.figure = None
         self.ax = None
 
@@ -45,17 +44,33 @@ class BaseGraph(ABC):
         """
         pass
 
-    def setup_plot(self, figsize: tuple = (14, 8)):
+    def setup_plot(self, figsize: Tuple[int, int] = (14, 8)):
         """
         Set up the plot with the given figure size.
         
         :param figsize: A tuple containing the width and height of the figure
         """
+        # Create a new figure with specified size
         self.figure, self.ax = plt.subplots(figsize=figsize)
-        # Set font properties for all text elements
-        plt.rcParams['font.weight'] = 'normal'
-        plt.rcParams['axes.titleweight'] = 'bold'
-        plt.rcParams['axes.labelweight'] = 'bold'
+        
+        # Configure the axes with explicit font properties
+        self.ax.set_title(
+            self.ax.get_title(),
+            fontdict={'weight': 'bold'},
+            pad=20
+        )
+        
+        # Set x and y label properties explicitly
+        self.ax.xaxis.label.set_weight('bold')
+        self.ax.yaxis.label.set_weight('bold')
+        
+        # Set tick label properties
+        self.ax.tick_params(
+            axis='both',
+            which='major',
+            labelsize=10,
+            width=1
+        )
 
     def add_title(self, title: str):
         """
@@ -63,7 +78,11 @@ class BaseGraph(ABC):
         
         :param title: The title of the graph
         """
-        self.ax.set_title(title, fontweight="bold", pad=20)
+        self.ax.set_title(
+            title,
+            fontdict={'weight': 'bold'},
+            pad=20
+        )
 
     def add_labels(self, xlabel: str, ylabel: str):
         """
@@ -72,14 +91,27 @@ class BaseGraph(ABC):
         :param xlabel: The label for the x-axis
         :param ylabel: The label for the y-axis
         """
-        self.ax.set_xlabel(xlabel, fontweight="bold", labelpad=10)
-        self.ax.set_ylabel(ylabel, fontweight="bold", labelpad=10)
+        self.ax.set_xlabel(
+            xlabel,
+            fontdict={'weight': 'bold'},
+            labelpad=10
+        )
+        self.ax.set_ylabel(
+            ylabel,
+            fontdict={'weight': 'bold'},
+            labelpad=10
+        )
 
-    def add_legend(self):
+    def add_legend(self, **kwargs):
         """
-        Add a legend to the graph.
+        Add a legend to the graph with consistent styling.
+        
+        :param kwargs: Additional keyword arguments for legend customization
         """
-        self.ax.legend()
+        legend = self.ax.legend(**kwargs)
+        # Apply consistent font weight to legend text
+        for text in legend.get_texts():
+            text.set_weight('normal')
 
     def apply_tight_layout(self, pad: float = 3.0):
         """
@@ -87,7 +119,7 @@ class BaseGraph(ABC):
         
         :param pad: The padding around the plot
         """
-        self.plt.tight_layout(pad=pad)
+        self.figure.tight_layout(pad=pad)
 
     def save(self, filepath: str):
         """
@@ -96,7 +128,7 @@ class BaseGraph(ABC):
         :param filepath: The path where the graph should be saved
         """
         try:
-            self.plt.savefig(filepath)
+            self.figure.savefig(filepath)
             logging.info(f"Graph saved successfully: {filepath}")
         except Exception as e:
             logging.error(f"Error saving graph to {filepath}: {str(e)}")
@@ -120,17 +152,13 @@ class BaseGraph(ABC):
     def annotate(self, x, y, text):
         """
         Add an annotation to the graph with configurable color and outline.
-        The appearance is controlled by ANNOTATION_COLOR, ENABLE_ANNOTATION_OUTLINE,
-        and ANNOTATION_OUTLINE_COLOR in the configuration.
         
         :param x: The x-coordinate of the annotation
         :param y: The y-coordinate of the annotation
         :param text: The text of the annotation
         """
-        # Get annotation color (defaults to white)
         text_color = self.config["ANNOTATION_COLOR"].strip('"')
-
-        # Create the annotation with default settings
+        
         annotation_params = {
             "text": text,
             "xy": (x, y),
@@ -138,12 +166,11 @@ class BaseGraph(ABC):
             "textcoords": "offset points",
             "ha": "center",
             "va": "bottom",
-            "fontsize": 8,
+            "fontsize": 10,
             "color": text_color,
-            "weight": 'bold'  # Always use bold for better visibility
+            "weight": 'bold'
         }
 
-        # Add outline effects if enabled
         if self.config["ENABLE_ANNOTATION_OUTLINE"]:
             outline_color = self.config["ANNOTATION_OUTLINE_COLOR"].strip('"')
             annotation_params["path_effects"] = [

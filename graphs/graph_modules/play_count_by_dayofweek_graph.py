@@ -63,9 +63,12 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
                     if value > 0:
                         self.annotate(processed_data["days"][i], value, f"{value}")
 
-        self.ax.set_xlabel(self.translations["play_count_by_dayofweek_xlabel"])
-        self.ax.set_ylabel(self.translations["play_count_by_dayofweek_ylabel"])
-        self.ax.set_title(self.translations["play_count_by_dayofweek_title"].format(days=self.config["TIME_RANGE_DAYS"]))
+        # Use base class methods for consistent bold formatting
+        self.add_title(self.translations["play_count_by_dayofweek_title"].format(days=self.config["TIME_RANGE_DAYS"]))
+        self.add_labels(
+            self.translations["play_count_by_dayofweek_xlabel"],
+            self.translations["play_count_by_dayofweek_ylabel"]
+        )
 
         self.ax.set_xticks(processed_data["days"])
         self.ax.set_xticklabels(processed_data["day_labels"], ha="center")

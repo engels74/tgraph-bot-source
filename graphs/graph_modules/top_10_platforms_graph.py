@@ -68,9 +68,12 @@ class Top10PlatformsGraph(BaseGraph):
                         x_pos = bar.get_x() + bar.get_width()/2
                         self.annotate(x_pos, height, f'{int(height)}')
 
-        self.ax.set_xlabel(self.translations["top_10_platforms_xlabel"])
-        self.ax.set_ylabel(self.translations["top_10_platforms_ylabel"])
-        self.ax.set_title(self.translations["top_10_platforms_title"].format(days=self.config["TIME_RANGE_DAYS"]))
+        # Use base class methods for consistent bold formatting
+        self.add_title(self.translations["top_10_platforms_title"].format(days=self.config["TIME_RANGE_DAYS"]))
+        self.add_labels(
+            self.translations["top_10_platforms_xlabel"],
+            self.translations["top_10_platforms_ylabel"]
+        )
 
         self.ax.set_xticks([x + bar_width/2 for x in index])
         self.ax.set_xticklabels(processed_data["platforms"], rotation=45, ha="right")

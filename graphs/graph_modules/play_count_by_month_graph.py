@@ -68,12 +68,12 @@ class PlayCountByMonthGraph(BaseGraph):
 
         # Plot movie data
         self.ax.bar(index, processed_data["movie_data"], bar_width,
-                               label="Movies", color=self.get_color("Movies"))
+                   label="Movies", color=self.get_color("Movies"))
 
         # Plot TV data, stacked on top of movie data
         self.ax.bar(index, processed_data["tv_data"], bar_width,
-                            bottom=processed_data["movie_data"],
-                            label="TV", color=self.get_color("TV"))
+                   bottom=processed_data["movie_data"],
+                   label="TV", color=self.get_color("TV"))
 
         if self.config["ANNOTATE_PLAY_COUNT_BY_MONTH"]:
             for i in range(len(index)):
@@ -92,9 +92,12 @@ class PlayCountByMonthGraph(BaseGraph):
                 # Annotate total on top
                 self.annotate(i, total, str(int(total)))
 
-        self.ax.set_xlabel(self.translations["play_count_by_month_xlabel"])
-        self.ax.set_ylabel(self.translations["play_count_by_month_ylabel"])
-        self.ax.set_title(self.translations["play_count_by_month_title"])
+        # Use base class methods for consistent bold formatting
+        self.add_title(self.translations["play_count_by_month_title"])
+        self.add_labels(
+            self.translations["play_count_by_month_xlabel"],
+            self.translations["play_count_by_month_ylabel"]
+        )
 
         self.ax.set_xticks(index)
         self.ax.set_xticklabels(processed_data["months"], rotation=45, ha="right")

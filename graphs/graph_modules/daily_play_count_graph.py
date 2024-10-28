@@ -71,9 +71,12 @@ class DailyPlayCountGraph(BaseGraph):
                     if value > 0:
                         self.annotate(processed_data["dates"][i], value, f"{value}")
 
-        self.ax.set_xlabel(self.translations["daily_play_count_xlabel"])
-        self.ax.set_ylabel(self.translations["daily_play_count_ylabel"])
-        self.ax.set_title(self.translations["daily_play_count_title"].format(days=self.config["TIME_RANGE_DAYS"]))
+        # Use base class methods for consistent bold formatting
+        self.add_title(self.translations["daily_play_count_title"].format(days=self.config["TIME_RANGE_DAYS"]))
+        self.add_labels(
+            self.translations["daily_play_count_xlabel"],
+            self.translations["daily_play_count_ylabel"]
+        )
 
         self.ax.set_xticks(processed_data["dates"])
         self.ax.set_xticklabels(processed_data["date_strs"], rotation=45, ha="right")
@@ -96,7 +99,7 @@ class DailyPlayCountGraph(BaseGraph):
 
         today = datetime.today().strftime("%Y-%m-%d")
         file_name = f"daily_play_count{'_' + user_id if user_id else ''}.png"
-        file_path = os.path.join(self.img_folder, today, file_name)  # Use os.path.join and self.img_folder
+        file_path = os.path.join(self.img_folder, today, file_name)
         self.save(file_path)
 
         return file_path
