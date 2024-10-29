@@ -9,27 +9,7 @@ from .graph_modules.data_fetcher import DataFetcher
 from .graph_modules.utils import ensure_folder_exists
 
 class UserGraphManager:
-    """
-    Manages the creation and generation of user-specific graphs.
-
-    This class is designed to generate graphs for individual users based on their specific data, using GraphFactory and DataFetcher.
-
-    Attributes:
-        config (Dict[str, Any]): Configuration parameters.
-        translations (Dict[str, str]): Translation strings for labels.
-        img_folder (str): Path for storing generated images.
-        graph_factory (GraphFactory): Factory for creating user-specific graph instances.
-        data_fetcher (DataFetcher): Fetcher for retrieving data for graphs.
-    """
     def __init__(self, config: Dict[str, Any], translations: Dict[str, str], img_folder: str):
-        """
-        Initialize the UserGraphManager with configuration, translations, and image folder path.
-
-        Args:
-            config (Dict[str, Any]): Configuration dictionary.
-            translations (Dict[str, str]): Dictionary with translation mappings.
-            img_folder (str): Path for storing generated images.
-        """
         self.config = config
         self.translations = translations
         self.img_folder = img_folder
@@ -37,15 +17,6 @@ class UserGraphManager:
         self.data_fetcher = DataFetcher(config)
 
     async def generate_user_graphs(self, user_id: str) -> List[str]:
-        """
-        Asynchronously generate graphs for a specific user, returning a list of file paths.
-
-        Args:
-            user_id (str): The unique identifier for the user.
-
-        Returns:
-            List[str]: A list of file paths to the generated user graphs.
-        """
         """
         Generate graphs for a specific user.
         

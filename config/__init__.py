@@ -1,20 +1,4 @@
 # config/__init__.py
-
-"""
-Configuration Initialization Module.
-
-This module centralizes configuration handling, including loading, saving, and validation.
-It imports helper modules for specific tasks, such as:
-- loader: Functions to load and save YAML configuration files
-- validator: Functions to validate configuration values
-- sanitizer: Functions to sanitize configuration input
-- defaults: Functions to create a default configuration
-- options: Definitions of configurable options and sections
-
-Environment Variables:
-    CONFIG_DIR (str): Directory for configuration files, defaults to "/config".
-"""
-
 import logging
 import os
 from typing import Dict, Any, Optional, List

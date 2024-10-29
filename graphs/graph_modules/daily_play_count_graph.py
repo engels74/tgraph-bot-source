@@ -9,38 +9,10 @@ from datetime import datetime, timedelta
 from matplotlib.dates import DateFormatter
 from matplotlib.ticker import MaxNLocator
 
-    """
-    A graph representing daily play counts.
-
-    This class generates a graph showing play counts per day based on fetched data.
-
-    Attributes:
-        config (Dict[str, Any]): Configuration parameters for the graph.
-        translations (Dict[str, str]): Translation strings for labels.
-        img_folder (str): Path to save generated images.
-    """
 class DailyPlayCountGraph(BaseGraph):
-        """
-        Initialize the DailyPlayCountGraph with configuration, translations, and image folder path.
-
-        Args:
-            config (Dict[str, Any]): Configuration dictionary.
-            translations (Dict[str, str]): Dictionary with translation mappings.
-            img_folder (str): Path for storing generated images.
-        """
     def __init__(self, config: Dict[str, Any], translations: Dict[str, str], img_folder: str):
         super().__init__(config, translations, img_folder)
         self.graph_type = "daily_play_count"
-        """
-        Asynchronously fetch the data required for the daily play count graph.
-
-        Args:
-            data_fetcher (Callable): Function to fetch the data.
-            user_id (str, optional): User identifier to fetch personalized data. Defaults to None.
-
-        Returns:
-            Dict[str, Any]: A dictionary containing the fetched play count data.
-        """
 
     async def fetch_data(self, data_fetcher, user_id: str = None) -> Dict[str, Any]:
         params = {"time_range": self.config["TIME_RANGE_DAYS"]}

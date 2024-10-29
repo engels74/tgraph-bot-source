@@ -17,14 +17,6 @@ class UpdateGraphsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
     """Cog for handling graph updates."""
     
     def __init__(self, bot: commands.Bot, config: dict, translations: dict):
-        """
-        Initialize the UpdateGraphsCog with bot instance, configuration, and translations.
-
-        Args:
-            bot (commands.Bot): The Discord bot instance.
-            config (dict): Configuration dictionary.
-            translations (dict): Translation mappings for the bot.
-        """
         self.bot = bot
         self.config = config
         self.translations = translations
