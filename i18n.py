@@ -1,4 +1,12 @@
 # i18n.py
+
+"""
+Internationalization (i18n) support for TGraph Bot.
+
+This module provides functionality for loading translations based on language codes.
+It also defines custom exceptions for handling missing translation keys or files.
+"""
+
 import os
 import logging
 from typing import Dict, List

@@ -1,4 +1,12 @@
 # main.py
+
+"""
+Main entry point for the TGraph Bot application.
+
+This script initializes the bot, loads configuration, and sets up logging and translations.
+It also defines command-line arguments for configuring file paths and launches the bot.
+"""
+
 import argparse
 import asyncio
 import discord
@@ -18,6 +26,12 @@ from graphs.user_graph_manager import UserGraphManager
 from i18n import load_translations, TranslationKeyError
 
 # Get the CONFIG_DIR from environment variable, default to '/config' if not set
+"""
+Set up and parse command-line arguments for configuration file, log file, and data folder.
+
+Environment Variables:
+    CONFIG_DIR (str): Directory path for configuration; defaults to "/config" if not set.
+"""
 CONFIG_DIR = os.environ.get("CONFIG_DIR", "/config")
 
 # Parse command-line arguments
@@ -245,3 +259,19 @@ if __name__ == "__main__":
 
 # TGraph - Tautulli Graph Bot
 # <https://github.com/engels74/tgraph-bot-source>
+# This script/bot works by posting Tautulli graphs to Discord webhook
+# Copyright (C) 2024 - engels74
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+#
+# Contact: engels74@tuta.io

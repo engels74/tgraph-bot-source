@@ -9,7 +9,27 @@ from .graph_modules.data_fetcher import DataFetcher
 from .graph_modules.utils import ensure_folder_exists, cleanup_old_folders
 import discord
 
+    """
+    Manages the creation, generation, and saving of graphs.
+
+    This class acts as a controller that uses the GraphFactory and DataFetcher to generate and save various graphs.
+
+    Attributes:
+        config (Dict[str, Any]): Configuration parameters.
+        translations (Dict[str, str]): Translation strings for labels.
+        img_folder (str): Path for storing generated images.
+        graph_factory (GraphFactory): Factory for creating specific graph instances.
+        data_fetcher (DataFetcher): Data fetcher for retrieving graph data.
+    """
 class GraphManager:
+        """
+        Initialize the GraphManager with configuration, translations, and image folder path.
+
+        Args:
+            config (Dict[str, Any]): Configuration dictionary.
+            translations (Dict[str, str]): Dictionary with translation mappings.
+            img_folder (str): Path for storing generated images.
+        """
     def __init__(self, config: Dict[str, Any], translations: Dict[str, str], img_folder: str):
         self.config = config
         self.translations = translations
@@ -17,6 +37,12 @@ class GraphManager:
         self.graph_factory = GraphFactory(config, translations, img_folder)
         self.data_fetcher = DataFetcher(config)
 
+    """
+    Asynchronously generate and save graphs, returning a list of generated file paths.
+
+    Returns:
+        List[str]: A list of file paths to the generated graphs.
+    """
     async def generate_and_save_graphs(self) -> List[str]:
         """
         Generate and save all enabled graphs.

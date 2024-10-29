@@ -9,10 +9,38 @@ from matplotlib.ticker import MaxNLocator
 
 class PlayCountByMonthGraph(BaseGraph):
     def __init__(self, config: Dict[str, Any], translations: Dict[str, str], img_folder: str):
+    """
+    A graph representing play counts distributed by month.
+
+    This class generates a graph that visualizes play counts for each month based on fetched data.
+
+    Attributes:
+        config (Dict[str, Any]): Configuration parameters for the graph.
+        translations (Dict[str, str]): Translation strings for labels.
+        img_folder (str): Path to save generated images.
+    """
         super().__init__(config, translations, img_folder)
+        """
+        Initialize the PlayCountByMonthGraph with configuration, translations, and image folder path.
+
+        Args:
+            config (Dict[str, Any]): Configuration dictionary.
+            translations (Dict[str, str]): Dictionary with translation mappings.
+            img_folder (str): Path for storing generated images.
+        """
         self.graph_type = "play_count_by_month"
 
     async def fetch_data(self, data_fetcher, user_id: str = None) -> Dict[str, Any]:
+        """
+        Asynchronously fetch the data required for the play count by month graph.
+
+        Args:
+            data_fetcher (Callable): Function to fetch the data.
+            user_id (str, optional): User identifier to fetch personalized data. Defaults to None.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing the fetched play count data by month.
+        """
         params = {"time_range": 12, "y_axis": "plays"}
         if user_id:
             params["user_id"] = user_id

@@ -6,7 +6,31 @@ from datetime import datetime, timedelta, time
 from typing import Dict, Any, Optional
 
 class UpdateTracker:
+    """
+    Tracks and manages updates, handling scheduling and log times.
+
+    This class manages an update tracker to keep records of the last update, next update, and checks against a logging threshold. It saves data to a tracker file.
+
+    Attributes:
+        data_folder (str): Directory to save tracker data.
+        config (Dict[str, Any]): Configuration settings.
+        translations (Dict[str, str]): Translations for log messages.
+        tracker_file (str): Path to the JSON file storing tracker data.
+        last_update (Optional[datetime]): Timestamp of the last update.
+        next_update (Optional[datetime]): Timestamp for the next update.
+        last_check (Optional[datetime]): Timestamp of the last check.
+        last_log_time (Optional[datetime]): Timestamp of the last log.
+        log_threshold (timedelta): Time interval for logging threshold.
+    """
     def __init__(self, data_folder: str, config: Dict[str, Any], translations: Dict[str, str]):
+        """
+        Initialize the UpdateTracker with folder path, configuration, and translations.
+
+        Args:
+            data_folder (str): Directory path for saving tracker data.
+            config (Dict[str, Any]): Configuration dictionary.
+            translations (Dict[str, str]): Dictionary with translation mappings.
+        """
         self.data_folder = data_folder
         self.config = config
         self.translations = translations

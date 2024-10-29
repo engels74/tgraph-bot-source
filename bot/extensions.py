@@ -11,7 +11,15 @@ from typing import List
 from discord.ext import commands
 
 def get_extension_paths() -> List[str]:
-    """Get a list of all extension paths in the commands directory.
+    """
+    Get a list of all extension paths in the commands directory.
+
+    This function scans the commands directory for all available
+    extension modules and returns their paths in dot notation.
+
+    Returns:
+        List[str]: List of extension paths in dot notation.
+    """
     
     Returns
     -------

@@ -9,10 +9,38 @@ from datetime import datetime
 from matplotlib.ticker import MaxNLocator
 
 class Top10UsersGraph(BaseGraph):
+    """
+    A graph representing the top 10 users by play count.
+
+    This class generates a graph showing the top 10 users with the highest play counts.
+
+    Attributes:
+        config (Dict[str, Any]): Configuration parameters for the graph.
+        translations (Dict[str, str]): Translation strings for labels.
+        img_folder (str): Path to save generated images.
+    """
     def __init__(self, config: Dict[str, Any], translations: Dict[str, str], img_folder: str):
+        """
+        Initialize the Top10UsersGraph with configuration, translations, and image folder path.
+
+        Args:
+            config (Dict[str, Any]): Configuration dictionary.
+            translations (Dict[str, str]): Dictionary with translation mappings.
+            img_folder (str): Path for storing generated images.
+        """
         super().__init__(config, translations, img_folder)
         self.graph_type = "top_10_users"
 
+        """
+        Asynchronously fetch the data required for the top 10 users graph.
+
+        Args:
+            data_fetcher (Callable): Function to fetch the data.
+            user_id (str, optional): User identifier to fetch personalized data. Defaults to None.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing the fetched play count data for the top 10 users.
+        """
     async def fetch_data(self, data_fetcher, user_id: str = None) -> Dict[str, Any]:
         params = {"time_range": self.config["TIME_RANGE_DAYS"]}
         # Note: We don't use user_id for this graph as it's always about all users

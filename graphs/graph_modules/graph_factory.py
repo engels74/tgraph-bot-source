@@ -1,5 +1,13 @@
 # graphs/graph_modules/graph_factory.py
 
+"""
+Graph Factory Module.
+
+This module provides a factory class for creating specific types of graph objects.
+The GraphFactory maps string identifiers to graph classes, allowing for dynamic
+instantiation based on configuration.
+"""
+
 from typing import Dict, Any, Type
 from .base_graph import BaseGraph
 from .daily_play_count_graph import DailyPlayCountGraph

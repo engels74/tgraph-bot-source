@@ -9,10 +9,38 @@ from datetime import datetime
 from matplotlib.ticker import MaxNLocator
 
 class PlayCountByDayOfWeekGraph(BaseGraph):
+    """
+    A graph representing play counts distributed by days of the week.
+
+    This class generates a graph that visualizes play counts for each day of the week based on fetched data.
+
+    Attributes:
+        config (Dict[str, Any]): Configuration parameters for the graph.
+        translations (Dict[str, str]): Translation strings for labels.
+        img_folder (str): Path to save generated images.
+    """
     def __init__(self, config: Dict[str, Any], translations: Dict[str, str], img_folder: str):
+        """
+        Initialize the PlayCountByDayOfWeekGraph with configuration, translations, and image folder path.
+
+        Args:
+            config (Dict[str, Any]): Configuration dictionary.
+            translations (Dict[str, str]): Dictionary with translation mappings.
+            img_folder (str): Path for storing generated images.
+        """
         super().__init__(config, translations, img_folder)
         self.graph_type = "play_count_by_dayofweek"
 
+        """
+        Asynchronously fetch the data required for the play count by day of the week graph.
+
+        Args:
+            data_fetcher (Callable): Function to fetch the data.
+            user_id (str, optional): User identifier to fetch personalized data. Defaults to None.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing the fetched play count data by day of the week.
+        """
     async def fetch_data(self, data_fetcher, user_id: str = None) -> Dict[str, Any]:
         params = {"time_range": self.config["TIME_RANGE_DAYS"]}
         if user_id:

@@ -8,7 +8,17 @@ import textwrap
 def create_table(
     headers: List[str], rows: List[List[str]], column_widths: List[int]
 ) -> str:
-    """Create a formatted table string."""
+    """
+    Create a formatted table string with specified headers, rows, and column widths.
+
+    Args:
+        headers (List[str]): List of header strings for each column.
+        rows (List[List[str]]): List of rows, where each row is a list of cell values.
+        column_widths (List[int]): List specifying the width of each column.
+
+    Returns:
+        str: A formatted string representing the table.
+    """
     def format_cell(content: str, width: int) -> str:
         return " " + content.ljust(width - 2) + " "
 
