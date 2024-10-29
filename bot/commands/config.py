@@ -12,7 +12,7 @@ from discord.ext import commands
 from typing import Optional, Literal
 
 from config.modules.validator import validate_config_value
-from config.modules.sanitizer import sanitize_config_value
+from config.modules.sanitizer import sanitize_config_value, format_value_for_display
 from config.config import CONFIGURABLE_OPTIONS, RESTART_REQUIRED_KEYS
 from config.modules.options import get_option_metadata
 from config.modules.loader import load_yaml_config, update_config_value, save_yaml_config
@@ -25,7 +25,7 @@ class ConfigCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
         self.bot = bot
         self.config = config
         self.translations = translations
-        CommandMixin.__init__(self)  # Initialize command mixin
+        CommandMixin.__init__(self)  # Initialize the command mixin
 
     @app_commands.command(
         name="config",
@@ -134,7 +134,7 @@ class ConfigCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
         if key:
             if key in self.config and key in CONFIGURABLE_OPTIONS:
                 value = self.config[key]
-                display_value = str(value).strip('"\'') if isinstance(value, (str, int, float, bool)) else str(value)
+                display_value = format_value_for_display(key, value)
                 await interaction.response.send_message(
                     f"{key}: {display_value}",
                     ephemeral=True
@@ -142,14 +142,54 @@ class ConfigCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
             else:
                 await interaction.response.send_message(
                     self.translations["config_view_invalid_key"].format(key=key),
-                    ephemeral=True,
+                    ephemeral=True
                 )
         else:
-            embed = discord.Embed(title="Bot Configuration", color=0x3498DB)
-            for k, v in self.config.items():
-                if k in CONFIGURABLE_OPTIONS:
-                    display_value = str(v).strip('"\'') if isinstance(v, (str, int, float, bool)) else str(v)
-                    embed.add_field(name=k, value=display_value, inline=False)
+            # Create embed for all configurable values
+            embed = discord.Embed(
+                title="Bot Configuration",
+                color=discord.Color.blue(),
+                description="Current configuration values:"
+            )
+            
+            # Group configuration options by type
+            boolean_options = []
+            color_options = []
+            time_options = []
+            other_options = []
+            
+            for key in CONFIGURABLE_OPTIONS:
+                if key in self.config:
+                    value = self.config[key]
+                    display_value = format_value_for_display(key, value)
+                    
+                    # Categorize the option
+                    if isinstance(value, bool):
+                        boolean_options.append((key, display_value))
+                    elif key.endswith('_COLOR'):
+                        color_options.append((key, display_value))
+                    elif key == 'FIXED_UPDATE_TIME':
+                        time_options.append((key, display_value))
+                    else:
+                        other_options.append((key, display_value))
+            
+            # Add fields for each category if they have values
+            if boolean_options:
+                bool_text = "\n".join(f"**{k}:** {v}" for k, v in boolean_options)
+                embed.add_field(name="Toggles", value=bool_text, inline=False)
+            
+            if color_options:
+                color_text = "\n".join(f"**{k}:** {v}" for k, v in color_options)
+                embed.add_field(name="Colors", value=color_text, inline=False)
+            
+            if time_options:
+                time_text = "\n".join(f"**{k}:** {v}" for k, v in time_options)
+                embed.add_field(name="Time Settings", value=time_text, inline=False)
+            
+            if other_options:
+                other_text = "\n".join(f"**{k}:** {v}" for k, v in other_options)
+                embed.add_field(name="Other Settings", value=other_text, inline=False)
+
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
     async def _handle_edit_config(
@@ -186,7 +226,7 @@ class ConfigCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
         if key not in CONFIGURABLE_OPTIONS:
             await interaction.response.send_message(
                 self.translations["config_view_invalid_key"].format(key=key),
-                ephemeral=True,
+                ephemeral=True
             )
             return
 
@@ -195,7 +235,7 @@ class ConfigCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
             get_option_metadata(key)
             
             # Process the value based on the key type
-            if key in ["TV_COLOR", "MOVIE_COLOR", "ANNOTATION_COLOR"]:
+            if key in ["TV_COLOR", "MOVIE_COLOR", "ANNOTATION_COLOR", "ANNOTATION_OUTLINE_COLOR"]:
                 if not value.startswith("#"):
                     await interaction.response.send_message(
                         "Color value must start with '#'. Example: #ff0000", 
@@ -210,8 +250,7 @@ class ConfigCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
                             ephemeral=True
                         )
                         return
-            elif key in ["UPDATE_DAYS", "KEEP_DAYS", "TIME_RANGE_DAYS", 
-                        "MY_STATS_COOLDOWN_MINUTES", "MY_STATS_GLOBAL_COOLDOWN_SECONDS"]:
+            elif key in ["UPDATE_DAYS", "KEEP_DAYS", "TIME_RANGE_DAYS"]:
                 try:
                     num_value = int(value)
                     if num_value <= 0:
@@ -229,6 +268,22 @@ class ConfigCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
                     return
             elif key.startswith(("ENABLE_", "ANNOTATE_", "CENSOR_")):
                 value = value.lower() in ['true', '1', 'yes', 'on']
+            elif key.endswith(("_COOLDOWN_MINUTES", "_COOLDOWN_SECONDS")):
+                try:
+                    num_value = int(value)
+                    if num_value < 0:
+                        await interaction.response.send_message(
+                            f"{key} cannot be negative.", 
+                            ephemeral=True
+                        )
+                        return
+                    value = str(num_value)
+                except ValueError:
+                    await interaction.response.send_message(
+                        f"{key} must be a number.", 
+                        ephemeral=True
+                    )
+                    return
 
             # Validate and sanitize the new value
             if not validate_config_value(key, value):
@@ -272,6 +327,10 @@ class ConfigCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
             if key == "LANGUAGE":
                 self.bot.translations = self.translations = self._load_translations(value)
                 await self._update_command_descriptions()
+                
+            # Update tracker if needed
+            if key in ["UPDATE_DAYS", "FIXED_UPDATE_TIME"]:
+                self.bot.update_tracker.update_config(self.config)
 
         except Exception as e:
             logging.error(f"Error updating config value: {str(e)}")
