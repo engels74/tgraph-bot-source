@@ -165,10 +165,12 @@ error_fetch_play_count_month_user: "Failed to fetch play count by month data for
 error_fetch_top_10_platforms: "Failed to fetch top 10 platforms data"
 error_fetch_top_10_platforms_user: "Failed to fetch top 10 platforms data for user {user_id}"
 error_fetch_top_10_users: "Failed to fetch top 10 users data"
+error_fetch_user_data: "Failed to fetch data for user {user_id}"
 error_fetching_data: "Error fetching data from Tautulli API"
 error_fetching_permissions: "Error fetching permissions for guild '{guild_name}': {error}"
 error_fetching_user_id: "Error fetching user ID from email: {error}"
 error_generating_graph: "Error generating graph: {graph_type}"
+error_generating_user_graph: "Error generating {graph_type} for user {user_id}: {error}"
 error_invalid_fixed_time: "Invalid time format for FIXED_UPDATE_TIME: {value}. Please use HH:MM format or 'XX:XX' to disable."
 error_missing_data_play_count_by_month: "Missing data for play count by month"
 error_missing_data_top_10_platforms: "Missing data for top 10 platforms"
@@ -180,6 +182,7 @@ error_missing_series_play_count_by_hourofday: "Missing 'series' data for play co
 error_processing_command: "An error occurred while processing the command."
 error_starting_bot: "Error starting the bot: {error}"
 error_update_post_graphs: "Error in update_and_post_graphs: {error}"
+error_user_graphs_generation: "Error generating graphs for user {user_id}: {error}"
 
 # Warning Messages
 warning_empty_series_daily_play_count: "Empty 'series' data for daily play count"

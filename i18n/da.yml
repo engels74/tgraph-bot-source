@@ -165,10 +165,12 @@ error_fetch_play_count_month_user: "Kunne ikke hente data om antal afspilninger 
 error_fetch_top_10_platforms: "Kunne ikke hente data for top 10 platforme"
 error_fetch_top_10_platforms_user: "Kunne ikke hente data for top 10 platforme for bruger {user_id}"
 error_fetch_top_10_users: "Kunne ikke hente data for top 10 brugere"
+error_fetch_user_data: "Kunne ikke hente data for bruger {user_id}"
 error_fetching_data: "Fejl ved hentning af data fra Tautulli API"
 error_fetching_permissions: "Fejl ved hentning af tilladelser for guild '{guild_name}': {error}"
 error_fetching_user_id: "Fejl ved hentning af bruger-ID fra e-mail: {error}"
 error_generating_graph: "Fejl ved generering af graf: {graph_type}"
+error_generating_user_graph: "Fejl ved generering af {graph_type} for bruger {user_id}: {error}"
 error_invalid_fixed_time: "Ugyldigt tidsformat for FIXED_UPDATE_TIME: {value}. Brug venligst HH:MM-format eller 'XX:XX' for at deaktivere."
 error_missing_data_play_count_by_month: "Manglende data for antal afspilninger pr. måned"
 error_missing_data_top_10_platforms: "Manglende data for top 10 platforme"
@@ -180,6 +182,7 @@ error_missing_series_play_count_by_hourofday: "Manglende 'serie'-data for antal 
 error_processing_command: "Der opstod en fejl under behandlingen af kommandoen."
 error_starting_bot: "Fejl ved start af bot: {error}"
 error_update_post_graphs: "Fejl i update_and_post_graphs: {error}"
+error_user_graphs_generation: "Fejl ved generering af grafer for bruger {user_id}: {error}"
 
 # Warning Messages
 warning_empty_series_daily_play_count: "Tom 'serie'-data for dagligt antal afspilninger"
