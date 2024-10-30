@@ -11,10 +11,9 @@ from typing import Optional, Any
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
-
 from .defaults import create_default_config
 from .validator import validate_config
-from .options import CONFIG_SECTIONS
+from .constants import CONFIG_SECTIONS
 
 class ConfigLoadError(Exception):
     """Raised when there's an error loading the configuration."""

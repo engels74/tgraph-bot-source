@@ -9,7 +9,8 @@ from datetime import datetime
 from typing import Any, Dict, Optional
 import logging
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
-from .options import get_option_metadata, CONFIG_SECTIONS
+from .options import get_option_metadata
+from .constants import CONFIG_SECTIONS
 
 def sanitize_config_value(key: str, value: Any) -> Any:
     """

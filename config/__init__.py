@@ -11,9 +11,9 @@ from .modules.sanitizer import sanitize_config_value
 from .modules.defaults import create_default_config
 from .modules.options import (
     CONFIGURABLE_OPTIONS,
-    RESTART_REQUIRED_KEYS,
-    CONFIG_SECTIONS
+    RESTART_REQUIRED_KEYS
 )
+from .modules.constants import CONFIG_SECTIONS
 
 # Get the CONFIG_DIR from environment variable, default to '/config' if not set
 CONFIG_DIR = os.environ.get("CONFIG_DIR", "/config")

@@ -9,8 +9,6 @@ from typing import Dict, Any
 from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
-# Import from a new constants module instead of options to avoid circular imports
-
 def create_default_config() -> CommentedMap:
     """
     Create a default configuration with standard values and structure.
