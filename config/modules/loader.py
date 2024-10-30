@@ -54,11 +54,11 @@ def add_missing_values(config: CommentedMap, defaults: CommentedMap) -> None:
     """
     new_config = CommentedMap()
     current_section = None
-    
+
     # Process each section in order
     for section, section_data in CONFIG_SECTIONS.items():
         section_keys_added = False
-        
+
         for key in section_data['keys']:
             # Add the key from either config or defaults
             if key in config:
@@ -148,7 +148,7 @@ def load_yaml_config(config_path: str) -> CommentedMap:
     except Exception as e:
         error_msg = f"Unexpected error loading configuration: {str(e)}"
         logging.error(error_msg)
-        raise ConfigLoadError(error_msg)
+        raise ConfigLoadError(error_msg) from e
 
 def save_yaml_config(config: CommentedMap, config_path: str) -> None:
     """
@@ -167,7 +167,7 @@ def save_yaml_config(config: CommentedMap, config_path: str) -> None:
     except Exception as e:
         error_msg = f"Error saving configuration to {config_path}: {str(e)}"
         logging.error(error_msg)
-        raise ConfigSaveError(error_msg)
+        raise ConfigSaveError(error_msg) from e
 
 def update_config_value(config: CommentedMap, key: str, value: Any) -> None:
     """
