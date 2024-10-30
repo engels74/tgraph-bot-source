@@ -155,6 +155,8 @@ log_updating_posting_graphs_startup: "Opdatering og udstationering af grafer ved
 log_waiting_before_permission_check: "Venter 5 sekunder, før kommandotilladelser tjekkes..."
 
 # Error Messages
+dm_disabled_error: "Kan ikke sende grafer via direkte besked. Sørg for, at du har aktiveret DM'er for denne server."
+dm_send_error: "Der opstod en fejl under afsendelse af grafer via direkte besked. Prøv igen senere."
 error_fetch_daily_play_count: "Kunne ikke hente data for dagligt antal afspilninger"
 error_fetch_daily_play_count_user: "Kunne ikke hente data for dagligt antal afspilninger for bruger {user_id}"
 error_fetch_graph_data: "Kunne ikke hente grafdata"

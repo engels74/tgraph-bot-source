@@ -155,6 +155,8 @@ log_updating_posting_graphs_startup: "Updating and posting graphs on bot startup
 log_waiting_before_permission_check: "Waiting 5 seconds before checking command permissions..."
 
 # Error Messages
+error_dm_disabled: "Unable to send graphs via direct message. Please ensure you have DMs enabled for this server."
+error_dm_send: "An error occurred while sending graphs via direct message. Please try again later."
 error_fetch_daily_play_count: "Failed to fetch daily play count data"
 error_fetch_daily_play_count_user: "Failed to fetch daily play count data for user {user_id}"
 error_fetch_graph_data: "Failed to fetch graph data"

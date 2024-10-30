@@ -18,7 +18,7 @@ class MyStatsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
         self.bot = bot
         self.config = config
         self.translations = translations
-        CommandMixin.__init__(self)
+        super().__init__()  # Initialize both CommandMixin and ErrorHandlerMixin
 
     @app_commands.command(
         name="my_stats",
@@ -35,7 +35,6 @@ class MyStatsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
         email : str
             The user's Plex email address
         """
-        # Check cooldowns using mixin's method
         if not await self.check_cooldowns(
             interaction,
             self.config["MY_STATS_COOLDOWN_MINUTES"],
@@ -46,7 +45,6 @@ class MyStatsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
         await interaction.response.defer(ephemeral=True)
 
         try:
-            # Fetch user ID from email
             user_id = self.bot.data_fetcher.get_user_id_from_email(email)
 
             if not user_id:
@@ -56,14 +54,12 @@ class MyStatsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
                 )
                 return
 
-            # Log the graph generation start
             logging.info(
                 self.translations["log_generating_user_graphs"].format(
                     user_id=user_id
                 )
             )
 
-            # Generate user-specific graphs
             graph_files = await self.bot.user_graph_manager.generate_user_graphs(user_id)
             
             logging.info(
@@ -80,31 +76,45 @@ class MyStatsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
                 )
                 return
 
-            # Send graphs via PM
             logging.info(self.translations["log_sending_graphs_pm"])
-            dm_channel = await interaction.user.create_dm()
             
-            for graph_file in graph_files:
-                logging.info(
-                    self.translations["log_sending_graph_file"].format(file=graph_file)
+            try:
+                dm_channel = await interaction.user.create_dm()
+                
+                for graph_file in graph_files:
+                    try:
+                        await dm_channel.send(file=discord.File(graph_file))
+                        logging.info(
+                            self.translations["log_sending_graph_file"].format(file=graph_file)
+                        )
+                    except discord.HTTPException as e:
+                        logging.error(f"Failed to send graph file: {str(e)}")
+                        raise
+
+                self.update_cooldowns(
+                    str(interaction.user.id),
+                    self.config["MY_STATS_COOLDOWN_MINUTES"],
+                    self.config["MY_STATS_GLOBAL_COOLDOWN_SECONDS"]
                 )
-                await dm_channel.send(file=discord.File(graph_file))
 
-            # Update cooldowns using mixin's method
-            self.update_cooldowns(
-                str(interaction.user.id),
-                self.config["MY_STATS_COOLDOWN_MINUTES"],
-                self.config["MY_STATS_GLOBAL_COOLDOWN_SECONDS"]
-            )
+                await self.log_command(interaction, "my_stats")
+                await interaction.followup.send(
+                    self.translations["my_stats_success"],
+                    ephemeral=True
+                )
 
-            # Log successful command execution
-            await self.log_command(interaction, "my_stats")
-
-            # Send success message
-            await interaction.followup.send(
-                self.translations["my_stats_success"],
-                ephemeral=True
-            )
+            except discord.Forbidden:
+                logging.warning("Failed to send DM to user; DMs may be disabled.")
+                await interaction.followup.send(
+                    self.translations["error_dm_disabled"],
+                    ephemeral=True
+                )
+            except Exception as e:
+                logging.error(f"Unexpected error when sending DM: {e}")
+                await interaction.followup.send(
+                    self.translations["error_dm_send"],
+                    ephemeral=True
+                )
 
         except Exception as e:
             logging.error(
@@ -113,9 +123,9 @@ class MyStatsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
                     error=str(e)
                 )
             )
-            raise  # Let the mixin's error handler handle it
+            raise
 
-async def setup(bot: commands.Bot) -> None:
+def setup(bot: commands.Bot) -> None:
     """Setup function for the my_stats cog.
     
     Parameters
@@ -123,4 +133,4 @@ async def setup(bot: commands.Bot) -> None:
     bot : commands.Bot
         The bot instance
     """
-    await bot.add_cog(MyStatsCog(bot, bot.config, bot.translations))
+    bot.add_cog(MyStatsCog(bot, bot.config, bot.translations))
