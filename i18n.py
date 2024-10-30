@@ -1,8 +1,8 @@
 # i18n.py
-import os
 import logging
+import os
 from typing import Dict, List
-from ruamel.yaml import YAML
+from ruamel.yaml import YAML, YAMLError
 
 class TranslationKeyError(Exception):
     pass
@@ -38,10 +38,10 @@ def load_translations(language: str) -> Dict[str, str]:
         
         logging.info(f"Loaded translations for language: {language}")
         return translations
-    except FileNotFoundError:
-        raise TranslationKeyError(f"Translation file for {language} not found. Looked in: {file_path}")
-    except yaml.YAMLError as e:
-        raise TranslationKeyError(f"Error parsing YAML in {file_path}: {str(e)}")
+    except FileNotFoundError as err:
+        raise TranslationKeyError(f"Translation file for {language} not found. Looked in: {file_path}") from err
+    except YAMLError as err:
+        raise TranslationKeyError(f"Error parsing YAML in {file_path}: {str(err)}") from err
 
 def get_available_languages() -> List[str]:
     """
@@ -76,13 +76,23 @@ def update_translations(bot, language: str) -> None:
     
     :param bot: The bot instance
     :param language: The language code to update to
+    :raises TranslationKeyError: If the language is not available
     """
+    available_languages = get_available_languages()
+    if language not in available_languages:
+        raise TranslationKeyError(
+            f"Language '{language}' not available. Available languages: {', '.join(available_languages)}"
+        )
+
     bot.translations = load_translations(language)
     
     # Update command descriptions
     for command in bot.tree.walk_commands():
         translation_key = f"{command.name}_command_description"
-        if translation_key in bot.translations:
+        try:
             command.description = bot.translations[translation_key]
+        except KeyError:
+            logging.warning(f"Missing translation for command description: {translation_key}")
+            # Keep existing description as fallback
     
     logging.info(f"Updated bot translations and command descriptions to language: {language}")
