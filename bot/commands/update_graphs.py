@@ -21,6 +21,7 @@ class UpdateGraphsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
         self.config = config
         self.translations = translations
         CommandMixin.__init__(self)
+        ErrorHandlerMixin.__init__(self)
 
     @app_commands.command(
         name="update_graphs",
@@ -50,17 +51,24 @@ class UpdateGraphsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
             logging.info(self.translations["log_manual_update_started"])
 
             # Reload config in case of changes
-            self.config = self.bot.config = await self.reload_config()
+            self.config = self.bot.config = self.reload_config()
             
             # Update the bot's tracker with new config
             self.bot.update_tracker.update_config(self.config)
 
             # Get the target channel
-            channel = self.bot.get_channel(self.config["CHANNEL_ID"])
+            channel_id = self.config.get("CHANNEL_ID")
+            if not channel_id:
+                await interaction.followup.send(
+                    "Channel ID not found in configuration.",
+                    ephemeral=True
+                )
+                return
+            channel = self.bot.get_channel(channel_id)
             if not channel:
                 await interaction.followup.send(
                     self.translations["log_channel_not_found"].format(
-                        channel_id=self.config["CHANNEL_ID"]
+                        channel_id=channel_id
                     ),
                     ephemeral=True
                 )
@@ -115,7 +123,7 @@ class UpdateGraphsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
             )
 
         except Exception as e:
-            logging.error(
+            logging.exception(
                 self.translations["log_command_error"].format(
                     command="update_graphs",
                     error=str(e)
@@ -123,7 +131,7 @@ class UpdateGraphsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
             )
             raise  # Let the mixin's error handler handle it
 
-    async def reload_config(self) -> dict:
+    def reload_config(self) -> dict:
         """Reload the configuration from disk.
 
         Returns
