@@ -8,6 +8,7 @@ Handles type conversion, formatting, and validation of configuration values.
 from datetime import datetime
 from typing import Any, Dict, Optional
 import logging
+import re  # Added for regex validation in color sanitization
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 from .options import get_option_metadata
 from .constants import CONFIG_SECTIONS
@@ -52,7 +53,7 @@ def sanitize_config_value(key: str, value: Any) -> Any:
         
         return value
 
-    except Exception as e:
+    except (ValueError, TypeError, KeyError) as e:
         logging.error(f"Error sanitizing config value for key {key}: {str(e)}")
         return _get_default_for_type(key)
 
@@ -70,11 +71,7 @@ def _sanitize_integer(value: Any, minimum: Optional[int] = None, key: str = None
     Special handling for cooldown values to allow zero/negative values.
     """
     try:
-        if isinstance(value, str):
-            # Handle potential decimal strings
-            value = int(float(value))
-        else:
-            value = int(value)
+        value = int(float(value)) if isinstance(value, str) else int(value)
             
         # For cooldown settings, allow zero and negative values
         if key and (key.endswith('_COOLDOWN_MINUTES') or key.endswith('_COOLDOWN_SECONDS')):
@@ -99,7 +96,7 @@ def _sanitize_color(value: str) -> DoubleQuotedScalarString:
     # Ensure valid hex color
     if len(color) == 4:  # Convert #RGB to #RRGGBB
         color = f'#{color[1]*2}{color[2]*2}{color[3]*2}'
-    elif len(color) != 7:  # Invalid length, return default
+    if not re.match(r'^#([0-9a-fA-F]{6})$', color):
         color = '#000000'
     return DoubleQuotedScalarString(color)
 
@@ -117,7 +114,7 @@ def _sanitize_time(value: str) -> DoubleQuotedScalarString:
 def _sanitize_string(value: Any) -> str:
     """Convert a value to string and clean it up."""
     return str(value).strip().strip('"\'')
-
+    
 def _get_default_for_type(key: str) -> Any:
     """Get a safe default value based on the option's type."""
     metadata = get_option_metadata(key)
@@ -186,6 +183,10 @@ def format_value_for_display(key: str, value: Any) -> str:
     """
     if isinstance(value, bool):
         return str(value).lower()
+    elif isinstance(value, int):
+        return str(value)
+    elif isinstance(value, list):
+        return ', '.join(map(str, value))
     elif isinstance(value, (DoubleQuotedScalarString, str)):
         return str(value).strip('"\'')
     return str(value)
