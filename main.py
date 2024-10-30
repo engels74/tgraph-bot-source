@@ -98,10 +98,27 @@ class TGraphBot(commands.Bot):
         self.config = kwargs.pop("config", None)
         self.config_path = kwargs.pop("config_path", None)
         self.translations = kwargs.pop("translations", None)
-        self.graph_manager = GraphManager(self.config, self.translations, self.img_folder)
-        self.user_graph_manager = UserGraphManager(self.config, self.translations, self.img_folder)
-        self.data_fetcher = DataFetcher(self.config)
-        log(self.translations["log_tgraphbot_initialized"])
+        self._initialized_resources = []
+        try:
+            self.graph_manager = GraphManager(self.config, self.translations, self.img_folder)
+            self._initialized_resources.append(self.graph_manager)
+            self.user_graph_manager = UserGraphManager(self.config, self.translations, self.img_folder)
+            self._initialized_resources.append(self.user_graph_manager)
+            self.data_fetcher = DataFetcher(self.config)
+            self._initialized_resources.append(self.data_fetcher)
+            log(self.translations["log_tgraphbot_initialized"])
+        except Exception as e:
+            log(f"Error during initialization: {e}", logging.ERROR)
+            self._cleanup_resources()
+            raise
+
+    def _cleanup_resources(self):
+        for resource in reversed(self._initialized_resources):
+            try:
+                if hasattr(resource, 'cleanup'):
+                    resource.cleanup()
+            except Exception as e:
+                log(f"Error during cleanup of {resource.__class__.__name__}: {e}", logging.ERROR)
 
     async def setup_hook(self):
         """Initialize the bot's state after login."""
