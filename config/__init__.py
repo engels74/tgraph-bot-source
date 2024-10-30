@@ -2,7 +2,7 @@
 import logging
 import os
 from typing import Dict, Any, Optional, List
-from ruamel.yaml import YAML
+from ruamel.yaml import YAML, YAMLError  # Included YAMLError
 
 # Import all required modules
 from .modules.loader import load_yaml_config, save_yaml_config
@@ -69,17 +69,17 @@ class ConfigManager:
         try:
             self._config = load_yaml_config(self.config_path)
             return self._config
-        except Exception as e:
+        except (FileNotFoundError, YAMLError) as e:
             logging.error(f"Failed to load configuration: {str(e)}")
-            raise ConfigError(f"Configuration load failed: {str(e)}")
+            raise ConfigError(f"Configuration load failed: {str(e)}") from e
 
     def save_config(self) -> None:
         """Save the current configuration to file."""
         try:
             save_yaml_config(self.config, self.config_path)
-        except Exception as e:
+        except (IOError, YAMLError) as e:
             logging.error(f"Failed to save configuration: {str(e)}")
-            raise ConfigError(f"Configuration save failed: {str(e)}")
+            raise ConfigError(f"Configuration save failed: {str(e)}") from e
 
     def update_value(self, key: str, value: Any, translations: Dict[str, str]) -> str:
         """
@@ -117,9 +117,9 @@ class ConfigManager:
                 old_value=old_value,
                 new_value=sanitized_value
             )
-        except Exception as e:
+        except (ConfigError, ValueError, TypeError) as e:
             logging.error(f"Error updating config value: {str(e)}")
-            raise ConfigError(f"Configuration update failed: {str(e)}")
+            raise ConfigError(f"Configuration update failed: {str(e)}") from e
 
     def get_configurable_options(self) -> List[str]:
         """
@@ -141,9 +141,9 @@ class ConfigManager:
         try:
             config = create_default_config()
             save_yaml_config(config, config_path)
-        except Exception as e:
+        except (IOError, YAMLError) as e:
             logging.error(f"Failed to create default configuration: {str(e)}")
-            raise ConfigError(f"Default configuration creation failed: {str(e)}")
+            raise ConfigError(f"Default configuration creation failed: {str(e)}") from e
 
 def get_config_manager(config_path: Optional[str] = None) -> ConfigManager:
     """
@@ -151,8 +151,8 @@ def get_config_manager(config_path: Optional[str] = None) -> ConfigManager:
     
     Args:
         config_path: Optional path to configuration file. If not provided,
-                    uses default path based on CONFIG_DIR
-                    
+                     uses default path based on CONFIG_DIR
+                     
     Returns:
         A ConfigManager instance
     """
