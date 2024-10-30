@@ -13,9 +13,6 @@ class DataFetcher:
         self.config = config
         self.cache = TTLCache(maxsize=100, ttl=cache_ttl)  # Cache with 5 minutes TTL
 
-    def cached_fetch(self, func):
-        return cached(cache=self.cache)(func)
-
     @cached(cache=TTLCache(maxsize=100, ttl=300))
     def fetch_tautulli_data(self, cmd: str, params: Dict[str, Any] = None) -> Optional[Dict[str, Any]]:
         """
@@ -78,12 +75,14 @@ class DataFetcher:
         params = {k: v for k, v in params.items() if v is not None}
 
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(self.config["TAUTULLI_URL"], params=params) as response:
-                    response.raise_for_status()
-                    data = await response.json()
-                    self.cache[cache_key] = data
-                    return data
+            async with (
+                aiohttp.ClientSession() as session,
+                session.get(self.config["TAUTULLI_URL"], params=params) as response
+            ):
+                response.raise_for_status()
+                data = await response.json()
+                self.cache[cache_key] = data
+                return data
         except aiohttp.ClientError as e:
             logging.error(f"Error fetching data from Tautulli API asynchronously: {str(e)}")
             return None
