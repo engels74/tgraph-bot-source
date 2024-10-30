@@ -1,6 +1,7 @@
 # graphs/graph_modules/graph_factory.py
 
 from typing import Dict, Any, Type
+import logging
 from .base_graph import BaseGraph
 from .daily_play_count_graph import DailyPlayCountGraph
 from .play_count_by_dayofweek_graph import PlayCountByDayOfWeekGraph
@@ -13,7 +14,7 @@ class GraphFactory:
     def __init__(self, config: Dict[str, Any], translations: Dict[str, str], img_folder: str):
         self.config = config
         self.translations = translations
-        self.img_folder = img_folder  # Add this line
+        self.img_folder = img_folder
         self.graph_classes: Dict[str, Type[BaseGraph]] = {
             "daily_play_count": DailyPlayCountGraph,
             "play_count_by_dayofweek": PlayCountByDayOfWeekGraph,
@@ -59,13 +60,38 @@ class GraphFactory:
         :param user_id: Optional user ID for user-specific graphs
         :return: A dictionary of graph type to generated graph file paths
         """
-        graph_data = await data_fetcher.fetch_all_graph_data(user_id)
         generated_graphs = {}
 
-        for graph_type, graph_instance in self.create_all_graphs().items():
-            if graph_data.get(graph_type):
-                file_path = await graph_instance.generate(data_fetcher, user_id)
-                if file_path:
-                    generated_graphs[graph_type] = file_path
+        try:
+            graph_data = await data_fetcher.fetch_all_graph_data(user_id)
+            if not graph_data:
+                logging.error(self.translations.get(
+                    "error_fetch_graph_data",
+                    "Failed to fetch graph data"
+                ))
+                return generated_graphs
+
+            for graph_type, graph_instance in self.create_all_graphs().items():
+                if graph_data.get(graph_type):
+                    try:
+                        file_path = await graph_instance.generate(data_fetcher, user_id)
+                        if file_path:
+                            generated_graphs[graph_type] = file_path
+                            logging.info(self.translations.get(
+                                "log_graph_generated",
+                                "Generated {graph_type} graph"
+                            ).format(graph_type=graph_type))
+                    except Exception as e:
+                        logging.error(self.translations.get(
+                            "error_generating_graph",
+                            "Error generating {graph_type} graph: {error}"
+                        ).format(graph_type=graph_type, error=str(e)))
+                        continue  # Continue with next graph even if one fails
+
+        except Exception as e:
+            logging.error(self.translations.get(
+                "error_graph_generation",
+                "Error during graph generation: {error}"
+            ).format(error=str(e)))
 
         return generated_graphs
