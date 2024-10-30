@@ -1,17 +1,17 @@
 # graphs/graph_modules/utils.py
 
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 import os
 import logging
 import shutil
+from collections import defaultdict
 
 def format_date(date: datetime) -> str:
-    """
-    Format a datetime object to a string.
-    
+    """Format a datetime object to a string (YYYY-MM-DD).
+
     :param date: The datetime object to format
-    :return: A formatted date string (YYYY-MM-DD)
+    :return: A formatted date string
     """
     return date.strftime("%Y-%m-%d")
 
@@ -35,9 +35,9 @@ def get_color(series_name: str, config: Dict[str, Any]) -> str:
     :return: The color code for the series
     """
     if series_name == "TV":
-        return config["TV_COLOR"].strip('"')
+        return config.get("TV_COLOR", "#FF0000").strip('"')
     elif series_name == "Movies":
-        return config["MOVIE_COLOR"].strip('"')
+        return config.get("MOVIE_COLOR", "#00FF00").strip('"')
     else:
         return "#1f77b4"  # Default color
 
@@ -65,8 +65,8 @@ def cleanup_old_folders(base_folder: str, keep_days: int, translations: Dict[str
         try:
             shutil.rmtree(os.path.join(base_folder, folder))
         except Exception as e:
-            logging.error(translations["error_deleting_folder"].format(folder=folder, error=str(e)))
-    logging.info(translations["log_cleaned_up_old_folders"].format(keep_days=keep_days))
+            logging.error(translations.get("error_deleting_folder", "Error deleting folder {folder}: {error}").format(folder=folder, error=str(e)))
+    logging.info(translations.get("log_cleaned_up_old_folders", "Cleaned up folders, keeping last {keep_days} days.").format(keep_days=keep_days))
 
 def censor_username(username: str, should_censor: bool) -> str:
     """
@@ -97,11 +97,13 @@ def validate_config(config: Dict[str, Any]) -> List[str]:
         if key not in config or not config[key]:
             errors.append(f"Missing or empty required configuration: {key}")
     
-    if "UPDATE_DAYS" in config and (not isinstance(config["UPDATE_DAYS"], int) or config["UPDATE_DAYS"] <= 0):
-        errors.append("UPDATE_DAYS must be a positive integer")
+    if "UPDATE_DAYS" in config:
+        if not isinstance(config["UPDATE_DAYS"], int) or config["UPDATE_DAYS"] <= 0:
+            errors.append(f"UPDATE_DAYS must be a positive integer, got {config['UPDATE_DAYS']} of type {type(config['UPDATE_DAYS']).__name__}")
     
-    if "KEEP_DAYS" in config and (not isinstance(config["KEEP_DAYS"], int) or config["KEEP_DAYS"] <= 0):
-        errors.append("KEEP_DAYS must be a positive integer")
+    if "KEEP_DAYS" in config:
+        if not isinstance(config["KEEP_DAYS"], int) or config["KEEP_DAYS"] <= 0:
+            errors.append(f"KEEP_DAYS must be a positive integer, got {config['KEEP_DAYS']} of type {type(config['KEEP_DAYS']).__name__}")
     
     return errors
 
@@ -115,10 +117,10 @@ def format_time_value(value: str) -> str:
     value = value.strip().strip("\"'")
     return f'"{value}"'
 
-def parse_time(value: str) -> datetime.time:
+def parse_time(value: str) -> Optional[datetime.time]:
     """
     Parse a time string into a datetime.time object.
-    
+
     :param value: The time string to parse (format: HH:MM)
     :return: A datetime.time object, or None if parsing fails
     """
@@ -145,7 +147,8 @@ def get_next_update_time(last_update: datetime, update_days: int, fixed_update_t
             next_update = next_update.replace(hour=fixed_time.hour, minute=fixed_time.minute, second=0, microsecond=0)
     
     # Ensure next_update is in the future
-    while next_update <= datetime.now():
+    now = datetime.now(tz=next_update.tzinfo)
+    while next_update <= now:
         next_update += timedelta(days=update_days)
     
     return next_update
@@ -153,14 +156,14 @@ def get_next_update_time(last_update: datetime, update_days: int, fixed_update_t
 def format_delta_time(delta: timedelta) -> str:
     """
     Format a timedelta object into a human-readable string.
-    
+
     :param delta: The timedelta to format
     :return: A formatted string representation of the time difference
     """
     days = delta.days
     hours, remainder = divmod(delta.seconds, 3600)
     minutes, seconds = divmod(remainder, 60)
-    
+
     parts = []
     if days:
         parts.append(f"{days} day{'s' if days != 1 else ''}")
@@ -170,7 +173,9 @@ def format_delta_time(delta: timedelta) -> str:
         parts.append(f"{minutes} minute{'s' if minutes != 1 else ''}")
     if seconds:
         parts.append(f"{seconds} second{'s' if seconds != 1 else ''}")
-    
+
+    if not parts:
+        return "0 seconds"
     return ", ".join(parts)
 
 def get_readable_file_size(size_in_bytes: int) -> str:
@@ -206,6 +211,9 @@ def get_sorted_date_folders(base_folder: str) -> List[str]:
     :param base_folder: The base folder containing date folders
     :return: A list of folder names sorted in descending order (newest first)
     """
+    if not os.path.exists(base_folder):
+        logging.warning(f"Base folder {base_folder} does not exist.")
+        return []
     folders = [f for f in os.listdir(base_folder) if os.path.isdir(os.path.join(base_folder, f)) and is_valid_date_string(f)]
     return sorted(folders, reverse=True)
 
@@ -217,7 +225,7 @@ def log_error(message: str, error: Exception, translations: Dict[str, str]):
     :param error: The exception object
     :param translations: The translations dictionary
     """
-    logging.error(translations.get(message, message).format(error=str(error)))
+    logging.error(translations.get(message, message).format_map(defaultdict(str, error=str(error))))
 
 def log_info(message: str, translations: Dict[str, str], **kwargs):
     """
@@ -227,4 +235,4 @@ def log_info(message: str, translations: Dict[str, str], **kwargs):
     :param translations: The translations dictionary
     :param kwargs: Additional formatting arguments for the translated message
     """
-    logging.info(translations.get(message, message).format(**kwargs))
+    logging.info(translations.get(message, message).format_map(defaultdict(str, **kwargs)))
