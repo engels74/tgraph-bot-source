@@ -53,17 +53,6 @@ class BaseGraph(ABC):
         # Create a new figure with specified size
         self.figure, self.ax = plt.subplots(figsize=figsize)
         
-        # Configure the axes with explicit font properties
-        self.ax.set_title(
-            self.ax.get_title(),
-            fontdict={'weight': 'bold'},
-            pad=20
-        )
-        
-        # Set x and y label properties explicitly
-        self.ax.xaxis.label.set_weight('bold')
-        self.ax.yaxis.label.set_weight('bold')
-        
         # Set tick label properties
         self.ax.tick_params(
             axis='both',
@@ -127,6 +116,9 @@ class BaseGraph(ABC):
         
         :param filepath: The path where the graph should be saved
         """
+        if self.figure is None:
+            logging.error("Figure is not initialized. Cannot save the graph.")
+            return
         try:
             self.figure.savefig(filepath)
             logging.info(f"Graph saved successfully: {filepath}")
@@ -137,17 +129,18 @@ class BaseGraph(ABC):
 
     def get_color(self, series_name: str) -> str:
         """
-        Get the color for TV shows or Movies.
+        Get the color for a given series.
         
-        :param series_name: The media type ('TV' or 'Movies')
+        :param series_name: The media type (e.g., 'TV' or 'Movies')
         :return: The color code for the series
-        :raises ValueError: If series_name is not 'TV' or 'Movies'
+        :raises ValueError: If color is not defined in configuration
         """
-        if series_name == "TV":
-            return self.config["TV_COLOR"].strip('"')
-        elif series_name == "Movies":
-            return self.config["MOVIE_COLOR"].strip('"')
-        raise ValueError(f"Invalid series name: {series_name}. Must be 'TV' or 'Movies'")
+        color_key = f"{series_name.upper()}_COLOR"
+        color = self.config.get(color_key)
+        if color:
+            return color
+        else:
+            raise ValueError(f"Color for series '{series_name}' not defined in configuration")
 
     def annotate(self, x, y, text):
         """
@@ -157,7 +150,7 @@ class BaseGraph(ABC):
         :param y: The y-coordinate of the annotation
         :param text: The text of the annotation
         """
-        text_color = self.config["ANNOTATION_COLOR"].strip('"')
+        text_color = self.config["ANNOTATION_COLOR"]
         
         annotation_params = {
             "text": text,
@@ -172,7 +165,7 @@ class BaseGraph(ABC):
         }
 
         if self.config["ENABLE_ANNOTATION_OUTLINE"]:
-            outline_color = self.config["ANNOTATION_OUTLINE_COLOR"].strip('"')
+            outline_color = self.config["ANNOTATION_OUTLINE_COLOR"]
             annotation_params["path_effects"] = [
                 patheffects.Stroke(linewidth=1, foreground=outline_color),
                 patheffects.Normal()
