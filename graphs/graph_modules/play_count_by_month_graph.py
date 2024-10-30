@@ -41,6 +41,10 @@ class PlayCountByMonthGraph(BaseGraph):
             "movie_data": []
         }
 
+        # Initialize with empty lists to prevent UnboundLocalError
+        tv_data = []
+        movie_data = []
+        
         for serie in series:
             if serie["name"] == "TV":
                 tv_data = serie["data"]
@@ -120,6 +124,7 @@ class PlayCountByMonthGraph(BaseGraph):
         today = datetime.today().strftime("%Y-%m-%d")
         file_name = f"play_count_by_month{'_' + user_id if user_id else ''}.png"
         file_path = os.path.join(self.img_folder, today, file_name)
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
         self.save(file_path)
 
         return file_path
