@@ -86,7 +86,7 @@ def update_config(key: str, value: Any, translations: Dict[str, str]) -> str:
             new_value=sanitized_value
         )
         
-    except Exception as e:
+    except (ValueError, KeyError, ConfigError) as e:
         logging.error(f"Failed to update configuration: {str(e)}")
         raise
 
@@ -100,7 +100,11 @@ def get_config_value(key: str) -> Any:
     Returns:
         The configuration value
     """
-    config = load_config()
+    try:
+        config = load_config()
+    except ConfigError as e:
+        logging.error(f"Failed to get configuration value: {str(e)}")
+        raise
     if key not in config:
         raise KeyError(f"Configuration key not found: {key}")
     return config[key]
