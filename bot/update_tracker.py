@@ -26,6 +26,10 @@ class UpdateTracker:
 
     def get_update_days(self) -> int:
         update_days = self.config.get("UPDATE_DAYS", 7)
+        try:
+            update_days = int(update_days)
+        except (TypeError, ValueError):
+            raise ValueError("UPDATE_DAYS must be an integer")
         if update_days <= 0:
             raise ValueError("UPDATE_DAYS must be a positive integer")
         return update_days
@@ -35,7 +39,9 @@ class UpdateTracker:
         if isinstance(fixed_time, time):
             return fixed_time
         elif isinstance(fixed_time, str):
-            fixed_time = fixed_time.strip('"\'')
+            fixed_time = fixed_time.strip()
+            if fixed_time.startswith(("'", '"')) and fixed_time.endswith(("'", '"')):
+                fixed_time = fixed_time[1:-1]
             if fixed_time.upper() == "XX:XX":
                 return None
             try:
@@ -51,15 +57,19 @@ class UpdateTracker:
     def load_tracker(self) -> None:
         if os.path.exists(self.tracker_file):
             with open(self.tracker_file, "r") as f:
-                data = json.load(f)
-                self.last_update = datetime.fromisoformat(data["last_update"])
-                self.next_update = datetime.fromisoformat(data["next_update"])
-                logging.info(
-                    self.translations["tracker_file_loaded"].format(
-                        last_update=self.last_update,
-                        next_update=self.next_update
+                try:
+                    data = json.load(f)
+                    self.last_update = datetime.fromisoformat(data["last_update"])
+                    self.next_update = datetime.fromisoformat(data["next_update"])
+                    logging.info(
+                        self.translations["tracker_file_loaded"].format(
+                            last_update=self.last_update,
+                            next_update=self.next_update
+                        )
                     )
-                )
+                except (json.JSONDecodeError, KeyError, ValueError) as e:
+                    logging.error(f"Error loading tracker data: {e}")
+                    self.reset()
         else:
             self.reset()
             logging.info(self.translations["no_tracker_file_found"])
@@ -80,8 +90,9 @@ class UpdateTracker:
         fixed_time = self.get_fixed_update_time()
         now = datetime.now().replace(microsecond=0)
 
-        # Calculate base date (tomorrow)
-        next_update = now.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=update_days)
+        # Calculate base date (from last update plus update days)
+        next_update = from_date + timedelta(days=update_days)
+        next_update = next_update.replace(hour=0, minute=0, second=0, microsecond=0)
         
         # Set the fixed time
         if fixed_time:
@@ -118,10 +129,15 @@ class UpdateTracker:
         self.save_tracker()
 
     def get_next_update_readable(self) -> str:
+        if self.next_update is None:
+            return "Update time not set"
         return self.next_update.strftime("%Y-%m-%d %H:%M:%S")
 
     def get_next_update_discord(self) -> str:
         """Get Discord timestamp for next update."""
+        if self.next_update is None:
+            logging.error("next_update is None in get_next_update_discord")
+            return "Update time not set"
         timestamp = int(self.next_update.timestamp())
         test_time = datetime.fromtimestamp(timestamp)
         logging.debug("Discord timestamp debug:")
@@ -133,7 +149,9 @@ class UpdateTracker:
     def should_log_check(self, now: datetime) -> bool:
         if self.last_log_time is None:
             return True
-
+        if self.next_update is None:
+            logging.error("next_update is None in should_log_check")
+            return False
         time_until_update = self.next_update - now
         
         if time_until_update <= self.log_threshold:
@@ -146,6 +164,9 @@ class UpdateTracker:
 
     def is_update_due(self) -> bool:
         now = datetime.now().replace(microsecond=0)
+        if self.next_update is None:
+            logging.error("next_update is None in is_update_due")
+            return False
         is_due = now >= self.next_update
 
         if self.should_log_check(now):
