@@ -25,7 +25,7 @@ class ConfigCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
         self.bot = bot
         self.config = config
         self.translations = translations
-        CommandMixin.__init__(self)  # Initialize the command mixin
+        super().__init__()
 
     @app_commands.command(
         name="config",
@@ -64,32 +64,20 @@ class ConfigCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
         ):
             return
 
-        try:
-            if action == "view":
-                await self._handle_view_config(interaction, key)
-            elif action == "edit":
-                await self._handle_edit_config(interaction, key, value)
+        if action == "view":
+            await self._handle_view_config(interaction, key)
+        elif action == "edit":
+            await self._handle_edit_config(interaction, key, value)
 
-            # Log successful command execution
-            await self.log_command(interaction, f"config_{action}")
-            
-            # Update cooldowns after successful execution
-            self.update_cooldowns(
-                str(interaction.user.id),
-                self.config["CONFIG_COOLDOWN_MINUTES"],
-                self.config["CONFIG_GLOBAL_COOLDOWN_SECONDS"]
-            )
-
-        except Exception as e:
-            # For configuration-specific errors, we want custom handling
-            if isinstance(e, (ValueError, KeyError)):
-                await interaction.response.send_message(
-                    f"Configuration error: {str(e)}", 
-                    ephemeral=True
-                )
-            else:
-                # For other errors, let the mixin handle it
-                raise e
+        # Log successful command execution
+        await self.log_command(interaction, f"config_{action}")
+        
+        # Update cooldowns after successful execution
+        self.update_cooldowns(
+            str(interaction.user.id),
+            self.config["CONFIG_COOLDOWN_MINUTES"],
+            self.config["CONFIG_GLOBAL_COOLDOWN_SECONDS"]
+        )
 
     @config.autocomplete('key')
     async def key_autocomplete(
@@ -243,47 +231,32 @@ class ConfigCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
                     )
                     return
             elif key == "FIXED_UPDATE_TIME":
-                if value.upper() != "XX:XX":
-                    if not self._validate_time_format(value):
-                        await interaction.response.send_message(
-                            "Invalid time format. Please use HH:MM format (e.g., 14:30) or XX:XX to disable.", 
-                            ephemeral=True
-                        )
-                        return
-            elif key in ["UPDATE_DAYS", "KEEP_DAYS", "TIME_RANGE_DAYS"]:
-                try:
-                    num_value = int(value)
-                    if num_value <= 0:
-                        await interaction.response.send_message(
-                            f"{key} must be a positive number.", 
-                            ephemeral=True
-                        )
-                        return
-                    value = str(num_value)
-                except ValueError:
+                if value.upper() != "XX:XX" and not self._validate_time_format(value):
                     await interaction.response.send_message(
-                        f"{key} must be a number.", 
+                        "Invalid time format. Please use HH:MM format (e.g., 14:30) or XX:XX to disable.", 
                         ephemeral=True
                     )
                     return
+            elif key in ["UPDATE_DAYS", "KEEP_DAYS", "TIME_RANGE_DAYS"]:
+                num_value = self._validate_positive_int(value)
+                if num_value is None:
+                    await interaction.response.send_message(
+                        f"{key} must be a positive number.", 
+                        ephemeral=True
+                    )
+                    return
+                value = str(num_value)
             elif key.startswith(("ENABLE_", "ANNOTATE_", "CENSOR_")):
                 value = value.lower() in ['true', '1', 'yes', 'on']
             elif key.endswith(("_COOLDOWN_MINUTES", "_COOLDOWN_SECONDS")):
-                try:
-                    num_value = int(value)
-                    if num_value < 0:
-                        await interaction.response.send_message(
-                            f"{key} cannot be negative.", 
-                            ephemeral=True
-                        )
-                        return
-                    value = str(num_value)
-                except ValueError:
+                num_value = self._validate_non_negative_int(value)
+                if num_value is None:
                     await interaction.response.send_message(
-                        f"{key} must be a number.", 
+                        f"{key} must be a non-negative number.", 
                         ephemeral=True
                     )
                     return
+                value = str(num_value)
 
             # Validate and sanitize the new value
             if not validate_config_value(key, value):
@@ -325,19 +298,61 @@ class ConfigCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
 
             # Special handling for language changes
             if key == "LANGUAGE":
-                self.bot.translations = self.translations = self._load_translations(value)
+                self.bot.translations = self.translations = await self._load_translations(value)
                 await self._update_command_descriptions()
                 
             # Update tracker if needed
             if key in ["UPDATE_DAYS", "FIXED_UPDATE_TIME"]:
                 self.bot.update_tracker.update_config(self.config)
 
-        except Exception as e:
+        except (ValueError, KeyError) as e:
             logging.error(f"Error updating config value: {str(e)}")
             await interaction.response.send_message(
                 f"Error updating configuration: {str(e)}", 
                 ephemeral=True
             )
+
+    def _validate_positive_int(self, value: str) -> Optional[int]:
+        """Validate that the value is a positive integer.
+
+        Parameters
+        ----------
+        value : str
+            The value to validate
+
+        Returns
+        -------
+        Optional[int]
+            The integer value if valid, else None
+        """
+        try:
+            num_value = int(value)
+            if num_value <= 0:
+                return None
+            return num_value
+        except ValueError:
+            return None
+
+    def _validate_non_negative_int(self, value: str) -> Optional[int]:
+        """Validate that the value is a non-negative integer.
+
+        Parameters
+        ----------
+        value : str
+            The value to validate
+
+        Returns
+        -------
+        Optional[int]
+            The integer value if valid, else None
+        """
+        try:
+            num_value = int(value)
+            if num_value < 0:
+                return None
+            return num_value
+        except ValueError:
+            return None
 
     def _validate_time_format(self, time_str: str) -> bool:
         """Validate time string format (HH:MM).
@@ -358,7 +373,7 @@ class ConfigCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
         except (ValueError, TypeError):
             return False
 
-    def _load_translations(self, language: str) -> dict:
+    async def _load_translations(self, language: str) -> dict:
         """Load translations for the specified language.
 
         Parameters
@@ -372,7 +387,7 @@ class ConfigCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
             The loaded translations
         """
         from i18n import load_translations
-        return load_translations(language)
+        return await load_translations(language)
 
     async def _update_command_descriptions(self) -> None:
         """Update command descriptions after language change."""
@@ -380,10 +395,11 @@ class ConfigCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
             translation_key = f"{command.name}_command_description"
             if translation_key in self.translations:
                 command.description = self.translations[translation_key]
-
+        await self.bot.tree.sync()
+        
     async def cog_app_command_error(self, 
-                                  interaction: discord.Interaction, 
-                                  error: app_commands.AppCommandError) -> None:
+                                    interaction: discord.Interaction, 
+                                    error: app_commands.AppCommandError) -> None:
         """Custom error handler for configuration commands.
         Extends the mixin's error handler with configuration-specific handling.
 
@@ -399,9 +415,9 @@ class ConfigCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
             
             # Handle configuration-specific errors
             if isinstance(error, (ValueError, KeyError)):
-                await self.send_error_message(
-                    interaction,
-                    f"Configuration error: {str(error)}"
+                await interaction.response.send_message(
+                    f"Configuration error: {str(error)}",
+                    ephemeral=True
                 )
                 return
             
