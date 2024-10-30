@@ -8,6 +8,10 @@ import os
 from datetime import datetime
 from matplotlib.ticker import MaxNLocator
 
+class TautulliDataError(Exception):
+    """Raised when there is an error fetching or processing Tautulli data."""
+    pass
+
 class Top10PlatformsGraph(BaseGraph):
     def __init__(self, config: Dict[str, Any], translations: Dict[str, str], img_folder: str):
         super().__init__(config, translations, img_folder)
@@ -20,21 +24,24 @@ class Top10PlatformsGraph(BaseGraph):
         
         data = await data_fetcher.fetch_tautulli_data_async("get_plays_by_top_10_platforms", params)
         if not data or 'response' not in data or 'data' not in data['response']:
-            logging.error(self.translations["error_fetch_top_10_platforms"])
-            return None
+            error_msg = self.translations["error_fetch_top_10_platforms"]
+            logging.error(error_msg)
+            raise TautulliDataError(error_msg)
         return data['response']['data']
 
     def process_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
         if 'categories' not in data or 'series' not in data:
-            logging.error(self.translations["error_missing_data_top_10_platforms"])
-            return None
+            error_msg = self.translations["error_missing_data_top_10_platforms"]
+            logging.error(error_msg)
+            raise TautulliDataError(error_msg)
 
         platforms = data['categories']
         series = data['series']
 
         if not series:
-            logging.warning(self.translations["warning_empty_series_top_10_platforms"])
-            return None
+            error_msg = self.translations["warning_empty_series_top_10_platforms"]
+            logging.warning(error_msg)
+            raise TautulliDataError(error_msg)
 
         processed_data = {
             "platforms": platforms,
@@ -68,7 +75,6 @@ class Top10PlatformsGraph(BaseGraph):
                         x_pos = bar.get_x() + bar.get_width()/2
                         self.annotate(x_pos, height, f'{int(height)}')
 
-        # Use base class methods for consistent bold formatting
         self.add_title(self.translations["top_10_platforms_title"].format(days=self.config["TIME_RANGE_DAYS"]))
         self.add_labels(
             self.translations["top_10_platforms_xlabel"],
@@ -83,19 +89,22 @@ class Top10PlatformsGraph(BaseGraph):
         self.apply_tight_layout()
 
     async def generate(self, data_fetcher, user_id: str = None) -> str:
-        data = await self.fetch_data(data_fetcher, user_id)
-        if data is None:
+        try:
+            data = await self.fetch_data(data_fetcher, user_id)
+            processed_data = self.process_data(data)
+            self.plot(processed_data)
+
+            today = datetime.today().strftime("%Y-%m-%d")
+            file_name = f"top_10_platforms{'_' + user_id if user_id else ''}.png"
+            file_path = os.path.join(self.img_folder, today, file_name)
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            self.save(file_path)
+
+            return file_path
+            
+        except TautulliDataError as e:
+            logging.error(f"Error generating top 10 platforms graph: {str(e)}")
             return None
-
-        processed_data = self.process_data(data)
-        if processed_data is None:
+        except Exception as e:
+            logging.error(f"Unexpected error generating top 10 platforms graph: {str(e)}")
             return None
-
-        self.plot(processed_data)
-
-        today = datetime.today().strftime("%Y-%m-%d")
-        file_name = f"top_10_platforms{'_' + user_id if user_id else ''}.png"
-        file_path = os.path.join(self.img_folder, today, file_name)
-        self.save(file_path)
-
-        return file_path
