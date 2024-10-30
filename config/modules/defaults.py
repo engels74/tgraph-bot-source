@@ -9,6 +9,8 @@ from typing import Dict, Any
 from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
+# Import from a new constants module instead of options to avoid circular imports
+
 def create_default_config() -> CommentedMap:
     """
     Create a default configuration with standard values and structure.
@@ -19,15 +21,26 @@ def create_default_config() -> CommentedMap:
     """
     cfg = CommentedMap()
     
-    # Basic settings
-    cfg['TAUTULLI_API_KEY'] = 'your_tautulli_api_key'
-    cfg['TAUTULLI_URL'] = 'http://your_tautulli_ip:port/api/v2'
-    cfg['DISCORD_TOKEN'] = 'your_discord_bot_token'
-    cfg['CHANNEL_ID'] = 'your_channel_id'
-    cfg['UPDATE_DAYS'] = 7
-    cfg['FIXED_UPDATE_TIME'] = DoubleQuotedScalarString('XX:XX')
+    # Basic settings with secure placeholders
+    cfg['TAUTULLI_API_KEY'] = '<REQUIRED_TAUTULLI_API_KEY>'
+    cfg['TAUTULLI_URL'] = '<REQUIRED_TAUTULLI_URL>'
+    cfg['DISCORD_TOKEN'] = '<REQUIRED_DISCORD_TOKEN>'
+    cfg['CHANNEL_ID'] = '<REQUIRED_CHANNEL_ID>'
+    
+    # Time-based settings
+    # KEEP_DAYS: Number of days to retain graph files. Default is 7 days to maintain
+    # a week's worth of historical data while managing disk space usage
     cfg['KEEP_DAYS'] = 7
+    
+    # UPDATE_DAYS: Frequency of graph updates in days. Default is 7 days to provide
+    # weekly updates, balancing freshness of data with server load
+    cfg['UPDATE_DAYS'] = 7
+    
+    # TIME_RANGE_DAYS: Number of days of data to include in graphs. Default is 30 days
+    # to show monthly trends while keeping graphs readable and performance manageable
     cfg['TIME_RANGE_DAYS'] = 30
+    
+    cfg['FIXED_UPDATE_TIME'] = DoubleQuotedScalarString('XX:XX')
     cfg['LANGUAGE'] = 'en'
     
     # Graph options
@@ -38,13 +51,13 @@ def create_default_config() -> CommentedMap:
     cfg['ENABLE_TOP_10_PLATFORMS'] = True
     cfg['ENABLE_TOP_10_USERS'] = True
     cfg['ENABLE_PLAY_COUNT_BY_MONTH'] = True
-    cfg['ENABLE_ANNOTATION_OUTLINE'] = True  # New option for annotation outline
+    cfg['ENABLE_ANNOTATION_OUTLINE'] = True
     
     # Graph colors
     cfg['TV_COLOR'] = DoubleQuotedScalarString('#1f77b4')
     cfg['MOVIE_COLOR'] = DoubleQuotedScalarString('#ff7f0e')
-    cfg['ANNOTATION_COLOR'] = DoubleQuotedScalarString('#ffffff')  # Changed to white
-    cfg['ANNOTATION_OUTLINE_COLOR'] = DoubleQuotedScalarString('#000000')  # New option for black outline
+    cfg['ANNOTATION_COLOR'] = DoubleQuotedScalarString('#ffffff')
+    cfg['ANNOTATION_OUTLINE_COLOR'] = DoubleQuotedScalarString('#000000')
     
     # Annotation options
     cfg['ANNOTATE_DAILY_PLAY_COUNT'] = True
@@ -64,79 +77,6 @@ def create_default_config() -> CommentedMap:
     
     return cfg
 
-def get_default_value(key: str) -> Any:
-    """
-    Get the default value for a specific configuration key.
-    
-    Args:
-        key: The configuration key to get the default value for
-        
-    Returns:
-        The default value for the specified key
-        
-    Raises:
-        KeyError: If the key doesn't exist in the default configuration
-    """
-    defaults = create_default_config()
-    if key not in defaults:
-        raise KeyError(f"No default value found for configuration key: {key}")
-    return defaults[key]
-
-def get_section_defaults(section: str) -> Dict[str, Any]:
-    """
-    Get all default values for a specific configuration section.
-    
-    Args:
-        section: The section name (e.g., 'basic', 'graph_options')
-        
-    Returns:
-        Dictionary of default values for the specified section
-        
-    Raises:
-        ValueError: If the section name is invalid
-    """
-    from .options import CONFIG_SECTIONS
-    
-    if section not in CONFIG_SECTIONS:
-        raise ValueError(f"Invalid configuration section: {section}")
-        
-    defaults = create_default_config()
-    section_keys = CONFIG_SECTIONS[section]['keys']
-    return {key: defaults[key] for key in section_keys}
-
-def is_default_value(key: str, value: Any) -> bool:
-    """
-    Check if a value matches the default value for a given key.
-    
-    Args:
-        key: The configuration key
-        value: The value to check
-        
-    Returns:
-        True if the value matches the default, False otherwise
-    """
-    try:
-        default = get_default_value(key)
-        if isinstance(default, DoubleQuotedScalarString):
-            return str(value).strip('"\'') == str(default).strip('"\'')
-        return value == default
-    except KeyError:
-        return False
-
-def reset_to_default(config: CommentedMap, key: str) -> None:
-    """
-    Reset a specific configuration value to its default.
-    
-    Args:
-        config: The current configuration CommentedMap
-        key: The key to reset
-        
-    Raises:
-        KeyError: If the key doesn't exist in the default configuration
-    """
-    default_value = get_default_value(key)
-    config[key] = default_value
-
 def merge_with_defaults(user_config: Dict[str, Any]) -> CommentedMap:
     """
     Merge a user configuration with default values, ensuring all required settings exist.
@@ -147,31 +87,54 @@ def merge_with_defaults(user_config: Dict[str, Any]) -> CommentedMap:
         
     Returns:
         A CommentedMap containing the merged configuration
+        
+    Raises:
+        ValueError: If user config contains invalid types
     """
     defaults = create_default_config()
-    
-    # Start with defaults and update with user values
     merged = CommentedMap()
-    for key, value in defaults.items():
+    
+    # Track unknown keys
+    unknown_keys = set(user_config.keys()) - set(defaults.keys())
+    if unknown_keys:
+        import logging
+        logging.warning(f"Unknown configuration keys: {unknown_keys}")
+    
+    for key, default_value in defaults.items():
         if key in user_config:
+            user_value = user_config[key]
+            
+            # Type validation
+            if not isinstance(user_value, type(default_value)):
+                raise ValueError(
+                    f"Invalid type for {key}: expected {type(default_value)}, "
+                    f"got {type(user_value)}"
+                )
+            
             # Special handling for cooldown values
-            if key.endswith(('_COOLDOWN_MINUTES', '_COOLDOWN_SECONDS')):
-                # Preserve user's cooldown value even if zero or negative
-                merged[key] = user_config[key]
+            if is_cooldown_key(key):
+                merged[key] = user_value
             else:
-                merged[key] = user_config[key]
+                merged[key] = user_value
         else:
-            merged[key] = value
+            merged[key] = default_value
             
     return merged
 
+# Helper functions
+def get_default_value(key: str) -> Any:
+    """Get the default value for a specific configuration key."""
+    defaults = create_default_config()
+    if key not in defaults:
+        raise KeyError(f"No default value found for configuration key: {key}")
+    return defaults[key]
+
+def is_cooldown_key(key: str) -> bool:
+    """Check if a configuration key is related to cooldowns."""
+    return key.endswith(('_COOLDOWN_MINUTES', '_COOLDOWN_SECONDS'))
+
 def get_cooldown_keys() -> list:
-    """
-    Get a list of all cooldown-related configuration keys.
-    
-    Returns:
-        List of cooldown configuration keys
-    """
+    """Get a list of all cooldown-related configuration keys."""
     return [
         'CONFIG_COOLDOWN_MINUTES',
         'CONFIG_GLOBAL_COOLDOWN_SECONDS',
@@ -180,15 +143,3 @@ def get_cooldown_keys() -> list:
         'MY_STATS_COOLDOWN_MINUTES',
         'MY_STATS_GLOBAL_COOLDOWN_SECONDS'
     ]
-
-def is_cooldown_key(key: str) -> bool:
-    """
-    Check if a configuration key is related to cooldowns.
-    
-    Args:
-        key: The configuration key to check
-        
-    Returns:
-        True if the key is a cooldown setting, False otherwise
-    """
-    return key.endswith(('_COOLDOWN_MINUTES', '_COOLDOWN_SECONDS'))
