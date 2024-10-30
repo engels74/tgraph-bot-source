@@ -88,7 +88,6 @@ class UpdateTracker:
     def calculate_next_update(self, from_date: datetime) -> datetime:
         update_days = self.get_update_days()
         fixed_time = self.get_fixed_update_time()
-        now = datetime.now().replace(microsecond=0)
 
         # Calculate base date (from last update plus update days)
         next_update = from_date + timedelta(days=update_days)
