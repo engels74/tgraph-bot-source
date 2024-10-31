@@ -7,8 +7,8 @@ Validates configuration values and structure against defined rules and constrain
 
 from typing import Dict, Any, List, Optional, Tuple
 import re
-from datetime import datetime
 from urllib.parse import urlparse
+from ipaddress import ip_address, IPv4Address
 from .options import get_option_metadata, OPTION_METADATA
 
 def _normalize_string(value: str) -> str:
@@ -44,35 +44,41 @@ def validate_config_value(key: str, value: Any) -> bool:
         # Type-specific validation
         value_type = metadata["type"]
 
-        # Special handling for numeric types from slash commands
+        # Handle string-to-number conversion for numeric types
         if value_type in (int, float):
-            try:
-                # Convert string to number if needed
-                if isinstance(value, str):
-                    # Convert string to number
-                    value = int(float(value)) if value_type is int else float(value)
-
-                # Special handling for cooldown values - allow zero and negative
-                if key.endswith(("_COOLDOWN_MINUTES", "_COOLDOWN_SECONDS")):
-                    return True  # All numeric values are valid for cooldowns
-
-                # Check minimum value constraint for non-cooldown values
-                if "min" in metadata and value < metadata["min"]:
+            if isinstance(value, str):
+                # Strip whitespace and validate non-empty
+                value = value.strip()
+                if not value:
+                    return False
+                try:
+                    # Handle both integer and float formats
+                    if value_type is int:
+                        # First convert to float to handle scientific notation
+                        value = int(float(value))
+                    else:
+                        value = float(value)
+                except ValueError:
                     return False
 
-                # Check maximum value constraint
-                if "max" in metadata and value > metadata["max"]:
-                    return False
+            # Special handling for cooldown values - allow zero and negative
+            if key.endswith(("_COOLDOWN_MINUTES", "_COOLDOWN_SECONDS")):
+                return isinstance(value, (int, float))
 
-                return True
-
-            except (ValueError, TypeError):
+            # Check minimum value constraint for non-cooldown values
+            if "min" in metadata and value < metadata["min"]:
                 return False
 
-        # Boolean validation
+            # Check maximum value constraint
+            if "max" in metadata and value > metadata["max"]:
+                return False
+
+            return True
+
+        # Boolean validation with expanded formats
         if value_type is bool:
             if isinstance(value, str):
-                return value.lower() in ['true', 'false', '1', '0', 'yes', 'no', 'on', 'off']
+                return value.lower() in ['true', 'false', '1', '0', 'yes', 'no', 'on', 'off', 't', 'f']
             return isinstance(value, bool)
 
         # String validation with format checking
@@ -80,8 +86,10 @@ def validate_config_value(key: str, value: Any) -> bool:
             if not isinstance(value, (str, int, float, bool)):
                 return False
 
-            # Convert to string for format validation
-            str_value = _normalize_string(value)
+            # Convert to string and check if empty
+            str_value = _normalize_string(str(value))
+            if not str_value and metadata.get("required", False):
+                return False
 
             if "format" in metadata:
                 if metadata["format"] == "hex":
@@ -92,6 +100,10 @@ def validate_config_value(key: str, value: Any) -> bool:
             # Check allowed values if specified
             if "allowed_values" in metadata:
                 return str_value in metadata["allowed_values"]
+
+            # Check max length if specified
+            if "max_length" in metadata and len(str_value) > metadata["max_length"]:
+                return False
 
             return True
 
@@ -132,6 +144,7 @@ def validate_config(config: Dict[str, Any]) -> Tuple[bool, List[str]]:
 def _validate_color(value: str) -> bool:
     """
     Validate a color value in hex format.
+    Supports RGB, RGBA, RRGGBB, and RRGGBBAA formats.
 
     Args:
         value: The color value to validate
@@ -152,8 +165,8 @@ def _validate_color(value: str) -> bool:
     # Remove the # for pattern matching
     color = color[1:]
 
-    # Valid formats: RGB or RRGGBB
-    return bool(re.match(r'^[0-9a-f]{3}([0-9a-f]{3})?$', color, re.IGNORECASE))
+    # Valid formats: RGB, RGBA, RRGGBB, or RRGGBBAA
+    return bool(re.match(r'^[0-9a-f]{3}([0-9a-f])?$|^[0-9a-f]{6}([0-9a-f]{2})?$', color, re.IGNORECASE))
 
 def _validate_time(value: str) -> bool:
     """
@@ -176,9 +189,111 @@ def _validate_time(value: str) -> bool:
 
     # Check HH:MM format
     try:
-        datetime.strptime(time_str, "%H:%M")
-        return True
+        time_parts = time_str.split(':')
+        if len(time_parts) != 2:
+            return False
+        
+        hours, minutes = map(int, time_parts)
+        return 0 <= hours < 24 and 0 <= minutes < 60
     except ValueError:
+        return False
+
+def _is_private_ip(ip_str: str) -> bool:
+    """
+    Check if an IP address is private.
+
+    Args:
+        ip_str: The IP address string to check
+
+    Returns:
+        True if private IP, False otherwise
+    """
+    try:
+        ip = ip_address(ip_str)
+        return (
+            isinstance(ip, IPv4Address) and (
+                ip.is_private or
+                ip.is_loopback or
+                ip.is_link_local or
+                ip.is_multicast
+            )
+        )
+    except ValueError:
+        return False
+
+def validate_url(url: str) -> bool:
+    """
+    Validate a URL format with enhanced security checks.
+
+    Args:
+        url: The URL to validate
+
+    Returns:
+        True if the URL is valid and secure, False otherwise
+    """
+    try:
+        # Basic URL length check
+        if not url or len(url) > 2048:  # Common URL length limit
+            return False
+
+        parsed = urlparse(url)
+
+        # Check for required components
+        if not all([
+            parsed.scheme in ('http', 'https'),
+            parsed.netloc,
+            len(parsed.netloc) <= 253  # DNS name length limit
+        ]):
+            return False
+
+        # Security checks
+        hostname = parsed.hostname or ''
+        return not any([
+            hostname.startswith('localhost'),
+            _is_private_ip(hostname),
+            '..' in parsed.path,  # Path traversal check
+            '%00' in url,  # Null byte injection check
+            hostname.count('.') > 10  # Suspicious number of subdomains
+        ])
+
+    except Exception:
+        return False
+
+def validate_discord_token(token: str) -> bool:
+    """
+    Validate a Discord bot token format.
+
+    Args:
+        token: The token to validate
+
+    Returns:
+        True if the format is valid, False otherwise
+    """
+    if not token or len(token) > 100:  # Reasonable length limit
+        return False
+    # Basic format validation for Discord tokens
+    # Real validation happens when the bot tries to connect
+    return bool(re.match(r'^[A-Za-z0-9_\-]{24,}\.[A-Za-z0-9_\-]{6}\.[A-Za-z0-9_\-]{27}$', str(token)))
+
+def validate_discord_channel_id(channel_id: str) -> bool:
+    """
+    Validate a Discord channel ID format.
+
+    Args:
+        channel_id: The channel ID to validate
+
+    Returns:
+        True if the format is valid, False otherwise
+    """
+    try:
+        # Discord channel IDs are numeric and typically 17-19 digits
+        channel_id_str = str(channel_id).strip()
+        if not channel_id_str.isdigit() or not (17 <= len(channel_id_str) <= 19):
+            return False
+        
+        # Additional sanity check - should be a positive number
+        return int(channel_id_str) > 0
+    except (ValueError, TypeError):
         return False
 
 def validate_integer_range(value: int, minimum: Optional[int] = None, maximum: Optional[int] = None) -> bool:
@@ -194,8 +309,11 @@ def validate_integer_range(value: int, minimum: Optional[int] = None, maximum: O
         True if valid, False otherwise
     """
     try:
-        # Handle string input from slash commands
+        # Handle string input
         if isinstance(value, str):
+            value = value.strip()
+            if not value:
+                return False
             value = int(float(value))
 
         if not isinstance(value, int):
@@ -226,8 +344,11 @@ def validate_language(value: str) -> bool:
     Returns:
         True if valid, False otherwise
     """
-    metadata = get_option_metadata("LANGUAGE")
-    return value in metadata.get("allowed_values", [])
+    try:
+        metadata = get_option_metadata("LANGUAGE")
+        return value in metadata.get("allowed_values", [])
+    except KeyError:
+        return False
 
 def get_validation_errors(config: Dict[str, Any]) -> List[str]:
     """
@@ -241,46 +362,3 @@ def get_validation_errors(config: Dict[str, Any]) -> List[str]:
     """
     is_valid, errors = validate_config(config)
     return errors
-
-def validate_discord_token(token: str) -> bool:
-    """
-    Validate a Discord bot token format.
-
-    Args:
-        token: The token to validate
-
-    Returns:
-        True if the format is valid, False otherwise
-    """
-    # Basic format validation for Discord tokens
-    # Real validation happens when the bot tries to connect
-    return bool(re.match(r'^[A-Za-z0-9_\-]{24,}\.[A-Za-z0-9_\-]{6}\.[A-Za-z0-9_\-]{27}$', str(token)))
-
-def validate_url(url: str) -> bool:
-    """
-    Validate a URL format.
-
-    Args:
-        url: The URL to validate
-
-    Returns:
-        True if the format is valid, False otherwise
-    """
-    try:
-        parsed = urlparse(url)
-        return all([parsed.scheme in ('http', 'https'), parsed.netloc])
-    except Exception:
-        return False
-
-def validate_discord_channel_id(channel_id: str) -> bool:
-    """
-    Validate a Discord channel ID format.
-
-    Args:
-        channel_id: The channel ID to validate
-
-    Returns:
-        True if the format is valid, False otherwise
-    """
-    # Discord channel IDs are numeric and typically 17-19 digits
-    return bool(re.match(r'^\d{17,19}$', str(channel_id)))
