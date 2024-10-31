@@ -2,8 +2,9 @@
 
 import logging
 import os
+import asyncio
 from datetime import datetime
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from .graph_modules.graph_factory import GraphFactory
 from .graph_modules.data_fetcher import DataFetcher
 from .graph_modules.utils import ensure_folder_exists
@@ -41,22 +42,32 @@ class UserGraphManager:
                 ).format(user_id=user_id))
                 return []
 
-            for graph_type, graph_instance in self.graph_factory.create_all_graphs().items():
-                # Skip excluded graph types for individual users
-                if graph_type in EXCLUDED_USER_GRAPHS:
-                    continue
-                    
+            async def generate_graph(graph_type: str, graph_instance: Any) -> Optional[str]:
+                """
+                Generate a single graph with error handling.
+                
+                :param graph_type: The type of graph to generate
+                :param graph_instance: The graph instance to use
+                :return: The file path of the generated graph, or None if generation fails
+                """
+                if graph_type in EXCLUDED_USER_GRAPHS or not graph_data.get(graph_type):
+                    return None
                 try:
-                    if graph_data.get(graph_type):
-                        file_path = await graph_instance.generate(self.data_fetcher, user_id)
-                        if file_path:
-                            graph_files.append(file_path)
+                    return await graph_instance.generate(self.data_fetcher, user_id)
                 except Exception as e:
                     logging.error(self.translations.get(
                         "error_generating_user_graph",
                         "Error generating {graph_type} for user {user_id}: {error}"
                     ).format(graph_type=graph_type, user_id=user_id, error=str(e)))
-                    continue  # Continue with next graph even if one fails
+                    return None
+
+            # Generate all graphs concurrently and filter out None results
+            graph_files = [
+                path for path in await asyncio.gather(*(
+                    generate_graph(graph_type, graph_instance)
+                    for graph_type, graph_instance in self.graph_factory.create_all_graphs().items()
+                )) if path
+            ]
 
             # Log generation status with safe translation access
             logging.info(self.translations.get(
@@ -88,5 +99,9 @@ async def generate_user_graphs(user_id: str, config: Dict[str, Any], translation
     :param img_folder: The folder to save the graphs in
     :return: A list of file paths for the generated graphs
     """
-    user_graph_manager = UserGraphManager(config, translations, img_folder)
-    return await user_graph_manager.generate_user_graphs(user_id)
+    try:
+        user_graph_manager = UserGraphManager(config, translations, img_folder)
+        return await user_graph_manager.generate_user_graphs(user_id)
+    except Exception as e:
+        logging.error(f"Failed to initialize UserGraphManager: {str(e)}")
+        return []
