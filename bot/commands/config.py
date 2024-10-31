@@ -8,6 +8,7 @@ Handles viewing and modifying bot configuration settings.
 import discord
 from discord import app_commands
 import logging
+import re
 from discord.ext import commands
 from typing import Optional, Literal
 
@@ -56,12 +57,19 @@ class ConfigCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
         value : Optional[str]
             New value to set (for edit action)
         """
-        # Add cooldown check using configurable values
-        if not await self.check_cooldowns(
-            interaction,
-            self.config["CONFIG_COOLDOWN_MINUTES"],
-            self.config["CONFIG_GLOBAL_COOLDOWN_SECONDS"]
-        ):
+        try:
+            if not await self.check_cooldowns(
+                interaction,
+                self.config["CONFIG_COOLDOWN_MINUTES"],
+                self.config["CONFIG_GLOBAL_COOLDOWN_SECONDS"]
+            ):
+                return
+        except Exception as e:
+            logging.error(f"Error checking cooldowns: {str(e)}")
+            await interaction.response.send_message(
+                "An error occurred while checking command cooldowns.",
+                ephemeral=True
+            )
             return
 
         if action == "view":
@@ -73,11 +81,14 @@ class ConfigCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
         await self.log_command(interaction, f"config_{action}")
         
         # Update cooldowns after successful execution
-        self.update_cooldowns(
-            str(interaction.user.id),
-            self.config["CONFIG_COOLDOWN_MINUTES"],
-            self.config["CONFIG_GLOBAL_COOLDOWN_SECONDS"]
-        )
+        try:
+            self.update_cooldowns(
+                str(interaction.user.id),
+                self.config["CONFIG_COOLDOWN_MINUTES"],
+                self.config["CONFIG_GLOBAL_COOLDOWN_SECONDS"]
+            )
+        except Exception as e:
+            logging.error(f"Error updating cooldowns: {str(e)}")
 
     @config.autocomplete('key')
     async def key_autocomplete(
@@ -99,11 +110,25 @@ class ConfigCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
         list[app_commands.Choice[str]]
             List of autocomplete choices
         """
-        return [
-            app_commands.Choice(name=key, value=key)
-            for key in CONFIGURABLE_OPTIONS
-            if current.lower() in key.lower()
-        ][:25]  # Discord limits choices to 25
+        current_lower = current.lower()
+        matches = []
+        
+        # Try prefix match first (more relevant)
+        for key in CONFIGURABLE_OPTIONS:
+            if len(matches) >= 25:  # Discord limits choices to 25
+                break
+            if key.lower().startswith(current_lower):
+                matches.append(app_commands.Choice(name=key, value=key))
+        
+        # If we still have room, try contains match
+        if len(matches) < 25:
+            for key in CONFIGURABLE_OPTIONS:
+                if len(matches) >= 25:
+                    break
+                if current_lower in key.lower() and not key.lower().startswith(current_lower):
+                    matches.append(app_commands.Choice(name=key, value=key))
+        
+        return matches
 
     async def _handle_view_config(
         self,
@@ -180,6 +205,19 @@ class ConfigCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
 
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
+    def _validate_time_format(self, time_str: str) -> bool:
+        """Validate time string format (HH:MM)."""
+        try:
+            if not re.match(r'^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$', time_str):
+                return False
+            return True  # Regex already validated the ranges
+        except (ValueError, TypeError):
+            return False
+
+    def _validate_color_format(self, value: str) -> bool:
+        """Validate color string format (#RGB or #RRGGBB)."""
+        return bool(re.match(r'^#(?:[0-9a-fA-F]{3}){1,2}$', value))
+
     async def _handle_edit_config(
         self,
         interaction: discord.Interaction,
@@ -224,16 +262,16 @@ class ConfigCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
             
             # Process the value based on the key type
             if key in ["TV_COLOR", "MOVIE_COLOR", "ANNOTATION_COLOR", "ANNOTATION_OUTLINE_COLOR"]:
-                if not value.startswith("#"):
+                if not self._validate_color_format(value):
                     await interaction.response.send_message(
-                        "Color value must start with '#'. Example: #ff0000", 
+                        "Invalid color format. Use '#' followed by 3 or 6 hex digits. Example: #ff0000 or #f00",
                         ephemeral=True
                     )
                     return
             elif key == "FIXED_UPDATE_TIME":
                 if value.upper() != "XX:XX" and not self._validate_time_format(value):
                     await interaction.response.send_message(
-                        "Invalid time format. Please use HH:MM format (e.g., 14:30) or XX:XX to disable.", 
+                        "Invalid time format. Please use HH:MM format (e.g., 14:30) or XX:XX to disable.",
                         ephemeral=True
                     )
                     return
@@ -241,7 +279,7 @@ class ConfigCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
                 num_value = self._validate_positive_int(value)
                 if num_value is None:
                     await interaction.response.send_message(
-                        f"{key} must be a positive number.", 
+                        f"{key} must be a positive number.",
                         ephemeral=True
                     )
                     return
@@ -252,7 +290,7 @@ class ConfigCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
                 num_value = self._validate_non_negative_int(value)
                 if num_value is None:
                     await interaction.response.send_message(
-                        f"{key} must be a non-negative number.", 
+                        f"{key} must be a non-negative number.",
                         ephemeral=True
                     )
                     return
@@ -308,23 +346,12 @@ class ConfigCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
         except (ValueError, KeyError) as e:
             logging.error(f"Error updating config value: {str(e)}")
             await interaction.response.send_message(
-                f"Error updating configuration: {str(e)}", 
+                f"Error updating configuration: {str(e)}",
                 ephemeral=True
             )
 
     def _validate_positive_int(self, value: str) -> Optional[int]:
-        """Validate that the value is a positive integer.
-
-        Parameters
-        ----------
-        value : str
-            The value to validate
-
-        Returns
-        -------
-        Optional[int]
-            The integer value if valid, else None
-        """
+        """Validate that the value is a positive integer."""
         try:
             num_value = int(value)
             if num_value <= 0:
@@ -334,18 +361,7 @@ class ConfigCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
             return None
 
     def _validate_non_negative_int(self, value: str) -> Optional[int]:
-        """Validate that the value is a non-negative integer.
-
-        Parameters
-        ----------
-        value : str
-            The value to validate
-
-        Returns
-        -------
-        Optional[int]
-            The integer value if valid, else None
-        """
+        """Validate that the value is a non-negative integer."""
         try:
             num_value = int(value)
             if num_value < 0:
@@ -354,49 +370,23 @@ class ConfigCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
         except ValueError:
             return None
 
-    def _validate_time_format(self, time_str: str) -> bool:
-        """Validate time string format (HH:MM).
-
-        Parameters
-        ----------
-        time_str : str
-            The time string to validate
-
-        Returns
-        -------
-        bool
-            True if valid format, False otherwise
-        """
-        try:
-            hours, minutes = map(int, time_str.split(':'))
-            return 0 <= hours < 24 and 0 <= minutes < 60
-        except (ValueError, TypeError):
-            return False
-
     async def _load_translations(self, language: str) -> dict:
-        """Load translations for the specified language.
-
-        Parameters
-        ----------
-        language : str
-            The language code to load
-
-        Returns
-        -------
-        dict
-            The loaded translations
-        """
+        """Load translations for the specified language."""
         from i18n import load_translations
         return await load_translations(language)
 
     async def _update_command_descriptions(self) -> None:
         """Update command descriptions after language change."""
-        for command in self.bot.tree.get_commands():
-            translation_key = f"{command.name}_command_description"
-            if translation_key in self.translations:
-                command.description = self.translations[translation_key]
-        await self.bot.tree.sync()
-        
+        try:
+            for command in self.bot.tree.get_commands():
+                translation_key = f"{command.name}_command_description"
+                if translation_key in self.translations:
+                    command.description = self.translations[translation_key]
+            await self.bot.tree.sync()
+        except Exception as e:
+            logging.error(f"Failed to update command descriptions: {str(e)}")
+            # Don't raise the error as this is a non-critical operation
+
     async def cog_app_command_error(self, 
                                     interaction: discord.Interaction, 
                                     error: app_commands.AppCommandError) -> None:
