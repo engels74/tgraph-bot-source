@@ -28,8 +28,8 @@ class UpdateTracker:
         update_days = self.config.get("UPDATE_DAYS", 7)
         try:
             update_days = int(update_days)
-        except (TypeError, ValueError):
-            raise ValueError("UPDATE_DAYS must be an integer")
+        except (TypeError, ValueError) as err:
+            raise ValueError("UPDATE_DAYS must be an integer") from err
         if update_days <= 0:
             raise ValueError("UPDATE_DAYS must be a positive integer")
         return update_days
@@ -88,6 +88,7 @@ class UpdateTracker:
     def calculate_next_update(self, from_date: datetime) -> datetime:
         update_days = self.get_update_days()
         fixed_time = self.get_fixed_update_time()
+        now = datetime.now().replace(microsecond=0)
 
         # Calculate base date (from last update plus update days)
         next_update = from_date + timedelta(days=update_days)
@@ -99,6 +100,9 @@ class UpdateTracker:
                 hour=fixed_time.hour,
                 minute=fixed_time.minute
             )
+            # If the calculated time is in the past, add one more day
+            while next_update <= now:
+                next_update += timedelta(days=1)
 
         # Debug the calculation
         logging.info(f"Next update calculation: Input {from_date}, Days {update_days}, Fixed time {fixed_time}, Result {next_update}")
