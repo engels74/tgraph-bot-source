@@ -2,12 +2,18 @@
 
 import logging
 import os
-from datetime import datetime, timedelta  # Added timedelta
-from typing import Dict, Any, List, Optional
+from datetime import datetime, timedelta
+from typing import Dict, Any, List, Optional, Tuple, TYPE_CHECKING
 from .graph_modules.graph_factory import GraphFactory
 from .graph_modules.data_fetcher import DataFetcher
 from .graph_modules.utils import ensure_folder_exists, cleanup_old_folders
 import discord
+import aiofiles
+import io
+import asyncio
+
+if TYPE_CHECKING:
+    from .update_tracker import UpdateTracker
 
 class GraphManager:
     def __init__(self, config: Dict[str, Any], translations: Dict[str, str], img_folder: str):
@@ -17,11 +23,11 @@ class GraphManager:
         self.graph_factory = GraphFactory(config, translations, img_folder)
         self.data_fetcher = DataFetcher(config)
 
-    async def generate_and_save_graphs(self) -> List[str]:
+    async def generate_and_save_graphs(self) -> List[Tuple[str, str]]:
         """
         Generate and save all enabled graphs.
 
-        :return: A list of file paths for the generated graphs
+        :return: A list of tuples containing (graph_type, file_path) for the generated graphs
         """
         today = datetime.today().strftime("%Y-%m-%d")
         dated_folder = os.path.join(self.img_folder, today)
@@ -41,29 +47,34 @@ class GraphManager:
 
         self.cleanup_old_graph_folders()
 
-        return [file_path for _, file_path in graph_files]
+        return graph_files
 
     def cleanup_old_graph_folders(self):
         """Clean up old graph folders based on the KEEP_DAYS configuration."""
-        cleanup_old_folders(self.img_folder, self.config["KEEP_DAYS"], self.translations)
+        try:
+            cleanup_old_folders(self.img_folder, self.config["KEEP_DAYS"], self.translations)
+        except OSError as e:
+            logging.error(self.translations.get("error_cleanup_folders", "Error cleaning up folders: {error}").format(error=str(e)))
 
-    async def delete_old_messages(self, channel: discord.TextChannel):
+    async def delete_old_messages(self, channel: discord.TextChannel, limit: int = 100):
         """
         Delete old messages in the specified channel.
 
         :param channel: The Discord channel to delete messages from
+        :param limit: Maximum number of messages to check (default: 100)
         """
         try:
-            async for message in channel.history(limit=100):
+            async for message in channel.history(limit=limit):
                 if message.author == channel.guild.me:
                     await message.delete()
+                    await asyncio.sleep(1.5)  # Rate limiting: Wait 1.5s between deletions
                     logging.info(self.translations["log_deleted_message"])
         except discord.errors.Forbidden:
             logging.error(self.translations["error_delete_messages_no_permission"])
         except Exception as e:
             logging.error(self.translations["error_delete_messages"].format(error=str(e)))
 
-    def create_embed(self, graph_type: str, update_tracker: Optional[Any] = None) -> discord.Embed:
+    def create_embed(self, graph_type: str, update_tracker: Optional['UpdateTracker'] = None) -> discord.Embed:
         """
         Create a Discord embed for a graph.
 
@@ -107,12 +118,12 @@ class GraphManager:
 
         return embed
 
-    async def post_graphs(self, channel: discord.TextChannel, graph_files: List[str], update_tracker: Optional[Any] = None):
+    async def post_graphs(self, channel: discord.TextChannel, graph_files: List[Tuple[str, str]], update_tracker: Optional['UpdateTracker'] = None):
         """
         Post graphs to the specified Discord channel with embeds.
 
         :param channel: The Discord channel to post graphs to
-        :param graph_files: List of graph file paths to post
+        :param graph_files: List of tuples containing (graph_type, file_path) for the graphs
         :param update_tracker: Optional UpdateTracker instance for timestamp handling
         """
         try:
@@ -122,14 +133,15 @@ class GraphManager:
             }
 
             graph_types = list(enabled_graphs.keys())
-            graph_pairs = list(zip(graph_types, graph_files))
+            graph_pairs = list(zip(graph_types, [f[1] for f in graph_files]))
 
             for graph_type, file_path in graph_pairs:
                 try:
                     embed = self.create_embed(graph_type, update_tracker)
 
-                    with open(file_path, 'rb') as f:
-                        file = discord.File(f, filename=os.path.basename(file_path))
+                    async with aiofiles.open(file_path, 'rb') as f:
+                        content = await f.read()
+                        file = discord.File(io.BytesIO(content), filename=os.path.basename(file_path))
                         embed.set_image(url=f"attachment://{os.path.basename(file_path)}")
                         await channel.send(embed=embed, file=file)
 
