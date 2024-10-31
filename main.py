@@ -132,8 +132,14 @@ class TGraphBot(commands.Bot):
             await self.tree.sync()
             logging.info(self.translations["log_application_commands_synced"])
 
+        except commands.ExtensionError as e:
+            log(self.translations["log_extension_load_error"].format(error=str(e)), logging.ERROR)
+            raise
+        except discord.HTTPException as e:
+            log(self.translations["log_command_sync_error"].format(error=str(e)), logging.ERROR)
+            raise
         except Exception as e:
-            log(f"Error in setup_hook: {str(e)}", logging.ERROR)
+            log(self.translations["log_unexpected_setup_error"].format(error=str(e)), logging.ERROR)
             raise
 
     async def on_error(self, event_method, *args, **kwargs):
@@ -201,33 +207,41 @@ class TGraphBot(commands.Bot):
             # Start update scheduling
             self.loop.create_task(schedule_updates(self))
 
+        except discord.Forbidden as e:
+            log(self.translations["log_permission_error"].format(error=str(e)), logging.ERROR)
+            raise
+        except discord.NotFound as e:
+            log(self.translations["log_channel_not_found_error"].format(error=str(e)), logging.ERROR)
+            raise
         except Exception as e:
-            log(self.translations["log_error_during_startup"].format(error=str(e)), 
-                logging.ERROR)
+            log(self.translations["log_error_during_startup"].format(error=str(e)), logging.ERROR)
             raise
 
 async def schedule_updates(bot):
     while True:
         if bot.update_tracker.is_update_due():
             log(bot.translations["log_auto_update_started"])
-            bot.config = load_config(bot.config_path, reload=True)
-            
-            channel = bot.get_channel(bot.config["CHANNEL_ID"])
-            if channel:
-                await bot.graph_manager.delete_old_messages(channel)
-                graph_files = await bot.graph_manager.generate_and_save_graphs()
-                if graph_files:
-                    await bot.graph_manager.post_graphs(channel, graph_files, bot.update_tracker)
-            else:
-                log(bot.translations["log_channel_not_found"].format(
-                    channel_id=bot.config["CHANNEL_ID"]
-                ), logging.ERROR)
-            
-            bot.update_tracker.update()
-            next_update_log = bot.update_tracker.get_next_update_readable()
-            log(bot.translations["log_auto_update_completed"].format(
-                next_update=next_update_log
-            ))
+            try:
+                bot.config = load_config(bot.config_path, reload=True)
+                
+                channel = bot.get_channel(bot.config["CHANNEL_ID"])
+                if channel:
+                    await bot.graph_manager.delete_old_messages(channel)
+                    graph_files = await bot.graph_manager.generate_and_save_graphs()
+                    if graph_files:
+                        await bot.graph_manager.post_graphs(channel, graph_files, bot.update_tracker)
+                else:
+                    log(bot.translations["log_channel_not_found"].format(
+                        channel_id=bot.config["CHANNEL_ID"]
+                    ), logging.ERROR)
+                
+                bot.update_tracker.update()
+                next_update_log = bot.update_tracker.get_next_update_readable()
+                log(bot.translations["log_auto_update_completed"].format(
+                    next_update=next_update_log
+                ))
+            except Exception as e:
+                log(bot.translations["log_auto_update_error"].format(error=str(e)), logging.ERROR)
         await asyncio.sleep(60)
 
 async def main():
@@ -249,16 +263,31 @@ async def main():
 
     try:
         await bot.start(config["DISCORD_TOKEN"])
+    except discord.LoginFailure as e:
+        log(translations["log_login_error"].format(error=str(e)), logging.ERROR)
+        raise
+    except discord.HTTPException as e:
+        log(translations["log_connection_error"].format(error=str(e)), logging.ERROR)
+        raise
     except Exception as e:
-        log(bot.translations["log_error_starting_bot"].format(error=str(e)), 
-            logging.ERROR)
+        log(translations["log_error_starting_bot"].format(error=str(e)), logging.ERROR)
+        raise
+    finally:
+        await bot.close()
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
-    except Exception as e:
-        log("An error occurred in main", logging.ERROR)
+    except KeyboardInterrupt:
+        log(translations["log_shutdown_requested"], logging.INFO)
+    except discord.LoginFailure as e:
+        log(translations["log_login_error"].format(error=str(e)), logging.ERROR)
         logger.exception(e)
+    except Exception as e:
+        log(translations["log_unexpected_main_error"].format(error=str(e)), logging.ERROR)
+        logger.exception(e)
+    finally:
+        log(translations["log_shutdown_complete"], logging.INFO)
 
 # TGraph - Tautulli Graph Bot
 # <https://github.com/engels74/tgraph-bot-source>
