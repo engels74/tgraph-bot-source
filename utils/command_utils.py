@@ -2,7 +2,8 @@
 
 import discord
 import logging
-from datetime import datetime, timedelta
+from datetime import timedelta
+from discord.utils import utcnow
 
 class ErrorHandlingMixin:
     """
@@ -53,10 +54,32 @@ class CommandMixin(ErrorHandlingMixin):
     """
     def __init__(self):
         self.user_cooldowns = {}
-        self.global_cooldown = datetime.now()
+        self.global_cooldown = utcnow()
+
+    def _cleanup_cooldowns(self) -> None:
+        """Remove expired cooldowns to prevent memory leaks."""
+        now = utcnow()
+        self.user_cooldowns = {
+            user_id: timestamp 
+            for user_id, timestamp in self.user_cooldowns.items() 
+            if timestamp > now
+        }
+
+    def _format_cooldown_timestamp(self, remaining_seconds: int) -> str:
+        """
+        Format a cooldown timestamp for Discord's time formatting.
+        
+        Args:
+            remaining_seconds: Number of seconds remaining on cooldown
+            
+        Returns:
+            Formatted Discord timestamp string
+        """
+        future_time = utcnow() + timedelta(seconds=remaining_seconds)
+        return f"<t:{int(future_time.timestamp())}:R>"
 
     async def check_cooldowns(self, interaction: discord.Interaction, 
-                              user_minutes: int, global_seconds: int) -> bool:
+                            user_minutes: int, global_seconds: int) -> bool:
         """
         Check if a command is on cooldown.
 
@@ -68,16 +91,21 @@ class CommandMixin(ErrorHandlingMixin):
         Returns:
             bool: True if command can proceed, False if on cooldown
         """
+        # Clean up expired cooldowns
+        self._cleanup_cooldowns()
+        
         # Skip cooldown checks if both values are 0 or negative
         if global_seconds <= 0 and user_minutes <= 0:
             return True
 
+        now = utcnow()
+
         # Check global cooldown only if global_seconds is positive
-        if global_seconds > 0 and datetime.now() < self.global_cooldown:
-            remaining = int((self.global_cooldown - datetime.now()).total_seconds())
+        if global_seconds > 0 and now < self.global_cooldown:
+            remaining = int((self.global_cooldown - now).total_seconds())
             await interaction.response.send_message(
                 self.translations["rate_limit_global"].format(
-                    time=f"<t:{int((datetime.now() + timedelta(seconds=remaining)).timestamp())}:R>"
+                    time=self._format_cooldown_timestamp(remaining)
                 ),
                 ephemeral=True,
             )
@@ -86,16 +114,13 @@ class CommandMixin(ErrorHandlingMixin):
         # Check user cooldown only if user_minutes is positive
         if user_minutes > 0:
             user_id = str(interaction.user.id)
-            if (
-                user_id in self.user_cooldowns
-                and datetime.now() < self.user_cooldowns[user_id]
-            ):
+            if user_id in self.user_cooldowns and now < self.user_cooldowns[user_id]:
                 remaining = int(
-                    (self.user_cooldowns[user_id] - datetime.now()).total_seconds()
+                    (self.user_cooldowns[user_id] - now).total_seconds()
                 )
                 await interaction.response.send_message(
                     self.translations["rate_limit_user"].format(
-                        time=f"<t:{int((datetime.now() + timedelta(seconds=remaining)).timestamp())}:R>"
+                        time=self._format_cooldown_timestamp(remaining)
                     ),
                     ephemeral=True,
                 )
@@ -112,13 +137,14 @@ class CommandMixin(ErrorHandlingMixin):
             user_minutes: Minutes for user-specific cooldown
             global_seconds: Seconds for global cooldown
         """
+        now = utcnow()
         # Only update cooldowns if the respective values are positive
         if user_minutes > 0:
-            self.user_cooldowns[user_id] = datetime.now() + timedelta(
+            self.user_cooldowns[user_id] = now + timedelta(
                 minutes=user_minutes
             )
         if global_seconds > 0:
-            self.global_cooldown = datetime.now() + timedelta(
+            self.global_cooldown = now + timedelta(
                 seconds=global_seconds
             )
 
@@ -154,6 +180,22 @@ class ErrorHandlerMixin(ErrorHandlingMixin):
     """
     async def cog_app_command_error(self, interaction: discord.Interaction, error: Exception) -> None:
         """Default error handler for application commands in this cog."""
+        logging.debug(f"Command error occurred: {error.__class__.__name__}")
+        
         if isinstance(error, discord.app_commands.CommandInvokeError):
             error = error.original
+        elif isinstance(error, discord.app_commands.CheckFailure):
+            await self.send_error_message(
+                interaction,
+                self.translations["error_check_failure"],
+                ephemeral=True
+            )
+            return
+        elif isinstance(error, discord.app_commands.CommandOnCooldown):
+            await self.send_error_message(
+                interaction,
+                self.translations["error_cooldown"],
+                ephemeral=True
+            )
+            return
         await self.handle_error(interaction, error)
