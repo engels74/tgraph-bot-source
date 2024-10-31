@@ -8,6 +8,7 @@ Tracks and displays the bot's running time since startup.
 import discord
 from discord import app_commands
 from discord.ext import commands
+import logging
 from datetime import datetime
 from utils.command_utils import CommandMixin, ErrorHandlerMixin
 
@@ -64,8 +65,11 @@ class UptimeCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
                 ephemeral=True
             )
 
-            # Log successful command execution
-            await self.log_command(interaction, "uptime")
+            # Log successful command execution with error handling
+            try:
+                await self.log_command(interaction, "uptime")
+            except Exception as e:
+                logging.error(f"Failed to log uptime command: {e}")
 
             # Update cooldowns if they were implemented
             # self.update_cooldowns(str(interaction.user.id), 1, 30)
@@ -81,5 +85,14 @@ async def setup(bot: commands.Bot) -> None:
     ----------
     bot : commands.Bot
         The bot instance
+
+    Raises
+    ------
+    Exception
+        If the cog cannot be added to the bot
     """
-    await bot.add_cog(UptimeCog(bot, bot.config, bot.translations))
+    try:
+        await bot.add_cog(UptimeCog(bot, bot.config, bot.translations))
+    except Exception as e:
+        logging.error(f"Failed to add UptimeCog: {e}")
+        raise  # Re-raise to prevent bot from starting with missing functionality
