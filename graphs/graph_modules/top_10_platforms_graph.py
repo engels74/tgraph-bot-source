@@ -12,6 +12,10 @@ class TautulliDataError(Exception):
     """Raised when there is an error fetching or processing Tautulli data."""
     pass
 
+class GraphGenerationError(Exception):
+    """Raised when there is an error generating or saving the graph."""
+    pass
+
 class Top10PlatformsGraph(BaseGraph):
     def __init__(self, config: Dict[str, Any], translations: Dict[str, str], img_folder: str):
         super().__init__(config, translations, img_folder)
@@ -48,11 +52,11 @@ class Top10PlatformsGraph(BaseGraph):
             "series": []
         }
 
-        for serie in series:
+        for series_item in series:
             processed_data["series"].append({
-                "name": serie["name"],
-                "data": serie["data"],
-                "color": get_color(serie["name"], self.config)
+                "name": series_item["name"],
+                "data": series_item["data"],
+                "color": get_color(series_item["name"], self.config)
             })
 
         return processed_data
@@ -63,9 +67,9 @@ class Top10PlatformsGraph(BaseGraph):
         bar_width = 0.35
         index = range(len(processed_data["platforms"]))
 
-        for i, serie in enumerate(processed_data["series"]):
-            bars = self.ax.bar([x + i * bar_width for x in index], serie["data"], 
-                             bar_width, label=serie["name"], color=serie["color"])
+        for i, series_item in enumerate(processed_data["series"]):
+            bars = self.ax.bar([x + i * bar_width for x in index], series_item["data"], 
+                             bar_width, label=series_item["name"], color=series_item["color"])
 
             if self.config["ANNOTATE_TOP_10_PLATFORMS"]:
                 for j, bar in enumerate(bars):
@@ -97,14 +101,21 @@ class Top10PlatformsGraph(BaseGraph):
             today = datetime.today().strftime("%Y-%m-%d")
             file_name = f"top_10_platforms{'_' + user_id if user_id else ''}.png"
             file_path = os.path.join(self.img_folder, today, file_name)
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
-            self.save(file_path)
+            
+            try:
+                os.makedirs(os.path.dirname(file_path), exist_ok=True)
+                self.save(file_path)
+            except (OSError, IOError) as e:
+                raise GraphGenerationError(f"Failed to save graph: {str(e)}")
 
             return file_path
             
         except TautulliDataError as e:
             logging.error(f"Error generating top 10 platforms graph: {str(e)}")
             return None
-        except Exception as e:
-            logging.error(f"Unexpected error generating top 10 platforms graph: {str(e)}")
+        except GraphGenerationError as e:
+            logging.error(f"Error saving top 10 platforms graph: {str(e)}")
             return None
+        except Exception as e:
+            logging.error(f"Uncaught exception in top 10 platforms graph generation: {str(e)}")
+            raise
