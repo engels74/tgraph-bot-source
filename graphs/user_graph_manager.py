@@ -29,7 +29,7 @@ class UserGraphManager:
         self.graph_factory = GraphFactory(config, translations, img_folder)
         self.data_fetcher = DataFetcher(config)
 
-    def _sanitize_user_id(self, user_id: str) -> str:
+    def _sanitize_user_id(self, user_id: Any) -> str:
         """
         Sanitize user ID for safe filename creation.
         
@@ -42,11 +42,22 @@ class UserGraphManager:
         Raises:
             InvalidUserIdError: If user_id is invalid
         """
-        if not user_id or not isinstance(user_id, str):
-            raise InvalidUserIdError("Invalid user ID")
+        if user_id is None:
+            raise InvalidUserIdError("User ID cannot be None")
+            
+        # Convert user_id to string if it isn't already
+        user_id_str = str(user_id).strip()
+        
+        # Check if the user_id is empty after stripping
+        if not user_id_str:
+            raise InvalidUserIdError("User ID cannot be empty")
+            
+        # Verify the user_id contains at least one non-special character
+        if not any(c.isalnum() for c in user_id_str):
+            raise InvalidUserIdError("User ID must contain at least one alphanumeric character")
             
         # Remove any characters that aren't alphanumeric, underscore, or hyphen
-        sanitized = re.sub(r'[^a-zA-Z0-9_-]', '_', user_id)
+        sanitized = re.sub(r'[^a-zA-Z0-9_-]', '_', user_id_str)
         
         # Ensure the filename isn't too long (most filesystems have limits)
         sanitized = sanitized[:50]
@@ -57,7 +68,7 @@ class UserGraphManager:
             
         return sanitized
 
-    async def generate_user_graphs(self, user_id: str) -> List[str]:
+    async def generate_user_graphs(self, user_id: Any) -> List[str]:
         """
         Generate graphs for a specific user.
         
@@ -68,7 +79,6 @@ class UserGraphManager:
             A list of file paths for the generated graphs
             
         Raises:
-            InvalidUserIdError: If user_id is invalid
             UserGraphManagerError: If graph generation fails
         """
         try:
@@ -85,9 +95,16 @@ class UserGraphManager:
 
             graph_files = []
             
-            # Fetch all graph data
-            graph_data = await self.data_fetcher.fetch_all_graph_data(str(user_id))
-            
+            # Fetch all graph data with error handling
+            try:
+                graph_data = await self.data_fetcher.fetch_all_graph_data(str(user_id))
+            except Exception:
+                logging.error(self.translations.get(
+                    "error_fetch_user_data",
+                    "Failed to fetch data for user {user_id}"
+                ).format(user_id=user_id))
+                return []
+
             if not graph_data:
                 logging.error(self.translations.get(
                     "error_fetch_user_data",
@@ -156,7 +173,7 @@ class UserGraphManager:
             raise UserGraphManagerError(error_msg) from e
 
 async def generate_user_graphs(
-    user_id: str,
+    user_id: Any,
     config: Dict[str, Any],
     translations: Dict[str, str],
     img_folder: str
