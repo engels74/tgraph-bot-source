@@ -1,13 +1,13 @@
 ﻿# graphs/graph_modules/play_count_by_dayofweek_graph.py
 
 from .base_graph import BaseGraph
-from .utils import get_color
+from .utils import get_color, validate_series_data
+from config.modules.sanitizer import sanitize_user_id, InvalidUserIdError
+from datetime import datetime
+from matplotlib.ticker import MaxNLocator
 from typing import Dict, Any, Optional, List
 import logging
 import os
-import re
-from datetime import datetime
-from matplotlib.ticker import MaxNLocator
 
 class PlayCountByDayOfWeekError(Exception):
     """Base exception for PlayCountByDayOfWeek graph-specific errors."""
@@ -21,64 +21,36 @@ class GraphGenerationError(PlayCountByDayOfWeekError):
     """Raised when graph generation fails."""
     pass
 
+class FileSystemError(PlayCountByDayOfWeekError):
+    """Raised when there are file system related errors."""
+    pass
+
 class PlayCountByDayOfWeekGraph(BaseGraph):
     def __init__(self, config: Dict[str, Any], translations: Dict[str, str], img_folder: str):
         super().__init__(config, translations, img_folder)
         self.graph_type = "play_count_by_dayofweek"
 
     def _validate_series_data(self, series: List[Dict[str, Any]], days_count: int) -> List[str]:
-        """
-        Validate series data for completeness and consistency.
-        
-        Args:
-            series: List of series data dictionaries
-            days_count: Expected number of data points per series
-            
-        Returns:
-            List of validation error messages, empty if validation passes
-        """
-        errors = []
-        for idx, serie in enumerate(series):
-            if not isinstance(serie, dict):
-                errors.append(f"Series {idx} is not a dictionary")
-                continue
-                
-            # Check required keys
-            for key in ("name", "data"):
-                if key not in serie:
-                    errors.append(f"Series {idx} missing required key: {key}")
-                    
-            # Validate data length if 'data' exists
-            if "data" in serie:
-                if not isinstance(serie["data"], (list, tuple)):
-                    errors.append(f"Series {idx} data is not a list")
-                elif len(serie["data"]) != days_count:
-                    errors.append(
-                        f"Series {idx} ({serie.get('name', 'unnamed')}) data length mismatch: "
-                        f"expected {days_count}, got {len(serie['data'])}"
-                    )
-                    
-            # Validate data types if data exists
-            if "data" in serie and isinstance(serie["data"], (list, tuple)):
-                if not all(isinstance(x, (int, float)) for x in serie["data"]):
-                    errors.append(f"Series {idx} contains non-numeric data")
-                    
-        return errors
+        return validate_series_data(series, days_count, "day of week series")
 
-    def _sanitize_filename(self, user_id: str) -> str:
+    def _process_filename(self, user_id: Optional[str]) -> Optional[str]:
         """
-        Sanitize user ID for safe filename creation.
+        Process user ID for safe filename creation.
         
         Args:
-            user_id: The user ID to sanitize
+            user_id: The user ID to process
             
         Returns:
-            A sanitized version of the user ID safe for filenames
+            A sanitized version of the user ID safe for filenames, or None if input is None
         """
-        # Remove any characters that aren't alphanumeric, underscore, or hyphen
-        sanitized = re.sub(r'[^a-zA-Z0-9_-]', '_', str(user_id))
-        # Ensure the filename isn't too long
-        return sanitized[:50]
+        if user_id is None:
+            return None
+            
+        try:
+            return sanitize_user_id(user_id)
+        except InvalidUserIdError as e:
+            logging.warning(f"Invalid user ID for filename: {e}")
+            return None
 
     async def fetch_data(self, data_fetcher, user_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """
@@ -90,9 +62,6 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
             
         Returns:
             The fetched data or None if fetching fails
-            
-        Raises:
-            PlayCountByDayOfWeekError: If data fetching fails
         """
         try:
             # If we have stored data, use it instead of fetching
@@ -109,13 +78,21 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
             
             data = await data_fetcher.fetch_tautulli_data_async("get_plays_by_dayofweek", params)
             if not data or 'response' not in data or 'data' not in data['response']:
-                raise PlayCountByDayOfWeekError(
+                error_msg = (
+                    self.translations.get(
+                        'error_fetch_play_count_dayofweek_user',
+                        'Failed to fetch play count by day of week data for user {user_id}: {error}'
+                    ) if user_id else
                     self.translations["error_fetch_play_count_dayofweek"]
                 )
+                if user_id:
+                    logging.error(error_msg.format(user_id=user_id, error="No data returned"))
+                else:
+                    logging.error(error_msg)
+                return None
+
             return data['response']['data']
             
-        except PlayCountByDayOfWeekError:
-            raise
         except Exception as e:
             error_msg = (
                 self.translations.get(
@@ -124,10 +101,13 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
                 ) if user_id else
                 self.translations["error_fetch_play_count_dayofweek"]
             )
-            logging.error(error_msg.format(user_id=user_id, error=str(e)))
+            if user_id:
+                logging.error(error_msg.format(user_id=user_id, error=str(e)))
+            else:
+                logging.error(f"{error_msg}: {str(e)}")
             return None
 
-    def process_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def process_data(self, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """
         Process the fetched data for plotting.
         
@@ -152,7 +132,7 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
             )
 
         days = list(range(7))
-        day_labels = [self.translations[f"day_{i}"] for i in range(7)]
+        day_labels = [self.translations.get(f"day_{i}", f"Day {i}") for i in range(7)]
 
         # Validate series data
         validation_errors = self._validate_series_data(series, len(days))
@@ -195,10 +175,15 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
             self.setup_plot()
 
             for serie in processed_data["series"]:
-                self.ax.plot(processed_data["days"], serie["data"], 
-                           label=serie["name"], marker="o", color=serie["color"])
+                self.ax.plot(
+                    processed_data["days"],
+                    serie["data"],
+                    label=serie["name"],
+                    marker="o",
+                    color=serie["color"]
+                )
 
-                if self.config["ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK"]:
+                if self.config.get("ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK", False):
                     for i, value in enumerate(serie["data"]):
                         if value > 0:
                             self.annotate(processed_data["days"][i], value, f"{value}")
@@ -234,7 +219,7 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
         """
         try:
             logging.debug("Generate called with stored data: %s", "present" if self.data else "none")
-            
+
             data = await self.fetch_data(data_fetcher, user_id)
             if data is None:
                 return None
@@ -245,28 +230,21 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
 
             self.plot(processed_data)
 
+            # Save the graph
             today = datetime.today().strftime("%Y-%m-%d")
+            base_dir = os.path.join(self.img_folder, today)
+            if user_id:
+                base_dir = os.path.join(base_dir, f"user_{user_id}")
+                
+            file_name = f"play_count_by_dayofweek{'_' + user_id if user_id else ''}.png"
+            file_path = os.path.join(base_dir, file_name)
             
-            # Sanitize user_id if present
-            safe_user_id = self._sanitize_filename(user_id) if user_id else None
-            file_name = f"play_count_by_dayofweek{'_' + safe_user_id if safe_user_id else ''}.png"
-            
-            # Create the dated directory path
-            dated_dir = os.path.join(self.img_folder, today)
-            os.makedirs(dated_dir, exist_ok=True)
-            
-            file_path = os.path.join(dated_dir, file_name)
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
             self.save(file_path)
             
             logging.debug("Saved play count by day of week graph: %s", file_path)
             return file_path
             
-        except (PlayCountByDayOfWeekError, DataValidationError) as e:
-            logging.error(str(e))
-            return None
-        except GraphGenerationError as e:
-            logging.error(f"Failed to generate graph: {str(e)}")
-            return None
         except Exception as e:
-            logging.error("Unexpected error during graph generation: %s", str(e))
+            logging.error(f"Error generating day of week graph: {str(e)}")
             return None

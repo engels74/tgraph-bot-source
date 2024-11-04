@@ -1,10 +1,5 @@
 # main.py
-import argparse
-import asyncio
-import discord
-import logging
-import os
-import sys
+
 from aiohttp import ClientConnectorError, ServerDisconnectedError
 from bot.extensions import load_extensions
 from bot.permission_checker import check_permissions_all_guilds
@@ -16,6 +11,12 @@ from graphs.graph_manager import GraphManager
 from graphs.graph_modules.data_fetcher import DataFetcher
 from graphs.user_graph_manager import UserGraphManager
 from i18n import load_translations, TranslationKeyError
+import argparse
+import asyncio
+import discord
+import logging
+import os
+import sys
 
 # Get the CONFIG_DIR from environment variable, default to '/config' if not set
 CONFIG_DIR = os.environ.get("CONFIG_DIR", "/config")
@@ -171,8 +172,8 @@ class TGraphBot(commands.Bot):
     async def on_resume(self):
         log(self.translations["log_bot_resumed"])
 
-    async def on_ready(self):
-        log(self.translations["log_bot_logged_in"].format(name=self.user.name))
+    async def background_initialization(self):
+        """Perform initialization tasks in the background."""
         try:
             # Check permissions after a short delay
             log(self.translations["log_waiting_before_permission_check"])
@@ -184,7 +185,13 @@ class TGraphBot(commands.Bot):
 
             # Initial graph update
             log(self.translations["log_updating_posting_graphs_startup"])
-            self.config = load_config(self.config_path, reload=True)
+            
+            try:
+                self.config = load_config(self.config_path, reload=True)
+            except Exception as e:
+                log(self.translations["log_config_reload_error"].format(error=str(e)), logging.ERROR)
+                # Use existing config as fallback
+                log("Using existing configuration as fallback", logging.WARNING)
             
             channel = self.get_channel(self.config["CHANNEL_ID"])
             if channel:
@@ -210,9 +217,6 @@ class TGraphBot(commands.Bot):
                 next_update=next_update_log
             ))
 
-            # Start update scheduling
-            self.loop.create_task(schedule_updates(self))
-
         except discord.Forbidden as e:
             log(self.translations["log_permission_error"].format(error=str(e)), logging.ERROR)
             raise
@@ -223,12 +227,28 @@ class TGraphBot(commands.Bot):
             log(self.translations["log_error_during_startup"].format(error=str(e)), logging.ERROR)
             raise
 
+    async def on_ready(self):
+        """Handle the on_ready event."""
+        log(self.translations["log_bot_logged_in"].format(name=self.user.name))
+        
+        # Start the initialization in a background task
+        self.loop.create_task(self.background_initialization())
+        
+        # Start update scheduling
+        self.loop.create_task(schedule_updates(self))
+
 async def schedule_updates(bot):
+    """Handle scheduled updates with proper error handling."""
     while True:
         if bot.update_tracker.is_update_due():
             log(bot.translations["log_auto_update_started"])
             try:
-                bot.config = load_config(bot.config_path, reload=True)
+                try:
+                    bot.config = load_config(bot.config_path, reload=True)
+                except Exception as e:
+                    log(bot.translations["log_config_reload_error"].format(error=str(e)), logging.ERROR)
+                    # Skip this update cycle if config reload fails
+                    continue
                 
                 channel = bot.get_channel(bot.config["CHANNEL_ID"])
                 if channel:
@@ -241,6 +261,7 @@ async def schedule_updates(bot):
                     log(bot.translations["log_channel_not_found"].format(
                         channel_id=bot.config["CHANNEL_ID"]
                     ), logging.ERROR)
+                    continue
                 
                 bot.update_tracker.update()
                 next_update_log = bot.update_tracker.get_next_update_readable()

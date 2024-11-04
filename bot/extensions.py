@@ -5,10 +5,10 @@ Extension management utilities for TGraph Bot.
 Handles loading, unloading, and reloading of command extensions.
 """
 
+from discord.ext import commands
+from typing import List, Tuple, Callable
 import logging
 import pathlib
-from typing import List, Tuple, Callable
-from discord.ext import commands
 
 def get_extension_paths() -> List[str]:
     """Get a list of all extension paths in the commands directory.
@@ -16,12 +16,9 @@ def get_extension_paths() -> List[str]:
     Returns
     -------
     List[str]
-        List of extension paths in dot notation (e.g., 'bot.commands.about')
-        
-    Raises
-    ------
-    FileNotFoundError
-        If the commands directory cannot be found
+        List of extension paths in dot notation (e.g., 'bot.commands.about').
+        Returns an empty list if the commands directory cannot be found or 
+        if there is an error scanning the directory.
     """
     commands_dir = pathlib.Path(__file__).parent / "commands"
     if not commands_dir.exists():

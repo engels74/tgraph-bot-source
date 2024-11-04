@@ -38,6 +38,7 @@ CONFIG_SECTIONS = {
         "category": "GRAPH_OPTIONS",
         "keys": [
             "CENSOR_USERNAMES",
+            "ENABLE_GRAPH_GRID",
             "ENABLE_DAILY_PLAY_COUNT",
             "ENABLE_PLAY_COUNT_BY_DAYOFWEEK",
             "ENABLE_PLAY_COUNT_BY_HOUROFDAY",
@@ -52,6 +53,7 @@ CONFIG_SECTIONS = {
         "keys": [
             "TV_COLOR",
             "MOVIE_COLOR",
+            "GRAPH_BACKGROUND_COLOR",
             "ANNOTATION_COLOR",
             "ANNOTATION_OUTLINE_COLOR",
             "ENABLE_ANNOTATION_OUTLINE",

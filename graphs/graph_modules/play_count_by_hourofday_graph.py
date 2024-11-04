@@ -1,12 +1,12 @@
 ﻿# graphs/graph_modules/play_count_by_hourofday_graph.py
 
 from .base_graph import BaseGraph
-from .utils import get_color
+from .utils import get_color, validate_series_data
+from datetime import datetime
+from matplotlib.ticker import MaxNLocator
 from typing import Dict, Any, Optional
 import logging
 import os
-from datetime import datetime
-from matplotlib.ticker import MaxNLocator
 
 class PlayCountByHourOfDayGraph(BaseGraph):
     def __init__(self, config: Dict[str, Any], translations: Dict[str, str], img_folder: str):
@@ -72,26 +72,20 @@ class PlayCountByHourOfDayGraph(BaseGraph):
 
             hours = list(range(24))
 
+            # Validate series data
+            errors = validate_series_data(series, 24, "hour of day series")
+            if errors:
+                for error in errors:
+                    logging.error("%s", error)
+                return None
+
             processed_data = {
                 "hours": hours,
                 "series": []
             }
 
-            # Validate and process each series
+            # Process validated series data
             for serie in series:
-                if not isinstance(serie, dict) or 'name' not in serie or 'data' not in serie:
-                    logging.error("Invalid series format: %s", serie)
-                    continue
-
-                if not isinstance(serie["data"], list) or len(serie["data"]) != 24:
-                    logging.error("[DEBUG] Invalid data length for series %s: expected 24, got %d",
-                                serie["name"], len(serie["data"]) if isinstance(serie["data"], list) else 0)
-                    continue
-
-                if not all(isinstance(x, (int, float)) for x in serie["data"]):
-                    logging.error("Invalid data type in series %s", serie["name"])
-                    continue
-
                 processed_data["series"].append({
                     "name": serie["name"],
                     "data": serie["data"],
@@ -131,8 +125,10 @@ class PlayCountByHourOfDayGraph(BaseGraph):
             )
 
             self.ax.set_xticks(processed_data["hours"])
-            # Format hours as 00-23
-            self.ax.set_xticklabels([f"{h:02d}" for h in processed_data["hours"]], ha="center")
+            # Format hours as 00-23 with proper alignment
+            self.ax.set_xticklabels([f"{h:02d}" for h in processed_data["hours"]])
+            for tick in self.ax.get_xticklabels():
+                tick.set_ha("center")
             self.ax.yaxis.set_major_locator(MaxNLocator(integer=True))
 
             self.add_legend()
@@ -166,10 +162,14 @@ class PlayCountByHourOfDayGraph(BaseGraph):
 
             self.plot(processed_data)
 
-            # Save the graph with proper file path handling
+            # Save the graph
             today = datetime.today().strftime("%Y-%m-%d")
+            base_dir = os.path.join(self.img_folder, today)
+            if user_id:
+                base_dir = os.path.join(base_dir, f"user_{user_id}")
+                
             file_name = f"play_count_by_hourofday{'_' + user_id if user_id else ''}.png"
-            file_path = os.path.join(self.img_folder, today, file_name)
+            file_path = os.path.join(base_dir, file_name)
             
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
             self.save(file_path)

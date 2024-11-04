@@ -5,23 +5,35 @@ Configuration value sanitization for TGraph Bot.
 Handles type conversion, formatting, and validation of configuration values.
 """
 
-import re
-import logging
-from datetime import datetime
-from typing import Any, Dict, Optional
-from ruamel.yaml.scalarstring import DoubleQuotedScalarString
-from .options import get_option_metadata
 from .constants import CONFIG_SECTIONS
+from .options import get_option_metadata
+from .validator import _validate_color, ColorValidationResult
+from datetime import datetime
+from ruamel.yaml.scalarstring import DoubleQuotedScalarString
+from typing import Any, Dict, Optional
+import logging
+import re
 
-# Module-level constants
-DEFAULT_COLOR = "#000000"
-DEFAULT_TIME = "XX:XX"
-DEFAULT_MIN_VALUE = 1
-HEX_COLOR_PATTERN = re.compile(r'^#([0-9a-fA-F]{6})$')
-TIME_FORMATS = ["%H:%M", "%I:%M%p", "%H.%M", "%H:%M:%S"]
+# Module-level constants with explicit types
+DEFAULT_COLOR: str = "#000000"
+DEFAULT_TIME: str = "XX:XX"
+DEFAULT_MIN_VALUE: int = 1
+TIME_FORMATS: tuple[str, ...] = ("%H:%M", "%I:%M%p", "%H.%M", "%H:%M:%S")
 
 class ConfigurationError(Exception):
-    """Raised when there are critical configuration issues."""
+    """Base exception for critical configuration issues."""
+    pass
+
+class ValidationError(ConfigurationError):
+    """Raised when configuration value validation fails."""
+    pass
+
+class SanitizationError(ConfigurationError):
+    """Raised when value sanitization fails."""
+    pass
+
+class InvalidUserIdError(SanitizationError):
+    """Raised when user ID is invalid."""
     pass
 
 def sanitize_config_value(key: str, value: Any) -> Any:
@@ -37,121 +49,182 @@ def sanitize_config_value(key: str, value: Any) -> Any:
         
     Raises:
         ConfigurationError: For critical configuration issues
-        ValueError: For invalid value formats
-        TypeError: For invalid value types
+        ValidationError: For invalid value formats
+        SanitizationError: For sanitization failures
     """
     try:
         if value is None:
             return _get_default_for_type(key)
 
         metadata = get_option_metadata(key)
+        if metadata is None:
+            raise ConfigurationError(f"No metadata found for key: {key}")
+
         value_type = metadata["type"]
 
         # Handle empty strings
         if isinstance(value, str) and not value.strip():
             return _get_default_for_type(key)
 
-        # Type-specific sanitization
-        if value_type is bool:
-            return _sanitize_boolean(value)
-        elif value_type is int:
-            return _sanitize_integer(value, metadata.get("min"), key)
-        elif value_type is str:
-            if "format" in metadata:
-                if metadata["format"] == "hex":
-                    return _sanitize_color(value)
-                elif metadata["format"] == "HH:MM":
-                    return _sanitize_time(value)
-            return _sanitize_string(value)
-        
-        return value
+        # Type-specific sanitization with error handling
+        try:
+            if value_type is bool:
+                return _sanitize_boolean(value)
+            elif value_type is int:
+                return _sanitize_integer(value, metadata.get("min"), key)
+            elif value_type is str:
+                if "format" in metadata:
+                    if metadata["format"] == "hex":
+                        return _sanitize_color(value)
+                    elif metadata["format"] == "HH:MM":
+                        return _sanitize_time(value)
+                return _sanitize_string(value)
+            
+            return value
 
-    except ValueError as e:
-        logging.error(f"Invalid value format for {key}: {str(e)}")
-        return _get_default_for_type(key)
-    except TypeError as e:
-        logging.error(f"Invalid type for {key}: {str(e)}")
-        return _get_default_for_type(key)
+        except (ValueError, TypeError) as e:
+            raise SanitizationError(f"Failed to sanitize value for {key}: {value}") from e
+            
     except KeyError as e:
         logging.error(f"Missing metadata for {key}: {str(e)}")
-        raise ConfigurationError(f"Missing configuration metadata for {key}")
+        raise ConfigurationError(f"Missing configuration metadata for {key}") from e
+    except Exception as e:
+        logging.error(f"Unexpected error sanitizing {key}: {str(e)}")
+        raise ConfigurationError(f"Failed to sanitize configuration value for {key}") from e
 
 def _sanitize_boolean(value: Any) -> bool:
-    """Convert a value to boolean while preserving formatting."""
+    """
+    Convert a value to boolean with improved validation.
+    
+    Args:
+        value: The value to convert
+        
+    Returns:
+        bool: The converted boolean value
+        
+    Raises:
+        ValueError: If the value cannot be converted to boolean
+    """
     if isinstance(value, bool):
         return value
     if isinstance(value, str):
-        return value.lower() in ['true', '1', 'yes', 'on', 't', 'y']
+        value = value.lower().strip()
+        if value in ('true', '1', 'yes', 'on', 't', 'y'):
+            return True
+        if value in ('false', '0', 'no', 'off', 'f', 'n'):
+            return False
+        raise ValueError(f"Invalid boolean string: {value}")
     return bool(value)
 
-def _sanitize_integer(value: Any, minimum: Optional[int] = None, key: str = None) -> int:
+def _sanitize_integer(
+    value: Any, 
+    minimum: Optional[int] = None, 
+    key: Optional[str] = None
+) -> int:
     """
-    Convert a value to integer and apply minimum constraint.
-    Special handling for cooldown values to allow zero/negative values.
+    Convert a value to integer with minimum constraint and cooldown handling.
+    
+    Args:
+        value: The value to convert
+        minimum: Optional minimum value
+        key: Optional configuration key for context
+        
+    Returns:
+        int: The sanitized integer value
+        
+    Raises:
+        ValueError: If the value cannot be converted to integer
     """
     try:
-        value = int(float(value)) if isinstance(value, str) else int(value)
+        converted_value = int(float(str(value).strip()))
             
-        # For cooldown settings, allow zero and negative values
+        # For cooldown settings, allow zero/negative values
         if key and (key.endswith('_COOLDOWN_MINUTES') or key.endswith('_COOLDOWN_SECONDS')):
-            return value
+            return converted_value
             
         # For non-cooldown settings, apply minimum constraint
         if minimum is not None:
-            value = max(minimum, value)
+            return max(minimum, converted_value)
             
-        return value
+        return converted_value
     except (ValueError, TypeError):
-        # Return appropriate default based on whether it's a cooldown setting
         if key and (key.endswith('_COOLDOWN_MINUTES') or key.endswith('_COOLDOWN_SECONDS')):
             return 0  # Default to disabled for cooldowns
         return minimum if minimum is not None else DEFAULT_MIN_VALUE
 
 def _sanitize_color(value: str) -> DoubleQuotedScalarString:
-    """Sanitize a color value to proper hex format."""
-    color = str(value).strip().strip('"\'')
-    if not color.startswith('#'):
-        color = f'#{color}'
-    # Ensure valid hex color
-    if len(color) == 4:  # Convert #RGB to #RRGGBB
-        color = f'#{color[1]*2}{color[2]*2}{color[3]*2}'
-    if not HEX_COLOR_PATTERN.match(color):
-        logging.warning(f"Invalid color format: {color}, using default: {DEFAULT_COLOR}")
-        color = DEFAULT_COLOR
-    return DoubleQuotedScalarString(color)
+    """
+    Sanitize a color value to proper hex format with validation.
+    
+    Args:
+        value: The color value to sanitize
+        
+    Returns:
+        DoubleQuotedScalarString: The sanitized color value
+        
+    Raises:
+        ValidationError: If color validation fails
+    """
+    validation_result: ColorValidationResult = _validate_color(value)
+    if not validation_result.is_valid:
+        logging.warning(f"Invalid color value: {validation_result.error_message}")
+        return DoubleQuotedScalarString(DEFAULT_COLOR)
+        
+    return DoubleQuotedScalarString(validation_result.normalized_color)
 
 def _sanitize_time(value: str) -> DoubleQuotedScalarString:
     """
-    Sanitize a time value to HH:MM format.
-    Supports multiple common time formats.
+    Sanitize a time value to HH:MM format with multi-format support.
+    
+    Args:
+        value: The time value to sanitize
+        
+    Returns:
+        DoubleQuotedScalarString: The sanitized time value
+        
+    Raises:
+        ValidationError: If time format is invalid
     """
     time_str = str(value).strip().strip('"\'').upper()
     if time_str == "XX:XX":
         return DoubleQuotedScalarString(DEFAULT_TIME)
     
-    try:
-        # Try multiple common formats
-        for fmt in TIME_FORMATS:
-            try:
-                parsed_time = datetime.strptime(time_str, fmt)
-                # Validate hours and minutes are in reasonable range
-                if 0 <= parsed_time.hour < 24 and 0 <= parsed_time.minute < 60:
-                    return DoubleQuotedScalarString(parsed_time.strftime("%H:%M"))
-            except ValueError:
-                continue
-        
-        logging.warning(f"Could not parse time string: {time_str}, using default: {DEFAULT_TIME}")
-        return DoubleQuotedScalarString(DEFAULT_TIME)
-    except Exception as e:
-        logging.error(f"Error processing time value: {str(e)}")
-        return DoubleQuotedScalarString(DEFAULT_TIME)
+    for fmt in TIME_FORMATS:
+        try:
+            parsed_time = datetime.strptime(time_str, fmt)
+            if 0 <= parsed_time.hour < 24 and 0 <= parsed_time.minute < 60:
+                return DoubleQuotedScalarString(parsed_time.strftime("%H:%M"))
+        except ValueError:
+            continue
+    
+    logging.warning(f"Invalid time format: {time_str}, using default")
+    return DoubleQuotedScalarString(DEFAULT_TIME)
 
 def _sanitize_string(value: Any) -> str:
-    """Convert a value to string and clean it up."""
-    return str(value).strip().strip('"\'')
+    """
+    Convert a value to string and clean it.
     
+    Args:
+        value: The value to sanitize
+        
+    Returns:
+        str: The sanitized string
+    """
+    return str(value).strip().strip('"\'')
+
 def _get_default_for_type(key: str) -> Any:
-    """Get a safe default value based on the option's type."""
+    """
+    Get a safe default value based on the option's type.
+    
+    Args:
+        key: The configuration key
+        
+    Returns:
+        The default value for the type
+        
+    Raises:
+        KeyError: If the key doesn't exist in metadata
+    """
     metadata = get_option_metadata(key)
     value_type = metadata["type"]
     
@@ -174,32 +247,40 @@ def _get_default_for_type(key: str) -> Any:
 def format_value_for_display(key: str, value: Any) -> str:
     """
     Format a configuration value for display in Discord messages.
-    Handles various types and edge cases.
+    
+    Args:
+        key: The configuration key
+        value: The value to format
+        
+    Returns:
+        str: The formatted value for display
     """
     if value is None:
         return "not set"
     if isinstance(value, bool):
         return str(value).lower()
-    elif isinstance(value, int):
+    elif isinstance(value, (int, float)):
         return str(value)
-    elif isinstance(value, list):
-        if not value:
-            return "empty list"
-        return ', '.join(map(str, value))
+    elif isinstance(value, (list, tuple)):
+        return ', '.join(map(str, value)) if value else "empty list"
     elif isinstance(value, dict):
-        if not value:
-            return "empty dict"
-        return ', '.join(f"{k}: {v}" for k, v in value.items())
+        return ', '.join(f"{k}: {v}" for k, v in value.items()) if value else "empty dict"
     elif isinstance(value, (DoubleQuotedScalarString, str)):
         return str(value).strip('"\'')
-    elif hasattr(value, '__str__'):
-        return str(value)
     return str(value)
 
 def validate_and_sanitize_config(config: Dict[str, Any]) -> Dict[str, Any]:
     """
     Validate and sanitize an entire configuration dictionary.
-    Includes enhanced error handling with section context.
+    
+    Args:
+        config: The configuration dictionary to process
+        
+    Returns:
+        Dict[str, Any]: The sanitized configuration
+        
+    Raises:
+        ConfigurationError: If validation or sanitization fails
     """
     sanitized = {}
     
@@ -207,22 +288,68 @@ def validate_and_sanitize_config(config: Dict[str, Any]) -> Dict[str, Any]:
     for section in CONFIG_SECTIONS:
         section_data = CONFIG_SECTIONS[section]
         logging.debug(f"Processing section: {section}")
+        
         for key in section_data['keys']:
             if key in config:
                 try:
                     sanitized[key] = sanitize_config_value(key, config[key])
-                except Exception as e:
-                    logging.error(f"Error sanitizing {key} in section {section}: {str(e)}")
+                except (ValidationError, SanitizationError) as e:
+                    logging.error(f"Error in section {section}, key {key}: {str(e)}")
                     sanitized[key] = _get_default_for_type(key)
+                except Exception as e:
+                    logging.error(f"Unexpected error processing {key}: {str(e)}")
+                    raise ConfigurationError(f"Failed to process configuration key: {key}") from e
     
-    # Handle any remaining keys not in sections
-    logging.debug("Processing uncategorized keys")
+    # Handle remaining keys
     for key, value in config.items():
         if key not in sanitized:
             try:
                 sanitized[key] = sanitize_config_value(key, value)
             except Exception as e:
-                logging.error(f"Error sanitizing uncategorized key {key}: {str(e)}")
+                logging.error(f"Error processing uncategorized key {key}: {str(e)}")
                 sanitized[key] = _get_default_for_type(key)
                 
+    return sanitized
+
+def sanitize_user_id(user_id: Optional[str], max_length: int = 50) -> str:
+    """
+    Sanitize user ID for safe filename creation.
+    
+    Args:
+        user_id: The user ID to sanitize
+        max_length: Maximum length for the sanitized ID (default: 50)
+        
+    Returns:
+        A sanitized version of the user ID safe for filenames
+        
+    Raises:
+        InvalidUserIdError: If user_id is invalid
+    """
+    if user_id is None:
+        raise InvalidUserIdError("User ID cannot be None")
+        
+    # Convert to string and strip whitespace
+    try:
+        user_id_str = str(user_id).strip()
+    except (TypeError, ValueError) as e:
+        raise InvalidUserIdError("Failed to convert user ID to string") from e
+        
+    # Check if empty after stripping
+    if not user_id_str:
+        raise InvalidUserIdError("User ID cannot be empty")
+        
+    # Verify at least one alphanumeric character
+    if not any(c.isalnum() for c in user_id_str):
+        raise InvalidUserIdError("User ID must contain at least one alphanumeric character")
+        
+    # Remove any characters that aren't alphanumeric, underscore, or hyphen
+    sanitized = re.sub(r'[^a-zA-Z0-9_-]', '_', user_id_str)
+    
+    # Limit length
+    sanitized = sanitized[:max_length]
+    
+    # Handle hidden files
+    if sanitized.startswith('.'):
+        sanitized = f"_dot_{sanitized[1:]}"
+        
     return sanitized

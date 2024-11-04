@@ -6,22 +6,88 @@ Handles manual updates of server-wide graphs, including
 graph generation and posting to the designated channel.
 """
 
-import discord
-from discord import app_commands
-import logging
-from discord.ext import commands
 from config.config import load_config
+from discord import app_commands
+from discord.ext import commands
+from typing import Optional
 from utils.command_utils import CommandMixin, ErrorHandlerMixin
+import discord
+import logging
 
 class UpdateGraphsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
     """Cog for handling graph updates."""
     
     def __init__(self, bot: commands.Bot, config: dict, translations: dict):
+        """Initialize the UpdateGraphs cog.
+        
+        Parameters
+        ----------
+        bot : commands.Bot
+            The bot instance
+        config : dict
+            Configuration dictionary
+        translations : dict
+            Translation strings dictionary
+        """
+        # Initialize parent classes first
+        super().__init__()
+        
+        # Set instance attributes
         self.bot = bot
         self.config = config
         self.translations = translations
-        CommandMixin.__init__(self)
-        ErrorHandlerMixin.__init__(self)
+
+    async def get_target_channel(self, interaction: discord.Interaction) -> Optional[discord.TextChannel]:
+        """Get the target channel for posting graphs.
+        
+        Parameters
+        ----------
+        interaction : discord.Interaction
+            The interaction instance
+            
+        Returns
+        -------
+        Optional[discord.TextChannel]
+            The target channel if found and valid, None otherwise
+        """
+        try:
+            channel_id = self.config.get("CHANNEL_ID")
+            if not channel_id:
+                await interaction.followup.send(
+                    "Channel ID not found in configuration.",
+                    ephemeral=True
+                )
+                return None
+                
+            # Convert channel_id to integer and handle potential conversion errors
+            try:
+                channel_id = int(channel_id)
+            except (ValueError, TypeError):
+                await interaction.followup.send(
+                    "Invalid channel ID in configuration.",
+                    ephemeral=True
+                )
+                return None
+                
+            channel = self.bot.get_channel(channel_id)
+            if not channel:
+                await interaction.followup.send(
+                    self.translations["log_channel_not_found"].format(
+                        channel_id=channel_id
+                    ),
+                    ephemeral=True
+                )
+                return None
+                
+            return channel
+            
+        except Exception as e:
+            logging.error(f"Error getting target channel: {e}")
+            await interaction.followup.send(
+                "Error accessing target channel.",
+                ephemeral=True
+            )
+            return None
 
     @app_commands.command(
         name="update_graphs",
@@ -56,31 +122,27 @@ class UpdateGraphsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
             # Update the bot's tracker with new config
             self.bot.update_tracker.update_config(self.config)
 
-            # Get the target channel
-            channel_id = self.config.get("CHANNEL_ID")
-            if not channel_id:
-                await interaction.followup.send(
-                    "Channel ID not found in configuration.",
-                    ephemeral=True
-                )
-                return
-            channel = self.bot.get_channel(channel_id)
+            # Get and validate target channel
+            channel = await self.get_target_channel(interaction)
             if not channel:
-                await interaction.followup.send(
-                    self.translations["log_channel_not_found"].format(
-                        channel_id=channel_id
-                    ),
-                    ephemeral=True
-                )
                 return
 
             # Delete old graph messages
             await self.bot.graph_manager.delete_old_messages(channel)
             
-            # Generate new graphs - now passing the data_fetcher instance
-            graph_files = await self.bot.graph_manager.generate_and_save_graphs(self.bot.data_fetcher)
-            
-            if not graph_files:
+            # Generate new graphs - pass the data_fetcher instance
+            try:
+                graph_files = await self.bot.graph_manager.generate_and_save_graphs(self.bot.data_fetcher)
+                
+                if not graph_files:
+                    await interaction.followup.send(
+                        self.translations["error_generating_graph"],
+                        ephemeral=True
+                    )
+                    return
+                    
+            except Exception as e:
+                logging.error(f"Error generating graphs: {e}")
                 await interaction.followup.send(
                     self.translations["error_generating_graph"],
                     ephemeral=True
@@ -88,7 +150,15 @@ class UpdateGraphsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
                 return
 
             # Post the new graphs
-            await self.bot.graph_manager.post_graphs(channel, graph_files, self.bot.update_tracker)
+            try:
+                await self.bot.graph_manager.post_graphs(channel, graph_files, self.bot.update_tracker)
+            except Exception as e:
+                logging.error(f"Error posting graphs: {e}")
+                await interaction.followup.send(
+                    "Error posting graphs to channel.",
+                    ephemeral=True
+                )
+                return
 
             # Update the tracker
             self.bot.update_tracker.update()

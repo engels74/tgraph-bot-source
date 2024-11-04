@@ -1,144 +1,302 @@
 # graphs/graph_modules/utils.py
 
-from typing import List, Dict, Any, Optional
+"""
+Utility functions for graph generation.
+"""
+
+from config.modules.validator import (
+    _validate_color,
+    validate_url,
+    ColorValidationResult,
+    validate_config_value
+)
 from datetime import datetime, timedelta
-import os
+from typing import List, Dict, Any, Optional, Tuple
 import logging
+import os
 import shutil
-from collections import defaultdict
 
 def format_date(date: datetime) -> str:
     """Format a datetime object to a string (YYYY-MM-DD).
 
-    :param date: The datetime object to format
-    :return: A formatted date string
+    Args:
+        date: The datetime object to format
+
+    Returns:
+        str: A formatted date string
     """
     return date.strftime("%Y-%m-%d")
 
 def get_date_range(days: int) -> List[datetime]:
-    """
-    Get a list of datetime objects for the specified number of days up to today.
+    """Get a list of datetime objects for the specified number of days up to today.
     
-    :param days: The number of days to generate
-    :return: A list of datetime objects
+    Args:
+        days: The number of days to generate
+        
+    Returns:
+        List[datetime]: A list of datetime objects
+        
+    Raises:
+        ValueError: If days is not a positive integer
     """
+    if not isinstance(days, int) or days <= 0:
+        raise ValueError("Days must be a positive integer")
+        
     end_date = datetime.now().astimezone()
     start_date = end_date - timedelta(days=days - 1)
     return [start_date + timedelta(days=i) for i in range(days)]
 
 def get_color(series_name: str, config: Dict[str, Any]) -> str:
-    """
-    Get the color for a given series name.
+    """Get the color for a given series name.
     
-    :param series_name: The name of the series
-    :param config: The configuration dictionary
-    :return: The color code for the series
+    Args:
+        series_name: The name of the series
+        config: The configuration dictionary
+        
+    Returns:
+        str: The color code for the series
+        
+    Raises:
+        KeyError: If required color configuration is missing
     """
-    if series_name == "TV":
-        return config.get("TV_COLOR", "#FF0000").strip('"')
-    elif series_name == "Movies":
-        return config.get("MOVIE_COLOR", "#00FF00").strip('"')
-    else:
-        return "#1f77b4"  # Default color
+    color_map = {
+        "TV": "TV_COLOR",
+        "Movies": "MOVIE_COLOR"
+    }
+    
+    series_key = series_name.strip()
+    config_key = color_map.get(series_key)
+    
+    if config_key:
+        color = config.get(config_key)
+        if color:
+            return color.strip('"\'')
+            
+    # Default color if no match or missing config
+    return "#1f77b4"
 
-def ensure_folder_exists(folder: str):
-    """
-    Ensure that the specified folder exists, creating it if necessary.
+def ensure_folder_exists(folder: str) -> None:
+    """Ensure that the specified folder exists, creating it if necessary.
     
-    :param folder: The path to the folder
+    Args:
+        folder: The path to the folder
+        
+    Raises:
+        OSError: If folder creation fails
     """
-    if not os.path.exists(folder):
-        os.makedirs(folder)
-    logging.info(f"Ensured folder exists: {folder}")
+    try:
+        if not os.path.exists(folder):
+            os.makedirs(folder)
+            logging.info(f"Created folder: {folder}")
+        logging.debug(f"Ensured folder exists: {folder}")
+    except OSError as e:
+        logging.error(f"Failed to create folder {folder}: {e}")
+        raise
 
-def cleanup_old_folders(base_folder: str, keep_days: int, translations: Dict[str, str]):
-    """
-    Clean up old folders, keeping only the specified number of most recent ones.
+def parse_folder_date(folder_name: str) -> Optional[datetime]:
+    """Parse a folder name into a datetime object.
     
-    :param base_folder: The base folder containing dated subfolders
-    :param keep_days: The number of recent folders to keep
-    :param translations: The translations dictionary
+    Args:
+        folder_name: The name of the folder in YYYY-MM-DD format
+        
+    Returns:
+        Optional[datetime]: Parsed datetime or None if invalid
+    """
+    try:
+        return datetime.strptime(folder_name, "%Y-%m-%d")
+    except ValueError:
+        return None
+
+def cleanup_old_folders(base_folder: str, keep_days: int, translations: Dict[str, str]) -> None:
+    """Clean up old folders, keeping only the specified number of most recent ones.
+    
+    Args:
+        base_folder: The base folder containing dated subfolders
+        keep_days: The number of recent folders to keep
+        translations: The translations dictionary
     """
     if not os.path.exists(base_folder):
         return
 
-    folders = [f for f in os.listdir(base_folder) if os.path.isdir(os.path.join(base_folder, f))]
-    folders.sort(reverse=True)
-    for folder in folders[keep_days:]:
-        folder_path = os.path.join(base_folder, folder)
-        if not os.path.exists(folder_path):
-            continue
-        try:
-            shutil.rmtree(folder_path)
-        except Exception as e:
-            logging.error(translations.get(
-                "error_deleting_folder",
-                "Error deleting folder {folder}: {error}"
-            ).format(folder=folder, error=str(e)))
-    logging.info(translations.get(
-        "log_cleaned_up_old_folders",
-        "Cleaned up folders, keeping last {keep_days} days."
-    ).format(keep_days=keep_days))
+    try:
+        # Get all folders and parse dates
+        folder_dates = []
+        for folder in os.listdir(base_folder):
+            folder_path = os.path.join(base_folder, folder)
+            if os.path.isdir(folder_path):
+                parsed_date = parse_folder_date(folder)
+                if parsed_date:
+                    folder_dates.append((folder, parsed_date))
+
+        # Sort by date and get folders to delete
+        folder_dates.sort(key=lambda x: x[1], reverse=True)
+        folders_to_delete = [folder for folder, _ in folder_dates[keep_days:]]
+
+        # Delete old folders
+        for folder in folders_to_delete:
+            folder_path = os.path.join(base_folder, folder)
+            try:
+                shutil.rmtree(folder_path)
+                logging.debug(f"Deleted old folder: {folder}")
+            except OSError as e:
+                logging.error(
+                    translations.get(
+                        "error_deleting_folder",
+                        "Error deleting folder {folder}: {error}"
+                    ).format(folder=folder, error=str(e))
+                )
+
+        logging.info(
+            translations.get(
+                "log_cleaned_up_old_folders",
+                "Cleaned up folders, keeping last {keep_days} days."
+            ).format(keep_days=keep_days)
+        )
+
+    except Exception as e:
+        logging.error(f"Error during folder cleanup: {str(e)}")
 
 def censor_username(username: str, should_censor: bool) -> str:
-    """
-    Censor a username if required.
+    """Censor a username if required.
     
-    :param username: The username to potentially censor
-    :param should_censor: Whether censoring should be applied
-    :return: The censored or uncensored username
+    Args:
+        username: The username to potentially censor
+        should_censor: Whether censoring should be applied
+        
+    Returns:
+        str: The censored or uncensored username
     """
-    if not should_censor:
+    if not should_censor or not username:
         return username
+
     length = len(username)
     if length <= 2:
         return "*" * length
+
     half_length = length // 2
     return username[:half_length] + "*" * (length - half_length)
 
 def is_valid_date_string(date_string: str) -> bool:
-    """
-    Check if a string is a valid date in the format YYYY-MM-DD.
+    """Check if a string is a valid date in the format YYYY-MM-DD.
 
-    :param date_string: The string to check
-    :return: True if the string is a valid date, False otherwise
+    Args:
+        date_string: The string to check
+
+    Returns:
+        bool: True if the string is a valid date, False otherwise
     """
+    if not isinstance(date_string, str):
+        return False
+
     try:
-        if not isinstance(date_string, str):
+        if date_string.count('-') != 2:
             return False
-        if not date_string.count('-') == 2:
-            return False
+            
         date = datetime.strptime(date_string, "%Y-%m-%d")
+        
         # Ensure reasonable date range
         min_date = datetime(1970, 1, 1)
         max_date = datetime.now() + timedelta(days=365)
+        
         return min_date <= date <= max_date
     except ValueError:
         return False
 
-def parse_time(value: str) -> Optional[datetime.time]:
+def validate_config(config: Dict[str, Any]) -> List[str]:
     """
-    Parse a time string into a datetime.time object.
+    Validate configuration values with enhanced checks.
+    
+    Args:
+        config: The configuration dictionary to validate
+        
+    Returns:
+        List[str]: List of error messages, empty if validation passes
+    """
+    errors = []
+    
+    # Required configuration keys with type validation
+    required_validations = {
+        "TAUTULLI_API_KEY": (str, "API key must be a string"),
+        "TAUTULLI_URL": (str, "URL must be a string"),
+        "DISCORD_TOKEN": (str, "Discord token must be a string"),
+        "CHANNEL_ID": ((int, str), "Channel ID must be a number or string that converts to a number")
+    }
 
-    :param value: The time string to parse (format: HH:MM)
-    :return: A datetime.time object, or None if parsing fails
-    """
-    try:
-        if not value or not isinstance(value, str):
-            raise ValueError("Empty or invalid input")
-        return datetime.strptime(value.strip("\"'"), "%H:%M").time()
-    except ValueError as e:
-        logging.error(
-            f"Invalid time format: {value}. Use HH:MM format (00:00-23:59). Error: {str(e)}"
-        )
-        return None
+    # Check required fields
+    for key, (expected_type, error_msg) in required_validations.items():
+        if key not in config or not config[key]:
+            errors.append(f"Missing or empty required configuration: {key}")
+            continue
+
+        value = config[key]
+        if isinstance(expected_type, tuple):
+            if not isinstance(value, expected_type):
+                try:
+                    # For CHANNEL_ID, try converting string to int
+                    if key == "CHANNEL_ID" and isinstance(value, str):
+                        int(value)
+                    else:
+                        errors.append(f"{error_msg} (got {type(value).__name__})")
+                except ValueError:
+                    errors.append(f"{error_msg} (invalid format)")
+        elif not isinstance(value, expected_type):
+            errors.append(f"{error_msg} (got {type(value).__name__})")
+
+    # Validate URL format and security
+    if "TAUTULLI_URL" in config and config["TAUTULLI_URL"]:
+        url = config["TAUTULLI_URL"]
+        if not validate_url(url):
+            errors.append(
+                f"Invalid or insecure TAUTULLI_URL: {url}\n"
+                "URL must start with http:// or https:// and be properly formatted"
+            )
+
+    # Validate numeric values
+    numeric_validations = {
+        "UPDATE_DAYS": (1, None, "UPDATE_DAYS must be a positive integer"),
+        "KEEP_DAYS": (1, None, "KEEP_DAYS must be a positive integer"),
+        "TIME_RANGE_DAYS": (1, 365, "TIME_RANGE_DAYS must be between 1 and 365")
+    }
+
+    for key, (min_val, max_val, error_msg) in numeric_validations.items():
+        if key in config:
+            try:
+                value = int(config[key])
+                if value < min_val:
+                    errors.append(f"{error_msg} (got {value})")
+                if max_val and value > max_val:
+                    errors.append(f"{error_msg} (got {value})")
+            except (ValueError, TypeError):
+                errors.append(f"{key} must be a valid integer (got {config[key]})")
+
+    # Validate color values using validator's color validation
+    color_keys = ["TV_COLOR", "MOVIE_COLOR", "ANNOTATION_COLOR", "ANNOTATION_OUTLINE_COLOR"]
+    for key in color_keys:
+        if key in config:
+            result: ColorValidationResult = _validate_color(config[key])
+            if not result.is_valid:
+                errors.append(f"Invalid color format for {key}: {result.error_message}")
+
+    # Use validator's config_value validation for other fields
+    for key, value in config.items():
+        if key not in required_validations and key not in numeric_validations:
+            try:
+                if not validate_config_value(key, value):
+                    errors.append(f"Invalid value for {key}: {value}")
+            except KeyError:
+                # Skip validation if key is not in validator's metadata
+                continue
+
+    return errors
 
 def get_sorted_date_folders(base_folder: str) -> List[str]:
-    """
-    Get a sorted list of date folders in the base folder.
+    """Get a sorted list of date folders in the base folder.
 
-    :param base_folder: The base folder containing date folders
-    :return: A list of folder names sorted in descending order
+    Args:
+        base_folder: The base folder containing date folders
+
+    Returns:
+        List[str]: List of folder names sorted by date in descending order
     """
     if not isinstance(base_folder, str):
         logging.error(f"Invalid base folder type: {type(base_folder)}")
@@ -149,23 +307,42 @@ def get_sorted_date_folders(base_folder: str) -> List[str]:
         return []
 
     try:
-        folders = [
-            f for f in os.listdir(base_folder) 
-            if os.path.isdir(os.path.join(base_folder, f)) and is_valid_date_string(f)
-        ]
-        logging.debug(f"Found {len(folders)} valid date folders in {base_folder}")
-        return sorted(folders, reverse=True)
+        valid_folders = []
+        for f in os.listdir(base_folder):
+            folder_path = os.path.join(base_folder, f)
+            if os.path.isdir(folder_path) and is_valid_date_string(f):
+                valid_folders.append(f)
+
+        try:
+            valid_folders.sort(
+                key=lambda x: datetime.strptime(x, "%Y-%m-%d"),
+                reverse=True
+            )
+            logging.debug(f"Sorted {len(valid_folders)} valid date folders in {base_folder}")
+            return valid_folders
+        except ValueError as e:
+            logging.error(f"Error parsing folder dates: {str(e)}")
+            return []
+
     except OSError as e:
         logging.error(f"Error accessing folder {base_folder}: {str(e)}")
         return []
 
 def format_delta_time(delta: timedelta) -> str:
-    """
-    Format a timedelta object into a human-readable string.
+    """Format a timedelta object into a human-readable string.
 
-    :param delta: The timedelta to format
-    :return: A formatted string representation of the time difference
+    Args:
+        delta: The timedelta to format
+
+    Returns:
+        str: A formatted string representation of the time difference
+        
+    Raises:
+        TypeError: If input is not a timedelta object
     """
+    if not isinstance(delta, timedelta):
+        raise TypeError("Input must be a timedelta object")
+
     units = {
         'day': delta.days,
         'hour': delta.seconds // 3600,
@@ -179,129 +356,120 @@ def format_delta_time(delta: timedelta) -> str:
         if value > 0
     ]
 
-    if not parts:
-        return "0 seconds"
-    return ", ".join(parts)
+    return ", ".join(parts) if parts else "0 seconds"
 
 def get_readable_file_size(size_in_bytes: int) -> str:
-    """
-    Convert file size in bytes to a human-readable format.
+    """Convert file size in bytes to a human-readable format.
 
-    :param size_in_bytes: File size in bytes
-    :return: A string representation of the file size (e.g., "5.2 MB")
-    :raises ValueError: If size is not a number
+    Args:
+        size_in_bytes: File size in bytes
+
+    Returns:
+        str: A string representation of the file size (e.g., "5.2 MB")
+
+    Raises:
+        ValueError: If size is not a valid number
     """
     if not isinstance(size_in_bytes, (int, float)):
         raise ValueError("Size must be a number")
+
     if size_in_bytes < 0:
         return f"-{get_readable_file_size(abs(size_in_bytes))}"
+        
     if size_in_bytes == 0:
         return "0 B"
 
-    for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
-        if size_in_bytes < 1024.0:
-            return f"{size_in_bytes:.1f} {unit}"
-        size_in_bytes /= 1024.0
-    return f"{size_in_bytes:.1f} PB"
+    units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
+    base = 1024.0
+    i = 0
 
-def get_next_update_time(last_update: datetime, update_days: int, fixed_update_time: str = None) -> datetime:
-    """
-    Calculate the next update time based on the last update and configuration.
-    
-    :param last_update: The datetime of the last update
-    :param update_days: The number of days between updates
-    :param fixed_update_time: Optional fixed time for updates (format: HH:MM)
-    :return: The datetime of the next scheduled update
-    """
-    next_update = last_update + timedelta(days=update_days)
-    
-    if fixed_update_time:
-        fixed_time = parse_time(fixed_update_time)
-        if fixed_time:
-            next_update = next_update.replace(
-                hour=fixed_time.hour,
-                minute=fixed_time.minute,
-                second=0,
-                microsecond=0
-            )
-    
-    # Ensure next_update is in the future
-    now = datetime.now(tz=next_update.tzinfo)
-    if next_update <= now:
-        days_behind = (now - next_update).days + 1
-        days_to_add = ((days_behind + update_days - 1) // update_days) * update_days
-        next_update += timedelta(days=days_to_add)
-    
-    return next_update
+    while size_in_bytes >= base and i < len(units) - 1:
+        size_in_bytes /= base
+        i += 1
 
-def validate_config(config: Dict[str, Any]) -> List[str]:
+    return f"{size_in_bytes:.1f} {units[i]}"
+
+def validate_date_range(start_date: datetime, end_date: datetime) -> Tuple[bool, Optional[str]]:
     """
-    Validate configuration values.
+    Validate a date range for reasonableness.
     
-    :param config: The configuration dictionary to validate
-    :return: A list of error messages
+    Args:
+        start_date: The start date to validate
+        end_date: The end date to validate
+        
+    Returns:
+        Tuple[bool, Optional[str]]: (is_valid, error_message)
+    """
+    if not isinstance(start_date, datetime) or not isinstance(end_date, datetime):
+        return False, "Dates must be datetime objects"
+
+    if start_date > end_date:
+        return False, "Start date cannot be after end date"
+
+    # Check for unreasonable date ranges
+    min_date = datetime(1970, 1, 1)
+    max_date = datetime.now() + timedelta(days=365)
+    
+    if start_date < min_date:
+        return False, f"Start date cannot be before {min_date.date()}"
+        
+    if end_date > max_date:
+        return False, f"End date cannot be after {max_date.date()}"
+
+    # Check for unreasonably long date ranges
+    max_range = timedelta(days=365 * 5)  # 5 years
+    if end_date - start_date > max_range:
+        return False, "Date range cannot exceed 5 years"
+
+    return True, None
+
+def validate_series_data(
+    series: List[Dict[str, Any]], 
+    expected_length: Optional[int] = None,
+    series_type: str = "series"
+) -> List[str]:
+    """
+    Validate series data for completeness and consistency.
+    
+    Args:
+        series: List of series data dictionaries
+        expected_length: Expected number of data points per series (optional)
+        series_type: Type of series for error messages (default: "series")
+        
+    Returns:
+        List of validation error messages, empty if validation passes
     """
     errors = []
-    required_keys = ["TAUTULLI_API_KEY", "TAUTULLI_URL", "DISCORD_TOKEN", "CHANNEL_ID"]
-    for key in required_keys:
-        if key not in config or not config[key]:
-            errors.append(f"Missing or empty required configuration: {key}")
-
-    # Validate URL format
-    if "TAUTULLI_URL" in config and config["TAUTULLI_URL"]:
-        if not config["TAUTULLI_URL"].startswith(("http://", "https://")):
-            errors.append("TAUTULLI_URL must start with http:// or https://")
-
-    if "UPDATE_DAYS" in config and (not isinstance(config["UPDATE_DAYS"], int) or config["UPDATE_DAYS"] <= 0):
-        errors.append(
-            f"UPDATE_DAYS must be a positive integer, got {config['UPDATE_DAYS']} "
-            f"of type {type(config['UPDATE_DAYS']).__name__}"
-        )
-
-    if "KEEP_DAYS" in config and (not isinstance(config["KEEP_DAYS"], int) or config["KEEP_DAYS"] <= 0):
-        errors.append(
-            f"KEEP_DAYS must be a positive integer, got {config['KEEP_DAYS']} "
-            f"of type {type(config['KEEP_DAYS']).__name__}"
-        )
-
+    
+    if not isinstance(series, list):
+        return [f"{series_type} must be a list"]
+        
+    for idx, serie in enumerate(series):
+        # Validate dictionary type
+        if not isinstance(serie, dict):
+            errors.append(f"{series_type} {idx} is not a dictionary")
+            continue
+            
+        # Check required keys
+        if "name" not in serie or "data" not in serie:
+            errors.append(f"{series_type} {idx} missing required keys (name, data)")
+            continue
+            
+        # Validate data type and content
+        data = serie["data"]
+        if not isinstance(data, list):
+            errors.append(f"{series_type} {idx} ({serie['name']}) data is not a list")
+            continue
+            
+        # Validate length if specified
+        if expected_length is not None and len(data) != expected_length:
+            errors.append(
+                f"{series_type} {idx} ({serie['name']}) data length mismatch: "
+                f"expected {expected_length}, got {len(data)}"
+            )
+            
+        # Validate numeric data
+        if not all(isinstance(x, (int, float)) for x in data):
+            errors.append(f"{series_type} {idx} ({serie['name']}) contains non-numeric data")
+            
     return errors
-
-def log_error(message: str, error: Exception, translations: Dict[str, str]):
-    """
-    Log an error message with translation support.
-
-    :param message: The error message key in the translations dictionary
-    :param error: The exception object
-    :param translations: The translations dictionary
-    """
-    if not isinstance(translations, dict):
-        translations = {}
-    if not isinstance(error, Exception):
-        error = Exception(str(error))
-
-    try:
-        logging.error(translations.get(message, message).format_map(
-            defaultdict(str, error=str(error))
-        ))
-    except Exception as e:
-        logging.error(f"Error while formatting log message: {str(e)}")
-        logging.error(f"Original error: {str(error)}")
-
-def log_info(message: str, translations: Dict[str, str], **kwargs):
-    """
-    Log an info message with translation support.
-
-    :param message: The info message key in the translations dictionary
-    :param translations: The translations dictionary
-    :param kwargs: Additional formatting arguments for the translated message
-    """
-    if not isinstance(translations, dict):
-        translations = {}
-
-    try:
-        logging.info(translations.get(message, message).format_map(
-            defaultdict(str, **kwargs)
-        ))
-    except Exception as e:
-        logging.error(f"Error while formatting log message: {str(e)}")
-        logging.info(message)  # Fallback to original message

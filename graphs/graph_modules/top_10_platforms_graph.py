@@ -1,11 +1,16 @@
 ﻿# graphs/graph_modules/top_10_platforms_graph.py
 
+"""
+Improved version of top_10_platforms_graph.py with better user ID sanitization and security.
+"""
+
 from .base_graph import BaseGraph
+from config.modules.sanitizer import sanitize_user_id, InvalidUserIdError
+from datetime import datetime
+from matplotlib.ticker import MaxNLocator
 from typing import Dict, Any, Optional
 import logging
 import os
-from datetime import datetime
-from matplotlib.ticker import MaxNLocator
 
 class Top10PlatformsError(Exception):
     """Base exception for Top10Platforms graph-specific errors."""
@@ -19,13 +24,27 @@ class GraphGenerationError(Top10PlatformsError):
     """Raised when there is an error generating the graph."""
     pass
 
+class FileSystemError(Top10PlatformsError):
+    """Raised when there are file system related errors."""
+    pass
+
 class Top10PlatformsGraph(BaseGraph):
     def __init__(self, config: Dict[str, Any], translations: Dict[str, str], img_folder: str):
         super().__init__(config, translations, img_folder)
         self.graph_type = "top_10_platforms"
 
+    def _process_filename(self, user_id: Optional[str]) -> str:
+        if user_id is None:
+            return ""
+        try:
+            return sanitize_user_id(user_id)
+        except InvalidUserIdError as e:
+            logging.warning(f"Invalid user ID for filename: {e}")
+            return ""
+
     async def fetch_data(self, data_fetcher, user_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
-        """Fetch top 10 platforms data.
+        """
+        Fetch top 10 platforms data.
         
         Args:
             data_fetcher: Data fetcher instance
@@ -43,13 +62,13 @@ class Top10PlatformsGraph(BaseGraph):
             # Otherwise, fetch new data
             params = {"time_range": self.config["TIME_RANGE_DAYS"]}
             if user_id:
-                params["user_id"] = user_id
+                params["user_id"] = str(user_id)  # Ensure user_id is string
             
             logging.debug("Fetching top 10 platforms data with params: %s", params)
             
             data = await data_fetcher.fetch_tautulli_data_async("get_plays_by_top_10_platforms", params)
             if not data or 'response' not in data or 'data' not in data['response']:
-                error_msg = self.translations.get("error_fetch_top_10_platforms")
+                error_msg = self.translations["error_fetch_top_10_platforms"]
                 if user_id:
                     error_msg = self.translations.get(
                         "error_fetch_top_10_platforms_user",
@@ -65,7 +84,8 @@ class Top10PlatformsGraph(BaseGraph):
             return None
 
     def process_data(self, raw_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """Process the raw data into a format suitable for plotting.
+        """
+        Process the raw data into a format suitable for plotting.
         
         Args:
             raw_data: Raw data from the API
@@ -99,6 +119,14 @@ class Top10PlatformsGraph(BaseGraph):
                     logging.error("Invalid series format: %s", serie)
                     continue
 
+                if not isinstance(serie["data"], list):
+                    logging.error(f"Invalid data type for {serie['name']}: {type(serie['data'])}")
+                    continue
+
+                if not all(isinstance(x, (int, float)) for x in serie["data"]):
+                    logging.error(f"Invalid data values in {serie['name']}")
+                    continue
+
                 if serie["name"] == "TV":
                     processed_data["tv_data"] = serie["data"]
                 elif serie["name"] == "Movies":
@@ -128,12 +156,12 @@ class Top10PlatformsGraph(BaseGraph):
 
             # Plot movie data
             self.ax.bar(index, processed_data["movie_data"], bar_width,
-                                   label="Movies", color=self.get_color("Movies"))
+                       label="Movies", color=self.get_color("Movies"))
 
             # Plot TV data, stacked on top of movie data
             self.ax.bar(index, processed_data["tv_data"], bar_width,
-                                bottom=processed_data["movie_data"],
-                                label="TV", color=self.get_color("TV"))
+                       bottom=processed_data["movie_data"],
+                       label="TV", color=self.get_color("TV"))
 
             if self.config["ANNOTATE_TOP_10_PLATFORMS"]:
                 for i in range(len(index)):
@@ -188,9 +216,14 @@ class Top10PlatformsGraph(BaseGraph):
 
             self.plot(processed_data)
 
+            # Save the graph
             today = datetime.today().strftime("%Y-%m-%d")
+            base_dir = os.path.join(self.img_folder, today)
+            if user_id:
+                base_dir = os.path.join(base_dir, f"user_{user_id}")
+                
             file_name = f"top_10_platforms{'_' + user_id if user_id else ''}.png"
-            file_path = os.path.join(self.img_folder, today, file_name)
+            file_path = os.path.join(base_dir, file_name)
             
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
             self.save(file_path)
@@ -198,6 +231,9 @@ class Top10PlatformsGraph(BaseGraph):
             logging.debug("Saved top 10 platforms graph: %s", file_path)
             return file_path
             
+        except FileSystemError:
+            logging.error("Security violation: Attempted file path traversal")
+            return None
         except Exception as e:
             logging.error(f"Error generating top 10 platforms graph: {str(e)}")
             return None

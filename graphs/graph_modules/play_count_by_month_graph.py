@@ -1,11 +1,12 @@
 ﻿# graphs/graph_modules/play_count_by_month_graph.py
 
 from .base_graph import BaseGraph
+from .utils import validate_series_data
+from datetime import datetime
+from matplotlib.ticker import MaxNLocator
 from typing import Dict, Any, Optional, List
 import logging
 import os
-from datetime import datetime
-from matplotlib.ticker import MaxNLocator
 
 class PlayCountByMonthError(Exception):
     """Base exception for PlayCountByMonth graph-specific errors."""
@@ -66,32 +67,7 @@ class PlayCountByMonthGraph(BaseGraph):
             return None
 
     def validate_series_data(self, series: List[Dict[str, Any]], month_count: int) -> List[str]:
-        """Validate series data for completeness and consistency."""
-        errors = []
-        for idx, serie in enumerate(series):
-            if not isinstance(serie, dict):
-                errors.append(f"Series {idx} is not a dictionary")
-                continue
-                
-            if "name" not in serie or "data" not in serie:
-                errors.append(f"Series {idx} missing required keys")
-                continue
-                
-            data = serie["data"]
-            if not isinstance(data, list):
-                errors.append(f"Series {idx} ({serie['name']}) data is not a list")
-                continue
-                
-            if len(data) != month_count:
-                errors.append(
-                    f"Series {idx} ({serie['name']}) data length mismatch: "
-                    f"expected {month_count}, got {len(data)}"
-                )
-                
-            if not all(isinstance(x, (int, float)) for x in data):
-                errors.append(f"Series {idx} ({serie['name']}) contains non-numeric data")
-                
-        return errors
+        return validate_series_data(series, month_count, "monthly series")
 
     def process_data(self, raw_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Process the raw data for plotting."""
@@ -218,8 +194,12 @@ class PlayCountByMonthGraph(BaseGraph):
 
             # Save the graph
             today = datetime.today().strftime("%Y-%m-%d")
+            base_dir = os.path.join(self.img_folder, today)
+            if user_id:
+                base_dir = os.path.join(base_dir, f"user_{user_id}")
+                
             file_name = f"play_count_by_month{'_' + user_id if user_id else ''}.png"
-            file_path = os.path.join(self.img_folder, today, file_name)
+            file_path = os.path.join(base_dir, file_name)
             
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
             self.save(file_path)

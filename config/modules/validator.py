@@ -5,12 +5,21 @@ Configuration validation for TGraph Bot.
 Validates configuration values and structure against defined rules and constraints.
 """
 
-from typing import Dict, Any, List, Tuple
-import re
-from urllib.parse import urlparse
-from ipaddress import ip_address, IPv4Address
-from .options import get_option_metadata, OPTION_METADATA
 from .constants import CONFIG_CATEGORIES, get_category_keys, get_category_display_name
+from .options import get_option_metadata, OPTION_METADATA
+from dataclasses import dataclass
+from ipaddress import ip_address, IPv4Address
+from typing import Dict, Any, List, Tuple
+from typing import Optional
+from urllib.parse import urlparse, unquote
+import re
+
+@dataclass
+class ColorValidationResult:
+    """Result of color validation containing the normalized color and any error message."""
+    is_valid: bool
+    normalized_color: Optional[str] = None
+    error_message: Optional[str] = None
 
 def _normalize_string(value: str) -> str:
     """
@@ -23,6 +32,72 @@ def _normalize_string(value: str) -> str:
         The normalized string
     """
     return str(value).strip().strip('"\'').lower()
+
+def _validate_color(value: str) -> ColorValidationResult:
+    """
+    Validate a color value in hex format.
+    Supports #RGB, #RGBA, #RRGGBB, and #RRGGBBAA formats, normalizing to #RRGGBB.
+    
+    Args:
+        value: The color value to validate
+        
+    Returns:
+        ColorValidationResult containing validation status, normalized color, and any error message
+    """
+    if not value:
+        return ColorValidationResult(
+            is_valid=False,
+            error_message="Color value cannot be empty"
+        )
+
+    # Normalize value
+    color = _normalize_string(value)
+    
+    # Add # prefix if missing
+    if not color.startswith('#'):
+        color = f'#{color}'
+    
+    # Remove the # for pattern matching
+    hex_value = color[1:]
+    
+    # Check different formats
+    if len(hex_value) == 3:  # RGB format
+        if not re.match(r'^[0-9a-f]{3}$', hex_value, re.IGNORECASE):
+            return ColorValidationResult(
+                is_valid=False,
+                error_message=f"Invalid RGB color format: {value}. Use format #RGB"
+            )
+        # Convert to RRGGBB
+        r, g, b = hex_value
+        normalized = f'#{r}{r}{g}{g}{b}{b}'
+        return ColorValidationResult(is_valid=True, normalized_color=normalized)
+        
+    if len(hex_value) == 6:  # RRGGBB format
+        if not re.match(r'^[0-9a-f]{6}$', hex_value, re.IGNORECASE):
+            return ColorValidationResult(
+                is_valid=False,
+                error_message=f"Invalid RRGGBB color format: {value}. Use format #RRGGBB"
+            )
+        return ColorValidationResult(is_valid=True, normalized_color=color)
+        
+    if len(hex_value) in (4, 8):  # RGBA or RRGGBBAA format
+        if not re.match(r'^[0-9a-f]{4}([0-9a-f]{4})?$', hex_value, re.IGNORECASE):
+            return ColorValidationResult(
+                is_valid=False,
+                error_message=f"Invalid RGBA/RRGGBBAA color format: {value}"
+            )
+        # Strip alpha channel and normalize
+        if len(hex_value) == 4:
+            r, g, b, _ = hex_value
+            normalized = f'#{r}{r}{g}{g}{b}{b}'
+        else:
+            normalized = f'#{hex_value[:6]}'
+        return ColorValidationResult(is_valid=True, normalized_color=normalized)
+    
+    return ColorValidationResult(
+        is_valid=False,
+        error_message=f"Invalid color format: {value}. Use '#' followed by 3 or 6 hex digits (e.g., #ff0000 or #f00)"
+    )
 
 def validate_config_value(key: str, value: Any) -> bool:
     """
@@ -94,7 +169,7 @@ def validate_config_value(key: str, value: Any) -> bool:
 
             if "format" in metadata:
                 if metadata["format"] == "hex":
-                    return _validate_color(str_value)
+                    return _validate_color(str_value).is_valid
                 elif metadata["format"] == "HH:MM":
                     return _validate_time(str_value)
 
@@ -149,33 +224,6 @@ def validate_config(config: Dict[str, Any]) -> Tuple[bool, List[str]]:
         errors.append(f"Unknown configuration keys: {', '.join(unknown_keys)}")
 
     return len(errors) == 0, errors
-
-def _validate_color(value: str) -> bool:
-    """
-    Validate a color value in hex format.
-    Supports RGB, RGBA, RRGGBB, and RRGGBBAA formats.
-
-    Args:
-        value: The color value to validate
-
-    Returns:
-        True if valid, False otherwise
-    """
-    if not value:
-        return False
-
-    # Normalize the value
-    color = _normalize_string(value)
-
-    # Check format
-    if not color.startswith('#'):
-        return False
-
-    # Remove the # for pattern matching
-    color = color[1:]
-
-    # Valid formats: RGB, RGBA, RRGGBB, or RRGGBBAA
-    return bool(re.match(r'^[0-9a-f]{3}([0-9a-f])?$|^[0-9a-f]{6}([0-9a-f]{2})?$', color, re.IGNORECASE))
 
 def _validate_time(value: str) -> bool:
     """
@@ -257,10 +305,11 @@ def validate_url(url: str) -> bool:
 
         # Security checks
         hostname = parsed.hostname or ''
+        path = unquote(parsed.path)  # Decode path to catch encoded traversal attempts
         return not any([
             hostname.startswith('localhost'),
             _is_private_ip(hostname),
-            '..' in parsed.path,  # Path traversal check
+            '..' in path,  # Decode path to check for traversal
             '%00' in url,  # Null byte injection check
             hostname.count('.') > 10  # Suspicious number of subdomains
         ])

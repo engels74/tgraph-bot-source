@@ -1,8 +1,8 @@
 # bot/permission_checker.py
 
+from typing import Dict, List, Set
 import discord
 import logging
-from typing import Dict, List, Set
 import textwrap
 
 def create_table(
@@ -94,13 +94,11 @@ async def resolve_permission_entities(
                     entities.append(f"Unknown Role {entity_id} ({permission_allowed})")
 
             elif perm["type"] == 2:  # User
-                try:
-                    user = await bot.fetch_user(entity_id)
-                    entities.append(f"{user.name} ({permission_allowed})")
-                except discord.NotFound:
-                    if show_unknown:
-                        logging.debug(f"User {entity_id} not found")
-                        entities.append(f"Unknown User {entity_id} ({permission_allowed})")
+                if member := guild.get_member(entity_id):
+                    entities.append(f"{member.name} ({permission_allowed})")
+                elif show_unknown:
+                    logging.debug(f"Member {entity_id} not found in guild {guild.name}")
+                    entities.append(f"Unknown Member {entity_id} ({permission_allowed})")
 
             elif perm["type"] == 3:  # Channel
                 if channel := guild.get_channel(entity_id):
