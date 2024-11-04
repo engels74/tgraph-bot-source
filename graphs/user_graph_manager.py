@@ -3,6 +3,7 @@
 import logging
 import os
 import asyncio
+import re
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 from .graph_modules.graph_factory import GraphFactory
@@ -12,6 +13,14 @@ from .graph_modules.utils import ensure_folder_exists
 # Define graphs that should be excluded for individual users
 EXCLUDED_USER_GRAPHS = {"top_10_users"}
 
+class UserGraphManagerError(Exception):
+    """Base exception for UserGraphManager errors."""
+    pass
+
+class InvalidUserIdError(UserGraphManagerError):
+    """Raised when user_id is invalid."""
+    pass
+
 class UserGraphManager:
     def __init__(self, config: Dict[str, Any], translations: Dict[str, str], img_folder: str):
         self.config = config
@@ -20,21 +29,62 @@ class UserGraphManager:
         self.graph_factory = GraphFactory(config, translations, img_folder)
         self.data_fetcher = DataFetcher(config)
 
+    def _sanitize_user_id(self, user_id: str) -> str:
+        """
+        Sanitize user ID for safe filename creation.
+        
+        Args:
+            user_id: The user ID to sanitize
+            
+        Returns:
+            A sanitized version of the user ID safe for filenames
+            
+        Raises:
+            InvalidUserIdError: If user_id is invalid
+        """
+        if not user_id or not isinstance(user_id, str):
+            raise InvalidUserIdError("Invalid user ID")
+            
+        # Remove any characters that aren't alphanumeric, underscore, or hyphen
+        sanitized = re.sub(r'[^a-zA-Z0-9_-]', '_', user_id)
+        
+        # Ensure the filename isn't too long (most filesystems have limits)
+        sanitized = sanitized[:50]
+        
+        # Ensure we don't start with a period (hidden files)
+        if sanitized.startswith('.'):
+            sanitized = f"_dot_{sanitized[1:]}"
+            
+        return sanitized
+
     async def generate_user_graphs(self, user_id: str) -> List[str]:
         """
         Generate graphs for a specific user.
         
         Args:
             user_id: The ID of the user to generate graphs for
+            
         Returns:
             A list of file paths for the generated graphs
+            
+        Raises:
+            InvalidUserIdError: If user_id is invalid
+            UserGraphManagerError: If graph generation fails
         """
-        today = datetime.today().strftime("%Y-%m-%d")
-        user_folder = os.path.join(self.img_folder, today, f"user_{str(user_id)}")
-        ensure_folder_exists(user_folder)
-
-        graph_files = []
         try:
+            # Validate and sanitize user_id
+            if not user_id:
+                raise InvalidUserIdError("User ID cannot be empty")
+                
+            safe_user_id = self._sanitize_user_id(user_id)
+            
+            # Create dated and user-specific folders
+            today = datetime.today().strftime("%Y-%m-%d")
+            user_folder = os.path.join(self.img_folder, today, f"user_{safe_user_id}")
+            ensure_folder_exists(user_folder)
+
+            graph_files = []
+            
             # Fetch all graph data
             graph_data = await self.data_fetcher.fetch_all_graph_data(str(user_id))
             
@@ -70,15 +120,16 @@ class UserGraphManager:
                     ).format(graph_type=graph_type, user_id=user_id, error=str(e)))
                 return None
 
-            # Generate all graphs concurrently
-            tasks = [
-                generate_graph(graph_type, graph_instance)
-                for graph_type, graph_instance in self.graph_factory.create_all_graphs().items()
-                if graph_type not in EXCLUDED_USER_GRAPHS
-            ]
-            
-            # Filter out None results
-            graph_files = [path for path in await asyncio.gather(*tasks) if path]
+            # Generate all graphs concurrently with timeout
+            async with asyncio.timeout(30):  # Add timeout for graph generation
+                tasks = [
+                    generate_graph(graph_type, graph_instance)
+                    for graph_type, graph_instance in self.graph_factory.create_all_graphs().items()
+                    if graph_type not in EXCLUDED_USER_GRAPHS
+                ]
+                
+                # Filter out None results
+                graph_files = [path for path in await asyncio.gather(*tasks) if path]
 
             logging.info(self.translations.get(
                 "log_generated_user_graphs",
@@ -92,26 +143,42 @@ class UserGraphManager:
 
             return graph_files
 
+        except asyncio.TimeoutError:
+            error_msg = f"Graph generation timed out for user {user_id}"
+            logging.error(error_msg)
+            raise UserGraphManagerError(error_msg)
         except Exception as e:
-            logging.error(self.translations.get(
+            error_msg = self.translations.get(
                 "error_user_graphs_generation",
                 "Error generating graphs for user {user_id}: {error}"
-            ).format(user_id=user_id, error=str(e)))
-            return []
+            ).format(user_id=user_id, error=str(e))
+            logging.error(error_msg)
+            raise UserGraphManagerError(error_msg) from e
 
-async def generate_user_graphs(user_id: str, config: Dict[str, Any], translations: Dict[str, str], img_folder: str) -> List[str]:
+async def generate_user_graphs(
+    user_id: str,
+    config: Dict[str, Any],
+    translations: Dict[str, str],
+    img_folder: str
+) -> List[str]:
     """
     Generate graphs for a specific user using the UserGraphManager.
     
-    :param user_id: The ID of the user to generate graphs for
-    :param config: The configuration dictionary
-    :param translations: The translations dictionary
-    :param img_folder: The folder to save the graphs in
-    :return: A list of file paths for the generated graphs
+    Args:
+        user_id: The ID of the user to generate graphs for
+        config: The configuration dictionary
+        translations: The translations dictionary
+        img_folder: The folder to save the graphs in
+        
+    Returns:
+        A list of file paths for the generated graphs
+        
+    Raises:
+        UserGraphManagerError: If graph generation fails
     """
     try:
         user_graph_manager = UserGraphManager(config, translations, img_folder)
         return await user_graph_manager.generate_user_graphs(user_id)
     except Exception as e:
-        logging.error(f"Failed to initialize UserGraphManager: {str(e)}")
-        return []
+        logging.error(f"Failed to generate user graphs: {str(e)}")
+        raise UserGraphManagerError(f"Failed to generate user graphs: {str(e)}") from e
