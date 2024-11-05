@@ -16,12 +16,9 @@ def get_extension_paths() -> List[str]:
     Returns
     -------
     List[str]
-        List of extension paths in dot notation (e.g., 'bot.commands.about')
-        
-    Raises
-    ------
-    FileNotFoundError
-        If the commands directory cannot be found
+        List of extension paths in dot notation (e.g., 'bot.commands.about').
+        Returns an empty list if the commands directory cannot be found or 
+        if there is an error scanning the directory.
     """
     commands_dir = pathlib.Path(__file__).parent / "commands"
     if not commands_dir.exists():
