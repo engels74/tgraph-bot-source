@@ -98,11 +98,11 @@ class UserGraphManager:
             # Fetch all graph data with error handling
             try:
                 graph_data = await self.data_fetcher.fetch_all_graph_data(str(user_id))
-            except Exception:
+            except Exception as e:
                 logging.error(self.translations.get(
                     "error_fetch_user_data",
-                    "Failed to fetch data for user {user_id}"
-                ).format(user_id=user_id))
+                    "Failed to fetch data for user {user_id}: {error}"
+                ).format(user_id=user_id, error=str(e)))
                 return []
 
             if not graph_data:
@@ -127,7 +127,9 @@ class UserGraphManager:
                     # Generate the graph
                     file_path = await graph_instance.generate(self.data_fetcher, str(user_id))
                     if file_path:
-                        logging.debug(f"Generated {graph_type} graph: {file_path}")
+                        # Log individual graph generation without full path
+                        graph_filename = os.path.basename(file_path)
+                        logging.debug(f"Generated graph: {graph_filename}")
                         return file_path
                         
                 except Exception as e:
@@ -148,15 +150,16 @@ class UserGraphManager:
                 # Filter out None results
                 graph_files = [path for path in await asyncio.gather(*tasks) if path]
 
-            logging.info(self.translations.get(
-                "log_generated_user_graphs",
-                "Generated graphs for user ID: {user_id}"
-            ).format(user_id=user_id))
+            if graph_files:
+                logging.info(self.translations.get(
+                    "log_generated_graph_files",
+                    "Generated {count} graph files"
+                ).format(count=len(graph_files)))
 
-            logging.info(self.translations.get(
-                "log_generated_graph_files",
-                "Generated {count} graph files"
-            ).format(count=len(graph_files)))
+                logging.info(self.translations.get(
+                    "log_generated_user_graphs",
+                    "Generated graphs for user ID: {user_id}"
+                ).format(user_id=user_id))
 
             return graph_files
 
