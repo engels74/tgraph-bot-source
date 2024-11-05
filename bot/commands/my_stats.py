@@ -8,6 +8,7 @@ Generates and sends personalized Plex statistics to users.
 import discord
 from discord import app_commands
 import logging
+import os
 from discord.ext import commands
 from typing import Optional
 from utils.command_utils import CommandMixin, ErrorHandlerMixin
@@ -116,15 +117,22 @@ class MyStatsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
             
             for graph_file in graph_files:
                 try:
+                    # Extract just the filename without the path
+                    filename = os.path.basename(graph_file)
+                    
                     await dm_channel.send(file=discord.File(graph_file))
                     logging.info(
                         self.translations["log_sending_graph_file"].format(
-                            file="[Graph file]"  # Avoid logging full path
+                            file=filename  # Log just the filename, which contains the graph type
                         )
                     )
                 except discord.HTTPException:
-                    logging.error("Failed to send graph file due to Discord API error")
-                    raise DMError("Failed to send graph file")
+                    logging.error(
+                        self.translations["error_sending_graph_file"].format(
+                            type=filename.replace('.png', '')
+                        )
+                    )
+                    raise DMError(f"Failed to send graph: {filename}")
                     
         except discord.Forbidden:
             logging.warning("Cannot send DM to user: DMs are disabled")
