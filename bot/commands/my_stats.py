@@ -5,10 +5,10 @@ My Stats command for TGraph Bot.
 Generates and sends personalized Plex statistics to users.
 """
 
+import os
 import discord
 from discord import app_commands
 import logging
-import os
 from discord.ext import commands
 from typing import Optional
 from utils.command_utils import CommandMixin, ErrorHandlerMixin
@@ -82,11 +82,6 @@ class MyStatsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
             if not graph_files:
                 raise GraphGenerationError("No graphs were generated")
                 
-            logging.info(
-                self.translations["log_generated_graph_files"].format(
-                    count=len(graph_files)
-                )
-            )
             return graph_files
             
         except Exception as e:
@@ -177,7 +172,7 @@ class MyStatsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
 
             logging.info(
                 self.translations["log_generating_user_graphs"].format(
-                    user_id="[User ID]"  # Avoid logging actual user ID
+                    user_id=user_id  # Show actual user ID
                 )
             )
 
