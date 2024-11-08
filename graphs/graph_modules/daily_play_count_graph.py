@@ -1,10 +1,15 @@
 ﻿# graphs/graph_modules/daily_play_count_graph.py
 
+"""
+Improved version of daily_play_count_graph.py with security fixes and enhancements.
+"""
+
 from .base_graph import BaseGraph
 from .utils import get_color
 from typing import Dict, Any, Optional
 import logging
 import os
+import re
 from datetime import datetime
 from matplotlib.dates import DateFormatter
 from matplotlib.ticker import MaxNLocator
@@ -13,21 +18,42 @@ class DailyPlayCountError(Exception):
     """Base exception for DailyPlayCount graph-specific errors."""
     pass
 
+class FileSystemError(DailyPlayCountError):
+    """Raised when there are file system related errors."""
+    pass
+
 class DailyPlayCountGraph(BaseGraph):
     def __init__(self, config: Dict[str, Any], translations: Dict[str, str], img_folder: str):
         super().__init__(config, translations, img_folder)
         self.graph_type = "daily_play_count"
 
-    async def fetch_data(self, data_fetcher, user_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
-        """Fetch daily play count data.
+    def _sanitize_user_id(self, user_id: Optional[str]) -> str:
+        """
+        Sanitize user ID for safe file name creation.
         
         Args:
-            data_fetcher: The data fetcher instance
-            user_id: Optional user ID for user-specific data
+            user_id: Raw user ID string
             
         Returns:
-            The fetched data or None if fetching fails
+            Sanitized user ID safe for file name use
         """
+        if not user_id:
+            return ""
+            
+        # Remove any characters that aren't alphanumeric, underscore, or hyphen
+        sanitized = re.sub(r'[^\w\-]', '', str(user_id))
+        
+        # Limit length to prevent extremely long filenames
+        sanitized = sanitized[:50]
+        
+        # Ensure we don't start with a period (hidden files)
+        if sanitized.startswith('.'):
+            sanitized = f"_dot_{sanitized[1:]}"
+            
+        return sanitized
+
+    async def fetch_data(self, data_fetcher, user_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """Fetch daily play count data."""
         try:
             # If we have stored data, use it instead of fetching
             if self.data is not None:
@@ -37,7 +63,7 @@ class DailyPlayCountGraph(BaseGraph):
             # Otherwise, fetch new data
             params = {"time_range": self.config["TIME_RANGE_DAYS"]}
             if user_id:
-                params["user_id"] = user_id
+                params["user_id"] = str(user_id)  # Ensure user_id is string
             
             logging.debug("Fetching daily play count data with params: %s", params)
             
@@ -53,25 +79,22 @@ class DailyPlayCountGraph(BaseGraph):
                 logging.error(f"Invalid data type received: {type(data)}")
                 return None
                 
-            if 'categories' not in data or 'series' not in data:
+            if 'response' not in data or 'data' not in data['response']:
                 logging.error(f"Missing required keys in data. Keys present: {data.keys()}")
                 return None
                 
-            return data
+            return data['response']['data']
             
         except Exception as e:
-            logging.error(f"Error fetching daily play count data: {str(e)}")
+            error_msg = self.translations.get(
+                'error_fetch_daily_play_count_user' if user_id else 'error_fetch_daily_play_count',
+                'Failed to fetch daily play count data{}: {}'
+            ).format(f" for user {user_id}" if user_id else "", str(e))
+            logging.error(error_msg)
             return None
 
     def process_data(self, raw_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """Process the raw data into a format suitable for plotting.
-        
-        Args:
-            raw_data: The raw data from the API
-            
-        Returns:
-            Processed data ready for plotting or None if processing fails
-        """
+        """Process the raw data into a format suitable for plotting."""
         try:
             if not isinstance(raw_data, dict) or 'categories' not in raw_data or 'series' not in raw_data:
                 logging.error(self.translations["error_missing_series_daily_play_count"])
@@ -124,11 +147,7 @@ class DailyPlayCountGraph(BaseGraph):
             return None
 
     def plot(self, processed_data: Dict[str, Any]) -> None:
-        """Plot the processed data.
-        
-        Args:
-            processed_data: The processed data ready for plotting
-        """
+        """Plot the processed data."""
         try:
             self.setup_plot()
 
@@ -164,18 +183,10 @@ class DailyPlayCountGraph(BaseGraph):
             
         except Exception as e:
             logging.error(f"Error plotting daily play count graph: {str(e)}")
-            raise DailyPlayCountError(f"Failed to plot graph: {str(e)}")
+            raise
 
     async def generate(self, data_fetcher, user_id: Optional[str] = None) -> Optional[str]:
-        """Generate the graph and return its file path.
-        
-        Args:
-            data_fetcher: The data fetcher instance
-            user_id: Optional user ID for user-specific graphs
-            
-        Returns:
-            The file path of the generated graph, or None if generation fails
-        """
+        """Generate the graph and return its file path."""
         try:
             logging.debug("Generate called with stored data: %s", "present" if self.data else "none")
             
@@ -189,16 +200,28 @@ class DailyPlayCountGraph(BaseGraph):
 
             self.plot(processed_data)
 
-            # Save the graph
+            # Save the graph with sanitized user_id
             today = datetime.today().strftime("%Y-%m-%d")
-            file_name = f"daily_play_count{'_' + user_id if user_id else ''}.png"
-            file_path = os.path.join(self.img_folder, today, file_name)
+            sanitized_user_id = self._sanitize_user_id(user_id)
+            file_name = f"daily_play_count{'_' + sanitized_user_id if sanitized_user_id else ''}.png"
             
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            # Ensure the path is within the intended directory
+            dated_dir = os.path.join(self.img_folder, today)
+            file_path = os.path.join(dated_dir, file_name)
+            
+            # Verify the final path is within the intended directory
+            if not os.path.abspath(file_path).startswith(os.path.abspath(self.img_folder)):
+                raise FileSystemError("Invalid file path generated")
+            
+            os.makedirs(dated_dir, exist_ok=True)
             self.save(file_path)
 
+            logging.debug("Saved daily play count graph: %s", file_path)
             return file_path
             
+        except FileSystemError:
+            logging.error("Security violation: Attempted file path traversal")
+            return None
         except Exception as e:
             logging.error(f"Error generating daily play count graph: {str(e)}")
             return None
