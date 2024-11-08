@@ -5,7 +5,7 @@ Default configuration settings for TGraph Bot.
 Provides functions for creating and managing default configuration values.
 """
 
-from typing import Dict, Any
+from typing import Dict, Any, List, Set
 from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
@@ -15,7 +15,6 @@ def create_default_config() -> CommentedMap:
     
     Returns:
         A CommentedMap containing the default configuration
-        Using CommentedMap preserves comments and formatting in the YAML file
     """
     cfg = CommentedMap()
     
@@ -26,18 +25,9 @@ def create_default_config() -> CommentedMap:
     cfg['CHANNEL_ID'] = '<REQUIRED_CHANNEL_ID>'
     
     # Time-based settings
-    # KEEP_DAYS: Number of days to retain graph files. Default is 7 days to maintain
-    # a week's worth of historical data while managing disk space usage
     cfg['KEEP_DAYS'] = 7
-    
-    # UPDATE_DAYS: Frequency of graph updates in days. Default is 7 days to provide
-    # weekly updates, balancing freshness of data with server load
     cfg['UPDATE_DAYS'] = 7
-    
-    # TIME_RANGE_DAYS: Number of days of data to include in graphs. Default is 30 days
-    # to show monthly trends while keeping graphs readable and performance manageable
     cfg['TIME_RANGE_DAYS'] = 30
-    
     cfg['FIXED_UPDATE_TIME'] = DoubleQuotedScalarString('XX:XX')
     cfg['LANGUAGE'] = 'en'
     
@@ -78,7 +68,6 @@ def create_default_config() -> CommentedMap:
 def merge_with_defaults(user_config: Dict[str, Any]) -> CommentedMap:
     """
     Merge a user configuration with default values, ensuring all required settings exist.
-    Special handling for cooldown values to preserve user's zero/negative values.
     
     Args:
         user_config: The user's configuration dictionary
@@ -98,6 +87,7 @@ def merge_with_defaults(user_config: Dict[str, Any]) -> CommentedMap:
         import logging
         logging.warning(f"Unknown configuration keys: {unknown_keys}")
     
+    # Merge user config with defaults
     for key, default_value in defaults.items():
         if key in user_config:
             user_value = user_config[key]
@@ -109,35 +99,62 @@ def merge_with_defaults(user_config: Dict[str, Any]) -> CommentedMap:
                     f"got {type(user_value)}"
                 )
             
-            # Special handling for cooldown values
-            if is_cooldown_key(key):
-                merged[key] = user_value
-            else:
-                merged[key] = user_value
+            merged[key] = user_value
         else:
             merged[key] = default_value
             
     return merged
 
-# Helper functions
+def is_cooldown_key(key: str) -> bool:
+    """
+    Check if a configuration key is related to cooldowns.
+    
+    Args:
+        key: The configuration key to check
+        
+    Returns:
+        True if the key is a cooldown setting, False otherwise
+    """
+    return key.endswith(('_COOLDOWN_MINUTES', '_COOLDOWN_SECONDS'))
+
+def get_cooldown_keys() -> List[str]:
+    """
+    Get a list of all cooldown-related configuration keys.
+    
+    Returns:
+        List of cooldown configuration keys
+    """
+    defaults = create_default_config()
+    return [key for key in defaults.keys() if is_cooldown_key(key)]
+
 def get_default_value(key: str) -> Any:
-    """Get the default value for a specific configuration key."""
+    """
+    Get the default value for a specific configuration key.
+    
+    Args:
+        key: The configuration key
+        
+    Returns:
+        The default value for the key
+        
+    Raises:
+        KeyError: If no default value exists for the key
+    """
     defaults = create_default_config()
     if key not in defaults:
         raise KeyError(f"No default value found for configuration key: {key}")
     return defaults[key]
 
-def is_cooldown_key(key: str) -> bool:
-    """Check if a configuration key is related to cooldowns."""
-    return key.endswith(('_COOLDOWN_MINUTES', '_COOLDOWN_SECONDS'))
-
-def get_cooldown_keys() -> list:
-    """Get a list of all cooldown-related configuration keys."""
-    return [
-        'CONFIG_COOLDOWN_MINUTES',
-        'CONFIG_GLOBAL_COOLDOWN_SECONDS',
-        'UPDATE_GRAPHS_COOLDOWN_MINUTES',
-        'UPDATE_GRAPHS_GLOBAL_COOLDOWN_SECONDS',
-        'MY_STATS_COOLDOWN_MINUTES',
-        'MY_STATS_GLOBAL_COOLDOWN_SECONDS'
-    ]
+def get_required_keys() -> Set[str]:
+    """
+    Get a set of required configuration keys.
+    
+    Returns:
+        Set of required configuration keys
+    """
+    return {
+        'TAUTULLI_API_KEY',
+        'TAUTULLI_URL',
+        'DISCORD_TOKEN',
+        'CHANNEL_ID'
+    }
