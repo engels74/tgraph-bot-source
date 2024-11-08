@@ -46,8 +46,11 @@ class UserGraphManager:
             raise InvalidUserIdError("User ID cannot be None")
             
         # Convert user_id to string if it isn't already
-        user_id_str = str(user_id).strip()
-        
+        try:
+            user_id_str = str(user_id).strip()
+        except (TypeError, ValueError) as e:
+            raise InvalidUserIdError("Failed to convert user ID to string") from e
+            
         # Check if the user_id is empty after stripping
         if not user_id_str:
             raise InvalidUserIdError("User ID cannot be empty")
@@ -80,6 +83,7 @@ class UserGraphManager:
             
         Raises:
             UserGraphManagerError: If graph generation fails
+            InvalidUserIdError: If user_id is invalid
         """
         try:
             # Validate and sanitize user_id
@@ -103,14 +107,15 @@ class UserGraphManager:
                     "error_fetch_user_data",
                     "Failed to fetch data for user {user_id}: {error}"
                 ).format(user_id=user_id, error=str(e)))
-                return []
+                raise UserGraphManagerError("Failed to fetch user data") from e
 
             if not graph_data:
-                logging.error(self.translations.get(
+                error_msg = self.translations.get(
                     "error_fetch_user_data",
                     "Failed to fetch data for user {user_id}"
-                ).format(user_id=user_id))
-                return []
+                ).format(user_id=user_id)
+                logging.error(error_msg)
+                raise UserGraphManagerError(error_msg)
 
             async def generate_graph(graph_type: str, graph_instance: Any) -> Optional[str]:
                 """Generate a single graph with error handling."""
@@ -133,22 +138,30 @@ class UserGraphManager:
                         return file_path
                         
                 except Exception as e:
-                    logging.error(self.translations.get(
+                    error_msg = self.translations.get(
                         "error_generating_user_graph",
                         "Error generating {graph_type} for user {user_id}: {error}"
-                    ).format(graph_type=graph_type, user_id=user_id, error=str(e)))
+                    ).format(graph_type=graph_type, user_id=user_id, error=str(e))
+                    logging.error(error_msg)
+                    raise UserGraphManagerError(error_msg) from e
+                    
                 return None
 
             # Generate all graphs concurrently with timeout
-            async with asyncio.timeout(30):  # Add timeout for graph generation
-                tasks = [
-                    generate_graph(graph_type, graph_instance)
-                    for graph_type, graph_instance in self.graph_factory.create_all_graphs().items()
-                    if graph_type not in EXCLUDED_USER_GRAPHS
-                ]
-                
-                # Filter out None results
-                graph_files = [path for path in await asyncio.gather(*tasks) if path]
+            try:
+                async with asyncio.timeout(30):  # Add timeout for graph generation
+                    tasks = [
+                        generate_graph(graph_type, graph_instance)
+                        for graph_type, graph_instance in self.graph_factory.create_all_graphs().items()
+                        if graph_type not in EXCLUDED_USER_GRAPHS
+                    ]
+                    
+                    # Filter out None results
+                    graph_files = [path for path in await asyncio.gather(*tasks) if path]
+            except asyncio.TimeoutError as e:
+                error_msg = f"Graph generation timed out for user {user_id}"
+                logging.error(error_msg)
+                raise UserGraphManagerError(error_msg) from e
 
             if graph_files:
                 logging.info(self.translations.get(
@@ -163,10 +176,8 @@ class UserGraphManager:
 
             return graph_files
 
-        except asyncio.TimeoutError:
-            error_msg = f"Graph generation timed out for user {user_id}"
-            logging.error(error_msg)
-            raise UserGraphManagerError(error_msg)
+        except (InvalidUserIdError, UserGraphManagerError):
+            raise
         except Exception as e:
             error_msg = self.translations.get(
                 "error_user_graphs_generation",
