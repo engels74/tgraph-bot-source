@@ -84,7 +84,7 @@ class PlayCountByHourOfDayGraph(BaseGraph):
                     continue
 
                 if not isinstance(serie["data"], list) or len(serie["data"]) != 24:
-                    logging.error("[DEBUG] Invalid data length for series %s: expected 24, got %d",
+                    logging.error("Invalid data length for series %s: expected 24, got %d",
                                 serie["name"], len(serie["data"]) if isinstance(serie["data"], list) else 0)
                     continue
 
@@ -131,8 +131,10 @@ class PlayCountByHourOfDayGraph(BaseGraph):
             )
 
             self.ax.set_xticks(processed_data["hours"])
-            # Format hours as 00-23
-            self.ax.set_xticklabels([f"{h:02d}" for h in processed_data["hours"]], ha="center")
+            # Format hours as 00-23 with proper alignment
+            self.ax.set_xticklabels([f"{h:02d}" for h in processed_data["hours"]])
+            for tick in self.ax.get_xticklabels():
+                tick.set_ha("center")
             self.ax.yaxis.set_major_locator(MaxNLocator(integer=True))
 
             self.add_legend()
