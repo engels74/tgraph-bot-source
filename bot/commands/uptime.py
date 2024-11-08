@@ -88,7 +88,7 @@ class UptimeCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
                 )
             except KeyError as ke:
                 logging.error(f"Missing translation key: {ke}")
-                raise KeyError(f"Missing required translation key: {ke}")
+                raise KeyError(f"Missing required translation key: {ke}") from ke
 
             await interaction.response.send_message(
                 response_message,
@@ -131,4 +131,4 @@ async def setup(bot: commands.Bot) -> None:
         await bot.add_cog(UptimeCog(bot, bot.config, bot.translations))
     except Exception as e:
         logging.error(f"Failed to add UptimeCog: {e}")
-        raise commands.ExtensionError(f"Failed to load UptimeCog: {e}")
+        raise commands.ExtensionError(f"Failed to load UptimeCog: {e}") from e
