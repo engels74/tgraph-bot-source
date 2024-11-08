@@ -55,16 +55,19 @@ OPTION_METADATA = {
         "type": str,
         "required": True,
         "description": "Tautulli API key for authentication",
+        "max_length": 64,
     },
     "TAUTULLI_URL": {
         "type": str,
         "required": True,
         "description": "URL to your Tautulli instance API",
+        "max_length": 2048,
     },
     "DISCORD_TOKEN": {
         "type": str,
         "required": True,
         "description": "Discord bot token for authentication",
+        "max_length": 100,
     },
     "CHANNEL_ID": {
         "type": int,
@@ -74,21 +77,25 @@ OPTION_METADATA = {
     "UPDATE_DAYS": {
         "type": int,
         "min": 1,
+        "max": 365,
         "description": "Number of days between graph updates",
     },
     "FIXED_UPDATE_TIME": {
         "type": str,
         "format": "HH:MM",
         "description": "Fixed time for updates (24-hour format, or XX:XX to disable)",
+        "examples": ["14:30", "XX:XX"],
     },
     "KEEP_DAYS": {
         "type": int,
         "min": 1,
+        "max": 365,
         "description": "Number of days to keep old graph files",
     },
     "TIME_RANGE_DAYS": {
         "type": int,
         "min": 1,
+        "max": 365,
         "description": "Number of days to include in graphs",
     },
     "LANGUAGE": {
@@ -127,26 +134,38 @@ OPTION_METADATA = {
         "description": "Enable play count by month graph",
     },
 
-    # Graph colors
+    # Graph colors with enhanced validation
     "TV_COLOR": {
         "type": str,
         "format": "hex",
-        "description": "Color for TV show data in graphs",
+        "description": "Color for TV show data in graphs (format: #RGB or #RRGGBB)",
+        "examples": ["#ff0000", "#f00"],
+        "normalize": True,  # Indicates color should be normalized to #RRGGBB format
+        "default": "#1f77b4",
     },
     "MOVIE_COLOR": {
         "type": str,
         "format": "hex",
-        "description": "Color for movie data in graphs",
+        "description": "Color for movie data in graphs (format: #RGB or #RRGGBB)",
+        "examples": ["#00ff00", "#0f0"],
+        "normalize": True,
+        "default": "#ff7f0e",
     },
     "ANNOTATION_COLOR": {
         "type": str,
         "format": "hex",
-        "description": "Color for graph annotations",
+        "description": "Color for graph annotations (format: #RGB or #RRGGBB)",
+        "examples": ["#ffffff", "#fff"],
+        "normalize": True,
+        "default": "#ffffff",
     },
     "ANNOTATION_OUTLINE_COLOR": {
         "type": str,
         "format": "hex",
-        "description": "Color for annotation text outline",
+        "description": "Color for annotation text outline (format: #RGB or #RRGGBB)",
+        "examples": ["#000000", "#000"],
+        "normalize": True,
+        "default": "#000000",
     },
 
     # Annotation options
@@ -183,31 +202,37 @@ OPTION_METADATA = {
     "CONFIG_COOLDOWN_MINUTES": {
         "type": int,
         "min": 0,
+        "max": 1440,  # 24 hours
         "description": "Minutes between config command uses per user",
     },
     "CONFIG_GLOBAL_COOLDOWN_SECONDS": {
         "type": int,
         "min": 0,
+        "max": 3600,  # 1 hour
         "description": "Seconds between any config command uses",
     },
     "UPDATE_GRAPHS_COOLDOWN_MINUTES": {
         "type": int,
         "min": 0,
+        "max": 1440,
         "description": "Minutes between update_graphs command uses per user",
     },
     "UPDATE_GRAPHS_GLOBAL_COOLDOWN_SECONDS": {
         "type": int,
         "min": 0,
+        "max": 3600,
         "description": "Seconds between any update_graphs command uses",
     },
     "MY_STATS_COOLDOWN_MINUTES": {
         "type": int,
         "min": 0,
+        "max": 1440,
         "description": "Minutes between personal stats requests",
     },
     "MY_STATS_GLOBAL_COOLDOWN_SECONDS": {
         "type": int,
         "min": 0,
+        "max": 3600,
         "description": "Seconds between any stats requests",
     },
 }

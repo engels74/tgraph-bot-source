@@ -5,19 +5,18 @@ Configuration value sanitization for TGraph Bot.
 Handles type conversion, formatting, and validation of configuration values.
 """
 
-import re
 import logging
 from datetime import datetime
 from typing import Any, Dict, Optional
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 from .options import get_option_metadata
 from .constants import CONFIG_SECTIONS
+from .validator import _validate_color, ColorValidationResult
 
 # Module-level constants
 DEFAULT_COLOR = "#000000"
 DEFAULT_TIME = "XX:XX"
 DEFAULT_MIN_VALUE = 1
-HEX_COLOR_PATTERN = re.compile(r'^#([0-9a-fA-F]{6})$')
 TIME_FORMATS = ["%H:%M", "%I:%M%p", "%H.%M", "%H:%M:%S"]
 
 class ConfigurationError(Exception):
@@ -108,17 +107,16 @@ def _sanitize_integer(value: Any, minimum: Optional[int] = None, key: str = None
         return minimum if minimum is not None else DEFAULT_MIN_VALUE
 
 def _sanitize_color(value: str) -> DoubleQuotedScalarString:
-    """Sanitize a color value to proper hex format."""
-    color = str(value).strip().strip('"\'')
-    if not color.startswith('#'):
-        color = f'#{color}'
-    # Ensure valid hex color
-    if len(color) == 4:  # Convert #RGB to #RRGGBB
-        color = f'#{color[1]*2}{color[2]*2}{color[3]*2}'
-    if not HEX_COLOR_PATTERN.match(color):
-        logging.warning(f"Invalid color format: {color}, using default: {DEFAULT_COLOR}")
-        color = DEFAULT_COLOR
-    return DoubleQuotedScalarString(color)
+    """
+    Sanitize a color value to proper hex format.
+    Uses enhanced color validation from validator.py.
+    """
+    validation_result: ColorValidationResult = _validate_color(value)
+    if not validation_result.is_valid:
+        logging.warning(f"{validation_result.error_message}, using default: {DEFAULT_COLOR}")
+        return DoubleQuotedScalarString(DEFAULT_COLOR)
+        
+    return DoubleQuotedScalarString(validation_result.normalized_color)
 
 def _sanitize_time(value: str) -> DoubleQuotedScalarString:
     """

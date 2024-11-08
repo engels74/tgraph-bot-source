@@ -18,7 +18,11 @@ from .modules.loader import (
     get_config_path,
     ConfigLoadError,
 )
-from .modules.validator import validate_config_value
+from .modules.validator import (
+    validate_config_value,
+    _validate_color,
+    ColorValidationResult,
+)
 from .modules.sanitizer import sanitize_config_value
 from .modules.options import (
     CONFIGURABLE_OPTIONS,
@@ -135,6 +139,14 @@ def validate_config_schema(config: Dict[str, Any]) -> None:
                 f"got {type(config[field]).__name__}"
             )
 
+    # Validate color fields separately
+    color_fields = ['TV_COLOR', 'MOVIE_COLOR', 'ANNOTATION_COLOR', 'ANNOTATION_OUTLINE_COLOR']
+    for field in color_fields:
+        if field in config:
+            result = _validate_color(config[field])
+            if not result.is_valid:
+                raise ConfigValidationError(f"Invalid color format for {field}: {result.error_message}")
+
     # Validate values by category
     for category in CONFIG_CATEGORIES:
         for key in get_category_keys(category):
@@ -143,38 +155,34 @@ def validate_config_schema(config: Dict[str, Any]) -> None:
                     f"Invalid value for {key} in category {get_category_display_name(category)}: {config[key]}"
                 )
 
-def load_config(config_path: Optional[str] = None, reload: bool = False) -> ConfigSchema:
+async def validate_and_format_config_value(key: str, value: Any, translations: Dict[str, str]) -> Optional[Any]:
     """
-    Load and validate the bot configuration.
+    Validate and format a configuration value with enhanced error handling.
     
     Args:
-        config_path: Optional path to config file
-        reload: Whether to force reload from disk
+        key: Configuration key
+        value: Value to validate
+        translations: Translation dictionary
         
     Returns:
-        The loaded and validated configuration
-        
-    Raises:
-        ConfigError: If configuration cannot be loaded or is invalid
+        Formatted value if valid, None otherwise
     """
     try:
-        path = config_path or CONFIG_PATH
-        config = load_yaml_config(path)
-        
-        # Validate schema
-        validate_config_schema(config)
-        
-        # Clear cache if reloading
-        if reload:
-            invalidate_config_cache()
-        
-        return cast(ConfigSchema, config)
-    except (ConfigLoadError, ConfigValidationError) as e:
-        logging.error(f"Failed to load configuration: {str(e)}")
-        raise
+        if key in ["TV_COLOR", "MOVIE_COLOR", "ANNOTATION_COLOR", "ANNOTATION_OUTLINE_COLOR"]:
+            result: ColorValidationResult = _validate_color(value)
+            if not result.is_valid:
+                return None, result.error_message
+            return result.normalized_color, None
+
+        # Handle other validations...
+        if not validate_config_value(key, value):
+            return None, translations.get("config_invalid_value", "Invalid value provided")
+
+        return sanitize_config_value(key, value), None
+
     except Exception as e:
-        logging.error(f"Unexpected error loading configuration: {str(e)}")
-        raise ConfigError(f"Configuration load failed: {str(e)}") from e
+        logging.error(f"Error validating config value: {str(e)}")
+        return None, str(e)
 
 def update_config(key: str, value: Any, translations: Dict[str, str]) -> str:
     """
@@ -202,11 +210,18 @@ def update_config(key: str, value: Any, translations: Dict[str, str]) -> str:
                 try:
                     config = load_yaml_config(CONFIG_PATH)
                     
-                    # Validate and sanitize
-                    if not validate_config_value(key, value):
-                        raise ValueError(f"Invalid value for {key}: {value}")
-                        
-                    sanitized_value = sanitize_config_value(key, value)
+                    # Special handling for color values
+                    if key in ["TV_COLOR", "MOVIE_COLOR", "ANNOTATION_COLOR", "ANNOTATION_OUTLINE_COLOR"]:
+                        result = _validate_color(value)
+                        if not result.is_valid:
+                            raise ValueError(result.error_message)
+                        sanitized_value = sanitize_config_value(key, result.normalized_color)
+                    else:
+                        # Validate and sanitize
+                        if not validate_config_value(key, value):
+                            raise ValueError(f"Invalid value for {key}: {value}")
+                        sanitized_value = sanitize_config_value(key, value)
+                    
                     old_value = config.get(key)
                     config[key] = sanitized_value
                     
@@ -261,6 +276,39 @@ def get_config_value(key: str) -> Any:
     except ConfigError as e:
         logging.error(f"Failed to get configuration value: {str(e)}")
         raise
+
+def load_config(config_path: Optional[str] = None, reload: bool = False) -> ConfigSchema:
+    """
+    Load and validate the bot configuration.
+    
+    Args:
+        config_path: Optional path to config file
+        reload: Whether to force reload from disk
+        
+    Returns:
+        The loaded and validated configuration
+        
+    Raises:
+        ConfigError: If configuration cannot be loaded or is invalid
+    """
+    try:
+        path = config_path or CONFIG_PATH
+        config = load_yaml_config(path)
+        
+        # Validate schema
+        validate_config_schema(config)
+        
+        # Clear cache if reloading
+        if reload:
+            invalidate_config_cache()
+        
+        return cast(ConfigSchema, config)
+    except (ConfigLoadError, ConfigValidationError) as e:
+        logging.error(f"Failed to load configuration: {str(e)}")
+        raise
+    except Exception as e:
+        logging.error(f"Unexpected error loading configuration: {str(e)}")
+        raise ConfigError(f"Configuration load failed: {str(e)}") from e
 
 def get_config_metadata(key: str) -> Dict[str, Any]:
     """
@@ -326,6 +374,7 @@ __all__ = [
     'get_category_config',
     'get_config_structure',
     'invalidate_config_cache',
+    'validate_and_format_config_value',
     'CONFIGURABLE_OPTIONS',
     'RESTART_REQUIRED_KEYS',
     'CONFIG_SECTIONS',
