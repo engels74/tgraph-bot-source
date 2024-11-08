@@ -1,8 +1,12 @@
 # graphs/graph_modules/graph_factory.py
 
+"""
+GraphFactory implementation with corrected type hints and improved error handling.
+"""
+
+from typing import Dict, Any, Tuple, Union, Optional
 import asyncio
 import logging
-from typing import Dict, Any, Tuple, Union
 from .base_graph import BaseGraph
 from .daily_play_count_graph import DailyPlayCountGraph
 from .play_count_by_dayofweek_graph import PlayCountByDayOfWeekGraph
@@ -100,7 +104,7 @@ class GraphFactory:
                 logging.debug(f"Skipping disabled graph type: {graph_type}")
         return enabled_graphs
 
-    async def generate_graphs(self, data_fetcher, user_id: str = None) -> Dict[str, str]:
+    async def generate_graphs(self, data_fetcher, user_id: Optional[str] = None) -> Dict[str, str]:
         """
         Generate all enabled graphs concurrently and return their file paths.
         
@@ -164,8 +168,8 @@ class GraphFactory:
         graph_type: str,
         graph_instance: BaseGraph,
         data_fetcher,
-        user_id: str = None
-    ) -> Tuple[str, str]:
+        user_id: Optional[str] = None
+    ) -> Optional[Tuple[str, str]]:
         """
         Helper method to generate a single graph with proper error handling.
         
@@ -176,7 +180,7 @@ class GraphFactory:
             user_id: Optional user ID for user-specific graphs
             
         Returns:
-            A tuple of (graph_type, file_path)
+            A tuple of (graph_type, file_path) if successful, None if generation fails
             
         Raises:
             GraphGenerationError: If there is an error generating the graph
