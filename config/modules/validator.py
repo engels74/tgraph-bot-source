@@ -7,7 +7,7 @@ Validates configuration values and structure against defined rules and constrain
 
 from typing import Dict, Any, List, Tuple
 import re
-from urllib.parse import urlparse
+from urllib.parse import urlparse, unquote
 from ipaddress import ip_address, IPv4Address
 from dataclasses import dataclass
 from typing import Optional
@@ -305,10 +305,11 @@ def validate_url(url: str) -> bool:
 
         # Security checks
         hostname = parsed.hostname or ''
+        path = unquote(parsed.path)  # Decode path to catch encoded traversal attempts
         return not any([
             hostname.startswith('localhost'),
             _is_private_ip(hostname),
-            '..' in parsed.path,  # Path traversal check
+            '..' in path,  # Decode path to check for traversal
             '%00' in url,  # Null byte injection check
             hostname.count('.') > 10  # Suspicious number of subdomains
         ])
