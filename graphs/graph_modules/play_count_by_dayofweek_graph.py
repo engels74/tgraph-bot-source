@@ -21,6 +21,10 @@ class GraphGenerationError(PlayCountByDayOfWeekError):
     """Raised when graph generation fails."""
     pass
 
+class FileSystemError(PlayCountByDayOfWeekError):
+    """Raised when there are file system related errors."""
+    pass
+
 class PlayCountByDayOfWeekGraph(BaseGraph):
     def __init__(self, config: Dict[str, Any], translations: Dict[str, str], img_folder: str):
         super().__init__(config, translations, img_folder)
@@ -65,7 +69,7 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
                     
         return errors
 
-    def _sanitize_filename(self, user_id: str) -> str:
+    def _sanitize_filename(self, user_id: Optional[str]) -> Optional[str]:
         """
         Sanitize user ID for safe filename creation.
         
@@ -73,12 +77,19 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
             user_id: The user ID to sanitize
             
         Returns:
-            A sanitized version of the user ID safe for filenames
+            A sanitized version of the user ID safe for filenames, or None if input is None
         """
+        if user_id is None:
+            return None
+            
         # Remove any characters that aren't alphanumeric, underscore, or hyphen
         sanitized = re.sub(r'[^a-zA-Z0-9_-]', '_', str(user_id))
         # Ensure the filename isn't too long
-        return sanitized[:50]
+        sanitized = sanitized[:50]
+        # Ensure we don't start with a period (hidden files)
+        if sanitized.startswith('.'):
+            sanitized = f"_dot_{sanitized[1:]}"
+        return sanitized
 
     async def fetch_data(self, data_fetcher, user_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """
@@ -90,9 +101,6 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
             
         Returns:
             The fetched data or None if fetching fails
-            
-        Raises:
-            PlayCountByDayOfWeekError: If data fetching fails
         """
         try:
             # If we have stored data, use it instead of fetching
@@ -109,13 +117,21 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
             
             data = await data_fetcher.fetch_tautulli_data_async("get_plays_by_dayofweek", params)
             if not data or 'response' not in data or 'data' not in data['response']:
-                raise PlayCountByDayOfWeekError(
+                error_msg = (
+                    self.translations.get(
+                        'error_fetch_play_count_dayofweek_user',
+                        'Failed to fetch play count by day of week data for user {user_id}: {error}'
+                    ) if user_id else
                     self.translations["error_fetch_play_count_dayofweek"]
                 )
+                if user_id:
+                    logging.error(error_msg.format(user_id=user_id, error="No data returned"))
+                else:
+                    logging.error(error_msg)
+                return None
+
             return data['response']['data']
             
-        except PlayCountByDayOfWeekError:
-            raise
         except Exception as e:
             error_msg = (
                 self.translations.get(
@@ -124,10 +140,13 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
                 ) if user_id else
                 self.translations["error_fetch_play_count_dayofweek"]
             )
-            logging.error(error_msg.format(user_id=user_id, error=str(e)))
+            if user_id:
+                logging.error(error_msg.format(user_id=user_id, error=str(e)))
+            else:
+                logging.error(f"{error_msg}: {str(e)}")
             return None
 
-    def process_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def process_data(self, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """
         Process the fetched data for plotting.
         
@@ -152,7 +171,7 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
             )
 
         days = list(range(7))
-        day_labels = [self.translations[f"day_{i}"] for i in range(7)]
+        day_labels = [self.translations.get(f"day_{i}", f"Day {i}") for i in range(7)]
 
         # Validate series data
         validation_errors = self._validate_series_data(series, len(days))
@@ -195,10 +214,15 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
             self.setup_plot()
 
             for serie in processed_data["series"]:
-                self.ax.plot(processed_data["days"], serie["data"], 
-                           label=serie["name"], marker="o", color=serie["color"])
+                self.ax.plot(
+                    processed_data["days"],
+                    serie["data"],
+                    label=serie["name"],
+                    marker="o",
+                    color=serie["color"]
+                )
 
-                if self.config["ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK"]:
+                if self.config.get("ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK", False):
                     for i, value in enumerate(serie["data"]):
                         if value > 0:
                             self.annotate(processed_data["days"][i], value, f"{value}")
@@ -248,24 +272,25 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
             today = datetime.today().strftime("%Y-%m-%d")
             
             # Sanitize user_id if present
-            safe_user_id = self._sanitize_filename(user_id) if user_id else None
+            safe_user_id = self._sanitize_filename(user_id)
             file_name = f"play_count_by_dayofweek{'_' + safe_user_id if safe_user_id else ''}.png"
             
             # Create the dated directory path
             dated_dir = os.path.join(self.img_folder, today)
-            os.makedirs(dated_dir, exist_ok=True)
-            
             file_path = os.path.join(dated_dir, file_name)
+            
+            # Verify the final path is within the intended directory
+            if not os.path.abspath(file_path).startswith(os.path.abspath(self.img_folder)):
+                raise FileSystemError("Invalid file path generated")
+            
+            os.makedirs(dated_dir, exist_ok=True)
             self.save(file_path)
             
             logging.debug("Saved play count by day of week graph: %s", file_path)
             return file_path
             
-        except (PlayCountByDayOfWeekError, DataValidationError) as e:
+        except (PlayCountByDayOfWeekError, DataValidationError, FileSystemError) as e:
             logging.error(str(e))
-            return None
-        except GraphGenerationError as e:
-            logging.error(f"Failed to generate graph: {str(e)}")
             return None
         except Exception as e:
             logging.error("Unexpected error during graph generation: %s", str(e))
