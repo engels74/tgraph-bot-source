@@ -9,8 +9,10 @@ import os
 import logging
 import fcntl
 import tempfile
-from typing import Dict, Any, Optional, TypedDict, Literal, cast
-from functools import lru_cache
+from typing import Dict, Any, Optional, TypedDict, Literal, cast, Tuple
+from functools import wraps
+from time import time
+from threading import Lock
 
 from .modules.loader import (
     load_yaml_config,
@@ -86,6 +88,65 @@ class ConfigKeyError(ConfigError):
     """Raised when accessing non-existent configuration keys."""
     pass
 
+class ConfigCache:
+    """Thread-safe configuration cache with exception handling."""
+    
+    def __init__(self, ttl: int = 300):
+        """Initialize the cache.
+        
+        Args:
+            ttl: Time-to-live in seconds for cache entries
+        """
+        self._cache: Dict[str, Tuple[Any, float]] = {}
+        self._ttl = ttl
+        self._lock = Lock()
+
+    def get(self, key: str) -> Optional[Any]:
+        """Get a value from the cache if it exists and hasn't expired."""
+        with self._lock:
+            if key in self._cache:
+                value, timestamp = self._cache[key]
+                if time() - timestamp <= self._ttl:
+                    return value
+                else:
+                    del self._cache[key]
+            return None
+
+    def set(self, key: str, value: Any) -> None:
+        """Set a value in the cache."""
+        if isinstance(value, Exception):
+            return  # Don't cache exceptions
+        with self._lock:
+            self._cache[key] = (value, time())
+
+    def clear(self) -> None:
+        """Clear all cached values."""
+        with self._lock:
+            self._cache.clear()
+
+# Create global cache instance
+_config_cache = ConfigCache()
+
+def cached_config(func):
+    """Decorator for caching configuration values with exception handling."""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        cache_key = f"{func.__name__}:{str(args)}:{str(kwargs)}"
+        cached_value = _config_cache.get(cache_key)
+        
+        if cached_value is not None:
+            return cached_value
+            
+        try:
+            result = func(*args, **kwargs)
+            _config_cache.set(cache_key, result)
+            return result
+        except Exception as e:
+            logging.error(f"Error in {func.__name__}: {str(e)}")
+            raise  # Re-raise the exception but don't cache it
+            
+    return wrapper
+
 def get_categorized_config(config: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
     """
     Organize configuration values by category.
@@ -155,7 +216,7 @@ def validate_config_schema(config: Dict[str, Any]) -> None:
                     f"Invalid value for {key} in category {get_category_display_name(category)}: {config[key]}"
                 )
 
-async def validate_and_format_config_value(key: str, value: Any, translations: Dict[str, str]) -> Optional[Any]:
+async def validate_and_format_config_value(key: str, value: Any, translations: Dict[str, str]) -> Tuple[Optional[Any], Optional[str]]:
     """
     Validate and format a configuration value with enhanced error handling.
     
@@ -165,7 +226,7 @@ async def validate_and_format_config_value(key: str, value: Any, translations: D
         translations: Translation dictionary
         
     Returns:
-        Formatted value if valid, None otherwise
+        Tuple of (formatted_value, error_message)
     """
     try:
         if key in ["TV_COLOR", "MOVIE_COLOR", "ANNOTATION_COLOR", "ANNOTATION_OUTLINE_COLOR"]:
@@ -174,7 +235,7 @@ async def validate_and_format_config_value(key: str, value: Any, translations: D
                 return None, result.error_message
             return result.normalized_color, None
 
-        # Handle other validations...
+        # Handle other validations
         if not validate_config_value(key, value):
             return None, translations.get("config_invalid_value", "Invalid value provided")
 
@@ -183,6 +244,62 @@ async def validate_and_format_config_value(key: str, value: Any, translations: D
     except Exception as e:
         logging.error(f"Error validating config value: {str(e)}")
         return None, str(e)
+
+@cached_config
+def get_config_value(key: str) -> Any:
+    """
+    Get a specific configuration value with caching.
+    
+    Args:
+        key: The configuration key to retrieve
+        
+    Returns:
+        The configuration value
+        
+    Raises:
+        ConfigKeyError: If the key doesn't exist
+    """
+    try:
+        config = load_config()
+        if key not in config:
+            raise ConfigKeyError(f"Configuration key not found: {key}")
+        return config[key]
+    except ConfigError as e:
+        logging.error(f"Failed to get configuration value: {str(e)}")
+        raise
+
+def load_config(config_path: Optional[str] = None, reload: bool = False) -> ConfigSchema:
+    """
+    Load and validate the bot configuration.
+    
+    Args:
+        config_path: Optional path to config file
+        reload: Whether to force reload from disk
+        
+    Returns:
+        The loaded and validated configuration
+        
+    Raises:
+        ConfigError: If configuration cannot be loaded or is invalid
+    """
+    try:
+        path = config_path or CONFIG_PATH
+        config = load_yaml_config(path)
+        
+        # Validate schema
+        validate_config_schema(config)
+        
+        # Clear cache if reloading
+        if reload:
+            invalidate_config_cache()
+        
+        return cast(ConfigSchema, config)
+    except (ConfigLoadError, ConfigValidationError) as e:
+        logging.error(f"Failed to load configuration: {str(e)}")
+        raise
+    except Exception as e:
+        logging.error(f"Unexpected error loading configuration: {str(e)}")
+        raise ConfigError(f"Configuration load failed: {str(e)}") from e
 
 def update_config(key: str, value: Any, translations: Dict[str, str]) -> str:
     """
@@ -254,62 +371,6 @@ def update_config(key: str, value: Any, translations: Dict[str, str]) -> str:
         logging.error(f"Failed to update configuration: {str(e)}")
         raise ConfigUpdateError(f"Configuration update failed: {str(e)}") from e
 
-@lru_cache(maxsize=128)
-def get_config_value(key: str) -> Any:
-    """
-    Get a specific configuration value with caching.
-    
-    Args:
-        key: The configuration key to retrieve
-        
-    Returns:
-        The configuration value
-        
-    Raises:
-        ConfigKeyError: If the key doesn't exist
-    """
-    try:
-        config = load_config()
-        if key not in config:
-            raise ConfigKeyError(f"Configuration key not found: {key}")
-        return config[key]
-    except ConfigError as e:
-        logging.error(f"Failed to get configuration value: {str(e)}")
-        raise
-
-def load_config(config_path: Optional[str] = None, reload: bool = False) -> ConfigSchema:
-    """
-    Load and validate the bot configuration.
-    
-    Args:
-        config_path: Optional path to config file
-        reload: Whether to force reload from disk
-        
-    Returns:
-        The loaded and validated configuration
-        
-    Raises:
-        ConfigError: If configuration cannot be loaded or is invalid
-    """
-    try:
-        path = config_path or CONFIG_PATH
-        config = load_yaml_config(path)
-        
-        # Validate schema
-        validate_config_schema(config)
-        
-        # Clear cache if reloading
-        if reload:
-            invalidate_config_cache()
-        
-        return cast(ConfigSchema, config)
-    except (ConfigLoadError, ConfigValidationError) as e:
-        logging.error(f"Failed to load configuration: {str(e)}")
-        raise
-    except Exception as e:
-        logging.error(f"Unexpected error loading configuration: {str(e)}")
-        raise ConfigError(f"Configuration load failed: {str(e)}") from e
-
 def get_config_metadata(key: str) -> Dict[str, Any]:
     """
     Get metadata for a configuration key.
@@ -330,7 +391,7 @@ def get_config_metadata(key: str) -> Dict[str, Any]:
 
 def invalidate_config_cache() -> None:
     """Invalidate the configuration cache."""
-    get_config_value.cache_clear()
+    _config_cache.clear()
 
 def get_category_config(config: Dict[str, Any], category: str) -> Dict[str, Any]:
     """
