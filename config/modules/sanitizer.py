@@ -5,13 +5,13 @@ Configuration value sanitization for TGraph Bot.
 Handles type conversion, formatting, and validation of configuration values.
 """
 
-import logging
-from datetime import datetime
-from typing import Any, Dict, Optional
-from ruamel.yaml.scalarstring import DoubleQuotedScalarString
-from .options import get_option_metadata
 from .constants import CONFIG_SECTIONS
+from .options import get_option_metadata
 from .validator import _validate_color, ColorValidationResult
+from datetime import datetime
+from ruamel.yaml.scalarstring import DoubleQuotedScalarString
+from typing import Any, Dict, Optional
+import logging
 
 # Module-level constants with explicit types
 DEFAULT_COLOR: str = "#000000"

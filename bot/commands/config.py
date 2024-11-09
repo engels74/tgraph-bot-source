@@ -5,12 +5,6 @@ Configuration command for TGraph Bot.
 Handles viewing and modifying bot configuration settings through slash commands.
 """
 
-import discord
-from discord import app_commands
-import logging
-from discord.ext import commands
-from typing import Optional, List
-from config.modules.sanitizer import format_value_for_display
 from config.config import (
     CONFIGURABLE_OPTIONS, 
     RESTART_REQUIRED_KEYS,
@@ -19,7 +13,13 @@ from config.config import (
 )
 from config.modules.constants import get_category_display_name
 from config.modules.loader import load_yaml_config, update_config_value, save_yaml_config
+from config.modules.sanitizer import format_value_for_display
+from discord import app_commands
+from discord.ext import commands
+from typing import Optional, List
 from utils.command_utils import CommandMixin, ErrorHandlerMixin
+import discord
+import logging
 
 class ConfigCog(commands.GroupCog, CommandMixin, ErrorHandlerMixin, name="config", description="View and edit bot configuration"):
     """

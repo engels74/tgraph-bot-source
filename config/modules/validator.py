@@ -5,14 +5,14 @@ Configuration validation for TGraph Bot.
 Validates configuration values and structure against defined rules and constraints.
 """
 
-from typing import Dict, Any, List, Tuple
-import re
-from urllib.parse import urlparse, unquote
-from ipaddress import ip_address, IPv4Address
-from dataclasses import dataclass
-from typing import Optional
-from .options import get_option_metadata, OPTION_METADATA
 from .constants import CONFIG_CATEGORIES, get_category_keys, get_category_display_name
+from .options import get_option_metadata, OPTION_METADATA
+from dataclasses import dataclass
+from ipaddress import ip_address, IPv4Address
+from typing import Dict, Any, List, Tuple
+from typing import Optional
+from urllib.parse import urlparse, unquote
+import re
 
 @dataclass
 class ColorValidationResult:

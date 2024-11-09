@@ -1,9 +1,9 @@
 # i18n.py
 
-import logging
 from pathlib import Path
-from typing import Dict, List, Optional
 from ruamel.yaml import YAML, YAMLError
+from typing import Dict, List, Optional
+import logging
 
 class TranslationError(Exception):
     """Base exception class for translation-related errors."""

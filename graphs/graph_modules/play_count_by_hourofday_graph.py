@@ -2,11 +2,11 @@
 
 from .base_graph import BaseGraph
 from .utils import get_color
+from datetime import datetime
+from matplotlib.ticker import MaxNLocator
 from typing import Dict, Any, Optional
 import logging
 import os
-from datetime import datetime
-from matplotlib.ticker import MaxNLocator
 
 class PlayCountByHourOfDayGraph(BaseGraph):
     def __init__(self, config: Dict[str, Any], translations: Dict[str, str], img_folder: str):

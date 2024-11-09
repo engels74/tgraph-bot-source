@@ -2,12 +2,12 @@
 
 from .base_graph import BaseGraph
 from .utils import get_color
+from datetime import datetime
+from matplotlib.ticker import MaxNLocator
 from typing import Dict, Any, Optional, List
 import logging
 import os
 import re
-from datetime import datetime
-from matplotlib.ticker import MaxNLocator
 
 class PlayCountByDayOfWeekError(Exception):
     """Base exception for PlayCountByDayOfWeek graph-specific errors."""

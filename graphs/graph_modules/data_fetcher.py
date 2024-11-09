@@ -5,12 +5,12 @@ Data fetching and caching functionality for TGraph Bot.
 Handles both synchronous and asynchronous data retrieval from Tautulli API.
 """
 
-from typing import Dict, Any, Optional
-import logging
-from datetime import datetime, timedelta
 from cachetools import TTLCache
+from datetime import datetime, timedelta
+from typing import Dict, Any, Optional
 import aiohttp
 import asyncio
+import logging
 import requests
 
 class DataFetcherError(Exception):

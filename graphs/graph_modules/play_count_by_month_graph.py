@@ -1,11 +1,11 @@
 ﻿# graphs/graph_modules/play_count_by_month_graph.py
 
 from .base_graph import BaseGraph
+from datetime import datetime
+from matplotlib.ticker import MaxNLocator
 from typing import Dict, Any, Optional, List
 import logging
 import os
-from datetime import datetime
-from matplotlib.ticker import MaxNLocator
 
 class PlayCountByMonthError(Exception):
     """Base exception for PlayCountByMonth graph-specific errors."""

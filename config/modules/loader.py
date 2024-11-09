@@ -5,15 +5,15 @@ Configuration file loading and saving for TGraph Bot.
 Handles YAML file operations with support for comments and formatting preservation.
 """
 
-import os
-import logging
-from typing import Optional, Any
+from .constants import CONFIG_SECTIONS, get_category_keys, CONFIG_CATEGORIES
+from .defaults import create_default_config
+from .validator import validate_config
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
-from .defaults import create_default_config
-from .validator import validate_config
-from .constants import CONFIG_SECTIONS, get_category_keys, CONFIG_CATEGORIES
+from typing import Optional, Any
+import logging
+import os
 
 class ConfigLoadError(Exception):
     """Raised when there's an error loading the configuration."""

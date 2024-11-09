@@ -5,13 +5,13 @@ Uptime command for TGraph Bot.
 Tracks and displays the bot's running time since startup.
 """
 
-import discord
+from datetime import datetime, timezone
 from discord import app_commands
 from discord.ext import commands
-import logging
-from datetime import datetime, timezone
 from typing import Any, Dict
 from utils.command_utils import CommandMixin, ErrorHandlerMixin
+import discord
+import logging
 
 class UptimeCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
     """Cog for handling uptime tracking and display."""

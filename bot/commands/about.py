@@ -6,10 +6,10 @@ Provides information about the bot including description,
 GitHub repository link, and license details.
 """
 
-import discord
 from discord import app_commands
 from discord.ext import commands
 from typing import Any, Dict
+import discord
 
 from utils.command_utils import CommandMixin, ErrorHandlerMixin
 

@@ -6,13 +6,13 @@ Improved version of daily_play_count_graph.py with security fixes and enhancemen
 
 from .base_graph import BaseGraph
 from .utils import get_color
+from datetime import datetime
+from matplotlib.dates import DateFormatter
+from matplotlib.ticker import MaxNLocator
 from typing import Dict, Any, Optional
 import logging
 import os
 import re
-from datetime import datetime
-from matplotlib.dates import DateFormatter
-from matplotlib.ticker import MaxNLocator
 
 class DailyPlayCountError(Exception):
     """Base exception for DailyPlayCount graph-specific errors."""

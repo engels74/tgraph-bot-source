@@ -1,15 +1,16 @@
 # graphs/graph_modules/base_graph.py
+
 """
 Improved base graph class with better error handling, type hints, and documentation.
 """
 
 from abc import ABC, abstractmethod
-import matplotlib.pyplot as plt
 from matplotlib import patheffects
-import matplotlib.figure
-import matplotlib.axes
 from typing import Dict, Any, Tuple, Optional, Union
 import logging
+import matplotlib.axes
+import matplotlib.figure
+import matplotlib.pyplot as plt
 
 class BaseGraphError(Exception):
     """Base exception class for graph-related errors."""

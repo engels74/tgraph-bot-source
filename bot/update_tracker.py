@@ -1,9 +1,10 @@
 # bot/update_tracker.py
+
+from datetime import datetime, timedelta, time
+from typing import Dict, Any, Optional
 import json
 import logging
 import os
-from datetime import datetime, timedelta, time
-from typing import Dict, Any, Optional
 
 class UpdateTracker:
     def __init__(self, data_folder: str, config: Dict[str, Any], translations: Dict[str, str]):

@@ -5,13 +5,13 @@ My Stats command for TGraph Bot.
 Generates and sends personalized Plex statistics to users.
 """
 
-import os
-import discord
 from discord import app_commands
-import logging
 from discord.ext import commands
 from typing import Optional, List
 from utils.command_utils import CommandMixin, ErrorHandlerMixin
+import discord
+import logging
+import os
 
 class UserStatsError(Exception):
     """Base exception for user statistics related errors."""

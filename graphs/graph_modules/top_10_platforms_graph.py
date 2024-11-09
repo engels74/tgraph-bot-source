@@ -5,12 +5,12 @@ Improved version of top_10_platforms_graph.py with better user ID sanitization a
 """
 
 from .base_graph import BaseGraph
+from datetime import datetime
+from matplotlib.ticker import MaxNLocator
 from typing import Dict, Any, Optional
 import logging
 import os
 import re
-from datetime import datetime
-from matplotlib.ticker import MaxNLocator
 
 class Top10PlatformsError(Exception):
     """Base exception for Top10Platforms graph-specific errors."""

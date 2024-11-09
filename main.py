@@ -1,10 +1,5 @@
 # main.py
-import argparse
-import asyncio
-import discord
-import logging
-import os
-import sys
+
 from aiohttp import ClientConnectorError, ServerDisconnectedError
 from bot.extensions import load_extensions
 from bot.permission_checker import check_permissions_all_guilds
@@ -16,6 +11,12 @@ from graphs.graph_manager import GraphManager
 from graphs.graph_modules.data_fetcher import DataFetcher
 from graphs.user_graph_manager import UserGraphManager
 from i18n import load_translations, TranslationKeyError
+import argparse
+import asyncio
+import discord
+import logging
+import os
+import sys
 
 # Get the CONFIG_DIR from environment variable, default to '/config' if not set
 CONFIG_DIR = os.environ.get("CONFIG_DIR", "/config")

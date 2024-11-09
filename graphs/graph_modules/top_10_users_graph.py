@@ -2,11 +2,11 @@
 
 from .base_graph import BaseGraph
 from .utils import censor_username
+from datetime import datetime
+from matplotlib.ticker import MaxNLocator
 from typing import Dict, Any, Optional
 import logging
 import os
-from datetime import datetime
-from matplotlib.ticker import MaxNLocator
 
 class Top10UsersError(Exception):
     """Base exception for Top10Users graph-specific errors."""

@@ -1,14 +1,14 @@
 # graphs/user_graph_manager.py
 
-import logging
-import os
-import asyncio
-import re
+from .graph_modules.data_fetcher import DataFetcher
+from .graph_modules.graph_factory import GraphFactory
+from .graph_modules.utils import ensure_folder_exists
 from datetime import datetime
 from typing import Dict, Any, List, Optional
-from .graph_modules.graph_factory import GraphFactory
-from .graph_modules.data_fetcher import DataFetcher
-from .graph_modules.utils import ensure_folder_exists
+import asyncio
+import logging
+import os
+import re
 
 # Define graphs that should be excluded for individual users
 EXCLUDED_USER_GRAPHS = {"top_10_users"}

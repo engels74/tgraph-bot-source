@@ -1,8 +1,8 @@
 # bot/permission_checker.py
 
+from typing import Dict, List, Set
 import discord
 import logging
-from typing import Dict, List, Set
 import textwrap
 
 def create_table(

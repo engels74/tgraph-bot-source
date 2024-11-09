@@ -5,9 +5,9 @@ Default configuration settings for TGraph Bot.
 Provides functions for creating and managing default configuration values.
 """
 
-from typing import Dict, Any, List, Set
 from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
+from typing import Dict, Any, List, Set
 
 def create_default_config() -> CommentedMap:
     """

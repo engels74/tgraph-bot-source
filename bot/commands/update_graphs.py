@@ -6,13 +6,13 @@ Handles manual updates of server-wide graphs, including
 graph generation and posting to the designated channel.
 """
 
-import discord
+from config.config import load_config
 from discord import app_commands
-import logging
 from discord.ext import commands
 from typing import Optional
-from config.config import load_config
 from utils.command_utils import CommandMixin, ErrorHandlerMixin
+import discord
+import logging
 
 class UpdateGraphsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
     """Cog for handling graph updates."""

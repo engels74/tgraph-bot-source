@@ -1,16 +1,16 @@
 ﻿# graphs/graph_manager.py
 
-import logging
-import os
+from .graph_modules.data_fetcher import DataFetcher, DataFetcherError
+from .graph_modules.graph_factory import GraphFactory, GraphFactoryError
+from .graph_modules.utils import ensure_folder_exists
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional, Tuple, TYPE_CHECKING
-from .graph_modules.graph_factory import GraphFactory, GraphFactoryError
-from .graph_modules.data_fetcher import DataFetcher, DataFetcherError
-from .graph_modules.utils import ensure_folder_exists
-import discord
 import aiofiles
-import io
 import asyncio
+import discord
+import io
+import logging
+import os
 
 if TYPE_CHECKING:
     from .update_tracker import UpdateTracker
