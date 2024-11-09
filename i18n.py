@@ -60,12 +60,12 @@ class TranslationManager:
                         f"Invalid translation file format in {file_path}. Expected dictionary."
                     )
                 return content
-        except FileNotFoundError:
-            raise TranslationFileError(f"Translation file not found: {file_path}")
+        except FileNotFoundError as e:
+            raise TranslationFileError(f"Translation file not found: {file_path}") from e
         except YAMLError as e:
-            raise TranslationFileError(f"Error parsing YAML in {file_path}: {str(e)}")
+            raise TranslationFileError(f"Error parsing YAML in {file_path}: {str(e)}") from e
         except Exception as e:
-            raise TranslationFileError(f"Unexpected error reading {file_path}: {str(e)}")
+            raise TranslationFileError(f"Unexpected error reading {file_path}: {str(e)}") from e
 
     def get_available_languages(self) -> List[str]:
         """Get a list of available language codes.
@@ -82,7 +82,7 @@ class TranslationManager:
                 if f.is_file() and f.stem
             ]
         except Exception as e:
-            raise TranslationFileError(f"Error scanning translation files: {str(e)}")
+            raise TranslationFileError(f"Error scanning translation files: {str(e)}") from e
 
     def _validate_translations(
         self,
@@ -100,22 +100,27 @@ class TranslationManager:
         Raises:
             TranslationKeyError: If translations are missing required keys
         """
-        missing_keys = set(reference_translations.keys()) - set(translations.keys())
-        extra_keys = set(translations.keys()) - set(reference_translations.keys())
-        
-        errors = []
-        
-        if missing_keys:
-            errors.append(f"Missing translation keys: {', '.join(sorted(missing_keys))}")
+        try:
+            missing_keys = set(reference_translations.keys()) - set(translations.keys())
+            extra_keys = set(translations.keys()) - set(reference_translations.keys())
             
-        if extra_keys:
-            errors.append(f"Extra translation keys: {', '.join(sorted(extra_keys))}")
+            errors = []
             
-        if errors:
+            if missing_keys:
+                errors.append(f"Missing translation keys: {', '.join(sorted(missing_keys))}")
+                
+            if extra_keys:
+                errors.append(f"Extra translation keys: {', '.join(sorted(extra_keys))}")
+                
+            if errors:
+                raise TranslationKeyError(
+                    f"Translation validation failed for {language}.yml:\n" +
+                    "\n".join(errors)
+                )
+        except Exception as e:
             raise TranslationKeyError(
-                f"Translation validation failed for {language}.yml:\n" +
-                "\n".join(errors)
-            )
+                f"Error validating translations for {language}: {str(e)}"
+            ) from e
 
     def load_translations(self, language: str) -> Dict[str, str]:
         """Load translations for the specified language.
@@ -129,30 +134,34 @@ class TranslationManager:
         Raises:
             TranslationError: If translations cannot be loaded or validated
         """
-        # Return cached translations if available
-        if language in self._cached_translations:
-            return self._cached_translations[language]
+        try:
+            # Return cached translations if available
+            if language in self._cached_translations:
+                return self._cached_translations[language]
 
-        # Load reference translations first
-        reference_file = self.translations_dir / f"{self.default_language}.yml"
-        reference_translations = self._load_yaml_file(reference_file)
+            # Load reference translations first
+            reference_file = self.translations_dir / f"{self.default_language}.yml"
+            reference_translations = self._load_yaml_file(reference_file)
 
-        # If loading default language, no validation needed
-        if language == self.default_language:
-            self._cached_translations[language] = reference_translations
-            return reference_translations
+            # If loading default language, no validation needed
+            if language == self.default_language:
+                self._cached_translations[language] = reference_translations
+                return reference_translations
 
-        # Load and validate requested language
-        language_file = self.translations_dir / f"{language}.yml"
-        translations = self._load_yaml_file(language_file)
-        
-        # Validate translations
-        self._validate_translations(translations, language, reference_translations)
-        
-        # Cache and return the translations
-        self._cached_translations[language] = translations
-        logging.info(f"Loaded translations for language: {language}")
-        return translations
+            # Load and validate requested language
+            language_file = self.translations_dir / f"{language}.yml"
+            translations = self._load_yaml_file(language_file)
+            
+            # Validate translations
+            self._validate_translations(translations, language, reference_translations)
+            
+            # Cache and return the translations
+            self._cached_translations[language] = translations
+            logging.info(f"Loaded translations for language: {language}")
+            return translations
+            
+        except (TranslationFileError, TranslationKeyError) as e:
+            raise TranslationError(f"Failed to load translations for {language}") from e
 
     def clear_cache(self) -> None:
         """Clear the translations cache."""
@@ -168,38 +177,50 @@ class TranslationManager:
         Raises:
             TranslationError: If the language is not available or translations fail
         """
-        available_languages = self.get_available_languages()
-        if language not in available_languages:
-            raise TranslationError(
-                f"Language '{language}' not available. "
-                f"Available languages: {', '.join(sorted(available_languages))}"
-            )
+        try:
+            available_languages = self.get_available_languages()
+            if language not in available_languages:
+                raise TranslationError(
+                    f"Language '{language}' not available. "
+                    f"Available languages: {', '.join(sorted(available_languages))}"
+                )
 
-        # Load new translations
-        bot.translations = self.load_translations(language)
-        
-        # Update command descriptions
-        for command in bot.tree.walk_commands():
-            translation_key = f"{command.name}_command_description"
-            try:
-                command.description = bot.translations[translation_key]
-            except KeyError:
-                logging.warning(f"Missing translation for command description: {translation_key}")
-                # Keep existing description as fallback
-        
-        logging.info(f"Updated bot translations and command descriptions to language: {language}")
+            # Load new translations
+            bot.translations = self.load_translations(language)
+            
+            # Update command descriptions
+            for command in bot.tree.walk_commands():
+                translation_key = f"{command.name}_command_description"
+                try:
+                    command.description = bot.translations[translation_key]
+                except KeyError:
+                    logging.warning(f"Missing translation for command description: {translation_key}")
+                    # Keep existing description as fallback
+            
+            logging.info(f"Updated bot translations and command descriptions to language: {language}")
+            
+        except Exception as e:
+            raise TranslationError(
+                f"Failed to update bot translations to {language}"
+            ) from e
 
 # Create a global instance for convenience
 translation_manager = TranslationManager()
 
-# Maintain backwards compatibility with existing code
+# Backwards compatibility functions
 def load_translations(language: str) -> Dict[str, str]:
     """Backwards-compatible function to load translations."""
-    return translation_manager.load_translations(language)
+    try:
+        return translation_manager.load_translations(language)
+    except Exception as e:
+        raise TranslationError("Failed to load translations") from e
 
 def get_available_languages() -> List[str]:
     """Backwards-compatible function to get available languages."""
-    return translation_manager.get_available_languages()
+    try:
+        return translation_manager.get_available_languages()
+    except Exception as e:
+        raise TranslationError("Failed to get available languages") from e
 
 def validate_translations(translations: Dict[str, str], reference_lang: str = "en") -> List[str]:
     """Backwards-compatible function to validate translations."""
@@ -215,4 +236,7 @@ def validate_translations(translations: Dict[str, str], reference_lang: str = "e
 
 def update_translations(bot, language: str) -> None:
     """Backwards-compatible function to update bot translations."""
-    translation_manager.update_bot_translations(bot, language)
+    try:
+        translation_manager.update_bot_translations(bot, language)
+    except Exception as e:
+        raise TranslationError("Failed to update translations") from e
