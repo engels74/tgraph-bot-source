@@ -37,12 +37,10 @@ class PlayCountByMonthGraph(BaseGraph):
             The fetched data or None if fetching fails
         """
         try:
-            # If we have stored data, use it instead of fetching
             if self.data is not None:
                 logging.debug("Using stored data for play count by month")
                 return self.data
 
-            # Use 12 months for monthly data
             params = {"time_range": 12, "y_axis": "plays"}
             if user_id:
                 params["user_id"] = user_id
@@ -58,13 +56,16 @@ class PlayCountByMonthGraph(BaseGraph):
                         'Failed to fetch play count by month data for user {user_id}: {error}'
                     ).format(user_id=user_id, error="No data returned")
                 logging.error(error_msg)
-                return None
+                raise DataValidationError(error_msg)
 
             return data['response']['data']
             
+        except DataValidationError:
+            raise
         except Exception as e:
-            logging.error(f"Error fetching play count by month data: {str(e)}")
-            return None
+            error_msg = f"Error fetching play count by month data: {str(e)}"
+            logging.error(error_msg)
+            raise PlayCountByMonthError(error_msg) from e
 
     def validate_series_data(self, series: List[Dict[str, Any]], month_count: int) -> List[str]:
         return validate_series_data(series, month_count, "monthly series")
@@ -182,17 +183,14 @@ class PlayCountByMonthGraph(BaseGraph):
 
             data = await self.fetch_data(data_fetcher, user_id)
             if data is None:
-                logging.error("Failed to fetch monthly play count data")
-                return None
+                raise DataValidationError("Failed to fetch monthly play count data")
 
             processed_data = self.process_data(data)
             if processed_data is None:
-                logging.error("Failed to process monthly play count data")
-                return None
+                raise DataValidationError("Failed to process monthly play count data")
 
             self.plot(processed_data)
 
-            # Save the graph
             today = datetime.today().strftime("%Y-%m-%d")
             base_dir = os.path.join(self.img_folder, today)
             if user_id:
@@ -207,6 +205,9 @@ class PlayCountByMonthGraph(BaseGraph):
             logging.debug("Saved monthly play count graph: %s", file_path)
             return file_path
             
+        except (DataValidationError, PlayCountByMonthError):
+            raise
         except Exception as e:
-            logging.error(f"Error generating monthly play count graph: {str(e)}")
-            return None
+            error_msg = f"Error generating monthly play count graph: {str(e)}"
+            logging.error(error_msg)
+            raise GraphGenerationError(error_msg) from e

@@ -54,10 +54,8 @@ def get_color(series_name: str, config: Dict[str, Any]) -> str:
         config: The configuration dictionary
         
     Returns:
-        str: The color code for the series
-        
-    Raises:
-        KeyError: If required color configuration is missing
+        str: The color code for the series. Returns default color '#1f77b4' if 
+             no matching color is found in config.
     """
     color_map = {
         "TV": "TV_COLOR",
@@ -368,13 +366,13 @@ def get_readable_file_size(size_in_bytes: int) -> str:
         str: A string representation of the file size (e.g., "5.2 MB")
 
     Raises:
-        ValueError: If size is not a valid number
+        ValueError: If size is negative or not a valid number
     """
     if not isinstance(size_in_bytes, (int, float)):
         raise ValueError("Size must be a number")
 
     if size_in_bytes < 0:
-        return f"-{get_readable_file_size(abs(size_in_bytes))}"
+        raise ValueError("File size cannot be negative")
         
     if size_in_bytes == 0:
         return "0 B"

@@ -33,7 +33,13 @@ class ConfigManager:
         
         Args:
             config_path: Path to the configuration file
+            
+        Raises:
+            ValueError: If config_path is empty or None
         """
+        if not config_path:
+            raise ValueError("Configuration path cannot be empty")
+            
         self.config_path = config_path
         self._config = None
         self._lock = threading.RLock()  # Use RLock for reentrant locking
@@ -50,12 +56,14 @@ class ConfigManager:
         
         Returns:
             The current configuration dictionary
+            
+        Raises:
+            ConfigError: If configuration cannot be loaded
         """
-        if self._config is None:
-            with self._lock:
-                if self._config is None:  # Double-check pattern
-                    self._config = self.load_config()
-        return self._config
+        with self._lock:
+            if self._config is None:
+                self._config = self.load_config()
+            return self._config
 
     def load_config(self, reload: bool = False) -> Dict[str, Any]:
         """
@@ -75,6 +83,10 @@ class ConfigManager:
                 if self._config is not None and not reload:
                     return self._config
 
+                if not os.path.exists(self.config_path):
+                    logging.info(f"Configuration file not found at {self.config_path}, creating new one")
+                    self.create_default_config_file(self.config_path)
+
                 self._config = load_yaml_config(self.config_path)
                 return self._config
             except (FileNotFoundError, YAMLError) as e:
@@ -90,7 +102,9 @@ class ConfigManager:
         """
         with self._lock:
             try:
-                save_yaml_config(self.config, self.config_path)
+                if self._config is None:
+                    raise ConfigError("Cannot save None configuration")
+                save_yaml_config(self._config, self.config_path)
             except (IOError, YAMLError) as e:
                 logging.error(f"Failed to save configuration: {str(e)}")
                 raise ConfigError(f"Configuration save failed: {str(e)}") from e
@@ -109,13 +123,17 @@ class ConfigManager:
             
         Raises:
             ConfigError: If the update fails
+            ValueError: If key or translations are invalid
         """
+        if not key or not translations:
+            raise ValueError("Key and translations must not be empty")
+            
         with self._lock:
             try:
                 if key not in CONFIGURABLE_OPTIONS:
                     raise ConfigError(f"Invalid configuration key: {key}")
 
-                old_value = self.config.get(key, "N/A")
+                old_value = self.config.get(key)  # Use get() to safely handle missing keys
                 sanitized_value = sanitize_config_value(key, value)
                 
                 if not validate_config_value(key, sanitized_value):
@@ -125,14 +143,14 @@ class ConfigManager:
                 self.save_config()
                 
                 if key == "FIXED_UPDATE_TIME" and str(sanitized_value).upper() == "XX:XX":
-                    return translations["config_updated_fixed_time_disabled"].format(key=key)
+                    return translations.get("config_updated_fixed_time_disabled", "Configuration updated").format(key=key)
                     
                 if key in RESTART_REQUIRED_KEYS:
-                    return translations["config_updated_restart"].format(key=key)
+                    return translations.get("config_updated_restart", "Configuration updated").format(key=key)
                     
-                return translations["config_updated"].format(
+                return translations.get("config_updated", "Configuration updated").format(
                     key=key,
-                    old_value=old_value,
+                    old_value=old_value if old_value is not None else "N/A",
                     new_value=sanitized_value
                 )
             except (ConfigError, ValueError, TypeError) as e:
@@ -146,21 +164,26 @@ class ConfigManager:
         Returns:
             List of configuration keys that can be modified via Discord
         """
-        return CONFIGURABLE_OPTIONS.copy()
+        return list(CONFIGURABLE_OPTIONS)  # Return a copy to prevent modification
 
-    @classmethod
-    def create_default_config_file(cls, config_path: str) -> None:
+    @staticmethod
+    def create_default_config_file(config_path: str) -> None:
         """
         Create a new configuration file with default values.
-        Thread-safe as it's a class method operating on a new file.
+        Thread-safe as it's a static method operating on a new file.
         
         Args:
             config_path: Path where the configuration file should be created
             
         Raises:
             ConfigError: If default configuration cannot be created
+            ValueError: If config_path is empty or None
         """
+        if not config_path:
+            raise ValueError("Configuration path cannot be empty")
+            
         try:
+            os.makedirs(os.path.dirname(config_path), exist_ok=True)
             config = create_default_config()
             save_yaml_config(config, config_path)
         except (IOError, YAMLError) as e:
@@ -177,8 +200,13 @@ def get_config_manager(config_path: Optional[str] = None) -> ConfigManager:
                      
     Returns:
         A ConfigManager instance
+        
+    Raises:
+        ValueError: If CONFIG_DIR environment variable is not set and no config_path provided
     """
     if config_path is None:
+        if not CONFIG_DIR:
+            raise ValueError("CONFIG_DIR environment variable not set and no config_path provided")
         config_path = os.path.join(CONFIG_DIR, "config.yml")
     
     return ConfigManager(config_path)

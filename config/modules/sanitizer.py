@@ -12,7 +12,6 @@ from datetime import datetime
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 from typing import Any, Dict, Optional
 import logging
-import re
 
 # Module-level constants with explicit types
 DEFAULT_COLOR: str = "#000000"
@@ -313,7 +312,7 @@ def validate_and_sanitize_config(config: Dict[str, Any]) -> Dict[str, Any]:
 
 def sanitize_user_id(user_id: Optional[str], max_length: int = 50) -> str:
     """
-    Sanitize user ID for safe filename creation.
+    Sanitize user ID for safe filename creation with enhanced security.
     
     Args:
         user_id: The user ID to sanitize
@@ -334,22 +333,39 @@ def sanitize_user_id(user_id: Optional[str], max_length: int = 50) -> str:
     except (TypeError, ValueError) as e:
         raise InvalidUserIdError("Failed to convert user ID to string") from e
         
-    # Check if empty after stripping
+    # Basic validation
     if not user_id_str:
         raise InvalidUserIdError("User ID cannot be empty")
+    
+    if len(user_id_str) > max_length * 2:  # Check before processing to prevent DoS
+        raise InvalidUserIdError(f"User ID exceeds maximum allowed length ({max_length * 2})")
         
     # Verify at least one alphanumeric character
     if not any(c.isalnum() for c in user_id_str):
         raise InvalidUserIdError("User ID must contain at least one alphanumeric character")
         
-    # Remove any characters that aren't alphanumeric, underscore, or hyphen
-    sanitized = re.sub(r'[^a-zA-Z0-9_-]', '_', user_id_str)
-    
-    # Limit length
+    # Enhanced sanitization
+    sanitized = ""
+    for c in user_id_str:
+        if c.isalnum() or c in '_-':
+            sanitized += c
+        else:
+            sanitized += '_'
+            
+    # Additional security measures
+    sanitized = sanitized.strip('._-')  # Remove leading/trailing special chars
+    if not sanitized:
+        raise InvalidUserIdError("Sanitized user ID cannot be empty")
+        
+    # Limit length after sanitization
     sanitized = sanitized[:max_length]
     
-    # Handle hidden files
+    # Prevent hidden files
     if sanitized.startswith('.'):
         sanitized = f"_dot_{sanitized[1:]}"
+        
+    # Ensure the final ID is not just special characters
+    if not any(c.isalnum() for c in sanitized):
+        raise InvalidUserIdError("Sanitized user ID must contain at least one alphanumeric character")
         
     return sanitized

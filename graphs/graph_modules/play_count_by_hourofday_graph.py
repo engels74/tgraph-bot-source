@@ -2,16 +2,58 @@
 
 from .base_graph import BaseGraph
 from .utils import get_color, validate_series_data
+from config.modules.sanitizer import sanitize_user_id, InvalidUserIdError
 from datetime import datetime
 from matplotlib.ticker import MaxNLocator
 from typing import Dict, Any, Optional
 import logging
 import os
 
+class PlayCountByHourOfDayError(Exception):
+    """Base exception for PlayCountByHourOfDay graph-specific errors."""
+    pass
+
+class DataValidationError(PlayCountByHourOfDayError):
+    """Raised when data validation fails."""
+    pass
+
+class GraphGenerationError(PlayCountByHourOfDayError):
+    """Raised when graph generation fails."""
+    pass
+
 class PlayCountByHourOfDayGraph(BaseGraph):
+    """Handles generation of play count by hour of day graphs."""
+    
     def __init__(self, config: Dict[str, Any], translations: Dict[str, str], img_folder: str):
+        """
+        Initialize the hour of day graph handler.
+        
+        Args:
+            config: Configuration dictionary
+            translations: Translation strings dictionary
+            img_folder: Path to image output folder
+        """
         super().__init__(config, translations, img_folder)
         self.graph_type = "play_count_by_hourofday"
+
+    def _process_filename(self, user_id: Optional[str]) -> Optional[str]:
+        """
+        Process user ID for safe filename creation.
+        
+        Args:
+            user_id: The user ID to process
+            
+        Returns:
+            Optional[str]: A sanitized version of the user ID safe for filenames
+        """
+        if user_id is None:
+            return None
+            
+        try:
+            return sanitize_user_id(user_id)
+        except InvalidUserIdError as e:
+            logging.warning(f"Invalid user ID for filename: {e}")
+            return None
 
     async def fetch_data(self, data_fetcher, user_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """
@@ -22,7 +64,7 @@ class PlayCountByHourOfDayGraph(BaseGraph):
             user_id: Optional user ID for user-specific data
             
         Returns:
-            The fetched data or None if fetching fails
+            Optional[Dict[str, Any]]: The fetched data or None if fetching fails
         """
         try:
             # If we have stored data, use it instead of fetching
@@ -33,7 +75,7 @@ class PlayCountByHourOfDayGraph(BaseGraph):
             # Otherwise, fetch new data
             params = {"time_range": self.config["TIME_RANGE_DAYS"]}
             if user_id:
-                params["user_id"] = user_id
+                params["user_id"] = str(user_id)  # Ensure user_id is string
             
             logging.debug("Fetching play count by hour of day data with params: %s", params)
             
@@ -108,10 +150,15 @@ class PlayCountByHourOfDayGraph(BaseGraph):
             self.setup_plot()
 
             for serie in processed_data["series"]:
-                self.ax.plot(processed_data["hours"], serie["data"], 
-                            label=serie["name"], marker="o", color=serie["color"])
+                self.ax.plot(
+                    processed_data["hours"],
+                    serie["data"],
+                    label=serie["name"],
+                    marker="o",
+                    color=serie["color"]
+                )
 
-                if self.config["ANNOTATE_PLAY_COUNT_BY_HOUROFDAY"]:
+                if self.config.get("ANNOTATE_PLAY_COUNT_BY_HOUROFDAY", False):
                     for i, value in enumerate(serie["data"]):
                         if value > 0:
                             self.annotate(processed_data["hours"][i], value, f"{value}")
@@ -136,7 +183,7 @@ class PlayCountByHourOfDayGraph(BaseGraph):
 
         except Exception as e:
             logging.error(f"Error plotting hour of day graph: {str(e)}")
-            raise
+            raise GraphGenerationError(str(e))
 
     async def generate(self, data_fetcher, user_id: Optional[str] = None) -> Optional[str]:
         """
@@ -147,7 +194,7 @@ class PlayCountByHourOfDayGraph(BaseGraph):
             user_id: Optional user ID for user-specific graphs
             
         Returns:
-            The path to the generated graph file, or None if generation fails
+            Optional[str]: The path to the generated graph file, or None if generation fails
         """
         try:
             logging.debug("Generate called with stored data: %s", "present" if self.data else "none")
@@ -162,13 +209,15 @@ class PlayCountByHourOfDayGraph(BaseGraph):
 
             self.plot(processed_data)
 
-            # Save the graph
+            # Save the graph with sanitized user ID
             today = datetime.today().strftime("%Y-%m-%d")
             base_dir = os.path.join(self.img_folder, today)
-            if user_id:
-                base_dir = os.path.join(base_dir, f"user_{user_id}")
+            
+            safe_user_id = self._process_filename(user_id)
+            if safe_user_id:
+                base_dir = os.path.join(base_dir, f"user_{safe_user_id}")
                 
-            file_name = f"play_count_by_hourofday{'_' + user_id if user_id else ''}.png"
+            file_name = f"play_count_by_hourofday{'_' + safe_user_id if safe_user_id else ''}.png"
             file_path = os.path.join(base_dir, file_name)
             
             os.makedirs(os.path.dirname(file_path), exist_ok=True)

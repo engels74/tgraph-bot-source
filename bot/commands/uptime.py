@@ -5,7 +5,7 @@ Uptime command for TGraph Bot.
 Tracks and displays the bot's running time since startup.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from discord import app_commands
 from discord.ext import commands
 from typing import Any, Dict
@@ -31,12 +31,41 @@ class UptimeCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
         self.bot = bot
         self.config = config
         self.translations = translations
-        # Use UTC as base timezone for consistent time handling
-        self.start_time = datetime.now(timezone.utc).astimezone()
+        # Store start time in UTC
+        self.start_time = datetime.now(timezone.utc)
         # Initialize both mixins
         CommandMixin.__init__(self)
         ErrorHandlerMixin.__init__(self)
         super().__init__()  # Initialize Cog
+
+    def format_uptime(self, delta: timedelta) -> str:
+        """Format a timedelta into a human-readable string.
+        
+        Parameters
+        ----------
+        delta : timedelta
+            The time difference to format
+            
+        Returns
+        -------
+        str
+            Formatted uptime string
+        """
+        days = delta.days
+        hours, remainder = divmod(delta.seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+
+        parts = []
+        if days > 0:
+            parts.append(f"{days} day{'s' if days != 1 else ''}")
+        if hours > 0:
+            parts.append(f"{hours} hour{'s' if hours != 1 else ''}")
+        if minutes > 0:
+            parts.append(f"{minutes} minute{'s' if minutes != 1 else ''}")
+        if seconds > 0 or not parts:
+            parts.append(f"{seconds} second{'s' if seconds != 1 else ''}")
+
+        return ", ".join(parts)
 
     @app_commands.command(
         name="uptime",
@@ -49,70 +78,31 @@ class UptimeCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
         ----------
         interaction : discord.Interaction
             The interaction instance
-
-        Raises
-        ------
-        ValueError
-            If there's an error calculating the uptime
-        KeyError
-            If required translation keys are missing
-        Exception
-            For any other unexpected errors
         """
         try:
-            # Use UTC for consistent time calculation
-            current_time = datetime.now(timezone.utc).astimezone()
-            uptime = current_time - self.start_time
+            # Get current time in UTC for consistency
+            current_time = datetime.now(timezone.utc)
+            uptime_delta = current_time - self.start_time
 
-            # Format the uptime in a readable way
-            days = uptime.days
-            hours, remainder = divmod(uptime.seconds, 3600)
-            minutes, seconds = divmod(remainder, 60)
+            # Format the uptime
+            formatted_uptime = self.format_uptime(uptime_delta)
 
-            # Build the uptime string with proper pluralization
-            uptime_parts = []
-            if days > 0:
-                uptime_parts.append(f"{days} day{'s' if days != 1 else ''}")
-            if hours > 0:
-                uptime_parts.append(f"{hours} hour{'s' if hours != 1 else ''}")
-            if minutes > 0:
-                uptime_parts.append(f"{minutes} minute{'s' if minutes != 1 else ''}")
-            if seconds > 0 or not uptime_parts:
-                uptime_parts.append(f"{seconds} second{'s' if seconds != 1 else ''}")
-
-            formatted_uptime = ", ".join(uptime_parts)
-
-            try:
-                response_message = self.translations["uptime_response"].format(
-                    uptime=formatted_uptime
-                )
-            except KeyError as ke:
-                logging.error(f"Missing translation key: {ke}")
-                raise KeyError(f"Missing required translation key: {ke}") from ke
-
+            # Send response
+            response_message = self.translations["uptime_response"].format(
+                uptime=formatted_uptime
+            )
+            
             await interaction.response.send_message(
                 response_message,
                 ephemeral=True
             )
 
             # Log command execution
-            try:
-                await self.log_command(interaction, "uptime")
-            except Exception as e:
-                logging.error(f"Failed to log uptime command: {e}")
+            await self.log_command(interaction, "uptime")
 
-        except ValueError as ve:
-            logging.error(f"Error calculating uptime: {ve}")
-            raise
-        except KeyError as ke:
-            logging.error(f"Missing translation key: {ke}")
-            raise
-        except discord.HTTPException as he:
-            logging.error(f"Discord API error: {he}")
-            raise
         except Exception as e:
-            logging.error(f"Unexpected error in uptime command: {e}")
-            raise
+            logging.error(f"Error in uptime command: {str(e)}")
+            await self.handle_error(interaction, e, "uptime")
 
 async def setup(bot: commands.Bot) -> None:
     """Setup function for the uptime cog.
@@ -121,11 +111,6 @@ async def setup(bot: commands.Bot) -> None:
     ----------
     bot : commands.Bot
         The bot instance
-
-    Raises
-    ------
-    commands.ExtensionError
-        If the cog cannot be added to the bot
     """
     try:
         await bot.add_cog(UptimeCog(bot, bot.config, bot.translations))

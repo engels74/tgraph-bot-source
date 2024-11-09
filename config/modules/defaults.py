@@ -40,10 +40,9 @@ def create_default_config() -> CommentedMap:
     cfg['ENABLE_TOP_10_PLATFORMS'] = True
     cfg['ENABLE_TOP_10_USERS'] = True
     cfg['ENABLE_PLAY_COUNT_BY_MONTH'] = True
-    cfg['ENABLE_ANNOTATION_OUTLINE'] = True
     
-    # Graph colors
-    cfg['TV_COLOR'] = DoubleQuotedScalarString('#1f77b4')
+    # Graph colors and appearance
+    cfg['TV_COLOR'] = DoubleQuotedScalarString('#1f77b4')  
     cfg['MOVIE_COLOR'] = DoubleQuotedScalarString('#ff7f0e')
     cfg['GRAPH_BACKGROUND_COLOR'] = DoubleQuotedScalarString('#ffffff')
     cfg['ANNOTATION_COLOR'] = DoubleQuotedScalarString('#ff0000')
@@ -128,7 +127,7 @@ def get_cooldown_keys() -> List[str]:
         List of cooldown configuration keys
     """
     defaults = create_default_config()
-    return [key for key in defaults.keys() if is_cooldown_key(key)]
+    return [key for key in defaults if is_cooldown_key(key)]
 
 def get_default_value(key: str) -> Any:
     """

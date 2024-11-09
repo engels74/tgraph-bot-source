@@ -62,7 +62,12 @@ class Top10PlatformsGraph(BaseGraph):
             # Otherwise, fetch new data
             params = {"time_range": self.config["TIME_RANGE_DAYS"]}
             if user_id:
-                params["user_id"] = str(user_id)  # Ensure user_id is string
+                try:
+                    sanitized_user_id = sanitize_user_id(user_id)
+                    params["user_id"] = sanitized_user_id
+                except InvalidUserIdError as e:
+                    logging.error(f"Invalid user ID format: {e}")
+                    return None
             
             logging.debug("Fetching top 10 platforms data with params: %s", params)
             
@@ -81,7 +86,7 @@ class Top10PlatformsGraph(BaseGraph):
             
         except Exception as e:
             logging.error(f"Error fetching top 10 platforms data: {str(e)}")
-            return None
+            raise Top10PlatformsError("Failed to fetch top 10 platforms data") from e
 
     def process_data(self, raw_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """
@@ -220,9 +225,16 @@ class Top10PlatformsGraph(BaseGraph):
             today = datetime.today().strftime("%Y-%m-%d")
             base_dir = os.path.join(self.img_folder, today)
             if user_id:
-                base_dir = os.path.join(base_dir, f"user_{user_id}")
-                
-            file_name = f"top_10_platforms{'_' + user_id if user_id else ''}.png"
+                try:
+                    safe_user_id = sanitize_user_id(user_id)
+                    base_dir = os.path.join(base_dir, f"user_{safe_user_id}")
+                    file_name = f"top_10_platforms_{safe_user_id}.png"
+                except InvalidUserIdError as e:
+                    logging.error(f"Invalid user ID for file path: {e}")
+                    raise FileSystemError("Invalid user ID for file path") from e
+            else:
+                file_name = "top_10_platforms.png"
+
             file_path = os.path.join(base_dir, file_name)
             
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
@@ -231,9 +243,9 @@ class Top10PlatformsGraph(BaseGraph):
             logging.debug("Saved top 10 platforms graph: %s", file_path)
             return file_path
             
-        except FileSystemError:
+        except FileSystemError as e:
             logging.error("Security violation: Attempted file path traversal")
-            return None
+            raise FileSystemError("Security violation in file path") from e
         except Exception as e:
             logging.error(f"Error generating top 10 platforms graph: {str(e)}")
-            return None
+            raise GraphGenerationError("Failed to generate top 10 platforms graph") from e

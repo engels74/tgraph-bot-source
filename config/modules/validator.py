@@ -12,6 +12,7 @@ from ipaddress import ip_address, IPv4Address
 from typing import Dict, Any, List, Tuple
 from typing import Optional
 from urllib.parse import urlparse, unquote
+import logging
 import re
 
 @dataclass
@@ -186,7 +187,14 @@ def validate_config_value(key: str, value: Any) -> bool:
         # Default type checking
         return isinstance(value, value_type)
 
-    except (KeyError, TypeError, ValueError):
+    except KeyError:
+        logging.debug(f"Invalid configuration key: {key}")
+        return False
+    except TypeError as e:
+        logging.debug(f"Type error validating {key}: {str(e)}")
+        return False
+    except ValueError as e:
+        logging.debug(f"Value error validating {key}: {str(e)}")
         return False
 
 def validate_config(config: Dict[str, Any]) -> Tuple[bool, List[str]]:
@@ -314,7 +322,14 @@ def validate_url(url: str) -> bool:
             hostname.count('.') > 10  # Suspicious number of subdomains
         ])
 
-    except Exception:
+    except ValueError as e:
+        logging.debug(f"URL validation failed with ValueError: {str(e)}")
+        return False
+    except UnicodeError as e:
+        logging.debug(f"URL validation failed with UnicodeError: {str(e)}")
+        return False
+    except AttributeError as e:
+        logging.debug(f"URL validation failed with AttributeError: {str(e)}")
         return False
 
 def get_validation_errors(config: Dict[str, Any]) -> List[str]:

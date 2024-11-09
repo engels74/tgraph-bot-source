@@ -10,6 +10,7 @@ from .defaults import create_default_config
 from .validator import validate_config
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
+from ruamel.yaml.error import YAMLError
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 from typing import Optional, Any
 import logging
@@ -120,38 +121,42 @@ def load_yaml_config(config_path: str) -> CommentedMap:
             return config
         
         # Load existing configuration
-        with open(config_path, 'r', encoding='utf-8') as file:
-            config = yaml.load(file)
+        try:
+            with open(config_path, 'r', encoding='utf-8') as file:
+                config = yaml.load(file)
+                
+                if config is None:
+                    config = create_default_config()
+                elif not isinstance(config, (dict, CommentedMap)):
+                    raise ConfigLoadError(f"Invalid config file format: {config_path}")
+                
+                # Get defaults and validate
+                defaults = create_default_config()
+                
+                # Track original keys
+                original_keys = set(config.keys())
+                
+                # Organize and update config
+                organized_config = organize_by_sections(config, defaults)
+                
+                # Validate final configuration
+                is_valid, errors = validate_config(organized_config)
+                if not is_valid:
+                    error_msg = "Configuration validation failed:\n" + "\n".join(errors)
+                    logging.error(error_msg)
+                    raise ConfigLoadError(error_msg)
+                
+                # Save if we made any changes
+                if set(organized_config.keys()) != original_keys:
+                    save_yaml_config(organized_config, config_path)
+                
+                return organized_config
+                
+        except (OSError, YAMLError) as e:
+            raise ConfigLoadError(f"Error reading config file: {str(e)}") from e
             
-            if config is None:
-                config = create_default_config()
-            elif not isinstance(config, (dict, CommentedMap)):
-                raise ConfigLoadError(f"Invalid config file format: {config_path}")
-            
-            # Get defaults and validate
-            defaults = create_default_config()
-            
-            # Track original keys
-            original_keys = set(config.keys())
-            
-            # Organize and update config
-            organized_config = organize_by_sections(config, defaults)
-            
-            # Validate final configuration
-            is_valid, errors = validate_config(organized_config)
-            if not is_valid:
-                error_msg = "Configuration validation failed:\n" + "\n".join(errors)
-                logging.error(error_msg)
-                raise ConfigLoadError(error_msg)
-            
-            # Save if we made any changes
-            if set(organized_config.keys()) != original_keys:
-                save_yaml_config(organized_config, config_path)
-            
-            return organized_config
-            
-    except Exception as e:
-        error_msg = f"Unexpected error loading configuration: {str(e)}"
+    except (OSError, YAMLError) as e:
+        error_msg = f"Failed to load configuration: {str(e)}"
         logging.error(error_msg)
         raise ConfigLoadError(error_msg) from e
 
@@ -162,6 +167,9 @@ def save_yaml_config(config: CommentedMap, config_path: str) -> None:
     Args:
         config: The configuration to save
         config_path: Path where to save the configuration
+        
+    Raises:
+        ConfigSaveError: If the save operation fails
     """
     try:
         # Ensure directory exists
@@ -172,7 +180,7 @@ def save_yaml_config(config: CommentedMap, config_path: str) -> None:
         with open(config_path, 'w', encoding='utf-8') as file:
             yaml.dump(config, file)
         logging.info(f"Configuration saved to {config_path}")
-    except Exception as e:
+    except (OSError, YAMLError) as e:
         error_msg = f"Error saving configuration to {config_path}: {str(e)}"
         logging.error(error_msg)
         raise ConfigSaveError(error_msg) from e
@@ -185,6 +193,9 @@ def update_config_value(config: CommentedMap, key: str, value: Any) -> None:
         config: The configuration to update
         key: The key to update
         value: The new value
+        
+    Raises:
+        KeyError: If key doesn't exist in config
     """
     if key in config:
         if isinstance(value, bool):
@@ -195,9 +206,18 @@ def update_config_value(config: CommentedMap, key: str, value: Any) -> None:
             config[key] = value
     else:
         logging.warning(f"Attempted to update non-existent key: {key}")
+        raise KeyError(f"Configuration key not found: {key}")
 
 def get_config_path(config_dir: Optional[str] = None) -> str:
-    """Get the configuration file path."""
+    """
+    Get the configuration file path.
+    
+    Args:
+        config_dir: Optional configuration directory override
+        
+    Returns:
+        The full path to the configuration file
+    """
     if config_dir is None:
         config_dir = os.environ.get("CONFIG_DIR", "/config")
     return os.path.join(config_dir, "config.yml")

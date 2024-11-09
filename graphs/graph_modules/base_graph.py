@@ -124,43 +124,56 @@ class BaseGraph(ABC):
         pass
 
     def setup_plot(self, figsize: Tuple[int, int] = (14, 8)) -> None:
-        """
-        Set up the plot with the given figure size.
+        """Set up the plot with the given figure size.
 
         Args:
             figsize: A tuple containing the width and height of the figure
 
         Raises:
             PlottingError: If plot setup fails
+            ValueError: If figure size is invalid
+            RuntimeError: If matplotlib backend fails
         """
         try:
-            plt.style.use('default')  # Ensure consistent style
-            self.figure, self.ax = plt.subplots(figsize=figsize)
-
-            if not self.ax:
-                raise PlottingError("Failed to create plot axes")
-
-            # Set tick label properties
-            self.ax.tick_params(
-                axis='both',
-                which='major',
-                labelsize=10,
-                width=1
-            )
-
-            # Set background color from config
-            background_color = self.config.get("GRAPH_BACKGROUND_COLOR", "#ffffff")
-            self.figure.patch.set_facecolor(background_color)  # Set figure background
-            self.ax.set_facecolor(background_color)  # Set plot area background
+            # Clear any existing plots to prevent interference
+            plt.close('all')
             
-            # Only enable grid if configured
-            if self.config.get("ENABLE_GRAPH_GRID", False):
-                self.ax.grid(True, linestyle='--', alpha=0.7)
-            else:
-                self.ax.grid(False)
+            # Use style context to ensure clean state
+            with plt.style.context('default'):
+                self.figure, self.ax = plt.subplots(figsize=figsize)
 
-        except Exception as e:
-            raise PlottingError(f"Error setting up plot: {str(e)}") from e
+                if not self.ax:
+                    raise PlottingError("Failed to create plot axes")
+
+                # Set tick label properties
+                self.ax.tick_params(
+                    axis='both',
+                    which='major',
+                    labelsize=10,
+                    width=1
+                )
+
+                # Set background color from config
+                background_color = self.config.get("GRAPH_BACKGROUND_COLOR", "#ffffff")
+                self.figure.patch.set_facecolor(background_color)
+                self.ax.set_facecolor(background_color)
+                
+                # Configure grid with proper z-order
+                if self.config.get("ENABLE_GRAPH_GRID", False):
+                    self.ax.grid(True, linestyle='--', alpha=0.7, zorder=0)  # Put grid behind plot elements
+                    self.ax.set_axisbelow(True)  # Ensure grid stays below other elements
+                else:
+                    self.ax.grid(False)
+
+                # Ensure proper subplot spacing
+                self.figure.set_tight_layout(True)
+
+        except ValueError as e:
+            raise PlottingError(f"Invalid plot parameters: {str(e)}") from e
+        except RuntimeError as e:
+            raise PlottingError(f"Matplotlib backend error: {str(e)}") from e
+        except TypeError as e:
+            raise PlottingError(f"Invalid argument type: {str(e)}") from e
 
     def add_title(self, title: str) -> None:
         """
@@ -171,6 +184,8 @@ class BaseGraph(ABC):
 
         Raises:
             PlottingError: If adding title fails
+            ValueError: If title parameters are invalid
+            TypeError: If title is not a string
         """
         if not self.ax:
             raise PlottingError("Plot axes not initialized")
@@ -181,8 +196,10 @@ class BaseGraph(ABC):
                 fontdict={'weight': 'bold', 'size': 12},
                 pad=20
             )
-        except Exception as e:
-            raise PlottingError(f"Error adding title: {str(e)}") from e
+        except ValueError as e:
+            raise PlottingError(f"Invalid title parameters: {str(e)}") from e
+        except TypeError as e:
+            raise PlottingError(f"Invalid title type: {str(e)}") from e
 
     def add_labels(self, xlabel: str, ylabel: str) -> None:
         """
@@ -194,6 +211,8 @@ class BaseGraph(ABC):
 
         Raises:
             PlottingError: If adding labels fails
+            ValueError: If label parameters are invalid
+            TypeError: If labels are not strings
         """
         if not self.ax:
             raise PlottingError("Plot axes not initialized")
@@ -209,8 +228,10 @@ class BaseGraph(ABC):
                 fontdict={'weight': 'bold'},
                 labelpad=10
             )
-        except Exception as e:
-            raise PlottingError(f"Error adding axis labels: {str(e)}") from e
+        except ValueError as e:
+            raise PlottingError(f"Invalid label parameters: {str(e)}") from e
+        except TypeError as e:
+            raise PlottingError(f"Invalid label type: {str(e)}") from e
 
     def add_legend(self, **kwargs) -> None:
         """
@@ -221,6 +242,8 @@ class BaseGraph(ABC):
 
         Raises:
             PlottingError: If adding legend fails
+            ValueError: If legend parameters are invalid
+            TypeError: If legend arguments are invalid types
         """
         if not self.ax:
             raise PlottingError("Plot axes not initialized")
@@ -232,8 +255,10 @@ class BaseGraph(ABC):
                     text.set_weight('normal')
             else:
                 logging.warning("Legend not added; legend object is None")
-        except Exception as e:
-            raise PlottingError(f"Error adding legend: {str(e)}") from e
+        except ValueError as e:
+            raise PlottingError(f"Invalid legend parameters: {str(e)}") from e
+        except TypeError as e:
+            raise PlottingError(f"Invalid legend argument types: {str(e)}") from e
 
     def apply_tight_layout(self, pad: float = 3.0) -> None:
         """
@@ -244,14 +269,18 @@ class BaseGraph(ABC):
 
         Raises:
             PlottingError: If applying tight layout fails
+            ValueError: If padding value is invalid
+            RuntimeError: If layout adjustment fails
         """
         if not self.figure:
             raise PlottingError("Figure not initialized")
 
         try:
             self.figure.tight_layout(pad=pad)
-        except Exception as e:
-            raise PlottingError(f"Error applying tight layout: {str(e)}") from e
+        except ValueError as e:
+            raise PlottingError(f"Invalid padding value: {str(e)}") from e
+        except RuntimeError as e:
+            raise PlottingError(f"Layout adjustment failed: {str(e)}") from e
 
     def save(self, filepath: str) -> None:
         """
@@ -262,6 +291,8 @@ class BaseGraph(ABC):
 
         Raises:
             PlottingError: If saving fails
+            OSError: If file operations fail
+            ValueError: If filepath is invalid
         """
         if not self.figure:
             raise PlottingError("Figure not initialized")
@@ -269,8 +300,10 @@ class BaseGraph(ABC):
         try:
             self.figure.savefig(filepath, dpi=300, bbox_inches='tight')
             logging.info(f"Graph saved successfully: {filepath}")
-        except Exception as e:
-            raise PlottingError(f"Error saving graph to {filepath}: {str(e)}") from e
+        except OSError as e:
+            raise PlottingError(f"Failed to save file: {str(e)}") from e
+        except ValueError as e:
+            raise PlottingError(f"Invalid save parameters: {str(e)}") from e
         finally:
             plt.close(self.figure)
 
@@ -315,6 +348,8 @@ class BaseGraph(ABC):
 
         Raises:
             PlottingError: If annotation fails
+            ValueError: If coordinate values are invalid
+            TypeError: If argument types are invalid
         """
         if not self.ax:
             raise PlottingError("Plot axes not initialized")
@@ -342,8 +377,10 @@ class BaseGraph(ABC):
                 ]
 
             self.ax.annotate(**annotation_params)
-        except Exception as e:
-            raise PlottingError(f"Error adding annotation: {str(e)}") from e
+        except ValueError as e:
+            raise PlottingError(f"Invalid annotation parameters: {str(e)}") from e
+        except TypeError as e:
+            raise PlottingError(f"Invalid annotation argument types: {str(e)}") from e
 
     @abstractmethod
     async def generate(self, data_fetcher: Any, user_id: Optional[str] = None) -> Optional[str]:

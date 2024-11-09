@@ -29,13 +29,47 @@ class UpdateGraphsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
         translations : dict
             Translation strings dictionary
         """
-        # Initialize parent classes first
-        super().__init__()
+        # Initialize parent classes explicitly to handle multiple inheritance correctly
+        commands.Cog.__init__(self)
+        CommandMixin.__init__(self)
+        ErrorHandlerMixin.__init__(self)
         
         # Set instance attributes
         self.bot = bot
         self.config = config
         self.translations = translations
+        
+        # Verify required bot attributes are available
+        required_attrs = ['update_tracker', 'graph_manager', 'data_fetcher']
+        missing_attrs = [attr for attr in required_attrs if not hasattr(self.bot, attr)]
+        if missing_attrs:
+            raise AttributeError(
+                f"Bot instance missing required attributes: {', '.join(missing_attrs)}"
+            )
+
+    async def cog_load(self) -> None:
+        """Called when the cog is loaded."""
+        logging.info(self.translations["log_commands_cog_loaded"])
+
+    async def cog_unload(self) -> None:
+        """Called when the cog is unloaded."""
+        logging.info(self.translations["log_unloading_command"].format(
+            command_name="update_graphs"
+        ))
+
+    def reload_config(self) -> dict:
+        """Reload the configuration from disk.
+
+        Returns
+        -------
+        dict
+            The updated configuration
+        """
+        try:
+            return load_config(reload=True)
+        except Exception as e:
+            logging.error(f"Error reloading config: {e}")
+            return self.config  # Return current config as fallback
 
     async def get_target_channel(self, interaction: discord.Interaction) -> Optional[discord.TextChannel]:
         """Get the target channel for posting graphs.
@@ -59,7 +93,6 @@ class UpdateGraphsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
                 )
                 return None
                 
-            # Convert channel_id to integer and handle potential conversion errors
             try:
                 channel_id = int(channel_id)
             except (ValueError, TypeError):
@@ -130,7 +163,7 @@ class UpdateGraphsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
             # Delete old graph messages
             await self.bot.graph_manager.delete_old_messages(channel)
             
-            # Generate new graphs - pass the data_fetcher instance
+            # Generate new graphs
             try:
                 graph_files = await self.bot.graph_manager.generate_and_save_graphs(self.bot.data_fetcher)
                 
@@ -167,7 +200,7 @@ class UpdateGraphsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
             # Log completion
             logging.info(self.translations["log_manual_update_completed"])
             
-            # Update cooldowns after successful execution using configurable values
+            # Update cooldowns after successful execution
             self.update_cooldowns(
                 str(interaction.user.id),
                 self.config["UPDATE_GRAPHS_COOLDOWN_MINUTES"],
@@ -176,11 +209,11 @@ class UpdateGraphsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
 
             # Log the command execution
             await self.log_command(interaction, "update_graphs")
-            
+
             # Send success message
             await interaction.followup.send(
                 self.translations["update_graphs_success"].format(
-                    next_update=self.bot.update_tracker.get_next_update_discord() 
+                    next_update=self.bot.update_tracker.get_next_update_discord()
                 ),
                 ephemeral=True
             )
@@ -193,23 +226,7 @@ class UpdateGraphsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
             )
 
         except Exception as e:
-            logging.exception(
-                self.translations["log_command_error"].format(
-                    command="update_graphs",
-                    error=str(e)
-                )
-            )
-            raise  # Let the mixin's error handler handle it
-
-    def reload_config(self) -> dict:
-        """Reload the configuration from disk.
-
-        Returns
-        -------
-        dict
-            The updated configuration
-        """
-        return load_config(reload=True)
+            await self.handle_command_error(interaction, e, "update_graphs")
 
 async def setup(bot: commands.Bot) -> None:
     """Setup function for the update_graphs cog.
@@ -218,5 +235,18 @@ async def setup(bot: commands.Bot) -> None:
     ----------
     bot : commands.Bot
         The bot instance
+        
+    Raises
+    ------
+    AttributeError
+        If bot is missing required attributes
     """
+    # Verify bot has required attributes before adding cog
+    required_attrs = ['config', 'translations', 'update_tracker', 'graph_manager', 'data_fetcher']
+    missing_attrs = [attr for attr in required_attrs if not hasattr(bot, attr)]
+    if missing_attrs:
+        raise AttributeError(
+            f"Bot instance missing required attributes: {', '.join(missing_attrs)}"
+        )
+        
     await bot.add_cog(UpdateGraphsCog(bot, bot.config, bot.translations))

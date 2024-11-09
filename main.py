@@ -10,7 +10,7 @@ from discord.ext import commands
 from graphs.graph_manager import GraphManager
 from graphs.graph_modules.data_fetcher import DataFetcher
 from graphs.user_graph_manager import UserGraphManager
-from i18n import load_translations, TranslationKeyError
+from i18n import load_translations
 import argparse
 import asyncio
 import discord
@@ -77,15 +77,20 @@ except Exception as e:
     log(f"Failed to load configuration: {e}", logging.ERROR)
     sys.exit(1)
 
-# Load translations
+# Load translations with a simple fallback
 try:
     translations = load_translations(config["LANGUAGE"])
-except TranslationKeyError as e:
+    logging.debug(f"Loaded translations keys: {sorted(translations.keys())}")
+    if not translations:  # If translations is None
+        translations = {"log_ensured_folders_exist": "Ensured folders exist"}
+        logging.warning("Translations failed to load, using fallback")
+except Exception as e:
     log(f"Error loading translations: {e}", logging.ERROR)
-    sys.exit(1)
+    translations = {"log_ensured_folders_exist": "Ensured folders exist"}
+    logging.warning("Exception during translation loading, using fallback")
 
 # Log that folders have been created
-log(translations["log_ensured_folders_exist"])
+log(translations.get("log_ensured_folders_exist", "Ensured folders exist"))  # Using .get() with default value
 
 # Create UpdateTracker instance
 update_tracker = create_update_tracker(args.data_folder, config, translations)
@@ -186,13 +191,28 @@ class TGraphBot(commands.Bot):
             # Initial graph update
             log(self.translations["log_updating_posting_graphs_startup"])
             
-            try:
-                self.config = load_config(self.config_path, reload=True)
-            except Exception as e:
-                log(self.translations["log_config_reload_error"].format(error=str(e)), logging.ERROR)
-                # Use existing config as fallback
-                log("Using existing configuration as fallback", logging.WARNING)
+            # Add retry mechanism for config reload
+            max_retries = 3
+            retry_delay = 5  # seconds
             
+            for attempt in range(max_retries):
+                try:
+                    self.config = load_config(self.config_path, reload=True)
+                    break
+                except Exception as e:
+                    if attempt < max_retries - 1:
+                        log(self.translations["log_config_reload_retry"].format(
+                            attempt=attempt + 1,
+                            max_retries=max_retries,
+                            error=str(e)
+                        ), logging.WARNING)
+                        await asyncio.sleep(retry_delay)
+                    else:
+                        log(self.translations["log_config_reload_failed"].format(
+                            error=str(e)
+                        ), logging.ERROR)
+                        raise  # Stop initialization if all retries fail
+
             channel = self.get_channel(self.config["CHANNEL_ID"])
             if channel:
                 await self.graph_manager.delete_old_messages(channel)
@@ -238,25 +258,55 @@ class TGraphBot(commands.Bot):
         self.loop.create_task(schedule_updates(self))
 
 async def schedule_updates(bot):
-    """Handle scheduled updates with proper error handling."""
+    channel_retry_delay = 3600  # 1 hour
+    channel_check_failures = 0
+    max_channel_failures = 3
+    
+    # Add these missing variables
+    max_consecutive_failures = 3
+    consecutive_failures = 0
+    failure_delay = 300  # 5 minutes
+
     while True:
         if bot.update_tracker.is_update_due():
             log(bot.translations["log_auto_update_started"])
             try:
                 try:
                     bot.config = load_config(bot.config_path, reload=True)
+                    consecutive_failures = 0  # Reset counter on success
                 except Exception as e:
-                    log(bot.translations["log_config_reload_error"].format(error=str(e)), logging.ERROR)
-                    # Skip this update cycle if config reload fails
+                    consecutive_failures += 1
+                    log(bot.translations["log_config_reload_error"].format(
+                        error=str(e),
+                        attempt=consecutive_failures,
+                        max_attempts=max_consecutive_failures
+                    ), logging.ERROR)
+                    
+                    if consecutive_failures >= max_consecutive_failures:
+                        log(bot.translations["log_config_reload_critical"], logging.CRITICAL)
+                        await asyncio.sleep(failure_delay)
                     continue
                 
                 channel = bot.get_channel(bot.config["CHANNEL_ID"])
-                if channel:
-                    await bot.graph_manager.delete_old_messages(channel)
-                    # Pass bot.data_fetcher to generate_and_save_graphs
-                    graph_files = await bot.graph_manager.generate_and_save_graphs(bot.data_fetcher)
-                    if graph_files:
-                        await bot.graph_manager.post_graphs(channel, graph_files, bot.update_tracker)
+                if not channel:
+                    channel_check_failures += 1
+                    log(bot.translations["log_channel_not_found"].format(
+                        channel_id=bot.config["CHANNEL_ID"],
+                        attempt=channel_check_failures,
+                        max_attempts=max_channel_failures
+                    ), logging.ERROR)
+                    
+                    if channel_check_failures >= max_channel_failures:
+                        log(bot.translations["log_channel_not_found_critical"], 
+                            logging.CRITICAL)
+                        await asyncio.sleep(channel_retry_delay)
+                    continue
+                
+                channel_check_failures = 0  # Reset on success
+                # Pass bot.data_fetcher to generate_and_save_graphs
+                graph_files = await bot.graph_manager.generate_and_save_graphs(bot.data_fetcher)
+                if graph_files:
+                    await bot.graph_manager.post_graphs(channel, graph_files, bot.update_tracker)
                 else:
                     log(bot.translations["log_channel_not_found"].format(
                         channel_id=bot.config["CHANNEL_ID"]
@@ -304,18 +354,33 @@ async def main():
         await bot.close()
 
 if __name__ == "__main__":
+    default_messages = {
+        "log_shutdown_requested": "Shutdown requested by user",
+        "log_login_error": "Login error: {error}",
+        "log_unexpected_main_error": "Unexpected error in main: {error}",
+        "log_shutdown_complete": "Shutdown complete"
+    }
+
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        log(translations["log_shutdown_requested"], logging.INFO)
+        message = getattr(translations, "log_shutdown_requested", 
+                         default_messages["log_shutdown_requested"])
+        log(message, logging.INFO)
     except discord.LoginFailure as e:
-        log(translations["log_login_error"].format(error=str(e)), logging.ERROR)
+        message = getattr(translations, "log_login_error", 
+                         default_messages["log_login_error"])
+        log(message.format(error=str(e)), logging.ERROR)
         logger.exception(e)
     except Exception as e:
-        log(translations["log_unexpected_main_error"].format(error=str(e)), logging.ERROR)
+        message = getattr(translations, "log_unexpected_main_error", 
+                         default_messages["log_unexpected_main_error"])
+        log(message.format(error=str(e)), logging.ERROR)
         logger.exception(e)
     finally:
-        log(translations["log_shutdown_complete"], logging.INFO)
+        message = getattr(translations, "log_shutdown_complete", 
+                         default_messages["log_shutdown_complete"])
+        log(message, logging.INFO)
 
 # TGraph - Tautulli Graph Bot
 # <https://github.com/engels74/tgraph-bot-source>

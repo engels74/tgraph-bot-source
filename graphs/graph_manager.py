@@ -13,7 +13,7 @@ import logging
 import os
 
 if TYPE_CHECKING:
-    from .update_tracker import UpdateTracker
+    from bot.update_tracker import UpdateTracker
 
 class GraphManagerError(Exception):
     """Base exception for GraphManager-related errors."""
@@ -75,7 +75,7 @@ class GraphManager:
                         logging.debug("Generated %s: %s", graph_type, file_path)
                 except (GraphFactoryError, IOError) as e:
                     logging.error("Error generating %s: %s", graph_type, str(e))
-                    raise GraphGenerationError(f"Failed to generate {graph_type}: {str(e)}")
+                    raise GraphGenerationError(f"Failed to generate {graph_type}: {str(e)}") from e
 
             if not graph_files:
                 raise GraphGenerationError("No graphs were generated successfully")
@@ -107,10 +107,10 @@ class GraphManager:
                         await message.delete()
                         await asyncio.sleep(1)  # Rate limiting
                         logging.info(self.translations["log_deleted_message"])
-                    except discord.Forbidden:
-                        raise DiscordError("Missing permissions to delete messages")
+                    except discord.Forbidden as e:
+                        raise DiscordError("Missing permissions to delete messages") from e
                     except discord.HTTPException as e:
-                        raise DiscordError(f"Failed to delete message: {str(e)}")
+                        raise DiscordError(f"Failed to delete message: {str(e)}") from e
         except discord.Forbidden as e:
             logging.error("Missing permissions to access channel history")
             raise DiscordError("Missing permissions to access channel history") from e
@@ -128,11 +128,21 @@ class GraphManager:
         Returns:
             Discord Embed object
         """
+        # Clean the type and ensure proper translation key format
         clean_type = graph_type.replace('ENABLE_', '').lower()
         days = self.config.get("TIME_RANGE_DAYS", 7)
 
-        title = self.translations.get(f"{clean_type}_title", "").format(days=days)
-        description = self.translations.get(f"{clean_type}_description", "").format(days=days)
+        # Get title and description using the correct translation key format
+        title_key = f"{clean_type}_title"
+        desc_key = f"{clean_type}_description"
+        
+        title = self.translations.get(title_key, "")
+        description = self.translations.get(desc_key, "")
+        
+        if title and days:
+            title = title.format(days=days)
+        if description and days:
+            description = description.format(days=days)
 
         if update_tracker:
             next_update_str = update_tracker.get_next_update_discord()

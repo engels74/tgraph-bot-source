@@ -64,12 +64,10 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
             The fetched data or None if fetching fails
         """
         try:
-            # If we have stored data, use it instead of fetching
             if self.data is not None:
                 logging.debug("Using stored data for play count by day of week")
                 return self.data
 
-            # Otherwise, fetch new data
             params = {"time_range": self.config["TIME_RANGE_DAYS"]}
             if user_id:
                 params["user_id"] = user_id
@@ -89,10 +87,10 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
                     logging.error(error_msg.format(user_id=user_id, error="No data returned"))
                 else:
                     logging.error(error_msg)
-                return None
+                raise DataValidationError(error_msg) from None
 
             return data['response']['data']
-            
+
         except Exception as e:
             error_msg = (
                 self.translations.get(
@@ -105,61 +103,54 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
                 logging.error(error_msg.format(user_id=user_id, error=str(e)))
             else:
                 logging.error(f"{error_msg}: {str(e)}")
-            return None
+            raise PlayCountByDayOfWeekError("Failed to fetch day of week data") from e
 
     def process_data(self, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """
-        Process the fetched data for plotting.
-        
-        Args:
-            data: Raw data from the API
-            
-        Returns:
-            Processed data ready for plotting
-            
-        Raises:
-            DataValidationError: If data validation fails
-        """
-        if 'series' not in data:
-            raise DataValidationError(
-                self.translations["error_missing_series_play_count_by_dayofweek"]
-            )
-
-        series = data['series']
-        if not series:
-            raise DataValidationError(
-                self.translations["warning_empty_series_play_count_by_dayofweek"]
-            )
-
-        days = list(range(7))
-        day_labels = [self.translations.get(f"day_{i}", f"Day {i}") for i in range(7)]
-
-        # Validate series data
-        validation_errors = self._validate_series_data(series, len(days))
-        if validation_errors:
-            raise DataValidationError(
-                "Series data validation failed:\n" + "\n".join(validation_errors)
-            )
-
-        processed_data = {
-            "days": days,
-            "day_labels": day_labels,
-            "series": []
-        }
-
         try:
-            for serie in series:
-                processed_data["series"].append({
-                    "name": serie["name"],
-                    "data": serie["data"],
-                    "color": get_color(serie["name"], self.config)
-                })
-        except KeyError as e:
-            raise DataValidationError(f"Missing required key in series data: {e}")
-        except ValueError as e:
-            raise DataValidationError(f"Invalid value in series data: {e}")
+            if 'series' not in data:
+                raise DataValidationError(
+                    self.translations["error_missing_series_play_count_by_dayofweek"]
+                )
 
-        return processed_data
+            series = data['series']
+            if not series:
+                raise DataValidationError(
+                    self.translations["warning_empty_series_play_count_by_dayofweek"]
+                )
+
+            days = list(range(7))
+            day_labels = [self.translations.get(f"day_{i}", f"Day {i}") for i in range(7)]
+
+            validation_errors = self._validate_series_data(series, len(days))
+            if validation_errors:
+                raise DataValidationError(
+                    "Series data validation failed:\n" + "\n".join(validation_errors)
+                )
+
+            processed_data = {
+                "days": days,
+                "day_labels": day_labels,
+                "series": []
+            }
+
+            for serie in series:
+                try:
+                    processed_data["series"].append({
+                        "name": serie["name"],
+                        "data": serie["data"],
+                        "color": get_color(serie["name"], self.config)
+                    })
+                except KeyError as e:
+                    raise DataValidationError(f"Missing required field in series data: {e}") from e
+                except ValueError as e:
+                    raise DataValidationError(f"Invalid value in series data: {e}") from e
+
+            return processed_data
+
+        except DataValidationError:
+            raise
+        except Exception as e:
+            raise PlayCountByDayOfWeekError("Failed to process day of week data") from e
 
     def plot(self, processed_data: Dict[str, Any]) -> None:
         """

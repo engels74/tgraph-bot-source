@@ -123,7 +123,7 @@ class Top10UsersGraph(BaseGraph):
 
         except Exception as e:
             logging.error(f"Error processing top 10 users data: {e}")
-            raise DataValidationError(f"Failed to process data: {str(e)}")
+            raise DataValidationError(f"Failed to process data: {str(e)}") from e
 
     def plot(self, processed_data: Dict[str, Any]) -> None:
         """

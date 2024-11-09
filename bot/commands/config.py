@@ -159,18 +159,22 @@ class ConfigCog(commands.GroupCog, CommandMixin, ErrorHandlerMixin, name="config
         try:
             if key not in CONFIGURABLE_OPTIONS:
                 await interaction.followup.send(
-                    self.translations["config_view_invalid_key"].format(key=key),
+                    self.translations["config_error_invalid_key"],
                     ephemeral=True
                 )
                 return
 
-            # Use new validation function
+            # Add await here
             formatted_value, error_message = await validate_and_format_config_value(
                 key, value, self.translations
             )
             
             if error_message:
-                await interaction.followup.send(error_message, ephemeral=True)
+                logging.warning(f"Configuration validation error for {key}: {error_message}")
+                await interaction.followup.send(
+                    self.translations["config_error_validation"].format(error=error_message),
+                    ephemeral=True
+                )
                 return
             
             if formatted_value is None:
@@ -214,6 +218,7 @@ class ConfigCog(commands.GroupCog, CommandMixin, ErrorHandlerMixin, name="config
             )
 
         except Exception as e:
+            logging.error(f"Unexpected error in config edit command: {str(e)}")
             await self.handle_command_error(interaction, e, "config_edit")
 
     @view.autocomplete('key')
@@ -279,8 +284,17 @@ class ConfigCog(commands.GroupCog, CommandMixin, ErrorHandlerMixin, name="config
             error = error.original
             
             if isinstance(error, (ValueError, KeyError)):
+                # Log the detailed error
+                logging.error(f"Configuration error in {interaction.command.name}: {str(error)}")
+                
+                # Map specific errors to user-friendly messages
+                error_key = "config_error_invalid_value"
+                if isinstance(error, KeyError):
+                    error_key = "config_error_invalid_key"
+                
+                # Send translated user-friendly message
                 await interaction.response.send_message(
-                    f"Configuration error: {str(error)}",
+                    self.translations[error_key],
                     ephemeral=True
                 )
                 return

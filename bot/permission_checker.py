@@ -52,8 +52,17 @@ async def get_registered_commands(
         guild_commands = await bot.tree.fetch_commands(guild=guild)
         
         command_map = {}
-        for cmd in global_commands + guild_commands:
+        for cmd in global_commands:
             command_map[str(cmd.id)] = cmd
+            
+        for cmd in guild_commands:
+            cmd_id = str(cmd.id)
+            if cmd_id in command_map:
+                logging.info(
+                    f"Guild command /{cmd.name} (ID: {cmd_id}) overrides global command "
+                    f"/{command_map[cmd_id].name} in guild {guild.name}"
+                )
+            command_map[cmd_id] = cmd
             
         return command_map
     except discord.HTTPException as e:
@@ -107,10 +116,18 @@ async def resolve_permission_entities(
                     logging.debug(f"Channel {entity_id} not found in guild {guild.name}")
                     entities.append(f"Unknown Channel {entity_id} ({permission_allowed})")
 
-        except Exception as e:
-            logging.error(f"Error resolving permission entity {perm['id']}: {e}")
+        except ValueError as e:
+            logging.error(f"Invalid entity ID format {perm['id']}: {e}")
             if show_unknown:
-                entities.append(f"Error resolving entity {perm['id']}")
+                entities.append(f"Invalid entity ID {perm['id']}")
+        except AttributeError as e:
+            logging.error(f"Missing required permission attributes: {e}")
+            if show_unknown:
+                entities.append(f"Invalid permission entry for {perm.get('id', 'unknown')}")
+        except discord.HTTPException as e:
+            logging.error(f"Discord API error while resolving entity {perm['id']}: {e}")
+            if show_unknown:
+                entities.append(f"API Error resolving {perm['id']}")
 
     return entities
 
@@ -209,7 +226,7 @@ async def check_command_permissions(
         final_rows.extend(all_rows)
 
         # Handle case where no permissions are set
-        if no_permissions_set and not final_rows:  # Only add warning if no other rows exist
+        if no_permissions_set:
             logging.warning(
                 translations["no_permissions_set_warning"].format(guild_name=guild.name)
             )
@@ -221,6 +238,7 @@ async def check_command_permissions(
         # Check critical commands
         critical_commands = {"config", "update_graphs"}
         for command in critical_commands:
+            command_pattern = f"/{command}"
             if command not in commands_with_permissions:
                 logging.warning(
                     translations["critical_command_no_permissions"].format(
@@ -228,7 +246,7 @@ async def check_command_permissions(
                     )
                 )
             elif any(
-                command in row[0] and row[1] == translations["accessible_to_all_members"]
+                row[0] == command_pattern and row[1] == translations["accessible_to_all_members"]
                 for row in final_rows
             ):
                 logging.warning(

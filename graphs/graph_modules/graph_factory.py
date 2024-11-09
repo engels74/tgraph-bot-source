@@ -1,7 +1,7 @@
 # graphs/graph_modules/graph_factory.py
 
 """
-GraphFactory implementation with corrected type hints and improved error handling.
+GraphFactory implementation with enhanced error handling and type safety.
 """
 
 from .base_graph import BaseGraph
@@ -11,7 +11,7 @@ from .play_count_by_hourofday_graph import PlayCountByHourOfDayGraph
 from .play_count_by_month_graph import PlayCountByMonthGraph
 from .top_10_platforms_graph import Top10PlatformsGraph
 from .top_10_users_graph import Top10UsersGraph
-from typing import Dict, Any, Tuple, Union, Optional
+from typing import Dict, Any, Tuple, Optional, Type
 import asyncio
 import logging
 
@@ -55,8 +55,8 @@ class GraphFactory:
         self.translations = translations
         self.img_folder = img_folder
         
-        # Map graph types to their respective classes
-        self.graph_classes: Dict[str, type[BaseGraph]] = {
+        # Map graph types to their respective classes with proper type hints
+        self.graph_classes: Dict[str, Type[BaseGraph]] = {
             "daily_play_count": DailyPlayCountGraph,
             "play_count_by_dayofweek": PlayCountByDayOfWeekGraph,
             "play_count_by_hourofday": PlayCountByHourOfDayGraph,
@@ -84,10 +84,7 @@ class GraphFactory:
         
         return graph_class(self.config, self.translations, self.img_folder)
 
-    def create_all_graphs(self) -> Dict[str, Union[
-        DailyPlayCountGraph, PlayCountByDayOfWeekGraph, PlayCountByHourOfDayGraph,
-        Top10PlatformsGraph, Top10UsersGraph, PlayCountByMonthGraph
-    ]]:
+    def create_all_graphs(self) -> Dict[str, BaseGraph]:
         """
         Create and return instances of all enabled graph types.
         
@@ -117,7 +114,8 @@ class GraphFactory:
         
         Raises:
             DataFetchError: If graph data cannot be fetched
-            TimeoutError: If data fetching exceeds timeout
+            GraphGenerationError: If graph generation fails
+            asyncio.TimeoutError: If data fetching exceeds timeout
         """
         generated_graphs = {}
         
@@ -129,37 +127,44 @@ class GraphFactory:
                 raise DataFetchError(self.translations.get(
                     "error_fetch_graph_data",
                     "Failed to fetch graph data"
-                ))
+                )) from None
                 
-            # Generate graphs concurrently
+            # Generate graphs concurrently with semaphore to limit concurrent operations
+            sem = asyncio.Semaphore(3)  # Limit to 3 concurrent graph generations
             tasks = []
+            
             for graph_type, graph_instance in self.create_all_graphs().items():
                 if graph_data.get(graph_type):
                     tasks.append(self._generate_single_graph(
-                        graph_type, graph_instance, data_fetcher, user_id
+                        graph_type, graph_instance, data_fetcher, user_id, sem
                     ))
                     
             results = await asyncio.gather(*tasks, return_exceptions=True)
             
             for result in results:
                 if isinstance(result, Exception):
-                    logging.error(str(result))
+                    logging.error(f"Graph generation error: {str(result)}")
                 elif result:
                     graph_type, file_path = result
                     generated_graphs[graph_type] = file_path
                     
-        except asyncio.TimeoutError:
-            logging.error(self.translations.get(
+        except asyncio.TimeoutError as e:
+            error_msg = self.translations.get(
                 "error_timeout",
                 "Timeout during graph generation"
-            ))
+            )
+            logging.error(error_msg)
+            raise GraphGenerationError(error_msg) from e
         except DataFetchError as e:
             logging.error(str(e))
+            raise
         except Exception as e:
-            logging.error(self.translations.get(
+            error_msg = self.translations.get(
                 "error_graph_generation",
                 "Error during graph generation: {error}"
-            ).format(error=str(e)))
+            ).format(error=str(e))
+            logging.error(error_msg)
+            raise GraphGenerationError(error_msg) from e
                 
         return generated_graphs
 
@@ -168,16 +173,18 @@ class GraphFactory:
         graph_type: str,
         graph_instance: BaseGraph,
         data_fetcher,
-        user_id: Optional[str] = None
+        user_id: Optional[str],
+        sem: asyncio.Semaphore
     ) -> Optional[Tuple[str, str]]:
         """
-        Helper method to generate a single graph with proper error handling.
+        Helper method to generate a single graph with proper error handling and concurrency control.
         
         Args:
             graph_type: The type of graph to generate
             graph_instance: The graph instance to use
             data_fetcher: The data fetcher instance
             user_id: Optional user ID for user-specific graphs
+            sem: Semaphore for controlling concurrent operations
             
         Returns:
             A tuple of (graph_type, file_path) if successful, None if generation fails
@@ -185,17 +192,19 @@ class GraphFactory:
         Raises:
             GraphGenerationError: If there is an error generating the graph
         """
-        try:
-            file_path = await graph_instance.generate(data_fetcher, user_id)
-            if file_path:
-                logging.info(self.translations.get(
-                    "log_graph_generated",
-                    "Generated {graph_type} graph"
-                ).format(graph_type=graph_type))
-                return graph_type, file_path
-            return None
-        except Exception as e:
-            raise GraphGenerationError(self.translations.get(
-                "error_generating_graph",
-                "Error generating {graph_type} graph: {error}"
-            ).format(graph_type=graph_type, error=str(e)))
+        async with sem:  # Control concurrent graph generations
+            try:
+                file_path = await graph_instance.generate(data_fetcher, user_id)
+                if file_path:
+                    logging.info(self.translations.get(
+                        "log_graph_generated",
+                        "Generated {graph_type} graph"
+                    ).format(graph_type=graph_type))
+                    return graph_type, file_path
+                return None
+            except Exception as e:
+                error_msg = self.translations.get(
+                    "error_generating_graph",
+                    "Error generating {graph_type} graph: {error}"
+                ).format(graph_type=graph_type, error=str(e))
+                raise GraphGenerationError(error_msg) from e

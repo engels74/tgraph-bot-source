@@ -2,6 +2,7 @@
 
 from pathlib import Path
 from ruamel.yaml import YAML, YAMLError
+from threading import Lock
 from typing import Dict, List, Optional
 import logging
 
@@ -25,6 +26,7 @@ class TranslationManager:
         self._translations_dir: Optional[Path] = None
         self._yaml = YAML(typ='safe')
         self._cached_translations: Dict[str, Dict[str, str]] = {}
+        self._cache_lock = Lock()
         
     @property
     def translations_dir(self) -> Path:
@@ -135,37 +137,46 @@ class TranslationManager:
             TranslationError: If translations cannot be loaded or validated
         """
         try:
-            # Return cached translations if available
-            if language in self._cached_translations:
+            # First check if translations are cached
+            with self._cache_lock:
+                if language in self._cached_translations:
+                    return self._cached_translations[language]
+            
+            # Load and validate translations outside the lock
+            translations = self._load_and_validate_translations(language)
+            
+            # Cache the result with the lock
+            with self._cache_lock:
+                # Double-check in case another thread loaded these translations
+                if language not in self._cached_translations:
+                    self._cached_translations[language] = translations
                 return self._cached_translations[language]
-
-            # Load reference translations first
-            reference_file = self.translations_dir / f"{self.default_language}.yml"
-            reference_translations = self._load_yaml_file(reference_file)
-
-            # If loading default language, no validation needed
-            if language == self.default_language:
-                self._cached_translations[language] = reference_translations
-                return reference_translations
-
-            # Load and validate requested language
-            language_file = self.translations_dir / f"{language}.yml"
-            translations = self._load_yaml_file(language_file)
             
-            # Validate translations
-            self._validate_translations(translations, language, reference_translations)
-            
-            # Cache and return the translations
-            self._cached_translations[language] = translations
-            logging.info(f"Loaded translations for language: {language}")
-            return translations
-            
-        except (TranslationFileError, TranslationKeyError) as e:
+        except Exception as e:
+            logging.error(f"Error loading translations for {language}: {str(e)}")
             raise TranslationError(f"Failed to load translations for {language}") from e
+
+    def _load_and_validate_translations(self, language: str) -> Dict[str, str]:
+        """Helper method to load and validate translations."""
+        # Load reference translations first
+        reference_file = self.translations_dir / f"{self.default_language}.yml"
+        reference_translations = self._load_yaml_file(reference_file)
+
+        # If loading default language, no validation needed
+        if language == self.default_language:
+            return reference_translations
+
+        # Load and validate requested language
+        language_file = self.translations_dir / f"{language}.yml"
+        translations = self._load_yaml_file(language_file)
+        self._validate_translations(translations, language, reference_translations)
+        
+        return translations
 
     def clear_cache(self) -> None:
         """Clear the translations cache."""
-        self._cached_translations.clear()
+        with self._cache_lock:
+            self._cached_translations.clear()
 
     def update_bot_translations(self, bot, language: str) -> None:
         """Update bot's translations and command descriptions.

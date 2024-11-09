@@ -29,6 +29,10 @@ class DataFetchError(UserStatsError):
     """Raised when there are issues fetching user data."""
     pass
 
+class InvalidUserIdError(UserStatsError):
+    """Raised when user ID is invalid."""
+    pass
+
 class MyStatsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
     """Cog for handling user-specific Plex statistics."""
     
@@ -81,6 +85,8 @@ class MyStatsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
             If graph generation fails
         DataFetchError
             If data fetching fails
+        InvalidUserIdError
+            If user ID is invalid
         """
         try:
             graph_files = await self.bot.user_graph_manager.generate_user_graphs(user_id)
@@ -96,9 +102,12 @@ class MyStatsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
         except IOError as e:
             logging.error(f"Failed to save generated graphs: {e}")
             raise GraphGenerationError("Failed to save generated graphs") from e
-        except Exception as e:
-            logging.error(f"Unexpected error during graph generation: {e}")
-            raise GraphGenerationError("Failed to generate user graphs") from e
+        except InvalidUserIdError as e:
+            logging.error(f"Invalid user ID format: {e}")
+            raise GraphGenerationError("Invalid user ID format") from e
+        except DataFetchError as e:
+            logging.error(f"Failed to fetch user data: {e}")
+            raise DataFetchError("Failed to fetch user statistics") from e
 
     async def send_graphs_via_dm(
         self,
@@ -118,13 +127,14 @@ class MyStatsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
         ------
         DMError
             If sending DMs fails
+        IOError
+            If there are file system errors
         """
         try:
             dm_channel = await user.create_dm()
             
             for graph_file in graph_files:
                 try:
-                    # Extract just the filename without the path
                     filename = os.path.basename(graph_file)
                     
                     if not os.path.exists(graph_file):
@@ -138,17 +148,18 @@ class MyStatsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
                         )
                     )
                 except discord.HTTPException as e:
-                    logging.error(
-                        f"Failed to send graph {filename}: {str(e)}"
-                    )
+                    logging.error(f"Failed to send graph {filename}: {str(e)}")
                     raise DMError(f"Failed to send graph: {filename}") from e
+                except IOError as e:
+                    logging.error(f"Failed to read graph file {filename}: {str(e)}")
+                    raise IOError(f"Failed to read graph file: {filename}") from e
                     
         except discord.Forbidden as e:
             logging.warning(f"Cannot send DM to user: {str(e)}")
             raise DMError("DMs are disabled") from e
-        except Exception as e:
-            logging.error(f"Unexpected error while sending DMs: {str(e)}")
-            raise DMError("Failed to send graphs via DM") from e
+        except discord.HTTPException as e:
+            logging.error(f"Discord API error while sending DMs: {str(e)}")
+            raise DMError("Failed to establish DM channel") from e
 
     @app_commands.command(
         name="my_stats",
@@ -184,7 +195,16 @@ class MyStatsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
                 return
 
             # Get user ID from email
-            user_id = self.bot.data_fetcher.get_user_id_from_email(email)
+            try:
+                user_id = self.bot.data_fetcher.get_user_id_from_email(email)
+            except DataFetchError:
+                logging.error("Failed to fetch user ID from email")
+                await interaction.followup.send(
+                    self.translations["my_stats_no_user_found"],
+                    ephemeral=True
+                )
+                return
+
             if not user_id:
                 await interaction.followup.send(
                     self.translations["my_stats_no_user_found"],
@@ -201,23 +221,34 @@ class MyStatsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
             # Generate graphs
             try:
                 graph_files = await self.generate_user_graphs(user_id)
-            except GraphGenerationError as e:
+            except (GraphGenerationError, DataFetchError) as e:
                 await interaction.followup.send(
                     self.translations["my_stats_generate_failed"],
                     ephemeral=True
                 )
-                logging.error(f"Graph generation failed: {str(e)}")
+                logging.error(
+                    self.translations["log_graph_generation_failed"].format(
+                        error_type=e.__class__.__name__
+                    )
+                )
+                return
+            except InvalidUserIdError:
+                await interaction.followup.send(
+                    self.translations["my_stats_no_user_found"],
+                    ephemeral=True
+                )
                 return
 
             # Send graphs via DM
             try:
                 await self.send_graphs_via_dm(interaction.user, graph_files)
             except DMError as e:
-                await interaction.followup.send(
-                    self.translations["error_dm_disabled"] if "disabled" in str(e)
-                    else self.translations["error_dm_send"],
-                    ephemeral=True
+                error_msg = (
+                    self.translations["error_dm_disabled"] 
+                    if "disabled" in str(e)
+                    else self.translations["error_dm_send"]
                 )
+                await interaction.followup.send(error_msg, ephemeral=True)
                 return
 
             # Update cooldowns and log success
@@ -233,13 +264,26 @@ class MyStatsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
                 ephemeral=True
             )
 
-        except Exception as e:
-            logging.error(
-                self.translations["log_command_error"].format(
-                    command="my_stats",
-                    error=str(e)
-                )
+        except discord.Forbidden:
+            logging.error("Discord permission error in my_stats command")
+            await interaction.followup.send(
+                self.translations["error_dm_disabled"],
+                ephemeral=True
             )
+        except discord.HTTPException:
+            logging.error("Discord API error in my_stats command")
+            await interaction.followup.send(
+                self.translations["my_stats_error"],
+                ephemeral=True
+            )
+        except IOError:
+            logging.error("File system error in my_stats command")
+            await interaction.followup.send(
+                self.translations["my_stats_error"],
+                ephemeral=True
+            )
+        except ValueError:
+            logging.error("Validation error in my_stats command")
             await interaction.followup.send(
                 self.translations["my_stats_error"],
                 ephemeral=True

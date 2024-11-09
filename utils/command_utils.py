@@ -20,10 +20,13 @@ class ErrorHandlingMixin:
         )
 
     async def send_error_message(self, interaction: discord.Interaction, error_message: str, ephemeral: bool = True) -> None:
+        """Send an error message with proper interaction response handling."""
         try:
+            # Check if we can use response
             if not interaction.response.is_done():
                 await interaction.response.send_message(error_message, ephemeral=ephemeral)
             else:
+                # Use followup if response is already sent
                 await interaction.followup.send(error_message, ephemeral=ephemeral)
         except discord.DiscordException as e:
             logging.error(f"Failed to send error message: {str(e)}")
@@ -63,8 +66,8 @@ class CommandMixin(ErrorHandlingMixin):
             self.global_cooldown = None
 
     def get_cooldown_status(self, user_id: str, user_minutes: int, global_seconds: int) -> Tuple[float, float]:
-        """Get remaining cooldown times for both user and global cooldowns.
-
+        """Get remaining cooldown times.
+        
         Returns:
             Tuple of (user_remaining, global_remaining) in seconds
         """
@@ -73,10 +76,8 @@ class CommandMixin(ErrorHandlingMixin):
         user_remaining = 0
         global_remaining = 0
 
-        if user_minutes > 0:
-            user_cooldown = self.user_cooldowns.get(user_id)
-            if user_cooldown:
-                user_remaining = self.get_remaining_time(user_cooldown)
+        if user_minutes > 0 and user_id in self.user_cooldowns:
+            user_remaining = self.get_remaining_time(self.user_cooldowns[user_id])
 
         if global_seconds > 0 and self.global_cooldown:
             global_remaining = self.get_remaining_time(self.global_cooldown)
@@ -117,7 +118,9 @@ class CommandMixin(ErrorHandlingMixin):
                 )
 
             cooldown_message = f"{self.translations['rate_limit_message']} ({', '.join(message_parts)})"
-            await interaction.response.send_message(cooldown_message, ephemeral=True)
+            
+            # Use send_error_message to handle interaction responses consistently
+            await self.send_error_message(interaction, cooldown_message, ephemeral=True)
             return False
 
         return True

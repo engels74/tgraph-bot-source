@@ -27,14 +27,24 @@ class DailyPlayCountGraph(BaseGraph):
         super().__init__(config, translations, img_folder)
         self.graph_type = "daily_play_count"
 
-    def _process_filename(self, user_id: Optional[str]) -> str:
+    def _process_filename(self, user_id: Optional[str]) -> Optional[str]:
+        """
+        Process user ID for safe filename creation.
+        
+        Args:
+            user_id: The user ID to process
+            
+        Returns:
+            Optional[str]: A sanitized version of the user ID safe for filenames
+        """
         if user_id is None:
-            return ""
+            return None
+            
         try:
             return sanitize_user_id(user_id)
         except InvalidUserIdError as e:
             logging.warning(f"Invalid user ID for filename: {e}")
-            return ""
+            return None
 
     async def fetch_data(self, data_fetcher, user_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """Fetch daily play count data."""
@@ -121,7 +131,7 @@ class DailyPlayCountGraph(BaseGraph):
                 })
 
             if not processed_data["series"]:
-                logging.error("No valid series data found")
+                logging.error("No valid series data found after processing")
                 return None
 
             return processed_data
@@ -184,13 +194,15 @@ class DailyPlayCountGraph(BaseGraph):
 
             self.plot(processed_data)
 
-            # Save the graph
+            # Save the graph with sanitized user ID
             today = datetime.today().strftime("%Y-%m-%d")
             base_dir = os.path.join(self.img_folder, today)
-            if user_id:
-                base_dir = os.path.join(base_dir, f"user_{user_id}")
+            
+            sanitized_user_id = self._process_filename(user_id)
+            if sanitized_user_id:
+                base_dir = os.path.join(base_dir, f"user_{sanitized_user_id}")
                 
-            file_name = f"daily_play_count{'_' + user_id if user_id else ''}.png"
+            file_name = f"daily_play_count{'_' + sanitized_user_id if sanitized_user_id else ''}.png"
             file_path = os.path.join(base_dir, file_name)
             
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
