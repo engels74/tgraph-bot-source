@@ -290,5 +290,46 @@ async def check_permissions_all_guilds(
     show_unknown : bool
         Whether to show unknown command entries in the output
     """
+    success_count = 0
+    failure_count = 0
+    
     for guild in bot.guilds:
-        await check_command_permissions(bot, guild, translations, show_unknown)
+        try:
+            await check_command_permissions(bot, guild, translations, show_unknown)
+            success_count += 1
+        except discord.HTTPException as e:
+            failure_count += 1
+            logging.error(
+                translations.get("error_checking_guild_permissions",
+                    "Failed to check permissions for guild {guild_name} (ID: {guild_id}): {error}"
+                ).format(
+                    guild_name=guild.name,
+                    guild_id=guild.id,
+                    error=str(e)
+                )
+            )
+        except Exception as e:
+            failure_count += 1
+            logging.error(
+                f"Unexpected error checking permissions for guild {guild.name} (ID: {guild.id}): {e}"
+            )
+            continue
+
+    # Log summary
+    if failure_count > 0:
+        logging.warning(
+            translations.get("permissions_check_summary",
+                "Completed permissions check with {failure_count} failures. "
+                "Successfully checked {success_count}/{total_count} guilds"
+            ).format(
+                failure_count=failure_count,
+                success_count=success_count,
+                total_count=len(bot.guilds)
+            )
+        )
+    else:
+        logging.info(
+            translations.get("permissions_check_complete",
+                "Successfully checked permissions for all {count} guilds"
+            ).format(count=success_count)
+        )

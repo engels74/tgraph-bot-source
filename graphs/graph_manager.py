@@ -4,7 +4,7 @@ from .graph_modules.data_fetcher import DataFetcher, DataFetcherError
 from .graph_modules.graph_factory import GraphFactory, GraphFactoryError
 from .graph_modules.utils import ensure_folder_exists
 from datetime import datetime, timedelta
-from typing import Dict, Any, List, Optional, Tuple, TYPE_CHECKING
+from typing import Dict, Any, List, Optional, Tuple, TYPE_CHECKING, Set
 import aiofiles
 import asyncio
 import discord
@@ -28,6 +28,16 @@ class DiscordError(GraphManagerError):
     pass
 
 class GraphManager:
+    # Define graph types as a class-level constant to filter enabled settings
+    GRAPH_TYPES: Set[str] = {
+        'ENABLE_DAILY_PLAY_COUNT',
+        'ENABLE_PLAY_COUNT_BY_DAYOFWEEK',
+        'ENABLE_PLAY_COUNT_BY_HOUROFDAY',
+        'ENABLE_TOP_10_PLATFORMS',
+        'ENABLE_TOP_10_USERS',
+        'ENABLE_PLAY_COUNT_BY_MONTH'
+    }
+
     def __init__(self, config: Dict[str, Any], translations: Dict[str, str], img_folder: str):
         self.config = config
         self.translations = translations
@@ -49,8 +59,6 @@ class GraphManager:
         today = datetime.today().strftime("%Y-%m-%d")
         dated_folder = os.path.join(self.img_folder, today)
         ensure_folder_exists(dated_folder)
-
-        graph_files = []
         
         try:
             logging.debug("Starting generate_and_save_graphs")
@@ -60,28 +68,56 @@ class GraphManager:
                 
             logging.debug("Fetched graph_data keys: %s", list(graph_data.keys()))
 
-            for graph_type, graph_instance in self.graph_factory.create_all_graphs().items():
-                try:
-                    if graph_type not in graph_data:
-                        logging.warning(f"No data available for {graph_type}")
-                        continue
+            # Create semaphore to limit concurrent operations
+            sem = asyncio.Semaphore(3)  # Limit to 3 concurrent generations
+
+            async def generate_graph(graph_type: str, graph_instance: Any) -> Optional[Tuple[str, str]]:
+                """Generate a single graph with proper resource management."""
+                async with sem:  # Control concurrent access
+                    try:
+                        if graph_type not in graph_data:
+                            logging.warning(f"No data available for {graph_type}")
+                            return None
+                            
+                        logging.debug("Generating %s", graph_type)
+                        graph_instance.data = graph_data[graph_type]
                         
-                    logging.debug("Generating %s", graph_type)
-                    graph_instance.data = graph_data[graph_type]
-                    file_path = await graph_instance.generate(data_fetcher)
+                        file_path = await graph_instance.generate(data_fetcher)
+                        
+                        if file_path:
+                            logging.debug("Generated %s: %s", graph_type, file_path)
+                            return (graph_type, file_path)
+                            
+                    except (GraphFactoryError, IOError) as e:
+                        logging.error("Error generating %s: %s", graph_type, str(e))
+                        raise GraphGenerationError(f"Failed to generate {graph_type}: {str(e)}") from e
+                    finally:
+                        # Ensure matplotlib resources are cleaned up
+                        if hasattr(graph_instance, 'cleanup_figure'):
+                            graph_instance.cleanup_figure()
+                    return None
+
+            # Add timeout for overall operation
+            try:
+                async with asyncio.timeout(30):  # 30 second timeout
+                    tasks = [
+                        generate_graph(graph_type, graph_instance)
+                        for graph_type, graph_instance in self.graph_factory.create_all_graphs().items()
+                    ]
+                    results = await asyncio.gather(*tasks)
                     
-                    if file_path:
-                        graph_files.append((graph_type, file_path))
-                        logging.debug("Generated %s: %s", graph_type, file_path)
-                except (GraphFactoryError, IOError) as e:
-                    logging.error("Error generating %s: %s", graph_type, str(e))
-                    raise GraphGenerationError(f"Failed to generate {graph_type}: {str(e)}") from e
-
-            if not graph_files:
-                raise GraphGenerationError("No graphs were generated successfully")
-
-            logging.debug("Final graph_files count: %d", len(graph_files))
-            return graph_files
+                    # Filter out None results and verify we have valid graphs
+                    graph_files = [r for r in results if r is not None]
+                    
+                    if not graph_files:
+                        raise GraphGenerationError("No graphs were generated successfully")
+                        
+                    logging.debug("Final graph_files count: %d", len(graph_files))
+                    return graph_files
+                    
+            except asyncio.TimeoutError as e:
+                logging.error("Graph generation timed out")
+                raise GraphGenerationError("Graph generation timed out") from e
                 
         except DataFetcherError as e:
             logging.error("Failed to fetch graph data: %s", str(e))
@@ -112,10 +148,8 @@ class GraphManager:
                     except discord.HTTPException as e:
                         raise DiscordError(f"Failed to delete message: {str(e)}") from e
         except discord.Forbidden as e:
-            logging.error("Missing permissions to access channel history")
             raise DiscordError("Missing permissions to access channel history") from e
         except discord.HTTPException as e:
-            logging.error("Failed to fetch channel history: %s", str(e))
             raise DiscordError("Failed to fetch channel history") from e
 
     def create_embed(self, graph_type: str, update_tracker: Optional['UpdateTracker'] = None) -> discord.Embed:
@@ -128,7 +162,7 @@ class GraphManager:
         Returns:
             Discord Embed object
         """
-        # Clean the type and ensure proper translation key format
+        # Remove 'ENABLE_' prefix and convert to lowercase for translation key
         clean_type = graph_type.replace('ENABLE_', '').lower()
         days = self.config.get("TIME_RANGE_DAYS", 7)
 
@@ -182,17 +216,33 @@ class GraphManager:
             DiscordError: If posting to Discord fails
         """
         try:
+            # Filter enabled graphs to include only actual graph types (exclude settings like ENABLE_GRAPH_GRID)
             enabled_graphs = {
                 k: v for k, v in self.config.items()
-                if k.startswith("ENABLE_") and v
+                if k in self.GRAPH_TYPES and v
             }
+            logging.debug("Filtered enabled graphs: %s", enabled_graphs.keys())
 
-            graph_types = list(enabled_graphs.keys())
-            graph_pairs = list(zip(graph_types, [f[1] for f in graph_files]))
+            # Create pairs of graph types and file paths, ensuring they match exactly
+            graph_pairs = []
+            
+            # Ensure graph_files and graph_types are properly aligned
+            for graph_file in graph_files:
+                graph_type = f"ENABLE_{graph_file[0].upper()}"
+                if graph_type in enabled_graphs:
+                    graph_pairs.append((graph_type, graph_file[1]))
+            
+            logging.debug("Created graph pairs: %s", 
+                         [(pair[0], os.path.basename(pair[1])) for pair in graph_pairs])
 
             for graph_type, file_path in graph_pairs:
                 try:
                     embed = self.create_embed(graph_type, update_tracker)
+                    
+                    # Log embed creation for debugging
+                    logging.debug("Creating embed for %s with title: %s", 
+                                graph_type, embed.title or "No title")
+                    
                     async with aiofiles.open(file_path, 'rb') as f:
                         content = await f.read()
                         file = discord.File(

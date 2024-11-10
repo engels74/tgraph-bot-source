@@ -67,12 +67,10 @@ class PlayCountByHourOfDayGraph(BaseGraph):
             Optional[Dict[str, Any]]: The fetched data or None if fetching fails
         """
         try:
-            # If we have stored data, use it instead of fetching
             if self.data is not None:
                 logging.debug("Using stored data for play count by hour of day")
                 return self.data
 
-            # Otherwise, fetch new data
             params = {"time_range": self.config["TIME_RANGE_DAYS"]}
             if user_id:
                 params["user_id"] = str(user_id)  # Ensure user_id is string
@@ -81,35 +79,37 @@ class PlayCountByHourOfDayGraph(BaseGraph):
             
             data = await data_fetcher.fetch_tautulli_data_async("get_plays_by_hourofday", params)
             if not data or 'response' not in data or 'data' not in data['response']:
-                error_msg = self.translations["error_fetch_play_count_hourofday"]
-                if user_id:
-                    error_msg = self.translations.get(
-                        'error_fetch_play_count_hourofday_user',
-                        'Failed to fetch play count by hour of day data for user {user_id}: {error}'
-                    ).format(user_id=user_id, error="No data returned")
+                error_msg = self.translations.get(
+                    'error_fetch_play_count_hourofday_user' if user_id else 'error_fetch_play_count_hourofday',
+                    'Failed to fetch play count by hour of day data{}: {}'
+                ).format(f" for user {user_id}" if user_id else "", "No data returned")
                 logging.error(error_msg)
-                return None
+                raise DataValidationError(error_msg)
 
             return data['response']['data']
             
+        except DataValidationError:
+            raise
         except Exception as e:
             error_msg = self.translations.get(
                 'error_fetch_play_count_hourofday_user' if user_id else 'error_fetch_play_count_hourofday',
                 'Failed to fetch play count by hour of day data{}: {}'
             ).format(f" for user {user_id}" if user_id else "", str(e))
             logging.error(error_msg)
-            return None
+            raise PlayCountByHourOfDayError(error_msg) from e
 
     def process_data(self, raw_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Process the raw data into a format suitable for plotting."""
         try:
-            if not isinstance(raw_data, dict) or 'series' not in raw_data:
-                logging.error(self.translations["error_missing_series_play_count_by_hourofday"])
-                return None
+            if 'series' not in raw_data:
+                error_msg = self.translations["error_missing_series_play_count_by_hourofday"]
+                logging.error(error_msg)
+                raise DataValidationError(error_msg)
 
             series = raw_data['series']
             if not series:
-                logging.warning(self.translations["warning_empty_series_play_count_by_hourofday"])
+                error_msg = self.translations["warning_empty_series_play_count_by_hourofday"]
+                logging.warning(error_msg)
                 return None
 
             hours = list(range(24))
@@ -117,9 +117,9 @@ class PlayCountByHourOfDayGraph(BaseGraph):
             # Validate series data
             errors = validate_series_data(series, 24, "hour of day series")
             if errors:
-                for error in errors:
-                    logging.error("%s", error)
-                return None
+                error_msg = "\n".join(errors)
+                logging.error(error_msg)
+                raise DataValidationError(error_msg)
 
             processed_data = {
                 "hours": hours,
@@ -135,14 +135,16 @@ class PlayCountByHourOfDayGraph(BaseGraph):
                 })
 
             if not processed_data["series"]:
-                logging.error("No valid series data found after processing")
-                return None
+                raise DataValidationError("No valid series data found after processing")
 
             return processed_data
 
+        except (DataValidationError, KeyError):
+            raise
         except Exception as e:
-            logging.error(f"Error processing hour of day data: {str(e)}")
-            return None
+            error_msg = f"Error processing hour of day data: {str(e)}"
+            logging.error(error_msg)
+            raise PlayCountByHourOfDayError(error_msg) from e
 
     def plot(self, processed_data: Dict[str, Any]) -> None:
         """Plot the processed data."""
@@ -172,7 +174,6 @@ class PlayCountByHourOfDayGraph(BaseGraph):
             )
 
             self.ax.set_xticks(processed_data["hours"])
-            # Format hours as 00-23 with proper alignment
             self.ax.set_xticklabels([f"{h:02d}" for h in processed_data["hours"]])
             for tick in self.ax.get_xticklabels():
                 tick.set_ha("center")
@@ -182,8 +183,9 @@ class PlayCountByHourOfDayGraph(BaseGraph):
             self.apply_tight_layout()
 
         except Exception as e:
-            logging.error(f"Error plotting hour of day graph: {str(e)}")
-            raise GraphGenerationError(str(e))
+            error_msg = f"Error plotting hour of day graph: {str(e)}"
+            logging.error(error_msg)
+            raise GraphGenerationError(error_msg) from e
 
     async def generate(self, data_fetcher, user_id: Optional[str] = None) -> Optional[str]:
         """
@@ -209,7 +211,6 @@ class PlayCountByHourOfDayGraph(BaseGraph):
 
             self.plot(processed_data)
 
-            # Save the graph with sanitized user ID
             today = datetime.today().strftime("%Y-%m-%d")
             base_dir = os.path.join(self.img_folder, today)
             
@@ -226,6 +227,9 @@ class PlayCountByHourOfDayGraph(BaseGraph):
             logging.debug("Saved play count by hour of day graph: %s", file_path)
             return file_path
             
+        except (DataValidationError, PlayCountByHourOfDayError):
+            raise
         except Exception as e:
-            logging.error(f"Error generating hour of day graph: {str(e)}")
-            return None
+            error_msg = f"Error generating hour of day graph: {str(e)}"
+            logging.error(error_msg)
+            raise GraphGenerationError(error_msg) from e

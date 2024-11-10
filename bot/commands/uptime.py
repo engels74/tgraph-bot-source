@@ -55,17 +55,19 @@ class UptimeCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
         hours, remainder = divmod(delta.seconds, 3600)
         minutes, seconds = divmod(remainder, 60)
 
-        parts = []
-        if days > 0:
-            parts.append(f"{days} day{'s' if days != 1 else ''}")
-        if hours > 0:
-            parts.append(f"{hours} hour{'s' if hours != 1 else ''}")
-        if minutes > 0:
-            parts.append(f"{minutes} minute{'s' if minutes != 1 else ''}")
-        if seconds > 0 or not parts:
-            parts.append(f"{seconds} second{'s' if seconds != 1 else ''}")
+        units = {
+            'day': days,
+            'hour': hours,
+            'minute': minutes,
+            'second': seconds
+        }
+        parts = [
+            f"{value} {unit}{'s' if value != 1 else ''}"
+            for unit, value in units.items()
+            if value > 0
+        ]
 
-        return ", ".join(parts)
+        return ", ".join(parts) if parts else "0 seconds"
 
     @app_commands.command(
         name="uptime",

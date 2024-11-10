@@ -8,6 +8,7 @@ Handles YAML file operations with support for comments and formatting preservati
 from .constants import CONFIG_SECTIONS, get_category_keys, CONFIG_CATEGORIES
 from .defaults import create_default_config
 from .validator import validate_config
+from .sanitizer import sanitize_config_value, ConfigurationError
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.error import YAMLError
@@ -188,6 +189,7 @@ def save_yaml_config(config: CommentedMap, config_path: str) -> None:
 def update_config_value(config: CommentedMap, key: str, value: Any) -> None:
     """
     Update a single configuration value while preserving structure and comments.
+    Uses sanitizer for secure value processing.
     
     Args:
         config: The configuration to update
@@ -196,17 +198,25 @@ def update_config_value(config: CommentedMap, key: str, value: Any) -> None:
         
     Raises:
         KeyError: If key doesn't exist in config
+        ConfigurationError: If value fails sanitization
     """
-    if key in config:
-        if isinstance(value, bool):
-            config[key] = value
-        elif isinstance(value, str) and (key.endswith("_COLOR") or key == "FIXED_UPDATE_TIME"):
-            config[key] = DoubleQuotedScalarString(value.strip('"\''))
-        else:
-            config[key] = value
-    else:
+    if key not in config:
         logging.warning(f"Attempted to update non-existent key: {key}")
         raise KeyError(f"Configuration key not found: {key}")
+
+    try:
+        # Use sanitizer to process the value securely
+        sanitized_value = sanitize_config_value(key, value)
+        
+        # Special handling for string values that need to be quoted
+        if isinstance(sanitized_value, str) and (key.endswith("_COLOR") or key == "FIXED_UPDATE_TIME"):
+            config[key] = DoubleQuotedScalarString(sanitized_value)
+        else:
+            config[key] = sanitized_value
+            
+    except ConfigurationError as e:
+        logging.error(f"Failed to sanitize value for {key}: {str(e)}")
+        raise
 
 def get_config_path(config_dir: Optional[str] = None) -> str:
     """

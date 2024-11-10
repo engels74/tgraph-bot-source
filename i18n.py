@@ -137,18 +137,9 @@ class TranslationManager:
             TranslationError: If translations cannot be loaded or validated
         """
         try:
-            # First check if translations are cached
             with self._cache_lock:
-                if language in self._cached_translations:
-                    return self._cached_translations[language]
-            
-            # Load and validate translations outside the lock
-            translations = self._load_and_validate_translations(language)
-            
-            # Cache the result with the lock
-            with self._cache_lock:
-                # Double-check in case another thread loaded these translations
                 if language not in self._cached_translations:
+                    translations = self._load_and_validate_translations(language)
                     self._cached_translations[language] = translations
                 return self._cached_translations[language]
             

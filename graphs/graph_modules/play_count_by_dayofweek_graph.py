@@ -1,9 +1,10 @@
 ﻿# graphs/graph_modules/play_count_by_dayofweek_graph.py
 
 from .base_graph import BaseGraph
-from .utils import get_color, validate_series_data
+from .utils import get_color, validate_series_data  
 from config.modules.sanitizer import sanitize_user_id, InvalidUserIdError
 from datetime import datetime
+from matplotlib import pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from typing import Dict, Any, Optional, List
 import logging
@@ -31,6 +32,16 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
         self.graph_type = "play_count_by_dayofweek"
 
     def _validate_series_data(self, series: List[Dict[str, Any]], days_count: int) -> List[str]:
+        """
+        Validate series data integrity.
+        
+        Args:
+            series: List of series data dictionaries
+            days_count: Expected number of data points per series
+            
+        Returns:
+            List of validation error messages, empty if validation passes
+        """
         return validate_series_data(series, days_count, "day of week series")
 
     def _process_filename(self, user_id: Optional[str]) -> Optional[str]:
@@ -41,7 +52,7 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
             user_id: The user ID to process
             
         Returns:
-            A sanitized version of the user ID safe for filenames, or None if input is None
+            Optional[str]: A sanitized version of the user ID safe for filenames
         """
         if user_id is None:
             return None
@@ -51,6 +62,17 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
         except InvalidUserIdError as e:
             logging.warning(f"Invalid user ID for filename: {e}")
             return None
+
+    def cleanup_figure(self) -> None:
+        """Clean up matplotlib figure resources."""
+        try:
+            if self.figure is not None:
+                self.figure.clear()
+                plt.close(self.figure)
+                self.figure = None
+                self.ax = None
+        except Exception as e:
+            logging.error(f"Error during figure cleanup: {e}")
 
     async def fetch_data(self, data_fetcher, user_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """
@@ -62,6 +84,9 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
             
         Returns:
             The fetched data or None if fetching fails
+            
+        Raises:
+            PlayCountByDayOfWeekError: If data fetching fails
         """
         try:
             if self.data is not None:
@@ -77,33 +102,20 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
             data = await data_fetcher.fetch_tautulli_data_async("get_plays_by_dayofweek", params)
             if not data or 'response' not in data or 'data' not in data['response']:
                 error_msg = (
-                    self.translations.get(
-                        'error_fetch_play_count_dayofweek_user',
-                        'Failed to fetch play count by day of week data for user {user_id}: {error}'
-                    ) if user_id else
-                    self.translations["error_fetch_play_count_dayofweek"]
+                    self.translations["error_fetch_play_count_dayofweek"] if not user_id else
+                    self.translations["error_fetch_play_count_dayofweek_user"].format(user_id=user_id)
                 )
-                if user_id:
-                    logging.error(error_msg.format(user_id=user_id, error="No data returned"))
-                else:
-                    logging.error(error_msg)
-                raise DataValidationError(error_msg) from None
+                logging.error(error_msg)
+                raise DataValidationError(error_msg)
 
             return data['response']['data']
 
+        except DataValidationError:
+            raise
         except Exception as e:
-            error_msg = (
-                self.translations.get(
-                    'error_fetch_play_count_dayofweek_user',
-                    'Failed to fetch play count by day of week data for user {user_id}: {error}'
-                ) if user_id else
-                self.translations["error_fetch_play_count_dayofweek"]
-            )
-            if user_id:
-                logging.error(error_msg.format(user_id=user_id, error=str(e)))
-            else:
-                logging.error(f"{error_msg}: {str(e)}")
-            raise PlayCountByDayOfWeekError("Failed to fetch day of week data") from e
+            error_msg = f"Failed to fetch day of week data: {str(e)}"
+            logging.error(error_msg)
+            raise PlayCountByDayOfWeekError(error_msg) from e
 
     def process_data(self, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         try:
@@ -195,7 +207,8 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
             self.apply_tight_layout()
             
         except Exception as e:
-            raise GraphGenerationError(f"Error plotting graph: {str(e)}")
+            self.cleanup_figure()  # Ensure figure is cleaned up on error
+            raise GraphGenerationError(f"Error plotting graph: {str(e)}") from e
 
     async def generate(self, data_fetcher, user_id: Optional[str] = None) -> Optional[str]:
         """
@@ -211,31 +224,45 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
         try:
             logging.debug("Generate called with stored data: %s", "present" if self.data else "none")
 
-            data = await self.fetch_data(data_fetcher, user_id)
-            if data is None:
-                return None
+            try:
+                data = await self.fetch_data(data_fetcher, user_id)
+                if data is None:
+                    return None
 
-            processed_data = self.process_data(data)
-            if processed_data is None:
-                return None
+                processed_data = self.process_data(data)
+                if processed_data is None:
+                    return None
 
-            self.plot(processed_data)
+                self.plot(processed_data)
 
-            # Save the graph
-            today = datetime.today().strftime("%Y-%m-%d")
-            base_dir = os.path.join(self.img_folder, today)
-            if user_id:
-                base_dir = os.path.join(base_dir, f"user_{user_id}")
+                # File handling with secure filename processing
+                today = datetime.today().strftime("%Y-%m-%d")
+                base_dir = os.path.join(self.img_folder, today)
                 
-            file_name = f"play_count_by_dayofweek{'_' + user_id if user_id else ''}.png"
-            file_path = os.path.join(base_dir, file_name)
-            
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
-            self.save(file_path)
-            
-            logging.debug("Saved play count by day of week graph: %s", file_path)
-            return file_path
-            
+                safe_user_id = self._process_filename(user_id)
+                if safe_user_id:
+                    base_dir = os.path.join(base_dir, f"user_{safe_user_id}")
+                    
+                file_name = f"play_count_by_dayofweek{'_' + safe_user_id if safe_user_id else ''}.png"
+                file_path = os.path.join(base_dir, file_name)
+                
+                try:
+                    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+                except OSError as e:
+                    raise FileSystemError(f"Failed to create directory: {str(e)}") from e
+                
+                self.save(file_path)
+                
+                logging.debug("Saved play count by day of week graph: %s", file_path)
+                return file_path
+
+            except Exception:
+                self.cleanup_figure()  # Cleanup on any error
+                raise
+
+        except (PlayCountByDayOfWeekError, FileSystemError):
+            raise
         except Exception as e:
-            logging.error(f"Error generating day of week graph: {str(e)}")
+            error_msg = f"Error generating day of week graph: {str(e)}"
+            logging.error(error_msg)
             return None

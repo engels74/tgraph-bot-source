@@ -2,9 +2,11 @@
 
 """
 My Stats command for TGraph Bot.
-Generates and sends personalized Plex statistics to users.
+Generates and sends personalized Plex statistics to users with improved 
+file cleanup and validation.
 """
 
+import re
 from discord import app_commands
 from discord.ext import commands
 from typing import Optional, List
@@ -33,6 +35,10 @@ class InvalidUserIdError(UserStatsError):
     """Raised when user ID is invalid."""
     pass
 
+class InvalidEmailError(UserStatsError):
+    """Raised when email format is invalid."""
+    pass
+
 class MyStatsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
     """Cog for handling user-specific Plex statistics."""
     
@@ -48,23 +54,48 @@ class MyStatsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
         translations : dict
             The translations dictionary
         """
-        # Initialize Cog first
+        # Initialize parent classes explicitly
         super().__init__()
+        CommandMixin.__init__(self)
+        ErrorHandlerMixin.__init__(self)
         
-        # Set instance attributes
         self.bot = bot
         self.config = config
         self.translations = translations
-        
-        # Initialize mixins once
-        CommandMixin.__init__(self)
-        ErrorHandlerMixin.__init__(self)
+        self.email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
 
-    async def cog_unload(self) -> None:
-        """Called when the cog is unloaded."""
-        logging.info(self.translations["log_unloading_command"].format(
-            command_name="my_stats"
-        ))
+    def validate_email(self, email: str) -> bool:
+        """
+        Validate email format using regex pattern.
+        
+        Parameters
+        ----------
+        email : str
+            The email to validate
+            
+        Returns
+        -------
+        bool
+            True if email is valid, False otherwise
+        """
+        return bool(re.match(self.email_pattern, email))
+
+    async def cleanup_graph_files(self, graph_files: List[str]) -> None:
+        """
+        Clean up temporary graph files.
+        
+        Parameters
+        ----------
+        graph_files : List[str]
+            List of graph file paths to clean up
+        """
+        for file_path in graph_files:
+            try:
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                    logging.debug(f"Cleaned up temporary file: {file_path}")
+            except OSError as e:
+                logging.warning(f"Failed to clean up {file_path}: {str(e)}")
 
     async def generate_user_graphs(self, user_id: str) -> Optional[List[str]]:
         """Generate graphs for a specific user with proper error handling.
@@ -92,29 +123,25 @@ class MyStatsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
             graph_files = await self.bot.user_graph_manager.generate_user_graphs(user_id)
             
             if not graph_files:
-                raise GraphGenerationError("No graphs were generated") from None
+                raise GraphGenerationError("No graphs were generated")
                 
             return graph_files
             
-        except ValueError as e:
-            logging.error(f"Invalid user ID or parameters: {e}")
-            raise GraphGenerationError("Invalid parameters for graph generation") from e
-        except IOError as e:
-            logging.error(f"Failed to save generated graphs: {e}")
-            raise GraphGenerationError("Failed to save generated graphs") from e
-        except InvalidUserIdError as e:
-            logging.error(f"Invalid user ID format: {e}")
-            raise GraphGenerationError("Invalid user ID format") from e
-        except DataFetchError as e:
-            logging.error(f"Failed to fetch user data: {e}")
-            raise DataFetchError("Failed to fetch user statistics") from e
+        except Exception as e:
+            logging.error(f"Failed to generate graphs: {str(e)}")
+            if isinstance(e, (ValueError, InvalidUserIdError)):
+                raise InvalidUserIdError("Invalid user ID format") from e
+            elif isinstance(e, DataFetchError):
+                raise DataFetchError("Failed to fetch user statistics") from e
+            else:
+                raise GraphGenerationError("Failed to generate graphs") from e
 
     async def send_graphs_via_dm(
         self,
         user: discord.User,
         graph_files: List[str]
     ) -> None:
-        """Send graphs to user via DM with proper error handling.
+        """Send graphs to user via DM with proper error handling and cleanup.
         
         Parameters
         ----------
@@ -127,8 +154,6 @@ class MyStatsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
         ------
         DMError
             If sending DMs fails
-        IOError
-            If there are file system errors
         """
         try:
             dm_channel = await user.create_dm()
@@ -147,19 +172,23 @@ class MyStatsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
                             file=filename
                         )
                     )
+
                 except discord.HTTPException as e:
                     logging.error(f"Failed to send graph {filename}: {str(e)}")
                     raise DMError(f"Failed to send graph: {filename}") from e
                 except IOError as e:
                     logging.error(f"Failed to read graph file {filename}: {str(e)}")
                     raise IOError(f"Failed to read graph file: {filename}") from e
-                    
+
         except discord.Forbidden as e:
             logging.warning(f"Cannot send DM to user: {str(e)}")
             raise DMError("DMs are disabled") from e
         except discord.HTTPException as e:
             logging.error(f"Discord API error while sending DMs: {str(e)}")
             raise DMError("Failed to establish DM channel") from e
+        finally:
+            # Always attempt to clean up files, even if sending failed
+            await self.cleanup_graph_files(graph_files)
 
     @app_commands.command(
         name="my_stats",
@@ -186,8 +215,8 @@ class MyStatsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
         await interaction.response.defer(ephemeral=True)
 
         try:
-            # Validate email input
-            if not email or '@' not in email:
+            # Validate email format
+            if not self.validate_email(email):
                 await interaction.followup.send(
                     "Please provide a valid email address.",
                     ephemeral=True
@@ -239,7 +268,7 @@ class MyStatsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
                 )
                 return
 
-            # Send graphs via DM
+            # Send graphs via DM and handle cleanup
             try:
                 await self.send_graphs_via_dm(interaction.user, graph_files)
             except DMError as e:
@@ -264,30 +293,26 @@ class MyStatsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
                 ephemeral=True
             )
 
-        except discord.Forbidden:
-            logging.error("Discord permission error in my_stats command")
-            await interaction.followup.send(
-                self.translations["error_dm_disabled"],
-                ephemeral=True
-            )
-        except discord.HTTPException:
-            logging.error("Discord API error in my_stats command")
-            await interaction.followup.send(
-                self.translations["my_stats_error"],
-                ephemeral=True
-            )
-        except IOError:
-            logging.error("File system error in my_stats command")
-            await interaction.followup.send(
-                self.translations["my_stats_error"],
-                ephemeral=True
-            )
-        except ValueError:
-            logging.error("Validation error in my_stats command")
-            await interaction.followup.send(
-                self.translations["my_stats_error"],
-                ephemeral=True
-            )
+        except Exception as e:
+            # Specific error handling with proper messages
+            if isinstance(e, discord.Forbidden):
+                logging.error("Discord permission error in my_stats command")
+                await interaction.followup.send(
+                    self.translations["error_dm_disabled"],
+                    ephemeral=True
+                )
+            elif isinstance(e, discord.HTTPException):
+                logging.error("Discord API error in my_stats command")
+                await interaction.followup.send(
+                    self.translations["my_stats_error"],
+                    ephemeral=True
+                )
+            else:
+                logging.error(f"Unexpected error in my_stats command: {str(e)}")
+                await interaction.followup.send(
+                    self.translations["my_stats_error"],
+                    ephemeral=True
+                )
 
 async def setup(bot: commands.Bot) -> None:
     """Setup function for the my_stats cog.

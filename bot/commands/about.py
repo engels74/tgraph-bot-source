@@ -10,7 +10,6 @@ from discord import app_commands, Embed, Interaction, Forbidden, HTTPException
 from discord.ext import commands
 from typing import Any, Dict
 from utils.command_utils import CommandMixin, ErrorHandlerMixin
-import logging
 
 class AboutCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
     """
@@ -95,10 +94,10 @@ class AboutCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
         try:
             await interaction.response.send_message(embed=embed, ephemeral=True)
         except Forbidden as e:
-            logging.error(f"Permission error in about command: {e}")
+            self.bot.logger.error(f"Permission error in about command: {e}")
             raise
         except HTTPException as e:
-            logging.error(f"HTTP error in about command: {e}")
+            self.bot.logger.error(f"HTTP error in about command: {e}")
             raise
 
     @app_commands.command(
@@ -123,7 +122,7 @@ class AboutCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
 
     async def cog_unload(self) -> None:
         """Called when the cog is being unloaded."""
-        logging.info(self.translations["log_unloading_command"].format(
+        self.bot.logger.info(self.translations["log_unloading_command"].format(
             command_name="about"
         ))
 
