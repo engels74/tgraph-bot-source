@@ -1,48 +1,129 @@
 ﻿# graphs/graph_modules/top_10_platforms_graph.py
 
 """
-Improved version of top_10_platforms_graph.py with better user ID sanitization and security.
+Improved top 10 platforms graph generator with standardized error handling and resource management.
+Handles generation of platform statistics graphs with proper validation, cleanup, and error handling.
 """
 
 from .base_graph import BaseGraph
+from .utils import validate_series_data
 from config.modules.sanitizer import sanitize_user_id, InvalidUserIdError
 from datetime import datetime
 from matplotlib.ticker import MaxNLocator
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List, Union
 import logging
 import os
 
-class Top10PlatformsError(Exception):
-    """Base exception for Top10Platforms graph-specific errors."""
+class PlatformsGraphError(Exception):
+    """Base exception for platform graph-related errors."""
     pass
 
-class DataValidationError(Top10PlatformsError):
+class DataFetchError(PlatformsGraphError):
+    """Raised when there's an error fetching graph data."""
+    pass
+
+class DataValidationError(PlatformsGraphError):
     """Raised when data validation fails."""
     pass
 
-class GraphGenerationError(Top10PlatformsError):
-    """Raised when there is an error generating the graph."""
+class GraphGenerationError(PlatformsGraphError):
+    """Raised when graph generation fails."""
     pass
 
-class FileSystemError(Top10PlatformsError):
-    """Raised when there are file system related errors."""
+class ResourceError(PlatformsGraphError):
+    """Raised when there's an error managing graph resources."""
     pass
 
 class Top10PlatformsGraph(BaseGraph):
+    """Handles generation of top 10 platforms graphs."""
+    
     def __init__(self, config: Dict[str, Any], translations: Dict[str, str], img_folder: str):
+        """
+        Initialize the platforms graph handler.
+        
+        Args:
+            config: Configuration dictionary
+            translations: Translation strings dictionary
+            img_folder: Path to image output folder
+            
+        Raises:
+            ValueError: If required configuration is missing
+        """
         super().__init__(config, translations, img_folder)
         self.graph_type = "top_10_platforms"
+        self._verify_config()
 
-    def _process_filename(self, user_id: Optional[str]) -> str:
+    def _verify_config(self) -> None:
+        """Verify required configuration exists."""
+        required_keys = [
+            'TIME_RANGE_DAYS',
+            'ANNOTATE_TOP_10_PLATFORMS',
+            'TV_COLOR',
+            'MOVIE_COLOR',
+            'GRAPH_BACKGROUND_COLOR'
+        ]
+        missing = [key for key in required_keys if key not in self.config]
+        if missing:
+            raise ValueError(f"Missing required configuration keys: {missing}")
+
+    def _process_filename(self, user_id: Optional[str]) -> Optional[str]:
+        """
+        Process user ID for safe filename creation.
+        
+        Args:
+            user_id: The user ID to process
+            
+        Returns:
+            Optional[str]: A sanitized version of the user ID safe for filenames
+            
+        Raises:
+            InvalidUserIdError: If user_id is invalid
+        """
         if user_id is None:
-            return ""
+            return None
+            
         try:
             return sanitize_user_id(user_id)
         except InvalidUserIdError as e:
             logging.warning(f"Invalid user ID for filename: {e}")
-            return ""
+            raise InvalidUserIdError(f"Invalid user ID format: {e}") from e
 
-    async def fetch_data(self, data_fetcher, user_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    def _validate_platform_data(self, platforms: List[str], series_data: List[List[int]]) -> None:
+        """
+        Validate platform-specific data.
+        
+        Args:
+            platforms: List of platform names
+            series_data: List of data series
+            
+        Raises:
+            DataValidationError: If validation fails
+        """
+        try:
+            if not platforms:
+                raise DataValidationError("No platforms provided")
+
+            if len(platforms) > 10:
+                raise DataValidationError("More than 10 platforms in data")
+
+            for data_series in series_data:
+                if len(data_series) != len(platforms):
+                    raise DataValidationError(
+                        f"Data series length ({len(data_series)}) "
+                        f"doesn't match platform count ({len(platforms)})"
+                    )
+
+            # Validate platform names
+            for platform in platforms:
+                if not isinstance(platform, str):
+                    raise DataValidationError(f"Invalid platform name type: {type(platform)}")
+                if not platform.strip():
+                    raise DataValidationError("Empty platform name found")
+
+        except Exception as e:
+            raise DataValidationError(f"Platform data validation failed: {str(e)}") from e
+
+    async def fetch_data(self, data_fetcher, user_id: Optional[str] = None) -> Dict[str, Any]:
         """
         Fetch top 10 platforms data.
         
@@ -51,108 +132,109 @@ class Top10PlatformsGraph(BaseGraph):
             user_id: Optional user ID for user-specific data
             
         Returns:
-            The fetched data or None if fetching fails
+            The fetched data
+            
+        Raises:
+            DataFetchError: If data fetching fails
         """
         try:
-            # If we have stored data, use it instead of fetching
             if self.data is not None:
                 logging.debug("Using stored data for top 10 platforms")
                 return self.data
 
-            # Otherwise, fetch new data
             params = {"time_range": self.config["TIME_RANGE_DAYS"]}
             if user_id:
-                try:
-                    sanitized_user_id = sanitize_user_id(user_id)
-                    params["user_id"] = sanitized_user_id
-                except InvalidUserIdError as e:
-                    logging.error(f"Invalid user ID format: {e}")
-                    return None
+                params["user_id"] = sanitize_user_id(user_id)
             
             logging.debug("Fetching top 10 platforms data with params: %s", params)
             
             data = await data_fetcher.fetch_tautulli_data_async("get_plays_by_top_10_platforms", params)
             if not data or 'response' not in data or 'data' not in data['response']:
-                error_msg = self.translations["error_fetch_top_10_platforms"]
-                if user_id:
-                    error_msg = self.translations.get(
-                        "error_fetch_top_10_platforms_user",
-                        "Failed to fetch top 10 platforms data for user {user_id}: {error}"
-                    ).format(user_id=user_id, error="No data returned")
+                error_msg = self.translations.get(
+                    'error_fetch_top_10_platforms_user' if user_id else 'error_fetch_top_10_platforms',
+                    'Failed to fetch platforms data{}: {}'
+                ).format(f" for user {user_id}" if user_id else "", "No data returned")
                 logging.error(error_msg)
-                return None
+                raise DataFetchError(error_msg)
 
             return data['response']['data']
-            
-        except Exception as e:
-            logging.error(f"Error fetching top 10 platforms data: {str(e)}")
-            raise Top10PlatformsError("Failed to fetch top 10 platforms data") from e
 
-    def process_data(self, raw_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        except InvalidUserIdError as e:
+            raise DataFetchError(f"Invalid user ID: {str(e)}") from e
+        except Exception as e:
+            error_msg = self.translations.get(
+                'error_fetch_top_10_platforms',
+                'Failed to fetch platforms data: {error}'
+            ).format(error=str(e))
+            logging.error(error_msg)
+            raise DataFetchError(error_msg) from e
+
+    def process_data(self, raw_data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Process the raw data into a format suitable for plotting.
+        Process the raw data for plotting.
         
         Args:
             raw_data: Raw data from the API
-        
+            
         Returns:
-            Processed data ready for plotting or None if processing fails
+            Processed data ready for plotting
+            
+        Raises:
+            DataValidationError: If processing fails
         """
         try:
-            if 'categories' not in raw_data or 'series' not in raw_data:
-                logging.error(self.translations["error_missing_data_top_10_platforms"])
-                return None
+            if not isinstance(raw_data, dict) or 'categories' not in raw_data or 'series' not in raw_data:
+                raise DataValidationError(self.translations["error_missing_data_top_10_platforms"])
 
             platforms = raw_data['categories']
             series = raw_data['series']
 
-            if not series or not platforms:
-                logging.warning(self.translations["warning_empty_series_top_10_platforms"])
-                return None
+            if not series:
+                raise DataValidationError(self.translations["warning_empty_series_top_10_platforms"])
+
+            # Validate series data
+            validation_errors = validate_series_data(series, len(platforms), "platforms series")
+            if validation_errors:
+                raise DataValidationError("\n".join(validation_errors))
+
+            # Additional platform-specific validation
+            series_data = [serie["data"] for serie in series]
+            self._validate_platform_data(platforms, series_data)
 
             processed_data = {
                 "platforms": platforms,
-                "tv_data": [],
-                "movie_data": []
+                "tv_data": next((s["data"] for s in series if s["name"] == "TV"), []),
+                "movie_data": next((s["data"] for s in series if s["name"] == "Movies"), [])
             }
-
-            logging.debug("Processing %d series for %d platforms", len(series), len(platforms))
-
-            # Process each series (TV and Movies)
-            for serie in series:
-                if not isinstance(serie, dict) or 'name' not in serie or 'data' not in serie:
-                    logging.error("Invalid series format: %s", serie)
-                    continue
-
-                if not isinstance(serie["data"], list):
-                    logging.error(f"Invalid data type for {serie['name']}: {type(serie['data'])}")
-                    continue
-
-                if not all(isinstance(x, (int, float)) for x in serie["data"]):
-                    logging.error(f"Invalid data values in {serie['name']}")
-                    continue
-
-                if serie["name"] == "TV":
-                    processed_data["tv_data"] = serie["data"]
-                elif serie["name"] == "Movies":
-                    processed_data["movie_data"] = serie["data"]
-
-            # Validate data lengths
-            if (len(processed_data["tv_data"]) != len(platforms) or 
-                len(processed_data["movie_data"]) != len(platforms)):
-                logging.error("[DEBUG] Data length mismatch: platforms=%d, tv=%d, movies=%d",
-                            len(platforms), len(processed_data["tv_data"]), 
-                            len(processed_data["movie_data"]))
-                return None
 
             return processed_data
 
+        except (KeyError, ValueError) as e:
+            raise DataValidationError(f"Data validation failed: {str(e)}") from e
         except Exception as e:
-            logging.error(f"Error processing top 10 platforms data: {str(e)}")
-            return None
+            error_msg = f"Error processing platforms data: {str(e)}"
+            logging.error(error_msg)
+            raise DataValidationError(error_msg) from e
+
+    def _add_bar_annotations(self, index: List[int], data: List[Union[int, float]], bottom: Optional[List[float]] = None) -> None:
+        """Add value annotations to bars."""
+        for i, value in enumerate(data):
+            if value > 0:
+                y_pos = value/2
+                if bottom is not None:
+                    y_pos += bottom[i]
+                self.annotate(i, y_pos, str(int(value)))
 
     def plot(self, processed_data: Dict[str, Any]) -> None:
-        """Plot the processed data."""
+        """
+        Plot the processed data.
+        
+        Args:
+            processed_data: Processed data ready for plotting
+            
+        Raises:
+            GraphGenerationError: If plotting fails
+        """
         try:
             self.setup_plot()
 
@@ -160,29 +242,32 @@ class Top10PlatformsGraph(BaseGraph):
             index = range(len(processed_data["platforms"]))
 
             # Plot movie data
-            self.ax.bar(index, processed_data["movie_data"], bar_width,
-                       label="Movies", color=self.get_color("Movies"))
+            self.ax.bar(
+                index,
+                processed_data["movie_data"],
+                bar_width,
+                label="Movies",
+                color=self.get_color("Movies")
+            )
 
-            # Plot TV data, stacked on top of movie data
-            self.ax.bar(index, processed_data["tv_data"], bar_width,
-                       bottom=processed_data["movie_data"],
-                       label="TV", color=self.get_color("TV"))
+            # Plot TV data stacked on top
+            self.ax.bar(
+                index,
+                processed_data["tv_data"],
+                bar_width,
+                bottom=processed_data["movie_data"],
+                label="TV",
+                color=self.get_color("TV")
+            )
 
-            if self.config["ANNOTATE_TOP_10_PLATFORMS"]:
+            if self.config.get("ANNOTATE_TOP_10_PLATFORMS", False):
+                # Annotate individual values
+                self._add_bar_annotations(index, processed_data["movie_data"])
+                self._add_bar_annotations(index, processed_data["tv_data"], processed_data["movie_data"])
+                
+                # Annotate totals
                 for i in range(len(index)):
-                    movie_value = processed_data["movie_data"][i]
-                    tv_value = processed_data["tv_data"][i]
-                    total = movie_value + tv_value
-                    
-                    # Annotate movie value if non-zero (in middle of movie section)
-                    if movie_value > 0:
-                        self.annotate(i, movie_value/2, str(int(movie_value)))
-                    
-                    # Annotate TV value if non-zero (in middle of TV section)
-                    if tv_value > 0:
-                        self.annotate(i, movie_value + tv_value/2, str(int(tv_value)))
-                    
-                    # Annotate total on top
+                    total = processed_data["movie_data"][i] + processed_data["tv_data"][i]
                     self.annotate(i, total, str(int(total)))
 
             self.add_title(self.translations["top_10_platforms_title"].format(
@@ -201,51 +286,52 @@ class Top10PlatformsGraph(BaseGraph):
             self.apply_tight_layout()
 
         except Exception as e:
-            logging.error(f"Error plotting top 10 platforms graph: {str(e)}")
-            raise GraphGenerationError(str(e))
+            error_msg = f"Error plotting platforms graph: {str(e)}"
+            logging.error(error_msg)
+            raise GraphGenerationError(error_msg) from e
 
     async def generate(self, data_fetcher, user_id: Optional[str] = None) -> Optional[str]:
-        """Generate the graph and return its file path."""
+        """
+        Generate the graph and return its file path.
+        
+        Args:
+            data_fetcher: Data fetcher instance
+            user_id: Optional user ID for user-specific graphs
+            
+        Returns:
+            The file path of the generated graph, or None if generation fails
+            
+        Raises:
+            PlatformsGraphError: If graph generation fails
+        """
         try:
-            logging.debug("Generate called with stored data: %s", "present" if self.data else "none")
-
             data = await self.fetch_data(data_fetcher, user_id)
-            if data is None:
-                logging.error("Failed to fetch top 10 platforms data")
-                return None
-
             processed_data = self.process_data(data)
-            if processed_data is None:
-                logging.error("Failed to process top 10 platforms data")
-                return None
-
             self.plot(processed_data)
 
-            # Save the graph
+            # Create directories and save graph
             today = datetime.today().strftime("%Y-%m-%d")
             base_dir = os.path.join(self.img_folder, today)
-            if user_id:
-                try:
-                    safe_user_id = sanitize_user_id(user_id)
-                    base_dir = os.path.join(base_dir, f"user_{safe_user_id}")
-                    file_name = f"top_10_platforms_{safe_user_id}.png"
-                except InvalidUserIdError as e:
-                    logging.error(f"Invalid user ID for file path: {e}")
-                    raise FileSystemError("Invalid user ID for file path") from e
-            else:
-                file_name = "top_10_platforms.png"
-
+            
+            safe_user_id = self._process_filename(user_id) if user_id else None
+            if safe_user_id:
+                base_dir = os.path.join(base_dir, f"user_{safe_user_id}")
+                
+            file_name = f"top_10_platforms{'_' + safe_user_id if safe_user_id else ''}.png"
             file_path = os.path.join(base_dir, file_name)
             
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
             self.save(file_path)
             
-            logging.debug("Saved top 10 platforms graph: %s", file_path)
+            logging.debug("Saved platforms graph: %s", file_path)
             return file_path
-            
-        except FileSystemError as e:
-            logging.error("Security violation: Attempted file path traversal")
-            raise FileSystemError("Security violation in file path") from e
+
+        except (DataFetchError, DataValidationError, GraphGenerationError) as e:
+            logging.error(str(e))
+            return None
         except Exception as e:
-            logging.error(f"Error generating top 10 platforms graph: {str(e)}")
-            raise GraphGenerationError("Failed to generate top 10 platforms graph") from e
+            error_msg = f"Unexpected error generating platforms graph: {str(e)}"
+            logging.error(error_msg)
+            raise PlatformsGraphError(error_msg) from e
+        finally:
+            self.cleanup_figure()

@@ -1,5 +1,10 @@
 # i18n.py
 
+"""
+Internationalization support for TGraph Bot.
+Handles loading and management of translations with proper error handling.
+"""
+
 from pathlib import Path
 from ruamel.yaml import YAML, YAMLError
 from threading import Lock
@@ -20,6 +25,9 @@ class TranslationFileError(TranslationError):
 
 class TranslationManager:
     """Manages loading and validation of translations."""
+    _instance = None
+    _translations: Dict[str, str] = {}
+    _lock = Lock()
     
     def __init__(self, default_language: str = "en"):
         self.default_language = default_language
@@ -27,6 +35,38 @@ class TranslationManager:
         self._yaml = YAML(typ='safe')
         self._cached_translations: Dict[str, Dict[str, str]] = {}
         self._cache_lock = Lock()
+
+    @classmethod
+    def get_instance(cls):
+        """Get the singleton instance."""
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = cls()
+        return cls._instance
+
+    @classmethod
+    def get_translation(cls, key: str) -> str:
+        """Get a translation string by key.
+        
+        Args:
+            key: The translation key to retrieve
+            
+        Returns:
+            The translation string, or the key if not found
+        """
+        with cls._lock:
+            return cls._translations.get(key, key)
+
+    @classmethod
+    def set_translations(cls, translations: Dict[str, str]) -> None:
+        """Set the translations dictionary.
+        
+        Args:
+            translations: Dictionary of translation strings
+        """
+        with cls._lock:
+            cls._translations = translations
         
     @property
     def translations_dir(self) -> Path:
@@ -189,6 +229,7 @@ class TranslationManager:
 
             # Load new translations
             bot.translations = self.load_translations(language)
+            TranslationManager.set_translations(bot.translations)
             
             # Update command descriptions
             for command in bot.tree.walk_commands():

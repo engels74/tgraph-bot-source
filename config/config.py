@@ -9,21 +9,17 @@ from functools import wraps
 from threading import Lock
 from time import time
 from typing import Dict, Any, Optional, TypedDict, Literal, cast, Tuple
-import fcntl
-import logging
-import os
-import tempfile
-
+from .modules.constants import (
+    CONFIG_SECTIONS,
+    CONFIG_CATEGORIES,
+    get_category_keys,
+    get_category_display_name
+)
 from .modules.loader import (
     load_yaml_config,
     save_yaml_config,
     get_config_path,
-    ConfigLoadError,
-)
-from .modules.validator import (
-    validate_config_value,
-    _validate_color,
-    ColorValidationResult,
+    LoaderError,
 )
 from .modules.sanitizer import sanitize_config_value
 from .modules.options import (
@@ -31,12 +27,15 @@ from .modules.options import (
     RESTART_REQUIRED_KEYS,
     get_option_metadata
 )
-from .modules.constants import (
-    CONFIG_SECTIONS,
-    CONFIG_CATEGORIES,
-    get_category_keys,
-    get_category_display_name
+from .modules.validator import (
+    validate_config_value,
+    _validate_color,
+    ColorValidationResult,
 )
+import fcntl
+import logging
+import os
+import tempfile
 
 # Use environment variable or default path
 CONFIG_PATH = get_config_path()
@@ -295,7 +294,7 @@ def load_config(config_path: Optional[str] = None, reload: bool = False) -> Conf
             invalidate_config_cache()
         
         return cast(ConfigSchema, config)
-    except (ConfigLoadError, ConfigValidationError) as e:
+    except (LoaderError, ConfigValidationError) as e:
         logging.error(f"Failed to load configuration: {str(e)}")
         raise
     except Exception as e:

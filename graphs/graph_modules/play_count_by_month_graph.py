@@ -1,5 +1,10 @@
 ﻿# graphs/graph_modules/play_count_by_month_graph.py
 
+"""
+Play Count by Month graph generator with enhanced error handling and resource management.
+Handles generation of monthly play count graphs with proper validation and cleanup.
+"""
+
 from .base_graph import BaseGraph
 from .utils import validate_series_data
 from config.modules.sanitizer import sanitize_user_id, InvalidUserIdError
@@ -9,26 +14,58 @@ from typing import Dict, Any, Optional, List
 import logging
 import os
 
-class PlayCountByMonthError(Exception):
-    """Base exception for PlayCountByMonth graph-specific errors."""
+class MonthlyGraphError(Exception):
+    """Base exception for monthly graph-related errors."""
     pass
 
-class DataValidationError(PlayCountByMonthError):
+class DataFetchError(MonthlyGraphError):
+    """Raised when there's an error fetching graph data."""
+    pass
+
+class DataValidationError(MonthlyGraphError):
     """Raised when data validation fails."""
     pass
 
-class GraphGenerationError(PlayCountByMonthError):
+class GraphGenerationError(MonthlyGraphError):
     """Raised when graph generation fails."""
     pass
 
-class FileSystemError(PlayCountByMonthError):
-    """Raised when there are file system related errors."""
+class ResourceError(MonthlyGraphError):
+    """Raised when there's an error managing graph resources."""
     pass
 
 class PlayCountByMonthGraph(BaseGraph):
+    """Handles generation of monthly play count graphs."""
+    
     def __init__(self, config: Dict[str, Any], translations: Dict[str, str], img_folder: str):
+        """
+        Initialize the monthly graph handler.
+        
+        Args:
+            config: Configuration dictionary
+            translations: Translation strings dictionary
+            img_folder: Path to image output folder
+            
+        Raises:
+            ValueError: If required configuration is missing
+        """
         super().__init__(config, translations, img_folder)
         self.graph_type = "play_count_by_month"
+        self._verify_config()
+        
+    def _verify_config(self) -> None:
+        """Verify required configuration exists."""
+        required_keys = [
+            'ANNOTATE_PLAY_COUNT_BY_MONTH',
+            'TV_COLOR',
+            'MOVIE_COLOR',
+            'GRAPH_BACKGROUND_COLOR',
+            'ANNOTATION_COLOR',
+            'ANNOTATION_OUTLINE_COLOR'
+        ]
+        missing = [key for key in required_keys if key not in self.config]
+        if missing:
+            raise ValueError(f"Missing required configuration keys: {missing}")
 
     def _process_filename(self, user_id: Optional[str]) -> Optional[str]:
         """
@@ -39,6 +76,9 @@ class PlayCountByMonthGraph(BaseGraph):
             
         Returns:
             Optional[str]: A sanitized version of the user ID safe for filenames
+            
+        Raises:
+            InvalidUserIdError: If user_id is invalid
         """
         if user_id is None:
             return None
@@ -47,72 +87,144 @@ class PlayCountByMonthGraph(BaseGraph):
             return sanitize_user_id(user_id)
         except InvalidUserIdError as e:
             logging.warning(f"Invalid user ID for filename: {e}")
-            return None
+            raise InvalidUserIdError(f"Invalid user ID format: {e}") from e
 
-    async def fetch_data(self, data_fetcher, user_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    def _validate_time_range(self, months: List[str]) -> None:
         """
-        Fetch play count data by month.
+        Validate the time range of the monthly data.
+        
+        Args:
+            months: List of month strings
+            
+        Raises:
+            DataValidationError: If validation fails
+        """
+        if not months:
+            raise DataValidationError("Empty months list")
+        
+        try:
+            parsed_dates = []
+            for month in months:
+                try:
+                    # Try YYYY-MM format first
+                    parsed = datetime.strptime(month, "%Y-%m")
+                except ValueError:
+                    try:
+                        # Try MMM YYYY format (e.g. "Dec 2023")
+                        parsed = datetime.strptime(month, "%b %Y")
+                    except ValueError:
+                        # Try MMMM YYYY format (e.g. "December 2023")
+                        try:
+                            parsed = datetime.strptime(month, "%B %Y")
+                        except ValueError as e:
+                            raise DataValidationError(f"Invalid month format: {month}") from e
+                parsed_dates.append(parsed)
+                
+            # Check time range is reasonable
+            first_month = min(parsed_dates)
+            last_month = max(parsed_dates)
+            month_diff = (last_month.year - first_month.year) * 12 + (last_month.month - first_month.month)
+            
+            if month_diff > 24:  # Maximum 2 years range
+                raise DataValidationError("Time range exceeds maximum allowed (24 months)")
+                
+        except ValueError as e:
+            raise DataValidationError(f"Invalid month format: {str(e)}") from e
+
+    async def fetch_data(self, data_fetcher, user_id: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Fetch monthly play count data.
         
         Args:
             data_fetcher: Data fetcher instance
             user_id: Optional user ID for user-specific data
             
         Returns:
-            The fetched data or None if fetching fails
+            The fetched data
             
         Raises:
-            PlayCountByMonthError: If data fetching fails
+            DataFetchError: If data fetching fails
         """
         try:
             if self.data is not None:
-                logging.debug("Using stored data for play count by month")
+                logging.debug("Using stored data for monthly play count")
                 return self.data
 
             params = {"time_range": 12, "y_axis": "plays"}
             if user_id:
-                try:
-                    sanitized_user_id = sanitize_user_id(user_id)
-                    params["user_id"] = sanitized_user_id
-                except InvalidUserIdError as e:
-                    logging.error(f"Invalid user ID format: {e}")
-                    raise DataValidationError("Invalid user ID format") from e
+                params["user_id"] = sanitize_user_id(user_id)
             
-            logging.debug("Fetching play count by month data with params: %s", params)
+            logging.debug("Fetching monthly play count data with params: %s", params)
             
             data = await data_fetcher.fetch_tautulli_data_async("get_plays_per_month", params)
             if not data or 'response' not in data or 'data' not in data['response']:
-                error_msg = self.translations["error_fetch_play_count_month"]
-                if user_id:
-                    error_msg = self.translations.get(
-                        'error_fetch_play_count_month_user',
-                        'Failed to fetch play count by month data for user {user_id}: {error}'
-                    ).format(user_id=user_id, error="No data returned")
+                error_msg = self.translations.get(
+                    'error_fetch_play_count_month_user' if user_id else 'error_fetch_play_count_month',
+                    'Failed to fetch monthly play count data{}: {}'
+                ).format(f" for user {user_id}" if user_id else "", "No data returned")
                 logging.error(error_msg)
-                raise DataValidationError(error_msg)
+                raise DataFetchError(error_msg)
 
-            return data['response']['data']
-            
-        except DataValidationError:
-            raise
+            # Additional data validation
+            response_data = data['response']['data']
+            if not isinstance(response_data, dict) or 'series' not in response_data:
+                raise DataValidationError("Invalid API response format")
+
+            return response_data
+
+        except InvalidUserIdError as e:
+            raise DataFetchError(f"Invalid user ID: {str(e)}") from e
         except Exception as e:
-            error_msg = f"Error fetching play count by month data: {str(e)}"
+            error_msg = self.translations.get(
+                'error_fetch_play_count_month',
+                'Failed to fetch monthly play count data: {error}'
+            ).format(error=str(e))
             logging.error(error_msg)
-            raise PlayCountByMonthError(error_msg) from e
+            raise DataFetchError(error_msg) from e
 
-    def validate_series_data(self, series: List[Dict[str, Any]], month_count: int) -> List[str]:
+    def _process_series_data(self, series: List[Dict[str, Any]], months: List[str]) -> Dict[str, Any]:
         """
-        Validate series data for completeness and consistency.
+        Process series data and filter out months with zero plays.
         
         Args:
             series: List of series data dictionaries
-            month_count: Expected number of data points per series
+            months: List of month labels
             
         Returns:
-            List of validation error messages, empty if validation passes
+            Dictionary containing processed series data
+            
+        Raises:
+            DataValidationError: If processing fails
         """
-        return validate_series_data(series, month_count, "monthly series")
+        try:
+            tv_data = next((s["data"] for s in series if s["name"] == "TV"), [0] * len(months))
+            movie_data = next((s["data"] for s in series if s["name"] == "Movies"), [0] * len(months))
 
-    def process_data(self, raw_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+            if len(tv_data) != len(months) or len(movie_data) != len(months):
+                raise DataValidationError("Series data length mismatch with months")
+
+            processed_data = {
+                "months": [],
+                "tv_data": [],
+                "movie_data": []
+            }
+
+            # Filter out months with zero plays for both TV and movies
+            for i, month in enumerate(months):
+                if tv_data[i] > 0 or movie_data[i] > 0:
+                    processed_data["months"].append(month)
+                    processed_data["tv_data"].append(tv_data[i])
+                    processed_data["movie_data"].append(movie_data[i])
+
+            if not processed_data["months"]:
+                raise DataValidationError("No non-zero data points found")
+
+            return processed_data
+
+        except Exception as e:
+            raise DataValidationError(f"Failed to process series data: {str(e)}") from e
+
+    def process_data(self, raw_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Process the raw data for plotting.
         
@@ -120,70 +232,41 @@ class PlayCountByMonthGraph(BaseGraph):
             raw_data: Raw data from the API
             
         Returns:
-            Processed data ready for plotting or None if validation fails
+            Processed data ready for plotting
             
         Raises:
-            DataValidationError: If processing fails with an unexpected error
+            DataValidationError: If processing fails
         """
         try:
             if not isinstance(raw_data, dict) or 'categories' not in raw_data or 'series' not in raw_data:
-                logging.error(self.translations["error_missing_data_play_count_by_month"])
-                return None
+                raise DataValidationError(self.translations["error_missing_data_play_count_by_month"])
 
             months = raw_data['categories']
             series = raw_data['series']
 
             if not months or not series:
-                logging.error(self.translations["warning_empty_data_play_count_by_month"])
-                return None
+                raise DataValidationError(self.translations["warning_empty_data_play_count_by_month"])
+
+            # Validate time range
+            self._validate_time_range(months)
 
             # Validate series data
-            validation_errors = self.validate_series_data(series, len(months))
+            validation_errors = validate_series_data(series, len(months), "monthly series")
             if validation_errors:
-                for error in validation_errors:
-                    logging.error("%s", error)
-                return None
+                raise DataValidationError("\n".join(validation_errors))
 
-            processed_data = self._process_series_data(months, series)
+            processed_data = self._process_series_data(series, months)
             if not processed_data["months"]:
-                logging.error(self.translations["warning_no_play_data_play_count_by_month"])
-                return None
+                raise DataValidationError(self.translations["warning_no_play_data_play_count_by_month"])
 
             return processed_data
 
+        except DataValidationError:
+            raise
         except Exception as e:
             error_msg = f"Error processing monthly play count data: {str(e)}"
             logging.error(error_msg)
             raise DataValidationError(error_msg) from e
-
-    def _process_series_data(self, months: List[str], series: List[Dict[str, Any]]) -> Dict[str, List[Any]]:
-        """
-        Process series data and filter out months with zero plays.
-        
-        Args:
-            months: List of month labels
-            series: List of series data dictionaries
-            
-        Returns:
-            Dictionary containing processed series data
-        """
-        tv_data = next((s["data"] for s in series if s["name"] == "TV"), [0] * len(months))
-        movie_data = next((s["data"] for s in series if s["name"] == "Movies"), [0] * len(months))
-
-        processed_data = {
-            "months": [],
-            "tv_data": [],
-            "movie_data": []
-        }
-
-        # Filter out months with zero plays for both TV and movies
-        for i, month in enumerate(months):
-            if tv_data[i] > 0 or movie_data[i] > 0:
-                processed_data["months"].append(month)
-                processed_data["tv_data"].append(tv_data[i])
-                processed_data["movie_data"].append(movie_data[i])
-
-        return processed_data
 
     def plot(self, processed_data: Dict[str, Any]) -> None:
         """
@@ -198,37 +281,29 @@ class PlayCountByMonthGraph(BaseGraph):
         try:
             self.setup_plot()
 
-            bar_width = 0.75
             index = range(len(processed_data["months"]))
+            bar_width = 0.75
 
-            # Plot movie data first
-            self.ax.bar(index, processed_data["movie_data"], 
-                       bar_width, label="Movies",
-                       color=self.get_color("Movies"))
+            # Plot stacked bars
+            self.ax.bar(
+                index, 
+                processed_data["movie_data"],
+                bar_width,
+                label="Movies",
+                color=self.get_color("Movies")
+            )
 
-            # Plot TV data stacked on top
-            self.ax.bar(index, processed_data["tv_data"], 
-                       bar_width, bottom=processed_data["movie_data"],
-                       label="TV", color=self.get_color("TV"))
+            self.ax.bar(
+                index,
+                processed_data["tv_data"],
+                bar_width,
+                bottom=processed_data["movie_data"],
+                label="TV",
+                color=self.get_color("TV")
+            )
 
-            # Add annotations if enabled
             if self.config.get("ANNOTATE_PLAY_COUNT_BY_MONTH", False):
-                for i in range(len(index)):
-                    movie_value = processed_data["movie_data"][i]
-                    tv_value = processed_data["tv_data"][i]
-                    total = movie_value + tv_value
-
-                    # Annotate movie value if non-zero (in middle of movie section)
-                    if movie_value > 0:
-                        self.annotate(i, movie_value/2, str(int(movie_value)))
-
-                    # Annotate TV value if non-zero (in middle of TV section)
-                    if tv_value > 0:
-                        self.annotate(i, movie_value + tv_value/2, str(int(tv_value)))
-
-                    # Annotate total on top
-                    if total > 0:
-                        self.annotate(i, total, str(int(total)))
+                self._add_annotations(index, processed_data)
 
             self.add_title(self.translations["play_count_by_month_title"])
             self.add_labels(
@@ -242,10 +317,27 @@ class PlayCountByMonthGraph(BaseGraph):
 
             self.add_legend()
             self.apply_tight_layout()
-            
+
         except Exception as e:
-            logging.error(f"Error plotting monthly play count graph: {str(e)}")
-            raise GraphGenerationError(f"Failed to plot graph: {str(e)}")
+            error_msg = f"Error plotting monthly play count graph: {str(e)}"
+            logging.error(error_msg)
+            raise GraphGenerationError(error_msg) from e
+
+    def _add_annotations(self, index: range, data: Dict[str, Any]) -> None:
+        """Add value annotations to the graph bars."""
+        for i in range(len(index)):
+            movie_value = data["movie_data"][i]
+            tv_value = data["tv_data"][i]
+            total = movie_value + tv_value
+
+            if movie_value > 0:
+                self.annotate(i, movie_value/2, str(int(movie_value)))
+
+            if tv_value > 0:
+                self.annotate(i, movie_value + tv_value/2, str(int(tv_value)))
+
+            if total > 0:
+                self.annotate(i, total, str(int(total)))
 
     async def generate(self, data_fetcher, user_id: Optional[str] = None) -> Optional[str]:
         """
@@ -259,40 +351,22 @@ class PlayCountByMonthGraph(BaseGraph):
             The file path of the generated graph, or None if generation fails
             
         Raises:
-            GraphGenerationError: If graph generation fails
-            FileSystemError: If file system operations fail
+            MonthlyGraphError: If graph generation fails
         """
         try:
-            logging.debug("Generate called with stored data: %s", "present" if self.data else "none")
-
             data = await self.fetch_data(data_fetcher, user_id)
-            if data is None:
-                raise DataValidationError("Failed to fetch monthly play count data")
-
             processed_data = self.process_data(data)
-            if processed_data is None:
-                raise DataValidationError("Failed to process monthly play count data")
-
             self.plot(processed_data)
 
+            # Create directories and save graph
             today = datetime.today().strftime("%Y-%m-%d")
             base_dir = os.path.join(self.img_folder, today)
             
-            # Add sanitized user_id handling for directory and filename
-            if user_id:
-                try:
-                    safe_user_id = self._process_filename(user_id)
-                    if safe_user_id:
-                        base_dir = os.path.join(base_dir, f"user_{safe_user_id}")
-                        file_name = f"play_count_by_month_{safe_user_id}.png"
-                    else:
-                        file_name = "play_count_by_month.png"
-                except InvalidUserIdError as e:
-                    logging.error(f"Invalid user ID for file path: {e}")
-                    raise FileSystemError("Invalid user ID for file path") from e
-            else:
-                file_name = "play_count_by_month.png"
-                    
+            safe_user_id = self._process_filename(user_id) if user_id else None
+            if safe_user_id:
+                base_dir = os.path.join(base_dir, f"user_{safe_user_id}")
+                
+            file_name = f"play_count_by_month{'_' + safe_user_id if safe_user_id else ''}.png"
             file_path = os.path.join(base_dir, file_name)
             
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
@@ -300,10 +374,13 @@ class PlayCountByMonthGraph(BaseGraph):
             
             logging.debug("Saved monthly play count graph: %s", file_path)
             return file_path
-            
-        except (DataValidationError, PlayCountByMonthError, FileSystemError):
-            raise
+
+        except (DataFetchError, DataValidationError, GraphGenerationError) as e:
+            logging.error(str(e))
+            return None
         except Exception as e:
-            error_msg = f"Error generating monthly play count graph: {str(e)}"
+            error_msg = f"Unexpected error generating monthly play count graph: {str(e)}"
             logging.error(error_msg)
-            raise GraphGenerationError(error_msg) from e
+            raise MonthlyGraphError(error_msg) from e
+        finally:
+            self.cleanup_figure()

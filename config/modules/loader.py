@@ -3,12 +3,13 @@
 """
 Configuration file loading and saving for TGraph Bot.
 Handles YAML file operations with support for comments and formatting preservation.
+Uses atomic file operations to prevent configuration corruption.
 """
 
 from .constants import CONFIG_SECTIONS, get_category_keys, CONFIG_CATEGORIES
 from .defaults import create_default_config
 from .validator import validate_config
-from .sanitizer import sanitize_config_value, ConfigurationError
+from .sanitizer import sanitize_config_value, SanitizerError
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.error import YAMLError
@@ -16,13 +17,26 @@ from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 from typing import Optional, Any
 import logging
 import os
+import tempfile
 
-class ConfigLoadError(Exception):
-    """Raised when there's an error loading the configuration."""
+class LoaderError(Exception):
+    """Base exception for configuration loader errors."""
     pass
 
-class ConfigSaveError(Exception):
-    """Raised when there's an error saving the configuration."""
+class ConfigFileError(LoaderError):
+    """Raised when there are file operation errors."""
+    pass
+
+class ConfigFormatError(LoaderError):
+    """Raised when there are YAML formatting or parsing errors."""
+    pass
+
+class ConfigValidationError(LoaderError):
+    """Raised when configuration validation fails."""
+    pass
+
+class ConfigUpdateError(LoaderError):
+    """Raised when configuration update operations fail."""
     pass
 
 def setup_yaml() -> YAML:
@@ -56,47 +70,56 @@ def organize_by_sections(config: CommentedMap, defaults: CommentedMap) -> Commen
         
     Returns:
         Organized configuration with proper sections
+        
+    Raises:
+        ConfigFormatError: If configuration organization fails
     """
-    new_config = CommentedMap()
-    current_section = None
+    try:
+        new_config = CommentedMap()
+        current_section = None
 
-    # Process each category in order
-    for category in CONFIG_CATEGORIES:
-        category_keys = get_category_keys(category)
+        # Process each category in order
+        for category in CONFIG_CATEGORIES:
+            category_keys = get_category_keys(category)
 
-        for section, section_data in CONFIG_SECTIONS.items():
-            if section_data['category'] == category:
-                section_header = section_data['header']
-                
-                # Add section header if we have keys to add
-                section_keys = [key for key in category_keys if key in config or key in defaults]
-                if section_keys:
-                    if current_section != section:
-                        if new_config:  # Add newline before new section
-                            new_config.yaml_set_comment_before_after_key(
-                                section_keys[0], 
-                                before="\n" + section_header
-                            )
-                        else:  # First section
-                            new_config.yaml_set_comment_before_after_key(
-                                section_keys[0],
-                                before=section_header
-                            )
-                        current_section = section
+            for section, section_data in CONFIG_SECTIONS.items():
+                if section_data['category'] == category:
+                    section_header = section_data['header']
+                    
+                    # Add section header if we have keys to add
+                    section_keys = [key for key in category_keys if key in config or key in defaults]
+                    if section_keys:
+                        if current_section != section:
+                            if new_config:  # Add newline before new section
+                                new_config.yaml_set_comment_before_after_key(
+                                    section_keys[0], 
+                                    before="\n" + section_header
+                                )
+                            else:  # First section
+                                new_config.yaml_set_comment_before_after_key(
+                                    section_keys[0],
+                                    before=section_header
+                                )
+                            current_section = section
 
-                    # Add keys from current section
-                    for key in section_keys:
-                        if key in config:
-                            new_config[key] = config[key]
-                        elif key in defaults:
-                            new_config[key] = defaults[key]
+                        # Add keys from current section
+                        for key in section_keys:
+                            if key in config:
+                                new_config[key] = config[key]
+                            elif key in defaults:
+                                new_config[key] = defaults[key]
 
-    # Add any remaining keys that aren't in sections
-    for key in config:
-        if key not in new_config:
-            new_config[key] = config[key]
+        # Add any remaining keys that aren't in sections
+        for key in config:
+            if key not in new_config:
+                new_config[key] = config[key]
 
-    return new_config
+        return new_config
+        
+    except Exception as e:
+        error_msg = f"Failed to organize configuration sections: {e}"
+        logging.error(error_msg)
+        raise ConfigFormatError(error_msg) from e
 
 def load_yaml_config(config_path: str) -> CommentedMap:
     """
@@ -109,7 +132,9 @@ def load_yaml_config(config_path: str) -> CommentedMap:
         The loaded configuration as a CommentedMap
         
     Raises:
-        ConfigLoadError: If the configuration cannot be loaded or is invalid
+        ConfigFileError: If file operations fail
+        ConfigFormatError: If YAML parsing fails
+        ConfigValidationError: If configuration validation fails
     """
     try:
         yaml = setup_yaml()
@@ -129,7 +154,7 @@ def load_yaml_config(config_path: str) -> CommentedMap:
                 if config is None:
                     config = create_default_config()
                 elif not isinstance(config, (dict, CommentedMap)):
-                    raise ConfigLoadError(f"Invalid config file format: {config_path}")
+                    raise ConfigFormatError(f"Invalid config file format: {config_path}")
                 
                 # Get defaults and validate
                 defaults = create_default_config()
@@ -145,7 +170,7 @@ def load_yaml_config(config_path: str) -> CommentedMap:
                 if not is_valid:
                     error_msg = "Configuration validation failed:\n" + "\n".join(errors)
                     logging.error(error_msg)
-                    raise ConfigLoadError(error_msg)
+                    raise ConfigValidationError(error_msg)
                 
                 # Save if we made any changes
                 if set(organized_config.keys()) != original_keys:
@@ -153,38 +178,65 @@ def load_yaml_config(config_path: str) -> CommentedMap:
                 
                 return organized_config
                 
-        except (OSError, YAMLError) as e:
-            raise ConfigLoadError(f"Error reading config file: {str(e)}") from e
+        except (OSError, IOError) as e:
+            raise ConfigFileError(f"Error reading config file: {str(e)}") from e
+        except YAMLError as e:
+            raise ConfigFormatError(f"Error parsing YAML: {str(e)}") from e
             
-    except (OSError, YAMLError) as e:
-        error_msg = f"Failed to load configuration: {str(e)}"
+    except Exception as e:
+        if isinstance(e, (ConfigFileError, ConfigFormatError, ConfigValidationError)):
+            raise
+        error_msg = f"Unexpected error loading configuration: {str(e)}"
         logging.error(error_msg)
-        raise ConfigLoadError(error_msg) from e
+        raise LoaderError(error_msg) from e
 
 def save_yaml_config(config: CommentedMap, config_path: str) -> None:
     """
     Save configuration to a YAML file while preserving structure and comments.
+    Uses atomic write operations with proper error handling.
     
     Args:
         config: The configuration to save
         config_path: Path where to save the configuration
         
     Raises:
-        ConfigSaveError: If the save operation fails
+        ConfigFileError: If file operations fail
+        ConfigFormatError: If YAML formatting fails
     """
     try:
         # Ensure directory exists
         os.makedirs(os.path.dirname(config_path), exist_ok=True)
         
-        # Save with preserved formatting
-        yaml = setup_yaml()
-        with open(config_path, 'w', encoding='utf-8') as file:
-            yaml.dump(config, file)
-        logging.info(f"Configuration saved to {config_path}")
-    except (OSError, YAMLError) as e:
-        error_msg = f"Error saving configuration to {config_path}: {str(e)}"
+        # Create temporary file in same directory for atomic write
+        config_dir = os.path.dirname(config_path)
+        with tempfile.NamedTemporaryFile(mode='w', dir=config_dir, delete=False) as temp_file:
+            try:
+                # Save config to temporary file
+                yaml = setup_yaml()
+                yaml.dump(config, temp_file)
+                temp_file.flush()
+                os.fsync(temp_file.fileno())
+                
+                # Atomic rename
+                os.replace(temp_file.name, config_path)
+                logging.info(f"Configuration saved to {config_path}")
+                
+            except YAMLError as e:
+                os.unlink(temp_file.name)
+                raise ConfigFormatError(f"Error formatting YAML: {str(e)}") from e
+            except OSError as e:
+                os.unlink(temp_file.name)
+                raise ConfigFileError(f"Error during atomic save: {str(e)}") from e
+            except Exception as e:
+                os.unlink(temp_file.name)
+                raise LoaderError(f"Unexpected error saving configuration: {str(e)}") from e
+                
+    except Exception as e:
+        if isinstance(e, (ConfigFileError, ConfigFormatError)):
+            raise
+        error_msg = f"Failed to save configuration: {str(e)}"
         logging.error(error_msg)
-        raise ConfigSaveError(error_msg) from e
+        raise LoaderError(error_msg) from e
 
 def update_config_value(config: CommentedMap, key: str, value: Any) -> None:
     """
@@ -197,12 +249,13 @@ def update_config_value(config: CommentedMap, key: str, value: Any) -> None:
         value: The new value
         
     Raises:
-        KeyError: If key doesn't exist in config
-        ConfigurationError: If value fails sanitization
+        ConfigUpdateError: If update operation fails
+        ConfigValidationError: If new value fails validation
     """
     if key not in config:
-        logging.warning(f"Attempted to update non-existent key: {key}")
-        raise KeyError(f"Configuration key not found: {key}")
+        error_msg = f"Configuration key not found: {key}"
+        logging.error(error_msg)
+        raise ConfigUpdateError(error_msg)
 
     try:
         # Use sanitizer to process the value securely
@@ -214,9 +267,14 @@ def update_config_value(config: CommentedMap, key: str, value: Any) -> None:
         else:
             config[key] = sanitized_value
             
-    except ConfigurationError as e:
-        logging.error(f"Failed to sanitize value for {key}: {str(e)}")
-        raise
+    except SanitizerError as e:
+        error_msg = f"Failed to sanitize value for {key}: {str(e)}"
+        logging.error(error_msg)
+        raise ConfigValidationError(error_msg) from e
+    except Exception as e:
+        error_msg = f"Unexpected error updating configuration value: {str(e)}"
+        logging.error(error_msg)
+        raise ConfigUpdateError(error_msg) from e
 
 def get_config_path(config_dir: Optional[str] = None) -> str:
     """
@@ -238,6 +296,9 @@ __all__ = [
     'save_yaml_config',
     'update_config_value',
     'get_config_path',
-    'ConfigLoadError',
-    'ConfigSaveError',
+    'LoaderError',
+    'ConfigFileError', 
+    'ConfigFormatError',
+    'ConfigValidationError',
+    'ConfigUpdateError',
 ]

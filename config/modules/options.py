@@ -2,13 +2,46 @@
 
 """
 Configuration options and metadata for TGraph Bot.
-Defines available configuration keys, sections, and their properties.
+Defines available configuration keys, sections, and their properties with enhanced error handling.
 """
 
-from typing import Dict, Any
+from typing import Dict, Any, List, Optional, TypedDict, Union, Set
+import logging
+
+# Custom Exception Hierarchy
+class OptionsError(Exception):
+    """Base exception for configuration options errors."""
+    pass
+
+class MetadataError(OptionsError):
+    """Raised when there are issues with option metadata."""
+    pass
+
+class ValidationError(OptionsError):
+    """Raised when option validation fails."""
+    pass
+
+class OptionLookupError(OptionsError):
+    """Raised when looking up non-existent options."""
+    pass
+
+# Type Definitions
+class OptionMetadata(TypedDict, total=False):
+    """TypedDict for option metadata structure."""
+    type: type
+    required: bool
+    description: str
+    min: Optional[Union[int, float]]
+    max: Optional[Union[int, float]]
+    format: Optional[str]
+    examples: Optional[List[str]]
+    normalize: Optional[bool]
+    default: Optional[Any]
+    allowed_values: Optional[List[str]]
+    max_length: Optional[int]
 
 # List of keys that can be configured via Discord commands
-CONFIGURABLE_OPTIONS = [
+CONFIGURABLE_OPTIONS: Set[str] = {
     "UPDATE_DAYS",
     "FIXED_UPDATE_TIME",
     "KEEP_DAYS",
@@ -40,18 +73,18 @@ CONFIGURABLE_OPTIONS = [
     "UPDATE_GRAPHS_GLOBAL_COOLDOWN_SECONDS",
     "MY_STATS_COOLDOWN_MINUTES",
     "MY_STATS_GLOBAL_COOLDOWN_SECONDS",
-]
+}
 
 # Keys that require a bot restart when changed
-RESTART_REQUIRED_KEYS = [
+RESTART_REQUIRED_KEYS: Set[str] = {
     "TAUTULLI_API_KEY",
     "TAUTULLI_URL",
     "DISCORD_TOKEN",
     "CHANNEL_ID",
-]
+}
 
-# Configuration option metadata
-OPTION_METADATA = {
+# Configuration option metadata with enhanced validation
+OPTION_METADATA: Dict[str, OptionMetadata] = {
     # Basic settings
     "TAUTULLI_API_KEY": {
         "type": str,
@@ -146,7 +179,7 @@ OPTION_METADATA = {
         "format": "hex",
         "description": "Color for TV show data in graphs (format: #RGB or #RRGGBB)",
         "examples": ["#ff0000", "#f00"],
-        "normalize": True,  # Indicates color should be normalized to #RRGGBB format
+        "normalize": True,
         "default": "#1f77b4",
     },
     "MOVIE_COLOR": {
@@ -212,7 +245,7 @@ OPTION_METADATA = {
         "description": "Show value annotations on monthly play count graph",
     },
 
-    # Cooldown options
+    # Cooldown options with enhanced validation
     "CONFIG_COOLDOWN_MINUTES": {
         "type": int,
         "min": 0,
@@ -251,22 +284,84 @@ OPTION_METADATA = {
     },
 }
 
-def get_option_metadata(key: str) -> Dict[str, Any]:
+def get_option_metadata(key: str, translations: Optional[Dict[str, str]] = None) -> OptionMetadata:
     """
-    Get metadata for a specific configuration option.
+    Get metadata for a specific configuration option with enhanced error handling.
     
     Args:
         key: The configuration key
+        translations: Optional translation dictionary for error messages
         
     Returns:
         Dictionary containing the option's metadata
         
     Raises:
-        KeyError: If the key doesn't exist in the metadata
+        OptionLookupError: If the key doesn't exist in the metadata
+        MetadataError: If there are issues accessing metadata
     """
-    if key not in OPTION_METADATA:
-        raise KeyError(f"No metadata found for configuration key: {key}")
-    return OPTION_METADATA[key]
+    try:
+        if key not in OPTION_METADATA:
+            error_msg = (translations or {}).get(
+                'error_invalid_option_key',
+                'No metadata found for configuration key: {key}'
+            ).format(key=key)
+            logging.error(error_msg)
+            raise OptionLookupError(error_msg)
+            
+        return OPTION_METADATA[key]
+        
+    except KeyError as e:
+        error_msg = (translations or {}).get(
+            'error_metadata_access',
+            'Error accessing metadata for key {key}: {error}'
+        ).format(key=key, error=str(e))
+        logging.error(error_msg)
+        raise MetadataError(error_msg) from e
+    except Exception as e:
+        error_msg = (translations or {}).get(
+            'error_unexpected_metadata',
+            'Unexpected error getting metadata for {key}: {error}'
+        ).format(key=key, error=str(e))
+        logging.error(error_msg)
+        raise MetadataError(error_msg) from e
+
+def validate_option_metadata() -> None:
+    """
+    Validate the consistency of option metadata definitions.
+    
+    Raises:
+        MetadataError: If metadata validation fails
+    """
+    try:
+        # Check all configurable options have metadata
+        missing_metadata = CONFIGURABLE_OPTIONS - set(OPTION_METADATA.keys())
+        if missing_metadata:
+            raise MetadataError(f"Missing metadata for configurable options: {missing_metadata}")
+            
+        # Validate metadata structure
+        for key, metadata in OPTION_METADATA.items():
+            if "type" not in metadata:
+                raise MetadataError(f"Missing required 'type' in metadata for {key}")
+                
+            if metadata.get("required", False) and "default" in metadata:
+                raise MetadataError(
+                    f"Required option {key} should not have a default value"
+                )
+                
+            if "min" in metadata and "max" in metadata:
+                if metadata["min"] > metadata["max"]:
+                    raise MetadataError(
+                        f"Invalid range for {key}: min ({metadata['min']}) > max ({metadata['max']})"
+                    )
+                    
+        logging.info("Option metadata validation completed successfully")
+        
+    except MetadataError:
+        raise
+    except Exception as e:
+        error_msg = f"Unexpected error validating option metadata: {str(e)}"
+        logging.error(error_msg)
+        raise MetadataError(error_msg) from e
 
 # Export public interface
 __all__ = [
@@ -274,4 +369,12 @@ __all__ = [
     'RESTART_REQUIRED_KEYS',
     'OPTION_METADATA',
     'get_option_metadata',
+    'validate_option_metadata',
+    'OptionsError',
+    'MetadataError',
+    'ValidationError',
+    'OptionLookupError',
 ]
+
+# Validate metadata on module import
+validate_option_metadata()

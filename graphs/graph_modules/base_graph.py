@@ -282,6 +282,22 @@ class BaseGraph(ABC):
         except RuntimeError as e:
             raise PlottingError(f"Layout adjustment failed: {str(e)}") from e
 
+    def cleanup_figure(self) -> None:
+        """
+        Clean up matplotlib resources properly.
+        Should be called after saving or if an error occurs.
+        """
+        try:
+            if hasattr(self, 'figure') and self.figure is not None:
+                plt.close(self.figure)
+                self.figure = None
+                self.ax = None
+        except Exception as e:
+            logging.warning(f"Error during figure cleanup: {str(e)}")
+            # Still set to None even if cleanup fails to prevent reuse
+            self.figure = None
+            self.ax = None
+
     def save(self, filepath: str) -> None:
         """
         Save the graph to a file.
@@ -305,7 +321,7 @@ class BaseGraph(ABC):
         except ValueError as e:
             raise PlottingError(f"Invalid save parameters: {str(e)}") from e
         finally:
-            plt.close(self.figure)
+            self.cleanup_figure()  # Ensure cleanup happens even if save fails
 
     def get_color(self, series_name: str) -> str:
         """

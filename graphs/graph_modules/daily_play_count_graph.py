@@ -1,31 +1,71 @@
 ﻿# graphs/graph_modules/daily_play_count_graph.py
 
 """
-Improved version of daily_play_count_graph.py with security fixes and enhancements.
+Improved daily play count graph generator with standardized error handling and resource management.
+Handles generation of daily play count graphs with proper validation, cleanup, and error handling.
 """
 
 from .base_graph import BaseGraph
-from .utils import get_color
+from .utils import get_color, validate_series_data
 from config.modules.sanitizer import sanitize_user_id, InvalidUserIdError
 from datetime import datetime
 from matplotlib.dates import DateFormatter
 from matplotlib.ticker import MaxNLocator
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List, Union
 import logging
 import os
 
 class DailyPlayCountError(Exception):
-    """Base exception for DailyPlayCount graph-specific errors."""
+    """Base exception for daily play count graph-related errors."""
     pass
 
-class FileSystemError(DailyPlayCountError):
-    """Raised when there are file system related errors."""
+class DataFetchError(DailyPlayCountError):
+    """Raised when there's an error fetching graph data."""
+    pass
+
+class DataValidationError(DailyPlayCountError):
+    """Raised when data validation fails."""
+    pass
+
+class GraphGenerationError(DailyPlayCountError):
+    """Raised when graph generation fails."""
+    pass
+
+class ResourceError(DailyPlayCountError):
+    """Raised when there's an error managing graph resources."""
     pass
 
 class DailyPlayCountGraph(BaseGraph):
+    """Handles generation of daily play count graphs."""
+    
     def __init__(self, config: Dict[str, Any], translations: Dict[str, str], img_folder: str):
+        """
+        Initialize the daily play count graph handler.
+        
+        Args:
+            config: Configuration dictionary
+            translations: Translation strings dictionary
+            img_folder: Path to image output folder
+            
+        Raises:
+            ValueError: If required configuration is missing
+        """
         super().__init__(config, translations, img_folder)
         self.graph_type = "daily_play_count"
+        self._verify_config()
+        
+    def _verify_config(self) -> None:
+        """Verify required configuration exists."""
+        required_keys = [
+            'TIME_RANGE_DAYS',
+            'ANNOTATE_DAILY_PLAY_COUNT',
+            'TV_COLOR',
+            'MOVIE_COLOR',
+            'GRAPH_BACKGROUND_COLOR'
+        ]
+        missing = [key for key in required_keys if key not in self.config]
+        if missing:
+            raise ValueError(f"Missing required configuration keys: {missing}")
 
     def _process_filename(self, user_id: Optional[str]) -> Optional[str]:
         """
@@ -36,6 +76,9 @@ class DailyPlayCountGraph(BaseGraph):
             
         Returns:
             Optional[str]: A sanitized version of the user ID safe for filenames
+            
+        Raises:
+            InvalidUserIdError: If user_id is invalid
         """
         if user_id is None:
             return None
@@ -44,120 +87,166 @@ class DailyPlayCountGraph(BaseGraph):
             return sanitize_user_id(user_id)
         except InvalidUserIdError as e:
             logging.warning(f"Invalid user ID for filename: {e}")
-            return None
+            raise InvalidUserIdError(f"Invalid user ID format: {e}") from e
 
-    async def fetch_data(self, data_fetcher, user_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
-        """Fetch daily play count data."""
+    def _validate_dates(self, dates: List[str]) -> List[datetime]:
+        """
+        Validate and convert date strings to datetime objects.
+        
+        Args:
+            dates: List of date strings
+            
+        Returns:
+            List of validated datetime objects
+            
+        Raises:
+            DataValidationError: If date validation fails
+        """
         try:
-            # If we have stored data, use it instead of fetching
+            datetime_dates = []
+            for date in dates:
+                try:
+                    dt = datetime.strptime(date, "%Y-%m-%d")
+                    datetime_dates.append(dt)
+                except ValueError as e:
+                    raise DataValidationError(f"Invalid date format: {date}") from e
+                    
+            # Validate date range
+            if datetime_dates:
+                date_range = (datetime_dates[-1] - datetime_dates[0]).days
+                if date_range > 365:  # Maximum 1 year range
+                    raise DataValidationError("Date range exceeds maximum allowed (365 days)")
+                    
+            return datetime_dates
+            
+        except Exception as e:
+            raise DataValidationError(f"Date validation failed: {str(e)}") from e
+
+    async def fetch_data(self, data_fetcher, user_id: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Fetch daily play count data.
+        
+        Args:
+            data_fetcher: Data fetcher instance
+            user_id: Optional user ID for user-specific data
+            
+        Returns:
+            The fetched data
+            
+        Raises:
+            DataFetchError: If data fetching fails
+        """
+        try:
             if self.data is not None:
                 logging.debug("Using stored data for daily play count")
                 return self.data
 
-            # Otherwise, fetch new data
             params = {"time_range": self.config["TIME_RANGE_DAYS"]}
             if user_id:
-                params["user_id"] = str(user_id)  # Ensure user_id is string
+                params["user_id"] = sanitize_user_id(user_id)
             
             logging.debug("Fetching daily play count data with params: %s", params)
             
-            # Fetch data from data_fetcher
             data = await data_fetcher.fetch_tautulli_data_async("get_plays_by_date", params)
-            
-            # Validate the data structure
-            if not data:
-                logging.error(self.translations["error_fetch_daily_play_count"])
-                return None
-                
-            if not isinstance(data, dict):
-                logging.error(f"Invalid data type received: {type(data)}")
-                return None
-                
-            if 'response' not in data or 'data' not in data['response']:
-                logging.error(f"Missing required keys in data. Keys present: {data.keys()}")
-                return None
-                
+            if not data or 'response' not in data or 'data' not in data['response']:
+                error_msg = self.translations.get(
+                    'error_fetch_daily_play_count_user' if user_id else 'error_fetch_daily_play_count',
+                    'Failed to fetch daily play count data{}: {}'
+                ).format(f" for user {user_id}" if user_id else "", "No data returned")
+                logging.error(error_msg)
+                raise DataFetchError(error_msg)
+
             return data['response']['data']
-            
+
+        except InvalidUserIdError as e:
+            raise DataFetchError(f"Invalid user ID: {str(e)}") from e
         except Exception as e:
             error_msg = self.translations.get(
-                'error_fetch_daily_play_count_user' if user_id else 'error_fetch_daily_play_count',
-                'Failed to fetch daily play count data{}: {}'
-            ).format(f" for user {user_id}" if user_id else "", str(e))
+                'error_fetch_daily_play_count',
+                'Failed to fetch daily play count data: {error}'
+            ).format(error=str(e))
             logging.error(error_msg)
-            return None
+            raise DataFetchError(error_msg) from e
 
-    def process_data(self, raw_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """Process the raw data into a format suitable for plotting."""
+    def process_data(self, raw_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Process the raw data for plotting.
+        
+        Args:
+            raw_data: Raw data from the API
+            
+        Returns:
+            Processed data ready for plotting
+            
+        Raises:
+            DataValidationError: If processing fails
+        """
         try:
             if not isinstance(raw_data, dict) or 'categories' not in raw_data or 'series' not in raw_data:
-                logging.error(self.translations["error_missing_series_daily_play_count"])
-                return None
+                raise DataValidationError(self.translations["error_missing_series_daily_play_count"])
 
-            categories = raw_data['categories']
+            # Validate dates and convert to datetime objects
+            datetime_dates = self._validate_dates(raw_data['categories'])
             series = raw_data['series']
 
             if not series:
-                logging.warning(self.translations["warning_empty_series_daily_play_count"])
-                return None
+                raise DataValidationError(self.translations["warning_empty_series_daily_play_count"])
 
-            # Convert string dates to datetime objects
-            try:
-                datetime_dates = [datetime.strptime(date, "%Y-%m-%d") for date in categories]
-            except ValueError as e:
-                logging.error(f"Error parsing dates: {str(e)}")
-                return None
+            # Validate series data
+            validation_errors = validate_series_data(series, len(datetime_dates), "daily series")
+            if validation_errors:
+                raise DataValidationError("\n".join(validation_errors))
 
             processed_data = {
                 "dates": datetime_dates,
                 "series": []
             }
 
-            # Process each series (TV and Movies)
             for serie in series:
-                if not isinstance(serie, dict) or 'name' not in serie or 'data' not in serie:
-                    logging.error(f"Invalid series data format: {serie}")
-                    continue
-                
-                # Validate data points
-                if not all(isinstance(x, (int, float)) for x in serie["data"]):
-                    logging.error(f"Invalid data points in series {serie['name']}")
-                    continue
-
-                processed_data["series"].append({
-                    "name": serie["name"],
-                    "data": serie["data"],
-                    "color": get_color(serie["name"], self.config)
-                })
-
-            if not processed_data["series"]:
-                logging.error("No valid series data found after processing")
-                return None
+                try:
+                    processed_data["series"].append({
+                        "name": serie["name"],
+                        "data": serie["data"],
+                        "color": get_color(serie["name"], self.config)
+                    })
+                except KeyError as e:
+                    raise DataValidationError(f"Missing required field in series data: {e}") from e
+                except ValueError as e:
+                    raise DataValidationError(f"Invalid value in series data: {e}") from e
 
             return processed_data
-            
+
+        except (KeyError, ValueError) as e:
+            raise DataValidationError(f"Data validation failed: {str(e)}") from e
         except Exception as e:
-            logging.error(f"Error processing daily play count data: {str(e)}")
-            return None
+            error_msg = f"Error processing daily play count data: {str(e)}"
+            logging.error(error_msg)
+            raise DataValidationError(error_msg) from e
 
     def plot(self, processed_data: Dict[str, Any]) -> None:
-        """Plot the processed data."""
+        """
+        Plot the processed data.
+        
+        Args:
+            processed_data: Processed data ready for plotting
+            
+        Raises:
+            GraphGenerationError: If plotting fails
+        """
         try:
             self.setup_plot()
 
             for serie in processed_data["series"]:
                 self.ax.plot(
-                    processed_data["dates"], 
+                    processed_data["dates"],
                     serie["data"],
                     label=serie["name"],
                     marker="o",
                     color=serie["color"]
                 )
 
-                if self.config["ANNOTATE_DAILY_PLAY_COUNT"]:
-                    for i, value in enumerate(serie["data"]):
-                        if value > 0:
-                            self.annotate(processed_data["dates"][i], value, f"{value}")
+                if self.config.get("ANNOTATE_DAILY_PLAY_COUNT", False):
+                    self._add_annotations(processed_data["dates"], serie["data"])
 
             self.add_title(self.translations["daily_play_count_title"].format(
                 days=self.config["TIME_RANGE_DAYS"]
@@ -167,42 +256,52 @@ class DailyPlayCountGraph(BaseGraph):
                 self.translations["daily_play_count_ylabel"]
             )
 
-            self.ax.set_xticks(processed_data["dates"])
             self.ax.xaxis.set_major_formatter(DateFormatter("%Y-%m-%d"))
             self.ax.tick_params(axis='x', rotation=45)
             self.ax.yaxis.set_major_locator(MaxNLocator(integer=True))
 
             self.add_legend()
             self.apply_tight_layout()
-            
+
         except Exception as e:
-            logging.error(f"Error plotting daily play count graph: {str(e)}")
-            raise
+            error_msg = f"Error plotting daily play count graph: {str(e)}"
+            logging.error(error_msg)
+            raise GraphGenerationError(error_msg) from e
+
+    def _add_annotations(self, dates: List[datetime], values: List[Union[int, float]]) -> None:
+        """Add value annotations to the graph points."""
+        for date, value in zip(dates, values):
+            if value > 0:
+                self.annotate(date, value, f"{int(value)}")
 
     async def generate(self, data_fetcher, user_id: Optional[str] = None) -> Optional[str]:
-        """Generate the graph and return its file path."""
-        try:
-            logging.debug("Generate called with stored data: %s", "present" if self.data else "none")
+        """
+        Generate the graph and return its file path.
+        
+        Args:
+            data_fetcher: Data fetcher instance
+            user_id: Optional user ID for user-specific graphs
             
-            raw_data = await self.fetch_data(data_fetcher, user_id)
-            if raw_data is None:
-                return None
-
-            processed_data = self.process_data(raw_data)
-            if processed_data is None:
-                return None
-
+        Returns:
+            The file path of the generated graph, or None if generation fails
+            
+        Raises:
+            DailyPlayCountError: If graph generation fails
+        """
+        try:
+            data = await self.fetch_data(data_fetcher, user_id)
+            processed_data = self.process_data(data)
             self.plot(processed_data)
 
-            # Save the graph with sanitized user ID
+            # Create directories and save graph
             today = datetime.today().strftime("%Y-%m-%d")
             base_dir = os.path.join(self.img_folder, today)
             
-            sanitized_user_id = self._process_filename(user_id)
-            if sanitized_user_id:
-                base_dir = os.path.join(base_dir, f"user_{sanitized_user_id}")
+            safe_user_id = self._process_filename(user_id) if user_id else None
+            if safe_user_id:
+                base_dir = os.path.join(base_dir, f"user_{safe_user_id}")
                 
-            file_name = f"daily_play_count{'_' + sanitized_user_id if sanitized_user_id else ''}.png"
+            file_name = f"daily_play_count{'_' + safe_user_id if safe_user_id else ''}.png"
             file_path = os.path.join(base_dir, file_name)
             
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
@@ -210,10 +309,13 @@ class DailyPlayCountGraph(BaseGraph):
             
             logging.debug("Saved daily play count graph: %s", file_path)
             return file_path
-            
-        except FileSystemError:
-            logging.error("Security violation: Attempted file path traversal")
+
+        except (DataFetchError, DataValidationError, GraphGenerationError) as e:
+            logging.error(str(e))
             return None
         except Exception as e:
-            logging.error(f"Error generating daily play count graph: {str(e)}")
-            return None
+            error_msg = f"Unexpected error generating daily play count graph: {str(e)}"
+            logging.error(error_msg)
+            raise DailyPlayCountError(error_msg) from e
+        finally:
+            self.cleanup_figure()
