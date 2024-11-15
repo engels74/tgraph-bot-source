@@ -430,6 +430,41 @@ def sanitize_user_id(user_id: Optional[str]) -> str:
     except Exception as e:
         raise InvalidUserIdError(f"Failed to sanitize user ID: {str(e)}") from e
 
+def sanitize_language_code(language: str) -> str:
+    """
+    Sanitize language code to prevent path traversal and ensure valid format.
+    
+    Args:
+        language: The language code to sanitize
+        
+    Returns:
+        str: A sanitized language code
+        
+    Raises:
+        ValidationError: If language code is invalid
+    """
+    if not language:
+        raise ValidationError("Language code cannot be empty")
+        
+    try:
+        # Strip any whitespace and quotes
+        sanitized = str(language).strip().strip('"\'').lower()
+        
+        # Ensure it only contains valid characters
+        if not sanitized.isalnum():
+            raise ValidationError(f"Invalid language code format: {language}")
+            
+        # Limit length
+        if len(sanitized) > 5:  # Most language codes are 2-5 characters
+            raise ValidationError(f"Language code too long: {language}")
+            
+        return sanitized
+        
+    except Exception as e:
+        if isinstance(e, ValidationError):
+            raise
+        raise ValidationError(f"Failed to sanitize language code: {str(e)}") from e
+
 # Export public interface
 __all__ = [
     'sanitize_config_value',

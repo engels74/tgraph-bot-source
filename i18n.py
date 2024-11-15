@@ -5,6 +5,7 @@ Internationalization support for TGraph Bot.
 Handles loading and management of translations with proper error handling.
 """
 
+from config.modules.sanitizer import sanitize_language_code, ValidationError
 from pathlib import Path
 from ruamel.yaml import YAML, YAMLError
 from threading import Lock
@@ -189,20 +190,32 @@ class TranslationManager:
 
     def _load_and_validate_translations(self, language: str) -> Dict[str, str]:
         """Helper method to load and validate translations."""
-        # Load reference translations first
-        reference_file = self.translations_dir / f"{self.default_language}.yml"
-        reference_translations = self._load_yaml_file(reference_file)
+        try:
+            # Load reference translations first
+            reference_file = self.translations_dir / f"{self.default_language}.yml"
+            reference_translations = self._load_yaml_file(reference_file)
 
-        # If loading default language, no validation needed
-        if language == self.default_language:
-            return reference_translations
+            # If loading default language, no validation needed
+            if language == self.default_language:
+                return reference_translations
 
-        # Load and validate requested language
-        language_file = self.translations_dir / f"{language}.yml"
-        translations = self._load_yaml_file(language_file)
-        self._validate_translations(translations, language, reference_translations)
-        
-        return translations
+            # Sanitize language code
+            try:
+                safe_language = sanitize_language_code(language)
+            except ValidationError as e:
+                raise TranslationError(f"Invalid language code: {str(e)}") from e
+
+            # Load and validate requested language
+            language_file = self.translations_dir / f"{safe_language}.yml"
+            translations = self._load_yaml_file(language_file)
+            self._validate_translations(translations, language, reference_translations)
+            
+            return translations
+            
+        except Exception as e:
+            if isinstance(e, TranslationError):
+                raise
+            raise TranslationError(f"Failed to load translations: {str(e)}") from e
 
     def clear_cache(self) -> None:
         """Clear the translations cache."""

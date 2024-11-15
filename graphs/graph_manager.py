@@ -245,6 +245,10 @@ class GraphManager:
                     
                     async with aiofiles.open(file_path, 'rb') as f:
                         content = await f.read()
+                        file_size = len(content)
+                        max_size = 8 * 1024 * 1024  # Discord's file size limit (8MB)
+                        if file_size > max_size:
+                            raise DiscordError(f"Graph file exceeds Discord's size limit: {file_size} bytes")
                         file = discord.File(
                             io.BytesIO(content), 
                             filename=os.path.basename(file_path)

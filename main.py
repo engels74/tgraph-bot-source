@@ -177,79 +177,88 @@ class TGraphBot(commands.Bot):
             # Check permissions after a short delay
             log(self.translations["log_waiting_before_permission_check"])
             await asyncio.sleep(5)
-
-            # Permissions check with error handling
-            try:
-                log(self.translations["log_checking_command_permissions"])
-                await check_permissions_all_guilds(self, self.translations)
-                log(self.translations["log_command_permissions_checked"])
-            except PermissionError as e:
-                raise BackgroundTaskError("Permission check failed") from e
-
-            # Initial graph update
-            log(self.translations["log_updating_posting_graphs_startup"])
             
-            # Config reload with retry mechanism
-            max_retries = 3
-            retry_delay = 5
-            last_error = None
+            # Sequential initialization steps with proper error handling
+            await self._check_permissions()
+            await self._reload_config_with_retry()
+            channel = await self._validate_channel()
+            await self._update_and_post_graphs(channel)
+            await self._update_tracker_state()
             
-            for attempt in range(max_retries):
-                try:
-                    self.config = load_config(self.config_path, reload=True)
-                    break
-                except Exception as e:
-                    last_error = e
-                    if attempt < max_retries - 1:
-                        log(self.translations["log_config_reload_retry"].format(
-                            attempt=attempt + 1,
-                            max_retries=max_retries,
-                            error=str(e)
-                        ), logging.WARNING)
-                        await asyncio.sleep(retry_delay)
-                    else:
-                        error_msg = self.translations["log_config_reload_failed"].format(error=str(e))
-                        logging.error(error_msg)
-                        raise MainConfigError("Configuration reload failed") from last_error
-
-            # Channel validation and graph posting
-            channel = self.get_channel(self.config["CHANNEL_ID"])
-            if not channel:
-                error_msg = self.translations["log_channel_not_found"].format(
-                    channel_id=self.config["CHANNEL_ID"]
-                )
-                logging.error(error_msg)
-                raise BackgroundTaskError(error_msg)
-
-            try:
-                await self.graph_manager.delete_old_messages(channel)
-                graph_files = await self.graph_manager.generate_and_save_graphs(self.data_fetcher)
-                if graph_files:
-                    await self.graph_manager.post_graphs(channel, graph_files, self.update_tracker)
-            except Exception as e:
-                raise BackgroundTaskError("Failed to generate or post graphs") from e
-
-            # Update tracker management
-            try:
-                self.update_tracker.last_update = datetime.now()
-                self.update_tracker.next_update = self.update_tracker.calculate_next_update(
-                    self.update_tracker.last_update
-                )
-                self.update_tracker.save_tracker()
-            except Exception as e:
-                raise BackgroundTaskError("Failed to update tracker") from e
-
             next_update_log = self.update_tracker.get_next_update_readable()
             log(self.translations["log_graphs_updated_posted"].format(
                 next_update=next_update_log
             ))
-
+            
         except Exception as e:
             if isinstance(e, (BackgroundTaskError, MainConfigError)):
                 raise
             error_msg = f"Background initialization failed: {str(e)}"
             logging.error(error_msg)
             raise BackgroundTaskError(error_msg) from e
+
+    async def _check_permissions(self) -> None:
+        """Check bot permissions with error handling."""
+        try:
+            log(self.translations["log_checking_command_permissions"])
+            await check_permissions_all_guilds(self, self.translations)
+            log(self.translations["log_command_permissions_checked"])
+        except PermissionError as e:
+            raise BackgroundTaskError("Permission check failed") from e
+
+    async def _reload_config_with_retry(self, max_retries: int = 3, retry_delay: int = 5) -> None:
+        """Reload configuration with retry mechanism."""
+        last_error = None
+        for attempt in range(max_retries):
+            try:
+                self.config = load_config(self.config_path, reload=True)
+                return
+            except Exception as e:
+                last_error = e
+                if attempt < max_retries - 1:
+                    log(self.translations["log_config_reload_retry"].format(
+                        attempt=attempt + 1,
+                        max_retries=max_retries,
+                        error=str(e)
+                    ), logging.WARNING)
+                    await asyncio.sleep(retry_delay)
+                    continue
+                error_msg = self.translations["log_config_reload_failed"].format(error=str(e))
+                logging.error(error_msg)
+                raise MainConfigError("Configuration reload failed") from last_error
+
+    async def _validate_channel(self) -> discord.TextChannel:
+        """Validate and return the target channel."""
+        channel = self.get_channel(self.config["CHANNEL_ID"])
+        if not channel:
+            error_msg = self.translations["log_channel_not_found"].format(
+                channel_id=self.config["CHANNEL_ID"]
+            )
+            logging.error(error_msg)
+            raise BackgroundTaskError(error_msg)
+        return channel
+
+    async def _update_and_post_graphs(self, channel: discord.TextChannel) -> None:
+        """Generate and post graphs to the specified channel."""
+        try:
+            await self.graph_manager.delete_old_messages(channel)
+            graph_files = await self.graph_manager.generate_and_save_graphs(self.data_fetcher)
+            if not graph_files:
+                raise BackgroundTaskError("No graphs were generated")
+            await self.graph_manager.post_graphs(channel, graph_files, self.update_tracker)
+        except Exception as e:
+            raise BackgroundTaskError("Failed to generate or post graphs") from e
+
+    async def _update_tracker_state(self) -> None:
+        """Update the tracker state with proper error handling."""
+        try:
+            self.update_tracker.last_update = datetime.now()
+            self.update_tracker.next_update = self.update_tracker.calculate_next_update(
+                self.update_tracker.last_update
+            )
+            self.update_tracker.save_tracker()
+        except Exception as e:
+            raise BackgroundTaskError("Failed to update tracker") from e
 
     async def on_ready(self) -> None:
         """Handle the on_ready event with enhanced error handling."""
@@ -511,7 +520,43 @@ async def main() -> None:
         finally:
             # Ensure bot is properly closed
             try:
-                await bot.close()
+                logger.info("Initiating bot shutdown sequence...")
+                
+                # Cancel all pending tasks except shutdown tasks
+                pending = [t for t in asyncio.all_tasks() 
+                        if t is not asyncio.current_task() 
+                        and not t.done()]
+                
+                if pending:
+                    logger.info(f"Cancelling {len(pending)} pending tasks...")
+                    # Cancel all pending tasks
+                    for task in pending:
+                        task.cancel()
+                    
+                    try:
+                        # Wait for all tasks to complete with timeout
+                        # Return when all tasks are complete or when timeout occurs
+                        await asyncio.wait(pending, timeout=5)
+                        
+                        # Check for tasks that didn't complete in time
+                        remaining = [t for t in pending if not t.done()]
+                        if remaining:
+                            logger.warning(f"{len(remaining)} tasks did not complete in time")
+                            
+                    except asyncio.CancelledError:
+                        logger.info("Shutdown tasks cancelled")
+                    except Exception as e:
+                        logger.error(f"Error while waiting for tasks to complete: {e}")
+
+                # Close the bot connection
+                try:
+                    logger.info("Closing bot connection...")
+                    await bot.close()
+                except Exception as e:
+                    logger.error(f"Error closing bot connection: {e}")
+                    
+                logger.info("Bot shutdown complete")
+                
             except Exception as e:
                 logger.error(f"Error during bot shutdown: {e}")
 

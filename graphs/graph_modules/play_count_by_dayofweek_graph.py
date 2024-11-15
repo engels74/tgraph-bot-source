@@ -240,6 +240,7 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
         except Exception as e:
             error_msg = f"Error plotting graph: {str(e)}"
             logging.error(error_msg)
+            self.cleanup_figure()  # Clean up resources on error
             raise GraphGenerationError(error_msg) from e
 
     async def generate(self, data_fetcher, user_id: Optional[str] = None) -> Optional[str]:

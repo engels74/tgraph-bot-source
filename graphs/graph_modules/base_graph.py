@@ -292,7 +292,7 @@ class BaseGraph(ABC):
                 plt.close(self.figure)
                 self.figure = None
                 self.ax = None
-        except Exception as e:
+        except (ValueError, RuntimeError, TypeError) as e:
             logging.warning(f"Error during figure cleanup: {str(e)}")
             # Still set to None even if cleanup fails to prevent reuse
             self.figure = None

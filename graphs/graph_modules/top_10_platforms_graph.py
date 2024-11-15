@@ -120,6 +120,16 @@ class Top10PlatformsGraph(BaseGraph):
                 if not platform.strip():
                     raise DataValidationError("Empty platform name found")
 
+            # Validate numeric data
+            for data_series in series_data:
+                for value in data_series:
+                    if not isinstance(value, (int, float)):
+                        raise DataValidationError(
+                            f"Invalid data type in series: {type(value)}. Expected numeric value."
+                        )
+                    if value < 0:
+                        raise DataValidationError(f"Negative value found in series: {value}")
+
         except Exception as e:
             raise DataValidationError(f"Platform data validation failed: {str(e)}") from e
 

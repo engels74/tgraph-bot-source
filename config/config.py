@@ -443,7 +443,6 @@ __all__ = [
     'CONFIG_PATH',
     'ConfigSchema',
     'ConfigError',
-    'ConfigLoadError',
     'ConfigValidationError',
     'ConfigUpdateError',
     'ConfigKeyError',

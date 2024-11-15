@@ -110,6 +110,9 @@ class DailyPlayCountGraph(BaseGraph):
                     datetime_dates.append(dt)
                 except ValueError as e:
                     raise DataValidationError(f"Invalid date format: {date}") from e
+            
+            # Sort dates to ensure correct date range calculation
+            datetime_dates.sort()
                     
             # Validate date range
             if datetime_dates:

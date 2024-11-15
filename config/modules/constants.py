@@ -5,8 +5,11 @@ Constant definitions for TGraph Bot configuration.
 Defines the structure and organization of configuration options with enhanced error handling.
 """
 
-from typing import Dict, List, Set, Optional, Union
+from typing import Dict, List, Set, Optional, Union, NoReturn, TypeVar
 import logging
+
+# Type variable for generic exception types
+E = TypeVar('E', bound=Exception)
 
 # Custom Exception Hierarchy
 class ConstantsError(Exception):
@@ -103,6 +106,59 @@ CONFIG_SECTIONS: Dict[str, Dict[str, Union[str, List[str]]]] = {
     },
 }
 
+def handle_error(
+    error: E,
+    translation_key: str,
+    fallback_msg: str,
+    translations: Optional[Dict[str, str]] = None,
+    error_class: Optional[type[E]] = None,
+    **format_args
+) -> NoReturn:
+    """
+    Helper function to handle errors with translations.
+    
+    Args:
+        error: The original exception
+        translation_key: Key for translation lookup
+        fallback_msg: Default message if translation not found
+        translations: Optional translations dictionary
+        error_class: Optional specific error class to raise
+        **format_args: Format arguments for the error message
+        
+    Raises:
+        The specified error class or the original error's class
+    """
+    error_msg = (translations or {}).get(
+        translation_key,
+        fallback_msg
+    ).format(error=str(error), **format_args)
+    
+    logging.error(error_msg)
+    raise (error_class or type(error))(error_msg) from error
+
+def log_with_translation(
+    level: int,
+    translation_key: str,
+    fallback_msg: str,
+    translations: Optional[Dict[str, str]] = None,
+    **format_args
+) -> None:
+    """
+    Helper function for logging with translations.
+    
+    Args:
+        level: Logging level
+        translation_key: Key for translation lookup
+        fallback_msg: Default message if translation not found
+        translations: Optional translations dictionary
+        **format_args: Format arguments for the message
+    """
+    msg = (translations or {}).get(
+        translation_key,
+        fallback_msg
+    ).format(**format_args)
+    logging.log(level, msg)
+
 def validate_category(category: str, translations: Optional[Dict[str, str]] = None) -> None:
     """
     Validate a category exists and is properly defined.
@@ -116,22 +172,16 @@ def validate_category(category: str, translations: Optional[Dict[str, str]] = No
     """
     try:
         if category not in CONFIG_CATEGORIES:
-            error_msg = (translations or {}).get(
-                'error_invalid_category',
-                'Invalid category: {category}'
-            ).format(category=category)
-            logging.error(error_msg)
-            raise CategoryError(error_msg)
-            
+            raise CategoryError(f"Invalid category: {category}")
     except Exception as e:
-        if isinstance(e, CategoryError):
-            raise
-        error_msg = (translations or {}).get(
-            'error_category_validation',
-            'Error validating category {category}: {error}'
-        ).format(category=category, error=str(e))
-        logging.error(error_msg)
-        raise CategoryError(error_msg) from e
+        handle_error(
+            e,
+            'error_invalid_category',
+            'Invalid category: {category}',
+            translations,
+            CategoryError,
+            category=category
+        )
 
 def get_category_keys(category: str, translations: Optional[Dict[str, str]] = None) -> List[str]:
     """
@@ -156,23 +206,28 @@ def get_category_keys(category: str, translations: Optional[Dict[str, str]] = No
             if section["category"] == category:
                 section_keys = section.get("keys", [])
                 if not isinstance(section_keys, list):
-                    error_msg = (translations or {}).get(
-                        'error_invalid_section_keys',
-                        'Invalid keys format in section'
-                    )
-                    raise KeyError(error_msg)
+                    raise KeyError("Invalid keys format in section")
                 keys.extend(section_keys)
         return keys
         
-    except (CategoryError, KeyError):
-        raise
-    except Exception as e:
-        error_msg = (translations or {}).get(
+    except (CategoryError, KeyError) as e:
+        handle_error(
+            e,
             'error_key_retrieval',
-            'Error retrieving keys for category {category}: {error}'
-        ).format(category=category, error=str(e))
-        logging.error(error_msg)
-        raise KeyError(error_msg) from e
+            'Error retrieving keys for category {category}: {error}',
+            translations,
+            KeyError if isinstance(e, KeyError) else None,
+            category=category
+        )
+    except Exception as e:
+        handle_error(
+            e,
+            'error_unexpected',
+            'Unexpected error retrieving keys for {category}: {error}',
+            translations,
+            KeyError,
+            category=category
+        )
 
 def get_key_category(key: str, translations: Optional[Dict[str, str]] = None) -> str:
     """
@@ -193,28 +248,20 @@ def get_key_category(key: str, translations: Optional[Dict[str, str]] = None) ->
             if key in section.get("keys", []):
                 category = section["category"]
                 if not isinstance(category, str):
-                    error_msg = (translations or {}).get(
-                        'error_invalid_category_type',
-                        'Invalid category type for key {key}'
-                    ).format(key=key)
-                    raise KeyError(error_msg)
+                    raise KeyError("Invalid category type")
                 return category
                 
-        error_msg = (translations or {}).get(
-            'error_key_not_found',
-            'Configuration key not found in any category: {key}'
-        ).format(key=key)
-        raise KeyError(error_msg)
+        raise KeyError(f"Configuration key not found in any category: {key}")
         
     except Exception as e:
-        if isinstance(e, KeyError):
-            raise
-        error_msg = (translations or {}).get(
+        handle_error(
+            e,
             'error_category_lookup',
-            'Error looking up category for key {key}: {error}'
-        ).format(key=key, error=str(e))
-        logging.error(error_msg)
-        raise KeyError(error_msg) from e
+            'Error looking up category for key {key}: {error}',
+            translations,
+            KeyError,
+            key=key
+        )
 
 def get_all_keys(translations: Optional[Dict[str, str]] = None) -> Dict[str, List[str]]:
     """
@@ -231,40 +278,45 @@ def get_all_keys(translations: Optional[Dict[str, str]] = None) -> Dict[str, Lis
     """
     try:
         categorized_keys: Dict[str, List[str]] = {
-            category: []
-            for category in CONFIG_CATEGORIES
+            category: [] for category in CONFIG_CATEGORIES
         }
         
         for section in CONFIG_SECTIONS.values():
             category = section["category"]
             if not isinstance(category, str) or category not in CONFIG_CATEGORIES:
-                error_msg = (translations or {}).get(
-                    'error_invalid_section_category',
-                    'Invalid category in section: {category}'
-                ).format(category=category)
-                raise ValidationError(error_msg)
+                raise ValidationError(f"Invalid category in section: {category}")
                 
             section_keys = section.get("keys", [])
             if not isinstance(section_keys, list):
-                error_msg = (translations or {}).get(
-                    'error_invalid_keys_format',
-                    'Invalid keys format in section with category {category}'
-                ).format(category=category)
-                raise ValidationError(error_msg)
+                raise ValidationError(f"Invalid keys format in section with category {category}")
                 
             categorized_keys[category].extend(section_keys)
+            
+        # Log any unused categories
+        unused_categories = {
+            cat for cat, keys in categorized_keys.items() if not keys
+        }
+        if unused_categories:
+            log_with_translation(
+                logging.WARNING,
+                'warning_unused_categories',
+                'Unused categories found: {categories}',
+                translations,
+                categories=unused_categories
+            )
             
         return categorized_keys
         
     except ValidationError:
         raise
     except Exception as e:
-        error_msg = (translations or {}).get(
+        handle_error(
+            e,
             'error_key_organization',
-            'Error organizing configuration keys: {error}'
-        ).format(error=str(e))
-        logging.error(error_msg)
-        raise ValidationError(error_msg) from e
+            'Error organizing configuration keys: {error}',
+            translations,
+            ValidationError
+        )
 
 def get_category_display_name(category: str, translations: Optional[Dict[str, str]] = None) -> str:
     """
@@ -283,16 +335,17 @@ def get_category_display_name(category: str, translations: Optional[Dict[str, st
     try:
         validate_category(category, translations)
         return CONFIG_CATEGORIES[category]
-        
     except CategoryError:
         raise
     except Exception as e:
-        error_msg = (translations or {}).get(
+        handle_error(
+            e,
             'error_display_name',
-            'Error getting display name for category {category}: {error}'
-        ).format(category=category, error=str(e))
-        logging.error(error_msg)
-        raise CategoryError(error_msg) from e
+            'Error getting display name for category {category}: {error}',
+            translations,
+            CategoryError,
+            category=category
+        )
 
 def validate_config_structure(translations: Optional[Dict[str, str]] = None) -> None:
     """
@@ -310,20 +363,19 @@ def validate_config_structure(translations: Optional[Dict[str, str]] = None) -> 
         for section in CONFIG_SECTIONS.values():
             category = section.get("category")
             if not isinstance(category, str):
-                error_msg = (translations or {}).get(
-                    'error_invalid_section_category',
-                    'Invalid or missing category in section'
-                )
-                raise ValidationError(error_msg)
+                raise ValidationError("Invalid or missing category in section")
             used_categories.add(category)
             
+        # Log unused categories
         unused_categories = set(CONFIG_CATEGORIES.keys()) - used_categories
         if unused_categories:
-            error_msg = (translations or {}).get(
-                'error_unused_categories',
-                'Unused categories found: {categories}'
-            ).format(categories=unused_categories)
-            logging.warning(error_msg)
+            log_with_translation(
+                logging.WARNING,
+                'warning_unused_categories',
+                'Unused categories found: {categories}',
+                translations,
+                categories=unused_categories
+            )
             
         # Validate no key appears in multiple sections
         all_keys: Set[str] = set()
@@ -332,11 +384,7 @@ def validate_config_structure(translations: Optional[Dict[str, str]] = None) -> 
         for section in CONFIG_SECTIONS.values():
             section_keys = section.get("keys", [])
             if not isinstance(section_keys, list):
-                error_msg = (translations or {}).get(
-                    'error_invalid_keys_type',
-                    'Invalid keys type in section'
-                )
-                raise ValidationError(error_msg)
+                raise ValidationError("Invalid keys type in section")
                 
             for key in section_keys:
                 if key in all_keys:
@@ -344,23 +392,25 @@ def validate_config_structure(translations: Optional[Dict[str, str]] = None) -> 
                 all_keys.add(key)
                 
         if duplicate_keys:
-            error_msg = (translations or {}).get(
-                'error_duplicate_keys',
-                'Duplicate keys found in configuration: {keys}'
-            ).format(keys=duplicate_keys)
-            raise ValidationError(error_msg)
+            raise ValidationError(f"Duplicate keys found in configuration: {duplicate_keys}")
             
-        logging.info("Configuration structure validation completed successfully")
+        log_with_translation(
+            logging.INFO,
+            'info_structure_validated',
+            'Configuration structure validation completed successfully',
+            translations
+        )
         
     except ValidationError:
         raise
     except Exception as e:
-        error_msg = (translations or {}).get(
+        handle_error(
+            e,
             'error_structure_validation',
-            'Error validating configuration structure: {error}'
-        ).format(error=str(e))
-        logging.error(error_msg)
-        raise ValidationError(error_msg) from e
+            'Error validating configuration structure: {error}',
+            translations,
+            ValidationError
+        )
 
 # Export public interface
 __all__ = [

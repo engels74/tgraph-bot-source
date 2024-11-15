@@ -5,8 +5,9 @@ Enhanced permission checker for TGraph Bot.
 Handles Discord permission management with robust error handling and validation.
 """
 
-from typing import Dict, List, Set, Any
 from discord.errors import NotFound, Forbidden, HTTPException
+from typing import Dict, List, Set, Any
+import asyncio
 import discord
 import logging
 import textwrap
@@ -100,6 +101,31 @@ def create_table(
         logging.error(error_msg)
         raise TableFormattingError(error_msg) from e
 
+async def fetch_with_retry(fetch_func, max_retries=3):
+    """
+    Execute a fetch function with retry logic for rate limits.
+    
+    Args:
+        fetch_func: Async function to execute
+        max_retries: Maximum number of retry attempts
+        
+    Returns:
+        Result from the fetch function
+        
+    Raises:
+        CommandError: If max retries exceeded
+    """
+    for attempt in range(max_retries):
+        try:
+            return await fetch_func()
+        except HTTPException as e:
+            if e.status == 429:  # Rate limited
+                retry_after = e.response.headers.get('Retry-After', 1)
+                await asyncio.sleep(float(retry_after))
+                continue
+            raise
+    raise CommandError("Max retries exceeded")
+
 async def get_registered_commands(
     bot: discord.Client,
     guild: discord.Guild,
@@ -123,7 +149,7 @@ async def get_registered_commands(
         command_map = {}
         
         try:
-            global_commands = await bot.tree.fetch_commands()
+            global_commands = await fetch_with_retry(lambda: bot.tree.fetch_commands())
             for cmd in global_commands:
                 command_map[str(cmd.id)] = cmd
         except HTTPException as e:
@@ -134,7 +160,7 @@ async def get_registered_commands(
             raise CommandError(error_msg) from e
 
         try:
-            guild_commands = await bot.tree.fetch_commands(guild=guild)
+            guild_commands = await fetch_with_retry(lambda: bot.tree.fetch_commands(guild=guild))
             for cmd in guild_commands:
                 cmd_id = str(cmd.id)
                 if cmd_id in command_map:

@@ -7,6 +7,7 @@ Handles scheduling and tracking of update times with robust error handling and v
 
 from datetime import datetime, timedelta, time
 from typing import Dict, Any, Optional, Tuple
+import contextlib
 import json
 import logging
 import os
@@ -563,10 +564,8 @@ class UpdateTracker:
                     
             except OSError as e:
                 if os.path.exists(temp_file):
-                    try:
+                    with contextlib.suppress(OSError):
                         os.remove(temp_file)
-                    except OSError:
-                        pass
                 raise FileOperationError(f"Failed to save tracker file: {str(e)}") from e
                 
             logging.info(self.translations.get(

@@ -69,12 +69,15 @@ class AboutCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
         translations : Dict[str, str]
             Dictionary containing translation strings
         """
+        # Initialize base classes in proper MRO order
+        super().__init__()  # Initialize commands.Cog first
+        CommandMixin.__init__(self)  # Then mixins in order
+        ErrorHandlerMixin.__init__(self)
+        
+        # Set instance attributes
         self.bot = bot
         self.config = config
         self.translations = translations
-        CommandMixin.__init__(self)
-        ErrorHandlerMixin.__init__(self)
-        super().__init__()
 
     def create_about_embed(self) -> Embed:
         """Create an embed containing bot information.
