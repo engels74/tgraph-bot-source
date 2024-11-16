@@ -81,36 +81,45 @@ class TGraphBot(commands.Bot):
         self.update_tracker = kwargs.pop("update_tracker", None)
         self.config = kwargs.pop("config", None)
         self.config_path = kwargs.pop("config_path", None)
-        self._translations = kwargs.pop("translations", {})  # Store initial translations
+        # Store translations immediately for synchronous access
+        self.translations = kwargs.pop("translations", {})
         self._initialized_resources = []
         self._initialization_lock = asyncio.Lock()
-
-    async def initialize(self) -> None:
-        """Asynchronously initialize bot components."""
+        
         try:
-            # Initialize DataFetcher first
+            # Initialize core components synchronously
             self.data_fetcher = DataFetcher(self.config)
             self._initialized_resources.append(self.data_fetcher)
             
-            # Initialize GraphManager with DataFetcher
-            self.graph_manager = GraphManager(self.config, self._translations, self.img_folder)
+            self.graph_manager = GraphManager(self.config, self.translations, self.img_folder)
             self._initialized_resources.append(self.graph_manager)
             
-            # Initialize UserGraphManager
-            self.user_graph_manager = UserGraphManager(self.config, self._translations, self.img_folder)
+            self.user_graph_manager = UserGraphManager(self.config, self.translations, self.img_folder)
             self._initialized_resources.append(self.user_graph_manager)
             
-            # Now load translations asynchronously
-            translation_manager = TranslationManager.get_instance()
-            self.translations = await translation_manager.load_translations(self.config.get("LANGUAGE", "en"))
-            
-            logging.info(self.translations["log_tgraphbot_initialized"])
+            logging.info(self.translations.get("log_tgraphbot_initialized", "TGraphBot initialized"))
             
         except Exception as e:
-            await self._cleanup_resources()
+            self._cleanup_resources()
             error_msg = f"Failed to initialize TGraphBot: {str(e)}"
             logging.error(error_msg)
             raise InitializationError(error_msg) from e
+
+    async def _reinitialize_translations(self) -> None:
+        """Asynchronously update translations after initial setup."""
+        try:
+            translation_manager = TranslationManager.get_instance()
+            new_translations = await translation_manager.load_translations(self.config.get("LANGUAGE", "en"))
+            
+            # Update translations atomically
+            async with self._initialization_lock:
+                self.translations.update(new_translations)
+                
+            logging.info(self.translations.get("log_translations_reloaded", "Translations reloaded"))
+            
+        except Exception as e:
+            logging.error(f"Failed to reinitialize translations: {str(e)}")
+            # Continue with existing translations if update fails
 
     async def setup_hook(self) -> None:
         """Initialize the bot's state after login with enhanced error handling."""
