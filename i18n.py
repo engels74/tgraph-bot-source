@@ -176,12 +176,22 @@ class TranslationManager:
                     return self._cached_translations[language]
                     
                 translations = await self._load_and_validate_translations(language)
+                if not translations:
+                    # Fallback to default language if translations failed to load
+                    translations = await self._load_and_validate_translations(self.default_language)
+                    logging.warning(f"Failed to load translations for {language}, using {self.default_language}")
+                    
                 self._cached_translations[language] = translations
                 return translations
             
         except Exception as e:
             logging.error(f"Error loading translations for {language}: {str(e)}")
-            raise TranslationError(f"Failed to load translations for {language}") from e
+            # Load default language as fallback
+            try:
+                return await self._load_and_validate_translations(self.default_language)
+            except Exception as fallback_error:
+                logging.error(f"Failed to load fallback translations: {str(fallback_error)}")
+                raise TranslationError(f"Failed to load translations") from e
 
     async def _load_and_validate_translations(self, language: str) -> Dict[str, str]:
         """Helper method to load and validate translations asynchronously.

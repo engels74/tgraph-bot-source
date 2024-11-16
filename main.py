@@ -69,6 +69,8 @@ class CleanupError(MainError):
     """Raised during cleanup failures."""
     pass
 
+# main.py update
+
 class TGraphBot(commands.Bot):
     """Enhanced TGraph Bot with standardized error handling."""
     
@@ -79,37 +81,71 @@ class TGraphBot(commands.Bot):
         self.update_tracker = kwargs.pop("update_tracker", None)
         self.config = kwargs.pop("config", None)
         self.config_path = kwargs.pop("config_path", None)
-        self.translations = kwargs.pop("translations", None)
+        self._translations = kwargs.pop("translations", {})  # Store initial translations
         self._initialized_resources = []
         self._initialization_lock = asyncio.Lock()
-        
+
+    async def initialize(self) -> None:
+        """Asynchronously initialize bot components."""
         try:
             # Initialize DataFetcher first
             self.data_fetcher = DataFetcher(self.config)
             self._initialized_resources.append(self.data_fetcher)
             
             # Initialize GraphManager with DataFetcher
-            self.graph_manager = GraphManager(self.config, self.translations, self.img_folder)
+            self.graph_manager = GraphManager(self.config, self._translations, self.img_folder)
             self._initialized_resources.append(self.graph_manager)
             
             # Initialize UserGraphManager
-            self.user_graph_manager = UserGraphManager(self.config, self.translations, self.img_folder)
+            self.user_graph_manager = UserGraphManager(self.config, self._translations, self.img_folder)
             self._initialized_resources.append(self.user_graph_manager)
             
-            log(self.translations["log_tgraphbot_initialized"])
+            # Now load translations asynchronously
+            translation_manager = TranslationManager.get_instance()
+            self.translations = await translation_manager.load_translations(self.config.get("LANGUAGE", "en"))
+            
+            logging.info(self.translations["log_tgraphbot_initialized"])
             
         except Exception as e:
-            self._cleanup_resources()
+            await self._cleanup_resources()
             error_msg = f"Failed to initialize TGraphBot: {str(e)}"
             logging.error(error_msg)
             raise InitializationError(error_msg) from e
 
-    def _cleanup_resources(self) -> None:
+    async def setup_hook(self) -> None:
+        """Initialize the bot's state after login with enhanced error handling."""
+        try:
+            async with self._initialization_lock:
+                # Initialize bot components
+                await self.initialize()
+
+                # Load command extensions
+                await load_extensions(self)
+
+                # Sync application commands
+                logging.info(self.translations["log_syncing_application_commands"])
+                await self.tree.sync()
+                logging.info(self.translations["log_application_commands_synced"])
+
+        except commands.ExtensionError as e:
+            error_msg = self.translations["log_extension_load_error"].format(error=str(e))
+            logging.error(error_msg)
+            raise InitializationError(error_msg) from e
+        except discord.HTTPException as e:
+            error_msg = self.translations["log_command_sync_error"].format(error=str(e))
+            logging.error(error_msg)
+            raise InitializationError(error_msg) from e
+        except Exception as e:
+            error_msg = self.translations["log_unexpected_setup_error"].format(error=str(e))
+            logging.error(error_msg)
+            raise InitializationError(error_msg) from e
+
+    async def _cleanup_resources(self) -> None:
         """Clean up initialized resources in reverse order."""
         for resource in reversed(self._initialized_resources):
             try:
                 if hasattr(resource, 'cleanup'):
-                    resource.cleanup()
+                    await resource.cleanup()  # Make cleanup async
             except Exception as e:
                 logging.error(f"Error during cleanup of {resource.__class__.__name__}: {e}")
 
