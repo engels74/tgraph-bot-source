@@ -59,11 +59,11 @@ class TGraphBot(commands.Bot):
         intents.guilds = True
         intents.messages = True
         
-        # Pass intents to super().__init__
+        # Pass intents to super().__init__ with updated argument order
         super().__init__(
+            *args,
             command_prefix="!",
             intents=intents,
-            *args, 
             **kwargs
         )
         
@@ -265,40 +265,54 @@ class TGraphBot(commands.Bot):
         except Exception as e:
             raise BackgroundTaskError("Failed to update tracker") from e
 
+    @tasks.loop(seconds=60)
+    async def schedule_updates_task(self):
+        """Background task for scheduling updates with proper error handling"""
+        try:
+            if self.update_tracker.is_update_due():
+                log(self.translations["log_auto_update_started"])
+                
+                # Handle config reload
+                config_success, consecutive_failures = await _handle_config_reload(
+                    self, 0, 3, 600  # Start with 0 failures, max 3 attempts, 10 min delay
+                )
+                if not config_success:
+                    return
+
+                # Handle channel validation
+                channel, channel_check_failures = await _handle_channel_validation(
+                    self, 0, 3, 1800  # Start with 0 failures, max 3 attempts, 30 min delay
+                )
+                if not channel:
+                    return
+                
+                # Handle graph update
+                if not await _handle_graph_update(self, channel):
+                    raise BackgroundTaskError("Failed to update graphs")
+                    
+        except Exception as e:
+            error_msg = f"Error in scheduled update task: {str(e)}"
+            logging.error(error_msg)
+            # The tasks extension will automatically handle the retry logic
+
+    @schedule_updates_task.before_loop
+    async def before_schedule_updates(self):
+        """Wait until the bot is ready before starting the task"""
+        await self.wait_until_ready()
+
     async def on_ready(self) -> None:
         """Handle the on_ready event with enhanced error handling."""
         log(self.translations["log_bot_logged_in"].format(name=self.user.name))
         
         try:
-            # Create background tasks using discord.ext.tasks
-            self.create_monitored_task(self.background_initialization())
-            self.create_monitored_task(self.schedule_updates())
+            # Start the background task using tasks.loop
+            self.schedule_updates_task.start()
+            await self.background_initialization()
             
         except Exception as e:
             error_msg = f"Failed to start background tasks: {str(e)}"
             logging.error(error_msg)
             raise BackgroundTaskError(error_msg) from e
-
-    @tasks.loop(seconds=60)  # Use tasks.loop decorator
-    async def schedule_updates_task(self):
-        """Background task for scheduling updates"""
-        # Existing schedule_updates logic here
-
-    def create_monitored_task(self, coro):
-        """Create a monitored background task that logs exceptions."""
-        task = self.loop.create_task(coro)
-        task.add_done_callback(self._handle_background_task_exception)
-        return task
-
-    def _handle_background_task_exception(self, task):
-        """Handle exceptions from background tasks."""
-        try:
-            exc = task.exception()
-            if exc:
-                logging.error(f"Background task failed with exception: {exc}")
-                # Optionally restart the task or take other recovery actions
-        except asyncio.CancelledError:
-            pass  # Task was cancelled, this is normal during shutdown
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
@@ -394,57 +408,6 @@ async def _handle_graph_update(bot: TGraphBot, channel: discord.TextChannel) -> 
         error_msg = bot.translations["log_auto_update_error"].format(error=str(e))
         logging.error(error_msg)
         return False
-
-async def schedule_updates(bot: TGraphBot) -> None:
-    """Schedule updates with enhanced error handling and retry mechanisms."""
-    # Constants for timing and retry logic
-    NORMAL_DELAY = 60  # Normal check interval in seconds
-    ERROR_DELAY = 300  # Delay after errors in seconds
-    MAX_CONSECUTIVE_FAILURES = 3  # Maximum allowed consecutive config reload failures
-    FAILURE_DELAY = 600  # Delay after max failures in seconds (10 minutes)
-    MAX_CHANNEL_FAILURES = 3  # Maximum allowed consecutive channel check failures
-    CHANNEL_RETRY_DELAY = 1800  # Delay after max channel failures (30 minutes)
-    
-    # Initialize failure counters
-    consecutive_failures = 0
-    channel_check_failures = 0
-    
-    while True:
-        try:
-            if bot.update_tracker.is_update_due():
-                log(bot.translations["log_auto_update_started"])
-                
-                # Handle config reload
-                config_success, consecutive_failures = await _handle_config_reload(
-                    bot, 
-                    consecutive_failures, 
-                    MAX_CONSECUTIVE_FAILURES, 
-                    FAILURE_DELAY
-                )
-                if not config_success:
-                    continue
-
-                # Handle channel validation
-                channel, channel_check_failures = await _handle_channel_validation(
-                    bot, 
-                    channel_check_failures, 
-                    MAX_CHANNEL_FAILURES, 
-                    CHANNEL_RETRY_DELAY
-                )
-                if not channel:
-                    continue
-                
-                # Handle graph update
-                if not await _handle_graph_update(bot, channel):
-                    raise BackgroundTaskError("Failed to update graphs")
-                    
-            await asyncio.sleep(NORMAL_DELAY)
-        except Exception as e:
-            if not isinstance(e, BackgroundTaskError):
-                error_msg = f"Unexpected error in update scheduling: {str(e)}"
-                logging.error(error_msg)
-            # Add delay after errors to prevent tight loops
-            await asyncio.sleep(ERROR_DELAY)
 
 def setup_logging(log_file: str) -> None:
     """Set up logging with error handling."""

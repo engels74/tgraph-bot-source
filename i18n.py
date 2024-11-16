@@ -11,6 +11,7 @@ from ruamel.yaml import YAML, YAMLError
 from threading import Lock
 from typing import Dict, List, Optional
 import logging
+import asyncio  # Add this import at the top of the file
 
 class TranslationError(Exception):
     """Base exception class for translation-related errors."""
@@ -230,6 +231,15 @@ class TranslationManager:
         with self._cache_lock:
             self._cached_translations.clear()
 
+    async def _update_command_description(self, command, translation, updated_commands, failed_commands):
+        await asyncio.sleep(1.0)  # Rate limit to 1 request per second
+        try:
+            command.description = translation
+            updated_commands.append(command.name)
+        except Exception as e:
+            logging.error(f"Failed to update description for command {command.name}: {str(e)}")
+            failed_commands.append(command.name)
+
     def update_bot_translations(self, bot, language: str) -> None:
         """Update bot's translations and command descriptions.
         
@@ -256,18 +266,17 @@ class TranslationManager:
             updated_commands = []  # Track successfully updated commands
             failed_commands = []    # Track commands that failed to update
             
-            # Update command descriptions
-            for command in bot.tree.walk_commands():
-                translation_key = f"{command.name}_command_description"
-                try:
-                    command.description = bot.translations[translation_key]
-                    updated_commands.append(command.name)  # Track successful updates
-                except KeyError:
-                    logging.warning(f"Missing translation for command description: {translation_key}")
-                    failed_commands.append(command.name)  # Track failed updates
-                except Exception as e:
-                    logging.error(f"Failed to update description for command {command.name}: {str(e)}")
-                    failed_commands.append(command.name)  # Track failed updates
+            # Use asyncio to handle rate limiting
+            async def update_all_commands():
+                for command in bot.tree.walk_commands():
+                    translation_key = f"{command.name}_command_description"
+                    translation = bot.translations.get(translation_key)
+                    if translation:
+                        await self._update_command_description(
+                            command, translation, updated_commands, failed_commands
+                        )
+
+            asyncio.run(update_all_commands())
             
             logging.info(
                 f"Updated bot translations to {language}. "
