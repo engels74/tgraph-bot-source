@@ -241,7 +241,7 @@ class ConfigCog(commands.GroupCog, CommandMixin, ErrorHandlerMixin, name="config
                 value = None
 
             # Validate and format value
-            formatted_value, error_message = await validate_and_format_config_value(
+            formatted_value, error_message = validate_and_format_config_value(
                 key, value, self.translations
             )
             

@@ -152,7 +152,8 @@ class DataFetcher:
 
             api_params = {k: v for k, v in api_params.items() if v is not None}
 
-            response = requests.get(self.config["TAUTULLI_URL"], params=api_params)
+            timeout = self.config.get("REQUEST_TIMEOUT", 30)  # Default 30 seconds
+            response = requests.get(self.config["TAUTULLI_URL"], params=api_params, timeout=timeout)
             response.raise_for_status()
             
             data = response.json()
@@ -229,26 +230,29 @@ class DataFetcher:
             # Ensure all params are strings for the API call
             api_params = {k: str(v) for k, v in api_params.items() if v is not None}
 
-            async with aiohttp.ClientSession() as session:
-                async with session.get(self.config["TAUTULLI_URL"], params=api_params) as response:
-                    response.raise_for_status()
-                    raw_data = await response.json()
-                    
-                    if not raw_data or 'response' not in raw_data:
-                        raise DataProcessingError("Invalid API response format")
+            timeout = aiohttp.ClientTimeout(total=self.config.get("REQUEST_TIMEOUT", 30))
+            async with (
+                aiohttp.ClientSession(timeout=timeout) as session,
+                session.get(self.config["TAUTULLI_URL"], params=api_params) as response
+            ):
+                response.raise_for_status()
+                raw_data = await response.json()
+                
+                if not raw_data or 'response' not in raw_data:
+                    raise DataProcessingError("Invalid API response format")
 
-                    if cmd == "get_users":
-                        return raw_data
+                if cmd == "get_users":
+                    return raw_data
 
-                    if 'data' in raw_data['response']:
-                        result_data = raw_data['response']['data']
-                        if not self._validate_data_structure(cmd, result_data):
-                            raise DataProcessingError(f"Invalid data structure for command {cmd}")
-                            
-                        self._set_cached_data(cache_key, result_data)
-                        return result_data
-                    
-                    raise DataProcessingError("No data found in API response")
+                if 'data' in raw_data['response']:
+                    result_data = raw_data['response']['data']
+                    if not self._validate_data_structure(cmd, result_data):
+                        raise DataProcessingError(f"Invalid data structure for command {cmd}")
+                        
+                    self._set_cached_data(cache_key, result_data)
+                    return result_data
+                
+                raise DataProcessingError("No data found in API response")
                     
         except aiohttp.ClientError as e:
             logging.error(f"Error fetching data from Tautulli API asynchronously: {str(e)}")

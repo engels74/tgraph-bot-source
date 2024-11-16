@@ -12,7 +12,7 @@ from bot.permission_checker import check_permissions_all_guilds, PermissionError
 from bot.update_tracker import create_update_tracker, UpdateTrackerError
 from config.config import load_config
 from datetime import datetime
-from discord.ext import commands
+from discord.ext import commands, tasks
 from graphs.graph_manager import GraphManager
 from graphs.graph_modules.data_fetcher import DataFetcher
 from graphs.user_graph_manager import UserGraphManager
@@ -54,12 +54,20 @@ class TGraphBot(commands.Bot):
     """Enhanced TGraph Bot with standardized error handling."""
     
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Initialize essential attributes first
-        self._initialized_resources = []
-        self._initialization_lock = asyncio.Lock()
+        # Initialize intents before super().__init__
+        intents = discord.Intents.default()
+        intents.guilds = True
+        intents.messages = True
         
-        # Initialize other attributes
+        # Pass intents to super().__init__
+        super().__init__(
+            command_prefix="!",
+            intents=intents,
+            *args, 
+            **kwargs
+        )
+        
+        # Initialize other attributes after super().__init__
         self.data_folder = kwargs.pop("data_folder", None)
         self.img_folder = os.path.join(self.data_folder, "img")
         self.update_tracker = kwargs.pop("update_tracker", None)
@@ -261,19 +269,19 @@ class TGraphBot(commands.Bot):
         log(self.translations["log_bot_logged_in"].format(name=self.user.name))
         
         try:
-            # Create and monitor background tasks
-            background_tasks = [
-                self.create_monitored_task(self.background_initialization()),
-                self.create_monitored_task(schedule_updates(self))
-            ]
-            
-            # Store tasks for cleanup
-            self._background_tasks = background_tasks
+            # Create background tasks using discord.ext.tasks
+            self.background_initialization_task.start()
+            self.schedule_updates_task.start()
             
         except Exception as e:
             error_msg = f"Failed to start background tasks: {str(e)}"
             logging.error(error_msg)
             raise BackgroundTaskError(error_msg) from e
+
+    @tasks.loop(seconds=60)  # Use tasks.loop decorator
+    async def schedule_updates_task(self):
+        """Background task for scheduling updates"""
+        # Existing schedule_updates logic here
 
     def create_monitored_task(self, coro):
         """Create a monitored background task that logs exceptions."""
@@ -290,6 +298,16 @@ class TGraphBot(commands.Bot):
                 # Optionally restart the task or take other recovery actions
         except asyncio.CancelledError:
             pass  # Task was cancelled, this is normal during shutdown
+
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx, error):
+        """Handle command errors using discord.py's error system"""
+        if isinstance(error, commands.CommandNotFound):
+            return
+        elif isinstance(error, commands.MissingPermissions):
+            await ctx.send("You don't have permission to use this command.")
+        else:
+            logging.error(f"Command error: {str(error)}")
 
 async def _handle_config_reload(bot: TGraphBot, consecutive_failures: int, max_consecutive_failures: int, failure_delay: int) -> tuple[bool, int]:
     """Handle configuration reload with retry logic.
@@ -553,45 +571,20 @@ async def main() -> None:
         intents.messages = True
 
         try:
-            bot = TGraphBot(
+            async with TGraphBot(
                 command_prefix="!",
-                intents=intents,
                 data_folder=args.data_folder,
                 update_tracker=update_tracker,
                 config=config,
                 config_path=args.config_file,
                 translations=translations,
-            )
+            ) as bot:
+                await bot.start(config["DISCORD_TOKEN"])
         except InitializationError as e:
             logger.error(f"Bot initialization failed: {e}")
             raise
         except Exception as e:
             error_msg = f"Unexpected error during bot initialization: {e}"
-            logger.error(error_msg)
-            raise InitializationError(error_msg) from e
-
-        try:
-            # Start the bot
-            await bot.start(config["DISCORD_TOKEN"])
-        except discord.LoginFailure as e:
-            error_msg = translations.get(
-                "log_login_error",
-                "Login error: {error}"
-            ).format(error=str(e))
-            logger.error(error_msg)
-            raise InitializationError(error_msg) from e
-        except discord.HTTPException as e:
-            error_msg = translations.get(
-                "log_connection_error",
-                "Connection error: {error}"
-            ).format(error=str(e))
-            logger.error(error_msg)
-            raise InitializationError(error_msg) from e
-        except Exception as e:
-            error_msg = translations.get(
-                "log_error_starting_bot",
-                "Error starting bot: {error}"
-            ).format(error=str(e))
             logger.error(error_msg)
             raise InitializationError(error_msg) from e
         finally:

@@ -106,6 +106,19 @@ CONFIG_SECTIONS: Dict[str, Dict[str, Union[str, List[str]]]] = {
     },
 }
 
+# Pre-computed lookup dictionary for key-to-category mapping
+_KEY_CATEGORY_MAP: Dict[str, str] = {}
+
+def _build_key_category_map() -> None:
+    """Build the key-to-category lookup dictionary."""
+    global _KEY_CATEGORY_MAP
+    _KEY_CATEGORY_MAP = {
+        key: section["category"]
+        for section in CONFIG_SECTIONS.values()
+        for key in section.get("keys", [])
+        if isinstance(section.get("category"), str)
+    }
+
 def handle_error(
     error: E,
     translation_key: str,
@@ -244,14 +257,9 @@ def get_key_category(key: str, translations: Optional[Dict[str, str]] = None) ->
         ConfigKeyError: If the key doesn't belong to any category
     """
     try:
-        for section in CONFIG_SECTIONS.values():
-            if key in section.get("keys", []):
-                category = section["category"]
-                if not isinstance(category, str):
-                    raise ConfigKeyError("Invalid category type")
-                return category
-                
-        raise ConfigKeyError(f"Configuration key not found in any category: {key}")
+        if key not in _KEY_CATEGORY_MAP:
+            raise ConfigKeyError(f"Configuration key not found in any category: {key}")
+        return _KEY_CATEGORY_MAP[key]
         
     except Exception as e:
         handle_error(
@@ -358,6 +366,9 @@ def validate_config_structure(translations: Optional[Dict[str, str]] = None) -> 
         ValidationError: If structure validation fails
     """
     try:
+        # Rebuild key category map to ensure it's in sync
+        _build_key_category_map()
+        
         # Check all categories are referenced
         used_categories: Set[str] = set()
         for section in CONFIG_SECTIONS.values():
@@ -426,6 +437,9 @@ __all__ = [
     'ConfigKeyError',
     'ValidationError',
 ]
+
+# Initialize the key category map after CONFIG_SECTIONS is defined
+_build_key_category_map()
 
 # Validate configuration structure on module import
 validate_config_structure()

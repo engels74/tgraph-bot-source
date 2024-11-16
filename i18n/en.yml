@@ -213,6 +213,7 @@ error_no_graphs_generated: "No graphs were generated"
 error_processing_command: "An error occurred while processing the command."
 error_saving_tracker: "Error saving tracker file: {error}"
 error_starting_bot: "Error starting the bot: {error}"
+error_unsupported_type: "Unsupported configuration type for {key}: {type}"
 error_update_post_graphs: "Error in update_and_post_graphs: {error}"
 error_user_graphs_generation: "Error generating graphs for user {user_id}: {error}"
 

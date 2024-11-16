@@ -5,7 +5,7 @@ Enhanced permission checker for TGraph Bot.
 Handles Discord permission management with robust error handling and validation.
 """
 
-from discord.errors import NotFound, Forbidden, HTTPException
+from discord.errors import HTTPException
 from typing import Dict, List, Set, Any
 import asyncio
 import discord

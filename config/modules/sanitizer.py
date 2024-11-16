@@ -98,7 +98,12 @@ def sanitize_config_value(
                         return _sanitize_time(value, translations)
                 return _sanitize_string(value)
             
-            return value
+            # Handle unsupported types
+            error_msg = (translations or {}).get(
+                'error_unsupported_type',
+                'Unsupported configuration type for {key}: {type}'
+            ).format(key=key, type=str(value_type))
+            raise ValidationError(error_msg)
 
         except (ValueError, TypeError) as e:
             error_msg = (translations or {}).get(
@@ -454,7 +459,7 @@ def sanitize_language_code(language: str) -> str:
         sanitized = str(language).strip().strip('"\'').lower()
         
         # Validate against common language code formats
-        if not re.match(r'^[a-z]{2}(-[a-z]{2})?$', sanitized):
+        if not re.match(r'^[a-zA-Z]{2,3}(?:-[a-zA-Z]{2,8})*$', sanitized):
             raise ValidationError(f"Invalid language code format: {language}")
             
         # Limit length

@@ -208,7 +208,7 @@ class TranslationManager:
             # Load and validate requested language
             language_file = self.translations_dir / f"{safe_language}.yml"
             translations = self._load_yaml_file(language_file)
-            self._validate_translations(translations, language, reference_translations)
+            self.validate_translations(translations, language, reference_translations)
             
             return translations
             
@@ -251,7 +251,8 @@ class TranslationManager:
                     command.description = bot.translations[translation_key]
                 except KeyError:
                     logging.warning(f"Missing translation for command description: {translation_key}")
-                    # Keep existing description as fallback
+                except Exception as e:
+                    logging.error(f"Failed to update description for command {command.name}: {str(e)}")
             
             logging.info(f"Updated bot translations and command descriptions to language: {language}")
             

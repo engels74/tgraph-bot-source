@@ -13,8 +13,6 @@ import json
 import logging
 import os
 
-
-
 class UpdateTrackerError(Exception):
     """Base exception for update tracker related errors."""
     pass
@@ -301,16 +299,10 @@ class UpdateTracker:
                     hour=fixed_time.hour,
                     minute=fixed_time.minute
                 )
-                # Ensure future time
-                max_iterations = 366  # Maximum days in a year
-                iterations = 0
-                while next_update <= now:
-                    iterations += 1
-                    if iterations > max_iterations:
-                        raise TimeValidationError(
-                            "Failed to find valid future update time after maximum iterations"
-                        )
-                    next_update += timedelta(days=1)
+
+            if next_update <= now:
+                days_difference = (now - next_update).days + 1
+                next_update += timedelta(days=days_difference)
 
             logging.debug(
                 f"Next update calculation: Input {from_date}, "
