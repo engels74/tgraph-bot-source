@@ -15,6 +15,7 @@ from discord.ext import commands
 from typing import Any, Dict
 from utils.command_utils import CommandMixin, ErrorHandlerMixin
 import logging
+import discord
 
 class AboutError(Exception):
     """Base exception class for about command errors."""
@@ -83,7 +84,8 @@ class AboutCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
         """Create an embed containing bot information.
         
         Creates a formatted embed containing the bot's description,
-        GitHub repository link, and license information.
+        GitHub repository link, and license information using Discord's
+        standard blue color.
 
         Returns
         -------
@@ -92,18 +94,14 @@ class AboutCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
 
         Raises
         ------
-        ConfigurationError
-            If required configuration values are missing
         TranslationError
             If required translation strings are missing
         EmbedFieldError
             If there's an error adding fields to the embed
+        EmbedCreationError
+            If there's a general error during embed creation
         """
         try:
-            # Validate required configuration
-            if "embed_color" not in self.config:
-                raise ConfigurationError("Missing embed_color in configuration")
-            
             # Validate required translations
             required_translations = ["about_description", "about_github"]
             missing_translations = [
@@ -115,9 +113,10 @@ class AboutCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
                     f"Missing required translations: {', '.join(missing_translations)}"
                 )
 
+            # Use Discord blue color directly
             embed = Embed(
                 title="TGraph Bot", 
-                color=self.config["embed_color"]
+                color=discord.Color.blue()
             )
             
             try:

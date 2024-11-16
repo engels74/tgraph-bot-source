@@ -362,8 +362,7 @@ class ConfigCog(commands.GroupCog, CommandMixin, ErrorHandlerMixin, name="config
         return sorted(choices, key=lambda c: c.name)[:25]
 
     async def _update_language(self, language: str) -> None:
-        """
-        Update bot language settings.
+        """Update bot language settings.
         
         Args:
             language: New language code to set
@@ -373,10 +372,28 @@ class ConfigCog(commands.GroupCog, CommandMixin, ErrorHandlerMixin, name="config
         """
         try:
             from i18n import load_translations
-            # Remove the await since load_translations is synchronous
             translations = load_translations(language)
-            self.bot.translations = self.translations = translations
+            
+            # Update translations across all components
+            self.bot.translations = translations
+            self.translations = translations
+            
+            # Update translations for graph-related components
+            if hasattr(self.bot, 'graph_manager'):
+                self.bot.graph_manager.translations = translations
+                self.bot.graph_manager.graph_factory.translations = translations
+                
+            if hasattr(self.bot, 'user_graph_manager'):
+                self.bot.user_graph_manager.translations = translations
+                self.bot.user_graph_manager.graph_factory.translations = translations
+                
+            if hasattr(self.bot, 'data_fetcher'):
+                self.bot.data_fetcher.translations = translations
+                
             await self._update_command_descriptions()
+            
+            logging.info(f"Updated language settings to: {language}")
+            
         except Exception as e:
             logging.error(f"Failed to update language to {language}: {str(e)}")
             raise ConfigUpdateError(f"Failed to update language to {language}") from e

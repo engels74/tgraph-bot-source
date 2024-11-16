@@ -50,6 +50,10 @@ class BackgroundTaskError(MainError):
     """Raised for background task failures."""
     pass
 
+class TranslationError(MainError):
+    """Raised for translation-related errors."""
+    pass
+
 class TGraphBot(commands.Bot):
     """Enhanced TGraph Bot with standardized error handling."""
     
@@ -212,7 +216,7 @@ class TGraphBot(commands.Bot):
             raise BackgroundTaskError("Permission check failed") from e
 
     async def _reload_config_with_retry(self, max_retries: int = 3, retry_delay: int = 5) -> None:
-        """Reload configuration with retry mechanism."""
+        """Reload configuration with retry mechanism and update translations."""
         last_error = None
         for attempt in range(max_retries):
             try:
@@ -220,7 +224,11 @@ class TGraphBot(commands.Bot):
                 self.config = await asyncio.get_event_loop().run_in_executor(
                     None, lambda: load_config(self.config_path, reload=True)
                 )
+                
+                # Reload translations after config update
+                await self._reload_translations()
                 return
+                
             except Exception as e:
                 last_error = e
                 if attempt < max_retries - 1:
@@ -234,7 +242,6 @@ class TGraphBot(commands.Bot):
                 error_msg = self.translations["log_config_reload_failed"].format(error=str(e))
                 logging.error(error_msg)
                 raise ConfigError("Configuration reload failed") from last_error
-
     async def _validate_channel(self) -> discord.TextChannel:
         """Validate and return the target channel."""
         channel = self.get_channel(self.config["CHANNEL_ID"])
@@ -267,6 +274,34 @@ class TGraphBot(commands.Bot):
             self.update_tracker.save_tracker()
         except Exception as e:
             raise BackgroundTaskError("Failed to update tracker") from e
+
+    async def _reload_translations(self) -> None:
+        """Reload translations based on current configuration."""
+        try:
+            from i18n import load_translations
+            
+            language = self.config.get("LANGUAGE", "en")
+            translations = load_translations(language)
+            
+            # Update translations across all components
+            self.translations = translations
+            
+            # Update translations for graph-related components
+            if hasattr(self, 'graph_manager'):
+                self.graph_manager.translations = translations
+                self.graph_manager.graph_factory.translations = translations
+                
+            if hasattr(self, 'user_graph_manager'):
+                self.user_graph_manager.translations = translations
+                
+            if hasattr(self, 'data_fetcher'):
+                self.data_fetcher.translations = translations
+                
+            logging.info(f"Reloaded translations for language: {language}")
+            
+        except Exception as e:
+            logging.error(f"Failed to reload translations: {str(e)}")
+            raise TranslationError(f"Failed to reload translations: {str(e)}") from e
 
     @tasks.loop(seconds=60)
     async def schedule_updates_task(self):
