@@ -324,7 +324,7 @@ class ConfigCog(commands.GroupCog, CommandMixin, ErrorHandlerMixin, name="config
 
     async def _update_language(self, language: str) -> None:
         """
-        Update bot language settings.
+        Update bot language settings asynchronously.
         
         Args:
             language: New language code to set
@@ -333,8 +333,8 @@ class ConfigCog(commands.GroupCog, CommandMixin, ErrorHandlerMixin, name="config
             ConfigUpdateError: If language update fails
         """
         try:
-            from i18n import load_translations
-            self.bot.translations = self.translations = await load_translations(language)
+            from i18n import update_translations
+            await update_translations(self.bot, language)
             await self._update_command_descriptions()
         except Exception as e:
             error_msg = f"Failed to update language to {language}"
