@@ -269,27 +269,34 @@ class TGraphBot(commands.Bot):
     async def schedule_updates_task(self):
         """Background task for scheduling updates with proper error handling"""
         try:
-            if self.update_tracker.is_update_due():
-                log(self.translations["log_auto_update_started"])
-                
-                # Handle config reload
-                config_success, consecutive_failures = await _handle_config_reload(
-                    self, 0, 3, 600  # Start with 0 failures, max 3 attempts, 10 min delay
-                )
-                if not config_success:
-                    return
-
-                # Handle channel validation
-                channel, channel_check_failures = await _handle_channel_validation(
-                    self, 0, 3, 1800  # Start with 0 failures, max 3 attempts, 30 min delay
-                )
-                if not channel:
-                    return
-                
-                # Handle graph update
-                if not await _handle_graph_update(self, channel):
-                    raise BackgroundTaskError("Failed to update graphs")
+            # Add network error handling
+            try:
+                if self.update_tracker.is_update_due():
+                    log(self.translations["log_auto_update_started"])
                     
+                    # Handle config reload
+                    config_success, consecutive_failures = await _handle_config_reload(
+                        self, 0, 3, 600  # Start with 0 failures, max 3 attempts, 10 min delay
+                    )
+                    if not config_success:
+                        await asyncio.sleep(60)  # Add delay before retry
+                        return
+
+                    # Handle channel validation
+                    channel, channel_check_failures = await _handle_channel_validation(
+                        self, 0, 3, 1800  # Start with 0 failures, max 3 attempts, 30 min delay
+                    )
+                    if not channel:
+                        await asyncio.sleep(60)  # Add delay before retry
+                        return
+                    
+                    # Handle graph update
+                    if not await _handle_graph_update(self, channel):
+                        raise BackgroundTaskError("Failed to update graphs")
+            except (ClientConnectorError, ServerDisconnectedError) as e:
+                log(self.translations["log_network_error"].format(error=str(e)), logging.WARNING)
+                await asyncio.sleep(300)  # 5 minute delay on network errors
+                return
         except Exception as e:
             error_msg = f"Error in scheduled update task: {str(e)}"
             logging.error(error_msg)
@@ -438,7 +445,7 @@ def create_folders(log_file: str, data_folder: str, img_folder: str) -> None:
                     f.write('test')
                 os.remove(test_file)
             except IOError as e:
-                raise OSError(f"No write permission in {folder}: {e}")
+                raise OSError(f"No write permission in {folder}: {e}") from e
     except OSError as e:
         error_msg = f"Failed to create required folders: {str(e)}"
         logging.error(error_msg)
@@ -480,10 +487,6 @@ async def main() -> None:
         # Create log directory and add file handler
         try:
             os.makedirs(os.path.dirname(args.log_file), exist_ok=True)
-            # Add file handler to root logger
-            file_handler = logging.FileHandler(args.log_file, encoding='utf-8')
-            file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
-            logging.getLogger().addHandler(file_handler)
         except Exception as e:
             print(f"Failed to set up log file: {e}")  # Use print since console logging still works
             raise InitializationError(f"Failed to set up log file: {e}") from e
