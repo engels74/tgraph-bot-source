@@ -69,8 +69,6 @@ class CleanupError(MainError):
     """Raised during cleanup failures."""
     pass
 
-# main.py update
-
 class TGraphBot(commands.Bot):
     """Enhanced TGraph Bot with standardized error handling."""
     
@@ -81,23 +79,24 @@ class TGraphBot(commands.Bot):
         self.update_tracker = kwargs.pop("update_tracker", None)
         self.config = kwargs.pop("config", None)
         self.config_path = kwargs.pop("config_path", None)
-        # Store translations immediately for synchronous access
-        self.translations = kwargs.pop("translations", {})
+        self.translations = kwargs.pop("translations", None)
         self._initialized_resources = []
         self._initialization_lock = asyncio.Lock()
         
         try:
-            # Initialize core components synchronously
+            # Initialize DataFetcher first
             self.data_fetcher = DataFetcher(self.config)
             self._initialized_resources.append(self.data_fetcher)
             
+            # Initialize GraphManager with DataFetcher
             self.graph_manager = GraphManager(self.config, self.translations, self.img_folder)
             self._initialized_resources.append(self.graph_manager)
             
+            # Initialize UserGraphManager
             self.user_graph_manager = UserGraphManager(self.config, self.translations, self.img_folder)
             self._initialized_resources.append(self.user_graph_manager)
             
-            logging.info(self.translations.get("log_tgraphbot_initialized", "TGraphBot initialized"))
+            log(self.translations["log_tgraphbot_initialized"])
             
         except Exception as e:
             self._cleanup_resources()
@@ -105,56 +104,12 @@ class TGraphBot(commands.Bot):
             logging.error(error_msg)
             raise InitializationError(error_msg) from e
 
-    async def _reinitialize_translations(self) -> None:
-        """Asynchronously update translations after initial setup."""
-        try:
-            translation_manager = TranslationManager.get_instance()
-            new_translations = await translation_manager.load_translations(self.config.get("LANGUAGE", "en"))
-            
-            # Update translations atomically
-            async with self._initialization_lock:
-                self.translations.update(new_translations)
-                
-            logging.info(self.translations.get("log_translations_reloaded", "Translations reloaded"))
-            
-        except Exception as e:
-            logging.error(f"Failed to reinitialize translations: {str(e)}")
-            # Continue with existing translations if update fails
-
-    async def setup_hook(self) -> None:
-        """Initialize the bot's state after login with enhanced error handling."""
-        try:
-            async with self._initialization_lock:
-                # Initialize bot components
-                await self.initialize()
-
-                # Load command extensions
-                await load_extensions(self)
-
-                # Sync application commands
-                logging.info(self.translations["log_syncing_application_commands"])
-                await self.tree.sync()
-                logging.info(self.translations["log_application_commands_synced"])
-
-        except commands.ExtensionError as e:
-            error_msg = self.translations["log_extension_load_error"].format(error=str(e))
-            logging.error(error_msg)
-            raise InitializationError(error_msg) from e
-        except discord.HTTPException as e:
-            error_msg = self.translations["log_command_sync_error"].format(error=str(e))
-            logging.error(error_msg)
-            raise InitializationError(error_msg) from e
-        except Exception as e:
-            error_msg = self.translations["log_unexpected_setup_error"].format(error=str(e))
-            logging.error(error_msg)
-            raise InitializationError(error_msg) from e
-
-    async def _cleanup_resources(self) -> None:
+    def _cleanup_resources(self) -> None:
         """Clean up initialized resources in reverse order."""
         for resource in reversed(self._initialized_resources):
             try:
                 if hasattr(resource, 'cleanup'):
-                    await resource.cleanup()  # Make cleanup async
+                    resource.cleanup()
             except Exception as e:
                 logging.error(f"Error during cleanup of {resource.__class__.__name__}: {e}")
 
