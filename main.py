@@ -75,6 +75,7 @@ class TGraphBot(commands.Bot):
         self.config_path = kwargs.pop("config_path", None)
         self.translations = kwargs.pop("translations", None)
         
+        self._initialized_resources = []  # Initialize the list to keep track of resources
         try:
             self._initialize_resources()
         except Exception as e:
@@ -270,8 +271,8 @@ class TGraphBot(commands.Bot):
         
         try:
             # Create background tasks using discord.ext.tasks
-            self.background_initialization_task.start()
-            self.schedule_updates_task.start()
+            self.create_monitored_task(self.background_initialization())
+            self.create_monitored_task(self.schedule_updates())
             
         except Exception as e:
             error_msg = f"Failed to start background tasks: {str(e)}"
@@ -467,6 +468,14 @@ def create_folders(log_file: str, data_folder: str, img_folder: str) -> None:
         for folder in [os.path.dirname(log_file), data_folder, img_folder]:
             if not os.path.exists(folder):
                 os.makedirs(folder)
+            # Verify write permissions
+            test_file = os.path.join(folder, '.write_test')
+            try:
+                with open(test_file, 'w') as f:
+                    f.write('test')
+                os.remove(test_file)
+            except IOError as e:
+                raise OSError(f"No write permission in {folder}: {e}")
     except OSError as e:
         error_msg = f"Failed to create required folders: {str(e)}"
         logging.error(error_msg)

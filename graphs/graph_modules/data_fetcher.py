@@ -276,7 +276,7 @@ class DataFetcher:
 
         try:
             response = self.fetch_tautulli_data("get_users")
-            if not response or 'response' not in response or 'data' not in response['response']:
+            if not response or 'data' not in response.get('response', {}):
                 logging.error("Invalid response structure from get_users API call")
                 return None
                     
@@ -315,10 +315,11 @@ class DataFetcher:
 
         def add_task(cmd: str, params: Dict[str, Any], graph_type: str) -> None:
             """Helper to add a task and its corresponding graph type."""
+            task_params = params.copy()  # Create a copy of params
             if user_id:
-                params["user_id"] = str(user_id)  # Ensure user_id is string
-            logging.debug("Adding task for %s with params: %s", cmd, params)
-            tasks.append(self.fetch_tautulli_data_async(cmd, params))
+                task_params["user_id"] = str(user_id)  # Ensure user_id is string
+            logging.debug("Adding task for %s with params: %s", cmd, task_params)
+            tasks.append(self.fetch_tautulli_data_async(cmd, task_params))  # Use the copied params
             graph_types.append(graph_type)
 
         # Base parameters with time range
@@ -359,11 +360,8 @@ class DataFetcher:
                     logging.error(f"Error fetching data for {graph_type}: {str(result)}")
                     continue
                     
-                if result is not None:
-                    if 'response' in result and 'data' in result['response']:
-                        data[graph_type] = result['response']['data']
-                    else:
-                        data[graph_type] = result
+                if result:
+                    data[graph_type] = result
                     logging.debug("Successfully fetched data for %s", graph_type)
                 else:
                     logging.warning(f"No data returned for {graph_type}")

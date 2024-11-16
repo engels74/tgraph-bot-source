@@ -102,6 +102,14 @@ class TranslationManager:
                     raise TranslationFileError(
                         f"Invalid translation file format in {file_path}. Expected dictionary."
                     )
+                # Validate that all values are strings
+                non_string_keys = [k for k, v in content.items() 
+                                   if not isinstance(v, str)]
+                if non_string_keys:
+                    raise TranslationFileError(
+                        f"Invalid value types in {file_path} for keys: {non_string_keys}. "
+                        "All values must be strings."
+                    )
                 return content
         except FileNotFoundError as e:
             raise TranslationFileError(f"Translation file not found: {file_path}") from e
@@ -244,18 +252,31 @@ class TranslationManager:
             bot.translations = self.load_translations(language)
             TranslationManager.set_translations(bot.translations)
             
+            # Keep track of successful updates
+            updated_commands = []  # Track successfully updated commands
+            failed_commands = []    # Track commands that failed to update
+            
             # Update command descriptions
             for command in bot.tree.walk_commands():
                 translation_key = f"{command.name}_command_description"
                 try:
                     command.description = bot.translations[translation_key]
+                    updated_commands.append(command.name)  # Track successful updates
                 except KeyError:
                     logging.warning(f"Missing translation for command description: {translation_key}")
+                    failed_commands.append(command.name)  # Track failed updates
                 except Exception as e:
                     logging.error(f"Failed to update description for command {command.name}: {str(e)}")
+                    failed_commands.append(command.name)  # Track failed updates
             
-            logging.info(f"Updated bot translations and command descriptions to language: {language}")
-            
+            logging.info(
+                f"Updated bot translations to {language}. "
+                f"Updated commands: {len(updated_commands)}, "
+                f"Failed commands: {len(failed_commands)}"
+            )
+            if failed_commands:
+                logging.warning(f"Failed to update commands: {', '.join(failed_commands)}")
+                
         except Exception as e:
             raise TranslationError(
                 f"Failed to update bot translations to {language}"

@@ -235,9 +235,10 @@ class ConfigCog(commands.GroupCog, CommandMixin, ErrorHandlerMixin, name="config
                 raise ConfigValidationError(self.translations["config_error_invalid_key"])
 
             # Handle special case where value is "null", "none", or "XX:XX" for FIXED_UPDATE_TIME
-            if value and value.lower() in ("null", "none"):
-                value = None
-            elif key == "FIXED_UPDATE_TIME" and value and value.upper() == "XX:XX":
+            if value and (
+                value.lower() in ("null", "none") or
+                (key == "FIXED_UPDATE_TIME" and value.upper() == "XX:XX")
+            ):
                 value = None
 
             # Validate and format value
