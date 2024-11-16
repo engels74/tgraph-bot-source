@@ -7,12 +7,14 @@ Handles generation of play count graphs by hour with proper validation, cleanup,
 
 from .base_graph import BaseGraph
 from .utils import get_color, validate_series_data
+from config.modules.constants import ConfigKeyError
 from config.modules.sanitizer import sanitize_user_id, InvalidUserIdError
 from datetime import datetime
 from matplotlib.ticker import MaxNLocator
 from typing import Dict, Any, Optional, List, Union
 import logging
 import os
+
 
 class HourOfDayError(Exception):
     """Base exception for hour of day graph-related errors."""
@@ -98,18 +100,14 @@ class PlayCountByHourOfDayGraph(BaseGraph):
         Raises:
             DataValidationError: If validation fails
         """
-        try:
-            if len(data) != 24:
-                raise DataValidationError(f"Expected 24 hours, got {len(data)}")
-                
-            for hour in data:
-                if not isinstance(hour, (int, float)):
-                    raise DataValidationError(f"Invalid hour value type: {type(hour)}")
-                if hour < 0:
-                    raise DataValidationError(f"Negative hour value: {hour}")
-                    
-        except Exception as e:
-            raise DataValidationError(f"Hour validation failed: {str(e)}") from e
+        if len(data) != 24:
+            raise DataValidationError(f"Expected 24 hours, got {len(data)}")
+            
+        for hour in data:
+            if not isinstance(hour, (int, float)):
+                raise DataValidationError(f"Invalid hour value type: {type(hour)}")
+            if hour < 0:
+                raise DataValidationError(f"Negative hour value: {hour}")
 
     async def fetch_data(self, data_fetcher, user_id: Optional[str] = None) -> Dict[str, Any]:
         """
@@ -145,7 +143,9 @@ class PlayCountByHourOfDayGraph(BaseGraph):
                 logging.error(error_msg)
                 raise DataFetchError(error_msg)
 
-            return data['response']['data']
+            # Store the fetched data in self.data for caching
+            self.data = data['response']['data']
+            return self.data
 
         except InvalidUserIdError as e:
             raise DataFetchError(f"Invalid user ID: {str(e)}") from e
@@ -202,7 +202,7 @@ class PlayCountByHourOfDayGraph(BaseGraph):
 
             return processed_data
 
-        except (KeyError, ValueError) as e:
+        except (ConfigKeyError, ValueError) as e:
             raise DataValidationError(f"Data validation failed: {str(e)}") from e
         except Exception as e:
             error_msg = f"Error processing hour of day data: {str(e)}"

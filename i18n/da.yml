@@ -242,4 +242,5 @@ graphs_no_monthly_data: "Ingen data tilgængelige for antal afspilninger pr. må
 config_error_generic: "Der opstod en fejl under behandlingen af konfigurationen. Kontroller din input og prøv igen."
 config_error_invalid_key: "Den specificerede konfigurationsnøgle findes ikke eller kan ikke ændres."
 config_error_invalid_value: "Den angivne værdi er ikke gyldig for denne konfigurationsindstilling."
+config_error_required_field: "Denne konfigurationsindstilling kan ikke være tom eller null"
 config_error_validation: "Ugyldig konfigurationsværdi: {error}"

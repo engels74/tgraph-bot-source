@@ -26,6 +26,7 @@ from config.config import (
 )
 from config.modules.constants import get_category_display_name
 from config.modules.loader import load_yaml_config, update_config_value, save_yaml_config
+from config.modules.options import get_option_metadata
 from config.modules.sanitizer import format_value_for_display
 from discord import app_commands, Embed, Color
 from discord.ext import commands
@@ -233,6 +234,12 @@ class ConfigCog(commands.GroupCog, CommandMixin, ErrorHandlerMixin, name="config
             if key not in CONFIGURABLE_OPTIONS:
                 raise ConfigValidationError(self.translations["config_error_invalid_key"])
 
+            # Handle special case where value is "null", "none", or "XX:XX" for FIXED_UPDATE_TIME
+            if value and value.lower() in ("null", "none"):
+                value = None
+            elif key == "FIXED_UPDATE_TIME" and value and value.upper() == "XX:XX":
+                value = None
+
             # Validate and format value
             formatted_value, error_message = await validate_and_format_config_value(
                 key, value, self.translations
@@ -244,9 +251,20 @@ class ConfigCog(commands.GroupCog, CommandMixin, ErrorHandlerMixin, name="config
                     self.translations["config_error_validation"].format(error=error_message)
                 )
             
+            # Check if None is allowed for this key
+            metadata = get_option_metadata(key)
             if formatted_value is None:
-                raise ConfigValidationError(self.translations["config_error_invalid_value"])
-            
+                if metadata.get("required", False) and key != "FIXED_UPDATE_TIME":
+                    raise ConfigValidationError(
+                        self.translations.get(
+                            "config_error_required_field",
+                            "This configuration option cannot be empty or null"
+                        )
+                    )
+                # Special handling for FIXED_UPDATE_TIME
+                if key == "FIXED_UPDATE_TIME":
+                    formatted_value = "XX:XX"  # Convert None back to XX:XX for storage
+
             try:
                 # Load fresh config
                 config = load_yaml_config(self.bot.config_path)
@@ -258,15 +276,17 @@ class ConfigCog(commands.GroupCog, CommandMixin, ErrorHandlerMixin, name="config
                 self.config[key] = formatted_value
                 
                 # Get appropriate response message
-                if key == "FIXED_UPDATE_TIME" and str(formatted_value).upper() == "XX:XX":
+                if key == "FIXED_UPDATE_TIME" and (formatted_value == "XX:XX" or formatted_value is None):
                     response_message = self.translations["config_updated_fixed_time_disabled"].format(key=key)
                 elif key in RESTART_REQUIRED_KEYS:
                     response_message = self.translations["config_updated_restart"].format(key=key)
                 else:
+                    old_display = format_value_for_display(key, old_value)
+                    new_display = format_value_for_display(key, formatted_value)
                     response_message = self.translations["config_updated"].format(
                         key=key,
-                        old_value=old_value,
-                        new_value=formatted_value
+                        old_value=old_display,
+                        new_value=new_display
                     )
                 
                 await interaction.followup.send(response_message, ephemeral=True)
@@ -290,11 +310,10 @@ class ConfigCog(commands.GroupCog, CommandMixin, ErrorHandlerMixin, name="config
         except Exception as e:
             if isinstance(e, (ConfigValidationError, ConfigUpdateError)):
                 logging.error(f"Configuration error: {str(e)}")
+                raise
             else:
-                error_msg = "Unexpected error updating configuration"
-                logging.error(f"{error_msg}: {str(e)}")
-                e = ConfigUpdateError(error_msg)
-            await self.handle_command_error(interaction, e, "config_edit")
+                logging.error(f"Unexpected error updating configuration: {str(e)}")
+                raise ConfigUpdateError("Unexpected error updating configuration") from e
 
     @view.autocomplete('key')
     async def view_key_autocomplete(
@@ -339,9 +358,8 @@ class ConfigCog(commands.GroupCog, CommandMixin, ErrorHandlerMixin, name="config
             self.bot.translations = self.translations = translations
             await self._update_command_descriptions()
         except Exception as e:
-            error_msg = f"Failed to update language to {language}"
-            logging.error(f"{error_msg}: {str(e)}")
-            raise ConfigUpdateError(error_msg) from e
+            logging.error(f"Failed to update language to {language}: {str(e)}")
+            raise ConfigUpdateError(f"Failed to update language to {language}") from e
 
     async def _update_command_descriptions(self) -> None:
         """
@@ -368,9 +386,8 @@ class ConfigCog(commands.GroupCog, CommandMixin, ErrorHandlerMixin, name="config
             logging.info(self.translations["log_command_descriptions_updated"])
             
         except Exception as e:
-            error_msg = "Failed to update command descriptions"
-            logging.error(f"{error_msg}: {str(e)}")
-            raise ConfigUpdateError(error_msg) from e
+            logging.error(f"Failed to update command descriptions: {str(e)}")
+            raise ConfigUpdateError("Failed to update command descriptions") from e
 
     async def cog_app_command_error(
         self,

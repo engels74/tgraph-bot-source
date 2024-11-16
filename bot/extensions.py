@@ -67,10 +67,15 @@ async def _process_extension_operation(
     Raises
     ------
     ValueError
-        If bot instance is None
+        If bot instance is None or if operation is not valid
     """
     if not bot:
         raise ValueError("Bot instance cannot be None")
+
+    # Validate operation parameter
+    valid_operations = {"load", "reload", "unload"}
+    if operation not in valid_operations:
+        raise ValueError(f"Invalid operation: {operation}. Must be one of: {', '.join(valid_operations)}")
 
     # Use proper translation keys directly based on operation
     if operation == "load":
@@ -109,6 +114,12 @@ async def _process_extension_operation(
         except commands.ExtensionAlreadyLoaded:
             logging.warning(f"Extension already loaded: {extension_path}")
             success_count += 1  # Count as success since it's available
+        except commands.NoEntryPointError:
+            logging.error(f"No entry point found in extension: {extension_path}")
+            failure_count += 1
+        except commands.ExtensionFailed as e:
+            logging.error(f"Extension failed during {operation} of {extension_path}: {e}")
+            failure_count += 1
         except Exception as e:
             logging.error(
                 f"Failed to {operation} extension {extension_path}: {str(e)}"

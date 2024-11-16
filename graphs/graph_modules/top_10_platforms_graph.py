@@ -7,12 +7,14 @@ Handles generation of platform statistics graphs with proper validation, cleanup
 
 from .base_graph import BaseGraph
 from .utils import validate_series_data
+from config.modules.constants import ConfigKeyError
 from config.modules.sanitizer import sanitize_user_id, InvalidUserIdError
 from datetime import datetime
 from matplotlib.ticker import MaxNLocator
 from typing import Dict, Any, Optional, List, Union
 import logging
 import os
+
 
 class PlatformsGraphError(Exception):
     """Base exception for platform graph-related errors."""
@@ -219,7 +221,7 @@ class Top10PlatformsGraph(BaseGraph):
 
             return processed_data
 
-        except (KeyError, ValueError) as e:
+        except (ConfigKeyError, ValueError) as e:
             raise DataValidationError(f"Data validation failed: {str(e)}") from e
         except Exception as e:
             error_msg = f"Error processing platforms data: {str(e)}"

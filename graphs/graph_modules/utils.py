@@ -5,7 +5,7 @@ Utility functions for graph generation.
 """
 
 from config.modules.validator import (
-    _validate_color,
+    validate_color,
     validate_url,
     ColorValidationResult,
     validate_config_value
@@ -271,7 +271,7 @@ def validate_config(config: Dict[str, Any]) -> List[str]:
     color_keys = ["TV_COLOR", "MOVIE_COLOR", "ANNOTATION_COLOR", "ANNOTATION_OUTLINE_COLOR"]
     for key in color_keys:
         if key in config:
-            result: ColorValidationResult = _validate_color(config[key])
+            result: ColorValidationResult = validate_color(config[key])
             if not result.is_valid:
                 errors.append(f"Invalid color format for {key}: {result.error_message}")
 

@@ -5,12 +5,14 @@ Improved base graph class with better error handling, type hints, and documentat
 """
 
 from abc import ABC, abstractmethod
+from config.modules.constants import ConfigKeyError
 from matplotlib import patheffects
 from typing import Dict, Any, Tuple, Optional, Union
 import logging
 import matplotlib.axes
 import matplotlib.figure
 import matplotlib.pyplot as plt
+
 
 class BaseGraphError(Exception):
     """Base exception class for graph-related errors."""
@@ -63,7 +65,15 @@ class BaseGraph(ABC):
             raise ValueError("Image folder path must be a non-empty string")
 
         # Check for required configuration keys
-        required_config_keys = {"TV_COLOR", "MOVIE_COLOR", "ANNOTATION_COLOR", "ANNOTATION_OUTLINE_COLOR"}
+        required_config_keys = {
+            "TV_COLOR",
+            "MOVIE_COLOR",
+            "ANNOTATION_COLOR",
+            "ANNOTATION_OUTLINE_COLOR",
+            "GRAPH_BACKGROUND_COLOR",
+            "ENABLE_GRAPH_GRID",
+            "ENABLE_ANNOTATION_OUTLINE"
+        }
         missing_keys = required_config_keys - set(config.keys())
         if missing_keys:
             raise ValueError(f"Missing required configuration keys: {missing_keys}")
@@ -323,35 +333,28 @@ class BaseGraph(ABC):
         finally:
             self.cleanup_figure()  # Ensure cleanup happens even if save fails
 
-    def get_color(self, series_name: str) -> str:
+    def get_color(self, name: str) -> str:
         """
         Get the color for a given series.
 
         Args:
-            series_name: The media type (e.g., 'TV' or 'Movies')
+            name: The media type (e.g., 'TV' or 'Movies')
 
         Returns:
             The color code for the series
 
         Raises:
-            ValueError: If color is not defined in configuration
+            ConfigKeyError: If color is not defined in configuration
         """
-        series_name = series_name.upper()
-        color_map = {
-            "TV": "TV_COLOR",
-            "MOVIES": "MOVIE_COLOR"
-        }
-
-        if series_name not in color_map:
-            raise ValueError(f"Color for series '{series_name}' not defined")
-
-        color_key = color_map[series_name]
-        color = self.config.get(color_key)
-
-        if not color:
-            raise ValueError(f"Color '{color_key}' not found in configuration")
-
-        return color.strip('"\'')
+        try:
+            if name == "TV":
+                return self.config["TV_COLOR"]
+            elif name == "Movies":
+                return self.config["MOVIE_COLOR"]
+            else:
+                raise ConfigKeyError(f"No color defined for: {name}")
+        except KeyError as e:  # Keep this for dict access
+            raise ConfigKeyError(f"Missing color configuration: {str(e)}") from e
 
     def annotate(self, x: Union[int, float], y: Union[int, float], text: str) -> None:
         """

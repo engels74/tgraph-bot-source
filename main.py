@@ -33,10 +33,7 @@ logging.basicConfig(
     force=True  # Force configuration of the root logger
 )
 
-# Ensure all loggers inherit the root logger's configuration
-logging.getLogger().setLevel(logging.INFO)
-
-# Custom Exception Hierarchy
+# Simplified exception hierarchy
 class MainError(Exception):
     """Base exception for main module errors."""
     pass
@@ -45,7 +42,7 @@ class InitializationError(MainError):
     """Raised during initialization failures."""
     pass
 
-class MainConfigError(MainError):
+class ConfigError(MainError):
     """Raised for configuration-related errors."""
     pass
 
@@ -53,56 +50,46 @@ class BackgroundTaskError(MainError):
     """Raised for background task failures."""
     pass
 
-class EventHandlingError(MainError):
-    """Raised for event handling errors."""
-    pass
-
-class SchedulingError(MainError):
-    """Raised for update scheduling errors."""
-    pass
-
-class ResourceManagementError(MainError):
-    """Raised for resource management failures."""
-    pass
-
-class CleanupError(MainError):
-    """Raised during cleanup failures."""
-    pass
-
 class TGraphBot(commands.Bot):
     """Enhanced TGraph Bot with standardized error handling."""
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Initialize essential attributes first
+        self._initialized_resources = []
+        self._initialization_lock = asyncio.Lock()
+        
+        # Initialize other attributes
         self.data_folder = kwargs.pop("data_folder", None)
         self.img_folder = os.path.join(self.data_folder, "img")
         self.update_tracker = kwargs.pop("update_tracker", None)
         self.config = kwargs.pop("config", None)
         self.config_path = kwargs.pop("config_path", None)
         self.translations = kwargs.pop("translations", None)
-        self._initialized_resources = []
-        self._initialization_lock = asyncio.Lock()
         
         try:
-            # Initialize DataFetcher first
-            self.data_fetcher = DataFetcher(self.config)
-            self._initialized_resources.append(self.data_fetcher)
-            
-            # Initialize GraphManager with DataFetcher
-            self.graph_manager = GraphManager(self.config, self.translations, self.img_folder)
-            self._initialized_resources.append(self.graph_manager)
-            
-            # Initialize UserGraphManager
-            self.user_graph_manager = UserGraphManager(self.config, self.translations, self.img_folder)
-            self._initialized_resources.append(self.user_graph_manager)
-            
-            log(self.translations["log_tgraphbot_initialized"])
-            
+            self._initialize_resources()
         except Exception as e:
-            self._cleanup_resources()
+            self._cleanup_resources()  # Now safe to call
             error_msg = f"Failed to initialize TGraphBot: {str(e)}"
             logging.error(error_msg)
             raise InitializationError(error_msg) from e
+
+    def _initialize_resources(self):
+        """Initialize bot resources with proper error handling."""
+        # Initialize DataFetcher first
+        self.data_fetcher = DataFetcher(self.config)
+        self._initialized_resources.append(self.data_fetcher)
+        
+        # Initialize GraphManager with DataFetcher
+        self.graph_manager = GraphManager(self.config, self.translations, self.img_folder)
+        self._initialized_resources.append(self.graph_manager)
+        
+        # Initialize UserGraphManager
+        self.user_graph_manager = UserGraphManager(self.config, self.translations, self.img_folder)
+        self._initialized_resources.append(self.user_graph_manager)
+        
+        log(self.translations["log_tgraphbot_initialized"])
 
     def _cleanup_resources(self) -> None:
         """Clean up initialized resources in reverse order."""
@@ -120,21 +107,26 @@ class TGraphBot(commands.Bot):
                 # Load command extensions
                 await load_extensions(self)
 
-                # Sync application commands
+                # Sync application commands with broader error handling
                 logging.info(self.translations["log_syncing_application_commands"])
-                await self.tree.sync()
-                logging.info(self.translations["log_application_commands_synced"])
+                try:
+                    await self.tree.sync()
+                    logging.info(self.translations["log_application_commands_synced"])
+                except discord.Forbidden as e:
+                    error_msg = self.translations["log_command_sync_forbidden"].format(error=str(e))
+                    logging.error(error_msg)
+                    raise InitializationError(error_msg) from e
+                except discord.HTTPException as e:
+                    error_msg = self.translations["log_command_sync_error"].format(error=str(e))
+                    logging.error(error_msg)
+                    raise InitializationError(error_msg) from e
+                except Exception as e:
+                    error_msg = self.translations["log_command_sync_unexpected"].format(error=str(e))
+                    logging.error(error_msg)
+                    raise InitializationError(error_msg) from e
 
         except commands.ExtensionError as e:
             error_msg = self.translations["log_extension_load_error"].format(error=str(e))
-            logging.error(error_msg)
-            raise InitializationError(error_msg) from e
-        except discord.HTTPException as e:
-            error_msg = self.translations["log_command_sync_error"].format(error=str(e))
-            logging.error(error_msg)
-            raise InitializationError(error_msg) from e
-        except Exception as e:
-            error_msg = self.translations["log_unexpected_setup_error"].format(error=str(e))
             logging.error(error_msg)
             raise InitializationError(error_msg) from e
 
@@ -158,7 +150,7 @@ class TGraphBot(commands.Bot):
         except Exception as e:
             error_msg = f"Error handling event error for {event_method}: {str(e)}"
             logging.error(error_msg)
-            raise EventHandlingError(error_msg) from e
+            raise BackgroundTaskError(error_msg) from e
 
     async def on_connect(self) -> None:
         """Handle connection event."""
@@ -192,7 +184,7 @@ class TGraphBot(commands.Bot):
             ))
             
         except Exception as e:
-            if isinstance(e, (BackgroundTaskError, MainConfigError)):
+            if isinstance(e, (BackgroundTaskError, ConfigError)):
                 raise
             error_msg = f"Background initialization failed: {str(e)}"
             logging.error(error_msg)
@@ -212,7 +204,10 @@ class TGraphBot(commands.Bot):
         last_error = None
         for attempt in range(max_retries):
             try:
-                self.config = load_config(self.config_path, reload=True)
+                # Run load_config in executor to prevent blocking
+                self.config = await asyncio.get_event_loop().run_in_executor(
+                    None, lambda: load_config(self.config_path, reload=True)
+                )
                 return
             except Exception as e:
                 last_error = e
@@ -226,7 +221,7 @@ class TGraphBot(commands.Bot):
                     continue
                 error_msg = self.translations["log_config_reload_failed"].format(error=str(e))
                 logging.error(error_msg)
-                raise MainConfigError("Configuration reload failed") from last_error
+                raise ConfigError("Configuration reload failed") from last_error
 
     async def _validate_channel(self) -> discord.TextChannel:
         """Validate and return the target channel."""
@@ -266,15 +261,35 @@ class TGraphBot(commands.Bot):
         log(self.translations["log_bot_logged_in"].format(name=self.user.name))
         
         try:
-            # Start the initialization in a background task
-            self.loop.create_task(self.background_initialization())
+            # Create and monitor background tasks
+            background_tasks = [
+                self.create_monitored_task(self.background_initialization()),
+                self.create_monitored_task(schedule_updates(self))
+            ]
             
-            # Start update scheduling
-            self.loop.create_task(schedule_updates(self))
+            # Store tasks for cleanup
+            self._background_tasks = background_tasks
+            
         except Exception as e:
             error_msg = f"Failed to start background tasks: {str(e)}"
             logging.error(error_msg)
             raise BackgroundTaskError(error_msg) from e
+
+    def create_monitored_task(self, coro):
+        """Create a monitored background task that logs exceptions."""
+        task = self.loop.create_task(coro)
+        task.add_done_callback(self._handle_background_task_exception)
+        return task
+
+    def _handle_background_task_exception(self, task):
+        """Handle exceptions from background tasks."""
+        try:
+            exc = task.exception()
+            if exc:
+                logging.error(f"Background task failed with exception: {exc}")
+                # Optionally restart the task or take other recovery actions
+        except asyncio.CancelledError:
+            pass  # Task was cancelled, this is normal during shutdown
 
 async def _handle_config_reload(bot: TGraphBot, consecutive_failures: int, max_consecutive_failures: int, failure_delay: int) -> tuple[bool, int]:
     """Handle configuration reload with retry logic.
@@ -363,13 +378,18 @@ async def _handle_graph_update(bot: TGraphBot, channel: discord.TextChannel) -> 
 
 async def schedule_updates(bot: TGraphBot) -> None:
     """Schedule updates with enhanced error handling and retry mechanisms."""
-    channel_retry_delay = 3600  # 1 hour
-    channel_check_failures = 0
-    max_channel_failures = 3
-    max_consecutive_failures = 3
+    # Constants for timing and retry logic
+    NORMAL_DELAY = 60  # Normal check interval in seconds
+    ERROR_DELAY = 300  # Delay after errors in seconds
+    MAX_CONSECUTIVE_FAILURES = 3  # Maximum allowed consecutive config reload failures
+    FAILURE_DELAY = 600  # Delay after max failures in seconds (10 minutes)
+    MAX_CHANNEL_FAILURES = 3  # Maximum allowed consecutive channel check failures
+    CHANNEL_RETRY_DELAY = 1800  # Delay after max channel failures (30 minutes)
+    
+    # Initialize failure counters
     consecutive_failures = 0
-    failure_delay = 300  # 5 minutes
-
+    channel_check_failures = 0
+    
     while True:
         try:
             if bot.update_tracker.is_update_due():
@@ -377,28 +397,35 @@ async def schedule_updates(bot: TGraphBot) -> None:
                 
                 # Handle config reload
                 config_success, consecutive_failures = await _handle_config_reload(
-                    bot, consecutive_failures, max_consecutive_failures, failure_delay
+                    bot, 
+                    consecutive_failures, 
+                    MAX_CONSECUTIVE_FAILURES, 
+                    FAILURE_DELAY
                 )
                 if not config_success:
                     continue
 
                 # Handle channel validation
                 channel, channel_check_failures = await _handle_channel_validation(
-                    bot, channel_check_failures, max_channel_failures, channel_retry_delay
+                    bot, 
+                    channel_check_failures, 
+                    MAX_CHANNEL_FAILURES, 
+                    CHANNEL_RETRY_DELAY
                 )
                 if not channel:
                     continue
                 
                 # Handle graph update
                 if not await _handle_graph_update(bot, channel):
-                    raise SchedulingError("Failed to update graphs")
+                    raise BackgroundTaskError("Failed to update graphs")
                     
+            await asyncio.sleep(NORMAL_DELAY)
         except Exception as e:
-            if not isinstance(e, SchedulingError):
+            if not isinstance(e, BackgroundTaskError):
                 error_msg = f"Unexpected error in update scheduling: {str(e)}"
                 logging.error(error_msg)
-                
-        await asyncio.sleep(60)
+            # Add delay after errors to prevent tight loops
+            await asyncio.sleep(ERROR_DELAY)
 
 def setup_logging(log_file: str) -> None:
     """Set up logging with error handling."""
@@ -425,7 +452,7 @@ def create_folders(log_file: str, data_folder: str, img_folder: str) -> None:
     except OSError as e:
         error_msg = f"Failed to create required folders: {str(e)}"
         logging.error(error_msg)
-        raise ResourceManagementError(error_msg) from e
+        raise BackgroundTaskError(error_msg) from e
 
 def log(message: str, level: int = logging.INFO) -> None:
     """Centralized logging function."""
@@ -477,7 +504,7 @@ async def main() -> None:
         # Now create remaining folders
         try:
             create_folders(args.log_file, args.data_folder, IMG_FOLDER)
-        except ResourceManagementError as e:
+        except BackgroundTaskError as e:
             logging.error(f"Failed to create required folders: {e}")
             raise
 
@@ -489,7 +516,7 @@ async def main() -> None:
         except Exception as e:
             error_msg = f"Failed to load configuration: {e}"
             logger.error(error_msg)
-            raise MainConfigError(error_msg) from e
+            raise ConfigError(error_msg) from e
 
         # Load translations with fallback handling
         try:
@@ -611,7 +638,7 @@ async def main() -> None:
                 logger.error(f"Error during bot shutdown: {e}")
 
     except Exception as e:
-        if not isinstance(e, (InitializationError, MainConfigError, ResourceManagementError)):
+        if not isinstance(e, (InitializationError, ConfigError, BackgroundTaskError)):
             logging.error(f"Unexpected error in main: {e}")
         raise
 

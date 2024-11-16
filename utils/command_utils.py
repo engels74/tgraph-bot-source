@@ -7,7 +7,16 @@ import discord
 import logging
 
 class ErrorHandlingMixin:
-    """A mixin class providing common error handling functionality."""
+    """A mixin class providing common error handling functionality.
+    
+    This mixin requires the implementing class to provide a `translations` dictionary
+    containing the following keys:
+        - log_command_error: Format string with {command} and {error} placeholders
+        - error_processing_command: Generic error message for command processing failures
+    
+    Attributes:
+        translations (dict): Must be provided by the implementing class
+    """
     async def handle_error(self, interaction: discord.Interaction, error: Exception, command_name: str = None) -> None:
         logging.error(
             self.translations["log_command_error"].format(
@@ -152,7 +161,18 @@ class CommandMixin(ErrorHandlingMixin):
         await self.handle_error(interaction, error, command_name)
 
 class ErrorHandlerMixin(ErrorHandlingMixin):
-    """A mixin class providing error handling functionality for cogs."""
+    """A mixin class providing error handling functionality for cogs.
+    
+    This mixin requires the implementing class to provide a `translations` dictionary
+    containing the following keys:
+        - error_check_failure: Message for permission/check failures
+        - error_cooldown: Message for cooldown violations
+        - error_processing_command: Generic error message (inherited from ErrorHandlingMixin)
+        - log_command_error: Format string (inherited from ErrorHandlingMixin)
+    
+    Attributes:
+        translations (dict): Must be provided by the implementing class
+    """
     async def cog_app_command_error(self, interaction: discord.Interaction, error: Exception) -> None:
         logging.debug(f"Command error occurred: {error.__class__.__name__}")
         

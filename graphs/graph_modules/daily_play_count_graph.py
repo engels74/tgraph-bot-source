@@ -53,6 +53,7 @@ class DailyPlayCountGraph(BaseGraph):
         """
         super().__init__(config, translations, img_folder)
         self.graph_type = "daily_play_count"
+        self.data = None
         self._verify_config()
         
     def _verify_config(self) -> None:
@@ -327,6 +328,9 @@ class DailyPlayCountGraph(BaseGraph):
             return file_path
 
         except (DataFetchError, DataValidationError, GraphGenerationError) as e:
+            logging.error(str(e))
+            return None
+        except InvalidUserIdError as e:
             logging.error(str(e))
             return None
         except Exception as e:

@@ -84,11 +84,17 @@ class DataFetcher:
         Validate the data structure returned from Tautulli based on the command.
         
         Args:
-            cmd: The API command
+            cmd: The API command being validated
             data: The data to validate
             
         Returns:
-            True if the data structure is valid, False otherwise
+            bool: True if the data structure is valid for the command
+            
+        Note:
+            - get_users command returns a special format that's validated separately
+            - Some commands return raw non-dict data that's processed differently
+            - get_plays_by_date requires specific structure with categories and series
+            - Other commands use default validation
         """
         if cmd == "get_users":
             return True  # get_users has a different structure, handled separately
@@ -362,4 +368,4 @@ class DataFetcher:
                 
         except Exception as e:
             logging.error(f"Error fetching graph data: {str(e)}")
-            raise DataFetcherError(f"Failed to fetch graph data: {str(e)}")
+            raise DataFetcherError(f"Failed to fetch graph data: {str(e)}") from e

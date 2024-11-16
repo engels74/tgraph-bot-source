@@ -20,7 +20,7 @@ class CategoryError(ConstantsError):
     """Raised when there are issues with configuration categories."""
     pass
 
-class KeyError(ConstantsError):
+class ConfigKeyError(ConstantsError):
     """Raised when there are issues with configuration keys."""
     pass
 
@@ -196,7 +196,7 @@ def get_category_keys(category: str, translations: Optional[Dict[str, str]] = No
         
     Raises:
         CategoryError: If the category doesn't exist
-        KeyError: If there are issues with key retrieval
+        ConfigKeyError: If there are issues with key retrieval
     """
     try:
         validate_category(category, translations)
@@ -206,17 +206,17 @@ def get_category_keys(category: str, translations: Optional[Dict[str, str]] = No
             if section["category"] == category:
                 section_keys = section.get("keys", [])
                 if not isinstance(section_keys, list):
-                    raise KeyError("Invalid keys format in section")
+                    raise ConfigKeyError("Invalid keys format in section")
                 keys.extend(section_keys)
         return keys
         
-    except (CategoryError, KeyError) as e:
+    except (CategoryError, ConfigKeyError) as e:
         handle_error(
             e,
             'error_key_retrieval',
             'Error retrieving keys for category {category}: {error}',
             translations,
-            KeyError if isinstance(e, KeyError) else None,
+            ConfigKeyError if isinstance(e, ConfigKeyError) else None,
             category=category
         )
     except Exception as e:
@@ -225,7 +225,7 @@ def get_category_keys(category: str, translations: Optional[Dict[str, str]] = No
             'error_unexpected',
             'Unexpected error retrieving keys for {category}: {error}',
             translations,
-            KeyError,
+            ConfigKeyError,
             category=category
         )
 
@@ -241,17 +241,17 @@ def get_key_category(key: str, translations: Optional[Dict[str, str]] = None) ->
         The category name
         
     Raises:
-        KeyError: If the key doesn't belong to any category
+        ConfigKeyError: If the key doesn't belong to any category
     """
     try:
         for section in CONFIG_SECTIONS.values():
             if key in section.get("keys", []):
                 category = section["category"]
                 if not isinstance(category, str):
-                    raise KeyError("Invalid category type")
+                    raise ConfigKeyError("Invalid category type")
                 return category
                 
-        raise KeyError(f"Configuration key not found in any category: {key}")
+        raise ConfigKeyError(f"Configuration key not found in any category: {key}")
         
     except Exception as e:
         handle_error(
@@ -259,7 +259,7 @@ def get_key_category(key: str, translations: Optional[Dict[str, str]] = None) ->
             'error_category_lookup',
             'Error looking up category for key {key}: {error}',
             translations,
-            KeyError,
+            ConfigKeyError,
             key=key
         )
 
@@ -423,7 +423,7 @@ __all__ = [
     'validate_config_structure',
     'ConstantsError',
     'CategoryError',
-    'KeyError',
+    'ConfigKeyError',
     'ValidationError',
 ]
 

@@ -233,62 +233,44 @@ async def resolve_permission_entities(
                     "Allowed" if perm["permission"] else "Denied"
                 )
 
-                try:
-                    if perm["type"] == 1:  # Role
-                        role = guild.get_role(entity_id)
-                        if role:
-                            entities.append(f"{role.name} ({permission_allowed})")
-                        elif show_unknown:
-                            logging.debug(f"Role {entity_id} not found in guild {guild.name}")
-                            entities.append(
-                                translations.get(
-                                    'unknown_role',
-                                    'Unknown Role {id} ({permission})'
-                                ).format(id=entity_id, permission=permission_allowed)
-                            )
+                if perm["type"] == 1:  # Role
+                    role = guild.get_role(entity_id)
+                    if role:
+                        entities.append(f"{role.name} ({permission_allowed})")
+                    elif show_unknown:
+                        logging.debug(f"Role {entity_id} not found in guild {guild.name}")
+                        entities.append(
+                            translations.get(
+                                'unknown_role',
+                                'Unknown Role {id} ({permission})'
+                            ).format(id=entity_id, permission=permission_allowed)
+                        )
 
-                    elif perm["type"] == 2:  # User
-                        member = guild.get_member(entity_id)
-                        if member:
-                            entities.append(f"{member.name} ({permission_allowed})")
-                        elif show_unknown:
-                            logging.debug(f"Member {entity_id} not found in guild {guild.name}")
-                            entities.append(
-                                translations.get(
-                                    'unknown_member',
-                                    'Unknown Member {id} ({permission})'
-                                ).format(id=entity_id, permission=permission_allowed)
-                            )
+                elif perm["type"] == 2:  # User
+                    member = guild.get_member(entity_id)
+                    if member:
+                        entities.append(f"{member.name} ({permission_allowed})")
+                    elif show_unknown:
+                        logging.debug(f"Member {entity_id} not found in guild {guild.name}")
+                        entities.append(
+                            translations.get(
+                                'unknown_member',
+                                'Unknown Member {id} ({permission})'
+                            ).format(id=entity_id, permission=permission_allowed)
+                        )
 
-                    elif perm["type"] == 3:  # Channel
-                        channel = guild.get_channel(entity_id)
-                        if channel:
-                            entities.append(f"#{channel.name} ({permission_allowed})")
-                        elif show_unknown:
-                            logging.debug(f"Channel {entity_id} not found in guild {guild.name}")
-                            entities.append(
-                                translations.get(
-                                    'unknown_channel',
-                                    'Unknown Channel {id} ({permission})'
-                                ).format(id=entity_id, permission=permission_allowed)
-                            )
-
-                except NotFound as e:
-                    if show_unknown:
-                        error_msg = translations.get(
-                            'error_entity_not_found',
-                            'Entity {id} not found: {error}'
-                        ).format(id=entity_id, error=str(e))
-                        logging.warning(error_msg)
-                        entities.append(f"Not Found: {entity_id}")
-                except Forbidden as e:
-                    error_msg = translations.get(
-                        'error_entity_forbidden',
-                        'Access forbidden to entity {id}: {error}'
-                    ).format(id=entity_id, error=str(e))
-                    logging.warning(error_msg)
-                    if show_unknown:
-                        entities.append(f"Access Denied: {entity_id}")
+                elif perm["type"] == 3:  # Channel
+                    channel = guild.get_channel(entity_id)
+                    if channel:
+                        entities.append(f"#{channel.name} ({permission_allowed})")
+                    elif show_unknown:
+                        logging.debug(f"Channel {entity_id} not found in guild {guild.name}")
+                        entities.append(
+                            translations.get(
+                                'unknown_channel',
+                                'Unknown Channel {id} ({permission})'
+                            ).format(id=entity_id, permission=permission_allowed)
+                        )
 
             except ValueError as e:
                 if show_unknown:

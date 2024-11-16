@@ -11,6 +11,8 @@ from .modules.sanitizer import sanitize_config_value
 from .modules.validator import validate_config_value
 from ruamel.yaml import YAML, YAMLError
 from typing import Dict, Any, Optional, List
+import contextlib
+import fcntl 
 import logging
 import os
 import threading
@@ -26,6 +28,9 @@ class ConfigManager:
     """
     Thread-safe configuration manager for TGraph Bot.
     """
+    
+    # Add a class-level lock for file operations
+    _file_lock = threading.Lock()
     
     def __init__(self, config_path: str):
         """
@@ -167,10 +172,21 @@ class ConfigManager:
         return list(CONFIGURABLE_OPTIONS)  # Return a copy to prevent modification
 
     @staticmethod
+    @contextlib.contextmanager
+    def _file_lock_context(file_path: str):
+        """Context manager for file-level locking."""
+        with open(file_path, 'a+') as f:
+            try:
+                fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+                yield
+            finally:
+                fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+
+    @staticmethod
     def create_default_config_file(config_path: str) -> None:
         """
         Create a new configuration file with default values.
-        Thread-safe as it's a static method operating on a new file.
+        Thread-safe with file-level locking.
         
         Args:
             config_path: Path where the configuration file should be created
@@ -184,8 +200,10 @@ class ConfigManager:
             
         try:
             os.makedirs(os.path.dirname(config_path), exist_ok=True)
-            config = create_default_config()
-            save_yaml_config(config, config_path)
+            with ConfigManager._file_lock:  # Thread-level lock
+                with ConfigManager._file_lock_context(config_path):  # File-level lock
+                    config = create_default_config()
+                    save_yaml_config(config, config_path)
         except (IOError, YAMLError) as e:
             logging.error(f"Failed to create default configuration: {str(e)}")
             raise ConfigError(f"Default configuration creation failed: {str(e)}") from e

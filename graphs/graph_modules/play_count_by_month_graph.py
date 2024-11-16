@@ -7,12 +7,14 @@ Handles generation of monthly play count graphs with proper validation and clean
 
 from .base_graph import BaseGraph
 from .utils import validate_series_data
+from config.modules.constants import ConfigKeyError
 from config.modules.sanitizer import sanitize_user_id, InvalidUserIdError
 from datetime import datetime
 from matplotlib.ticker import MaxNLocator
 from typing import Dict, Any, Optional, List
 import logging
 import os
+
 
 class MonthlyGraphError(Exception):
     """Base exception for monthly graph-related errors."""
@@ -261,10 +263,10 @@ class PlayCountByMonthGraph(BaseGraph):
 
             return processed_data
 
-        except DataValidationError:
-            raise
+        except (ConfigKeyError, ValueError) as e:  # Updated from KeyError
+            raise DataValidationError(f"Data validation failed: {str(e)}") from e
         except Exception as e:
-            error_msg = f"Error processing monthly play count data: {str(e)}"
+            error_msg = f"Error processing monthly data: {str(e)}"
             logging.error(error_msg)
             raise DataValidationError(error_msg) from e
 

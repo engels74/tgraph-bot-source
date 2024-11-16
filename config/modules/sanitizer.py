@@ -176,7 +176,7 @@ def _sanitize_integer(
         ConversionError: If conversion fails
     """
     try:
-        converted_value = int(float(str(value).strip()))
+        converted_value = int(str(value).strip())
         
         # For cooldown settings, allow zero/negative values
         if key and (key.endswith('_COOLDOWN_MINUTES') or key.endswith('_COOLDOWN_SECONDS')):
@@ -216,9 +216,9 @@ def _sanitize_color(
         ValidationError: If validation fails
     """
     try:
-        from .validator import _validate_color
+        from .validator import validate_color
         
-        validation_result = _validate_color(value)
+        validation_result = validate_color(value)
         if not validation_result.is_valid:
             error_msg = (translations or {}).get(
                 'error_invalid_color',
@@ -316,6 +316,8 @@ def _get_default_for_type(key: str) -> Any:
     try:
         from .options import get_option_metadata
         metadata = get_option_metadata(key)
+        if metadata is None:
+            raise ValidationError(f"No metadata found for key: {key}")
         value_type = metadata["type"]
         
         # Special handling for cooldown settings

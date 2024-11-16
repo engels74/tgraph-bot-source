@@ -7,6 +7,7 @@ and resource management. Handles generation of play count graphs by day of week.
 
 from .base_graph import BaseGraph
 from .utils import get_color, validate_series_data
+from config.modules.constants import ConfigKeyError
 from config.modules.sanitizer import sanitize_user_id, InvalidUserIdError
 from datetime import datetime
 from matplotlib.ticker import MaxNLocator
@@ -183,14 +184,14 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
                         "data": serie["data"],
                         "color": get_color(serie["name"], self.config)
                     })
-                except KeyError as e:
+                except ConfigKeyError as e:
                     raise DataValidationError(f"Missing required field in series data: {e}") from e
                 except ValueError as e:
                     raise DataValidationError(f"Invalid value in series data: {e}") from e
 
             return processed_data
 
-        except (KeyError, ValueError) as e:
+        except (ConfigKeyError, ValueError) as e:
             raise DataValidationError(f"Data validation failed: {str(e)}") from e
         except Exception as e:
             error_msg = f"Failed to process day of week data: {str(e)}"
@@ -206,7 +207,6 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
             
         Raises:
             GraphGenerationError: If plotting fails
-            ResourceError: If resource management fails
         """
         try:
             self.setup_plot()

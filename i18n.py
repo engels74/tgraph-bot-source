@@ -127,7 +127,7 @@ class TranslationManager:
         except Exception as e:
             raise TranslationFileError(f"Error scanning translation files: {str(e)}") from e
 
-    def _validate_translations(
+    def validate_translations(
         self,
         translations: Dict[str, str],
         language: str,
@@ -281,7 +281,7 @@ def get_available_languages() -> List[str]:
 def validate_translations(translations: Dict[str, str], reference_lang: str = "en") -> List[str]:
     """Backwards-compatible function to validate translations."""
     try:
-        translation_manager._validate_translations(
+        translation_manager.validate_translations(
             translations,
             "custom",
             translation_manager.load_translations(reference_lang)

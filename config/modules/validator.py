@@ -344,3 +344,16 @@ def get_validation_errors(config: Dict[str, Any]) -> List[str]:
     """
     is_valid, errors = validate_config(config)
     return errors
+
+def validate_color(value: str) -> ColorValidationResult:
+    """
+    Public interface for color validation.
+    Validates a color value in hex format.
+    
+    Args:
+        value: The color value to validate
+        
+    Returns:
+        ColorValidationResult containing validation status, normalized color, and any error message
+    """
+    return _validate_color(value)

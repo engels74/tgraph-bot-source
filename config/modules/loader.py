@@ -116,7 +116,7 @@ def organize_by_sections(config: CommentedMap, defaults: CommentedMap) -> Commen
 
         return new_config
         
-    except Exception as e:
+    except KeyError as e:
         error_msg = f"Failed to organize configuration sections: {e}"
         logging.error(error_msg)
         raise ConfigFormatError(error_msg) from e
@@ -205,10 +205,11 @@ def save_yaml_config(config: CommentedMap, config_path: str) -> None:
     """
     try:
         # Ensure directory exists
-        os.makedirs(os.path.dirname(config_path), exist_ok=True)
-        
-        # Create temporary file in same directory for atomic write
         config_dir = os.path.dirname(config_path)
+        if config_dir:
+            os.makedirs(config_dir, exist_ok=True)
+
+        # Create temporary file in same directory for atomic write
         with tempfile.NamedTemporaryFile(mode='w', dir=config_dir, delete=False) as temp_file:
             try:
                 # Save config to temporary file

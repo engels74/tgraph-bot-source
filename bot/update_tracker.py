@@ -5,12 +5,15 @@ Improved update tracker for TGraph Bot with standardized error handling.
 Handles scheduling and tracking of update times with robust error handling and validation.
 """
 
+from config.modules.constants import ConfigKeyError
 from datetime import datetime, timedelta, time
 from typing import Dict, Any, Optional, Tuple
 import contextlib
 import json
 import logging
 import os
+
+
 
 class UpdateTrackerError(Exception):
     """Base exception for update tracker related errors."""
@@ -379,7 +382,7 @@ class UpdateTracker:
             self.save_tracker()
             
         except Exception as e:
-            if isinstance(e, (ConfigError, TimeValidationError)):
+            if isinstance(e, (ConfigError, TimeValidationError, ConfigKeyError)):
                 raise ConfigError(str(e)) from e
             error_msg = "Failed to update configuration"
             logging.error(f"{error_msg}: {str(e)}")

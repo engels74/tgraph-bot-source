@@ -13,7 +13,8 @@ from .modules.constants import (
     CONFIG_SECTIONS,
     CONFIG_CATEGORIES,
     get_category_keys,
-    get_category_display_name
+    get_category_display_name,
+    ConfigKeyError
 )
 from .modules.loader import (
     load_yaml_config,
@@ -82,10 +83,6 @@ class ConfigValidationError(ConfigError):
 
 class ConfigUpdateError(ConfigError):
     """Raised when configuration update fails."""
-    pass
-
-class ConfigKeyError(ConfigError):
-    """Raised when accessing non-existent configuration keys."""
     pass
 
 class ConfigCache:

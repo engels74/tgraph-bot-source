@@ -7,6 +7,7 @@ Handles generation of user statistics graphs with proper validation, cleanup, an
 
 from .base_graph import BaseGraph
 from .utils import validate_series_data, censor_username
+from config.modules.constants import ConfigKeyError
 from datetime import datetime
 from matplotlib.ticker import MaxNLocator
 from typing import Dict, Any, Optional, List, Union
@@ -188,7 +189,7 @@ class Top10UsersGraph(BaseGraph):
 
             return processed_data
 
-        except (KeyError, ValueError) as e:
+        except (ValueError, ConfigKeyError) as e:
             raise DataValidationError(f"Data validation failed: {str(e)}") from e
         except Exception as e:
             error_msg = f"Error processing users data: {str(e)}"
