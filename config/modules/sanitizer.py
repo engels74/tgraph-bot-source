@@ -9,6 +9,7 @@ from datetime import datetime
 from typing import Any, Dict, Optional
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 import logging
+import re
 
 # Custom Exception Hierarchy
 class SanitizerError(Exception):
@@ -450,8 +451,8 @@ def sanitize_language_code(language: str) -> str:
         # Strip any whitespace and quotes
         sanitized = str(language).strip().strip('"\'').lower()
         
-        # Ensure it only contains valid characters
-        if not sanitized.isalnum():
+        # Validate against common language code formats
+        if not re.match(r'^[a-z]{2}(-[a-z]{2})?$', sanitized):
             raise ValidationError(f"Invalid language code format: {language}")
             
         # Limit length

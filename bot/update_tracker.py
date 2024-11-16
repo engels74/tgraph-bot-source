@@ -299,7 +299,14 @@ class UpdateTracker:
                     minute=fixed_time.minute
                 )
                 # Ensure future time
+                max_iterations = 366  # Maximum days in a year
+                iterations = 0
                 while next_update <= now:
+                    iterations += 1
+                    if iterations > max_iterations:
+                        raise TimeValidationError(
+                            "Failed to find valid future update time after maximum iterations"
+                        )
                     next_update += timedelta(days=1)
 
             logging.debug(

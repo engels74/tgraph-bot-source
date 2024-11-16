@@ -173,9 +173,9 @@ class GraphManager:
         title = self.translations.get(title_key, "")
         description = self.translations.get(desc_key, "")
         
-        if title and days:
+        if title and days is not None:
             title = title.format(days=days)
-        if description and days:
+        if description and days is not None:
             description = description.format(days=days)
 
         if update_tracker:

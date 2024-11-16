@@ -116,8 +116,11 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
             if not data or 'response' not in data or 'data' not in data['response']:
                 error_msg = self.translations.get(
                     'error_fetch_play_count_dayofweek_user' if user_id else 'error_fetch_play_count_dayofweek',
-                    'Failed to fetch play count by day of week data{}: {}'
-                ).format(f" for user {user_id}" if user_id else "", "No data returned")
+                    'Failed to fetch play count by day of week data for user {user_id}: {error}'
+                ).format(
+                    user_id=user_id if user_id else "",
+                    error="No data returned"
+                )
                 logging.error(error_msg)
                 raise DataFetchError(error_msg)
 

@@ -17,6 +17,7 @@ from graphs.graph_manager import GraphManager
 from graphs.graph_modules.data_fetcher import DataFetcher
 from graphs.user_graph_manager import UserGraphManager
 from i18n import load_translations, TranslationManager
+from typing import Optional
 import argparse
 import asyncio
 import discord
@@ -275,6 +276,91 @@ class TGraphBot(commands.Bot):
             logging.error(error_msg)
             raise BackgroundTaskError(error_msg) from e
 
+async def _handle_config_reload(bot: TGraphBot, consecutive_failures: int, max_consecutive_failures: int, failure_delay: int) -> tuple[bool, int]:
+    """Handle configuration reload with retry logic.
+    
+    Args:
+        bot: The bot instance
+        consecutive_failures: Current number of consecutive failures
+        max_consecutive_failures: Maximum allowed consecutive failures
+        failure_delay: Delay in seconds before next retry
+        
+    Returns:
+        Tuple of (success status, updated consecutive failures count)
+    """
+    try:
+        bot.config = load_config(bot.config_path, reload=True)
+        return True, 0
+    except Exception as e:
+        consecutive_failures += 1
+        log(bot.translations["log_config_reload_error"].format(
+            error=str(e),
+            attempt=consecutive_failures,
+            max_attempts=max_consecutive_failures
+        ), logging.ERROR)
+        
+        if consecutive_failures >= max_consecutive_failures:
+            log(bot.translations["log_config_reload_critical"], logging.CRITICAL)
+            await asyncio.sleep(failure_delay)
+        return False, consecutive_failures
+
+async def _handle_channel_validation(bot: TGraphBot, channel_check_failures: int, max_channel_failures: int, channel_retry_delay: int) -> tuple[Optional[discord.TextChannel], int]:
+    """Validate and get the target channel.
+    
+    Args:
+        bot: The bot instance
+        channel_check_failures: Current number of channel check failures
+        max_channel_failures: Maximum allowed channel check failures
+        channel_retry_delay: Delay in seconds before next retry
+        
+    Returns:
+        Tuple of (channel if valid or None, updated channel check failures count)
+    """
+    channel = bot.get_channel(bot.config["CHANNEL_ID"])
+    if not channel:
+        channel_check_failures += 1
+        log(bot.translations["log_channel_not_found"].format(
+            channel_id=bot.config["CHANNEL_ID"],
+            attempt=channel_check_failures,
+            max_attempts=max_channel_failures
+        ), logging.ERROR)
+        
+        if channel_check_failures >= max_channel_failures:
+            log(bot.translations["log_channel_not_found_critical"], logging.CRITICAL)
+            await asyncio.sleep(channel_retry_delay)
+        return None, channel_check_failures
+    return channel, 0
+
+async def _handle_graph_update(bot: TGraphBot, channel: discord.TextChannel) -> bool:
+    """Handle graph generation and posting.
+    
+    Args:
+        bot: The bot instance
+        channel: The target channel for posting
+        
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    try:
+        graph_files = await bot.graph_manager.generate_and_save_graphs(bot.data_fetcher)
+        if not graph_files:
+            raise BackgroundTaskError("No graphs were generated")
+            
+        await bot.graph_manager.post_graphs(channel, graph_files, bot.update_tracker)
+        
+        # Update tracker
+        bot.update_tracker.update()
+        next_update_log = bot.update_tracker.get_next_update_readable()
+        log(bot.translations["log_auto_update_completed"].format(
+            next_update=next_update_log
+        ))
+        return True
+        
+    except Exception as e:
+        error_msg = bot.translations["log_auto_update_error"].format(error=str(e))
+        logging.error(error_msg)
+        return False
+
 async def schedule_updates(bot: TGraphBot) -> None:
     """Schedule updates with enhanced error handling and retry mechanisms."""
     channel_retry_delay = 3600  # 1 hour
@@ -289,60 +375,24 @@ async def schedule_updates(bot: TGraphBot) -> None:
             if bot.update_tracker.is_update_due():
                 log(bot.translations["log_auto_update_started"])
                 
-                try:
-                    # Config reload with error handling
-                    try:
-                        bot.config = load_config(bot.config_path, reload=True)
-                        consecutive_failures = 0
-                    except Exception as e:
-                        consecutive_failures += 1
-                        log(bot.translations["log_config_reload_error"].format(
-                            error=str(e),
-                            attempt=consecutive_failures,
-                            max_attempts=max_consecutive_failures
-                        ), logging.ERROR)
-                        
-                        if consecutive_failures >= max_consecutive_failures:
-                            log(bot.translations["log_config_reload_critical"], logging.CRITICAL)
-                            await asyncio.sleep(failure_delay)
-                        continue
-                    
-                    # Channel validation
-                    channel = bot.get_channel(bot.config["CHANNEL_ID"])
-                    if not channel:
-                        channel_check_failures += 1
-                        log(bot.translations["log_channel_not_found"].format(
-                            channel_id=bot.config["CHANNEL_ID"],
-                            attempt=channel_check_failures,
-                            max_attempts=max_channel_failures
-                        ), logging.ERROR)
-                        
-                        if channel_check_failures >= max_channel_failures:
-                            log(bot.translations["log_channel_not_found_critical"], logging.CRITICAL)
-                            await asyncio.sleep(channel_retry_delay)
-                        continue
-                    
-                    channel_check_failures = 0  # Reset on success
-                    
-                    # Graph generation and posting
-                    graph_files = await bot.graph_manager.generate_and_save_graphs(bot.data_fetcher)
-                    if graph_files:
-                        await bot.graph_manager.post_graphs(channel, graph_files, bot.update_tracker)
-                    else:
-                        raise BackgroundTaskError("No graphs were generated")
-                    
-                    # Update tracker
-                    bot.update_tracker.update()
-                    next_update_log = bot.update_tracker.get_next_update_readable()
-                    log(bot.translations["log_auto_update_completed"].format(
-                        next_update=next_update_log
-                    ))
-                    
-                except Exception as e:
-                    error_msg = bot.translations["log_auto_update_error"].format(error=str(e))
-                    logging.error(error_msg)
-                    raise SchedulingError(error_msg) from e
+                # Handle config reload
+                config_success, consecutive_failures = await _handle_config_reload(
+                    bot, consecutive_failures, max_consecutive_failures, failure_delay
+                )
+                if not config_success:
+                    continue
+
+                # Handle channel validation
+                channel, channel_check_failures = await _handle_channel_validation(
+                    bot, channel_check_failures, max_channel_failures, channel_retry_delay
+                )
+                if not channel:
+                    continue
                 
+                # Handle graph update
+                if not await _handle_graph_update(bot, channel):
+                    raise SchedulingError("Failed to update graphs")
+                    
         except Exception as e:
             if not isinstance(e, SchedulingError):
                 error_msg = f"Unexpected error in update scheduling: {str(e)}"

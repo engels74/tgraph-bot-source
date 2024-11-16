@@ -91,21 +91,24 @@ class ConfigKeyError(ConfigError):
 class ConfigCache:
     """Thread-safe configuration cache with exception handling."""
     
-    def __init__(self, ttl: int = 300):
+    def __init__(self, ttl: int = 300, max_size: int = 1000):
         """Initialize the cache.
         
         Args:
             ttl: Time-to-live in seconds for cache entries
+            max_size: Maximum number of entries in cache
         """
         self._cache: Dict[str, Tuple[Any, float]] = {}
         self._ttl = ttl
+        self._max_size = max_size
         self._lock = Lock()
 
     def get(self, key: str) -> Optional[Any]:
         """Get a value from the cache if it exists and hasn't expired."""
         with self._lock:
-            if key in self._cache:
-                value, timestamp = self._cache[key]
+            entry = self._cache.get(key)
+            if entry is not None:
+                value, timestamp = entry
                 if time() - timestamp <= self._ttl:
                     return value
                 else:
@@ -117,6 +120,11 @@ class ConfigCache:
         if isinstance(value, Exception):
             return  # Don't cache exceptions
         with self._lock:
+            # Enforce size limit
+            if len(self._cache) >= self._max_size:
+                # Remove oldest entry
+                oldest_key = min(self._cache.items(), key=lambda x: x[1][1])[0]
+                del self._cache[oldest_key]
             self._cache[key] = (value, time())
 
     def clear(self) -> None:
@@ -319,7 +327,13 @@ def update_config(key: str, value: Any, translations: Dict[str, str]) -> str:
     try:
         # Create a temporary file in the same directory
         config_dir = os.path.dirname(CONFIG_PATH)
+        # Check directory permissions
+        if not os.access(config_dir, os.W_OK):
+            raise ConfigUpdateError(f"No write permission in {config_dir}")
+
+        temp_file_path = None  # Initialize temp_file_path
         with tempfile.NamedTemporaryFile(mode='w', dir=config_dir, delete=False) as temp_file:
+            temp_file_path = temp_file.name
             # Load and modify configuration
             with open(CONFIG_PATH, 'r') as config_file:
                 # Acquire exclusive lock
@@ -368,6 +382,12 @@ def update_config(key: str, value: Any, translations: Dict[str, str]) -> str:
                     fcntl.flock(config_file.fileno(), fcntl.LOCK_UN)
                     
     except Exception as e:
+        # Clean up temporary file if it exists
+        if temp_file_path and os.path.exists(temp_file_path):
+            try:
+                os.unlink(temp_file_path)
+            except OSError:
+                pass  # Best effort cleanup
         logging.error(f"Failed to update configuration: {str(e)}")
         raise ConfigUpdateError(f"Configuration update failed: {str(e)}") from e
 
