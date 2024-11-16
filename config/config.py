@@ -31,7 +31,6 @@ from .modules.options import (
 from .modules.validator import (
     validate_config_value,
     _validate_color,
-    ColorValidationResult,
 )
 import fcntl
 import logging
@@ -221,34 +220,40 @@ def validate_config_schema(config: Dict[str, Any]) -> None:
                     f"Invalid value for {key} in category {get_category_display_name(category)}: {config[key]}"
                 )
 
-async def validate_and_format_config_value(key: str, value: Any, translations: Dict[str, str]) -> Tuple[Optional[Any], Optional[str]]:
+async def validate_and_format_config_value(
+    key: str, 
+    value: Any, 
+    translations: Dict[str, str]
+) -> Tuple[Any, Optional[str]]:
     """
-    Validate and format a configuration value with enhanced error handling.
-    
-    Args:
-        key: Configuration key
-        value: Value to validate
-        translations: Translation dictionary
-        
-    Returns:
-        Tuple of (formatted_value, error_message)
+    Validate and format a configuration value.
     """
     try:
-        if key in ["TV_COLOR", "MOVIE_COLOR", "ANNOTATION_COLOR", "ANNOTATION_OUTLINE_COLOR"]:
-            result: ColorValidationResult = _validate_color(value)
-            if not result.is_valid:
-                return None, result.error_message
-            return result.normalized_color, None
+        # Special handling for required fields
+        if value is None or (isinstance(value, str) and not value.strip()):
+            return None, translations.get(
+                "config_error_required_field",
+                "This configuration option cannot be empty or null"
+            )
 
-        # Handle other validations
+        # Validate the value - remove await since validate_config_value is synchronous
         if not validate_config_value(key, value):
-            return None, translations.get("config_invalid_value", "Invalid value provided")
+            return None, translations.get(
+                "config_error_validation",
+                "Invalid configuration value: {error}"
+            ).format(error=f"Invalid value for {key}")
 
-        return sanitize_config_value(key, value), None
+        # Format the value - remove await since sanitize_config_value is synchronous
+        formatted_value = sanitize_config_value(key, value)
+        return formatted_value, None
 
     except Exception as e:
-        logging.error(f"Error validating config value: {str(e)}")
-        return None, str(e)
+        error_msg = f"Configuration validation failed: {str(e)}"
+        logging.error(error_msg)
+        return None, translations.get(
+            "config_error_generic",
+            "An error occurred while processing the configuration"
+        )
 
 @cached_config
 def get_config_value(key: str) -> Any:

@@ -67,6 +67,9 @@ class TGraphBot(commands.Bot):
             **kwargs
         )
         
+        # Initialize the initialization lock
+        self._initialization_lock = asyncio.Lock()
+        
         # Initialize other attributes after super().__init__
         self.data_folder = kwargs.pop("data_folder", None)
         self.img_folder = os.path.join(self.data_folder, "img")
@@ -487,6 +490,10 @@ async def main() -> None:
         # Create log directory and add file handler
         try:
             os.makedirs(os.path.dirname(args.log_file), exist_ok=True)
+            # Add file handler to root logger
+            file_handler = logging.FileHandler(args.log_file, encoding='utf-8')
+            file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+            logging.getLogger().addHandler(file_handler)
         except Exception as e:
             print(f"Failed to set up log file: {e}")  # Use print since console logging still works
             raise InitializationError(f"Failed to set up log file: {e}") from e
@@ -547,7 +554,6 @@ async def main() -> None:
 
         try:
             async with TGraphBot(
-                command_prefix="!",
                 data_folder=args.data_folder,
                 update_tracker=update_tracker,
                 config=config,

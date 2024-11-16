@@ -211,15 +211,6 @@ class ConfigCog(commands.GroupCog, CommandMixin, ErrorHandlerMixin, name="config
     ) -> None:
         """
         Edit a configuration setting.
-
-        Args:
-            interaction: The Discord interaction
-            key: Configuration key to edit
-            value: New value to set
-            
-        Raises:
-            ConfigUpdateError: If update operation fails
-            ConfigValidationError: If validation fails
         """
         if not await self.check_cooldowns(
             interaction,
@@ -232,7 +223,11 @@ class ConfigCog(commands.GroupCog, CommandMixin, ErrorHandlerMixin, name="config
 
         try:
             if key not in CONFIGURABLE_OPTIONS:
-                raise ConfigValidationError(self.translations["config_error_invalid_key"])
+                await interaction.followup.send(
+                    self.translations["config_error_invalid_key"],
+                    ephemeral=True
+                )
+                return
 
             # Handle special case where value is "null", "none", or "XX:XX" for FIXED_UPDATE_TIME
             if value and (
@@ -241,16 +236,17 @@ class ConfigCog(commands.GroupCog, CommandMixin, ErrorHandlerMixin, name="config
             ):
                 value = None
 
-            # Validate and format value
-            formatted_value, error_message = validate_and_format_config_value(
+            # Validate and format the value
+            formatted_value, error_message = await validate_and_format_config_value(
                 key, value, self.translations
             )
             
             if error_message:
-                logging.warning(f"Configuration validation error for {key}: {error_message}")
-                raise ConfigValidationError(
-                    self.translations["config_error_validation"].format(error=error_message)
+                await interaction.followup.send(
+                    error_message,
+                    ephemeral=True
                 )
+                return
             
             # Check if None is allowed for this key
             metadata = get_option_metadata(key)
@@ -322,12 +318,21 @@ class ConfigCog(commands.GroupCog, CommandMixin, ErrorHandlerMixin, name="config
         interaction: discord.Interaction,
         current: str
     ) -> List[app_commands.Choice[str]]:
-        """Provide autocomplete for view command's key parameter."""
-        return [
-            app_commands.Choice(name=key, value=key)
-            for key in CONFIGURABLE_OPTIONS
-            if current.lower() in key.lower()
-        ][:25]
+        """
+        Provide autocomplete for view command's key parameter.
+        Shows keys organized by category with proper formatting.
+        """
+        choices = []
+        categorized = get_categorized_config(self.config)
+        
+        for category, category_config in categorized.items():
+            category_name = get_category_display_name(category)
+            for key in category_config.keys():
+                if key in CONFIGURABLE_OPTIONS and current.lower() in key.lower():
+                    display_name = f"{category_name} » {key}"
+                    choices.append(app_commands.Choice(name=display_name, value=key))
+        
+        return sorted(choices, key=lambda c: c.name)[:25]
 
     @edit.autocomplete('key')
     async def edit_key_autocomplete(
@@ -335,12 +340,26 @@ class ConfigCog(commands.GroupCog, CommandMixin, ErrorHandlerMixin, name="config
         interaction: discord.Interaction,
         current: str
     ) -> List[app_commands.Choice[str]]:
-        """Provide autocomplete for edit command's key parameter."""
-        return [
-            app_commands.Choice(name=key, value=key)
-            for key in CONFIGURABLE_OPTIONS
-            if current.lower() in key.lower()
-        ][:25]
+        """
+        Provide autocomplete for edit command's key parameter.
+        Shows keys organized by category with proper formatting.
+        """
+        choices = []
+        categorized = get_categorized_config(self.config)
+        
+        for category, category_config in categorized.items():
+            # Get category display name (e.g., "Basic settings" for BASIC_SETTINGS)
+            category_name = get_category_display_name(category)
+            
+            # Add keys from this category that match the current input
+            for key in category_config.keys():
+                if key in CONFIGURABLE_OPTIONS and current.lower() in key.lower():
+                    # Format as "Category » Key" for better organization
+                    display_name = f"{category_name} » {key}"
+                    choices.append(app_commands.Choice(name=display_name, value=key))
+        
+        # Sort choices by category and then by key
+        return sorted(choices, key=lambda c: c.name)[:25]
 
     async def _update_language(self, language: str) -> None:
         """
