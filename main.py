@@ -20,6 +20,7 @@ from i18n import load_translations, TranslationManager
 from typing import Optional
 import argparse
 import asyncio
+import contextlib
 import discord
 import logging
 import os
@@ -112,6 +113,7 @@ class TGraphBot(commands.Bot):
         for resource in reversed(self._initialized_resources):
             try:
                 if hasattr(resource, 'cleanup'):
+                    logging.info(f"Cleaning up resource: {resource.__class__.__name__}")
                     resource.cleanup()
             except Exception as e:
                 logging.error(f"Error during cleanup of {resource.__class__.__name__}: {e}")
@@ -219,6 +221,7 @@ class TGraphBot(commands.Bot):
         """Reload configuration with retry mechanism and update translations."""
         last_error = None
         for attempt in range(max_retries):
+            logging.info(f"Config reload attempt {attempt + 1}/{max_retries}")
             try:
                 # Run load_config in executor to prevent blocking
                 self.config = await asyncio.get_event_loop().run_in_executor(
@@ -409,10 +412,8 @@ class TGraphBot(commands.Bot):
         except Exception as e:
             # Log any errors that occur during error handling
             logging.error(f"Error in error handler: {str(e)}", exc_info=e)
-            try:
+            with contextlib.suppress(Exception):
                 await ctx.send(self.translations["error_handler_failed"])
-            except:
-                pass  # If we can't send a message, there's nothing more we can do
 
 async def _handle_config_reload(bot: TGraphBot, consecutive_failures: int, max_consecutive_failures: int, failure_delay: int) -> tuple[bool, int]:
     """Handle configuration reload with retry logic.
@@ -604,8 +605,9 @@ async def main() -> None:
             logging.debug(f"Loaded translations keys: {sorted(translations.keys())}")
             TranslationManager.set_translations(translations)
             if not translations:
+                attempted_language = config["LANGUAGE"]
                 translations = {"log_ensured_folders_exist": "Ensured folders exist"}
-                logging.warning("Translations failed to load, using fallback")
+                logging.warning(f"Translations failed to load for language '{attempted_language}', using fallback")
         except Exception as e:
             error_msg = f"Error loading translations: {e}"
             logger.error(error_msg)
