@@ -221,7 +221,7 @@ class TGraphBot(commands.Bot):
         """Reload configuration with retry mechanism and update translations."""
         last_error = None
         for attempt in range(max_retries):
-            logging.info(f"Config reload attempt {attempt + 1}/{max_retries}")
+            logging.debug(f"Config reload attempt {attempt + 1}/{max_retries}")
             try:
                 # Run load_config in executor to prevent blocking
                 self.config = await asyncio.get_event_loop().run_in_executor(
