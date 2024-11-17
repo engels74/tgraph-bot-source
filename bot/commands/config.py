@@ -501,11 +501,11 @@ class ConfigCog(commands.GroupCog, CommandMixin, ErrorHandlerMixin, name="config
 
     async def cog_load(self) -> None:
         """Called when the cog is loaded."""
-        logging.info(self.translations["log_commands_cog_loaded"])
+        logging.debug(self.translations["log_commands_cog_loaded"])
 
     async def cog_unload(self) -> None:
         """Called when the cog is unloaded."""
-        logging.info(self.translations["log_unloading_command"].format(
+        logging.debug(self.translations["log_unloading_command"].format(
             command_name="config"
         ))
 

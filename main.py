@@ -113,7 +113,7 @@ class TGraphBot(commands.Bot):
         for resource in reversed(self._initialized_resources):
             try:
                 if hasattr(resource, 'cleanup'):
-                    logging.info(f"Cleaning up resource: {resource.__class__.__name__}")
+                    logging.debug(f"Cleaning up resource: {resource.__class__.__name__}")
                     resource.cleanup()
             except Exception as e:
                 logging.error(f"Error during cleanup of {resource.__class__.__name__}: {e}")
@@ -298,7 +298,7 @@ class TGraphBot(commands.Bot):
             if hasattr(self, 'data_fetcher'):
                 self.data_fetcher.translations = translations
                 
-            logging.info(f"Reloaded translations for language: {language}")
+            logging.debug(f"Reloaded translations for language: {language}")
             
         except Exception as e:
             logging.error(f"Failed to reload translations: {str(e)}")
