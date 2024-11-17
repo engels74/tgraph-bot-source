@@ -16,6 +16,7 @@ Classes:
     ConfigCog: Main configuration command handler
 """
 
+from asyncio import Lock
 from config.config import (
     CONFIGURABLE_OPTIONS, 
     RESTART_REQUIRED_KEYS,
@@ -72,6 +73,7 @@ class ConfigCog(commands.GroupCog, CommandMixin, ErrorHandlerMixin, name="config
             self.bot = bot
             self.config = bot.config
             self.translations = bot.translations
+            self._config_lock = Lock()
             
             # Initialize mixins first
             CommandMixin.__init__(self)
@@ -263,31 +265,32 @@ class ConfigCog(commands.GroupCog, CommandMixin, ErrorHandlerMixin, name="config
                     formatted_value = "XX:XX"  # Convert None back to XX:XX for storage
 
             try:
-                # Load fresh config
-                config = load_yaml_config(self.bot.config_path)
-                old_value = config.get(key)
-                
-                # Update and save
-                update_config_value(config, key, formatted_value)
-                save_yaml_config(config, self.bot.config_path)
-                self.config[key] = formatted_value
-                
-                # Get appropriate response message
-                if key == "FIXED_UPDATE_TIME" and (formatted_value == "XX:XX" or formatted_value is None):
-                    response_message = self.translations["config_updated_fixed_time_disabled"].format(key=key)
-                elif key in RESTART_REQUIRED_KEYS:
-                    response_message = self.translations["config_updated_restart"].format(key=key)
-                else:
-                    old_display = format_value_for_display(key, old_value)
-                    new_display = format_value_for_display(key, formatted_value)
-                    response_message = self.translations["config_updated"].format(
-                        key=key,
-                        old_value=old_display,
-                        new_value=new_display
-                    )
-                
-                await interaction.followup.send(response_message, ephemeral=True)
-                
+                async with self._config_lock:
+                    # Load fresh config
+                    config = load_yaml_config(self.bot.config_path)
+                    old_value = config.get(key)
+                    
+                    # Update and save
+                    update_config_value(config, key, formatted_value)
+                    save_yaml_config(config, self.bot.config_path)
+                    self.config[key] = formatted_value
+                    
+                    # Get appropriate response message
+                    if key == "FIXED_UPDATE_TIME" and (formatted_value == "XX:XX" or formatted_value is None):
+                        response_message = self.translations["config_updated_fixed_time_disabled"].format(key=key)
+                    elif key in RESTART_REQUIRED_KEYS:
+                        response_message = self.translations["config_updated_restart"].format(key=key)
+                    else:
+                        old_display = format_value_for_display(key, old_value)
+                        new_display = format_value_for_display(key, formatted_value)
+                        response_message = self.translations["config_updated"].format(
+                            key=key,
+                            old_value=old_display,
+                            new_value=new_display
+                        )
+                    
+                    await interaction.followup.send(response_message, ephemeral=True)
+                    
             except (ConfigError, BaseConfigValidationError) as e:
                 raise ConfigUpdateError(f"Failed to update configuration: {str(e)}") from e
 
@@ -312,27 +315,64 @@ class ConfigCog(commands.GroupCog, CommandMixin, ErrorHandlerMixin, name="config
                 logging.error(f"Unexpected error updating configuration: {str(e)}")
                 raise ConfigUpdateError("Unexpected error updating configuration") from e
 
-    @view.autocomplete('key')
-    async def view_key_autocomplete(
+    async def _get_key_autocomplete(
         self,
-        interaction: discord.Interaction,
         current: str
     ) -> List[app_commands.Choice[str]]:
-        """
-        Provide autocomplete for view command's key parameter.
-        Shows keys organized by category with proper formatting.
+        """Get autocomplete choices for configuration keys.
+        
+        This helper method provides filtered and categorized autocomplete suggestions
+        for configuration keys. Results are limited to 25 choices and sorted alphabetically.
+        
+        Parameters
+        -----------
+        current: str
+            The current value entered by the user to filter against
+            
+        Returns
+        --------
+        List[app_commands.Choice[str]]
+            A list of autocomplete choices, each containing:
+            - name: Category » Key format for display
+            - value: The actual config key
+            
+        Note
+        -----
+        The choices returned are suggestions only. Users may input other values.
         """
         choices = []
         categorized = get_categorized_config(self.config)
         
         for category, category_config in categorized.items():
             category_name = get_category_display_name(category)
-            for key in category_config.keys():
+            for key in category_config:
                 if key in CONFIGURABLE_OPTIONS and current.lower() in key.lower():
                     display_name = f"{category_name} » {key}"
                     choices.append(app_commands.Choice(name=display_name, value=key))
         
         return sorted(choices, key=lambda c: c.name)[:25]
+
+    @view.autocomplete('key')
+    async def view_key_autocomplete(
+        self,
+        interaction: discord.Interaction,
+        current: str
+    ) -> List[app_commands.Choice[str]]:
+        """Autocomplete callback for the view command's key parameter.
+        
+        Parameters
+        -----------
+        interaction: discord.Interaction
+            The autocomplete interaction being handled
+        current: str
+            The current value entered by the user
+            
+        Returns
+        --------
+        List[app_commands.Choice[str]]
+            The filtered autocomplete choices
+        """
+        return await self._get_key_autocomplete(current)
 
     @edit.autocomplete('key')
     async def edit_key_autocomplete(
@@ -340,26 +380,21 @@ class ConfigCog(commands.GroupCog, CommandMixin, ErrorHandlerMixin, name="config
         interaction: discord.Interaction,
         current: str
     ) -> List[app_commands.Choice[str]]:
-        """
-        Provide autocomplete for edit command's key parameter.
-        Shows keys organized by category with proper formatting.
-        """
-        choices = []
-        categorized = get_categorized_config(self.config)
+        """Autocomplete callback for the edit command's key parameter.
         
-        for category, category_config in categorized.items():
-            # Get category display name (e.g., "Basic settings" for BASIC_SETTINGS)
-            category_name = get_category_display_name(category)
+        Parameters
+        -----------
+        interaction: discord.Interaction
+            The autocomplete interaction being handled
+        current: str
+            The current value entered by the user
             
-            # Add keys from this category that match the current input
-            for key in category_config.keys():
-                if key in CONFIGURABLE_OPTIONS and current.lower() in key.lower():
-                    # Format as "Category » Key" for better organization
-                    display_name = f"{category_name} » {key}"
-                    choices.append(app_commands.Choice(name=display_name, value=key))
-        
-        # Sort choices by category and then by key
-        return sorted(choices, key=lambda c: c.name)[:25]
+        Returns
+        --------
+        List[app_commands.Choice[str]]
+            The filtered autocomplete choices
+        """
+        return await self._get_key_autocomplete(current)
 
     async def _update_language(self, language: str) -> None:
         """Update bot language settings.

@@ -5,6 +5,7 @@ Main configuration interface for TGraph Bot.
 Provides a clean API for configuration management while encapsulating implementation details.
 """
 
+from contextlib import suppress
 from functools import wraps
 from threading import Lock
 from time import time
@@ -136,19 +137,18 @@ def cached_config(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         cache_key = f"{func.__name__}:{str(args)}:{str(kwargs)}"
-        cached_value = _config_cache.get(cache_key)
-        
-        if cached_value is not None:
-            return cached_value
+        with _config_cache._lock:
+            cached_value = _config_cache.get(cache_key)
+            if cached_value is not None:
+                return cached_value
             
-        try:
-            result = func(*args, **kwargs)
-            _config_cache.set(cache_key, result)
-            return result
-        except Exception as e:
-            logging.error(f"Error in {func.__name__}: {str(e)}")
-            raise  # Re-raise the exception but don't cache it
-            
+            try:
+                result = func(*args, **kwargs)
+                _config_cache.set(cache_key, result)
+                return result
+            except Exception as e:
+                logging.error(f"Error in {func.__name__}: {str(e)}")
+                raise
     return wrapper
 
 def get_categorized_config(config: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
@@ -334,6 +334,7 @@ def update_config(key: str, value: Any, translations: Dict[str, str]) -> str:
             raise ConfigUpdateError(f"No write permission in {config_dir}")
 
         temp_file_path = None  # Initialize temp_file_path
+        original_mode = os.stat(CONFIG_PATH).st_mode  # Get original file permissions
         with tempfile.NamedTemporaryFile(mode='w', dir=config_dir, delete=False) as temp_file:
             temp_file_path = temp_file.name
             # Load and modify configuration
@@ -360,7 +361,10 @@ def update_config(key: str, value: Any, translations: Dict[str, str]) -> str:
                     
                     # Write to temp file
                     save_yaml_config(config, temp_file.name)
-                    
+                    # Ensure data is written to disk
+                    os.fsync(temp_file.fileno())  # Ensure data is flushed to disk
+                    # Preserve original file permissions
+                    os.chmod(temp_file.name, original_mode)  # Set permissions to original
                     # Atomic rename
                     os.replace(temp_file.name, CONFIG_PATH)
                     
@@ -386,10 +390,8 @@ def update_config(key: str, value: Any, translations: Dict[str, str]) -> str:
     except Exception as e:
         # Clean up temporary file if it exists
         if temp_file_path and os.path.exists(temp_file_path):
-            try:
+            with suppress(OSError):
                 os.unlink(temp_file_path)
-            except OSError:
-                pass  # Best effort cleanup
         logging.error(f"Failed to update configuration: {str(e)}")
         raise ConfigUpdateError(f"Configuration update failed: {str(e)}") from e
 

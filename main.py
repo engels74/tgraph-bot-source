@@ -278,8 +278,6 @@ class TGraphBot(commands.Bot):
     async def _reload_translations(self) -> None:
         """Reload translations based on current configuration."""
         try:
-            from i18n import load_translations
-            
             language = self.config.get("LANGUAGE", "en")
             translations = load_translations(language)
             
@@ -361,13 +359,60 @@ class TGraphBot(commands.Bot):
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
-        """Handle command errors using discord.py's error system"""
-        if isinstance(error, commands.CommandNotFound):
-            return
-        elif isinstance(error, commands.MissingPermissions):
-            await ctx.send("You don't have permission to use this command.")
-        else:
-            logging.error(f"Command error: {str(error)}")
+        """Handle command errors with comprehensive error handling and user feedback.
+        
+        Provides detailed error messages for different types of command errors while
+        maintaining security by not exposing sensitive details.
+        """
+        try:
+            if isinstance(error, commands.CommandNotFound):
+                # Silently ignore command not found errors
+                return
+            
+            elif isinstance(error, commands.MissingPermissions):
+                await ctx.send(self.translations["error_missing_permissions"])
+            
+            elif isinstance(error, commands.BotMissingPermissions):
+                await ctx.send(self.translations["error_bot_missing_permissions"].format(
+                    permissions=", ".join(error.missing_permissions)
+                ))
+            
+            elif isinstance(error, commands.MissingRequiredArgument):
+                await ctx.send(self.translations["error_missing_argument"].format(
+                    param=error.param.name
+                ))
+            
+            elif isinstance(error, commands.BadArgument):
+                await ctx.send(self.translations["error_bad_argument"])
+            
+            elif isinstance(error, commands.NoPrivateMessage):
+                await ctx.send(self.translations["error_no_dm"])
+            
+            elif isinstance(error, commands.CommandOnCooldown):
+                await ctx.send(self.translations["error_cooldown"].format(
+                    time=round(error.retry_after, 2)
+                ))
+            
+            elif isinstance(error, commands.DisabledCommand):
+                await ctx.send(self.translations["error_command_disabled"])
+            
+            elif isinstance(error, commands.CheckFailure):
+                await ctx.send(self.translations["error_check_failure"])
+            
+            else:
+                # Log unexpected errors with full details
+                logging.error(f"Unexpected command error: {str(error)}", exc_info=error)
+                
+                # Send a generic error message to the user
+                await ctx.send(self.translations["error_unexpected"])
+            
+        except Exception as e:
+            # Log any errors that occur during error handling
+            logging.error(f"Error in error handler: {str(e)}", exc_info=e)
+            try:
+                await ctx.send(self.translations["error_handler_failed"])
+            except:
+                pass  # If we can't send a message, there's nothing more we can do
 
 async def _handle_config_reload(bot: TGraphBot, consecutive_failures: int, max_consecutive_failures: int, failure_delay: int) -> tuple[bool, int]:
     """Handle configuration reload with retry logic.
