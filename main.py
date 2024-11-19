@@ -545,7 +545,10 @@ async def _handle_graph_update(bot: TGraphBot, channel: discord.TextChannel) -> 
     finally:
         # Clean up temporary state
         if temp_tracker_state is not None:
-            del temp_tracker_state
+            try:
+                del temp_tracker_state
+            except Exception as e:
+                logging.warning("Failed to cleanup temporary tracker state: %s", str(e))
 
 def setup_logging(log_file: str) -> None:
     """Set up logging with error handling."""
