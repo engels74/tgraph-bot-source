@@ -473,15 +473,19 @@ async def _handle_channel_validation(bot: TGraphBot, channel_check_failures: int
 
 async def _handle_graph_update(bot: TGraphBot, channel: discord.TextChannel) -> bool:
     """
-    Handle graph generation and posting.
-    
+    Handle graph generation and posting with enhanced error handling and state management.
+
     Args:
         bot: The bot instance
         channel: The target channel for posting
-        
+
     Returns:
         bool: True if successful, False otherwise
+
+    The function uses a rollback mechanism to restore state on failure and
+    properly handles cleanup of temporary states and resources.
     """
+    temp_tracker_state = None
     try:
         # 1. Store current tracker state for rollback
         previous_state = bot.update_tracker.get_state()
@@ -499,11 +503,19 @@ async def _handle_graph_update(bot: TGraphBot, channel: discord.TextChannel) -> 
         temp_tracker_state = bot.update_tracker.get_state()
 
         try:
-            # 4. Delete old messages
+            # 4. Delete old messages with specific error handling
             await bot.graph_manager.delete_old_messages(channel)
             logging.debug("Successfully deleted old messages")
-        except Exception:
-            logging.exception("Failed to delete old messages")
+        except discord.NotFound:
+            logging.warning("Some messages were already deleted")
+        except discord.Forbidden:
+            logging.error("Bot lacks permissions to delete messages", exc_info=True)
+            return False
+        except discord.HTTPException as e:
+            logging.error("Discord API error while deleting messages: %s", str(e))
+            # Continue with update even if deletion fails
+        except Exception as e:
+            logging.error("Unexpected error deleting messages: %s", str(e))
             # Continue with update even if deletion fails
             
         # 5. Generate new graphs
@@ -530,6 +542,10 @@ async def _handle_graph_update(bot: TGraphBot, channel: discord.TextChannel) -> 
         error_msg = bot.translations["log_auto_update_error"].format(error=str(e))
         logging.exception(error_msg)
         return False
+    finally:
+        # Clean up temporary state
+        if temp_tracker_state is not None:
+            del temp_tracker_state
 
 def setup_logging(log_file: str) -> None:
     """Set up logging with error handling."""
