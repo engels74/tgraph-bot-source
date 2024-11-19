@@ -245,6 +245,7 @@ class TGraphBot(commands.Bot):
                 error_msg = self.translations["log_config_reload_failed"].format(error=str(e))
                 logging.error(error_msg)
                 raise ConfigError("Configuration reload failed") from last_error
+
     async def _validate_channel(self) -> discord.TextChannel:
         """Validate and return the target channel."""
         channel = self.get_channel(self.config["CHANNEL_ID"])
@@ -482,7 +483,10 @@ async def _handle_graph_update(bot: TGraphBot, channel: discord.TextChannel) -> 
         bool: True if successful, False otherwise
     """
     try:
-        # 1. Update tracker FIRST to set proper timestamps for this update
+        # 1. Store current tracker state for rollback
+        previous_state = bot.update_tracker.get_state()
+        
+        # 2. Update tracker for correct timestamp generation
         bot.update_tracker.update()
         current_update = bot.update_tracker.last_update
         logging.debug(
@@ -491,49 +495,40 @@ async def _handle_graph_update(bot: TGraphBot, channel: discord.TextChannel) -> 
             bot.update_tracker.next_update.isoformat() if bot.update_tracker.next_update else "None"
         )
 
-        # 2. Delete old messages BEFORE generating new ones
+        # 3. Create a temporary tracker state for embed generation
+        temp_tracker_state = bot.update_tracker.get_state()
+
         try:
+            # 4. Delete old messages
             await bot.graph_manager.delete_old_messages(channel)
             logging.debug("Successfully deleted old messages")
         except Exception as e:
             logging.exception("Failed to delete old messages")
             # Continue with update even if deletion fails
             
-        # 3. Generate new graphs
+        # 5. Generate new graphs
         graph_files = await bot.graph_manager.generate_and_save_graphs(bot.data_fetcher)
         if not graph_files:
             raise BackgroundTaskError("No graphs were generated")
             
-        # 4. Post new graphs with updated tracker (which now has correct timestamps)
-        await bot.graph_manager.post_graphs(channel, graph_files, bot.update_tracker)
+        # 6. Post new graphs with temporary tracker state
+        await bot.graph_manager.post_graphs(channel, graph_files, temp_tracker_state)
         
-        # 5. Log completion with tracker state
+        # 7. Only save the tracker state permanently after successful completion
+        bot.update_tracker.save_state()
+        
         next_update_log = bot.update_tracker.get_next_update_readable()
         log(bot.translations["log_auto_update_completed"].format(
             next_update=next_update_log
         ))
 
-        # Add detailed debug logging
-        if bot.update_tracker.last_update and bot.update_tracker.next_update:
-            logging.debug(
-                "Update sequence completed. Last update: %s, Next update: %s",
-                bot.update_tracker.last_update.isoformat(),
-                bot.update_tracker.next_update.isoformat()
-            )
-        
         return True
         
     except Exception as e:
+        # Restore previous tracker state on failure
+        bot.update_tracker.restore_state(previous_state)
         error_msg = bot.translations["log_auto_update_error"].format(error=str(e))
-        logging.exception(error_msg)
-        
-        # Add detailed error state logging
-        if bot.update_tracker:
-            logging.error(
-                "Update failed. Tracker state - Last update: %s, Next update: %s",
-                bot.update_tracker.last_update.isoformat() if bot.update_tracker.last_update else "None",
-                bot.update_tracker.next_update.isoformat() if bot.update_tracker.next_update else "None"
-            )
+        logging.error(error_msg)
         return False
 
 def setup_logging(log_file: str) -> None:

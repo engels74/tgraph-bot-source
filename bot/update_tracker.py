@@ -93,6 +93,66 @@ class UpdateTracker:
             logging.error(f"{error_msg}: {str(e)}")
             raise UpdateTrackerError(error_msg) from e
 
+    def get_state(self) -> Dict[str, Any]:
+        """
+        Get current tracker state for backup/restore purposes.
+        
+        Returns:
+            Dict containing current tracker state
+        """
+        return {
+            'last_update': self.last_update,
+            'next_update': self.next_update,
+            'last_check': self.last_check,
+            'last_log_time': self.last_log_time
+        }
+
+    def restore_state(self, state: Dict[str, Any]) -> None:
+        """
+        Restore tracker to a previous state.
+        
+        Args:
+            state: Previously saved state from get_state()
+            
+        Raises:
+            StateError: If state restoration fails
+        """
+        try:
+            self.last_update = state['last_update']
+            self.next_update = state['next_update']
+            self.last_check = state['last_check']
+            self.last_log_time = state['last_log_time']
+            self.save_tracker()  # Persist restored state to disk
+            
+            logging.debug(
+                "Restored tracker state - Last update: %s, Next update: %s",
+                self.last_update.isoformat() if self.last_update else "None",
+                self.next_update.isoformat() if self.next_update else "None"
+            )
+        except Exception as e:
+            error_msg = f"Failed to restore tracker state: {str(e)}"
+            logging.error(error_msg)
+            raise StateError(error_msg) from e
+
+    def save_state(self) -> None:
+        """
+        Save current state to disk.
+        
+        Raises:
+            FileOperationError: If save fails
+        """
+        try:
+            self.save_tracker()
+            logging.debug(
+                "Saved tracker state - Last update: %s, Next update: %s",
+                self.last_update.isoformat() if self.last_update else "None",
+                self.next_update.isoformat() if self.next_update else "None"
+            )
+        except Exception as e:
+            error_msg = f"Failed to save tracker state: {str(e)}"
+            logging.error(error_msg)
+            raise FileOperationError(error_msg) from e
+
     def validate_update_days(self) -> int:
         """
         Validate and return update days configuration.
