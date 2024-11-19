@@ -496,7 +496,7 @@ async def _handle_graph_update(bot: TGraphBot, channel: discord.TextChannel) -> 
             await bot.graph_manager.delete_old_messages(channel)
             logging.debug("Successfully deleted old messages")
         except Exception as e:
-            logging.error("Failed to delete old messages: %s", str(e))
+            logging.exception("Failed to delete old messages")
             # Continue with update even if deletion fails
             
         # 3. Generate new graphs
@@ -525,7 +525,7 @@ async def _handle_graph_update(bot: TGraphBot, channel: discord.TextChannel) -> 
         
     except Exception as e:
         error_msg = bot.translations["log_auto_update_error"].format(error=str(e))
-        logging.error(error_msg)
+        logging.exception(error_msg)
         
         # Add detailed error state logging
         if bot.update_tracker:
