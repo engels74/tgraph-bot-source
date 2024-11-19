@@ -471,7 +471,8 @@ async def _handle_channel_validation(bot: TGraphBot, channel_check_failures: int
     return channel, 0
 
 async def _handle_graph_update(bot: TGraphBot, channel: discord.TextChannel) -> bool:
-    """Handle graph generation and posting.
+    """
+    Handle graph generation and posting.
     
     Args:
         bot: The bot instance
@@ -481,23 +482,58 @@ async def _handle_graph_update(bot: TGraphBot, channel: discord.TextChannel) -> 
         bool: True if successful, False otherwise
     """
     try:
+        # 1. Update tracker FIRST to set proper timestamps for this update
+        bot.update_tracker.update()
+        current_update = bot.update_tracker.last_update
+        logging.debug(
+            "Update sequence started. Current update time: %s, Next scheduled: %s",
+            current_update.isoformat() if current_update else "None",
+            bot.update_tracker.next_update.isoformat() if bot.update_tracker.next_update else "None"
+        )
+
+        # 2. Delete old messages BEFORE generating new ones
+        try:
+            await bot.graph_manager.delete_old_messages(channel)
+            logging.debug("Successfully deleted old messages")
+        except Exception as e:
+            logging.error("Failed to delete old messages: %s", str(e))
+            # Continue with update even if deletion fails
+            
+        # 3. Generate new graphs
         graph_files = await bot.graph_manager.generate_and_save_graphs(bot.data_fetcher)
         if not graph_files:
             raise BackgroundTaskError("No graphs were generated")
             
+        # 4. Post new graphs with updated tracker (which now has correct timestamps)
         await bot.graph_manager.post_graphs(channel, graph_files, bot.update_tracker)
         
-        # Update tracker
-        bot.update_tracker.update()
+        # 5. Log completion with tracker state
         next_update_log = bot.update_tracker.get_next_update_readable()
         log(bot.translations["log_auto_update_completed"].format(
             next_update=next_update_log
         ))
+
+        # Add detailed debug logging
+        if bot.update_tracker.last_update and bot.update_tracker.next_update:
+            logging.debug(
+                "Update sequence completed. Last update: %s, Next update: %s",
+                bot.update_tracker.last_update.isoformat(),
+                bot.update_tracker.next_update.isoformat()
+            )
+        
         return True
         
     except Exception as e:
         error_msg = bot.translations["log_auto_update_error"].format(error=str(e))
         logging.error(error_msg)
+        
+        # Add detailed error state logging
+        if bot.update_tracker:
+            logging.error(
+                "Update failed. Tracker state - Last update: %s, Next update: %s",
+                bot.update_tracker.last_update.isoformat() if bot.update_tracker.last_update else "None",
+                bot.update_tracker.next_update.isoformat() if bot.update_tracker.next_update else "None"
+            )
         return False
 
 def setup_logging(log_file: str) -> None:
