@@ -101,22 +101,9 @@ class UpdateTracker:
             Dict containing current tracker state
             
         Raises:
-            StateError: If tracker state is invalid or incomplete
+            StateError: If tracker state cannot be retrieved
         """
         try:
-            # Validate critical state components
-            if self.last_update is None:
-                raise StateError("Cannot get state: last_update is not set")
-            if self.next_update is None:
-                raise StateError("Cannot get state: next_update is not set")
-                
-            # Ensure timestamps are valid
-            now = datetime.now()
-            if self.last_update > now:
-                raise StateError("Invalid state: last_update is in the future")
-            if self.next_update < now:
-                raise StateError("Invalid state: next_update is in the past")
-                
             state = {
                 'last_update': self.last_update,
                 'next_update': self.next_update,
@@ -124,9 +111,9 @@ class UpdateTracker:
                 'last_log_time': self.last_log_time
             }
             
-            # Log state details for debugging
+            # Log state for debugging without validation
             logging.debug(
-                "Generated tracker state - Last update: %s, Next update: %s",
+                "Got tracker state - Last update: %s, Next update: %s",
                 state['last_update'].isoformat() if state['last_update'] else "None",
                 state['next_update'].isoformat() if state['next_update'] else "None"
             )
@@ -134,8 +121,6 @@ class UpdateTracker:
             return state
             
         except Exception as e:
-            if isinstance(e, StateError):
-                raise
             error_msg = f"Failed to get tracker state: {str(e)}"
             logging.error(error_msg)
             raise StateError(error_msg) from e
@@ -149,60 +134,40 @@ class UpdateTracker:
             
         Raises:
             StateError: If state restoration fails
-            ValueError: If state values are invalid
         """
         try:
             if not isinstance(state, dict):
                 raise StateError(f"Invalid state type: expected dict, got {type(state)}")
                 
-            # Define required keys and their expected types
-            required_fields = {
-                'last_update': (datetime, True),  # (type, required)
-                'next_update': (datetime, True),
-                'last_check': (datetime, False),
-                'last_log_time': (datetime, False)
-            }
-            
-            # Validate all required fields
-            for key, (expected_type, required) in required_fields.items():
-                if key not in state:
-                    if required:
-                        raise StateError(f"Missing required key: {key}")
-                    continue
-                    
+            # Basic validation of required fields
+            required_fields = {'last_update', 'next_update'}
+            missing_fields = required_fields - set(state.keys())
+            if missing_fields:
+                raise StateError(f"Missing required fields: {missing_fields}")
+
+            # Type validation only for non-None values
+            for key in ('last_update', 'next_update'):
                 value = state[key]
-                if value is not None and not isinstance(value, expected_type):
+                if value is not None and not isinstance(value, datetime):
                     raise StateError(
-                        f"Invalid type for {key}: expected {expected_type.__name__}, "
-                        f"got {type(value).__name__}"
+                        f"Invalid type for {key}: expected datetime, got {type(value)}"
                     )
             
-            # Validate timestamp logic
-            now = datetime.now()
-            if state['last_update'] > now:
-                raise ValueError("last_update cannot be in the future")
-            if state['next_update'] < now:
-                raise ValueError("next_update cannot be in the past")
-            if state['last_update'] > state['next_update']:
-                raise ValueError("last_update cannot be after next_update")
-                
             # Apply the state
             self.last_update = state['last_update']
             self.next_update = state['next_update']
-            self.last_check = state.get('last_check')
+            self.last_check = state.get('last_check')  # Optional fields use .get()
             self.last_log_time = state.get('last_log_time')
             
-            # Save the restored state
+            # Persist the restored state
             self.save_tracker()
             
-            logging.info(
+            logging.debug(
                 "Restored tracker state - Last update: %s, Next update: %s",
-                self.last_update.isoformat(),
-                self.next_update.isoformat()
+                self.last_update.isoformat() if self.last_update else "None",
+                self.next_update.isoformat() if self.next_update else "None"
             )
             
-        except ValueError as e:
-            raise StateError(f"Invalid state values: {str(e)}")
         except Exception as e:
             if isinstance(e, StateError):
                 raise
