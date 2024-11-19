@@ -104,22 +104,29 @@ class UpdateTracker:
             StateError: If tracker state cannot be retrieved
         """
         try:
+            # Validate required state components
+            if self.last_update is None:
+                raise StateError("Cannot get state: last_update is None")
+            if self.next_update is None:
+                raise StateError("Cannot get state: next_update is None")
+                
+            # Create state dictionary with validated components
             state = {
                 'last_update': self.last_update,
                 'next_update': self.next_update,
-                'last_check': self.last_check,
-                'last_log_time': self.last_log_time
+                'last_check': self.last_check,  # Optional field
+                'last_log_time': self.last_log_time  # Optional field
             }
             
-            # Log state for debugging without validation
+            # Log state for debugging
             logging.debug(
                 "Got tracker state - Last update: %s, Next update: %s",
                 state['last_update'].isoformat() if state['last_update'] else "None",
-                state['next_update'].isoformat() if state['next_update'] else "None"
+                state['next_update'].isoformat() if state['next_update'] else "None"  
             )
             
             return state
-            
+                
         except Exception as e:
             error_msg = f"Failed to get tracker state: {str(e)}"
             logging.error(error_msg)
