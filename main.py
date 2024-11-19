@@ -502,7 +502,7 @@ async def _handle_graph_update(bot: TGraphBot, channel: discord.TextChannel) -> 
             # 4. Delete old messages
             await bot.graph_manager.delete_old_messages(channel)
             logging.debug("Successfully deleted old messages")
-        except Exception as e:
+        except Exception:
             logging.exception("Failed to delete old messages")
             # Continue with update even if deletion fails
             

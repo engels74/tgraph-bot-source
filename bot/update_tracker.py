@@ -127,7 +127,7 @@ class UpdateTracker:
 
     def restore_state(self, state: Dict[str, Any]) -> None:
         """
-        Restore tracker to a previous state.
+        Restore tracker to a previous state with enhanced validation.
         
         Args:
             state: Previously saved state from get_state()
@@ -145,18 +145,54 @@ class UpdateTracker:
             if missing_fields:
                 raise StateError(f"Missing required fields: {missing_fields}")
 
-            # Type validation only for non-None values
-            for key in ('last_update', 'next_update'):
+            # Get current time in system timezone for validation
+            now = datetime.now().astimezone()
+            max_future = now + timedelta(days=self.config.get("TIME_RANGE_DAYS", 365))
+            min_past = now - timedelta(days=365 * 2)  # 2 years back as reasonable limit
+
+            # Validate required datetime fields
+            for key in required_fields:
                 value = state[key]
-                if value is not None and not isinstance(value, datetime):
-                    raise StateError(
-                        f"Invalid type for {key}: expected datetime, got {type(value)}"
-                    )
+                if value is not None:
+                    if not isinstance(value, datetime):
+                        raise StateError(
+                            f"Invalid type for {key}: expected datetime, got {type(value)}"
+                        )
+                    
+                    # Ensure timezone awareness
+                    if value.tzinfo is None:
+                        value = value.astimezone()  # Use system timezone if none specified
+                    
+                    # Validate time bounds
+                    if value > max_future:
+                        raise StateError(f"{key} is too far in the future (max: {max_future})")
+                    if value < min_past:
+                        raise StateError(f"{key} is too far in the past (min: {min_past})")
+
+            # Validate optional datetime fields
+            optional_fields = {'last_check', 'last_log_time'}
+            for key in optional_fields:
+                value = state.get(key)
+                if value is not None:
+                    if not isinstance(value, datetime):
+                        raise StateError(
+                            f"Invalid type for optional {key}: expected datetime, got {type(value)}"
+                        )
+                    
+                    # Ensure timezone awareness
+                    if value.tzinfo is None:
+                        value = value.astimezone()
+                    
+                    # Validate time bounds for optional fields
+                    if value > now:
+                        raise StateError(f"{key} cannot be in the future")
+                    if value < min_past:
+                        raise StateError(f"{key} is too far in the past (min: {min_past})")
             
-            # Apply the state
+            # Apply the state after all validation passes
             self.last_update = state['last_update']
             self.next_update = state['next_update']
-            self.last_check = state.get('last_check')  # Optional fields use .get()
+            self.last_check = state.get('last_check')
             self.last_log_time = state.get('last_log_time')
             
             # Persist the restored state
