@@ -528,7 +528,7 @@ async def _handle_graph_update(bot: TGraphBot, channel: discord.TextChannel) -> 
         # Restore previous tracker state on failure
         bot.update_tracker.restore_state(previous_state)
         error_msg = bot.translations["log_auto_update_error"].format(error=str(e))
-        logging.error(error_msg)
+        logging.exception(error_msg)
         return False
 
 def setup_logging(log_file: str) -> None:
