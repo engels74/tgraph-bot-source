@@ -476,18 +476,19 @@ async def _handle_graph_update(bot: TGraphBot, channel: discord.TextChannel) -> 
     Handle graph generation and posting with enhanced error handling and state management.
 
     Args:
-        bot: The bot instance
+        bot: The bot instance 
         channel: The target channel for posting
 
     Returns:
         bool: True if successful, False otherwise
     """
     temp_tracker = None
+    previous_state = None
     try:
         # 1. Store current tracker state for rollback
         previous_state = bot.update_tracker.get_state()
         
-        # 2. Update tracker for correct timestamp generation
+        # 2. Update tracker state and validate
         bot.update_tracker.update()
         current_update = bot.update_tracker.last_update
         logging.debug(
@@ -496,18 +497,18 @@ async def _handle_graph_update(bot: TGraphBot, channel: discord.TextChannel) -> 
             bot.update_tracker.next_update.isoformat() if bot.update_tracker.next_update else "None"
         )
 
-        # 3. Create a temporary tracker instance (not just state) for embed generation
-        temp_tracker = UpdateTracker(bot.data_folder, bot.config, bot.translations)
+        # 3. Create temporary tracker with proper initialization
+        temp_tracker = UpdateTracker(bot.data_folder, bot.config, bot.translations) 
         temp_tracker.restore_state(bot.update_tracker.get_state())
 
+        # 4. Delete old messages with granular error handling
         try:
-            # 4. Delete old messages with specific error handling
             await bot.graph_manager.delete_old_messages(channel)
             logging.debug("Successfully deleted old messages")
         except discord.NotFound:
             logging.warning("Some messages were already deleted")
-        except discord.Forbidden:
-            logging.error("Bot lacks permissions to delete messages", exc_info=True)
+        except discord.Forbidden as e:
+            logging.error("Bot lacks permissions to delete messages: %s", str(e))
             return False
         except discord.HTTPException as e:
             logging.error("Discord API error while deleting messages: %s", str(e))
@@ -515,36 +516,53 @@ async def _handle_graph_update(bot: TGraphBot, channel: discord.TextChannel) -> 
         except Exception as e:
             logging.error("Unexpected error deleting messages: %s", str(e))
             # Continue with update even if deletion fails
-            
-        # 5. Generate new graphs
-        graph_files = await bot.graph_manager.generate_and_save_graphs(bot.data_fetcher)
-        if not graph_files:
-            raise BackgroundTaskError("No graphs were generated")
-            
-        # 6. Post new graphs with temporary tracker instance (not state)
+
+        # 5. Generate new graphs with specific error handling
+        try:
+            graph_files = await bot.graph_manager.generate_and_save_graphs(bot.data_fetcher)
+            if not graph_files:
+                raise BackgroundTaskError("No graphs were generated")
+        except BackgroundTaskError as e:
+            logging.error("Failed to generate graphs: %s", str(e))
+            # Restore previous state before returning
+            if previous_state:
+                bot.update_tracker.restore_state(previous_state)
+            return False
+        except Exception as e:
+            logging.error("Unexpected error generating graphs: %s", str(e))
+            if previous_state:
+                bot.update_tracker.restore_state(previous_state)
+            return False
+
+        # 6. Post graphs using temporary tracker
         await bot.graph_manager.post_graphs(channel, graph_files, temp_tracker)
         
-        # 7. Only save the tracker state permanently after successful completion
+        # 7. Save state only after successful completion
         bot.update_tracker.save_state()
         
         next_update_log = bot.update_tracker.get_next_update_readable()
         log(bot.translations["log_auto_update_completed"].format(
             next_update=next_update_log
         ))
-
         return True
-        
+
     except Exception as e:
-        # Restore previous tracker state on failure
-        bot.update_tracker.restore_state(previous_state)
-        error_msg = bot.translations["log_auto_update_error"].format(error=str(e))
+        # Restore previous state on failure
+        if previous_state:
+            bot.update_tracker.restore_state(previous_state)
+        error_msg = bot.translations.get(
+            "log_auto_update_error",
+            "Error during automatic update: {error}"
+        ).format(error=str(e))
         logging.exception(error_msg)
         return False
-        
+
     finally:
-        # Clean up temporary tracker
+        # Clean up temporary tracker with proper error handling
         if temp_tracker is not None:
             try:
+                if hasattr(temp_tracker, 'cleanup'):
+                    await temp_tracker.cleanup()
                 del temp_tracker
             except Exception as e:
                 logging.warning("Failed to cleanup temporary tracker: %s", str(e))
