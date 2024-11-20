@@ -9,7 +9,7 @@ resource management.
 from aiohttp import ClientConnectorError, ServerDisconnectedError
 from bot.extensions import load_extensions
 from bot.permission_checker import check_permissions_all_guilds, PermissionError
-from bot.update_tracker import create_update_tracker, UpdateTrackerError
+from bot.update_tracker import UpdateTracker, create_update_tracker, UpdateTrackerError
 from config.config import load_config
 from datetime import datetime
 from discord.ext import commands, tasks
@@ -481,11 +481,8 @@ async def _handle_graph_update(bot: TGraphBot, channel: discord.TextChannel) -> 
 
     Returns:
         bool: True if successful, False otherwise
-
-    The function uses a rollback mechanism to restore state on failure and
-    properly handles cleanup of temporary states and resources.
     """
-    temp_tracker_state = None
+    temp_tracker = None
     try:
         # 1. Store current tracker state for rollback
         previous_state = bot.update_tracker.get_state()
@@ -499,8 +496,9 @@ async def _handle_graph_update(bot: TGraphBot, channel: discord.TextChannel) -> 
             bot.update_tracker.next_update.isoformat() if bot.update_tracker.next_update else "None"
         )
 
-        # 3. Create a temporary tracker state for embed generation
-        temp_tracker_state = bot.update_tracker.get_state()
+        # 3. Create a temporary tracker instance (not just state) for embed generation
+        temp_tracker = UpdateTracker(bot.data_folder, bot.config, bot.translations)
+        temp_tracker.restore_state(bot.update_tracker.get_state())
 
         try:
             # 4. Delete old messages with specific error handling
@@ -523,8 +521,8 @@ async def _handle_graph_update(bot: TGraphBot, channel: discord.TextChannel) -> 
         if not graph_files:
             raise BackgroundTaskError("No graphs were generated")
             
-        # 6. Post new graphs with temporary tracker state
-        await bot.graph_manager.post_graphs(channel, graph_files, temp_tracker_state)
+        # 6. Post new graphs with temporary tracker instance (not state)
+        await bot.graph_manager.post_graphs(channel, graph_files, temp_tracker)
         
         # 7. Only save the tracker state permanently after successful completion
         bot.update_tracker.save_state()
@@ -542,13 +540,14 @@ async def _handle_graph_update(bot: TGraphBot, channel: discord.TextChannel) -> 
         error_msg = bot.translations["log_auto_update_error"].format(error=str(e))
         logging.exception(error_msg)
         return False
+        
     finally:
-        # Clean up temporary state
-        if temp_tracker_state is not None:
+        # Clean up temporary tracker
+        if temp_tracker is not None:
             try:
-                del temp_tracker_state
+                del temp_tracker
             except Exception as e:
-                logging.warning("Failed to cleanup temporary tracker state: %s", str(e))
+                logging.warning("Failed to cleanup temporary tracker: %s", str(e))
 
 def setup_logging(log_file: str) -> None:
     """Set up logging with error handling."""

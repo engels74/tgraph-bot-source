@@ -35,7 +35,7 @@ class StateError(UpdateTrackerError):
 
 class UpdateTracker:
     """Handles tracking and scheduling of updates with enhanced error handling."""
-    
+
     def __init__(self, data_folder: str, config: Dict[str, Any], translations: Dict[str, str]):
         """
         Initialize the update tracker with validation.
@@ -93,6 +93,38 @@ class UpdateTracker:
             logging.error(f"{error_msg}: {str(e)}")
             raise UpdateTrackerError(error_msg) from e
 
+    @classmethod
+    def from_state(
+        cls,
+        state: Dict[str, Any],
+        data_folder: str,
+        config: Dict[str, Any],
+        translations: Dict[str, str]
+    ) -> 'UpdateTracker':
+        """
+        Create a new UpdateTracker instance from a state dictionary.
+        
+        Args:
+            state: State dictionary from get_state()
+            data_folder: Path to data storage folder
+            config: Configuration dictionary
+            translations: Translation strings dictionary
+            
+        Returns:
+            New UpdateTracker instance with the given state
+            
+        Raises:
+            StateError: If state is invalid or cannot be applied
+        """
+        try:
+            tracker = cls(data_folder, config, translations)
+            tracker.restore_state(state)
+            return tracker
+        except Exception as e:
+            error_msg = f"Failed to create tracker from state: {str(e)}"
+            logging.error(error_msg)
+            raise StateError(error_msg) from e
+
     def get_state(self) -> Dict[str, Any]:
         """
         Get current tracker state for backup/restore purposes.
@@ -110,12 +142,18 @@ class UpdateTracker:
             if self.next_update is None:
                 raise StateError("Cannot get state: next_update is None")
                 
+            # Ensure timezone awareness for all datetime objects
+            def ensure_timezone(dt: Optional[datetime]) -> Optional[datetime]:
+                if dt is not None and dt.tzinfo is None:
+                    return dt.astimezone()
+                return dt
+                
             # Create state dictionary with validated components
             state = {
-                'last_update': self.last_update,
-                'next_update': self.next_update,
-                'last_check': self.last_check,  # Optional field
-                'last_log_time': self.last_log_time  # Optional field
+                'last_update': ensure_timezone(self.last_update),
+                'next_update': ensure_timezone(self.next_update),
+                'last_check': ensure_timezone(self.last_check),
+                'last_log_time': ensure_timezone(self.last_log_time)
             }
             
             # Log state for debugging
@@ -129,6 +167,24 @@ class UpdateTracker:
                 
         except Exception as e:
             error_msg = f"Failed to get tracker state: {str(e)}"
+            logging.error(error_msg)
+            raise StateError(error_msg) from e
+
+    def create_temporary_tracker(self) -> 'UpdateTracker':
+        """
+        Create a temporary tracker instance with current state.
+        
+        Returns:
+            New UpdateTracker instance with copy of current state
+            
+        Raises:
+            StateError: If temporary tracker cannot be created
+        """
+        try:
+            current_state = self.get_state()
+            return self.from_state(current_state, self.data_folder, self.config, self.translations)
+        except Exception as e:
+            error_msg = f"Failed to create temporary tracker: {str(e)}"
             logging.error(error_msg)
             raise StateError(error_msg) from e
 
@@ -175,35 +231,12 @@ class UpdateTracker:
                         raise StateError(f"{key} is too far in the future (max: {max_future})")
                     if value < min_past:
                         raise StateError(f"{key} is too far in the past (min: {min_past})")
-
-            # Validate optional datetime fields
-            optional_fields = {'last_check', 'last_log_time'}
-            for key in optional_fields:
-                value = state.get(key)
-                if value is not None:
-                    if not isinstance(value, datetime):
-                        raise StateError(
-                            f"Invalid type for optional {key}: expected datetime, got {type(value)}"
-                        )
-                    
-                    # Ensure timezone awareness
-                    if value.tzinfo is None:
-                        value = value.astimezone()
-                    
-                    # Validate time bounds for optional fields
-                    if value > now:
-                        raise StateError(f"{key} cannot be in the future")
-                    if value < min_past:
-                        raise StateError(f"{key} is too far in the past (min: {min_past})")
             
             # Apply the state after all validation passes
             self.last_update = state['last_update']
             self.next_update = state['next_update']
             self.last_check = state.get('last_check')
             self.last_log_time = state.get('last_log_time')
-            
-            # Persist the restored state
-            self.save_tracker()
             
             logging.debug(
                 "Restored tracker state - Last update: %s, Next update: %s",
