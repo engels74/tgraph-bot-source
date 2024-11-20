@@ -348,6 +348,7 @@ class UpdateTracker:
     def _load_tracker(self) -> None:
         """
         Load tracker data from file with error handling.
+        Recalculates next_update based on current configuration.
         
         Raises:
             FileOperationError: If file operations fail
@@ -365,15 +366,27 @@ class UpdateTracker:
                 try:
                     data = json.load(f)
                     self.last_update = datetime.fromisoformat(data["last_update"])
-                    self.next_update = datetime.fromisoformat(data["next_update"])
+                    saved_next_update = datetime.fromisoformat(data["next_update"])
                     
+                    # Log the loaded values
                     logging.info(self.translations.get(
                         "tracker_file_loaded",
-                        "Loaded tracker file. Last update: {last_update}, Next update: {next_update}"
+                        "Loaded tracker file. Last update: {last_update}, Saved next update: {next_update}"
                     ).format(
                         last_update=self.last_update,
-                        next_update=self.next_update
+                        next_update=saved_next_update
                     ))
+
+                    # Recalculate next_update based on current config
+                    self.next_update = self.calculate_next_update(self.last_update)
+                    
+                    # If the calculated time differs from saved time, log it and save
+                    if self.next_update != saved_next_update:
+                        logging.info(
+                            "Recalculated next update time based on current configuration. "
+                            f"Changed from {saved_next_update} to {self.next_update}"
+                        )
+                        self.save_tracker()
                     
                 except (json.JSONDecodeError, KeyError, ValueError) as e:
                     error_msg = f"Invalid tracker file format: {str(e)}"
