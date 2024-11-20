@@ -55,6 +55,18 @@ class TranslationError(MainError):
     """Raised for translation-related errors."""
     pass
 
+class DataFetchError(MainError):
+    """Raised when data fetching fails."""
+    pass
+
+class GraphGenerationError(MainError):
+    """Raised when graph generation fails."""
+    pass
+
+class PostingError(MainError):
+    """Raised when posting graphs fails."""
+    pass
+
 class TGraphBot(commands.Bot):
     """Enhanced TGraph Bot with standardized error handling."""
     
@@ -258,15 +270,71 @@ class TGraphBot(commands.Bot):
         return channel
 
     async def _update_and_post_graphs(self, channel: discord.TextChannel) -> None:
-        """Generate and post graphs to the specified channel."""
+        """Generate and post graphs to the specified channel with enhanced error handling."""
         try:
-            await self.graph_manager.delete_old_messages(channel)
-            graph_files = await self.graph_manager.generate_and_save_graphs(self.data_fetcher)
-            if not graph_files:
-                raise BackgroundTaskError("No graphs were generated")
-            await self.graph_manager.post_graphs(channel, graph_files, self.update_tracker)
+            # First try to delete old messages
+            try:
+                await self.graph_manager.delete_old_messages(channel)
+            except discord.HTTPException as e:
+                logging.warning(f"Failed to delete old messages: {str(e)}")
+                # Continue execution even if message deletion fails
+            
+            # Fetch graph data with timeout and error handling
+            try:
+                async with asyncio.timeout(30):  # 30 second timeout for data fetching
+                    graph_data = await self.data_fetcher.fetch_all_graph_data()
+                    if not graph_data:
+                        error_msg = "No data received from Tautulli API"
+                        logging.error(error_msg)
+                        raise DataFetchError(error_msg)
+                    logging.debug(f"Successfully fetched graph data: {list(graph_data.keys())}")
+            except asyncio.TimeoutError as e:
+                error_msg = "Timeout while fetching graph data"
+                logging.error(error_msg)
+                raise DataFetchError(error_msg) from e
+            except Exception as e:
+                error_msg = f"Failed to fetch graph data: {str(e)}"
+                logging.error(error_msg)
+                raise DataFetchError(error_msg) from e
+
+            # Generate graphs with proper error handling
+            try:
+                graph_files = await self.graph_manager.generate_and_save_graphs(self.data_fetcher)
+                if not graph_files:
+                    error_msg = "No graphs were generated"
+                    logging.error(error_msg)
+                    raise GraphGenerationError(error_msg)
+                logging.debug(f"Successfully generated {len(graph_files)} graphs")
+            except Exception as e:
+                error_msg = f"Failed to generate graphs: {str(e)}"
+                logging.error(error_msg)
+                raise GraphGenerationError(error_msg) from e
+
+            # Post graphs with timeout and error handling
+            try:
+                async with asyncio.timeout(30):  # 30 second timeout for posting
+                    await self.graph_manager.post_graphs(channel, graph_files, self.update_tracker)
+                    logging.info("Successfully posted all graphs")
+            except asyncio.TimeoutError as e:
+                error_msg = "Timeout while posting graphs"
+                logging.error(error_msg)
+                raise PostingError(error_msg) from e
+            except discord.HTTPException as e:
+                error_msg = f"Discord API error while posting graphs: {str(e)}"
+                logging.error(error_msg)
+                raise PostingError(error_msg) from e
+            except Exception as e:
+                error_msg = f"Failed to post graphs: {str(e)}"
+                logging.error(error_msg)
+                raise PostingError(error_msg) from e
+
+        except (DataFetchError, GraphGenerationError, PostingError) as e:
+            # Re-raise with more context for the calling function
+            raise BackgroundTaskError(f"Failed to update and post graphs: {str(e)}") from e
         except Exception as e:
-            raise BackgroundTaskError("Failed to generate or post graphs") from e
+            error_msg = f"Unexpected error in graph update process: {str(e)}"
+            logging.error(error_msg)
+            raise BackgroundTaskError(error_msg) from e
 
     async def _update_tracker_state(self) -> None:
         """Update the tracker state with proper error handling."""
