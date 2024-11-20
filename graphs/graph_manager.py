@@ -156,157 +156,147 @@ class GraphManager:
         except discord.HTTPException as e:
             raise DiscordError("Failed to fetch channel history") from e
 
-def create_embed(self, graph_type: str, update_tracker: Optional['UpdateTracker'] = None) -> discord.Embed:
-    """Create a Discord embed for a graph.
-    
-    Args:
-        graph_type: Type of graph
-        update_tracker: Optional UpdateTracker for timestamps
+    async def post_graphs(
+        self, 
+        channel: discord.TextChannel, 
+        graph_files: List[Tuple[str, str]], 
+        update_tracker: Optional['UpdateTracker'] = None
+    ) -> None:
+        """
+        Post graphs to Discord channel with embeds.
         
-    Returns:
-        Discord Embed object
-        
-    Raises:
-        EmbedCreationError: If embed creation fails
-    """
-    try:
-        # Remove 'ENABLE_' prefix and convert to lowercase for translation key
-        clean_type = graph_type.replace('ENABLE_', '').lower()
-        days = self.config.get("TIME_RANGE_DAYS", 7)
+        Args:
+            channel: Discord channel to post to
+            graph_files: List of (graph_type, file_path) tuples
+            update_tracker: Optional UpdateTracker for timestamps
+            
+        Raises:
+            DiscordError: If posting to Discord fails
+        """
+        try:
+            # Filter enabled graphs to include only actual graph types (exclude settings like ENABLE_GRAPH_GRID)
+            enabled_graphs = {
+                k: v for k, v in self.config.items()
+                if k in self.GRAPH_TYPES and v
+            }
+            logging.debug("Filtered enabled graphs: %s", enabled_graphs.keys())
 
-        # Get title and description using the correct translation key format
-        title_key = f"{clean_type}_title"
-        desc_key = f"{clean_type}_description"
-        
-        title = self.translations.get(title_key, "")
-        description = self.translations.get(desc_key, "")
-        
-        if title and days is not None:
-            title = title.format(days=days)
-        if description and days is not None:
-            description = description.format(days=days)
+            # Create pairs of graph types and file paths, ensuring they match exactly
+            graph_pairs = []
+            
+            # Ensure graph_files and graph_types are properly aligned
+            for graph_file in graph_files:
+                graph_type = f"ENABLE_{graph_file[0].upper()}"
+                if graph_type in enabled_graphs:
+                    graph_pairs.append((graph_type, graph_file[1]))
+            
+            logging.debug("Created graph pairs: %s", 
+                         [(pair[0], os.path.basename(pair[1])) for pair in graph_pairs])
 
-        # Get next update time - enhanced error handling here
-        if update_tracker is not None:
-            try:
-                if hasattr(update_tracker, 'get_next_update_discord'):
-                    next_update_str = update_tracker.get_next_update_discord()
-                else:
-                    # Fallback if we somehow get an invalid tracker
-                    update_days = self.config.get("UPDATE_DAYS", 1)
-                    next_update = datetime.now() + timedelta(days=update_days)
-                    next_update_str = f"<t:{int(next_update.timestamp())}:R>"
-                    logging.warning("Invalid update tracker provided, using fallback timestamp")
-            except Exception as e:
-                logging.error(f"Error getting next update time: {str(e)}")
-                next_update_str = "Unknown"
-        else:
-            update_days = self.config.get("UPDATE_DAYS", 1)
-            next_update = datetime.now() + timedelta(days=update_days)
-            next_update_str = f"<t:{int(next_update.timestamp())}:R>"
-            logging.debug("No update tracker provided, using fallback timestamp")
-
-        description = f"{description}\n\n{self.translations['next_update'].format(next_update=next_update_str)}"
-
-        embed = discord.Embed(
-            title=title,
-            description=description,
-            color=discord.Color.blue()
-        )
-
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        footer_text = self.translations.get('embed_footer', 'Generated on {now}').format(now=now)
-        embed.set_footer(text=footer_text)
-
-        return embed
-
-    except Exception as e:
-        error_msg = f"Failed to create embed for {graph_type}: {str(e)}"
-        logging.error(error_msg)
-        raise EmbedCreationError(error_msg) from e
-
-async def post_graphs(
-    self, 
-    channel: discord.TextChannel, 
-    graph_files: List[Tuple[str, str]], 
-    update_tracker: Optional['UpdateTracker'] = None
-) -> None:
-    """Post graphs to Discord channel with embeds.
-    
-    Args:
-        channel: Discord channel to post to
-        graph_files: List of (graph_type, file_path) tuples
-        update_tracker: Optional UpdateTracker for timestamps
-        
-    Raises:
-        DiscordError: If posting to Discord fails
-    """
-    try:
-        # Filter enabled graphs to include only actual graph types (exclude settings like ENABLE_GRAPH_GRID)
-        enabled_graphs = {
-            k: v for k, v in self.config.items()
-            if k in self.GRAPH_TYPES and v
-        }
-        logging.debug("Filtered enabled graphs: %s", enabled_graphs.keys())
-
-        # Create pairs of graph types and file paths, ensuring they match exactly
-        graph_pairs = []
-        
-        # Ensure graph_files and graph_types are properly aligned
-        for graph_file in graph_files:
-            graph_type = f"ENABLE_{graph_file[0].upper()}"
-            if graph_type in enabled_graphs:
-                graph_pairs.append((graph_type, graph_file[1]))
-        
-        logging.debug("Created graph pairs: %s", 
-                     [(pair[0], os.path.basename(pair[1])) for pair in graph_pairs])
-
-        for graph_type, file_path in graph_pairs:
-            try:
-                # Create embed with proper error handling for update_tracker
+            for graph_type, file_path in graph_pairs:
                 try:
-                    embed = self.create_embed(graph_type, update_tracker)
+                    # Create embed with proper error handling for update_tracker
+                    try:
+                        embed = self.create_embed(graph_type, update_tracker)
+                    except Exception as e:
+                        logging.error(f"Failed to create embed for {graph_type}: {str(e)}")
+                        # Create basic embed without update time if embed creation fails
+                        embed = discord.Embed(
+                            title=graph_type.replace('ENABLE_', '').title(),
+                            color=discord.Color.blue()
+                        )
+                    
+                    try:
+                        async with aiofiles.open(file_path, 'rb') as f:
+                            content = await f.read()
+                            file_size = len(content)
+                            max_size = 8 * 1024 * 1024  # Discord's file size limit (8MB)
+                            if file_size > max_size:
+                                raise DiscordError(f"Graph file exceeds Discord's size limit: {file_size} bytes")
+                            file = discord.File(
+                                io.BytesIO(content), 
+                                filename=os.path.basename(file_path)
+                            )
+                            embed.set_image(url=f"attachment://{os.path.basename(file_path)}")
+                            await channel.send(embed=embed, file=file)
+
+                        logging.info(
+                            self.translations["log_posted_message"].format(
+                                filename=os.path.basename(file_path)
+                            )
+                        )
+
+                    except discord.Forbidden as e:
+                        raise DiscordError("Missing permissions to post messages") from e
+                    except discord.HTTPException as e:
+                        raise DiscordError(f"Failed to send message: {str(e)}") from e
+                    except IOError as e:
+                        raise DiscordError(f"Failed to read graph file: {str(e)}") from e
+
                 except Exception as e:
-                    logging.error(f"Failed to create embed for {graph_type}: {str(e)}")
-                    # Create basic embed without update time if embed creation fails
-                    embed = discord.Embed(
-                        title=graph_type.replace('ENABLE_', '').title(),
-                        color=discord.Color.blue()
-                    )
-                
+                    logging.error(f"Failed to post graph {os.path.basename(file_path)}: {str(e)}")
+                    # Continue trying to post other graphs even if one fails
+                    continue
+
+        except Exception as e:
+            error_msg = "Failed to post graphs to Discord"
+            logging.error(f"{error_msg}: {str(e)}")
+            raise DiscordError(error_msg) from e
+
+    def create_embed(self, graph_type: str, update_tracker: Optional['UpdateTracker'] = None) -> discord.Embed:
+        """Create a Discord embed for a graph."""
+        try:
+            # Remove 'ENABLE_' prefix and convert to lowercase for translation key
+            clean_type = graph_type.replace('ENABLE_', '').lower()
+            days = self.config.get("TIME_RANGE_DAYS", 7)
+
+            # Get title and description using the correct translation key format
+            title_key = f"{clean_type}_title"
+            desc_key = f"{clean_type}_description"
+            
+            title = self.translations.get(title_key, "")
+            description = self.translations.get(desc_key, "")
+            
+            if title and days is not None:
+                title = title.format(days=days)
+            if description and days is not None:
+                description = description.format(days=days)
+
+            # Get next update time - enhanced error handling here
+            if update_tracker is not None:
                 try:
-                    async with aiofiles.open(file_path, 'rb') as f:
-                        content = await f.read()
-                        file_size = len(content)
-                        max_size = 8 * 1024 * 1024  # Discord's file size limit (8MB)
-                        if file_size > max_size:
-                            raise DiscordError(f"Graph file exceeds Discord's size limit: {file_size} bytes")
-                        file = discord.File(
-                            io.BytesIO(content), 
-                            filename=os.path.basename(file_path)
-                        )
-                        embed.set_image(url=f"attachment://{os.path.basename(file_path)}")
-                        await channel.send(embed=embed, file=file)
+                    if hasattr(update_tracker, 'get_next_update_discord'):
+                        next_update_str = update_tracker.get_next_update_discord()
+                    else:
+                        # Fallback if we somehow get an invalid tracker
+                        update_days = self.config.get("UPDATE_DAYS", 1)
+                        next_update = datetime.now() + timedelta(days=update_days)
+                        next_update_str = f"<t:{int(next_update.timestamp())}:R>"
+                        logging.warning("Invalid update tracker provided, using fallback timestamp")
+                except Exception as e:
+                    logging.error(f"Error getting next update time: {str(e)}")
+                    next_update_str = "Unknown"
+            else:
+                update_days = self.config.get("UPDATE_DAYS", 1)
+                next_update = datetime.now() + timedelta(days=update_days)
+                next_update_str = f"<t:{int(next_update.timestamp())}:R>"
+                logging.debug("No update tracker provided, using fallback timestamp")
 
-                    logging.info(
-                        self.translations["log_posted_message"].format(
-                            filename=os.path.basename(file_path)
-                        )
-                    )
+            description = f"{description}\n\n{self.translations['next_update'].format(next_update=next_update_str)}"
 
-                except discord.Forbidden as e:
-                    raise DiscordError("Missing permissions to post messages") from e
-                except discord.HTTPException as e:
-                    raise DiscordError(f"Failed to send message: {str(e)}") from e
-                except IOError as e:
-                    raise DiscordError(f"Failed to read graph file: {str(e)}") from e
+            embed = discord.Embed(
+                title=title,
+                description=description,
+                color=discord.Color.blue()
+            )
 
-            except Exception as e:
-                logging.error(f"Failed to post graph {os.path.basename(file_path)}: {str(e)}")
-                # Continue trying to post other graphs even if one fails
-                continue
+            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            footer_text = self.translations.get('embed_footer', 'Generated on {now}').format(now=now)
+            embed.set_footer(text=footer_text)
 
-    except Exception as e:
-        error_msg = "Failed to post graphs to Discord"
-        logging.error(f"{error_msg}: {str(e)}")
-        raise DiscordError(error_msg) from e
+            return embed
+
+        except Exception as e:
+            error_msg = f"Failed to create embed for {graph_type}: {str(e)}"
+            logging.error(error_msg)
+            raise EmbedCreationError(error_msg) from e
