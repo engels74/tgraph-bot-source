@@ -9,7 +9,7 @@ resource management.
 from aiohttp import ClientConnectorError, ServerDisconnectedError
 from bot.extensions import load_extensions
 from bot.permission_checker import check_permissions_all_guilds, PermissionError
-from bot.update_tracker import create_update_tracker, UpdateTrackerError
+from bot.update_tracker import UpdateTracker, create_update_tracker, UpdateTrackerError
 from config.config import load_config
 from datetime import datetime
 from discord.ext import commands, tasks
@@ -53,6 +53,18 @@ class BackgroundTaskError(MainError):
 
 class TranslationError(MainError):
     """Raised for translation-related errors."""
+    pass
+
+class DataFetchError(MainError):
+    """Raised when data fetching fails."""
+    pass
+
+class GraphGenerationError(MainError):
+    """Raised when graph generation fails."""
+    pass
+
+class PostingError(MainError):
+    """Raised when posting graphs fails."""
     pass
 
 class TGraphBot(commands.Bot):
@@ -245,6 +257,7 @@ class TGraphBot(commands.Bot):
                 error_msg = self.translations["log_config_reload_failed"].format(error=str(e))
                 logging.error(error_msg)
                 raise ConfigError("Configuration reload failed") from last_error
+
     async def _validate_channel(self) -> discord.TextChannel:
         """Validate and return the target channel."""
         channel = self.get_channel(self.config["CHANNEL_ID"])
@@ -257,15 +270,71 @@ class TGraphBot(commands.Bot):
         return channel
 
     async def _update_and_post_graphs(self, channel: discord.TextChannel) -> None:
-        """Generate and post graphs to the specified channel."""
+        """Generate and post graphs to the specified channel with enhanced error handling."""
         try:
-            await self.graph_manager.delete_old_messages(channel)
-            graph_files = await self.graph_manager.generate_and_save_graphs(self.data_fetcher)
-            if not graph_files:
-                raise BackgroundTaskError("No graphs were generated")
-            await self.graph_manager.post_graphs(channel, graph_files, self.update_tracker)
+            # First try to delete old messages
+            try:
+                await self.graph_manager.delete_old_messages(channel)
+            except discord.HTTPException as e:
+                logging.warning(f"Failed to delete old messages: {str(e)}")
+                # Continue execution even if message deletion fails
+            
+            # Fetch graph data with timeout and error handling
+            try:
+                async with asyncio.timeout(30):  # 30 second timeout for data fetching
+                    graph_data = await self.data_fetcher.fetch_all_graph_data()
+                    if not graph_data:
+                        error_msg = "No data received from Tautulli API"
+                        logging.error(error_msg)
+                        raise DataFetchError(error_msg)
+                    logging.debug(f"Successfully fetched graph data: {list(graph_data.keys())}")
+            except asyncio.TimeoutError as e:
+                error_msg = "Timeout while fetching graph data"
+                logging.error(error_msg)
+                raise DataFetchError(error_msg) from e
+            except Exception as e:
+                error_msg = f"Failed to fetch graph data: {str(e)}"
+                logging.error(error_msg)
+                raise DataFetchError(error_msg) from e
+
+            # Generate graphs with proper error handling
+            try:
+                graph_files = await self.graph_manager.generate_and_save_graphs(self.data_fetcher)
+                if not graph_files:
+                    error_msg = "No graphs were generated"
+                    logging.error(error_msg)
+                    raise GraphGenerationError(error_msg)
+                logging.debug(f"Successfully generated {len(graph_files)} graphs")
+            except Exception as e:
+                error_msg = f"Failed to generate graphs: {str(e)}"
+                logging.error(error_msg)
+                raise GraphGenerationError(error_msg) from e
+
+            # Post graphs with timeout and error handling
+            try:
+                async with asyncio.timeout(30):  # 30 second timeout for posting
+                    await self.graph_manager.post_graphs(channel, graph_files, self.update_tracker)
+                    logging.info("Successfully posted all graphs")
+            except asyncio.TimeoutError as e:
+                error_msg = "Timeout while posting graphs"
+                logging.error(error_msg)
+                raise PostingError(error_msg) from e
+            except discord.HTTPException as e:
+                error_msg = f"Discord API error while posting graphs: {str(e)}"
+                logging.error(error_msg)
+                raise PostingError(error_msg) from e
+            except Exception as e:
+                error_msg = f"Failed to post graphs: {str(e)}"
+                logging.error(error_msg)
+                raise PostingError(error_msg) from e
+
+        except (DataFetchError, GraphGenerationError, PostingError) as e:
+            # Re-raise with more context for the calling function
+            raise BackgroundTaskError(f"Failed to update and post graphs: {str(e)}") from e
         except Exception as e:
-            raise BackgroundTaskError("Failed to generate or post graphs") from e
+            error_msg = f"Unexpected error in graph update process: {str(e)}"
+            logging.error(error_msg)
+            raise BackgroundTaskError(error_msg) from e
 
     async def _update_tracker_state(self) -> None:
         """Update the tracker state with proper error handling."""
@@ -471,34 +540,100 @@ async def _handle_channel_validation(bot: TGraphBot, channel_check_failures: int
     return channel, 0
 
 async def _handle_graph_update(bot: TGraphBot, channel: discord.TextChannel) -> bool:
-    """Handle graph generation and posting.
-    
+    """
+    Handle graph generation and posting with enhanced error handling and state management.
+
     Args:
-        bot: The bot instance
+        bot: The bot instance 
         channel: The target channel for posting
-        
+
     Returns:
         bool: True if successful, False otherwise
     """
+    temp_tracker = None
+    previous_state = None
     try:
-        graph_files = await bot.graph_manager.generate_and_save_graphs(bot.data_fetcher)
-        if not graph_files:
-            raise BackgroundTaskError("No graphs were generated")
-            
-        await bot.graph_manager.post_graphs(channel, graph_files, bot.update_tracker)
+        # 1. Store current tracker state for rollback
+        previous_state = bot.update_tracker.get_state()
         
-        # Update tracker
+        # 2. Update tracker state and validate
         bot.update_tracker.update()
+        current_update = bot.update_tracker.last_update
+        logging.debug(
+            "Update sequence started. Current update time: %s, Next scheduled: %s",
+            current_update.isoformat() if current_update else "None",
+            bot.update_tracker.next_update.isoformat() if bot.update_tracker.next_update else "None"
+        )
+
+        # 3. Create temporary tracker with proper initialization
+        temp_tracker = UpdateTracker(bot.data_folder, bot.config, bot.translations) 
+        temp_tracker.restore_state(bot.update_tracker.get_state())
+
+        # 4. Delete old messages with granular error handling
+        try:
+            await bot.graph_manager.delete_old_messages(channel)
+            logging.debug("Successfully deleted old messages")
+        except discord.NotFound:
+            logging.warning("Some messages were already deleted")
+        except discord.Forbidden as e:
+            logging.error("Bot lacks permissions to delete messages: %s", str(e))
+            return False
+        except discord.HTTPException as e:
+            logging.error("Discord API error while deleting messages: %s", str(e))
+            # Continue with update even if deletion fails
+        except Exception as e:
+            logging.error("Unexpected error deleting messages: %s", str(e))
+            # Continue with update even if deletion fails
+
+        # 5. Generate new graphs with specific error handling
+        try:
+            graph_files = await bot.graph_manager.generate_and_save_graphs(bot.data_fetcher)
+            if not graph_files:
+                raise BackgroundTaskError("No graphs were generated")
+        except BackgroundTaskError as e:
+            logging.error("Failed to generate graphs: %s", str(e))
+            # Restore previous state before returning
+            if previous_state:
+                bot.update_tracker.restore_state(previous_state)
+            return False
+        except Exception as e:
+            logging.error("Unexpected error generating graphs: %s", str(e))
+            if previous_state:
+                bot.update_tracker.restore_state(previous_state)
+            return False
+
+        # 6. Post graphs using temporary tracker
+        await bot.graph_manager.post_graphs(channel, graph_files, temp_tracker)
+        
+        # 7. Save state only after successful completion
+        bot.update_tracker.save_state()
+        
         next_update_log = bot.update_tracker.get_next_update_readable()
         log(bot.translations["log_auto_update_completed"].format(
             next_update=next_update_log
         ))
         return True
-        
+
     except Exception as e:
-        error_msg = bot.translations["log_auto_update_error"].format(error=str(e))
-        logging.error(error_msg)
+        # Restore previous state on failure
+        if previous_state:
+            bot.update_tracker.restore_state(previous_state)
+        error_msg = bot.translations.get(
+            "log_auto_update_error",
+            "Error during automatic update: {error}"
+        ).format(error=str(e))
+        logging.exception(error_msg)
         return False
+
+    finally:
+        # Clean up temporary tracker with proper error handling
+        if temp_tracker is not None:
+            try:
+                if hasattr(temp_tracker, 'cleanup'):
+                    await temp_tracker.cleanup()
+                del temp_tracker
+            except Exception as e:
+                logging.warning("Failed to cleanup temporary tracker: %s", str(e))
 
 def setup_logging(log_file: str) -> None:
     """Set up logging with error handling."""

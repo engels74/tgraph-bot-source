@@ -35,7 +35,7 @@ class StateError(UpdateTrackerError):
 
 class UpdateTracker:
     """Handles tracking and scheduling of updates with enhanced error handling."""
-    
+
     def __init__(self, data_folder: str, config: Dict[str, Any], translations: Dict[str, str]):
         """
         Initialize the update tracker with validation.
@@ -92,6 +92,183 @@ class UpdateTracker:
             error_msg = "Failed to initialize update tracker"
             logging.error(f"{error_msg}: {str(e)}")
             raise UpdateTrackerError(error_msg) from e
+
+    @classmethod
+    def from_state(
+        cls,
+        state: Dict[str, Any],
+        data_folder: str,
+        config: Dict[str, Any],
+        translations: Dict[str, str]
+    ) -> 'UpdateTracker':
+        """
+        Create a new UpdateTracker instance from a state dictionary.
+        
+        Args:
+            state: State dictionary from get_state()
+            data_folder: Path to data storage folder
+            config: Configuration dictionary
+            translations: Translation strings dictionary
+            
+        Returns:
+            New UpdateTracker instance with the given state
+            
+        Raises:
+            StateError: If state is invalid or cannot be applied
+        """
+        try:
+            tracker = cls(data_folder, config, translations)
+            tracker.restore_state(state)
+            return tracker
+        except Exception as e:
+            error_msg = f"Failed to create tracker from state: {str(e)}"
+            logging.error(error_msg)
+            raise StateError(error_msg) from e
+
+    def get_state(self) -> Dict[str, Any]:
+        """
+        Get current tracker state for backup/restore purposes.
+        
+        Returns:
+            Dict containing current tracker state
+            
+        Raises:
+            StateError: If tracker state cannot be retrieved
+        """
+        try:
+            # Validate required state components
+            if self.last_update is None:
+                raise StateError("Cannot get state: last_update is None")
+            if self.next_update is None:
+                raise StateError("Cannot get state: next_update is None")
+                
+            # Ensure timezone awareness for all datetime objects
+            def ensure_timezone(dt: Optional[datetime]) -> Optional[datetime]:
+                if dt is not None and dt.tzinfo is None:
+                    return dt.astimezone()
+                return dt
+                
+            # Create state dictionary with validated components
+            state = {
+                'last_update': ensure_timezone(self.last_update),
+                'next_update': ensure_timezone(self.next_update),
+                'last_check': ensure_timezone(self.last_check),
+                'last_log_time': ensure_timezone(self.last_log_time)
+            }
+            
+            # Log state for debugging
+            logging.debug(
+                "Got tracker state - Last update: %s, Next update: %s",
+                state['last_update'].isoformat() if state['last_update'] else "None",
+                state['next_update'].isoformat() if state['next_update'] else "None"  
+            )
+            
+            return state
+                
+        except Exception as e:
+            error_msg = f"Failed to get tracker state: {str(e)}"
+            logging.error(error_msg)
+            raise StateError(error_msg) from e
+
+    def create_temporary_tracker(self) -> 'UpdateTracker':
+        """
+        Create a temporary tracker instance with current state.
+        
+        Returns:
+            New UpdateTracker instance with copy of current state
+            
+        Raises:
+            StateError: If temporary tracker cannot be created
+        """
+        try:
+            current_state = self.get_state()
+            return self.from_state(current_state, self.data_folder, self.config, self.translations)
+        except Exception as e:
+            error_msg = f"Failed to create temporary tracker: {str(e)}"
+            logging.error(error_msg)
+            raise StateError(error_msg) from e
+
+    def restore_state(self, state: Dict[str, Any]) -> None:
+        """
+        Restore tracker to a previous state with enhanced validation.
+        
+        Args:
+            state: Previously saved state from get_state()
+            
+        Raises:
+            StateError: If state restoration fails
+        """
+        try:
+            if not isinstance(state, dict):
+                raise StateError(f"Invalid state type: expected dict, got {type(state)}")
+                
+            # Basic validation of required fields
+            required_fields = {'last_update', 'next_update'}
+            missing_fields = required_fields - set(state.keys())
+            if missing_fields:
+                raise StateError(f"Missing required fields: {missing_fields}")
+
+            # Get current time in system timezone for validation
+            now = datetime.now().astimezone()
+            max_future = now + timedelta(days=self.config.get("TIME_RANGE_DAYS", 365))
+            min_past = now - timedelta(days=365 * 2)  # 2 years back as reasonable limit
+
+            # Validate required datetime fields
+            for key in required_fields:
+                value = state[key]
+                if value is not None:
+                    if not isinstance(value, datetime):
+                        raise StateError(
+                            f"Invalid type for {key}: expected datetime, got {type(value)}"
+                        )
+                    
+                    # Ensure timezone awareness
+                    if value.tzinfo is None:
+                        value = value.astimezone()  # Use system timezone if none specified
+                    
+                    # Validate time bounds
+                    if value > max_future:
+                        raise StateError(f"{key} is too far in the future (max: {max_future})")
+                    if value < min_past:
+                        raise StateError(f"{key} is too far in the past (min: {min_past})")
+            
+            # Apply the state after all validation passes
+            self.last_update = state['last_update']
+            self.next_update = state['next_update']
+            self.last_check = state.get('last_check')
+            self.last_log_time = state.get('last_log_time')
+            
+            logging.debug(
+                "Restored tracker state - Last update: %s, Next update: %s",
+                self.last_update.isoformat() if self.last_update else "None",
+                self.next_update.isoformat() if self.next_update else "None"
+            )
+            
+        except Exception as e:
+            if isinstance(e, StateError):
+                raise
+            error_msg = f"Failed to restore tracker state: {str(e)}"
+            logging.error(error_msg)
+            raise StateError(error_msg) from e
+
+    def save_state(self) -> None:
+        """
+        Save current state to disk.
+        
+        Raises:
+            FileOperationError: If save fails
+        """
+        try:
+            self.save_tracker()
+            logging.debug(
+                "Saved tracker state - Last update: %s, Next update: %s",
+                self.last_update.isoformat() if self.last_update else "None",
+                self.next_update.isoformat() if self.next_update else "None"
+            )
+        except Exception as e:
+            error_msg = f"Failed to save tracker state: {str(e)}"
+            logging.error(error_msg)
+            raise FileOperationError(error_msg) from e
 
     def validate_update_days(self) -> int:
         """
@@ -204,6 +381,7 @@ class UpdateTracker:
     def _load_tracker(self) -> None:
         """
         Load tracker data from file with error handling.
+        Recalculates next_update based on current configuration.
         
         Raises:
             FileOperationError: If file operations fail
@@ -221,15 +399,27 @@ class UpdateTracker:
                 try:
                     data = json.load(f)
                     self.last_update = datetime.fromisoformat(data["last_update"])
-                    self.next_update = datetime.fromisoformat(data["next_update"])
+                    saved_next_update = datetime.fromisoformat(data["next_update"])
                     
+                    # Log the loaded values
                     logging.info(self.translations.get(
                         "tracker_file_loaded",
-                        "Loaded tracker file. Last update: {last_update}, Next update: {next_update}"
+                        "Loaded tracker file. Last update: {last_update}, Saved next update: {next_update}"
                     ).format(
                         last_update=self.last_update,
-                        next_update=self.next_update
+                        next_update=saved_next_update
                     ))
+
+                    # Recalculate next_update based on current config
+                    self.next_update = self.calculate_next_update(self.last_update)
+                    
+                    # If the calculated time differs from saved time, log it and save
+                    if self.next_update != saved_next_update:
+                        logging.info(
+                            "Recalculated next update time based on current configuration. "
+                            f"Changed from {saved_next_update} to {self.next_update}"
+                        )
+                        self.save_tracker()
                     
                 except (json.JSONDecodeError, KeyError, ValueError) as e:
                     error_msg = f"Invalid tracker file format: {str(e)}"
