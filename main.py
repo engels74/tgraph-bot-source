@@ -28,7 +28,7 @@ import sys
 
 # Set up basic logging immediately after imports
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[logging.StreamHandler(sys.stdout)],  # Start with just console logging
     force=True  # Force configuration of the root logger
@@ -639,7 +639,7 @@ def setup_logging(log_file: str) -> None:
     """Set up logging with error handling."""
     try:
         logging.basicConfig(
-            level=logging.DEBUG,
+            level=logging.INFO,
             format='%(asctime)s - %(levelname)s - %(message)s',
             handlers=[
                 logging.FileHandler(log_file, encoding='utf-8'),
@@ -670,7 +670,7 @@ def create_folders(log_file: str, data_folder: str, img_folder: str) -> None:
         logging.error(error_msg)
         raise BackgroundTaskError(error_msg) from e
 
-def log(message: str, level: int = logging.DEBUG) -> None:
+def log(message: str, level: int = logging.INFO) -> None:
     """Centralized logging function."""
     logger = logging.getLogger(__name__)
     logger.log(level, message)
