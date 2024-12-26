@@ -15,6 +15,7 @@ from datetime import datetime
 from discord.ext import commands, tasks
 from graphs.graph_manager import GraphManager
 from graphs.graph_modules.data_fetcher import DataFetcher
+from graphs.graph_modules.utils import cleanup_old_folders
 from graphs.user_graph_manager import UserGraphManager
 from i18n import load_translations, TranslationManager
 from typing import Optional
@@ -130,10 +131,34 @@ class TGraphBot(commands.Bot):
             except Exception as e:
                 logging.error(f"Error during cleanup of {resource.__class__.__name__}: {e}")
 
+    def _cleanup_old_folders(self) -> None:
+        """Clean up old graph folders with error handling.
+        
+        This is a non-blocking operation - if cleanup fails, it logs the error
+        and continues execution.
+        """
+        try:
+            keep_days = self.config.get('KEEP_DAYS')
+            if keep_days is None:
+                logging.error(self.translations["error_config_missing"].format(key='KEEP_DAYS'))
+                return
+                
+            cleanup_old_folders(self.img_folder, keep_days, self.translations)
+            logging.debug(self.translations["log_cleaned_up_old_folders"].format(
+                keep_days=keep_days
+            ))
+        except (OSError, KeyError) as e:
+            error_msg = self.translations["error_unexpected"].format(error=str(e))
+            logging.error(error_msg)
+            # Continue execution even if cleanup fails
+
     async def setup_hook(self) -> None:
         """Initialize the bot's state after login with enhanced error handling."""
         try:
             async with self._initialization_lock:
+                # Clean up old graph folders first
+                self._cleanup_old_folders()
+                
                 # Load command extensions
                 await load_extensions(self)
 
@@ -589,7 +614,15 @@ async def _handle_graph_update(bot: TGraphBot, channel: discord.TextChannel) -> 
         try:
             graph_files = await bot.graph_manager.generate_and_save_graphs(bot.data_fetcher)
             if not graph_files:
-                raise BackgroundTaskError("No graphs were generated")
+                raise BackgroundTaskError(bot.translations["error_no_graphs_generated"])
+                
+            try:
+                # Clean up old graph folders
+                bot._cleanup_old_folders()
+            except Exception as e:
+                logging.warning(f"Failed to cleanup old folders: {e}")
+                # Continue execution as cleanup failure is non-critical
+                
         except BackgroundTaskError as e:
             logging.error("Failed to generate graphs: %s", str(e))
             # Restore previous state before returning
@@ -618,10 +651,7 @@ async def _handle_graph_update(bot: TGraphBot, channel: discord.TextChannel) -> 
         # Restore previous state on failure
         if previous_state:
             bot.update_tracker.restore_state(previous_state)
-        error_msg = bot.translations.get(
-            "log_auto_update_error",
-            "Error during automatic update: {error}"
-        ).format(error=str(e))
+        error_msg = bot.translations["log_auto_update_error"].format(error=str(e))
         logging.exception(error_msg)
         return False
 
@@ -657,7 +687,8 @@ def create_folders(log_file: str, data_folder: str, img_folder: str) -> None:
         for folder in [os.path.dirname(log_file), data_folder, img_folder]:
             if not os.path.exists(folder):
                 os.makedirs(folder)
-            # Verify write permissions
+            
+            # Test write permissions
             test_file = os.path.join(folder, '.write_test')
             try:
                 with open(test_file, 'w') as f:
