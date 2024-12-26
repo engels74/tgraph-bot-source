@@ -138,9 +138,14 @@ class TGraphBot(commands.Bot):
         and continues execution.
         """
         try:
-            cleanup_old_folders(self.img_folder, self.config['KEEP_DAYS'], self.translations)
+            keep_days = self.config.get('KEEP_DAYS')
+            if keep_days is None:
+                logging.error(self.translations["error_config_missing"].format(key='KEEP_DAYS'))
+                return
+                
+            cleanup_old_folders(self.img_folder, keep_days, self.translations)
             logging.debug(self.translations["log_cleaned_up_old_folders"].format(
-                keep_days=self.config['KEEP_DAYS']
+                keep_days=keep_days
             ))
         except (OSError, KeyError) as e:
             error_msg = self.translations["error_unexpected"].format(error=str(e))
@@ -611,8 +616,13 @@ async def _handle_graph_update(bot: TGraphBot, channel: discord.TextChannel) -> 
             if not graph_files:
                 raise BackgroundTaskError(bot.translations["error_no_graphs_generated"])
                 
-            # Clean up old graph folders
-            bot._cleanup_old_folders()
+            try:
+                # Clean up old graph folders
+                bot._cleanup_old_folders()
+            except Exception as e:
+                logging.warning(f"Failed to cleanup old folders: {e}")
+                # Continue execution as cleanup failure is non-critical
+                
         except BackgroundTaskError as e:
             logging.error("Failed to generate graphs: %s", str(e))
             # Restore previous state before returning
