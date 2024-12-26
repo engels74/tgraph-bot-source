@@ -138,7 +138,9 @@ class TGraphBot(commands.Bot):
                 # Clean up old graph folders first
                 try:
                     cleanup_old_folders(self.img_folder, self.config['KEEP_DAYS'], self.translations)
-                    logging.debug(self.translations["log_cleaned_up_old_folders"])
+                    logging.debug(self.translations["log_cleaned_up_old_folders"].format(
+                        keep_days=self.config['KEEP_DAYS']
+                    ))
                 except (OSError, KeyError) as e:
                     error_msg = self.translations["error_unexpected"].format(error=str(e))
                     logging.error(error_msg)
@@ -599,7 +601,7 @@ async def _handle_graph_update(bot: TGraphBot, channel: discord.TextChannel) -> 
         try:
             graph_files = await bot.graph_manager.generate_and_save_graphs(bot.data_fetcher)
             if not graph_files:
-                raise BackgroundTaskError("No graphs were generated")
+                raise BackgroundTaskError(bot.translations["error_no_graphs_generated"])
                 
             # Clean up old graph folders
             try:
@@ -637,10 +639,7 @@ async def _handle_graph_update(bot: TGraphBot, channel: discord.TextChannel) -> 
         # Restore previous state on failure
         if previous_state:
             bot.update_tracker.restore_state(previous_state)
-        error_msg = bot.translations.get(
-            "log_auto_update_error",
-            "Error during automatic update: {error}"
-        ).format(error=str(e))
+        error_msg = bot.translations["log_auto_update_error"].format(error=str(e))
         logging.exception(error_msg)
         return False
 
