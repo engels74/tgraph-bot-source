@@ -15,6 +15,7 @@ from datetime import datetime
 from discord.ext import commands, tasks
 from graphs.graph_manager import GraphManager
 from graphs.graph_modules.data_fetcher import DataFetcher
+from graphs.graph_modules.utils import cleanup_old_folders
 from graphs.user_graph_manager import UserGraphManager
 from i18n import load_translations, TranslationManager
 from typing import Optional
@@ -154,6 +155,9 @@ class TGraphBot(commands.Bot):
                     error_msg = self.translations["log_command_sync_unexpected"].format(error=str(e))
                     logging.error(error_msg)
                     raise InitializationError(error_msg) from e
+
+                # Clean up old graph folders after config is loaded
+                cleanup_old_folders(self.img_folder, self.config['KEEP_DAYS'], self.translations)
 
         except commands.ExtensionError as e:
             error_msg = self.translations["log_extension_load_error"].format(error=str(e))
@@ -590,6 +594,9 @@ async def _handle_graph_update(bot: TGraphBot, channel: discord.TextChannel) -> 
             graph_files = await bot.graph_manager.generate_and_save_graphs(bot.data_fetcher)
             if not graph_files:
                 raise BackgroundTaskError("No graphs were generated")
+                
+            # Clean up old graph folders
+            cleanup_old_folders(bot.img_folder, bot.config['KEEP_DAYS'], bot.translations)
         except BackgroundTaskError as e:
             logging.error("Failed to generate graphs: %s", str(e))
             # Restore previous state before returning
@@ -657,7 +664,8 @@ def create_folders(log_file: str, data_folder: str, img_folder: str) -> None:
         for folder in [os.path.dirname(log_file), data_folder, img_folder]:
             if not os.path.exists(folder):
                 os.makedirs(folder)
-            # Verify write permissions
+            
+            # Test write permissions
             test_file = os.path.join(folder, '.write_test')
             try:
                 with open(test_file, 'w') as f:
