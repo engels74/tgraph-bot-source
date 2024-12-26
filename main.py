@@ -135,6 +135,15 @@ class TGraphBot(commands.Bot):
         """Initialize the bot's state after login with enhanced error handling."""
         try:
             async with self._initialization_lock:
+                # Clean up old graph folders first
+                try:
+                    cleanup_old_folders(self.img_folder, self.config['KEEP_DAYS'], self.translations)
+                    logging.debug(self.translations["log_cleaned_up_old_folders"])
+                except (OSError, KeyError) as e:
+                    error_msg = self.translations["error_unexpected"].format(error=str(e))
+                    logging.error(error_msg)
+                    # Continue with initialization even if cleanup fails
+                
                 # Load command extensions
                 await load_extensions(self)
 
@@ -155,9 +164,6 @@ class TGraphBot(commands.Bot):
                     error_msg = self.translations["log_command_sync_unexpected"].format(error=str(e))
                     logging.error(error_msg)
                     raise InitializationError(error_msg) from e
-
-                # Clean up old graph folders after config is loaded
-                cleanup_old_folders(self.img_folder, self.config['KEEP_DAYS'], self.translations)
 
         except commands.ExtensionError as e:
             error_msg = self.translations["log_extension_load_error"].format(error=str(e))
@@ -596,7 +602,13 @@ async def _handle_graph_update(bot: TGraphBot, channel: discord.TextChannel) -> 
                 raise BackgroundTaskError("No graphs were generated")
                 
             # Clean up old graph folders
-            cleanup_old_folders(bot.img_folder, bot.config['KEEP_DAYS'], bot.translations)
+            try:
+                cleanup_old_folders(bot.img_folder, bot.config['KEEP_DAYS'], bot.translations)
+                logging.debug(bot.translations["log_cleaned_up_old_folders"])
+            except (OSError, KeyError) as e:
+                error_msg = bot.translations["error_unexpected"].format(error=str(e))
+                logging.error(error_msg)
+                # Continue with update even if cleanup fails
         except BackgroundTaskError as e:
             logging.error("Failed to generate graphs: %s", str(e))
             # Restore previous state before returning
