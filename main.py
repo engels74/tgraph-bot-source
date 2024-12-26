@@ -131,20 +131,28 @@ class TGraphBot(commands.Bot):
             except Exception as e:
                 logging.error(f"Error during cleanup of {resource.__class__.__name__}: {e}")
 
+    def _cleanup_old_folders(self) -> None:
+        """Clean up old graph folders with error handling.
+        
+        This is a non-blocking operation - if cleanup fails, it logs the error
+        and continues execution.
+        """
+        try:
+            cleanup_old_folders(self.img_folder, self.config['KEEP_DAYS'], self.translations)
+            logging.debug(self.translations["log_cleaned_up_old_folders"].format(
+                keep_days=self.config['KEEP_DAYS']
+            ))
+        except (OSError, KeyError) as e:
+            error_msg = self.translations["error_unexpected"].format(error=str(e))
+            logging.error(error_msg)
+            # Continue execution even if cleanup fails
+
     async def setup_hook(self) -> None:
         """Initialize the bot's state after login with enhanced error handling."""
         try:
             async with self._initialization_lock:
                 # Clean up old graph folders first
-                try:
-                    cleanup_old_folders(self.img_folder, self.config['KEEP_DAYS'], self.translations)
-                    logging.debug(self.translations["log_cleaned_up_old_folders"].format(
-                        keep_days=self.config['KEEP_DAYS']
-                    ))
-                except (OSError, KeyError) as e:
-                    error_msg = self.translations["error_unexpected"].format(error=str(e))
-                    logging.error(error_msg)
-                    # Continue with initialization even if cleanup fails
+                self._cleanup_old_folders()
                 
                 # Load command extensions
                 await load_extensions(self)
@@ -604,13 +612,7 @@ async def _handle_graph_update(bot: TGraphBot, channel: discord.TextChannel) -> 
                 raise BackgroundTaskError(bot.translations["error_no_graphs_generated"])
                 
             # Clean up old graph folders
-            try:
-                cleanup_old_folders(bot.img_folder, bot.config['KEEP_DAYS'], bot.translations)
-                logging.debug(bot.translations["log_cleaned_up_old_folders"])
-            except (OSError, KeyError) as e:
-                error_msg = bot.translations["error_unexpected"].format(error=str(e))
-                logging.error(error_msg)
-                # Continue with update even if cleanup fails
+            bot._cleanup_old_folders()
         except BackgroundTaskError as e:
             logging.error("Failed to generate graphs: %s", str(e))
             # Restore previous state before returning
