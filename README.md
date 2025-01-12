@@ -43,8 +43,13 @@ For detailed information on setting up and using TGraph Bot, please refer to our
 
 If you encounter any issues, have questions, or need further assistance, please feel free to [create an issue](https://github.com/engels74/tgraph-bot/issues) on our GitHub repository. We're here to help!
 
-## 📜 License
+## ⚖️ License
+
+[![GNU GPLv3 Image](https://www.gnu.org/graphics/gplv3-127x51.png)](http://www.gnu.org/licenses/gpl-3.0.en.html)
 
 The Docker image is licensed under the GPLv3 License. See the [LICENSE](https://github.com/engels74/tgraph-bot/blob/master/LICENSE) file for details.
 
+[![GNU AGPLv3 Image](https://www.gnu.org/graphics/agplv3-155x51.png)](https://www.gnu.org/licenses/agpl-3.0.en.html)
+
 The source code for the TGraph Bot scripts are licensed under the AGPLv3 License. See the [LICENSE](https://github.com/engels74/tgraph-bot-source/blob/main/LICENSE) file for details.
+
