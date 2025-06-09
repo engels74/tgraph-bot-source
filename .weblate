@@ -1,0 +1,26 @@
+[weblate]
+url = https://hosted.weblate.org/
+
+[component "tgraph-bot"]
+name = TGraph Bot
+slug = tgraph-bot
+repo = https://github.com/engels74/tgraph-bot-source.git
+push = git@github.com:engels74/tgraph-bot-source.git
+branch = main
+filemask = locale/*/LC_MESSAGES/messages.po
+template = locale/messages.pot
+file_format = po
+new_lang = add
+language_regex = ^[a-z]{2}(_[A-Z]{2})?$
+
+[component "tgraph-bot.readme"]
+name = TGraph Bot README
+slug = tgraph-bot-readme
+repo = https://github.com/engels74/tgraph-bot-source.git
+push = git@github.com:engels74/tgraph-bot-source.git
+branch = main
+filemask = docs/README.*.md
+template = README.md
+file_format = md
+new_lang = add
+language_regex = ^[a-z]{2}(_[A-Z]{2})?$
