@@ -28,6 +28,7 @@ dependencies = [
     "seaborn>=0.13.0",
     "httpx>=0.25.0",
     "pyyaml>=6.0.0",
+    "watchdog>=6.0.0",
 ]
 
 [project.optional-dependencies]

@@ -1,9 +1,11 @@
 """Tests for configuration manager functionality."""
 
 import tempfile
+import threading
+import time
 from pathlib import Path
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 import yaml
@@ -261,3 +263,213 @@ TV_COLOR: '#1f77b4'  # Color for TV shows
         """Clean up temporary files after each test."""
         # This will be called after each test method
         pass
+
+
+class TestLiveConfigurationManagement:
+    """Test cases for live configuration management functionality."""
+
+    @pytest.fixture
+    def temp_config_file(self) -> Path:
+        """Create a temporary config file for testing."""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yml', delete=False) as f:
+            config_data = {
+                'TAUTULLI_API_KEY': 'test_api_key',
+                'TAUTULLI_URL': 'http://localhost:8181/api/v2',
+                'DISCORD_TOKEN': 'test_discord_token',
+                'CHANNEL_ID': 123456789012345678,
+                'UPDATE_DAYS': 14,
+                'TV_COLOR': '#1f77b4',
+            }
+            yaml.dump(config_data, f, default_flow_style=False)
+            return Path(f.name)
+
+    def test_config_change_notification(self, temp_config_file: Path) -> None:
+        """Test that configuration change notifications work."""
+        manager = ConfigManager()
+        callback_called = threading.Event()
+        old_config = None
+        new_config = None
+
+        def config_change_callback(old_cfg: TGraphBotConfig, new_cfg: TGraphBotConfig) -> None:
+            nonlocal old_config, new_config
+            old_config = old_cfg
+            new_config = new_cfg
+            callback_called.set()
+
+        # Register callback
+        manager.register_change_callback(config_change_callback)
+
+        # Load initial config
+        initial_config = manager.load_config(temp_config_file)
+        manager.set_current_config(initial_config)
+
+        # Update configuration
+        updated_config = initial_config.model_copy()
+        updated_config.UPDATE_DAYS = 21
+
+        # Trigger configuration update
+        manager.update_runtime_config(updated_config)
+
+        # Wait for callback to be called
+        assert callback_called.wait(timeout=1.0), "Callback was not called within timeout"
+
+        # Verify callback received correct values
+        assert old_config is not None
+        assert new_config is not None
+        assert old_config.UPDATE_DAYS == 14
+        assert new_config.UPDATE_DAYS == 21
+
+    def test_runtime_config_update(self, temp_config_file: Path) -> None:
+        """Test runtime configuration updates."""
+        manager = ConfigManager()
+
+        # Load initial config
+        initial_config = manager.load_config(temp_config_file)
+        manager.set_current_config(initial_config)
+
+        # Update configuration at runtime
+        updated_config = initial_config.model_copy()
+        updated_config.UPDATE_DAYS = 21
+        updated_config.TV_COLOR = '#ff0000'
+
+        manager.update_runtime_config(updated_config)
+
+        # Verify current config is updated
+        current_config = manager.get_current_config()
+        assert current_config.UPDATE_DAYS == 21
+        assert current_config.TV_COLOR == '#ff0000'
+
+    def test_file_monitoring_and_reload(self, temp_config_file: Path) -> None:
+        """Test file monitoring and automatic reload functionality."""
+        manager = ConfigManager()
+
+        # Load initial config
+        initial_config = manager.load_config(temp_config_file)
+        manager.set_current_config(initial_config)
+
+        # Start file monitoring
+        manager.start_file_monitoring(temp_config_file)
+
+        try:
+            # Modify the config file externally
+            modified_data = {
+                'TAUTULLI_API_KEY': 'test_api_key',
+                'TAUTULLI_URL': 'http://localhost:8181/api/v2',
+                'DISCORD_TOKEN': 'test_discord_token',
+                'CHANNEL_ID': 123456789012345678,
+                'UPDATE_DAYS': 30,  # Changed value
+                'TV_COLOR': '#00ff00',  # Changed value
+            }
+
+            with open(temp_config_file, 'w') as f:
+                yaml.dump(modified_data, f, default_flow_style=False)
+
+            # Wait for file monitoring to detect change and reload
+            time.sleep(0.5)  # Give file monitor time to detect change
+
+            # Verify config was reloaded
+            current_config = manager.get_current_config()
+            assert current_config.UPDATE_DAYS == 30
+            assert current_config.TV_COLOR == '#00ff00'
+
+        finally:
+            # Stop file monitoring
+            manager.stop_file_monitoring()
+
+    def test_thread_safety(self, temp_config_file: Path) -> None:
+        """Test thread safety of configuration access."""
+        manager = ConfigManager()
+
+        # Load initial config
+        initial_config = manager.load_config(temp_config_file)
+        manager.set_current_config(initial_config)
+
+        results = []
+        errors = []
+
+        def config_reader() -> None:
+            """Function to read config from multiple threads."""
+            try:
+                for _ in range(100):
+                    config = manager.get_current_config()
+                    results.append(config.UPDATE_DAYS)
+                    time.sleep(0.001)  # Small delay to increase chance of race conditions
+            except Exception as e:
+                errors.append(e)
+
+        def config_updater() -> None:
+            """Function to update config from multiple threads."""
+            try:
+                for i in range(50):
+                    updated_config = manager.get_current_config().model_copy()
+                    updated_config.UPDATE_DAYS = 14 + (i % 10)  # Vary between 14-23
+                    manager.update_runtime_config(updated_config)
+                    time.sleep(0.002)  # Small delay
+            except Exception as e:
+                errors.append(e)
+
+        # Start multiple threads
+        threads = []
+        for _ in range(3):
+            threads.append(threading.Thread(target=config_reader))
+        for _ in range(2):
+            threads.append(threading.Thread(target=config_updater))
+
+        # Start all threads
+        for thread in threads:
+            thread.start()
+
+        # Wait for all threads to complete
+        for thread in threads:
+            thread.join()
+
+        # Verify no errors occurred
+        assert len(errors) == 0, f"Errors occurred during thread safety test: {errors}"
+
+        # Verify we got results from readers
+        assert len(results) > 0, "No results from config readers"
+
+    def test_callback_management(self, temp_config_file: Path) -> None:
+        """Test callback registration and unregistration."""
+        manager = ConfigManager()
+
+        callback1_called = threading.Event()
+        callback2_called = threading.Event()
+
+        def callback1(old_cfg: TGraphBotConfig, new_cfg: TGraphBotConfig) -> None:
+            callback1_called.set()
+
+        def callback2(old_cfg: TGraphBotConfig, new_cfg: TGraphBotConfig) -> None:
+            callback2_called.set()
+
+        # Register both callbacks
+        manager.register_change_callback(callback1)
+        manager.register_change_callback(callback2)
+
+        # Load initial config and trigger update
+        initial_config = manager.load_config(temp_config_file)
+        manager.set_current_config(initial_config)
+
+        updated_config = initial_config.model_copy()
+        updated_config.UPDATE_DAYS = 21
+        manager.update_runtime_config(updated_config)
+
+        # Both callbacks should be called
+        assert callback1_called.wait(timeout=1.0), "Callback1 was not called"
+        assert callback2_called.wait(timeout=1.0), "Callback2 was not called"
+
+        # Reset events
+        callback1_called.clear()
+        callback2_called.clear()
+
+        # Unregister callback1
+        manager.unregister_change_callback(callback1)
+
+        # Trigger another update
+        updated_config2 = updated_config.model_copy()
+        updated_config2.UPDATE_DAYS = 25
+        manager.update_runtime_config(updated_config2)
+
+        # Only callback2 should be called
+        assert not callback1_called.wait(timeout=0.5), "Callback1 should not have been called"
+        assert callback2_called.wait(timeout=1.0), "Callback2 was not called"
