@@ -101,10 +101,10 @@ class TGraphBot(commands.Bot):
         await super().close()
 
 
-async def main() -> NoReturn:
+async def main() -> None:
     """
     Main entry point for the TGraph Bot application.
-    
+
     This function creates the bot instance, loads the configuration,
     and starts the bot with proper error handling.
     """
@@ -112,17 +112,18 @@ async def main() -> NoReturn:
         # TODO: Load configuration to get Discord token
         # config = load_config()
         # token = config.DISCORD_TOKEN
-        
+
         # For now, we'll need to implement configuration loading first
         logger.error("Configuration system not yet implemented")
         logger.error("Please implement config/manager.py and config/schema.py first")
         sys.exit(1)
-        
+
         # bot = TGraphBot()
         # await bot.start(token)
-        
+
     except KeyboardInterrupt:
         logger.info("Received keyboard interrupt, shutting down...")
+        sys.exit(0)
     except Exception as e:
         logger.exception(f"Fatal error: {e}")
         sys.exit(1)

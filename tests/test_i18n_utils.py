@@ -33,9 +33,9 @@ def test_function():
     return message
 '''
         with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
-            f.write(code)
+            _ = f.write(code)
             f.flush()
-            
+
             strings = extract_strings_from_file(Path(f.name))
             
         assert len(strings) == 1
@@ -54,9 +54,9 @@ def test_function():
     return message
 '''
         with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
-            f.write(code)
+            _ = f.write(code)
             f.flush()
-            
+
             strings = extract_strings_from_file(Path(f.name))
             
         assert len(strings) == 2

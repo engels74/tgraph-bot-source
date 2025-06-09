@@ -5,8 +5,9 @@ This module contains utility functions specifically related to Discord commands,
 such as formatting command output or complex argument parsing.
 """
 
+from __future__ import annotations
+
 import logging
-from typing import Any, Optional
 
 import discord
 
@@ -16,19 +17,22 @@ logger = logging.getLogger(__name__)
 def create_error_embed(
     title: str = "Error",
     description: str = "An error occurred",
-    color: discord.Color = discord.Color.red()
+    color: discord.Color | None = None
 ) -> discord.Embed:
     """
     Create a standardized error embed.
-    
+
     Args:
         title: Title for the error embed
         description: Description of the error
         color: Color for the embed
-        
+
     Returns:
         Discord embed for the error
     """
+    if color is None:
+        color = discord.Color.red()
+
     embed = discord.Embed(
         title=title,
         description=description,
@@ -41,19 +45,22 @@ def create_error_embed(
 def create_success_embed(
     title: str = "Success",
     description: str = "Operation completed successfully",
-    color: discord.Color = discord.Color.green()
+    color: discord.Color | None = None
 ) -> discord.Embed:
     """
     Create a standardized success embed.
-    
+
     Args:
         title: Title for the success embed
         description: Description of the success
         color: Color for the embed
-        
+
     Returns:
         Discord embed for the success message
     """
+    if color is None:
+        color = discord.Color.green()
+
     embed = discord.Embed(
         title=title,
         description=description,
@@ -66,19 +73,22 @@ def create_success_embed(
 def create_info_embed(
     title: str = "Information",
     description: str = "",
-    color: discord.Color = discord.Color.blue()
+    color: discord.Color | None = None
 ) -> discord.Embed:
     """
     Create a standardized info embed.
-    
+
     Args:
         title: Title for the info embed
         description: Description of the information
         color: Color for the embed
-        
+
     Returns:
         Discord embed for the information
     """
+    if color is None:
+        color = discord.Color.blue()
+
     embed = discord.Embed(
         title=title,
         description=description,
@@ -88,7 +98,7 @@ def create_info_embed(
     return embed
 
 
-def format_config_value(key: str, value: Any) -> str:
+def format_config_value(key: str, value: str | int | float | bool | None) -> str:
     """
     Format a configuration value for display.
     

@@ -1,5 +1,9 @@
 """Tests for configuration schema validation."""
 
+from __future__ import annotations
+
+from typing import Any
+
 import pytest
 from pydantic import ValidationError
 
@@ -11,7 +15,7 @@ class TestTGraphBotConfig:
 
     def test_valid_minimal_config(self) -> None:
         """Test that minimal required configuration is valid."""
-        config_data = {
+        config_data: dict[str, Any] = {
             "TAUTULLI_API_KEY": "test_api_key",
             "TAUTULLI_URL": "http://localhost:8181/api/v2",
             "DISCORD_TOKEN": "test_discord_token",
@@ -26,7 +30,7 @@ class TestTGraphBotConfig:
 
     def test_valid_full_config(self) -> None:
         """Test that full configuration with all options is valid."""
-        config_data = {
+        config_data: dict[str, Any] = {
             "TAUTULLI_API_KEY": "test_api_key",
             "TAUTULLI_URL": "http://localhost:8181/api/v2",
             "DISCORD_TOKEN": "test_discord_token",
@@ -72,7 +76,7 @@ class TestTGraphBotConfig:
 
     def test_default_values(self) -> None:
         """Test that default values are applied correctly."""
-        config_data = {
+        config_data: dict[str, Any] = {
             "TAUTULLI_API_KEY": "test_api_key",
             "TAUTULLI_URL": "http://localhost:8181/api/v2",
             "DISCORD_TOKEN": "test_discord_token",
@@ -103,7 +107,7 @@ class TestTGraphBotConfig:
 
     def test_invalid_color_format(self) -> None:
         """Test that invalid color formats raise ValidationError."""
-        config_data = {
+        config_data: dict[str, Any] = {
             "TAUTULLI_API_KEY": "test_api_key",
             "TAUTULLI_URL": "http://localhost:8181/api/v2",
             "DISCORD_TOKEN": "test_discord_token",
@@ -119,7 +123,7 @@ class TestTGraphBotConfig:
 
     def test_invalid_time_format(self) -> None:
         """Test that invalid time formats raise ValidationError."""
-        config_data = {
+        config_data: dict[str, Any] = {
             "TAUTULLI_API_KEY": "test_api_key",
             "TAUTULLI_URL": "http://localhost:8181/api/v2",
             "DISCORD_TOKEN": "test_discord_token",
@@ -132,7 +136,7 @@ class TestTGraphBotConfig:
 
     def test_negative_values_validation(self) -> None:
         """Test that negative values for certain fields raise ValidationError."""
-        config_data = {
+        config_data: dict[str, Any] = {
             "TAUTULLI_API_KEY": "test_api_key",
             "TAUTULLI_URL": "http://localhost:8181/api/v2",
             "DISCORD_TOKEN": "test_discord_token",
@@ -145,7 +149,7 @@ class TestTGraphBotConfig:
 
     def test_channel_id_validation(self) -> None:
         """Test that channel ID validation works correctly."""
-        config_data = {
+        config_data: dict[str, Any] = {
             "TAUTULLI_API_KEY": "test_api_key",
             "TAUTULLI_URL": "http://localhost:8181/api/v2",
             "DISCORD_TOKEN": "test_discord_token",

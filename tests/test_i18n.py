@@ -5,11 +5,8 @@ This module tests the translation loading, fallback behavior, string formatting,
 and language switching functionality of the i18n system.
 """
 
-import gettext
-import tempfile
 from pathlib import Path
 from unittest.mock import patch, MagicMock
-import pytest
 
 import i18n
 

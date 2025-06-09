@@ -5,7 +5,6 @@ This module tests that the locale directory structure is properly set up
 according to gettext standards and that translation files are correctly formatted.
 """
 
-import pytest
 from pathlib import Path
 import polib
 import i18n
