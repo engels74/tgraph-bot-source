@@ -1,0 +1,189 @@
+<context>
+# Overview  
+TGraph Bot is a Discord bot designed to automatically generate and post Tautulli graphs to a specified Discord channel. It provides insightful visualizations and statistics about Plex Media Server activity and performance. The bot solves the problem of manual monitoring and reporting of Plex usage statistics by automating the generation of high-quality, customizable graphs that are posted directly to Discord channels on a scheduled basis.
+
+The target users are Plex server administrators and community managers who want to share engaging usage statistics with their Discord communities. The bot is valuable because it transforms raw Tautulli data into visually appealing, informative graphs that help users understand viewing patterns, popular content, and server usage trends.
+
+# Core Features  
+## Automated Graph Generation and Posting
+- **What it does**: Automatically generates multiple types of statistical graphs from Tautulli data and posts them to Discord channels on a configurable schedule
+- **Why it's important**: Eliminates manual work and ensures consistent, timely sharing of server statistics
+- **How it works**: Uses Seaborn/Matplotlib for high-quality visualizations, scheduled via configurable intervals or fixed times
+
+## Interactive Discord Commands
+- **What it does**: Provides slash commands for bot management (/about, /config, /my_stats, /update_graphs, /uptime)
+- **Why it's important**: Allows users to interact with the bot, view personal statistics, and administrators to manage settings
+- **How it works**: Built using discord.py v2.5.2+ with permission-based access control
+
+## Personal Statistics via DM
+- **What it does**: Generates personalized viewing statistics for individual users and sends them via direct message
+- **Why it's important**: Provides privacy-conscious personal insights without cluttering public channels
+- **How it works**: Users provide their Plex email via /my_stats command, bot generates custom graphs
+
+## Comprehensive Configuration System
+- **What it does**: Robust configuration management with validation, live editing, and extensive customization options
+- **Why it's important**: Allows fine-tuning of all aspects including colors, graph types, annotations, and scheduling
+- **How it works**: Pydantic-based schema with YAML configuration file, atomic saves preserving comments
+
+## Internationalization Support
+- **What it does**: Full i18n support using gettext-based translation files with Weblate integration
+- **Why it's important**: Makes the bot accessible to non-English speaking communities
+- **How it works**: GNU gettext format with automated string extraction and CI validation
+
+# User Experience  
+## User Personas
+- **Server Administrators**: Need to monitor and share server usage statistics, configure bot settings, and manage community engagement
+- **Community Members**: Want to view server statistics and their personal viewing habits
+- **Moderators**: May need limited access to trigger manual updates or view configuration
+
+## Key User Flows
+1. **Initial Setup**: Administrator configures bot with Tautulli API credentials and Discord settings
+2. **Automated Posting**: Bot automatically generates and posts graphs according to schedule
+3. **Personal Stats Request**: User runs /my_stats command, provides email, receives DM with personal graphs
+4. **Configuration Management**: Administrator uses /config commands to view and modify settings
+5. **Manual Updates**: Administrator triggers immediate graph generation via /update_graphs
+
+## UI/UX Considerations
+- Clean, modern graph aesthetics using Seaborn
+- Intuitive slash command interface
+- Privacy-conscious personal statistics delivery
+- Responsive error handling and user feedback
+- Customizable visual themes and colors
+</context>
+<PRD>
+# Technical Architecture  
+## System Components
+- **Main Bot Core** (main.py): Entry point managing bot lifecycle, event loop, and background tasks
+- **Command System** (bot/commands/): Modular slash command implementations using discord.py Cogs
+- **Graph Generation Engine** (graphs/): Orchestrates data fetching, graph creation, and Discord posting
+- **Configuration Management** (config/): Pydantic-based schema with YAML file handling
+- **Internationalization** (i18n.py, locale/): Gettext-based translation system
+- **Utilities** (utils/): Shared helper functions and command utilities
+
+## Data Models
+- **Configuration Schema** (config/schema.py): Pydantic BaseModel defining all settings with validation
+- **Graph Data Models**: Structured data from Tautulli API for various graph types
+- **User Statistics Models**: Personal viewing data structures for individual user graphs
+
+## APIs and Integrations
+- **Tautulli API**: Primary data source using httpx for async HTTP requests
+- **Discord API**: Bot interactions via discord.py v2.5.2+ library
+- **Weblate Integration**: Translation management and CI validation
+
+## Infrastructure Requirements
+- **Python 3.13**: Modern Python features including match statements and enhanced type hints
+- **Package Management**: uv/uvx for dependency management and execution
+- **Type Safety**: basedpyright for comprehensive type checking
+- **Testing Framework**: pytest for test-driven development
+- **Async Architecture**: Non-blocking I/O with asyncio.to_thread() for CPU-bound tasks
+
+# Development Roadmap  
+## Phase 1: Core Infrastructure (MVP)
+- Configuration system with Pydantic schema and YAML management
+- Basic Discord bot setup with slash command framework
+- Tautulli API integration with async HTTP client
+- Base graph generation system with Matplotlib/Seaborn
+- Essential commands: /about, /uptime
+- Basic error handling and logging
+
+## Phase 2: Graph Generation Engine
+- Complete graph module system with factory pattern
+- All six graph types: daily play count, day of week, hour of day, monthly, top platforms, top users
+- Automated scheduling system with configurable intervals
+- Graph posting to Discord with message management
+- Non-blocking graph generation using asyncio.to_thread()
+
+## Phase 3: Advanced Features
+- Personal statistics system with DM delivery
+- Configuration management commands (/config view, /config edit)
+- Manual graph update command (/update_graphs)
+- Permission system and access controls
+- Comprehensive customization options (colors, annotations, grid settings)
+
+## Phase 4: Internationalization and Polish
+- Complete i18n system with gettext integration
+- Weblate setup for translation management
+- Enhanced error handling and user feedback
+- Performance optimizations and caching
+- Comprehensive test coverage
+
+## Phase 5: Production Readiness
+- Command cooldown systems
+- Advanced scheduling options (fixed time posting)
+- Username censoring and privacy features
+- Robust API error handling and fallbacks
+- Documentation and deployment guides
+
+# Logical Dependency Chain
+## Foundation Layer (Build First)
+1. **Configuration System**: Must exist before any other component can be configured
+2. **Basic Bot Framework**: Discord connection and command registration system
+3. **Tautulli API Client**: Data source integration required for all graph functionality
+
+## Core Functionality Layer
+4. **Base Graph System**: Abstract foundation for all graph types
+5. **Graph Factory and Data Fetcher**: Infrastructure for graph creation
+6. **Basic Graph Types**: Start with daily play count as proof of concept
+7. **Discord Posting System**: Ability to send generated graphs to channels
+
+## Feature Expansion Layer
+8. **Remaining Graph Types**: Complete the full set of six graph types
+9. **Automated Scheduling**: Background task system for regular updates
+10. **Personal Statistics**: User-specific graph generation and DM delivery
+11. **Configuration Commands**: Live configuration management via Discord
+
+## Enhancement Layer
+12. **Permission System**: Access control for administrative commands
+13. **Internationalization**: Translation system and multi-language support
+14. **Advanced Customization**: Colors, annotations, and visual options
+15. **Production Features**: Cooldowns, error recovery, and performance optimization
+
+# Risks and Mitigations  
+## Technical Challenges
+- **Risk**: Blocking operations freezing Discord bot event loop
+- **Mitigation**: Use asyncio.to_thread() for all CPU-bound graph generation tasks
+
+- **Risk**: Tautulli API downtime or rate limiting
+- **Mitigation**: Implement robust error handling, retry logic, and graceful fallbacks
+
+- **Risk**: Discord rate limiting on message posting
+- **Mitigation**: Implement proper rate limiting and queue management
+
+## MVP Definition and Scope
+- **Risk**: Feature creep preventing timely MVP delivery
+- **Mitigation**: Focus on core graph generation and posting functionality first, defer advanced features
+
+- **Risk**: Complex configuration system delaying development
+- **Mitigation**: Start with basic YAML configuration, enhance with live editing later
+
+## Resource and Development Constraints
+- **Risk**: Test-driven development slowing initial progress
+- **Mitigation**: Write focused, atomic tests that drive feature development without over-engineering
+
+- **Risk**: Type safety requirements adding complexity
+- **Mitigation**: Use basedpyright incrementally, fix type issues as they arise rather than perfect typing upfront
+
+- **Risk**: Internationalization complexity
+- **Mitigation**: Build English-only MVP first, add i18n system as separate phase
+
+# Appendix  
+## Technical Specifications
+- **Python Version**: 3.13 with modern features (match statements, enhanced type hints)
+- **Key Dependencies**: discord.py v2.5.2+, pydantic, matplotlib, seaborn, httpx, pytest
+- **Type Checking**: basedpyright with strict type safety requirements
+- **Package Management**: uv/uvx for all Python operations
+- **Testing Strategy**: Test-driven development with pytest, comprehensive coverage required
+
+## Development Requirements
+- **TDD Approach**: All features must be developed with tests written first
+- **Type Safety**: All code must pass basedpyright type checking before completion
+- **Non-Blocking Architecture**: All I/O and CPU-bound operations must be properly async
+- **Configuration Preservation**: Live config changes must preserve YAML comments and structure
+- **Error Resilience**: Graceful handling of API failures, network issues, and Discord limitations
+
+## Directory Structure Preservation
+The existing project directory structure must be maintained exactly as specified in the project overview. No reorganization or modification of the established architecture is permitted. All file and directory descriptions from the project overview define the high-level architecture and design patterns that must be followed.
+
+## Configuration Options Preservation
+All existing configuration options from the project overview must be included exactly as documented. No additional configuration options beyond those currently specified should be added during development.
+</PRD>
