@@ -205,6 +205,73 @@ MY_STATS_COOLDOWN_MINUTES: 5
 MY_STATS_GLOBAL_COOLDOWN_SECONDS: 60
 ```
 
+### Config Options - Context
+
+```
+# ⚙️ Configuration
+
+This page details all the configuration options available for TGraph Bot. These settings are managed through the `config.yml` file in your configuration directory.
+
+## 🔑 Essential Settings
+
+- `TAUTULLI_API_KEY`: Your Tautulli API key.
+- `TAUTULLI_URL`: The URL to your Tautulli instance (e.g., `http://localhost:8181/api/v2`).
+- `DISCORD_TOKEN`: The token for your Discord bot.
+- `CHANNEL_ID`: The ID of the Discord channel where you want to post the graphs.
+
+## ⏱️ Timing and Retention Settings
+
+- `UPDATE_DAYS`: The interval in days for how often to post the graphs (default: 7).
+- `FIXED_UPDATE_TIME`: A specific time of day to post the graphs (format: "HH:MM", 24-hour clock). Set to "XX:XX" to disable and use `UPDATE_DAYS` interval instead.
+- `KEEP_DAYS`: The number of days to keep the generated images (default: 7).
+- `TIME_RANGE_DAYS`: The time range in days for the graphs (default: 30).
+
+## 🌐 Localization
+
+- `LANGUAGE`: The language to use for the bot (default: `en`). 
+  - Supported languages: `en` (English), `da` (Danish).
+
+## 📊 Graph Options
+
+- `CENSOR_USERNAMES`: Enable/disable censoring of usernames in the top 10 users graph (default: true).
+- `ENABLE_GRAPH_GRID`: Enable/disable grid on graphs (default: false).
+- `ENABLE_DAILY_PLAY_COUNT`: Enable/disable daily play count graph (default: true).
+- `ENABLE_PLAY_COUNT_BY_DAYOFWEEK`: Enable/disable play count by day of week graph (default: true).
+- `ENABLE_PLAY_COUNT_BY_HOUROFDAY`: Enable/disable play count by hour of day graph (default: true).
+- `ENABLE_TOP_10_PLATFORMS`: Enable/disable top 10 platforms graph (default: true).
+- `ENABLE_TOP_10_USERS`: Enable/disable top 10 users graph (default: true).
+- `ENABLE_PLAY_COUNT_BY_MONTH`: Enable/disable play count by month graph (default: true).
+
+## 🎨 Graph Colors
+
+- `TV_COLOR`: The color to use for TV shows in graphs (default: "#1f77b4", a shade of blue).
+- `MOVIE_COLOR`: The color to use for movies in graphs (default: "#ff7f0e", a shade of orange).
+- `GRAPH_BACKGROUND_COLOR`: The color to use for the graph background (default: "#ffffff", white).
+- `ANNOTATION_COLOR`: The color to use for number annotations on graphs (default: "#ffffff", white).
+- `ANNOTATION_OUTLINE_COLOR`: The color to use for the annotation outline (default: "#000000", black).
+- `ENABLE_ANNOTATION_OUTLINE`: Enable/disable annotation outline (default: true).
+
+Note: Colors can be specified using hex codes. For more color options, see [Matplotlib colors](https://matplotlib.org/stable/users/explain/colors/colors.html).
+
+## 🏷️ Annotation Options
+
+- `ANNOTATE_DAILY_PLAY_COUNT`: Enable/disable annotations on daily play count graph (default: true).
+- `ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK`: Enable/disable annotations on play count by day of week graph (default: true).
+- `ANNOTATE_PLAY_COUNT_BY_HOUROFDAY`: Enable/disable annotations on play count by hour of day graph (default: true).
+- `ANNOTATE_TOP_10_PLATFORMS`: Enable/disable annotations on top 10 platforms graph (default: true).
+- `ANNOTATE_TOP_10_USERS`: Enable/disable annotations on top 10 users graph (default: true).
+- `ANNOTATE_PLAY_COUNT_BY_MONTH`: Enable/disable annotations on play count by month graph (default: true).
+
+## ⏱️ Command Cooldown Options
+
+- `CONFIG_COOLDOWN_MINUTES`: Minutes between config command uses per user (default: 0).
+- `CONFIG_GLOBAL_COOLDOWN_SECONDS`: Seconds between any config command uses (default: 0).
+- `UPDATE_GRAPHS_COOLDOWN_MINUTES`: Cooldown period in minutes for updating graphs (default: 0).
+- `UPDATE_GRAPHS_GLOBAL_COOLDOWN_SECONDS`: Global cooldown period in seconds for updating graphs (default: 0).
+- `MY_STATS_COOLDOWN_MINUTES`: The cooldown period in minutes for individual users using the `/my_stats` command (default: 5).
+- `MY_STATS_GLOBAL_COOLDOWN_SECONDS`: The global cooldown period in seconds between any two uses of the `/my_stats` command (default: 60).
+```
+
 ---
 
 #### Python 3.13 Best Practices
