@@ -165,17 +165,59 @@ TV_COLOR: '#1f77b4'  # Color for TV shows
         """Test creating sample configuration file."""
         with tempfile.TemporaryDirectory() as temp_dir:
             sample_path = Path(temp_dir) / 'config.yml.sample'
-            
+
             ConfigManager.create_sample_config(sample_path)
-            
+
             assert sample_path.exists()
-            
+
             # Verify the sample file contains expected content
             content = sample_path.read_text()
             assert 'TAUTULLI_API_KEY:' in content
             assert 'DISCORD_TOKEN:' in content
             assert 'CHANNEL_ID:' in content
             assert '# Essential Settings' in content
+
+    def test_sample_config_validation(self) -> None:
+        """Test that the generated sample configuration can be loaded and validated."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            sample_path = Path(temp_dir) / 'config.yml.sample'
+
+            # Create the sample config
+            ConfigManager.create_sample_config(sample_path)
+
+            # Load the sample config - this should work without validation errors
+            # since it contains valid placeholder values
+            config = ConfigManager.load_config(sample_path)
+
+            # Verify it's a valid TGraphBotConfig instance
+            assert isinstance(config, TGraphBotConfig)
+
+            # Verify some key fields have the expected placeholder values
+            assert config.TAUTULLI_API_KEY == 'your_tautulli_api_key_here'
+            assert config.TAUTULLI_URL == 'http://localhost:8181/api/v2'
+            assert config.DISCORD_TOKEN == 'your_discord_bot_token_here'
+            assert config.CHANNEL_ID == 123456789012345678
+
+            # Verify default values are correctly set
+            assert config.UPDATE_DAYS == 7
+            assert config.FIXED_UPDATE_TIME == 'XX:XX'
+            assert config.KEEP_DAYS == 7
+            assert config.TIME_RANGE_DAYS == 30
+            assert config.LANGUAGE == 'en'
+            assert config.CENSOR_USERNAMES is True
+            assert config.ENABLE_GRAPH_GRID is False
+
+            # Verify color values
+            assert config.TV_COLOR == '#1f77b4'
+            assert config.MOVIE_COLOR == '#ff7f0e'
+            assert config.GRAPH_BACKGROUND_COLOR == '#ffffff'
+            assert config.ANNOTATION_COLOR == '#ff0000'
+            assert config.ANNOTATION_OUTLINE_COLOR == '#000000'
+
+            # Verify cooldown settings
+            assert config.CONFIG_COOLDOWN_MINUTES == 0
+            assert config.MY_STATS_COOLDOWN_MINUTES == 5
+            assert config.MY_STATS_GLOBAL_COOLDOWN_SECONDS == 60
 
     def test_atomic_save_operation(self, temp_config_file: Path) -> None:
         """Test that save operations are atomic."""
