@@ -47,6 +47,9 @@ Issues = "https://github.com/engels74/tgraph-bot-source/issues"
 [project.scripts]
 tgraph-bot = "main:main"
 
+[tool.hatch.build.targets.wheel]
+packages = ["bot", "config", "graphs", "utils"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
