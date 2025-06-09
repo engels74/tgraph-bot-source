@@ -176,3 +176,8 @@ exclude_lines = [
     "class .*\\bProtocol\\):",
     "@(abc\\.)?abstractmethod",
 ]
+
+[dependency-groups]
+dev = [
+    "polib>=1.2.0",
+]
