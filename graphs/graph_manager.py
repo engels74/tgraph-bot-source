@@ -18,7 +18,7 @@ Architecture:
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 from .graph_modules.data_fetcher import DataFetcher
 from .graph_modules.graph_factory import GraphFactory
@@ -91,14 +91,17 @@ class GraphManager:
         self._graph_factory = None
         logger.debug("GraphManager components cleaned up")
 
-    async def generate_all_graphs(self) -> list[str]:
+    async def generate_all_graphs(self, progress_callback: Callable[[str, int, int], None] | None = None) -> list[str]:
         """
-        Generate all enabled graphs for the server.
+        Generate all enabled graphs for the server with optional progress tracking.
 
         This method:
         1. Fetches data from Tautulli API (async)
         2. Generates graphs using GraphFactory (sync, in thread)
         3. Returns list of generated graph file paths
+
+        Args:
+            progress_callback: Optional callback for progress updates (message, current, total)
 
         Returns:
             List of file paths to generated graph images
@@ -114,17 +117,23 @@ class GraphManager:
 
         try:
             # Step 1: Fetch data from Tautulli API (async, non-blocking)
+            if progress_callback:
+                progress_callback("Fetching data from Tautulli API", 1, 3)
             logger.debug("Fetching data from Tautulli API")
             config = self.config_manager.get_current_config()
             data = await self._fetch_graph_data(config.TIME_RANGE_DAYS)
 
             # Step 2: Generate graphs using asyncio.to_thread() (non-blocking)
+            if progress_callback:
+                progress_callback("Generating graphs", 2, 3)
             logger.debug("Starting graph generation in separate thread")
             graph_files = await asyncio.to_thread(
                 self._generate_graphs_sync,
                 data
             )
 
+            if progress_callback:
+                progress_callback("Graph generation complete", 3, 3)
             logger.info(f"Successfully generated {len(graph_files)} graphs")
             return graph_files
 
