@@ -25,11 +25,11 @@ class UptimeCog(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         """
         Initialize the Uptime cog.
-        
+
         Args:
             bot: The Discord bot instance
         """
-        self.bot = bot
+        self.bot: commands.Bot = bot
         
     @app_commands.command(
         name="uptime",
@@ -54,7 +54,7 @@ class UptimeCog(commands.Cog):
         seconds = uptime_seconds % 60
         
         # Format uptime string
-        uptime_parts = []
+        uptime_parts: list[str] = []
         if days > 0:
             uptime_parts.append(f"{days} day{'s' if days != 1 else ''}")
         if hours > 0:
@@ -63,7 +63,7 @@ class UptimeCog(commands.Cog):
             uptime_parts.append(f"{minutes} minute{'s' if minutes != 1 else ''}")
         if seconds > 0 or not uptime_parts:
             uptime_parts.append(f"{seconds} second{'s' if seconds != 1 else ''}")
-            
+
         uptime_string = ", ".join(uptime_parts)
         
         embed = discord.Embed(
@@ -71,21 +71,21 @@ class UptimeCog(commands.Cog):
             color=discord.Color.green()
         )
         
-        embed.add_field(
+        _ = embed.add_field(
             name="Uptime",
             value=uptime_string,
             inline=False
         )
-        
-        embed.add_field(
+
+        _ = embed.add_field(
             name="Started",
             value=f"<t:{int(start_time)}:F>",
             inline=False
         )
-        
-        embed.set_footer(text="TGraph Bot is running smoothly!")
-        
-        await interaction.response.send_message(embed=embed)
+
+        _ = embed.set_footer(text="TGraph Bot is running smoothly!")
+
+        _ = await interaction.response.send_message(embed=embed)
 
 
 async def setup(bot: commands.Bot) -> None:

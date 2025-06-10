@@ -24,16 +24,18 @@ class UpdateGraphsCog(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         """
         Initialize the UpdateGraphs cog.
-        
+
         Args:
             bot: The Discord bot instance
         """
-        self.bot = bot
+        self.bot: commands.Bot = bot
         
     @app_commands.command(
         name="update_graphs",
         description="Manually update server graphs"
     )
+    @app_commands.default_permissions(manage_guild=True)
+    @app_commands.checks.has_permissions(manage_guild=True)
     async def update_graphs(self, interaction: discord.Interaction) -> None:
         """
         Manually trigger server-wide graph generation and posting.
@@ -41,32 +43,30 @@ class UpdateGraphsCog(commands.Cog):
         Args:
             interaction: The Discord interaction
         """
-        # TODO: Check if user has admin permissions
-        
         # Acknowledge the command
-        await interaction.response.send_message(
+        _ = await interaction.response.send_message(
             "Starting graph update... This may take a few minutes.",
             ephemeral=True
         )
-        
+
         try:
             # TODO: Implement graph generation using graph_manager
             # TODO: Post graphs to configured channel
-            
+
             # For now, send a placeholder message
             embed = discord.Embed(
                 title="Graph Update",
                 description="Graph update functionality not yet implemented",
                 color=discord.Color.orange()
             )
-            
-            embed.add_field(
+
+            _ = embed.add_field(
                 name="Status",
                 value="Placeholder - Implementation pending",
                 inline=False
             )
-            
-            await interaction.followup.send(embed=embed, ephemeral=True)
+
+            _ = await interaction.followup.send(embed=embed, ephemeral=True)
             
         except Exception as e:
             logger.exception(f"Error updating graphs: {e}")

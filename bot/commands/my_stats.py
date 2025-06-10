@@ -24,11 +24,11 @@ class MyStatsCog(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         """
         Initialize the MyStats cog.
-        
+
         Args:
             bot: The Discord bot instance
         """
-        self.bot = bot
+        self.bot: commands.Bot = bot
         
     @app_commands.command(
         name="my_stats",
@@ -50,43 +50,43 @@ class MyStatsCog(commands.Cog):
             email: The user's Plex email address
         """
         # TODO: Implement personal statistics generation
-        
+
         # Acknowledge the command
-        await interaction.response.send_message(
+        _ = await interaction.response.send_message(
             "Generating your personal statistics... This may take a moment.",
             ephemeral=True
         )
-        
+
         try:
             # TODO: Generate personal graphs using user_graph_manager
             # TODO: Send graphs via DM
-            
+
             # For now, send a placeholder message
             embed = discord.Embed(
                 title="Personal Statistics",
                 description="Personal statistics generation not yet implemented",
                 color=discord.Color.orange()
             )
-            
-            embed.add_field(
+
+            _ = embed.add_field(
                 name="Email",
                 value=email,
                 inline=True
             )
-            
+
             # Try to send DM
             try:
-                await interaction.user.send(embed=embed)
-                
+                _ = await interaction.user.send(embed=embed)
+
                 # Follow up to let user know DM was sent
-                await interaction.followup.send(
+                _ = await interaction.followup.send(
                     "Your personal statistics have been sent via DM!",
                     ephemeral=True
                 )
-                
+
             except discord.Forbidden:
                 # User has DMs disabled
-                await interaction.followup.send(
+                _ = await interaction.followup.send(
                     "I couldn't send you a DM. Please enable DMs from server members.",
                     ephemeral=True
                 )

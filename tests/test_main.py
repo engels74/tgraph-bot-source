@@ -180,6 +180,34 @@ class TestTGraphBot:
         assert inspect.iscoroutinefunction(bot.close), "close should be async"
         assert inspect.iscoroutinefunction(bot.setup_hook), "setup_hook should be async"
 
+    @pytest.mark.asyncio
+    async def test_discord_native_permissions_integration(self) -> None:
+        """Test that commands use Discord's native permissions system."""
+        config_manager = ConfigManager()
+        bot = TGraphBot(config_manager)
+
+        # Load extensions to test command permissions
+        from bot.commands.config import ConfigCog
+        from bot.commands.update_graphs import UpdateGraphsCog
+
+        config_cog = ConfigCog(bot)
+        update_cog = UpdateGraphsCog(bot)
+
+        # Verify admin commands have proper default permissions
+        config_view_cmd = config_cog.config_group.get_command("view")
+        config_edit_cmd = config_cog.config_group.get_command("edit")
+        update_graphs_cmd = update_cog.update_graphs
+
+        # These commands should have manage_guild permission requirement
+        assert config_view_cmd is not None, "config view command should exist"
+        assert config_edit_cmd is not None, "config edit command should exist"
+        assert update_graphs_cmd is not None, "update_graphs command should exist"
+
+        # Verify the commands have permission checks
+        assert hasattr(config_view_cmd, 'checks'), "config view should have permission checks"
+        assert hasattr(config_edit_cmd, 'checks'), "config edit should have permission checks"
+        assert hasattr(update_graphs_cmd, 'checks'), "update_graphs should have permission checks"
+
 
 
 

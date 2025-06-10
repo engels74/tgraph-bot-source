@@ -24,11 +24,11 @@ class AboutCog(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         """
         Initialize the About cog.
-        
+
         Args:
             bot: The Discord bot instance
         """
-        self.bot = bot
+        self.bot: commands.Bot = bot
         
     @app_commands.command(
         name="about",
@@ -47,45 +47,45 @@ class AboutCog(commands.Cog):
             color=discord.Color.blue()
         )
         
-        embed.add_field(
+        _ = embed.add_field(
             name="Version",
             value="1.0.0",
             inline=True
         )
-        
-        embed.add_field(
+
+        _ = embed.add_field(
             name="Author",
             value="engels74",
             inline=True
         )
-        
-        embed.add_field(
+
+        _ = embed.add_field(
             name="GitHub",
             value="[tgraph-bot-source](https://github.com/engels74/tgraph-bot-source)",
             inline=True
         )
-        
-        embed.add_field(
+
+        _ = embed.add_field(
             name="License",
             value="MIT License",
             inline=True
         )
-        
-        embed.add_field(
+
+        _ = embed.add_field(
             name="Python Version",
             value="3.13+",
             inline=True
         )
-        
-        embed.add_field(
+
+        _ = embed.add_field(
             name="Discord.py Version",
             value=discord.__version__,
             inline=True
         )
-        
-        embed.set_footer(text="TGraph Bot - Bringing Tautulli stats to Discord")
-        
-        await interaction.response.send_message(embed=embed)
+
+        _ = embed.set_footer(text="TGraph Bot - Bringing Tautulli stats to Discord")
+
+        _ = await interaction.response.send_message(embed=embed)
 
 
 async def setup(bot: commands.Bot) -> None:

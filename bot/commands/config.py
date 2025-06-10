@@ -24,13 +24,13 @@ class ConfigCog(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         """
         Initialize the Config cog.
-        
+
         Args:
             bot: The Discord bot instance
         """
-        self.bot = bot
-        
-    config_group = app_commands.Group(
+        self.bot: commands.Bot = bot
+
+    config_group: app_commands.Group = app_commands.Group(
         name="config",
         description="View or edit bot configuration"
     )
@@ -39,10 +39,12 @@ class ConfigCog(commands.Cog):
         name="view",
         description="View current bot configuration"
     )
+    @app_commands.default_permissions(manage_guild=True)
+    @app_commands.checks.has_permissions(manage_guild=True)
     async def config_view(self, interaction: discord.Interaction) -> None:
         """
         Display current bot configuration.
-        
+
         Args:
             interaction: The Discord interaction
         """
@@ -52,8 +54,8 @@ class ConfigCog(commands.Cog):
             description="Configuration viewing not yet implemented",
             color=discord.Color.orange()
         )
-        
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+        _ = await interaction.response.send_message(embed=embed, ephemeral=True)
         
     @config_group.command(
         name="edit",
@@ -63,15 +65,17 @@ class ConfigCog(commands.Cog):
         setting="The configuration setting to modify",
         value="The new value for the setting"
     )
+    @app_commands.default_permissions(manage_guild=True)
+    @app_commands.checks.has_permissions(manage_guild=True)
     async def config_edit(
-        self, 
+        self,
         interaction: discord.Interaction,
         setting: str,
         value: str
     ) -> None:
         """
         Edit a bot configuration setting.
-        
+
         Args:
             interaction: The Discord interaction
             setting: The configuration setting to modify
@@ -83,20 +87,20 @@ class ConfigCog(commands.Cog):
             description="Configuration editing not yet implemented",
             color=discord.Color.orange()
         )
-        
-        embed.add_field(
+
+        _ = embed.add_field(
             name="Setting",
             value=setting,
             inline=True
         )
-        
-        embed.add_field(
+
+        _ = embed.add_field(
             name="Value",
             value=value,
             inline=True
         )
-        
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+        _ = await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
 async def setup(bot: commands.Bot) -> None:
