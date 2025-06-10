@@ -8,9 +8,9 @@ import tempfile
 import threading
 import time
 from pathlib import Path
-from typing import Any, Callable
-from watchdog.events import FileSystemEventHandler  # pyright: ignore
-from watchdog.observers import Observer  # pyright: ignore
+from typing import Any, Callable, override
+from watchdog.events import FileSystemEventHandler  # pyright: ignore[reportMissingTypeStubs]
+from watchdog.observers import Observer  # pyright: ignore[reportMissingTypeStubs]
 
 import yaml
 from pydantic import ValidationError
@@ -30,10 +30,11 @@ class ConfigFileHandler(FileSystemEventHandler):
             config_path: Path to the configuration file to monitor
         """
         super().__init__()
-        self.config_manager = config_manager
-        self.config_path = config_path
-        self._last_modified = 0.0
+        self.config_manager: 'ConfigManager' = config_manager
+        self.config_path: Path = config_path
+        self._last_modified: float = 0.0
 
+    @override
     def on_modified(self, event: Any) -> None:
         """Handle file modification events."""
         if event.is_directory:
@@ -63,7 +64,7 @@ class ConfigManager:
     def __init__(self) -> None:
         """Initialize the configuration manager."""
         self._current_config: TGraphBotConfig | None = None
-        self._config_lock = threading.RLock()
+        self._config_lock: threading.RLock = threading.RLock()
         self._change_callbacks: list[Callable[[TGraphBotConfig, TGraphBotConfig], None]] = []
         self._file_observer: Observer | None = None  # pyright: ignore[reportInvalidTypeForm]
         self._monitored_file: Path | None = None
@@ -203,9 +204,9 @@ class ConfigManager:
                 temp_file.write(content_to_write)
                 temp_file.flush()
                 temp_path = Path(temp_file.name)
-            
+
             # Atomic move
-            temp_path.replace(config_path)
+            _ = temp_path.replace(config_path)
             
         except Exception as e:
             # Clean up temporary file if it exists
@@ -349,7 +350,7 @@ class ConfigManager:
         """
         # Re-validate the configuration by creating a new instance
         try:
-            TGraphBotConfig(**config.model_dump())
+            _ = TGraphBotConfig(**config.model_dump())
             return True
         except ValidationError:
             raise
@@ -363,9 +364,9 @@ class ConfigManager:
             sample_path: Path where to create the sample configuration file
         """
         sample_content = ConfigManager._generate_sample_content()
-        
-        sample_path.parent.mkdir(parents=True, exist_ok=True)
-        sample_path.write_text(sample_content, encoding='utf-8')
+
+        _ = sample_path.parent.mkdir(parents=True, exist_ok=True)
+        _ = sample_path.write_text(sample_content, encoding='utf-8')
 
     @staticmethod
     def _generate_sample_content() -> str:
