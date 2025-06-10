@@ -47,35 +47,42 @@ class GraphFactory:
         graphs: list[BaseGraph] = []
 
         # Check each graph type and create if enabled
-        if self.config.ENABLE_DAILY_PLAY_COUNT:
+        # Handle both TGraphBotConfig objects and dict configs for backward compatibility
+        def get_config_value(key: str, default: bool = True) -> bool:
+            if hasattr(self.config, key):
+                return bool(getattr(self.config, key))
+            elif isinstance(self.config, dict):
+                return bool(self.config.get(key, default))  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+            return default
+
+        if get_config_value('ENABLE_DAILY_PLAY_COUNT'):
             logger.debug("Creating daily play count graph")
             graphs.append(DailyPlayCountGraph(config=self.config))
 
-        if self.config.ENABLE_PLAY_COUNT_BY_DAYOFWEEK:
+        if get_config_value('ENABLE_PLAY_COUNT_BY_DAYOFWEEK'):
             logger.debug("Creating play count by day of week graph")
             graphs.append(PlayCountByDayOfWeekGraph(config=self.config))
 
-        if self.config.ENABLE_PLAY_COUNT_BY_HOUROFDAY:
+        if get_config_value('ENABLE_PLAY_COUNT_BY_HOUROFDAY'):
             logger.debug("Creating play count by hour of day graph")
             graphs.append(PlayCountByHourOfDayGraph(config=self.config))
 
-        if self.config.ENABLE_PLAY_COUNT_BY_MONTH:
+        if get_config_value('ENABLE_PLAY_COUNT_BY_MONTH'):
             logger.debug("Creating play count by month graph")
             graphs.append(PlayCountByMonthGraph(config=self.config))
 
-        if self.config.ENABLE_TOP_10_PLATFORMS:
+        if get_config_value('ENABLE_TOP_10_PLATFORMS'):
             logger.debug("Creating top 10 platforms graph")
             graphs.append(Top10PlatformsGraph(config=self.config))
 
-        if self.config.ENABLE_TOP_10_USERS:
+        if get_config_value('ENABLE_TOP_10_USERS'):
             logger.debug("Creating top 10 users graph")
             graphs.append(Top10UsersGraph(config=self.config))
 
         # Sample graph for demonstration (disabled by default)
-        # Note: There's no ENABLE_SAMPLE_GRAPH in the config schema, so we skip this
-        # if hasattr(self.config, 'ENABLE_SAMPLE_GRAPH') and self.config.ENABLE_SAMPLE_GRAPH:
-        #     logger.debug("Creating sample graph")
-        #     graphs.append(SampleGraph(config=self.config))
+        if get_config_value('ENABLE_SAMPLE_GRAPH', default=False):
+            logger.debug("Creating sample graph")
+            graphs.append(SampleGraph(config=self.config))
 
         logger.info(f"Created {len(graphs)} enabled graph instances")
         return graphs
@@ -119,24 +126,36 @@ class GraphFactory:
         """
         enabled_types: list[str] = []
 
+        # Helper function to get config values with backward compatibility
+        def get_config_value(key: str, default: bool = True) -> bool:
+            if hasattr(self.config, key):
+                return bool(getattr(self.config, key))
+            elif isinstance(self.config, dict):
+                return bool(self.config.get(key, default))  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+            return default
+
         # Check each graph type directly from config attributes
-        if self.config.ENABLE_DAILY_PLAY_COUNT:
+        if get_config_value('ENABLE_DAILY_PLAY_COUNT'):
             enabled_types.append("daily_play_count")
 
-        if self.config.ENABLE_PLAY_COUNT_BY_DAYOFWEEK:
+        if get_config_value('ENABLE_PLAY_COUNT_BY_DAYOFWEEK'):
             enabled_types.append("play_count_by_dayofweek")
 
-        if self.config.ENABLE_PLAY_COUNT_BY_HOUROFDAY:
+        if get_config_value('ENABLE_PLAY_COUNT_BY_HOUROFDAY'):
             enabled_types.append("play_count_by_hourofday")
 
-        if self.config.ENABLE_PLAY_COUNT_BY_MONTH:
+        if get_config_value('ENABLE_PLAY_COUNT_BY_MONTH'):
             enabled_types.append("play_count_by_month")
 
-        if self.config.ENABLE_TOP_10_PLATFORMS:
+        if get_config_value('ENABLE_TOP_10_PLATFORMS'):
             enabled_types.append("top_10_platforms")
 
-        if self.config.ENABLE_TOP_10_USERS:
+        if get_config_value('ENABLE_TOP_10_USERS'):
             enabled_types.append("top_10_users")
+
+        # Sample graph (disabled by default)
+        if get_config_value('ENABLE_SAMPLE_GRAPH', default=False):
+            enabled_types.append("sample_graph")
 
         return enabled_types
 
@@ -167,3 +186,53 @@ class GraphFactory:
             directory = ensure_graph_directory()
 
         return cleanup_old_files(directory, keep_days)
+
+    def generate_all_graphs(self, data: dict[str, object]) -> list[str]:
+        """
+        Generate all enabled graphs with proper resource management.
+
+        This method creates all enabled graphs in sequence while ensuring
+        proper cleanup of matplotlib resources to prevent memory leaks.
+
+        Args:
+            data: Dictionary containing the data needed for graph generation
+
+        Returns:
+            List of paths to generated graph files
+
+        Raises:
+            Exception: If any graph generation fails
+        """
+        graphs = self.create_enabled_graphs()
+        generated_paths: list[str] = []
+
+        logger.info(f"Starting generation of {len(graphs)} enabled graphs")
+
+        for graph in graphs:
+            try:
+                # Use context manager for automatic cleanup
+                with graph:
+                    output_path = graph.generate(data)
+                    generated_paths.append(output_path)
+                    logger.debug(f"Generated {graph.__class__.__name__}: {output_path}")
+
+            except Exception as e:
+                logger.error(f"Failed to generate {graph.__class__.__name__}: {e}")
+                # Continue with other graphs even if one fails
+                continue
+
+        # Additional cleanup to ensure no matplotlib state remains
+        BaseGraph.cleanup_all_figures()
+
+        logger.info(f"Successfully generated {len(generated_paths)} graphs")
+        return generated_paths
+
+    def cleanup_all_graph_resources(self) -> None:
+        """
+        Perform comprehensive cleanup of all graph-related resources.
+
+        This method ensures all matplotlib figures are closed and
+        any remaining graph resources are properly released.
+        """
+        BaseGraph.cleanup_all_figures()
+        logger.debug("Performed comprehensive graph resource cleanup")

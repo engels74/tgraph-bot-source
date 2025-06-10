@@ -58,7 +58,14 @@ class BaseGraph(ABC):
 
         # Use background color from config if not explicitly provided
         if background_color is None and config is not None:
-            background_color = config.GRAPH_BACKGROUND_COLOR
+            # Handle both TGraphBotConfig objects and dict configs for backward compatibility
+            if hasattr(config, 'GRAPH_BACKGROUND_COLOR'):
+                background_color = str(config.GRAPH_BACKGROUND_COLOR)
+            elif isinstance(config, dict) and 'GRAPH_BACKGROUND_COLOR' in config:
+                bg_color = config.get('GRAPH_BACKGROUND_COLOR')  # pyright: ignore[reportUnknownMemberType]
+                background_color = str(bg_color) if bg_color is not None else "#ffffff"  # pyright: ignore[reportUnknownArgumentType]
+            else:
+                background_color = "#ffffff"
         elif background_color is None:
             background_color = "#ffffff"
 
@@ -76,7 +83,7 @@ class BaseGraph(ABC):
     def setup_figure(self) -> tuple[matplotlib.figure.Figure, Axes]:
         """
         Setup the matplotlib figure and axes.
-        
+
         Returns:
             Tuple of (figure, axes)
         """
@@ -87,9 +94,13 @@ class BaseGraph(ABC):
             facecolor=self.background_color
         )
 
+        # Ensure axes is not None (it shouldn't be with our usage)
+        if self.axes is None:  # pyright: ignore[reportUnnecessaryComparison]
+            raise RuntimeError("Failed to create matplotlib axes")
+
         # Set axes background color
         self.axes.set_facecolor(self.background_color)
-        
+
         return self.figure, self.axes
 
     def apply_seaborn_style(self) -> None:
@@ -118,7 +129,11 @@ class BaseGraph(ABC):
             True if grid should be enabled, False otherwise
         """
         if self.config is not None:
-            return self.config.ENABLE_GRAPH_GRID
+            # Handle both TGraphBotConfig objects and dict configs for backward compatibility
+            if hasattr(self.config, 'ENABLE_GRAPH_GRID'):
+                return bool(self.config.ENABLE_GRAPH_GRID)
+            elif isinstance(self.config, dict) and 'ENABLE_GRAPH_GRID' in self.config:
+                return bool(self.config.get('ENABLE_GRAPH_GRID', False))  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
         return False
 
     def get_tv_color(self) -> str:
@@ -268,11 +283,45 @@ class BaseGraph(ABC):
         return censor_username(username, censor_enabled)
 
     def cleanup(self) -> None:
-        """Clean up matplotlib resources."""
+        """
+        Clean up matplotlib resources to prevent memory leaks.
+
+        This method ensures proper cleanup of matplotlib figures and axes,
+        preventing memory accumulation during repeated graph generation.
+        """
         if self.figure is not None:
-            plt.close(self.figure)
-            self.figure = None
-            self.axes = None
+            try:
+                # Close the specific figure to free memory
+                plt.close(self.figure)
+                logger.debug(f"Closed matplotlib figure for {self.__class__.__name__}")
+            except Exception as e:
+                logger.warning(f"Error closing figure: {e}")
+            finally:
+                # Always reset references regardless of close success
+                self.figure = None
+                self.axes = None
+
+        # Additional cleanup: clear any remaining matplotlib state
+        try:
+            # Force garbage collection of any remaining matplotlib objects
+            plt.clf()  # Clear current figure
+            plt.cla()  # Clear current axes
+        except Exception as e:
+            logger.debug(f"Minor cleanup warning: {e}")
+
+    @classmethod
+    def cleanup_all_figures(cls) -> None:
+        """
+        Clean up all matplotlib figures to prevent memory leaks.
+
+        This is a utility method for bulk cleanup operations,
+        useful when generating multiple graphs in sequence.
+        """
+        try:
+            plt.close('all')
+            logger.debug("Closed all matplotlib figures")
+        except Exception as e:
+            logger.warning(f"Error during bulk figure cleanup: {e}")
             
     def __enter__(self) -> "BaseGraph":
         """Context manager entry."""
