@@ -1,26 +1,71 @@
+# Weblate Configuration for TGraph Bot
+#
+# This file configures Weblate integration for collaborative translation management.
+# Weblate is a web-based translation tool that helps manage localization workflows.
+#
+# For more information about Weblate configuration, see:
+# https://docs.weblate.org/en/latest/admin/projects.html#project-configuration
+
 [weblate]
+# Weblate instance URL - using hosted.weblate.org for this project
 url = https://hosted.weblate.org/
 
 [component "tgraph-bot"]
+# Main component for bot interface translations
 name = TGraph Bot
 slug = tgraph-bot
 repo = https://github.com/engels74/tgraph-bot-source.git
 push = git@github.com:engels74/tgraph-bot-source.git
+
+# Branch configuration - using main for stable translations
+# Note: Development happens on feat-rewrite_v2, but translations should target main
 branch = main
+
+# File patterns for translation files
 filemask = locale/*/LC_MESSAGES/messages.po
 template = locale/messages.pot
+
+# Translation file format
 file_format = po
+
+# Language handling
 new_lang = add
 language_regex = ^[a-z]{2}(_[A-Z]{2})?$
 
+# Workflow settings
+allow_translation_propagation = true
+enable_suggestions = true
+suggestion_voting = true
+check_flags = safe-html,python-format,python-brace-format
+
+# Quality checks
+enforced_checks =
+    inconsistent,
+    same,
+    translated,
+    python-format,
+    python-brace-format
+
 [component "tgraph-bot.readme"]
+# Component for README documentation translations
 name = TGraph Bot README
 slug = tgraph-bot-readme
 repo = https://github.com/engels74/tgraph-bot-source.git
 push = git@github.com:engels74/tgraph-bot-source.git
 branch = main
+
+# File patterns for README translations
 filemask = docs/README.*.md
 template = README.md
+
+# Markdown file format
 file_format = md
+
+# Language handling
 new_lang = add
 language_regex = ^[a-z]{2}(_[A-Z]{2})?$
+
+# Workflow settings for documentation
+allow_translation_propagation = true
+enable_suggestions = true
+suggestion_voting = true
