@@ -11,6 +11,7 @@ import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
 from types import TracebackType
+from typing import TYPE_CHECKING
 
 import matplotlib.pyplot as plt
 import matplotlib.figure
@@ -23,31 +24,44 @@ from .utils import (
     censor_username,
 )
 
+if TYPE_CHECKING:
+    from config.schema import TGraphBotConfig
+
 logger = logging.getLogger(__name__)
 
 
 class BaseGraph(ABC):
     """Abstract base class defining the common interface for all graph types."""
-    
+
     def __init__(
         self,
+        config: "TGraphBotConfig | None" = None,
         width: int = 12,
         height: int = 8,
         dpi: int = 100,
-        background_color: str = "#ffffff"
+        background_color: str | None = None
     ) -> None:
         """
         Initialize the base graph.
 
         Args:
+            config: Configuration object containing graph settings
             width: Figure width in inches
             height: Figure height in inches
             dpi: Dots per inch for the figure
-            background_color: Background color for the graph
+            background_color: Background color for the graph (overrides config if provided)
 
         Raises:
             ValueError: If background_color is not a valid color format
         """
+        self.config: "TGraphBotConfig | None" = config
+
+        # Use background color from config if not explicitly provided
+        if background_color is None and config is not None:
+            background_color = config.GRAPH_BACKGROUND_COLOR
+        elif background_color is None:
+            background_color = "#ffffff"
+
         # Validate color format using utility function
         if not validate_color(background_color):
             raise ValueError(f"Invalid background color format: {background_color}")
@@ -77,7 +91,102 @@ class BaseGraph(ABC):
         self.axes.set_facecolor(self.background_color)
         
         return self.figure, self.axes
-        
+
+    def apply_seaborn_style(self) -> None:
+        """
+        Apply Seaborn styling based on configuration settings.
+
+        This method sets up the Seaborn style context for the graph,
+        including grid settings and overall aesthetic preferences.
+        """
+        import seaborn as sns
+
+        # Set the default Seaborn style
+        sns.set_style("whitegrid" if self.get_grid_enabled() else "white")
+
+        # Set color palette if available
+        if self.config is not None:
+            # Create a custom palette using TV and Movie colors
+            custom_palette = [self.config.TV_COLOR, self.config.MOVIE_COLOR]
+            sns.set_palette(custom_palette)
+
+    def get_grid_enabled(self) -> bool:
+        """
+        Get whether grid lines should be enabled for this graph.
+
+        Returns:
+            True if grid should be enabled, False otherwise
+        """
+        if self.config is not None:
+            return self.config.ENABLE_GRAPH_GRID
+        return False
+
+    def get_tv_color(self) -> str:
+        """
+        Get the color to use for TV shows in graphs.
+
+        Returns:
+            Hex color string for TV shows
+        """
+        if self.config is not None:
+            return self.config.TV_COLOR
+        return "#1f77b4"  # Default blue
+
+    def get_movie_color(self) -> str:
+        """
+        Get the color to use for movies in graphs.
+
+        Returns:
+            Hex color string for movies
+        """
+        if self.config is not None:
+            return self.config.MOVIE_COLOR
+        return "#ff7f0e"  # Default orange
+
+    def get_annotation_color(self) -> str:
+        """
+        Get the color to use for annotations in graphs.
+
+        Returns:
+            Hex color string for annotations
+        """
+        if self.config is not None:
+            return self.config.ANNOTATION_COLOR
+        return "#ff0000"  # Default red
+
+    def get_annotation_outline_color(self) -> str:
+        """
+        Get the outline color to use for annotations in graphs.
+
+        Returns:
+            Hex color string for annotation outlines
+        """
+        if self.config is not None:
+            return self.config.ANNOTATION_OUTLINE_COLOR
+        return "#000000"  # Default black
+
+    def is_annotation_outline_enabled(self) -> bool:
+        """
+        Get whether annotation outlines should be enabled.
+
+        Returns:
+            True if annotation outlines should be enabled, False otherwise
+        """
+        if self.config is not None:
+            return self.config.ENABLE_ANNOTATION_OUTLINE
+        return True  # Default enabled
+
+    def should_censor_usernames(self) -> bool:
+        """
+        Get whether usernames should be censored in this graph.
+
+        Returns:
+            True if usernames should be censored, False otherwise
+        """
+        if self.config is not None:
+            return self.config.CENSOR_USERNAMES
+        return True  # Default to censoring for privacy
+
     @abstractmethod
     def generate(self, data: dict[str, object]) -> str:
         """

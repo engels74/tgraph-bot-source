@@ -8,11 +8,14 @@ adding new graph implementations to the system.
 
 import logging
 from collections.abc import Sequence
-from typing import cast, override
+from typing import TYPE_CHECKING, cast, override
 
 import seaborn as sns
 
 from .base_graph import BaseGraph
+
+if TYPE_CHECKING:
+    from config.schema import TGraphBotConfig
 
 logger = logging.getLogger(__name__)
 
@@ -31,21 +34,29 @@ class SampleGraph(BaseGraph):
     
     def __init__(
         self,
+        config: "TGraphBotConfig | None" = None,
         width: int = 10,
         height: int = 6,
         dpi: int = 100,
-        background_color: str = "#ffffff"
+        background_color: str | None = None
     ) -> None:
         """
         Initialize the sample graph.
-        
+
         Args:
+            config: Configuration object containing graph settings
             width: Figure width in inches
-            height: Figure height in inches  
+            height: Figure height in inches
             dpi: Dots per inch for the figure
-            background_color: Background color for the graph
+            background_color: Background color for the graph (overrides config if provided)
         """
-        super().__init__(width, height, dpi, background_color)
+        super().__init__(
+            config=config,
+            width=width,
+            height=height,
+            dpi=dpi,
+            background_color=background_color
+        )
         
     @override
     def get_title(self) -> str:
