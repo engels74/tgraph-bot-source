@@ -2,13 +2,16 @@
 Utility functions for graph modules in TGraph Bot.
 
 This module contains utility functions used by the graph modules,
-such as date formatting, folder management, and username censoring.
+such as date formatting, folder management, username censoring,
+and data processing utilities.
 """
 
 import logging
 import re
+from collections import defaultdict
 from datetime import datetime, timedelta
 from pathlib import Path
+
 
 logger = logging.getLogger(__name__)
 
@@ -229,3 +232,287 @@ def validate_color(color: str) -> bool:
         return True
         
     return False
+
+
+# Data Processing Utilities for Graph Generation
+
+def validate_graph_data(data: dict[str, object], required_keys: list[str]) -> tuple[bool, str]:
+    """
+    Validate that graph data contains required keys and has valid structure.
+
+    Args:
+        data: Data dictionary to validate
+        required_keys: List of required keys that must be present
+
+    Returns:
+        Tuple of (is_valid, error_message)
+    """
+    # Check for required keys
+    missing_keys = [key for key in required_keys if key not in data]
+    if missing_keys:
+        return False, f"Missing required keys: {', '.join(missing_keys)}"
+
+    # Check for empty data
+    if not data:
+        return False, "Data dictionary is empty"
+
+    return True, ""
+
+
+def safe_get_nested_value(data: dict[str, object], keys: list[str], default: object = None) -> object:
+    """
+    Safely get a nested value from a dictionary using a list of keys.
+
+    Args:
+        data: Dictionary to search in
+        keys: List of keys to traverse (e.g., ['response', 'data', 'items'])
+        default: Default value to return if key path doesn't exist
+
+    Returns:
+        The value at the key path, or default if not found
+    """
+    current = data
+    for key in keys:
+        if isinstance(current, dict) and key in current:
+            current = current[key]
+        else:
+            return default
+    return current
+
+
+def process_play_history_data(raw_data: dict[str, object]) -> list[dict[str, object]]:
+    """
+    Process raw play history data from Tautulli API into a standardized format.
+
+    Args:
+        raw_data: Raw data from Tautulli API
+
+    Returns:
+        List of processed play history records
+
+    Raises:
+        ValueError: If data format is invalid
+    """
+    # Extract the actual data from the API response
+    history_data = safe_get_nested_value(raw_data, ['data'], [])
+
+    if not isinstance(history_data, list):
+        raise ValueError("Play history data must be a list")
+
+    processed_records = []
+
+    for record in history_data:  # pyright: ignore[reportUnknownVariableType]
+        if not isinstance(record, dict):
+            logger.warning("Skipping invalid record: not a dictionary")
+            continue
+
+        try:
+            # Extract and validate required fields
+            processed_record = {
+                'date': safe_get_nested_value(record, ['date'], ''),  # pyright: ignore[reportUnknownArgumentType]
+                'user': safe_get_nested_value(record, ['user'], ''),  # pyright: ignore[reportUnknownArgumentType]
+                'platform': safe_get_nested_value(record, ['platform'], ''),  # pyright: ignore[reportUnknownArgumentType]
+                'media_type': safe_get_nested_value(record, ['media_type'], ''),  # pyright: ignore[reportUnknownArgumentType]
+                'duration': safe_get_nested_value(record, ['duration'], 0),  # pyright: ignore[reportUnknownArgumentType]
+                'stopped': safe_get_nested_value(record, ['stopped'], 0),  # pyright: ignore[reportUnknownArgumentType]
+                'paused_counter': safe_get_nested_value(record, ['paused_counter'], 0),  # pyright: ignore[reportUnknownArgumentType]
+            }
+
+            # Convert timestamps to datetime objects if they're valid
+            if processed_record['date']:
+                try:
+                    # Safely convert to int, handling various input types
+                    if isinstance(processed_record['date'], (int, float)):
+                        timestamp = int(processed_record['date'])
+                    elif isinstance(processed_record['date'], str):
+                        timestamp = int(processed_record['date'])
+                    else:
+                        logger.warning(f"Invalid timestamp type: {type(processed_record['date'])}")
+                        continue
+
+                    processed_record['datetime'] = datetime.fromtimestamp(timestamp)
+                except (ValueError, TypeError) as e:
+                    logger.warning(f"Invalid timestamp: {processed_record['date']}, error: {e}")
+                    continue
+            else:
+                logger.warning("Missing date in record")
+                continue
+
+            processed_records.append(processed_record)  # pyright: ignore[reportUnknownMemberType]
+
+        except Exception as e:
+            logger.warning(f"Error processing record: {e}")
+            continue
+
+    logger.info(f"Processed {len(processed_records)} valid records from {len(history_data)} total")  # pyright: ignore[reportUnknownArgumentType]
+    return processed_records  # pyright: ignore[reportUnknownVariableType]
+
+
+def aggregate_by_date(records: list[dict[str, object]]) -> dict[str, int]:
+    """
+    Aggregate play records by date.
+
+    Args:
+        records: List of processed play history records
+
+    Returns:
+        Dictionary mapping date strings to play counts
+    """
+    date_counts: dict[str, int] = defaultdict(int)
+
+    for record in records:
+        if 'datetime' in record and isinstance(record['datetime'], datetime):
+            date_str = record['datetime'].strftime('%Y-%m-%d')
+            date_counts[date_str] += 1
+
+    return dict(date_counts)
+
+
+def aggregate_by_day_of_week(records: list[dict[str, object]]) -> dict[str, int]:
+    """
+    Aggregate play records by day of week.
+
+    Args:
+        records: List of processed play history records
+
+    Returns:
+        Dictionary mapping day names to play counts
+    """
+    day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    day_counts: dict[str, int] = {day: 0 for day in day_names}
+
+    for record in records:
+        if 'datetime' in record and isinstance(record['datetime'], datetime):
+            day_name = day_names[record['datetime'].weekday()]
+            day_counts[day_name] += 1
+
+    return day_counts
+
+
+def aggregate_by_hour_of_day(records: list[dict[str, object]]) -> dict[int, int]:
+    """
+    Aggregate play records by hour of day.
+
+    Args:
+        records: List of processed play history records
+
+    Returns:
+        Dictionary mapping hour (0-23) to play counts
+    """
+    hour_counts: dict[int, int] = {hour: 0 for hour in range(24)}
+
+    for record in records:
+        if 'datetime' in record and isinstance(record['datetime'], datetime):
+            hour = record['datetime'].hour
+            hour_counts[hour] += 1
+
+    return hour_counts
+
+
+def aggregate_by_month(records: list[dict[str, object]]) -> dict[str, int]:
+    """
+    Aggregate play records by month.
+
+    Args:
+        records: List of processed play history records
+
+    Returns:
+        Dictionary mapping month strings (YYYY-MM) to play counts
+    """
+    month_counts: dict[str, int] = defaultdict(int)
+
+    for record in records:
+        if 'datetime' in record and isinstance(record['datetime'], datetime):
+            month_str = record['datetime'].strftime('%Y-%m')
+            month_counts[month_str] += 1
+
+    return dict(month_counts)
+
+
+def aggregate_top_users(records: list[dict[str, object]], limit: int = 10, censor: bool = True) -> list[dict[str, object]]:
+    """
+    Aggregate play records to get top users by play count.
+
+    Args:
+        records: List of processed play history records
+        limit: Maximum number of users to return
+        censor: Whether to censor usernames
+
+    Returns:
+        List of user dictionaries with username and play count
+    """
+    user_counts: dict[str, int] = defaultdict(int)
+
+    for record in records:
+        username = record.get('user', 'Unknown')
+        if username and isinstance(username, str):
+            user_counts[username] += 1
+
+    # Sort by play count and take top N
+    sorted_users = sorted(user_counts.items(), key=lambda x: x[1], reverse=True)[:limit]
+
+    result = []
+    for username, count in sorted_users:
+        processed_username = censor_username(username) if censor else username
+        result.append({  # pyright: ignore[reportUnknownMemberType]
+            'username': processed_username,
+            'play_count': count
+        })
+
+    return result  # pyright: ignore[reportUnknownVariableType]
+
+
+def aggregate_top_platforms(records: list[dict[str, object]], limit: int = 10) -> list[dict[str, object]]:
+    """
+    Aggregate play records to get top platforms by play count.
+
+    Args:
+        records: List of processed play history records
+        limit: Maximum number of platforms to return
+
+    Returns:
+        List of platform dictionaries with platform name and play count
+    """
+    platform_counts: dict[str, int] = defaultdict(int)
+
+    for record in records:
+        platform = record.get('platform', 'Unknown')
+        if platform and isinstance(platform, str):
+            platform_counts[platform] += 1
+
+    # Sort by play count and take top N
+    sorted_platforms = sorted(platform_counts.items(), key=lambda x: x[1], reverse=True)[:limit]
+
+    result = []
+    for platform, count in sorted_platforms:
+        result.append({  # pyright: ignore[reportUnknownMemberType]
+            'platform': platform,
+            'play_count': count
+        })
+
+    return result  # pyright: ignore[reportUnknownVariableType]
+
+
+def handle_empty_data(graph_type: str) -> dict[str, object] | list[dict[str, object]]:
+    """
+    Generate appropriate empty data structure for different graph types.
+
+    Args:
+        graph_type: Type of graph (e.g., 'daily', 'users', 'platforms')
+
+    Returns:
+        Empty data structure appropriate for the graph type
+    """
+    if graph_type == 'daily':
+        return {}
+    elif graph_type == 'day_of_week':
+        day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        return {day: 0 for day in day_names}
+    elif graph_type == 'hour_of_day':
+        return {str(hour): 0 for hour in range(24)}
+    elif graph_type == 'month':
+        return {}
+    elif graph_type in ['users', 'platforms']:
+        return []
+    else:
+        return {}
