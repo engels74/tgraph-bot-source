@@ -122,6 +122,10 @@ class TGraphBot(commands.Bot):
         self._shutdown_event: asyncio.Event = asyncio.Event()
         self._is_shutting_down: bool = False
 
+        # Initialize update tracker for automated scheduling
+        from bot.update_tracker import UpdateTracker
+        self.update_tracker: UpdateTracker = UpdateTracker(self)
+
     def is_shutting_down(self) -> bool:
         """Check if the bot is currently shutting down."""
         return self._is_shutting_down
@@ -189,13 +193,155 @@ class TGraphBot(commands.Bot):
         """
         logger.info("Setting up background tasks...")
 
-        # TODO: Add actual background tasks here when implementing scheduled features
-        # Example:
-        # task = asyncio.create_task(self._periodic_health_check())
-        # self._background_tasks.add(task)
-        # task.add_done_callback(self._background_tasks.discard)
+        try:
+            # Setup automated graph update scheduler
+            await self._setup_update_scheduler()
+
+            # Add periodic health check task
+            _ = self.create_background_task(
+                self._periodic_health_check(),
+                "health_check"
+            )
+            logger.info("Health check task started")
+
+        except Exception as e:
+            logger.exception(f"Error setting up background tasks: {e}")
+            raise
 
         logger.info("Background tasks setup complete")
+
+    async def _setup_update_scheduler(self) -> None:
+        """Setup the automated graph update scheduler."""
+        try:
+            config = self.config_manager.get_current_config()
+
+            # Set up the update callback
+            self.update_tracker.set_update_callback(self._automated_graph_update)
+
+            # Start the scheduler with configuration
+            fixed_time = None if config.FIXED_UPDATE_TIME == "XX:XX" else config.FIXED_UPDATE_TIME
+            await self.update_tracker.start_scheduler(
+                update_days=config.UPDATE_DAYS,
+                fixed_update_time=fixed_time
+            )
+
+            logger.info(f"Update scheduler started (every {config.UPDATE_DAYS} days)")
+            if fixed_time:
+                logger.info(f"Fixed update time: {fixed_time}")
+
+        except Exception as e:
+            logger.exception(f"Failed to setup update scheduler: {e}")
+            raise
+
+    async def _automated_graph_update(self) -> None:
+        """
+        Automated graph update callback for the scheduler.
+
+        This method is called by the update tracker when it's time to generate
+        and post graphs automatically.
+        """
+        logger.info("Starting automated graph update")
+
+        try:
+            # Import here to avoid circular imports
+            from graphs.graph_manager import GraphManager
+            import discord
+
+            config = self.config_manager.get_current_config()
+
+            # Find the target channel for posting graphs
+            target_channel = self.get_channel(config.CHANNEL_ID)
+            if target_channel is None:
+                logger.error(f"Could not find Discord channel with ID: {config.CHANNEL_ID}")
+                return
+
+            # Verify channel is a text channel
+            if not isinstance(target_channel, discord.TextChannel):
+                logger.error(f"Channel {config.CHANNEL_ID} is not a text channel")
+                return
+
+            # Generate graphs
+            async with GraphManager(self.config_manager) as graph_manager:
+                graph_files = await graph_manager.generate_all_graphs(
+                    max_retries=3,
+                    timeout_seconds=300.0
+                )
+
+                if not graph_files:
+                    logger.warning("No graphs generated during automated update")
+                    return
+
+                # Post graphs to channel
+                success_count = await self._post_graphs_to_channel(target_channel, graph_files)
+
+                logger.info(f"Automated update complete: {success_count}/{len(graph_files)} graphs posted")
+
+        except Exception as e:
+            logger.exception(f"Error during automated graph update: {e}")
+            raise
+
+    async def _periodic_health_check(self) -> None:
+        """Periodic health check for background systems."""
+        while not self._shutdown_event.is_set():
+            try:
+                # Check update tracker health
+                if not self.update_tracker.is_scheduler_healthy():
+                    logger.warning("Update scheduler appears unhealthy, attempting restart")
+                    try:
+                        await self.update_tracker.restart_scheduler()
+                        logger.info("Update scheduler restarted successfully")
+                    except Exception as e:
+                        logger.error(f"Failed to restart update scheduler: {e}")
+
+                # Wait for next health check (every 5 minutes)
+                await asyncio.sleep(300)
+
+            except asyncio.CancelledError:
+                logger.debug("Health check task cancelled")
+                break
+            except Exception as e:
+                logger.exception(f"Error in health check: {e}")
+                await asyncio.sleep(60)  # Wait before retrying
+
+    async def _post_graphs_to_channel(
+        self,
+        channel: "discord.TextChannel",
+        graph_files: list[str]
+    ) -> int:
+        """
+        Post generated graph files to a Discord channel.
+
+        Args:
+            channel: Discord text channel to post to
+            graph_files: List of graph file paths to post
+
+        Returns:
+            Number of successfully posted graphs
+        """
+        import discord
+        from pathlib import Path
+
+        success_count = 0
+
+        for graph_file in graph_files:
+            try:
+                file_path = Path(graph_file)
+                if not file_path.exists():
+                    logger.warning(f"Graph file not found: {graph_file}")
+                    continue
+
+                # Create Discord file object
+                discord_file = discord.File(file_path, filename=file_path.name)
+
+                # Post to channel
+                _ = await channel.send(file=discord_file)
+                success_count += 1
+                logger.debug(f"Posted graph: {file_path.name}")
+
+            except Exception as e:
+                logger.error(f"Failed to post graph {graph_file}: {e}")
+
+        return success_count
 
     def create_background_task(self, coro: Coroutine[object, object, None], name: str | None = None) -> asyncio.Task[None]:
         """
@@ -314,6 +460,13 @@ class TGraphBot(commands.Bot):
         try:
             # Set shutdown event to signal other components
             self._shutdown_event.set()
+
+            # Stop update tracker
+            try:
+                await self.update_tracker.stop_scheduler()
+                logger.info("Update tracker stopped")
+            except Exception as e:
+                logger.error(f"Error stopping update tracker: {e}")
 
             # Clean up background tasks
             await self.cleanup_background_tasks()

@@ -10,13 +10,233 @@ import logging
 import re
 from datetime import datetime, time, timedelta
 from typing import TYPE_CHECKING
-from collections.abc import Callable
+from collections.abc import Callable, Awaitable
 from dataclasses import dataclass, field
+from enum import Enum
 
 if TYPE_CHECKING:
     from discord.ext import commands
 
 logger = logging.getLogger(__name__)
+
+
+class TaskStatus(Enum):
+    """Status of background tasks."""
+    IDLE = "idle"
+    RUNNING = "running"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+
+
+class BackgroundTaskManager:
+    """
+    Enhanced background task manager for handling multiple concurrent tasks.
+
+    Provides task lifecycle management, health monitoring, and graceful shutdown.
+    """
+
+    def __init__(self, restart_delay: float = 30.0) -> None:
+        """Initialize the background task manager."""
+        self._tasks: dict[str, asyncio.Task[None]] = {}
+        self._task_status: dict[str, TaskStatus] = {}
+        self._task_health: dict[str, datetime] = {}
+        self._shutdown_event: asyncio.Event = asyncio.Event()
+        self._health_check_task: asyncio.Task[None] | None = None
+        self._health_check_interval: float = 60.0  # 1 minute
+        self._restart_delay: float = restart_delay
+
+    async def start(self) -> None:
+        """Start the background task manager."""
+        logger.info("Starting background task manager")
+        self._shutdown_event.clear()
+
+        # Start health check task
+        self._health_check_task = asyncio.create_task(self._health_check_loop())
+
+    async def stop(self) -> None:
+        """Stop the background task manager and all managed tasks."""
+        logger.info("Stopping background task manager")
+        self._shutdown_event.set()
+
+        # Cancel health check task
+        if self._health_check_task:
+            _ = self._health_check_task.cancel()
+            try:
+                await self._health_check_task
+            except asyncio.CancelledError:
+                pass
+            self._health_check_task = None
+
+        # Cancel all managed tasks
+        for task_name, task in self._tasks.items():
+            logger.debug(f"Cancelling task: {task_name}")
+            _ = task.cancel()
+
+        # Wait for all tasks to complete
+        if self._tasks:
+            _ = await asyncio.gather(*self._tasks.values(), return_exceptions=True)
+
+        self._tasks.clear()
+        self._task_status.clear()
+        self._task_health.clear()
+
+    def add_task(
+        self,
+        name: str,
+        coro: Callable[[], Awaitable[None]],
+        restart_on_failure: bool = True
+    ) -> None:
+        """
+        Add a new background task.
+
+        Args:
+            name: Unique name for the task
+            coro: Coroutine function to run as background task
+            restart_on_failure: Whether to restart the task if it fails
+        """
+        if name in self._tasks:
+            logger.warning(f"Task {name} already exists, replacing it")
+            self.remove_task(name)
+
+        logger.info(f"Adding background task: {name}")
+        task = asyncio.create_task(self._task_wrapper(name, coro, restart_on_failure))
+        self._tasks[name] = task
+        self._task_status[name] = TaskStatus.RUNNING
+        self._task_health[name] = datetime.now()
+
+    def remove_task(self, name: str) -> None:
+        """
+        Remove and cancel a background task.
+
+        Args:
+            name: Name of the task to remove
+        """
+        if name not in self._tasks:
+            logger.warning(f"Task {name} not found")
+            return
+
+        logger.info(f"Removing background task: {name}")
+        task = self._tasks[name]
+        _ = task.cancel()
+
+        del self._tasks[name]
+        _ = self._task_status.pop(name, None)
+        _ = self._task_health.pop(name, None)
+
+    async def _task_wrapper(
+        self,
+        name: str,
+        coro: Callable[[], Awaitable[None]],
+        restart_on_failure: bool
+    ) -> None:
+        """
+        Wrapper for background tasks with error handling and restart logic.
+
+        Args:
+            name: Task name
+            coro: Coroutine function to run
+            restart_on_failure: Whether to restart on failure
+        """
+        while not self._shutdown_event.is_set():
+            try:
+                self._task_status[name] = TaskStatus.RUNNING
+                self._task_health[name] = datetime.now()
+
+                await coro()
+
+                # If we reach here, the task completed normally
+                self._task_status[name] = TaskStatus.IDLE
+                break
+
+            except asyncio.CancelledError:
+                logger.debug(f"Task {name} was cancelled")
+                self._task_status[name] = TaskStatus.CANCELLED
+                raise
+
+            except Exception as e:
+                logger.exception(f"Error in background task {name}: {e}")
+                self._task_status[name] = TaskStatus.FAILED
+
+                if not restart_on_failure:
+                    logger.error(f"Task {name} failed and restart is disabled")
+                    break
+
+                # Wait before restarting to avoid tight error loops
+                logger.info(f"Restarting task {name} in {self._restart_delay} seconds")
+
+                try:
+                    _ = await asyncio.wait_for(
+                        self._shutdown_event.wait(),
+                        timeout=self._restart_delay
+                    )
+                    # If we reach here, shutdown was requested
+                    break
+                except asyncio.TimeoutError:
+                    # Timeout is expected, continue with restart
+                    continue
+
+    async def _health_check_loop(self) -> None:
+        """Periodic health check for all managed tasks."""
+        try:
+            while not self._shutdown_event.is_set():
+                await self._perform_health_check()
+
+                try:
+                    _ = await asyncio.wait_for(
+                        self._shutdown_event.wait(),
+                        timeout=self._health_check_interval
+                    )
+                    break  # Shutdown requested
+                except asyncio.TimeoutError:
+                    continue  # Continue health checks
+
+        except asyncio.CancelledError:
+            logger.debug("Health check loop cancelled")
+            raise
+        except Exception as e:
+            logger.exception(f"Error in health check loop: {e}")
+
+    async def _perform_health_check(self) -> None:
+        """Perform health check on all tasks."""
+        current_time = datetime.now()
+        stale_threshold = timedelta(minutes=5)  # 5 minutes
+
+        for task_name, last_health in self._task_health.items():
+            if current_time - last_health > stale_threshold:
+                status = self._task_status.get(task_name, TaskStatus.FAILED)
+                logger.warning(
+                    f"Task {task_name} appears stale (last health: {last_health}, "
+                    + f"status: {status.value})"
+                )
+
+    def get_task_status(self, name: str) -> TaskStatus | None:
+        """Get the status of a specific task."""
+        return self._task_status.get(name)
+
+    def get_all_task_status(self) -> dict[str, dict[str, str | datetime | bool | None]]:
+        """Get status of all managed tasks."""
+        result: dict[str, dict[str, str | datetime | bool | None]] = {}
+        for name in self._tasks:
+            status = self._task_status.get(name, TaskStatus.FAILED)
+            health = self._task_health.get(name)
+            result[name] = {
+                "status": status.value,
+                "last_health": health,
+                "is_done": self._tasks[name].done(),
+                "is_cancelled": self._tasks[name].cancelled(),
+            }
+        return result
+
+    def is_healthy(self) -> bool:
+        """Check if all tasks are healthy."""
+        current_time = datetime.now()
+        stale_threshold = timedelta(minutes=5)
+
+        for _, last_health in self._task_health.items():
+            if current_time - last_health > stale_threshold:
+                return False
+
+        return True
 
 
 @dataclass
@@ -228,7 +448,12 @@ class UpdateSchedule:
 
 
 class UpdateTracker:
-    """Manages scheduling and tracking of automatic graph updates."""
+    """
+    Enhanced update tracker with background task management.
+
+    Manages scheduling and tracking of automatic graph updates using
+    the BackgroundTaskManager for robust task lifecycle management.
+    """
 
     def __init__(self, bot: "commands.Bot") -> None:
         """
@@ -238,20 +463,21 @@ class UpdateTracker:
             bot: The Discord bot instance
         """
         self.bot: "commands.Bot" = bot
-        self.update_task: asyncio.Task[None] | None = None
-        self.update_callback: Callable[[], None] | None = None
+        self.update_callback: Callable[[], Awaitable[None]] | None = None
+        self._task_manager: BackgroundTaskManager = BackgroundTaskManager()
 
         # Initialize scheduling components
         self._config: SchedulingConfig | None = None
         self._state: ScheduleState = ScheduleState()
         self._schedule: UpdateSchedule | None = None
+        self._is_started: bool = False
 
-    def set_update_callback(self, callback: Callable[[], None]) -> None:
+    def set_update_callback(self, callback: Callable[[], Awaitable[None]]) -> None:
         """
         Set the callback function to call when updates are triggered.
 
         Args:
-            callback: Function to call for graph updates
+            callback: Async function to call for graph updates
         """
         self.update_callback = callback
 
@@ -261,13 +487,13 @@ class UpdateTracker:
         fixed_update_time: str | None = None
     ) -> None:
         """
-        Start the automatic update scheduler.
+        Start the automatic update scheduler using BackgroundTaskManager.
 
         Args:
             update_days: Interval in days between updates
             fixed_update_time: Fixed time for updates (HH:MM format) or None
         """
-        if self.update_task is not None:
+        if self._is_started:
             logger.warning("Update scheduler already running")
             return
 
@@ -283,20 +509,33 @@ class UpdateTracker:
         if fixed_update_time and fixed_update_time != "XX:XX":
             logger.info(f"Fixed update time: {fixed_update_time}")
 
+        # Start the background task manager
+        await self._task_manager.start()
+
+        # Add the scheduler task
+        self._task_manager.add_task(
+            "update_scheduler",
+            self._scheduler_loop,
+            restart_on_failure=True
+        )
+
         self._state.start_scheduler()
-        self.update_task = asyncio.create_task(self._scheduler_loop())
-        
+        self._is_started = True
+
     async def stop_scheduler(self) -> None:
-        """Stop the automatic update scheduler."""
-        if self.update_task is not None:
-            _ = self.update_task.cancel()
-            try:
-                await self.update_task
-            except asyncio.CancelledError:
-                pass
-            self.update_task = None
-            self._state.stop_scheduler()
-            logger.info("Update scheduler stopped")
+        """Stop the automatic update scheduler and task manager."""
+        if not self._is_started:
+            logger.debug("Update scheduler not running")
+            return
+
+        logger.info("Stopping update scheduler")
+
+        # Stop the background task manager (this will cancel all tasks)
+        await self._task_manager.stop()
+
+        self._state.stop_scheduler()
+        self._is_started = False
+        logger.info("Update scheduler stopped")
 
     async def _scheduler_loop(self) -> None:
         """
@@ -354,7 +593,7 @@ class UpdateTracker:
 
         try:
             if self.update_callback:
-                await asyncio.to_thread(self.update_callback)
+                await self.update_callback()
             else:
                 logger.warning("No update callback set")
 
@@ -381,7 +620,7 @@ class UpdateTracker:
         Returns:
             The next update datetime or None if scheduler not running
         """
-        if self.update_task is None or self._schedule is None:
+        if not self._is_started or self._schedule is None:
             return None
 
         return self._state.next_update
@@ -395,22 +634,72 @@ class UpdateTracker:
         """
         return self._state.last_update
 
-    def get_scheduler_status(self) -> dict[str, str | int | datetime | None]:
+    def get_scheduler_status(self) -> dict[str, str | int | datetime | None | bool]:
         """
-        Get comprehensive scheduler status information.
+        Get comprehensive scheduler status information including task manager status.
 
         Returns:
             Dictionary containing scheduler status details
         """
+        task_status = self._task_manager.get_all_task_status()
+        scheduler_task_status = task_status.get("update_scheduler", {})
+
         return {
             "is_running": self._state.is_running,
+            "is_started": self._is_started,
             "last_update": self._state.last_update,
             "next_update": self._state.next_update,
             "consecutive_failures": self._state.consecutive_failures,
             "last_failure": self._state.last_failure,
             "config_update_days": self._config.update_days if self._config else None,
             "config_fixed_time": self._config.fixed_update_time if self._config else None,
+            "task_manager_healthy": self._task_manager.is_healthy(),
+            "scheduler_task_status": scheduler_task_status.get("status"),
+            "scheduler_task_health": scheduler_task_status.get("last_health"),
         }
+
+    def is_scheduler_healthy(self) -> bool:
+        """
+        Check if the scheduler and its background tasks are healthy.
+
+        Returns:
+            True if scheduler is running and healthy, False otherwise
+        """
+        if not self._is_started:
+            return False
+
+        # Check if task manager is healthy
+        if not self._task_manager.is_healthy():
+            return False
+
+        # Check if scheduler task is running
+        task_status = self._task_manager.get_task_status("update_scheduler")
+        if task_status != TaskStatus.RUNNING:
+            return False
+
+        return True
+
+    async def restart_scheduler(self) -> None:
+        """
+        Restart the scheduler with current configuration.
+
+        Useful for recovering from failures or applying configuration changes.
+        """
+        if not self._config:
+            logger.error("Cannot restart scheduler: no configuration available")
+            return
+
+        logger.info("Restarting update scheduler")
+
+        # Stop current scheduler
+        await self.stop_scheduler()
+
+        # Start with current configuration
+        fixed_time = None if self._config.fixed_update_time == "XX:XX" else self._config.fixed_update_time
+        await self.start_scheduler(
+            update_days=self._config.update_days,
+            fixed_update_time=fixed_time
+        )
 
     # Test helper methods (for testing purposes only)
     def _get_state_for_testing(self) -> ScheduleState:
