@@ -53,6 +53,9 @@ class MyStatsCog(commands.Cog):
             bot: The Discord bot instance
         """
         self.bot: commands.Bot = bot
+        # Store cooldown tracking
+        self._user_cooldowns: dict[int, float] = {}
+        self._global_cooldown: float = 0.0
 
     @property
     def tgraph_bot(self) -> "TGraphBot":
@@ -61,6 +64,60 @@ class MyStatsCog(commands.Cog):
         if not isinstance(self.bot, TGraphBot):
             raise TypeError("Bot must be a TGraphBot instance")
         return self.bot
+
+    def _check_cooldowns(self, interaction: discord.Interaction) -> tuple[bool, float]:
+        """
+        Check if the user is on cooldown for the my_stats command.
+
+        Args:
+            interaction: The Discord interaction
+
+        Returns:
+            Tuple of (is_on_cooldown, retry_after_seconds)
+        """
+        import time
+
+        current_time = time.time()
+        config = self.tgraph_bot.config_manager.get_current_config()
+
+        # Check global cooldown
+        global_cooldown_seconds = config.MY_STATS_GLOBAL_COOLDOWN_SECONDS
+        if global_cooldown_seconds > 0:
+            if current_time < self._global_cooldown:
+                return True, self._global_cooldown - current_time
+
+        # Check per-user cooldown
+        user_cooldown_seconds = config.MY_STATS_COOLDOWN_MINUTES * 60
+        if user_cooldown_seconds > 0:
+            user_id = interaction.user.id
+            if user_id in self._user_cooldowns:
+                if current_time < self._user_cooldowns[user_id]:
+                    return True, self._user_cooldowns[user_id] - current_time
+
+        return False, 0.0
+
+    def _update_cooldowns(self, interaction: discord.Interaction) -> None:
+        """
+        Update cooldown timers after successful command execution.
+
+        Args:
+            interaction: The Discord interaction
+        """
+        import time
+
+        current_time = time.time()
+        config = self.tgraph_bot.config_manager.get_current_config()
+
+        # Update global cooldown
+        global_cooldown_seconds = config.MY_STATS_GLOBAL_COOLDOWN_SECONDS
+        if global_cooldown_seconds > 0:
+            self._global_cooldown = current_time + global_cooldown_seconds
+
+        # Update per-user cooldown
+        user_cooldown_seconds = config.MY_STATS_COOLDOWN_MINUTES * 60
+        if user_cooldown_seconds > 0:
+            user_id = interaction.user.id
+            self._user_cooldowns[user_id] = current_time + user_cooldown_seconds
         
     @app_commands.command(
         name="my_stats",
@@ -88,6 +145,26 @@ class MyStatsCog(commands.Cog):
             interaction: The Discord interaction
             email: The user's Plex email address for identification
         """
+        # Check cooldowns first
+        is_on_cooldown, retry_after = self._check_cooldowns(interaction)
+        if is_on_cooldown:
+            cooldown_embed = create_error_embed(
+                title="Command on Cooldown",
+                description=f"Please wait {retry_after:.1f} seconds before using this command again."
+            )
+            _ = cooldown_embed.add_field(
+                name="Cooldown Type",
+                value="Per-user" if interaction.user.id in self._user_cooldowns else "Global",
+                inline=True
+            )
+            _ = cooldown_embed.add_field(
+                name="Retry After",
+                value=f"{retry_after:.1f} seconds",
+                inline=True
+            )
+            _ = await interaction.response.send_message(embed=cooldown_embed, ephemeral=True)
+            return
+
         # Basic email validation
         if not email or "@" not in email or "." not in email:
             error_embed = create_error_embed(
@@ -124,6 +201,9 @@ class MyStatsCog(commands.Cog):
         )
 
         _ = await interaction.response.send_message(embed=embed, ephemeral=True)
+
+        # Update cooldowns after successful acknowledgment
+        self._update_cooldowns(interaction)
 
         try:
             # Generate personal graphs using user_graph_manager
