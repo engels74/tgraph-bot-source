@@ -9,8 +9,7 @@ background tasks, and handles overall bot lifecycle and error management.
 import asyncio
 import logging
 import sys
-from pathlib import Path
-from typing import NoReturn
+from typing import override
 
 import discord
 from discord.ext import commands
@@ -54,7 +53,8 @@ class TGraphBot(commands.Bot):
         )
         
         self.start_time: float = 0.0
-        
+
+    @override
     async def setup_hook(self) -> None:
         """
         Setup hook called when the bot is starting up.
@@ -90,11 +90,13 @@ class TGraphBot(commands.Bot):
         # Record start time for uptime tracking
         import time
         self.start_time = time.time()
-        
+
+    @override
     async def on_error(self, event: str, *args: object, **kwargs: object) -> None:
         """Handle errors that occur during event processing."""
         logger.exception(f"Error in event {event}")
-        
+
+    @override
     async def close(self) -> None:
         """Clean shutdown of the bot."""
         logger.info("Shutting down TGraph Bot...")
