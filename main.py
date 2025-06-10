@@ -77,7 +77,7 @@ class TGraphBot(commands.Bot):
         logger.info(f"Internationalization setup for language: {config.LANGUAGE}")
 
         # Load command extensions
-        await load_extensions(self)
+        _ = await load_extensions(self)
         logger.info("Command extensions loaded")
 
         # TODO: Setup background tasks
