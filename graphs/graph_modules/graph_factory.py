@@ -6,16 +6,19 @@ graph classes based on the enabled settings in the configuration.
 """
 
 import logging
+from pathlib import Path
 from typing import TYPE_CHECKING
 from collections.abc import Mapping
 
 from .base_graph import BaseGraph
+from .utils import cleanup_old_files, ensure_graph_directory
 from .daily_play_count_graph import DailyPlayCountGraph
 from .play_count_by_dayofweek_graph import PlayCountByDayOfWeekGraph
 from .play_count_by_hourofday_graph import PlayCountByHourOfDayGraph
 from .play_count_by_month_graph import PlayCountByMonthGraph
 from .top_10_platforms_graph import Top10PlatformsGraph
 from .top_10_users_graph import Top10UsersGraph
+from .sample_graph import SampleGraph
 
 if TYPE_CHECKING:
     pass
@@ -69,6 +72,11 @@ class GraphFactory:
             logger.debug("Creating top 10 users graph")
             graphs.append(Top10UsersGraph())
 
+        # Sample graph for demonstration (disabled by default)
+        if self.config.get("ENABLE_SAMPLE_GRAPH", False):
+            logger.debug("Creating sample graph")
+            graphs.append(SampleGraph())
+
         logger.info(f"Created {len(graphs)} enabled graph instances")
         return graphs
         
@@ -92,6 +100,7 @@ class GraphFactory:
             "play_count_by_month": PlayCountByMonthGraph,
             "top_10_platforms": Top10PlatformsGraph,
             "top_10_users": Top10UsersGraph,
+            "sample_graph": SampleGraph,
         }
 
         graph_class = graph_type_map.get(graph_type)
@@ -117,6 +126,7 @@ class GraphFactory:
             "play_count_by_month": "ENABLE_PLAY_COUNT_BY_MONTH",
             "top_10_platforms": "ENABLE_TOP_10_PLATFORMS",
             "top_10_users": "ENABLE_TOP_10_USERS",
+            "sample_graph": "ENABLE_SAMPLE_GRAPH",
         }
 
         for graph_type, config_key in type_config_map.items():
@@ -124,3 +134,31 @@ class GraphFactory:
                 enabled_types.append(graph_type)
 
         return enabled_types
+
+    def setup_graph_environment(self, base_path: str = "graphs") -> Path:
+        """
+        Setup the graph environment by ensuring directories exist.
+
+        Args:
+            base_path: Base path for graph storage
+
+        Returns:
+            Path object for the graph directory
+        """
+        return ensure_graph_directory(base_path)
+
+    def cleanup_old_graphs(self, directory: Path | None = None, keep_days: int = 7) -> int:
+        """
+        Clean up old graph files from the output directory.
+
+        Args:
+            directory: Directory to clean up (defaults to graph directory)
+            keep_days: Number of days to keep files
+
+        Returns:
+            Number of files deleted
+        """
+        if directory is None:
+            directory = ensure_graph_directory()
+
+        return cleanup_old_files(directory, keep_days)

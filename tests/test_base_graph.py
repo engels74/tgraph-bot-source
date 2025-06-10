@@ -9,7 +9,7 @@ import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import matplotlib.pyplot as plt
+
 import pytest
 
 from graphs.graph_modules.base_graph import BaseGraph
@@ -18,7 +18,7 @@ from graphs.graph_modules.base_graph import BaseGraph
 class ConcreteGraph(BaseGraph):
     """Concrete implementation of BaseGraph for testing."""
     
-    def generate(self, data: dict[str, any]) -> str:  # pyright: ignore[reportExplicitAny]
+    def generate(self, data: dict[str, object]) -> str:
         """Generate a test graph."""
         self.setup_figure()
         if self.axes is not None:
@@ -28,7 +28,7 @@ class ConcreteGraph(BaseGraph):
         with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
             output_path = tmp.name
             
-        return self.save_figure(output_path)
+        return self.save_figure(output_path=output_path)
     
     def get_title(self) -> str:
         """Get the title for this test graph."""
@@ -89,7 +89,7 @@ class TestBaseGraph:
         graph = ConcreteGraph()
         
         with pytest.raises(ValueError, match="Figure not initialized"):
-            graph.save_figure("test.png")
+            graph.save_figure(output_path="test.png")
     
     def test_save_figure_creates_directory(self) -> None:
         """Test that save_figure creates output directory if it doesn't exist."""
@@ -104,7 +104,7 @@ class TestBaseGraph:
                 graph.axes.plot([1, 2, 3], [1, 4, 2])
             
             # Save figure
-            saved_path = graph.save_figure(str(output_path))
+            saved_path = graph.save_figure(output_path=str(output_path))
             
             assert saved_path == str(output_path)
             assert output_path.exists()
@@ -206,3 +206,83 @@ class TestBaseGraph:
         
         with pytest.raises(TypeError, match="Can't instantiate abstract class"):
             PartialGraph()  # pyright: ignore[reportAbstractUsage]
+
+    def test_color_validation_in_constructor(self) -> None:
+        """Test that invalid colors are rejected in constructor."""
+        with pytest.raises(ValueError, match="Invalid background color format"):
+            _ = ConcreteGraph(background_color="invalid_color")
+
+    def test_valid_hex_color_accepted(self) -> None:
+        """Test that valid hex colors are accepted."""
+        graph = ConcreteGraph(background_color="#ff0000")
+        assert graph.background_color == "#ff0000"
+
+    def test_valid_named_color_accepted(self) -> None:
+        """Test that valid named colors are accepted."""
+        graph = ConcreteGraph(background_color="red")
+        assert graph.background_color == "red"
+
+    def test_format_username_with_censoring(self) -> None:
+        """Test username formatting with censoring enabled."""
+        graph = ConcreteGraph()
+
+        # Test normal username
+        result = graph.format_username("testuser", censor_enabled=True)
+        assert result == "t******r"
+
+        # Test short username
+        result = graph.format_username("ab", censor_enabled=True)
+        assert result == "**"
+
+        # Test without censoring
+        result = graph.format_username("testuser", censor_enabled=False)
+        assert result == "testuser"
+
+    def test_save_figure_with_graph_type_generates_filename(self) -> None:
+        """Test that save_figure can generate filename using graph_type."""
+        graph = ConcreteGraph()
+        _ = graph.setup_figure()
+
+        if graph.axes is not None:
+            _ = graph.axes.plot([1, 2, 3], [1, 4, 2])
+
+        # Save with graph_type instead of output_path
+        saved_path = graph.save_figure(graph_type="test_graph")
+
+        # Verify file was created and path contains graph type
+        assert Path(saved_path).exists()
+        assert "test_graph" in saved_path
+        assert saved_path.endswith(".png")
+
+        # Clean up
+        Path(saved_path).unlink(missing_ok=True)
+        graph.cleanup()
+
+    def test_save_figure_with_user_id_in_filename(self) -> None:
+        """Test that save_figure includes user_id in generated filename."""
+        graph = ConcreteGraph()
+        _ = graph.setup_figure()
+
+        if graph.axes is not None:
+            _ = graph.axes.plot([1, 2, 3], [1, 4, 2])
+
+        # Save with graph_type and user_id
+        saved_path = graph.save_figure(graph_type="test_graph", user_id="user123")
+
+        # Verify file was created and path contains user ID
+        assert Path(saved_path).exists()
+        assert "test_graph" in saved_path
+        assert "user_user123" in saved_path
+        assert saved_path.endswith(".png")
+
+        # Clean up
+        Path(saved_path).unlink(missing_ok=True)
+        graph.cleanup()
+
+    def test_save_figure_requires_graph_type_when_no_output_path(self) -> None:
+        """Test that save_figure requires graph_type when output_path not provided."""
+        graph = ConcreteGraph()
+        _ = graph.setup_figure()
+
+        with pytest.raises(ValueError, match="Either output_path or graph_type must be provided"):
+            graph.save_figure()
