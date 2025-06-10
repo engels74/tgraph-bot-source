@@ -7,6 +7,7 @@ simplifies the plotting code and produces a more aesthetically pleasing result.
 """
 
 import logging
+from collections.abc import Mapping
 from typing import TYPE_CHECKING, override
 
 import pandas as pd
@@ -66,7 +67,7 @@ class DailyPlayCountGraph(BaseGraph):
         return "Daily Play Count"
 
     @override
-    def generate(self, data: dict[str, object]) -> str:
+    def generate(self, data: Mapping[str, object]) -> str:
         """
         Generate the daily play count graph using the provided data.
 

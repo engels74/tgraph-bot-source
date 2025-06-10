@@ -7,7 +7,7 @@ adding new graph implementations to the system.
 """
 
 import logging
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, cast, override
 
 import seaborn as sns
@@ -69,7 +69,7 @@ class SampleGraph(BaseGraph):
         return "Sample Data Visualization"
         
     @override
-    def generate(self, data: dict[str, object]) -> str:
+    def generate(self, data: Mapping[str, object]) -> str:
         """
         Generate the sample graph using the provided data.
         
@@ -164,7 +164,7 @@ class SampleGraph(BaseGraph):
             # Always cleanup matplotlib resources
             self.cleanup()
             
-    def validate_data(self, data: dict[str, object]) -> bool:
+    def validate_data(self, data: Mapping[str, object]) -> bool:
         """
         Validate input data for the sample graph.
         

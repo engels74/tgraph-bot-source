@@ -9,6 +9,7 @@ and data processing utilities.
 import logging
 import re
 from collections import defaultdict
+from collections.abc import Mapping
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -236,7 +237,7 @@ def validate_color(color: str) -> bool:
 
 # Data Processing Utilities for Graph Generation
 
-def validate_graph_data(data: dict[str, object], required_keys: list[str]) -> tuple[bool, str]:
+def validate_graph_data(data: Mapping[str, object], required_keys: list[str]) -> tuple[bool, str]:
     """
     Validate that graph data contains required keys and has valid structure.
 
@@ -259,7 +260,7 @@ def validate_graph_data(data: dict[str, object], required_keys: list[str]) -> tu
     return True, ""
 
 
-def safe_get_nested_value(data: dict[str, object], keys: list[str], default: object = None) -> object:
+def safe_get_nested_value(data: Mapping[str, object], keys: list[str], default: object = None) -> object:
     """
     Safely get a nested value from a dictionary using a list of keys.
 
@@ -280,7 +281,7 @@ def safe_get_nested_value(data: dict[str, object], keys: list[str], default: obj
     return current
 
 
-def process_play_history_data(raw_data: dict[str, object]) -> list[dict[str, object]]:
+def process_play_history_data(raw_data: Mapping[str, object]) -> list[dict[str, object]]:
     """
     Process raw play history data from Tautulli API into a standardized format.
 

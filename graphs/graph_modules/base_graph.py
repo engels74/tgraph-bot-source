@@ -9,6 +9,7 @@ library to draw onto.
 
 import logging
 from abc import ABC, abstractmethod
+from collections.abc import Mapping
 from pathlib import Path
 from types import TracebackType
 from typing import TYPE_CHECKING
@@ -203,7 +204,7 @@ class BaseGraph(ABC):
         return True  # Default to censoring for privacy
 
     @abstractmethod
-    def generate(self, data: dict[str, object]) -> str:
+    def generate(self, data: Mapping[str, object]) -> str:
         """
         Generate the graph using the provided data.
         

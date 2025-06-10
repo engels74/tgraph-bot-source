@@ -123,6 +123,7 @@ class TestSampleGraph:
         # Verify content
         x_values = sample_data['x_values']
         y_values = sample_data['y_values']
+        assert isinstance(x_values, list) and isinstance(y_values, list)
         assert len(x_values) == len(y_values)
         assert len(x_values) == 10  # Should be 1 to 10
         assert sample_data['title'] == 'Sample Data Points'
