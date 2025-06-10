@@ -8,9 +8,12 @@ It includes robust error handling for API timeouts, connection issues, and
 invalid responses, as well as caching results.
 """
 
+from __future__ import annotations
+
 import asyncio
 import logging
-from typing import Any, Optional
+from types import TracebackType
+from typing import Any
 from urllib.parse import urljoin
 
 import httpx
@@ -20,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 class DataFetcher:
     """Handles fetching data from the Tautulli API with async HTTP requests."""
-    
+
     def __init__(
         self,
         base_url: str,
@@ -30,26 +33,31 @@ class DataFetcher:
     ) -> None:
         """
         Initialize the data fetcher.
-        
+
         Args:
             base_url: Base URL for the Tautulli API
             api_key: API key for authentication
             timeout: Request timeout in seconds
             max_retries: Maximum number of retry attempts
         """
-        self.base_url = base_url.rstrip('/')
-        self.api_key = api_key
-        self.timeout = timeout
-        self.max_retries = max_retries
-        self._client: Optional[httpx.AsyncClient] = None
-        self._cache: dict[str, Any] = {}
-        
-    async def __aenter__(self) -> "DataFetcher":
+        self.base_url: str = base_url.rstrip('/')
+        self.api_key: str = api_key
+        self.timeout: float = timeout
+        self.max_retries: int = max_retries
+        self._client: httpx.AsyncClient | None = None
+        self._cache: dict[str, dict[str, Any]] = {}
+
+    async def __aenter__(self) -> DataFetcher:
         """Async context manager entry."""
         self._client = httpx.AsyncClient(timeout=self.timeout)
         return self
-        
-    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None
+    ) -> None:
         """Async context manager exit."""
         if self._client is not None:
             await self._client.aclose()
@@ -58,7 +66,7 @@ class DataFetcher:
     async def _make_request(
         self,
         endpoint: str,
-        params: Optional[dict[str, Any]] = None
+        params: dict[str, str | int | float | bool] | None = None
     ) -> dict[str, Any]:
         """
         Make an authenticated request to the Tautulli API.
@@ -78,33 +86,34 @@ class DataFetcher:
             raise RuntimeError("DataFetcher not initialized. Use as async context manager.")
             
         # Prepare request parameters
-        request_params = {
+        request_params: dict[str, str | int | float | bool] = {
             "apikey": self.api_key,
             "cmd": endpoint,
             **(params or {})
         }
-        
+
         url = urljoin(self.base_url, "/api/v2")
-        
+
         for attempt in range(self.max_retries + 1):
             try:
                 logger.debug(f"Making API request to {endpoint} (attempt {attempt + 1})")
-                
+
                 response = await self._client.get(url, params=request_params)
-                response.raise_for_status()
-                
-                data = response.json()
-                
+                _ = response.raise_for_status()
+
+                data = response.json()  # pyright: ignore[reportAny]
+
                 # Check for API-level errors
                 if not isinstance(data, dict):
                     raise ValueError("Invalid API response format")
-                    
-                if data.get("response", {}).get("result") != "success":
-                    error_msg = data.get("response", {}).get("message", "Unknown API error")
+
+                response_data = data.get("response", {})  # pyright: ignore[reportUnknownMemberType]
+                if response_data.get("result") != "success":  # pyright: ignore[reportUnknownMemberType]
+                    error_msg = response_data.get("message", "Unknown API error")  # pyright: ignore[reportUnknownMemberType]
                     raise ValueError(f"API error: {error_msg}")
-                    
+
                 logger.debug(f"Successfully fetched data from {endpoint}")
-                return data.get("response", {}).get("data", {})
+                return response_data.get("data", {})  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
                 
             except httpx.TimeoutException:
                 logger.warning(f"Timeout on attempt {attempt + 1} for {endpoint}")
@@ -124,7 +133,7 @@ class DataFetcher:
     async def get_play_history(
         self,
         time_range: int = 30,
-        user_id: Optional[int] = None
+        user_id: int | None = None
     ) -> dict[str, Any]:
         """
         Fetch play history data from Tautulli.
@@ -142,11 +151,11 @@ class DataFetcher:
             logger.debug(f"Using cached data for {cache_key}")
             return self._cache[cache_key]
             
-        params = {
+        params: dict[str, str | int | float | bool] = {
             "length": 1000,  # Maximum number of records
             "start": 0,
         }
-        
+
         if user_id is not None:
             params["user_id"] = user_id
             
