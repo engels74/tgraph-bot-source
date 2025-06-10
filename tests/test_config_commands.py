@@ -132,8 +132,8 @@ class TestConfigCog:
         mock_interaction: MagicMock
     ) -> None:
         """Test successful configuration viewing."""
-        # Call the method directly
-        _ = await config_cog.config_view(mock_interaction)
+        # Call the method directly using the callback
+        _ = await config_cog.config_view.callback(config_cog, mock_interaction)
 
         # Verify interaction response was called
         mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportUnknownMemberType]
@@ -167,70 +167,70 @@ class TestConfigCog:
 
     @pytest.mark.asyncio
     async def test_config_edit_invalid_setting(
-        self, 
-        config_cog: ConfigCog, 
+        self,
+        config_cog: ConfigCog,
         mock_interaction: MagicMock
     ) -> None:
         """Test configuration editing with invalid setting."""
-        await config_cog.config_edit(mock_interaction, "INVALID_SETTING", "value")
-        
+        _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "INVALID_SETTING", "value")
+
         # Verify error response was sent
         mock_interaction.response.send_message.assert_called_once()
         call_args = mock_interaction.response.send_message.call_args
         embed = call_args[1]['embed']
-        
+
         assert embed.title == "❌ Invalid Setting"
         assert "INVALID_SETTING" in embed.description
 
     @pytest.mark.asyncio
     async def test_config_edit_invalid_value(
-        self, 
-        config_cog: ConfigCog, 
+        self,
+        config_cog: ConfigCog,
         mock_interaction: MagicMock
     ) -> None:
         """Test configuration editing with invalid value."""
-        await config_cog.config_edit(mock_interaction, "UPDATE_DAYS", "not_a_number")
-        
+        _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "UPDATE_DAYS", "not_a_number")
+
         # Verify error response was sent
         mock_interaction.response.send_message.assert_called_once()
         call_args = mock_interaction.response.send_message.call_args
         embed = call_args[1]['embed']
-        
+
         assert embed.title == "❌ Invalid Value"
         assert "UPDATE_DAYS" in embed.description
 
     @pytest.mark.asyncio
     async def test_config_edit_validation_error(
-        self, 
-        config_cog: ConfigCog, 
+        self,
+        config_cog: ConfigCog,
         mock_interaction: MagicMock
     ) -> None:
         """Test configuration editing with validation error."""
         # Try to set UPDATE_DAYS to an invalid value (outside range)
-        await config_cog.config_edit(mock_interaction, "UPDATE_DAYS", "999")
-        
+        _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "UPDATE_DAYS", "999")
+
         # Verify error response was sent
         mock_interaction.response.send_message.assert_called_once()
         call_args = mock_interaction.response.send_message.call_args
         embed = call_args[1]['embed']
-        
+
         assert embed.title == "❌ Validation Error"
 
     @pytest.mark.asyncio
     async def test_config_edit_no_config_file(
-        self, 
-        config_cog: ConfigCog, 
+        self,
+        config_cog: ConfigCog,
         mock_interaction: MagicMock
     ) -> None:
         """Test configuration editing when config file doesn't exist."""
         with patch('pathlib.Path.exists', return_value=False):
-            await config_cog.config_edit(mock_interaction, "UPDATE_DAYS", "14")
-        
+            _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "UPDATE_DAYS", "14")
+
         # Verify error response was sent
         mock_interaction.response.send_message.assert_called_once()
         call_args = mock_interaction.response.send_message.call_args
         embed = call_args[1]['embed']
-        
+
         assert embed.title == "❌ Configuration File Not Found"
 
     @pytest.mark.asyncio
@@ -251,9 +251,9 @@ class TestConfigCog:
             try:
                 with patch('pathlib.Path.exists', return_value=True), \
                      patch('bot.commands.config.Path', return_value=temp_path), \
-                     patch.object(ConfigManager, 'save_config_with_comments') as mock_save:
-                    
-                    await config_cog.config_edit(mock_interaction, "UPDATE_DAYS", "14")
+                     patch.object(ConfigManager, 'save_config') as mock_save:
+
+                    _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "UPDATE_DAYS", "14")
                 
                 # Verify success response was sent
                 mock_interaction.response.send_message.assert_called_once()
@@ -277,9 +277,9 @@ class TestConfigCog:
     ) -> None:
         """Test configuration editing with save error."""
         with patch('pathlib.Path.exists', return_value=True), \
-             patch.object(ConfigManager, 'save_config_with_comments', side_effect=Exception("Save failed")):
-            
-            await config_cog.config_edit(mock_interaction, "UPDATE_DAYS", "14")
+             patch.object(ConfigManager, 'save_config', side_effect=Exception("Save failed")):
+
+            _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "UPDATE_DAYS", "14")
         
         # Verify error response was sent
         mock_interaction.response.send_message.assert_called_once()
