@@ -9,12 +9,16 @@ personalized graphs for a user.
 
 import asyncio
 import logging
+import time
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 from .graph_modules.data_fetcher import DataFetcher
 from .graph_modules.graph_factory import GraphFactory
 from .graph_modules.utils import cleanup_old_files, ensure_graph_directory
+
+# Import shared classes from graph_manager
+from .graph_manager import GraphGenerationError, ResourceCleanupError, ProgressTracker
 
 if TYPE_CHECKING:
     from config.manager import ConfigManager
@@ -72,45 +76,88 @@ class UserGraphManager:
         self._graph_factory = None
         logger.debug("UserGraphManager components cleaned up")
 
-    async def generate_user_graphs(self, user_email: str) -> list[str]:
+    async def generate_user_graphs(
+        self,
+        user_email: str,
+        progress_callback: Callable[[str, int, int, dict[str, object]], None] | None = None,
+        max_retries: int = 3,
+        timeout_seconds: float = 180.0
+    ) -> list[str]:
         """
-        Generate personal graphs for a specific user.
+        Generate personal graphs for a specific user with enhanced error handling.
 
         Args:
             user_email: The user's Plex email address
+            progress_callback: Optional callback for progress updates
+            max_retries: Maximum number of retry attempts for failed operations
+            timeout_seconds: Maximum time to wait for graph generation
 
         Returns:
             List of file paths to generated user graph images
 
         Raises:
             RuntimeError: If components are not initialized
-            Exception: If graph generation fails
+            GraphGenerationError: If graph generation fails after retries
+            asyncio.TimeoutError: If generation exceeds timeout
         """
         if self._data_fetcher is None or self._graph_factory is None:
             raise RuntimeError("UserGraphManager components not initialized. Use as async context manager.")
 
         logger.info(f"Starting personal graph generation for user: {user_email}")
 
-        try:
-            # Step 1: Fetch user-specific data from Tautulli API (async, non-blocking)
-            logger.debug(f"Fetching user data for {user_email}")
-            config = self.config_manager.get_current_config()
-            user_data = await self._fetch_user_graph_data(user_email, config.TIME_RANGE_DAYS)
+        # Initialize progress tracker
+        progress_tracker = ProgressTracker(progress_callback)
 
-            # Step 2: Generate graphs using asyncio.to_thread() (non-blocking)
-            logger.debug("Starting user graph generation in separate thread")
-            graph_files = await asyncio.to_thread(
-                self._generate_user_graphs_sync,
+        try:
+            # Step 1: Fetch user-specific data with retry logic
+            progress_tracker.update("Fetching user data from Tautulli API", 1, 3)
+            config = self.config_manager.get_current_config()
+
+            user_data = await self._fetch_user_graph_data_with_retry(
                 user_email,
-                user_data
+                config.TIME_RANGE_DAYS,
+                max_retries,
+                progress_tracker
             )
 
-            logger.info(f"Generated {len(graph_files)} personal graphs for {user_email}")
-            return graph_files
+            # Step 2: Validate user data
+            progress_tracker.update("Validating user data", 2, 3)
+            if not self._validate_user_graph_data(user_data, progress_tracker):
+                raise GraphGenerationError(f"Invalid or insufficient data for user {user_email}")
+
+            # Step 3: Generate graphs with timeout protection
+            progress_tracker.update("Generating user graphs in separate thread", 3, 3)
+            logger.debug("Starting user graph generation with timeout protection")
+
+            try:
+                graph_files = await asyncio.wait_for(
+                    asyncio.to_thread(self._generate_user_graphs_sync, user_email, user_data, progress_tracker),
+                    timeout=timeout_seconds
+                )
+            except asyncio.TimeoutError:
+                error_msg = f"User graph generation exceeded timeout of {timeout_seconds} seconds"
+                progress_tracker.add_error(error_msg)
+                raise asyncio.TimeoutError(error_msg)
+
+            # Final validation
+            valid_files = self._validate_generated_user_files(graph_files, user_email, progress_tracker)
+
+            summary = progress_tracker.get_summary()
+            logger.info(f"User graph generation completed for {user_email}: {len(valid_files)} files, " +
+                       f"{summary['error_count']} errors, {summary['warning_count']} warnings, " +
+                       f"total time: {summary['total_time']:.2f}s")
+
+            return valid_files
 
         except Exception as e:
-            logger.exception(f"Error generating personal graphs for {user_email}: {e}")
-            raise
+            progress_tracker.add_error(f"Critical error in user graph generation: {str(e)}")
+            summary = progress_tracker.get_summary()
+            logger.exception(f"User graph generation failed for {user_email} after {summary['total_time']:.2f}s: {e}")
+
+            if isinstance(e, (GraphGenerationError, asyncio.TimeoutError)):
+                raise
+            else:
+                raise GraphGenerationError(f"Unexpected error during user graph generation: {e}") from e
 
     async def _fetch_user_graph_data(self, user_email: str, time_range_days: int) -> dict[str, object]:
         """
@@ -169,19 +216,147 @@ class UserGraphManager:
             logger.exception(f"Error fetching user graph data for {user_email}: {e}")
             raise
 
-    def _generate_user_graphs_sync(self, user_email: str, data: dict[str, object]) -> list[str]:
+    async def _fetch_user_graph_data_with_retry(
+        self,
+        user_email: str,
+        time_range_days: int,
+        max_retries: int,
+        progress_tracker: ProgressTracker
+    ) -> dict[str, object]:
+        """
+        Fetch user graph data with retry logic and exponential backoff.
+
+        Args:
+            user_email: The user's Plex email address
+            time_range_days: Number of days to fetch data for
+            max_retries: Maximum number of retry attempts
+            progress_tracker: Progress tracker for error reporting
+
+        Returns:
+            Dictionary containing user-specific data needed for graph generation
+
+        Raises:
+            GraphGenerationError: If all retry attempts fail
+        """
+        last_exception: Exception | None = None
+
+        for attempt in range(max_retries + 1):
+            try:
+                if attempt > 0:
+                    delay = min(2.0 ** attempt, 30.0)  # Exponential backoff, max 30s
+                    progress_tracker.add_warning(f"Retrying user data fetch for {user_email} (attempt {attempt + 1}/{max_retries + 1}) after {delay}s delay")
+                    await asyncio.sleep(delay)
+
+                return await self._fetch_user_graph_data(user_email, time_range_days)
+
+            except Exception as e:
+                last_exception = e
+                error_msg = f"User data fetch attempt {attempt + 1} failed for {user_email}: {str(e)}"
+
+                if attempt < max_retries:
+                    progress_tracker.add_warning(error_msg)
+                    logger.warning(error_msg)
+                else:
+                    progress_tracker.add_error(f"All {max_retries + 1} user data fetch attempts failed for {user_email}")
+                    logger.error(f"Final user data fetch attempt failed for {user_email}: {e}")
+
+        # If we get here, all retries failed
+        raise GraphGenerationError(f"Failed to fetch user data for {user_email} after {max_retries + 1} attempts") from last_exception
+
+    def _validate_user_graph_data(self, data: dict[str, object], progress_tracker: ProgressTracker) -> bool:
+        """
+        Validate that the fetched user data is sufficient for graph generation.
+
+        Args:
+            data: The user data dictionary to validate
+            progress_tracker: Progress tracker for warning/error reporting
+
+        Returns:
+            True if data is valid, False otherwise
+        """
+        try:
+            # Check for required keys
+            required_keys = ["play_history", "user_email", "user_id", "user_info"]
+            for key in required_keys:
+                if key not in data:
+                    progress_tracker.add_error(f"Missing '{key}' in user data")
+                    return False
+
+            play_history = data["play_history"]
+            user_email = data["user_email"]
+
+            # Check if play_history has data
+            if not isinstance(play_history, dict):
+                progress_tracker.add_error(f"Play history is not a dictionary for user {user_email}")
+                return False
+
+            # Check for data content (this depends on Tautulli API structure)
+            if not play_history:
+                progress_tracker.add_warning(f"Play history is empty for user {user_email} - graphs may be minimal")
+                return True  # Empty data is still valid, just results in empty graphs
+
+            logger.debug(f"User data validation passed for {user_email}")
+            return True
+
+        except Exception as e:
+            progress_tracker.add_error(f"User data validation error: {str(e)}")
+            logger.exception(f"Error during user data validation: {e}")
+            return False
+
+    def _validate_generated_user_files(self, graph_files: list[str], user_email: str, progress_tracker: ProgressTracker) -> list[str]:
+        """
+        Validate that generated user graph files exist and are accessible.
+
+        Args:
+            graph_files: List of file paths to validate
+            user_email: User email for logging context
+            progress_tracker: Progress tracker for warning/error reporting
+
+        Returns:
+            List of valid file paths
+        """
+        valid_files: list[str] = []
+
+        for file_path in graph_files:
+            try:
+                path = Path(file_path)
+
+                if not path.exists():
+                    progress_tracker.add_error(f"Generated user file does not exist for {user_email}: {file_path}")
+                    continue
+
+                if not path.is_file():
+                    progress_tracker.add_error(f"User path is not a file for {user_email}: {file_path}")
+                    continue
+
+                if path.stat().st_size == 0:
+                    progress_tracker.add_warning(f"Generated user file is empty for {user_email}: {file_path}")
+                    continue
+
+                valid_files.append(file_path)
+
+            except Exception as e:
+                progress_tracker.add_error(f"Error validating user file {file_path} for {user_email}: {str(e)}")
+                logger.exception(f"User file validation error for {user_email} - {file_path}: {e}")
+
+        logger.debug(f"Validated {len(valid_files)}/{len(graph_files)} generated user files for {user_email}")
+        return valid_files
+
+    def _generate_user_graphs_sync(self, user_email: str, data: dict[str, object], progress_tracker: ProgressTracker | None = None) -> list[str]:
         """
         Synchronous user graph generation (runs in separate thread).
 
         Args:
             user_email: The user's Plex email address
-            data: Dictionary containing the data needed for graph generation (unused in placeholder)
+            data: Dictionary containing the data needed for graph generation
+            progress_tracker: Optional progress tracker for error reporting
 
         Returns:
             List of file paths to generated user graph images
 
         Raises:
             RuntimeError: If GraphFactory is not initialized
+            GraphGenerationError: If user graph generation fails
         """
         if self._graph_factory is None:
             raise RuntimeError("GraphFactory not initialized")
@@ -208,21 +383,35 @@ class UserGraphManager:
             user_specific_paths: list[str] = []
             for path in generated_paths:
                 if path:
-                    # Create user-specific filename
-                    original_filename = Path(path).name
-                    user_filename = f"{user_email.replace('@', '_at_')}_{original_filename}"
-                    user_path = user_graph_dir / user_filename
+                    try:
+                        # Create user-specific filename
+                        original_filename = Path(path).name
+                        user_filename = f"{user_email.replace('@', '_at_')}_{original_filename}"
+                        user_path = user_graph_dir / user_filename
 
-                    # Move file to user directory
-                    _ = Path(path).rename(user_path)
-                    user_specific_paths.append(str(user_path))
+                        # Move file to user directory
+                        _ = Path(path).rename(user_path)
+                        user_specific_paths.append(str(user_path))
+                    except Exception as e:
+                        error_msg = f"Failed to move graph file {path} for user {user_email}: {e}"
+                        if progress_tracker:
+                            progress_tracker.add_error(error_msg)
+                        logger.error(error_msg)
 
-            logger.debug(f"Generated {len(user_specific_paths)} user graphs synchronously")
+            if progress_tracker:
+                if not user_specific_paths:
+                    progress_tracker.add_warning(f"No user graphs were generated for {user_email}")
+                else:
+                    logger.debug(f"Generated {len(user_specific_paths)} user graphs synchronously for {user_email}")
+
             return user_specific_paths
 
         except Exception as e:
-            logger.exception(f"Error in synchronous user graph generation for {user_email}: {e}")
-            raise
+            error_msg = f"Error in synchronous user graph generation for {user_email}: {e}"
+            if progress_tracker:
+                progress_tracker.add_error(error_msg)
+            logger.exception(error_msg)
+            raise GraphGenerationError(error_msg) from e
         
     async def send_user_graphs_dm(
         self,
@@ -289,33 +478,70 @@ class UserGraphManager:
             logger.exception(f"Error sending graphs to user {user_id}: {e}")
             return False
             
-    async def cleanup_user_graphs(self, graph_files: list[str]) -> None:
+    async def cleanup_user_graphs(
+        self,
+        graph_files: list[str],
+        timeout_seconds: float = 30.0
+    ) -> dict[str, object]:
         """
-        Clean up temporary user graph files using async threading.
+        Clean up temporary user graph files using async threading with enhanced error handling.
 
         Args:
             graph_files: List of file paths to clean up
+            timeout_seconds: Maximum time to wait for cleanup operations
+
+        Returns:
+            Dictionary with cleanup statistics
+
+        Raises:
+            ResourceCleanupError: If cleanup fails
+            asyncio.TimeoutError: If cleanup exceeds timeout
         """
         logger.info(f"Cleaning up {len(graph_files)} temporary user graph files")
 
-        try:
-            # Use asyncio.to_thread() for file I/O operations
-            _ = await asyncio.to_thread(
-                self._cleanup_user_graphs_sync,
-                graph_files
-            )
+        start_time = time.time()
 
-            logger.info("Successfully cleaned up user graph files")
+        try:
+            # Use asyncio.to_thread() for file I/O operations with timeout
+            try:
+                deleted_count = await asyncio.wait_for(
+                    asyncio.to_thread(self._cleanup_user_graphs_sync, graph_files),
+                    timeout=timeout_seconds
+                )
+            except asyncio.TimeoutError:
+                error_msg = f"User graph cleanup exceeded timeout of {timeout_seconds} seconds"
+                logger.error(error_msg)
+                raise asyncio.TimeoutError(error_msg)
+
+            cleanup_time = time.time() - start_time
+            cleanup_stats: dict[str, object] = {
+                "files_deleted": deleted_count,
+                "total_files": len(graph_files),
+                "cleanup_time": cleanup_time,
+                "success": True
+            }
+
+            logger.info(f"Successfully cleaned up {deleted_count}/{len(graph_files)} user graph files in {cleanup_time:.2f}s")
+            return cleanup_stats
 
         except Exception as e:
-            logger.exception(f"Error cleaning up user graph files: {e}")
+            cleanup_time = time.time() - start_time
+            logger.exception(f"Error cleaning up user graph files after {cleanup_time:.2f}s: {e}")
 
-    def _cleanup_user_graphs_sync(self, graph_files: list[str]) -> None:
+            if isinstance(e, asyncio.TimeoutError):
+                raise
+            else:
+                raise ResourceCleanupError(f"Failed to cleanup user graph files: {e}") from e
+
+    def _cleanup_user_graphs_sync(self, graph_files: list[str]) -> int:
         """
         Synchronous cleanup of user graph files (runs in separate thread).
 
         Args:
             graph_files: List of file paths to clean up
+
+        Returns:
+            Number of files successfully deleted
         """
         deleted_count = 0
 
@@ -326,10 +552,15 @@ class UserGraphManager:
                     path_obj.unlink()
                     deleted_count += 1
                     logger.debug(f"Deleted user graph file: {file_path}")
+                elif path_obj.exists():
+                    logger.warning(f"Path exists but is not a file: {file_path}")
+                else:
+                    logger.debug(f"File already deleted or does not exist: {file_path}")
             except OSError as e:
                 logger.warning(f"Failed to delete user graph file {file_path}: {e}")
 
-        logger.debug(f"Cleaned up {deleted_count} user graph files")
+        logger.debug(f"Cleaned up {deleted_count}/{len(graph_files)} user graph files")
+        return deleted_count
 
     async def cleanup_old_user_graphs(self, user_email: str, keep_days: int | None = None) -> None:
         """
@@ -364,9 +595,9 @@ class UserGraphManager:
         user_id: int,
         user_email: str,
         bot: object  # Discord bot instance
-    ) -> bool:
+    ) -> dict[str, object]:
         """
-        Process a complete user statistics request with full async threading support.
+        Process a complete user statistics request with full async threading support and detailed reporting.
 
         Args:
             user_id: Discord user ID
@@ -374,9 +605,11 @@ class UserGraphManager:
             bot: Discord bot instance for sending DMs
 
         Returns:
-            True if successful, False otherwise
+            Dictionary with processing statistics and results
         """
         logger.info(f"Processing stats request for user {user_id} ({user_email})")
+
+        start_time = time.time()
 
         try:
             # Generate user graphs (uses async threading internally)
@@ -386,18 +619,38 @@ class UserGraphManager:
             success = await self.send_user_graphs_dm(user_id, graph_files, bot)
 
             # Cleanup temporary files (uses async threading)
-            await self.cleanup_user_graphs(graph_files)
+            cleanup_stats = await self.cleanup_user_graphs(graph_files)
 
             # Cleanup old user graphs (uses async threading)
             await self.cleanup_old_user_graphs(user_email)
 
-            if success:
-                logger.info(f"Successfully processed stats request for user {user_id}")
-            else:
-                logger.warning(f"Failed to send stats to user {user_id}")
+            processing_time = time.time() - start_time
 
-            return success
+            result_stats: dict[str, object] = {
+                "success": success,
+                "user_id": user_id,
+                "user_email": user_email,
+                "graphs_generated": len(graph_files),
+                "cleanup_stats": cleanup_stats,
+                "processing_time": processing_time
+            }
+
+            if success:
+                logger.info(f"Successfully processed stats request for user {user_id} in {processing_time:.2f}s")
+            else:
+                logger.warning(f"Failed to send stats to user {user_id} after {processing_time:.2f}s")
+
+            return result_stats
 
         except Exception as e:
-            logger.exception(f"Error processing stats request for user {user_id}: {e}")
-            return False
+            processing_time = time.time() - start_time
+            error_stats: dict[str, object] = {
+                "success": False,
+                "user_id": user_id,
+                "user_email": user_email,
+                "error": str(e),
+                "processing_time": processing_time
+            }
+
+            logger.exception(f"Error processing stats request for user {user_id} after {processing_time:.2f}s: {e}")
+            return error_stats
