@@ -33,11 +33,23 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    # Testing framework
     "pytest>=8.4.0",
     "pytest-asyncio>=1.0.0",
     "pytest-cov>=6.1.1",
+    
+    # Linting and formatting
+    "ruff>=0.11.13",
+    
+    # Type checking
     "basedpyright>=1.29.2",
-    "ruff>=0.1.0",
+    
+    # Translation/i18n utilities
+    "polib>=1.2.0",
+    
+    # Type stubs for better type safety
+    "types-PyYAML>=6.0.0",
+    "types-requests>=2.31.0",
 ]
 
 [project.urls]
@@ -86,10 +98,21 @@ exclude_lines = [
     "@(abc\\.)?abstractmethod",
 ]
 
+[tool.ruff]
+target-version = "py313"
+
+[tool.basedpyright]
+pythonVersion = "3.13"
+typeCheckingMode = "recommended"
+exclude = ["htmlcov", ".venv"]
+
 [dependency-groups]
 dev = [
+    "basedpyright>=1.29.2",
     "polib>=1.2.0",
     "pytest>=8.4.0",
     "pytest-asyncio>=1.0.0",
     "pytest-cov>=6.1.1",
+    "types-pyyaml>=6.0.12.20250516",
+    "types-requests>=2.32.0.20250602",
 ]
