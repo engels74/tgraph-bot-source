@@ -26,7 +26,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from graphs.graph_manager import GraphManager
-from utils.command_utils import create_error_embed, create_success_embed, create_info_embed
+from utils.command_utils import create_error_embed, create_success_embed, create_info_embed, create_cooldown_embed
 
 if TYPE_CHECKING:
     from main import TGraphBot
@@ -55,6 +55,9 @@ class UpdateGraphsCog(commands.Cog):
             bot: The Discord bot instance
         """
         self.bot: commands.Bot = bot
+        # Store cooldown tracking
+        self._user_cooldowns: dict[int, float] = {}
+        self._global_cooldown: float = 0.0
 
     @property
     def tgraph_bot(self) -> "TGraphBot":
@@ -63,7 +66,61 @@ class UpdateGraphsCog(commands.Cog):
         if not isinstance(self.bot, TGraphBot):
             raise TypeError("Bot must be a TGraphBot instance")
         return self.bot
-        
+
+    def _check_cooldowns(self, interaction: discord.Interaction) -> tuple[bool, float]:
+        """
+        Check if the user is on cooldown for the update_graphs command.
+
+        Args:
+            interaction: The Discord interaction
+
+        Returns:
+            Tuple of (is_on_cooldown, retry_after_seconds)
+        """
+        import time
+
+        current_time = time.time()
+        config = self.tgraph_bot.config_manager.get_current_config()
+
+        # Check global cooldown
+        global_cooldown_seconds = config.UPDATE_GRAPHS_GLOBAL_COOLDOWN_SECONDS
+        if global_cooldown_seconds > 0:
+            if current_time < self._global_cooldown:
+                return True, self._global_cooldown - current_time
+
+        # Check per-user cooldown
+        user_cooldown_seconds = config.UPDATE_GRAPHS_COOLDOWN_MINUTES * 60
+        if user_cooldown_seconds > 0:
+            user_id = interaction.user.id
+            if user_id in self._user_cooldowns:
+                if current_time < self._user_cooldowns[user_id]:
+                    return True, self._user_cooldowns[user_id] - current_time
+
+        return False, 0.0
+
+    def _update_cooldowns(self, interaction: discord.Interaction) -> None:
+        """
+        Update cooldown timers after successful command execution.
+
+        Args:
+            interaction: The Discord interaction
+        """
+        import time
+
+        current_time = time.time()
+        config = self.tgraph_bot.config_manager.get_current_config()
+
+        # Update global cooldown
+        global_cooldown_seconds = config.UPDATE_GRAPHS_GLOBAL_COOLDOWN_SECONDS
+        if global_cooldown_seconds > 0:
+            self._global_cooldown = current_time + global_cooldown_seconds
+
+        # Update per-user cooldown
+        user_cooldown_seconds = config.UPDATE_GRAPHS_COOLDOWN_MINUTES * 60
+        if user_cooldown_seconds > 0:
+            user_id = interaction.user.id
+            self._user_cooldowns[user_id] = current_time + user_cooldown_seconds
+
     @app_commands.command(
         name="update_graphs",
         description="Manually trigger server-wide graph generation and posting"
@@ -75,15 +132,23 @@ class UpdateGraphsCog(commands.Cog):
         Manually trigger server-wide graph generation and posting.
 
         This command:
-        1. Acknowledges the request with ephemeral message
-        2. Uses GraphManager for non-blocking graph generation
-        3. Posts generated graphs to configured Discord channel
-        4. Provides progress feedback and error handling
-        5. Respects configured cooldowns for rate limiting
+        1. Checks cooldowns and rate limits
+        2. Acknowledges the request with ephemeral message
+        3. Uses GraphManager for non-blocking graph generation
+        4. Posts generated graphs to configured Discord channel
+        5. Provides progress feedback and error handling
+        6. Updates cooldowns after successful execution
 
         Args:
             interaction: The Discord interaction
         """
+        # Check cooldowns first
+        is_on_cooldown, retry_after = self._check_cooldowns(interaction)
+        if is_on_cooldown:
+            cooldown_embed = create_cooldown_embed("update graphs", retry_after)
+            _ = await interaction.response.send_message(embed=cooldown_embed, ephemeral=True)
+            return
+
         # Acknowledge the command immediately
         embed = create_info_embed(
             title="Graph Update Started",
@@ -182,6 +247,9 @@ class UpdateGraphsCog(commands.Cog):
                     return
 
                 _ = await interaction.followup.send(embed=success_embed, ephemeral=True)
+
+                # Update cooldowns after successful execution
+                self._update_cooldowns(interaction)
 
         except Exception as e:
             logger.exception(f"Error updating graphs: {e}")

@@ -24,7 +24,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from graphs.user_graph_manager import UserGraphManager
-from utils.command_utils import create_error_embed, create_success_embed, create_info_embed
+from utils.command_utils import create_error_embed, create_success_embed, create_info_embed, create_cooldown_embed
 
 if TYPE_CHECKING:
     from main import TGraphBot
@@ -148,20 +148,7 @@ class MyStatsCog(commands.Cog):
         # Check cooldowns first
         is_on_cooldown, retry_after = self._check_cooldowns(interaction)
         if is_on_cooldown:
-            cooldown_embed = create_error_embed(
-                title="Command on Cooldown",
-                description=f"Please wait {retry_after:.1f} seconds before using this command again."
-            )
-            _ = cooldown_embed.add_field(
-                name="Cooldown Type",
-                value="Per-user" if interaction.user.id in self._user_cooldowns else "Global",
-                inline=True
-            )
-            _ = cooldown_embed.add_field(
-                name="Retry After",
-                value=f"{retry_after:.1f} seconds",
-                inline=True
-            )
+            cooldown_embed = create_cooldown_embed("personal statistics", retry_after)
             _ = await interaction.response.send_message(embed=cooldown_embed, ephemeral=True)
             return
 

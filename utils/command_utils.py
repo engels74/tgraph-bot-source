@@ -38,7 +38,7 @@ def create_error_embed(
         description=description,
         color=color
     )
-    embed.set_footer(text="TGraph Bot")
+    _ = embed.set_footer(text="TGraph Bot")
     return embed
 
 
@@ -66,7 +66,7 @@ def create_success_embed(
         description=description,
         color=color
     )
-    embed.set_footer(text="TGraph Bot")
+    _ = embed.set_footer(text="TGraph Bot")
     return embed
 
 
@@ -94,7 +94,7 @@ def create_info_embed(
         description=description,
         color=color
     )
-    embed.set_footer(text="TGraph Bot")
+    _ = embed.set_footer(text="TGraph Bot")
     return embed
 
 
@@ -128,11 +128,7 @@ def format_config_value(key: str, value: str | int | float | bool | None) -> str
             return "Empty"
         return str(value)
         
-    # Format numeric values
-    if isinstance(value, (int, float)):
-        return str(value)
-        
-    # Default formatting
+    # Default formatting for any other type
     return str(value)
 
 
@@ -153,7 +149,7 @@ def truncate_text(text: str, max_length: int = 1024) -> str:
     return text[:max_length - 3] + "..."
 
 
-def parse_time_string(time_str: str) -> Optional[tuple[int, int]]:
+def parse_time_string(time_str: str) -> tuple[int, int] | None:
     """
     Parse a time string in HH:MM format.
     
@@ -198,7 +194,7 @@ def format_uptime(seconds: int) -> str:
     minutes = (seconds % 3600) // 60
     remaining_seconds = seconds % 60
     
-    parts = []
+    parts: list[str] = []
     if days > 0:
         parts.append(f"{days} day{'s' if days != 1 else ''}")
     if hours > 0:
@@ -235,33 +231,72 @@ def create_progress_embed(
 ) -> discord.Embed:
     """
     Create an embed showing progress.
-    
+
     Args:
         title: Title for the progress embed
         current: Current progress value
         total: Total progress value
         description: Additional description
-        
+
     Returns:
         Discord embed showing progress
     """
     percentage = (current / total * 100) if total > 0 else 0
     progress_bar_length = 20
     filled_length = int(progress_bar_length * current // total) if total > 0 else 0
-    
+
     progress_bar = "█" * filled_length + "░" * (progress_bar_length - filled_length)
-    
+
     embed = discord.Embed(
         title=title,
         description=description,
         color=discord.Color.blue()
     )
-    
-    embed.add_field(
+
+    _ = embed.add_field(
         name="Progress",
         value=f"{progress_bar} {percentage:.1f}%\n{current}/{total}",
         inline=False
     )
-    
-    embed.set_footer(text="TGraph Bot")
+
+    _ = embed.set_footer(text="TGraph Bot")
+    return embed
+
+
+def create_cooldown_embed(
+    command_name: str,
+    retry_after_seconds: float
+) -> discord.Embed:
+    """
+    Create a standardized cooldown embed for commands.
+
+    Args:
+        command_name: Name of the command that is on cooldown
+        retry_after_seconds: Seconds until the command can be used again
+
+    Returns:
+        Discord embed for cooldown notification
+    """
+    # Format retry time
+    if retry_after_seconds >= 60:
+        retry_time = f"{retry_after_seconds / 60:.1f} minutes"
+    else:
+        retry_time = f"{retry_after_seconds:.0f} seconds"
+
+    embed = create_error_embed(
+        title="Command on Cooldown",
+        description=f"The {command_name} command is currently on cooldown."
+    )
+
+    _ = embed.add_field(
+        name="Retry After",
+        value=retry_time,
+        inline=True
+    )
+    _ = embed.add_field(
+        name="Reason",
+        value="This prevents server overload during graph generation",
+        inline=False
+    )
+
     return embed
