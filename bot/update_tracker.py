@@ -165,6 +165,9 @@ class UpdateSchedule:
                 days_to_add = (min_next_update.date() - next_update.date()).days
                 next_update += timedelta(days=days_to_add)
 
+                # Ensure we still have the correct time after adding days
+                next_update = datetime.combine(next_update.date(), fixed_time)
+
         return next_update
 
     def is_valid_schedule_time(self, schedule_time: datetime, current_time: datetime) -> bool:
@@ -189,39 +192,77 @@ class UpdateSchedule:
 
         return True
 
+    def calculate_time_until_next_update(self, current_time: datetime) -> timedelta:
+        """
+        Calculate the time remaining until the next update.
+
+        Args:
+            current_time: Current datetime for calculation reference
+
+        Returns:
+            Time remaining until next update
+        """
+        next_update = self.calculate_next_update(current_time)
+        return next_update - current_time
+
+    def should_skip_update(self, current_time: datetime) -> bool:
+        """
+        Determine if an update should be skipped due to recent failures.
+
+        Args:
+            current_time: Current datetime for calculation reference
+
+        Returns:
+            True if update should be skipped
+        """
+        # Skip if too many consecutive failures (exponential backoff)
+        if self.state.consecutive_failures >= 3:
+            if self.state.last_failure:
+                # Exponential backoff: 2^failures hours
+                failure_count = min(self.state.consecutive_failures, 6)  # Cap at 64 hours
+                backoff_hours = 1 << failure_count  # Bit shift for 2^failure_count
+                backoff_until = self.state.last_failure + timedelta(hours=backoff_hours)
+                return current_time < backoff_until
+
+        return False
+
 
 class UpdateTracker:
     """Manages scheduling and tracking of automatic graph updates."""
-    
+
     def __init__(self, bot: "commands.Bot") -> None:
         """
         Initialize the update tracker.
-        
+
         Args:
             bot: The Discord bot instance
         """
         self.bot: "commands.Bot" = bot
         self.update_task: asyncio.Task[None] | None = None
-        self.last_update: datetime | None = None
         self.update_callback: Callable[[], None] | None = None
+
+        # Initialize scheduling components
+        self._config: SchedulingConfig | None = None
+        self._state: ScheduleState = ScheduleState()
+        self._schedule: UpdateSchedule | None = None
 
     def set_update_callback(self, callback: Callable[[], None]) -> None:
         """
         Set the callback function to call when updates are triggered.
-        
+
         Args:
             callback: Function to call for graph updates
         """
         self.update_callback = callback
-        
+
     async def start_scheduler(
-        self, 
+        self,
         update_days: int = 7,
         fixed_update_time: str | None = None
     ) -> None:
         """
         Start the automatic update scheduler.
-        
+
         Args:
             update_days: Interval in days between updates
             fixed_update_time: Fixed time for updates (HH:MM format) or None
@@ -229,14 +270,21 @@ class UpdateTracker:
         if self.update_task is not None:
             logger.warning("Update scheduler already running")
             return
-            
+
+        # Initialize scheduling configuration
+        fixed_time_str = fixed_update_time if fixed_update_time else "XX:XX"
+        self._config = SchedulingConfig(
+            update_days=update_days,
+            fixed_update_time=fixed_time_str
+        )
+        self._schedule = UpdateSchedule(self._config, self._state)
+
         logger.info(f"Starting update scheduler (every {update_days} days)")
         if fixed_update_time and fixed_update_time != "XX:XX":
             logger.info(f"Fixed update time: {fixed_update_time}")
-            
-        self.update_task = asyncio.create_task(
-            self._scheduler_loop(update_days, fixed_update_time)
-        )
+
+        self._state.start_scheduler()
+        self.update_task = asyncio.create_task(self._scheduler_loop())
         
     async def stop_scheduler(self) -> None:
         """Stop the automatic update scheduler."""
@@ -247,125 +295,128 @@ class UpdateTracker:
             except asyncio.CancelledError:
                 pass
             self.update_task = None
+            self._state.stop_scheduler()
             logger.info("Update scheduler stopped")
 
-    async def _scheduler_loop(
-        self,
-        update_days: int,
-        fixed_update_time: str | None
-    ) -> None:
+    async def _scheduler_loop(self) -> None:
         """
         Main scheduler loop for automatic updates.
-        
-        Args:
-            update_days: Interval in days between updates
-            fixed_update_time: Fixed time for updates (HH:MM format) or None
+
+        Uses the configured scheduling logic to determine when updates should occur.
         """
         try:
             while True:
-                next_update = self._calculate_next_update(update_days, fixed_update_time)
-                wait_seconds = (next_update - datetime.now()).total_seconds()
-                
+                if self._schedule is None:
+                    logger.error("Scheduler loop started without proper configuration")
+                    break
+
+                current_time = datetime.now()
+
+                # Check if we should skip this update due to recent failures
+                if self._schedule.should_skip_update(current_time):
+                    logger.info("Skipping update due to recent failures (exponential backoff)")
+                    # Wait a bit before checking again
+                    await asyncio.sleep(300)  # 5 minutes
+                    continue
+
+                next_update = self._schedule.calculate_next_update(current_time)
+
+                # Validate the calculated schedule time
+                if not self._schedule.is_valid_schedule_time(next_update, current_time):
+                    logger.error(f"Invalid schedule time calculated: {next_update}")
+                    # Fallback to a simple interval
+                    next_update = current_time + timedelta(hours=1)
+
+                self._state.set_next_update(next_update)
+                wait_seconds = (next_update - current_time).total_seconds()
+
                 if wait_seconds > 0:
                     logger.info(f"Next update scheduled for: {next_update}")
                     await asyncio.sleep(wait_seconds)
-                
+
                 # Trigger update
                 await self._trigger_update()
-                
+
         except asyncio.CancelledError:
             logger.info("Scheduler loop cancelled")
             raise
         except Exception as e:
             logger.exception(f"Error in scheduler loop: {e}")
-            
-    def _calculate_next_update(
-        self,
-        update_days: int,
-        fixed_update_time: str | None
-    ) -> datetime:
-        """
-        Calculate the next update time.
-        
-        Args:
-            update_days: Interval in days between updates
-            fixed_update_time: Fixed time for updates (HH:MM format) or None
-            
-        Returns:
-            The next update datetime
-        """
-        now = datetime.now()
-        
-        if fixed_update_time and fixed_update_time != "XX:XX":
-            # Parse fixed time
-            try:
-                hour, minute = map(int, fixed_update_time.split(":"))
-                update_time = time(hour, minute)
-                
-                # Calculate next occurrence of this time
-                next_update = datetime.combine(now.date(), update_time)
-                
-                # If time has passed today, schedule for tomorrow
-                if next_update <= now:
-                    next_update += timedelta(days=1)
-                    
-                # If we have a last update, ensure we respect the update_days interval
-                if self.last_update:
-                    min_next_update = self.last_update + timedelta(days=update_days)
-                    if next_update < min_next_update:
-                        # Find next occurrence that respects the interval
-                        days_to_add = (min_next_update.date() - next_update.date()).days
-                        next_update += timedelta(days=days_to_add)
-                        
-                return next_update
-                
-            except ValueError:
-                logger.error(f"Invalid fixed update time format: {fixed_update_time}")
-                
-        # Fallback to interval-based scheduling
-        if self.last_update:
-            return self.last_update + timedelta(days=update_days)
-        else:
-            # First run - schedule for next interval
-            return now + timedelta(days=update_days)
-            
+            # Record the failure
+            if self._state:
+                self._state.record_failure(datetime.now(), e)
+            # Wait before retrying to avoid tight error loops
+            await asyncio.sleep(60)  # 1 minute
+
     async def _trigger_update(self) -> None:
         """Trigger a graph update."""
         logger.info("Triggering scheduled graph update")
-        
+
         try:
             if self.update_callback:
                 await asyncio.to_thread(self.update_callback)
             else:
                 logger.warning("No update callback set")
-                
-            self.last_update = datetime.now()
+
+            # Record successful update in state
+            update_time = datetime.now()
+            self._state.record_successful_update(update_time)
             logger.info("Scheduled update completed successfully")
-            
+
         except Exception as e:
             logger.exception(f"Error during scheduled update: {e}")
-            
+            # Record failure in state
+            self._state.record_failure(datetime.now(), e)
+            raise
+
     async def force_update(self) -> None:
         """Force an immediate update outside of the schedule."""
         logger.info("Forcing immediate graph update")
         await self._trigger_update()
-        
-    def get_next_update_time(
-        self,
-        update_days: int,
-        fixed_update_time: str | None
-    ) -> datetime | None:
+
+    def get_next_update_time(self) -> datetime | None:
         """
         Get the next scheduled update time.
-        
-        Args:
-            update_days: Interval in days between updates
-            fixed_update_time: Fixed time for updates (HH:MM format) or None
-            
+
         Returns:
             The next update datetime or None if scheduler not running
         """
-        if self.update_task is None:
+        if self.update_task is None or self._schedule is None:
             return None
-            
-        return self._calculate_next_update(update_days, fixed_update_time)
+
+        return self._state.next_update
+
+    def get_last_update_time(self) -> datetime | None:
+        """
+        Get the last update time.
+
+        Returns:
+            The last update datetime or None if no updates have occurred
+        """
+        return self._state.last_update
+
+    def get_scheduler_status(self) -> dict[str, str | int | datetime | None]:
+        """
+        Get comprehensive scheduler status information.
+
+        Returns:
+            Dictionary containing scheduler status details
+        """
+        return {
+            "is_running": self._state.is_running,
+            "last_update": self._state.last_update,
+            "next_update": self._state.next_update,
+            "consecutive_failures": self._state.consecutive_failures,
+            "last_failure": self._state.last_failure,
+            "config_update_days": self._config.update_days if self._config else None,
+            "config_fixed_time": self._config.fixed_update_time if self._config else None,
+        }
+
+    # Test helper methods (for testing purposes only)
+    def _get_state_for_testing(self) -> ScheduleState:
+        """Get the internal state for testing purposes."""
+        return self._state
+
+    async def _trigger_update_for_testing(self) -> None:
+        """Trigger update for testing purposes."""
+        await self._trigger_update()
