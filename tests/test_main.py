@@ -124,20 +124,63 @@ class TestTGraphBot:
         """Test on_error event handler."""
         config_manager = ConfigManager()
         bot = TGraphBot(config_manager)
-        
+
         # Should not raise an exception
         await bot.on_error("test_event", "arg1", "arg2", kwarg1="value1")
 
     @pytest.mark.asyncio
     async def test_close(self) -> None:
-        """Test bot close method."""
+        """Test close method for graceful shutdown."""
         config_manager = ConfigManager()
         bot = TGraphBot(config_manager)
-        
+
         # Mock the parent close method
         with patch.object(commands.Bot, "close", new_callable=AsyncMock) as mock_close:
             await bot.close()
             mock_close.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_discord_connection_intents(self) -> None:
+        """Test that Discord intents are properly configured for bot functionality."""
+        config_manager = ConfigManager()
+        bot = TGraphBot(config_manager)
+
+        # Verify required intents are enabled
+        assert bot.intents.message_content is True, "Message content intent required for commands"
+        assert bot.intents.guilds is True, "Guilds intent required for server information"
+
+        # Verify bot configuration
+        assert bot.command_prefix == "!"  # pyright: ignore[reportUnknownMemberType]
+        assert bot.help_command is None, "Custom help command should be used"
+
+    @pytest.mark.asyncio
+    async def test_discord_bot_connection_setup(self) -> None:
+        """Test that the bot is properly configured for Discord connection."""
+        config_manager = ConfigManager()
+
+        # Create a mock config with valid Discord token
+        mock_config = TGraphBotConfig(
+            TAUTULLI_API_KEY="test_key",
+            TAUTULLI_URL="http://localhost:8181/api/v2",
+            DISCORD_TOKEN="test_discord_token_1234567890",
+            CHANNEL_ID=123456789,
+        )
+        config_manager.set_current_config(mock_config)
+
+        bot = TGraphBot(config_manager)
+
+        # Verify bot is properly initialized for Discord connection
+        assert isinstance(bot, commands.Bot), "Bot should be a discord.py Bot instance"
+        assert bot.config_manager is config_manager, "Config manager should be accessible"
+
+        # Verify async/await patterns are used in event handlers
+        import inspect
+        assert inspect.iscoroutinefunction(bot.on_ready), "on_ready should be async"
+        assert inspect.iscoroutinefunction(bot.on_error), "on_error should be async"
+        assert inspect.iscoroutinefunction(bot.close), "close should be async"
+        assert inspect.iscoroutinefunction(bot.setup_hook), "setup_hook should be async"
+
+
 
 
 class TestMainFunction:
