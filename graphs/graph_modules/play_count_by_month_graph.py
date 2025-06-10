@@ -8,7 +8,16 @@ by month.
 import logging
 from typing import TYPE_CHECKING, override
 
+import pandas as pd
+import seaborn as sns
+
 from .base_graph import BaseGraph
+from .utils import (
+    validate_graph_data,
+    process_play_history_data,
+    aggregate_by_month,
+    handle_empty_data,
+)
 
 if TYPE_CHECKING:
     from config.schema import TGraphBotConfig
@@ -69,22 +78,90 @@ class PlayCountByMonthGraph(BaseGraph):
         logger.info("Generating play count by month graph")
         
         try:
-            # Setup figure and axes
+            # Step 1: Validate input data
+            is_valid, error_msg = validate_graph_data(data, ['response'])
+            if not is_valid:
+                raise ValueError(f"Invalid graph data: {error_msg}")
+
+            # Step 2: Process play history data
+            processed_records = process_play_history_data(data)
+            logger.info(f"Processed {len(processed_records)} play history records")
+
+            # Step 3: Aggregate data by month
+            if processed_records:
+                month_counts = aggregate_by_month(processed_records)
+                logger.info(f"Aggregated data for {len(month_counts)} months")
+            else:
+                logger.warning("No valid records found, using empty data")
+                month_data = handle_empty_data('month')
+                if isinstance(month_data, dict):
+                    month_counts = month_data
+                else:
+                    month_counts = {}
+
+            # Step 4: Setup figure and axes
             _, ax = self.setup_figure()
 
-            # TODO: Implement actual graph generation using Seaborn
-            # This will process the data and create a bar plot or line plot
-            # showing play counts for each month
+            # Step 5: Configure Seaborn styling
+            if self.config and self.config.ENABLE_GRAPH_GRID:
+                sns.set_style("whitegrid")
+            else:
+                sns.set_style("white")
 
-            # Placeholder implementation
-            _ = ax.text(0.5, 0.5, "Play Count by Month Graph\n(Not yet implemented)",
-                       ha='center', va='center', transform=ax.transAxes, fontsize=16)
-            _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold')
-            
-            # TODO: Apply Seaborn styling
-            # sns.set_style("whitegrid")
-            # sns.barplot(data=processed_data, x="month", y="play_count", ax=ax)
-            
+            # Step 6: Prepare data for Seaborn
+            if month_counts:
+                # Sort months chronologically
+                sorted_months = sorted(month_counts.items())
+                plot_data: list[dict[str, object]] = []
+                for month, count in sorted_months:
+                    plot_data.append({'month': month, 'play_count': count})
+
+                # Convert to DataFrame for Seaborn
+                df = pd.DataFrame(plot_data)
+
+                # Step 7: Create the line plot using Seaborn (better for time series)
+                color = self.config.TV_COLOR if self.config else "#1f77b4"
+                _ = sns.lineplot(
+                    data=df,
+                    x="month",
+                    y="play_count",
+                    ax=ax,
+                    color=color,
+                    marker='o',
+                    linewidth=2.5,
+                    markersize=8
+                )
+
+                # Step 8: Customize the plot
+                _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)
+                _ = ax.set_xlabel("Month", fontsize=14, fontweight='bold')
+                _ = ax.set_ylabel("Play Count", fontsize=14, fontweight='bold')
+
+                # Rotate x-axis labels for better readability
+                ax.tick_params(axis='x', rotation=45, labelsize=12)
+                ax.tick_params(axis='y', labelsize=12)
+
+                # Add value annotations if enabled
+                if self.config and getattr(self.config, 'ENABLE_ANNOTATION_OUTLINE', False):
+                    numeric_values = [v for v in month_counts.values() if isinstance(v, (int, float))]
+                    max_count = max(numeric_values) if numeric_values else 1
+                    for i, (month, count) in enumerate(sorted_months):
+                        if isinstance(count, (int, float)) and count > 0:
+                            _ = ax.text(  # pyright: ignore[reportUnknownMemberType]
+                                i, count + max_count * 0.01,
+                                f'{int(count)}',
+                                ha='center', va='bottom', fontsize=10, fontweight='bold'
+                            )
+            else:
+                # Handle empty data case
+                _ = ax.text(0.5, 0.5, "No data available for monthly play counts",
+                           ha='center', va='center', transform=ax.transAxes, fontsize=16)
+                _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold')
+
+            # Adjust layout to prevent label cutoff
+            if self.figure is not None:
+                self.figure.tight_layout()
+
             # Save the figure
             output_path = "graphs/play_count_by_month.png"
             return self.save_figure(output_path)

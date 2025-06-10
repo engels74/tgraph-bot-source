@@ -7,7 +7,16 @@ This module inherits from BaseGraph and uses Seaborn to plot the top 10 platform
 import logging
 from typing import TYPE_CHECKING, override
 
+import pandas as pd
+import seaborn as sns
+
 from .base_graph import BaseGraph
+from .utils import (
+    validate_graph_data,
+    process_play_history_data,
+    aggregate_top_platforms,
+    handle_empty_data,
+)
 
 if TYPE_CHECKING:
     from config.schema import TGraphBotConfig
@@ -68,22 +77,90 @@ class Top10PlatformsGraph(BaseGraph):
         logger.info("Generating top 10 platforms graph")
         
         try:
-            # Setup figure and axes
+            # Step 1: Validate input data
+            is_valid, error_msg = validate_graph_data(data, ['response'])
+            if not is_valid:
+                raise ValueError(f"Invalid graph data: {error_msg}")
+
+            # Step 2: Process play history data
+            processed_records = process_play_history_data(data)
+            logger.info(f"Processed {len(processed_records)} play history records")
+
+            # Step 3: Aggregate top platforms data
+            if processed_records:
+                top_platforms = aggregate_top_platforms(processed_records, limit=10)
+                logger.info(f"Found {len(top_platforms)} top platforms")
+            else:
+                logger.warning("No valid records found, using empty data")
+                platform_data = handle_empty_data('platforms')
+                if isinstance(platform_data, list):
+                    top_platforms = platform_data
+                else:
+                    top_platforms = []
+
+            # Step 4: Setup figure and axes
             _, ax = self.setup_figure()
 
-            # TODO: Implement actual graph generation using Seaborn
-            # This will process the data and create a horizontal bar plot
-            # showing the top 10 platforms by play count
+            # Step 5: Configure Seaborn styling
+            if self.config and self.config.ENABLE_GRAPH_GRID:
+                sns.set_style("whitegrid")
+            else:
+                sns.set_style("white")
 
-            # Placeholder implementation
-            _ = ax.text(0.5, 0.5, "Top 10 Platforms Graph\n(Not yet implemented)",
-                       ha='center', va='center', transform=ax.transAxes, fontsize=16)
-            _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold')
-            
-            # TODO: Apply Seaborn styling
-            # sns.set_style("whitegrid")
-            # sns.barplot(data=processed_data, x="play_count", y="platform", ax=ax, orient="h")
-            
+            # Step 6: Prepare data for Seaborn
+            if top_platforms:
+                # Convert to DataFrame for Seaborn
+                df = pd.DataFrame(top_platforms)
+
+                # Step 7: Create horizontal bar plot using Seaborn
+                color = self.config.TV_COLOR if self.config else "#1f77b4"
+                _ = sns.barplot(
+                    data=df,
+                    x="play_count",
+                    y="platform",
+                    ax=ax,
+                    color=color,
+                    alpha=0.8,
+                    orient="h"
+                )
+
+                # Step 8: Customize the plot
+                _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)
+                _ = ax.set_xlabel("Play Count", fontsize=14, fontweight='bold')
+                _ = ax.set_ylabel("Platform", fontsize=14, fontweight='bold')
+
+                # Adjust tick parameters
+                ax.tick_params(axis='x', labelsize=12)
+                ax.tick_params(axis='y', labelsize=12)
+
+                # Add value annotations if enabled
+                if self.config and getattr(self.config, 'ENABLE_ANNOTATION_OUTLINE', False):
+                    # Get max play count for positioning annotations
+                    play_counts: list[int | float] = []
+                    for p in top_platforms:
+                        count = p.get('play_count', 0)
+                        if isinstance(count, (int, float)):
+                            play_counts.append(count)
+                    max_play_count = max(play_counts) if play_counts else 1
+                    for bar in ax.patches:
+                        width = bar.get_width()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+                        if width and width > 0:  # Only annotate non-zero values
+                            _ = ax.text(  # pyright: ignore[reportUnknownMemberType]
+                                width + max_play_count * 0.01,  # pyright: ignore[reportUnknownArgumentType]
+                                bar.get_y() + bar.get_height()/2.,  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+                                f'{int(width)}',  # pyright: ignore[reportUnknownArgumentType]
+                                ha='left', va='center', fontsize=10, fontweight='bold'
+                            )
+            else:
+                # Handle empty data case
+                _ = ax.text(0.5, 0.5, "No platform data available",
+                           ha='center', va='center', transform=ax.transAxes, fontsize=16)
+                _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold')
+
+            # Adjust layout to prevent label cutoff
+            if self.figure is not None:
+                self.figure.tight_layout()
+
             # Save the figure
             output_path = "graphs/top_10_platforms.png"
             return self.save_figure(output_path)
