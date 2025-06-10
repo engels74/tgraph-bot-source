@@ -9,7 +9,6 @@ import logging
 import re
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -152,9 +151,9 @@ def sanitize_filename(filename: str) -> str:
 
 
 def generate_graph_filename(
-    graph_type: str, 
-    timestamp: Optional[datetime] = None,
-    user_id: Optional[str] = None
+    graph_type: str,
+    timestamp: datetime | None = None,
+    user_id: str | None = None
 ) -> str:
     """
     Generate a standardized filename for a graph.
