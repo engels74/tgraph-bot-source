@@ -12,15 +12,17 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+from graphs.user_graph_manager import UserGraphManager
+
 if TYPE_CHECKING:
-    pass
+    from main import TGraphBot
 
 logger = logging.getLogger(__name__)
 
 
 class MyStatsCog(commands.Cog):
     """Cog for personal statistics commands."""
-    
+
     def __init__(self, bot: commands.Bot) -> None:
         """
         Initialize the MyStats cog.
@@ -29,6 +31,14 @@ class MyStatsCog(commands.Cog):
             bot: The Discord bot instance
         """
         self.bot: commands.Bot = bot
+
+    @property
+    def tgraph_bot(self) -> "TGraphBot":
+        """Get the TGraphBot instance with type safety."""
+        from main import TGraphBot
+        if not isinstance(self.bot, TGraphBot):
+            raise TypeError("Bot must be a TGraphBot instance")
+        return self.bot
         
     @app_commands.command(
         name="my_stats",
@@ -58,38 +68,26 @@ class MyStatsCog(commands.Cog):
         )
 
         try:
-            # TODO: Generate personal graphs using user_graph_manager
-            # TODO: Send graphs via DM
-
-            # For now, send a placeholder message
-            embed = discord.Embed(
-                title="Personal Statistics",
-                description="Personal statistics generation not yet implemented",
-                color=discord.Color.orange()
-            )
-
-            _ = embed.add_field(
-                name="Email",
-                value=email,
-                inline=True
-            )
-
-            # Try to send DM
-            try:
-                _ = await interaction.user.send(embed=embed)
-
-                # Follow up to let user know DM was sent
-                _ = await interaction.followup.send(
-                    "Your personal statistics have been sent via DM!",
-                    ephemeral=True
+            # Generate personal graphs using user_graph_manager
+            async with UserGraphManager(self.tgraph_bot.config_manager) as user_graph_manager:
+                success = await user_graph_manager.process_user_stats_request(
+                    user_id=interaction.user.id,
+                    user_email=email,
+                    bot=self.bot
                 )
 
-            except discord.Forbidden:
-                # User has DMs disabled
-                _ = await interaction.followup.send(
-                    "I couldn't send you a DM. Please enable DMs from server members.",
-                    ephemeral=True
-                )
+                if success:
+                    # Follow up to let user know DM was sent
+                    _ = await interaction.followup.send(
+                        "Your personal statistics have been generated and sent via DM!",
+                        ephemeral=True
+                    )
+                else:
+                    # Error occurred during processing
+                    _ = await interaction.followup.send(
+                        "An error occurred while generating your statistics. Please check that your email is correct and try again later.",
+                        ephemeral=True
+                    )
                 
         except Exception as e:
             logger.exception(f"Error generating personal stats for {interaction.user}: {e}")

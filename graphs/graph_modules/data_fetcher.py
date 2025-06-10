@@ -13,10 +13,11 @@ from __future__ import annotations
 import asyncio
 import logging
 from types import TracebackType
-from typing import Any
 from urllib.parse import urljoin
 
 import httpx
+
+
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +46,7 @@ class DataFetcher:
         self.timeout: float = timeout
         self.max_retries: int = max_retries
         self._client: httpx.AsyncClient | None = None
-        self._cache: dict[str, dict[str, Any]] = {}
+        self._cache: dict[str, dict[str, object]] = {}
 
     async def __aenter__(self) -> DataFetcher:
         """Async context manager entry."""
@@ -67,7 +68,7 @@ class DataFetcher:
         self,
         endpoint: str,
         params: dict[str, str | int | float | bool] | None = None
-    ) -> dict[str, Any]:
+    ) -> dict[str, object]:
         """
         Make an authenticated request to the Tautulli API.
         
@@ -119,13 +120,15 @@ class DataFetcher:
                 logger.warning(f"Timeout on attempt {attempt + 1} for {endpoint}")
                 if attempt == self.max_retries:
                     raise
-                await asyncio.sleep(2 ** attempt)  # Exponential backoff
+                delay = 2.0 ** attempt  # Exponential backoff
+                await asyncio.sleep(delay)
                 
             except httpx.HTTPError as e:
                 logger.warning(f"HTTP error on attempt {attempt + 1} for {endpoint}: {e}")
                 if attempt == self.max_retries:
                     raise
-                await asyncio.sleep(2 ** attempt)
+                delay = 2.0 ** attempt
+                await asyncio.sleep(delay)
                 
         # This should never be reached due to the raise statements above
         raise RuntimeError("Unexpected error in request retry loop")
@@ -134,7 +137,7 @@ class DataFetcher:
         self,
         time_range: int = 30,
         user_id: int | None = None
-    ) -> dict[str, Any]:
+    ) -> dict[str, object]:
         """
         Fetch play history data from Tautulli.
         
@@ -166,7 +169,7 @@ class DataFetcher:
         
         return data
         
-    async def get_user_stats(self, user_id: int) -> dict[str, Any]:
+    async def get_user_stats(self, user_id: int) -> dict[str, object]:
         """
         Fetch statistics for a specific user.
         
@@ -189,7 +192,7 @@ class DataFetcher:
         
         return data
         
-    async def get_library_stats(self) -> dict[str, Any]:
+    async def get_library_stats(self) -> dict[str, object]:
         """
         Fetch library statistics.
         
@@ -209,6 +212,47 @@ class DataFetcher:
         
         return data
         
+    async def get_users(self) -> dict[str, object]:
+        """
+        Fetch all users from Tautulli.
+
+        Returns:
+            Users data containing list of all users
+        """
+        cache_key = "users"
+
+        if cache_key in self._cache:
+            logger.debug(f"Using cached data for {cache_key}")
+            return self._cache[cache_key]
+
+        data = await self._make_request("get_users")
+
+        # Cache the result
+        self._cache[cache_key] = data
+
+        return data
+
+    async def find_user_by_email(self, email: str) -> dict[str, object] | None:
+        """
+        Find a user by their email address.
+
+        Args:
+            email: The user's email address
+
+        Returns:
+            User data if found, None otherwise
+        """
+        users_data = await self.get_users()
+
+        # users_data should be a list of user dictionaries
+        if isinstance(users_data, list):
+            for user in users_data:
+                if isinstance(user, dict) and user.get("email") == email:  # pyright: ignore[reportUnknownMemberType]
+                    return user
+
+        logger.warning(f"User not found with email: {email}")
+        return None
+
     def clear_cache(self) -> None:
         """Clear the data cache."""
         self._cache.clear()

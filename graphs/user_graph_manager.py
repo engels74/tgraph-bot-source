@@ -132,22 +132,34 @@ class UserGraphManager:
         logger.debug(f"Fetching user graph data for {user_email} ({time_range_days} days)")
 
         try:
-            # TODO: Implement user ID lookup by email
-            # For now, we'll fetch general play history and filter by user
-            # In a real implementation, you'd want to:
-            # 1. Look up user ID by email from Tautulli
-            # 2. Fetch user-specific play history
+            # Look up user by email to get user ID
+            user_info = await self._data_fetcher.find_user_by_email(user_email)
+            if user_info is None:
+                raise ValueError(f"User not found with email: {user_email}")
 
-            # Fetch play history data for the user
+            # Extract user ID from user info
+            user_id = user_info.get("user_id")
+            if user_id is None:
+                raise ValueError(f"User ID not found for email: {user_email}")
+
+            # Convert user_id to int safely
+            if isinstance(user_id, (int, str)):
+                user_id_int = int(user_id)
+            else:
+                raise ValueError(f"Invalid user ID type for email: {user_email}")
+
+            # Fetch play history data for the specific user
             play_history = await self._data_fetcher.get_play_history(
                 time_range=time_range_days,
-                user_id=None  # TODO: Replace with actual user ID lookup
+                user_id=user_id_int
             )
 
             user_data: dict[str, object] = {
                 "play_history": play_history,
                 "time_range_days": time_range_days,
                 "user_email": user_email,
+                "user_id": user_id,
+                "user_info": user_info,
             }
 
             logger.debug(f"Successfully fetched user graph data for {user_email}")
@@ -157,7 +169,7 @@ class UserGraphManager:
             logger.exception(f"Error fetching user graph data for {user_email}: {e}")
             raise
 
-    def _generate_user_graphs_sync(self, user_email: str, data: dict[str, object]) -> list[str]:  # pyright: ignore[reportUnusedParameter]
+    def _generate_user_graphs_sync(self, user_email: str, data: dict[str, object]) -> list[str]:
         """
         Synchronous user graph generation (runs in separate thread).
 
@@ -179,50 +191,100 @@ class UserGraphManager:
         try:
             # Ensure user graph output directory exists
             user_graph_dir_path = f"graphs/output/users/{user_email.replace('@', '_at_')}"
-            _ = ensure_graph_directory(user_graph_dir_path)
+            user_graph_dir = ensure_graph_directory(user_graph_dir_path)
 
-            # TODO: Implement user-specific graph generation
-            # This would involve:
-            # 1. Filtering data for the specific user
-            # 2. Creating user-specific graph instances
-            # 3. Generating personalized graphs
-            # For now, we'll use a placeholder implementation
+            # Generate user-specific graphs using GraphFactory
+            # The data is already filtered for this specific user
+            logger.info(f"Generating personal graphs for {user_email}")
 
-            logger.info(f"Placeholder: Generating personal graphs for {user_email}")
-            # Return empty list for now - this will be implemented in future tasks
-            generated_paths: list[str] = []
+            # GraphFactory should be initialized in __aenter__
+            assert self._graph_factory is not None, "GraphFactory not initialized"
 
-            logger.debug(f"Generated {len(generated_paths)} user graphs synchronously")
-            return generated_paths
+            # Use GraphFactory to generate all enabled graphs with user-specific data
+            # This will create graphs filtered to the specific user's activity
+            generated_paths = self._graph_factory.generate_all_graphs(data)
+
+            # Move generated graphs to user-specific directory
+            user_specific_paths: list[str] = []
+            for path in generated_paths:
+                if path:
+                    # Create user-specific filename
+                    original_filename = Path(path).name
+                    user_filename = f"{user_email.replace('@', '_at_')}_{original_filename}"
+                    user_path = user_graph_dir / user_filename
+
+                    # Move file to user directory
+                    _ = Path(path).rename(user_path)
+                    user_specific_paths.append(str(user_path))
+
+            logger.debug(f"Generated {len(user_specific_paths)} user graphs synchronously")
+            return user_specific_paths
 
         except Exception as e:
             logger.exception(f"Error in synchronous user graph generation for {user_email}: {e}")
             raise
         
     async def send_user_graphs_dm(
-        self, 
-        user_id: int, 
-        graph_files: list[str]
+        self,
+        user_id: int,
+        graph_files: list[str],
+        bot: object  # Discord bot instance
     ) -> bool:
         """
         Send generated user graphs via Discord DM.
-        
+
         Args:
             user_id: Discord user ID
             graph_files: List of file paths to graph images
-            
+            bot: Discord bot instance for sending messages
+
         Returns:
             True if successful, False otherwise
         """
         logger.info(f"Sending {len(graph_files)} personal graphs to user {user_id}")
-        
+
         try:
-            # TODO: Implement Discord DM sending
-            # This will require bot instance and file handling
-            
-            logger.info(f"Placeholder: Sending graphs to user {user_id}")
-            return True
-            
+            import discord
+
+            # Get the Discord user - bot should be a discord.Client or discord.Bot
+            get_user_func = getattr(bot, 'get_user', None)
+            if get_user_func is None:
+                logger.error("Bot does not have get_user method")
+                return False
+            user = get_user_func(user_id)
+            if user is None:
+                logger.error(f"Could not find Discord user with ID {user_id}")
+                return False
+
+            # Create embed for the personal statistics
+            embed = discord.Embed(
+                title="📊 Your Personal Plex Statistics",
+                description="Here are your personalized viewing statistics!",
+                color=discord.Color.blue()
+            )
+
+            # Add some metadata
+            _ = embed.set_footer(text="Generated by TGraph Bot")
+
+            # Send graphs as files
+            files_to_send: list[discord.File] = []
+            for graph_path in graph_files:
+                if Path(graph_path).exists():
+                    files_to_send.append(discord.File(graph_path))
+
+            if files_to_send:
+                # Send the embed with attached files
+                send_result = await user.send(embed=embed, files=files_to_send)  # pyright: ignore[reportAny]
+                _ = send_result
+                logger.info(f"Successfully sent {len(files_to_send)} graphs to user {user_id}")
+                return True
+            else:
+                # Send just the embed if no files
+                send_result = await user.send(embed=embed)  # pyright: ignore[reportAny]
+                _ = send_result
+                logger.warning(f"No graph files found to send to user {user_id}")
+                return True
+
         except Exception as e:
             logger.exception(f"Error sending graphs to user {user_id}: {e}")
             return False
@@ -300,7 +362,8 @@ class UserGraphManager:
     async def process_user_stats_request(
         self,
         user_id: int,
-        user_email: str
+        user_email: str,
+        bot: object  # Discord bot instance
     ) -> bool:
         """
         Process a complete user statistics request with full async threading support.
@@ -308,6 +371,7 @@ class UserGraphManager:
         Args:
             user_id: Discord user ID
             user_email: User's Plex email address
+            bot: Discord bot instance for sending DMs
 
         Returns:
             True if successful, False otherwise
@@ -319,7 +383,7 @@ class UserGraphManager:
             graph_files = await self.generate_user_graphs(user_email)
 
             # Send via DM
-            success = await self.send_user_graphs_dm(user_id, graph_files)
+            success = await self.send_user_graphs_dm(user_id, graph_files, bot)
 
             # Cleanup temporary files (uses async threading)
             await self.cleanup_user_graphs(graph_files)
