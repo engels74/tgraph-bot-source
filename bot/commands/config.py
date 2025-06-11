@@ -16,20 +16,20 @@ from pydantic import ValidationError
 
 from config.manager import ConfigManager
 from config.schema import TGraphBotConfig
+from utils.base_command_cog import BaseCommandCog
+from utils.config_utils import ConfigurationHelper
 from utils.error_handler import (
-    ErrorContext,
-    handle_command_error,
     ValidationError as TGraphValidationError,
     ConfigurationError
 )
 
 if TYPE_CHECKING:
-    from main import TGraphBot
+    pass
 
 logger = logging.getLogger(__name__)
 
 
-class ConfigCog(commands.Cog):
+class ConfigCog(BaseCommandCog):
     """Cog for configuration management commands."""
 
     def __init__(self, bot: commands.Bot) -> None:
@@ -39,15 +39,11 @@ class ConfigCog(commands.Cog):
         Args:
             bot: The Discord bot instance
         """
-        self.bot: commands.Bot = bot
+        # Initialize base class (no cooldown needed for config commands)
+        super().__init__(bot)
 
-    @property
-    def tgraph_bot(self) -> "TGraphBot":
-        """Get the TGraphBot instance with type safety."""
-        from main import TGraphBot
-        if not isinstance(self.bot, TGraphBot):
-            raise TypeError("Bot must be a TGraphBot instance")
-        return self.bot
+        # Create configuration helper
+        self.config_helper: ConfigurationHelper = ConfigurationHelper(self.tgraph_bot.config_manager)
 
     def _convert_config_value(self, value: str, target_type: type) -> Any:  # pyright: ignore[reportExplicitAny]
         """
@@ -178,16 +174,8 @@ class ConfigCog(commands.Cog):
             _ = await interaction.response.send_message(embed=embed, ephemeral=True)
 
         except Exception as e:
-            # Create error context for comprehensive logging
-            context = ErrorContext(
-                user_id=interaction.user.id,
-                guild_id=interaction.guild.id if interaction.guild else None,
-                channel_id=interaction.channel.id if interaction.channel else None,
-                command_name="config_view"
-            )
-
-            # Use enhanced error handling
-            await handle_command_error(interaction, e, context)
+            # Use base class error handling
+            await self.handle_command_error(interaction, e, "config_view")
         
     @config_group.command(
         name="edit",
@@ -283,20 +271,12 @@ class ConfigCog(commands.Cog):
             _ = await interaction.response.send_message(embed=success_embed, ephemeral=True)
 
         except Exception as e:
-            # Create error context for comprehensive logging
-            context = ErrorContext(
-                user_id=interaction.user.id,
-                guild_id=interaction.guild.id if interaction.guild else None,
-                channel_id=interaction.channel.id if interaction.channel else None,
-                command_name="config_edit",
-                additional_context={
-                    "setting": setting,
-                    "value": value
-                }
-            )
-
-            # Use enhanced error handling
-            await handle_command_error(interaction, e, context)
+            # Use base class error handling with additional context
+            additional_context: dict[str, object] = {
+                "setting": setting,
+                "value": value
+            }
+            await self.handle_command_error(interaction, e, "config_edit", additional_context)
 
 
 async def setup(bot: commands.Bot) -> None:

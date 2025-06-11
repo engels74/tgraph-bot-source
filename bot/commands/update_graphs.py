@@ -16,7 +16,6 @@ Command Design Specifications:
 - File Upload: Automatic posting to configured Discord channel
 """
 
-import asyncio
 import logging
 from typing import TYPE_CHECKING
 
@@ -25,24 +24,24 @@ from discord import app_commands
 from discord.ext import commands
 
 from graphs.graph_manager import GraphManager
+from utils.base_command_cog import BaseCommandCog, BaseCooldownConfig
 from utils.command_utils import create_error_embed, create_success_embed, create_info_embed, create_cooldown_embed
+from utils.config_utils import ConfigurationHelper
 from utils.discord_file_utils import upload_files_to_channel
 from utils.error_handler import (
-    ErrorContext,
-    handle_command_error,
     APIError,
     NetworkError,
-    ConfigurationError,
     error_handler
 )
+from utils.progress_utils import ProgressCallbackManager
 
 if TYPE_CHECKING:
-    from main import TGraphBot
+    pass
 
 logger = logging.getLogger(__name__)
 
 
-class UpdateGraphsCog(commands.Cog):
+class UpdateGraphsCog(BaseCommandCog):
     """
     Cog for manual graph update commands.
 
@@ -62,72 +61,17 @@ class UpdateGraphsCog(commands.Cog):
         Args:
             bot: The Discord bot instance
         """
-        self.bot: commands.Bot = bot
-        # Store cooldown tracking
-        self._user_cooldowns: dict[int, float] = {}
-        self._global_cooldown: float = 0.0
+        # Configure cooldown settings for this command
+        cooldown_config = BaseCooldownConfig(
+            user_cooldown_config_key="UPDATE_GRAPHS_COOLDOWN_MINUTES",
+            global_cooldown_config_key="UPDATE_GRAPHS_GLOBAL_COOLDOWN_SECONDS"
+        )
 
-    @property
-    def tgraph_bot(self) -> "TGraphBot":
-        """Get the TGraphBot instance with type safety."""
-        from main import TGraphBot
-        if not isinstance(self.bot, TGraphBot):
-            raise TypeError("Bot must be a TGraphBot instance")
-        return self.bot
+        # Initialize base class with cooldown configuration
+        super().__init__(bot, cooldown_config)
 
-    def _check_cooldowns(self, interaction: discord.Interaction) -> tuple[bool, float]:
-        """
-        Check if the user is on cooldown for the update_graphs command.
-
-        Args:
-            interaction: The Discord interaction
-
-        Returns:
-            Tuple of (is_on_cooldown, retry_after_seconds)
-        """
-        import time
-
-        current_time = time.time()
-        config = self.tgraph_bot.config_manager.get_current_config()
-
-        # Check global cooldown
-        global_cooldown_seconds = config.UPDATE_GRAPHS_GLOBAL_COOLDOWN_SECONDS
-        if global_cooldown_seconds > 0:
-            if current_time < self._global_cooldown:
-                return True, self._global_cooldown - current_time
-
-        # Check per-user cooldown
-        user_cooldown_seconds = config.UPDATE_GRAPHS_COOLDOWN_MINUTES * 60
-        if user_cooldown_seconds > 0:
-            user_id = interaction.user.id
-            if user_id in self._user_cooldowns:
-                if current_time < self._user_cooldowns[user_id]:
-                    return True, self._user_cooldowns[user_id] - current_time
-
-        return False, 0.0
-
-    def _update_cooldowns(self, interaction: discord.Interaction) -> None:
-        """
-        Update cooldown timers after successful command execution.
-
-        Args:
-            interaction: The Discord interaction
-        """
-        import time
-
-        current_time = time.time()
-        config = self.tgraph_bot.config_manager.get_current_config()
-
-        # Update global cooldown
-        global_cooldown_seconds = config.UPDATE_GRAPHS_GLOBAL_COOLDOWN_SECONDS
-        if global_cooldown_seconds > 0:
-            self._global_cooldown = current_time + global_cooldown_seconds
-
-        # Update per-user cooldown
-        user_cooldown_seconds = config.UPDATE_GRAPHS_COOLDOWN_MINUTES * 60
-        if user_cooldown_seconds > 0:
-            user_id = interaction.user.id
-            self._user_cooldowns[user_id] = current_time + user_cooldown_seconds
+        # Create configuration helper
+        self.config_helper: ConfigurationHelper = ConfigurationHelper(self.tgraph_bot.config_manager)
 
     @app_commands.command(
         name="update_graphs",
@@ -151,7 +95,7 @@ class UpdateGraphsCog(commands.Cog):
             interaction: The Discord interaction
         """
         # Check cooldowns first
-        is_on_cooldown, retry_after = self._check_cooldowns(interaction)
+        is_on_cooldown, retry_after = self.check_cooldowns(interaction)
         if is_on_cooldown:
             cooldown_embed = create_cooldown_embed("update graphs", retry_after)
             _ = await interaction.response.send_message(embed=cooldown_embed, ephemeral=True)
@@ -176,31 +120,12 @@ class UpdateGraphsCog(commands.Cog):
         _ = await interaction.response.send_message(embed=embed, ephemeral=True)
 
         try:
-            # Get configuration for channel posting
-            config = self.tgraph_bot.config_manager.get_current_config()
-            target_channel = self.bot.get_channel(config.CHANNEL_ID)
+            # Validate Discord channel using helper
+            target_channel = self.config_helper.validate_discord_channel(self.bot)
 
-            if target_channel is None:
-                raise ConfigurationError(
-                    f"Could not find Discord channel with ID: {config.CHANNEL_ID}",
-                    user_message=f"Could not find Discord channel with ID: {config.CHANNEL_ID}. Please check the bot configuration."
-                )
-
-            # Verify channel is a text channel
-            if not isinstance(target_channel, discord.TextChannel):
-                raise ConfigurationError(
-                    f"Channel {config.CHANNEL_ID} is not a text channel",
-                    user_message=f"Channel {config.CHANNEL_ID} is not a text channel. Please configure a valid text channel."
-                )
-
-            # Progress tracking callback for user feedback (must be sync)
-            def progress_callback(message: str, current: int, total: int, metadata: dict[str, object]) -> None:
-                """Update user on progress (sync callback for GraphManager)."""
-                try:
-                    # Schedule the async update in the event loop
-                    _ = asyncio.create_task(self._update_progress_embed(interaction, message, current, total, metadata))
-                except Exception as e:
-                    logger.warning(f"Failed to schedule progress update: {e}")
+            # Create progress callback manager for real-time updates
+            progress_manager = ProgressCallbackManager(interaction, "Graph Generation")
+            progress_callback = progress_manager.create_progress_callback()
 
             # Generate graphs using GraphManager
             async with GraphManager(self.tgraph_bot.config_manager) as graph_manager:
@@ -253,76 +178,24 @@ class UpdateGraphsCog(commands.Cog):
                 _ = await interaction.followup.send(embed=success_embed, ephemeral=True)
 
                 # Update cooldowns after successful execution
-                self._update_cooldowns(interaction)
+                self.update_cooldowns(interaction)
 
         except Exception as e:
-            # Create error context for comprehensive logging
+            # Use base class error handling with additional context
             try:
-                config = self.tgraph_bot.config_manager.get_current_config()
-                target_channel_id = config.CHANNEL_ID
+                config = self.get_current_config()
+                additional_context: dict[str, object] = {"target_channel_id": config.CHANNEL_ID}
             except Exception:
-                target_channel_id = None
+                additional_context = {}
 
-            context = ErrorContext(
-                user_id=interaction.user.id,
-                guild_id=interaction.guild.id if interaction.guild else None,
-                channel_id=interaction.channel.id if interaction.channel else None,
-                command_name="update_graphs",
-                additional_context={
-                    "target_channel_id": target_channel_id
-                }
+            await self.handle_command_error(
+                interaction,
+                e,
+                "update_graphs",
+                additional_context
             )
 
-            # Use enhanced error handling
-            await handle_command_error(interaction, e, context)
 
-    async def _update_progress_embed(
-        self,
-        interaction: discord.Interaction,
-        message: str,
-        current: int,
-        total: int,
-        metadata: dict[str, object]
-    ) -> None:
-        """
-        Update the interaction with progress information.
-
-        Args:
-            interaction: The Discord interaction to update
-            message: Progress message
-            current: Current step
-            total: Total steps
-            metadata: Additional metadata
-        """
-        try:
-            progress_embed = create_info_embed(
-                title="Graph Generation Progress",
-                description=f"Step {current}/{total}: {message}"
-            )
-
-            # Add progress bar
-            progress_percentage = (current / total * 100) if total > 0 else 0
-            progress_bar_length = 20
-            filled_length = int(progress_bar_length * current // total) if total > 0 else 0
-            progress_bar = "█" * filled_length + "░" * (progress_bar_length - filled_length)
-
-            _ = progress_embed.add_field(
-                name="Progress",
-                value=f"`{progress_bar}` {progress_percentage:.1f}%",
-                inline=False
-            )
-
-            if metadata:
-                if "elapsed_time" in metadata:
-                    _ = progress_embed.add_field(
-                        name="Elapsed Time",
-                        value=f"{metadata['elapsed_time']:.1f}s",
-                        inline=True
-                    )
-
-            _ = await interaction.edit_original_response(embed=progress_embed)
-        except Exception as e:
-            logger.warning(f"Failed to update progress embed: {e}")
 
     @error_handler(retry_attempts=2, retry_delay=1.0)
     async def _post_graphs_to_channel(

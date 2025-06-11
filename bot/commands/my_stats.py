@@ -24,20 +24,18 @@ from discord import app_commands
 from discord.ext import commands
 
 from graphs.user_graph_manager import UserGraphManager
+from utils.base_command_cog import BaseCommandCog, BaseCooldownConfig
 from utils.command_utils import create_error_embed, create_success_embed, create_info_embed, create_cooldown_embed
-from utils.error_handler import (
-    ErrorContext,
-    handle_command_error,
-    ValidationError
-)
+from utils.config_utils import ConfigurationHelper
+from utils.error_handler import ValidationError
 
 if TYPE_CHECKING:
-    from main import TGraphBot
+    pass
 
 logger = logging.getLogger(__name__)
 
 
-class MyStatsCog(commands.Cog):
+class MyStatsCog(BaseCommandCog):
     """
     Cog for personal statistics commands.
 
@@ -57,72 +55,17 @@ class MyStatsCog(commands.Cog):
         Args:
             bot: The Discord bot instance
         """
-        self.bot: commands.Bot = bot
-        # Store cooldown tracking
-        self._user_cooldowns: dict[int, float] = {}
-        self._global_cooldown: float = 0.0
+        # Configure cooldown settings for this command
+        cooldown_config = BaseCooldownConfig(
+            user_cooldown_config_key="MY_STATS_COOLDOWN_MINUTES",
+            global_cooldown_config_key="MY_STATS_GLOBAL_COOLDOWN_SECONDS"
+        )
 
-    @property
-    def tgraph_bot(self) -> "TGraphBot":
-        """Get the TGraphBot instance with type safety."""
-        from main import TGraphBot
-        if not isinstance(self.bot, TGraphBot):
-            raise TypeError("Bot must be a TGraphBot instance")
-        return self.bot
+        # Initialize base class with cooldown configuration
+        super().__init__(bot, cooldown_config)
 
-    def _check_cooldowns(self, interaction: discord.Interaction) -> tuple[bool, float]:
-        """
-        Check if the user is on cooldown for the my_stats command.
-
-        Args:
-            interaction: The Discord interaction
-
-        Returns:
-            Tuple of (is_on_cooldown, retry_after_seconds)
-        """
-        import time
-
-        current_time = time.time()
-        config = self.tgraph_bot.config_manager.get_current_config()
-
-        # Check global cooldown
-        global_cooldown_seconds = config.MY_STATS_GLOBAL_COOLDOWN_SECONDS
-        if global_cooldown_seconds > 0:
-            if current_time < self._global_cooldown:
-                return True, self._global_cooldown - current_time
-
-        # Check per-user cooldown
-        user_cooldown_seconds = config.MY_STATS_COOLDOWN_MINUTES * 60
-        if user_cooldown_seconds > 0:
-            user_id = interaction.user.id
-            if user_id in self._user_cooldowns:
-                if current_time < self._user_cooldowns[user_id]:
-                    return True, self._user_cooldowns[user_id] - current_time
-
-        return False, 0.0
-
-    def _update_cooldowns(self, interaction: discord.Interaction) -> None:
-        """
-        Update cooldown timers after successful command execution.
-
-        Args:
-            interaction: The Discord interaction
-        """
-        import time
-
-        current_time = time.time()
-        config = self.tgraph_bot.config_manager.get_current_config()
-
-        # Update global cooldown
-        global_cooldown_seconds = config.MY_STATS_GLOBAL_COOLDOWN_SECONDS
-        if global_cooldown_seconds > 0:
-            self._global_cooldown = current_time + global_cooldown_seconds
-
-        # Update per-user cooldown
-        user_cooldown_seconds = config.MY_STATS_COOLDOWN_MINUTES * 60
-        if user_cooldown_seconds > 0:
-            user_id = interaction.user.id
-            self._user_cooldowns[user_id] = current_time + user_cooldown_seconds
+        # Create configuration helper
+        self.config_helper: ConfigurationHelper = ConfigurationHelper(self.tgraph_bot.config_manager)
         
     @app_commands.command(
         name="my_stats",
@@ -152,7 +95,7 @@ class MyStatsCog(commands.Cog):
         """
         try:
             # Check cooldowns first
-            is_on_cooldown, retry_after = self._check_cooldowns(interaction)
+            is_on_cooldown, retry_after = self.check_cooldowns(interaction)
             if is_on_cooldown:
                 cooldown_embed = create_cooldown_embed("personal statistics", retry_after)
                 _ = await interaction.response.send_message(embed=cooldown_embed, ephemeral=True)
@@ -189,7 +132,7 @@ class MyStatsCog(commands.Cog):
             _ = await interaction.response.send_message(embed=embed, ephemeral=True)
 
             # Update cooldowns after successful acknowledgment
-            self._update_cooldowns(interaction)
+            self.update_cooldowns(interaction)
 
             # Generate personal graphs using user_graph_manager
             async with UserGraphManager(self.tgraph_bot.config_manager) as user_graph_manager:
@@ -247,20 +190,18 @@ class MyStatsCog(commands.Cog):
                     _ = await interaction.followup.send(embed=error_embed, ephemeral=True)
 
         except Exception as e:
-            # Create error context for comprehensive logging
-            context = ErrorContext(
-                user_id=interaction.user.id,
-                guild_id=interaction.guild.id if interaction.guild else None,
-                channel_id=interaction.channel.id if interaction.channel else None,
-                command_name="my_stats",
-                additional_context={
-                    "email": email,
-                    "email_domain": email.split("@")[-1] if "@" in email else None
-                }
-            )
+            # Use base class error handling with additional context
+            additional_context: dict[str, object] = {
+                "email": email,
+                "email_domain": email.split("@")[-1] if "@" in email else None
+            }
 
-            # Use enhanced error handling
-            await handle_command_error(interaction, e, context)
+            await self.handle_command_error(
+                interaction,
+                e,
+                "my_stats",
+                additional_context
+            )
 
 
 async def setup(bot: commands.Bot) -> None:
