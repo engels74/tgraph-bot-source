@@ -25,6 +25,11 @@ from discord.ext import commands
 
 from graphs.user_graph_manager import UserGraphManager
 from utils.command_utils import create_error_embed, create_success_embed, create_info_embed, create_cooldown_embed
+from utils.error_handler import (
+    ErrorContext,
+    handle_command_error,
+    ValidationError
+)
 
 if TYPE_CHECKING:
     from main import TGraphBot
@@ -145,54 +150,47 @@ class MyStatsCog(commands.Cog):
             interaction: The Discord interaction
             email: The user's Plex email address for identification
         """
-        # Check cooldowns first
-        is_on_cooldown, retry_after = self._check_cooldowns(interaction)
-        if is_on_cooldown:
-            cooldown_embed = create_cooldown_embed("personal statistics", retry_after)
-            _ = await interaction.response.send_message(embed=cooldown_embed, ephemeral=True)
-            return
-
-        # Basic email validation
-        if not email or "@" not in email or "." not in email:
-            error_embed = create_error_embed(
-                title="Invalid Email",
-                description="Please provide a valid email address."
-            )
-            _ = error_embed.add_field(
-                name="Example",
-                value="user@example.com",
-                inline=False
-            )
-            _ = await interaction.response.send_message(embed=error_embed, ephemeral=True)
-            return
-
-        # Acknowledge the command with informative message
-        embed = create_info_embed(
-            title="Personal Statistics Request",
-            description="Generating your personal Plex statistics... This may take a moment."
-        )
-        _ = embed.add_field(
-            name="Email",
-            value=email,
-            inline=True
-        )
-        _ = embed.add_field(
-            name="Delivery Method",
-            value="Direct Message (DM)",
-            inline=True
-        )
-        _ = embed.add_field(
-            name="Estimated Time",
-            value="1-3 minutes",
-            inline=True
-        )
-
-        _ = await interaction.response.send_message(embed=embed, ephemeral=True)
-
-        # Update cooldowns after successful acknowledgment
-        self._update_cooldowns(interaction)
-
         try:
+            # Check cooldowns first
+            is_on_cooldown, retry_after = self._check_cooldowns(interaction)
+            if is_on_cooldown:
+                cooldown_embed = create_cooldown_embed("personal statistics", retry_after)
+                _ = await interaction.response.send_message(embed=cooldown_embed, ephemeral=True)
+                return
+
+            # Enhanced email validation
+            if not email or "@" not in email or "." not in email or len(email) < 5:
+                raise ValidationError(
+                    f"Invalid email format: {email}",
+                    user_message="Please provide a valid email address (e.g., user@example.com)."
+                )
+
+            # Acknowledge the command with informative message
+            embed = create_info_embed(
+                title="Personal Statistics Request",
+                description="Generating your personal Plex statistics... This may take a moment."
+            )
+            _ = embed.add_field(
+                name="Email",
+                value=email,
+                inline=True
+            )
+            _ = embed.add_field(
+                name="Delivery Method",
+                value="Direct Message (DM)",
+                inline=True
+            )
+            _ = embed.add_field(
+                name="Estimated Time",
+                value="1-3 minutes",
+                inline=True
+            )
+
+            _ = await interaction.response.send_message(embed=embed, ephemeral=True)
+
+            # Update cooldowns after successful acknowledgment
+            self._update_cooldowns(interaction)
+
             # Generate personal graphs using user_graph_manager
             async with UserGraphManager(self.tgraph_bot.config_manager) as user_graph_manager:
                 result_stats = await user_graph_manager.process_user_stats_request(
@@ -249,24 +247,20 @@ class MyStatsCog(commands.Cog):
                     _ = await interaction.followup.send(embed=error_embed, ephemeral=True)
 
         except Exception as e:
-            logger.exception(f"Error generating personal stats for {interaction.user} ({email}): {e}")
-
-            error_embed = create_error_embed(
-                title="Unexpected Error",
-                description="An unexpected error occurred while generating your statistics."
-            )
-            _ = error_embed.add_field(
-                name="Error Details",
-                value=str(e)[:500] + ("..." if len(str(e)) > 500 else ""),
-                inline=False
-            )
-            _ = error_embed.add_field(
-                name="Support",
-                value="If this persists, please contact the server administrators",
-                inline=False
+            # Create error context for comprehensive logging
+            context = ErrorContext(
+                user_id=interaction.user.id,
+                guild_id=interaction.guild.id if interaction.guild else None,
+                channel_id=interaction.channel.id if interaction.channel else None,
+                command_name="my_stats",
+                additional_context={
+                    "email": email,
+                    "email_domain": email.split("@")[-1] if "@" in email else None
+                }
             )
 
-            _ = await interaction.followup.send(embed=error_embed, ephemeral=True)
+            # Use enhanced error handling
+            await handle_command_error(interaction, e, context)
 
 
 async def setup(bot: commands.Bot) -> None:
