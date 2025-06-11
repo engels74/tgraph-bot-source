@@ -35,7 +35,7 @@ class TestStateManager:
         # Test with default path
         manager = StateManager()
         assert manager.state_file_path.name == "scheduler_state.json"
-        assert ".taskmaster" in str(manager.state_file_path)
+        assert "data" in str(manager.state_file_path)
         
         # Test with custom path
         custom_path = Path("/tmp/test_state.json")

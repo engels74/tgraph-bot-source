@@ -826,13 +826,13 @@ class StateManager:
         Initialize state manager.
 
         Args:
-            state_file_path: Path to state file, defaults to .taskmaster/scheduler_state.json
+            state_file_path: Path to state file, defaults to data/scheduler_state.json
         """
         if state_file_path is None:
-            # Default to .taskmaster directory in current working directory
-            taskmaster_dir = Path.cwd() / ".taskmaster"
-            taskmaster_dir.mkdir(exist_ok=True)
-            self.state_file_path: Path = taskmaster_dir / "scheduler_state.json"
+            # Default to data directory in current working directory
+            data_dir = Path.cwd() / "data"
+            data_dir.mkdir(exist_ok=True)
+            self.state_file_path: Path = data_dir / "scheduler_state.json"
         else:
             self.state_file_path = state_file_path
 
