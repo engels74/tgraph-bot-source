@@ -46,22 +46,23 @@ class TestAsyncThreading:
             
             # Mock the data fetching
             mock_data_fetcher.get_play_history.return_value = {"data": []}
-            
-            # Mock the synchronous graph generation to simulate CPU-bound work
-            def mock_sync_generation(data):
-                # Simulate CPU-bound work
-                time.sleep(0.1)  # Small delay to simulate work
+
+            # Mock the synchronous graph generation method
+            def mock_sync_generation(data, progress_tracker=None):
                 return ["test_graph.png"]
-            
+
             # Test that asyncio.to_thread is used
             with patch('asyncio.to_thread') as mock_to_thread:
-                mock_to_thread.return_value = asyncio.create_task(
-                    asyncio.coroutine(lambda: ["test_graph.png"])()
-                )
-                
-                async with graph_manager:
-                    result = await graph_manager.generate_all_graphs()
-                
+                # Mock to_thread to return an awaitable that resolves to the result
+                future = asyncio.Future()
+                future.set_result(["test_graph.png"])
+                mock_to_thread.return_value = future
+
+                # Patch the sync method
+                with patch.object(graph_manager, '_generate_graphs_sync', mock_sync_generation):
+                    async with graph_manager:
+                        result = await graph_manager.generate_all_graphs()
+
                 # Verify asyncio.to_thread was called
                 mock_to_thread.assert_called_once()
                 assert result == ["test_graph.png"]
@@ -92,18 +93,26 @@ class TestAsyncThreading:
             user_graph_manager._data_fetcher = mock_data_fetcher
             user_graph_manager._graph_factory = mock_graph_factory
             
-            # Mock the data fetching
+            # Mock the data fetching methods
             mock_data_fetcher.get_play_history.return_value = {"data": []}
-            
+            mock_data_fetcher.find_user_by_email.return_value = {"user_id": 123}
+
+            # Mock the synchronous graph generation method
+            def mock_sync_user_generation(user_data, progress_tracker=None):
+                return []
+
             # Test that asyncio.to_thread is used
             with patch('asyncio.to_thread') as mock_to_thread:
-                mock_to_thread.return_value = asyncio.create_task(
-                    asyncio.coroutine(lambda: [])()
-                )
-                
-                async with user_graph_manager:
-                    result = await user_graph_manager.generate_user_graphs("test@example.com")
-                
+                # Mock to_thread to return an awaitable that resolves to the result
+                future = asyncio.Future()
+                future.set_result([])
+                mock_to_thread.return_value = future
+
+                # Patch the sync method
+                with patch.object(user_graph_manager, '_generate_user_graphs_sync', mock_sync_user_generation):
+                    async with user_graph_manager:
+                        result = await user_graph_manager.generate_user_graphs("test@example.com")
+
                 # Verify asyncio.to_thread was called
                 mock_to_thread.assert_called_once()
                 assert result == []
@@ -122,12 +131,13 @@ class TestAsyncThreading:
 
         # Test cleanup_old_graphs uses asyncio.to_thread
         with patch('asyncio.to_thread') as mock_to_thread:
-            mock_to_thread.return_value = asyncio.create_task(
-                asyncio.coroutine(lambda: 5)()  # Mock return value for cleanup_old_files
-            )
-            
+            # Mock to_thread to return an awaitable that resolves to the result
+            future = asyncio.Future()
+            future.set_result(5)  # Mock return value for cleanup_old_files
+            mock_to_thread.return_value = future
+
             await graph_manager.cleanup_old_graphs()
-            
+
             # Verify asyncio.to_thread was called for file operations
             mock_to_thread.assert_called_once()
 
@@ -171,10 +181,10 @@ class TestAsyncThreading:
             counter_task = asyncio.create_task(increment_counter())
             
             # Mock graph generation with actual asyncio.to_thread
-            def slow_sync_operation(data):
+            def slow_sync_operation(data, progress_tracker=None):
                 time.sleep(0.1)  # Simulate CPU-bound work
                 return ["test_graph.png"]
-            
+
             with patch.object(graph_manager, '_generate_graphs_sync', slow_sync_operation):
                 async with graph_manager:
                     # Run graph generation and counter concurrently
