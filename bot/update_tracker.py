@@ -6,13 +6,16 @@ should be automatically updated, based on configuration (UPDATE_DAYS, FIXED_UPDA
 """
 
 import asyncio
+import json
 import logging
 import re
+import tempfile
 
 from datetime import datetime, time, timedelta
+from pathlib import Path
 from typing import TYPE_CHECKING
 from collections.abc import Callable, Awaitable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 from enum import Enum
 
 if TYPE_CHECKING:
@@ -758,6 +761,464 @@ class ScheduleState:
         """Mark scheduler as stopped."""
         self.is_running = False
 
+    def to_dict(self) -> dict[str, str | int | bool | None]:
+        """Convert state to dictionary for persistence."""
+        return {
+            "last_update": self.last_update.isoformat() if self.last_update else None,
+            "next_update": self.next_update.isoformat() if self.next_update else None,
+            "is_running": self.is_running,
+            "consecutive_failures": self.consecutive_failures,
+            "last_failure": self.last_failure.isoformat() if self.last_failure else None,
+            "last_error": str(self.last_error) if self.last_error else None,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, str | int | bool | None]) -> "ScheduleState":
+        """Create state from dictionary for persistence."""
+        state = cls()
+
+        if data.get("last_update"):
+            state.last_update = datetime.fromisoformat(str(data["last_update"]))
+        if data.get("next_update"):
+            state.next_update = datetime.fromisoformat(str(data["next_update"]))
+
+        state.is_running = bool(data.get("is_running", False))
+        consecutive_failures_value = data.get("consecutive_failures", 0)
+        state.consecutive_failures = int(consecutive_failures_value) if consecutive_failures_value is not None else 0
+
+        if data.get("last_failure"):
+            state.last_failure = datetime.fromisoformat(str(data["last_failure"]))
+        if data.get("last_error"):
+            state.last_error = Exception(str(data["last_error"]))
+
+        return state
+
+
+@dataclass
+class PersistentScheduleData:
+    """Persistent data structure for schedule state and configuration."""
+
+    state: dict[str, str | int | bool | None]
+    config: dict[str, str | int] | None = None
+    version: str = "1.0"
+    saved_at: str = field(default_factory=lambda: datetime.now().isoformat())
+
+    def to_dict(self) -> dict[str, object]:
+        """Convert to dictionary for JSON serialization."""
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, object]) -> "PersistentScheduleData":
+        """Create from dictionary for JSON deserialization."""
+        return cls(
+            state=data.get("state", {}),  # pyright: ignore[reportArgumentType]
+            config=data.get("config"),  # pyright: ignore[reportArgumentType]
+            version=str(data.get("version", "1.0")),
+            saved_at=str(data.get("saved_at", datetime.now().isoformat()))
+        )
+
+
+class StateManager:
+    """Manages persistent state storage and recovery for the scheduler."""
+
+    def __init__(self, state_file_path: Path | None = None) -> None:
+        """
+        Initialize state manager.
+
+        Args:
+            state_file_path: Path to state file, defaults to .taskmaster/scheduler_state.json
+        """
+        if state_file_path is None:
+            # Default to .taskmaster directory in current working directory
+            taskmaster_dir = Path.cwd() / ".taskmaster"
+            taskmaster_dir.mkdir(exist_ok=True)
+            self.state_file_path: Path = taskmaster_dir / "scheduler_state.json"
+        else:
+            self.state_file_path = state_file_path
+
+        # Ensure parent directory exists
+        self.state_file_path.parent.mkdir(parents=True, exist_ok=True)
+
+        logger.debug(f"StateManager initialized with state file: {self.state_file_path}")
+
+    def save_state(self, state: ScheduleState, config: SchedulingConfig | None = None) -> None:
+        """
+        Save scheduler state to persistent storage with atomic operation.
+
+        Args:
+            state: Current scheduler state
+            config: Current scheduling configuration
+        """
+        try:
+            # Prepare data for persistence
+            config_dict = None
+            if config:
+                config_dict = {
+                    "update_days": config.update_days,
+                    "fixed_update_time": config.fixed_update_time
+                }
+
+            persistent_data = PersistentScheduleData(
+                state=state.to_dict(),
+                config=config_dict
+            )
+
+            # Atomic save using temporary file
+            temp_file = None
+            try:
+                with tempfile.NamedTemporaryFile(
+                    mode='w',
+                    encoding='utf-8',
+                    dir=self.state_file_path.parent,
+                    prefix=f'.{self.state_file_path.name}.',
+                    suffix='.tmp',
+                    delete=False,
+                ) as temp_file:
+                    json.dump(persistent_data.to_dict(), temp_file, indent=2, ensure_ascii=False)
+                    temp_file.flush()
+                    temp_path = Path(temp_file.name)
+
+                # Atomic move
+                _ = temp_path.replace(self.state_file_path)
+                logger.debug(f"State saved successfully to {self.state_file_path}")
+
+            except Exception as e:
+                # Clean up temporary file if it exists
+                if temp_file and Path(temp_file.name).exists():
+                    Path(temp_file.name).unlink(missing_ok=True)
+                raise OSError(f"Failed to save state to {self.state_file_path}: {e}") from e
+
+        except Exception as e:
+            logger.error(f"Failed to save scheduler state: {e}")
+            raise
+
+    def load_state(self) -> tuple[ScheduleState, SchedulingConfig | None]:
+        """
+        Load scheduler state from persistent storage.
+
+        Returns:
+            Tuple of (state, config) or (default_state, None) if no valid state found
+        """
+        try:
+            if not self.state_file_path.exists():
+                logger.debug("No state file found, returning default state")
+                return ScheduleState(), None
+
+            with self.state_file_path.open('r', encoding='utf-8') as f:
+                data: dict[str, object] = json.load(f)  # pyright: ignore[reportAny]
+
+            persistent_data = PersistentScheduleData.from_dict(data)
+
+            # Validate version compatibility
+            if persistent_data.version != "1.0":
+                logger.warning(f"State file version {persistent_data.version} may not be compatible")
+
+            # Restore state
+            state = ScheduleState.from_dict(persistent_data.state)
+
+            # Restore configuration if available
+            config = None
+            if persistent_data.config:
+                config = SchedulingConfig(
+                    update_days=int(persistent_data.config["update_days"]),
+                    fixed_update_time=str(persistent_data.config["fixed_update_time"])
+                )
+
+            logger.info(f"State loaded successfully from {self.state_file_path}")
+            logger.debug(f"Loaded state: last_update={state.last_update}, next_update={state.next_update}")
+
+            return state, config
+
+        except (json.JSONDecodeError, KeyError, ValueError, TypeError) as e:
+            logger.error(f"Failed to load state file (corrupted): {e}")
+            logger.info("Creating backup of corrupted state file and returning default state")
+            self._backup_corrupted_state()
+            return ScheduleState(), None
+
+        except Exception as e:
+            logger.error(f"Unexpected error loading state: {e}")
+            return ScheduleState(), None
+
+    def _backup_corrupted_state(self) -> None:
+        """Create a backup of corrupted state file for debugging."""
+        try:
+            if self.state_file_path.exists():
+                backup_path = self.state_file_path.with_suffix(f".corrupted.{datetime.now().strftime('%Y%m%d_%H%M%S')}.json")
+                _ = self.state_file_path.rename(backup_path)
+                logger.info(f"Corrupted state file backed up to: {backup_path}")
+        except Exception as e:
+            logger.error(f"Failed to backup corrupted state file: {e}")
+
+    def delete_state(self) -> None:
+        """Delete the persistent state file."""
+        try:
+            if self.state_file_path.exists():
+                self.state_file_path.unlink()
+                logger.info(f"State file deleted: {self.state_file_path}")
+        except Exception as e:
+            logger.error(f"Failed to delete state file: {e}")
+
+    def state_exists(self) -> bool:
+        """Check if a state file exists."""
+        return self.state_file_path.exists()
+
+
+@dataclass
+class MissedUpdate:
+    """Represents a missed update that needs to be processed."""
+
+    scheduled_time: datetime
+    detected_at: datetime
+    reason: str = "system_downtime"
+
+    def to_dict(self) -> dict[str, str]:
+        """Convert to dictionary for logging."""
+        return {
+            "scheduled_time": self.scheduled_time.isoformat(),
+            "detected_at": self.detected_at.isoformat(),
+            "reason": self.reason
+        }
+
+
+class RecoveryManager:
+    """Manages recovery operations for the scheduler."""
+
+    def __init__(self, state_manager: StateManager) -> None:
+        """
+        Initialize recovery manager.
+
+        Args:
+            state_manager: State manager for persistence operations
+        """
+        self.state_manager: StateManager = state_manager
+
+    def detect_missed_updates(
+        self,
+        current_time: datetime,
+        last_update: datetime | None,
+        next_update: datetime | None,
+        config: SchedulingConfig
+    ) -> list[MissedUpdate]:
+        """
+        Detect missed updates based on current time and last known state.
+
+        Args:
+            current_time: Current datetime
+            last_update: Last successful update time
+            next_update: Last scheduled next update time
+            config: Current scheduling configuration
+
+        Returns:
+            List of missed updates that should be processed
+        """
+        missed_updates: list[MissedUpdate] = []
+
+        # If we have no update history, no missed updates to detect
+        if last_update is None:
+            logger.debug("No previous update history, no missed updates to detect")
+            return missed_updates
+
+        # Calculate what the next update should have been
+        schedule = UpdateSchedule(config, ScheduleState())
+        schedule.state.last_update = last_update
+
+        # Check if we missed the scheduled next update
+        if next_update and next_update < current_time:
+            # We missed the scheduled update
+            missed_updates.append(MissedUpdate(
+                scheduled_time=next_update,
+                detected_at=current_time,
+                reason="missed_scheduled_update"
+            ))
+            logger.warning(f"Detected missed scheduled update: {next_update}")
+
+        # Check for additional missed updates based on interval
+        if config.is_interval_based():
+            # For interval-based scheduling, check how many intervals we missed
+            time_since_last = current_time - last_update
+            interval_days = config.update_days
+            missed_intervals = int(time_since_last.days // interval_days)
+
+            if missed_intervals > 1:  # More than one interval missed
+                for i in range(1, missed_intervals):
+                    missed_time = last_update + timedelta(days=interval_days * i)
+                    if missed_time < current_time:
+                        missed_updates.append(MissedUpdate(
+                            scheduled_time=missed_time,
+                            detected_at=current_time,
+                            reason="interval_based_missed_update"
+                        ))
+                        logger.warning(f"Detected missed interval update: {missed_time}")
+
+        logger.info(f"Detected {len(missed_updates)} missed updates")
+        return missed_updates
+
+    def validate_schedule_integrity(
+        self,
+        current_time: datetime,
+        state: ScheduleState,
+        config: SchedulingConfig
+    ) -> tuple[bool, list[str]]:
+        """
+        Validate schedule integrity and detect inconsistencies.
+
+        Args:
+            current_time: Current datetime
+            state: Current schedule state
+            config: Current scheduling configuration
+
+        Returns:
+            Tuple of (is_valid, list_of_issues)
+        """
+        issues: list[str] = []
+
+        # Check if next_update is reasonable
+        if state.next_update:
+            if state.next_update <= current_time:
+                issues.append(f"Next update time {state.next_update} is in the past")
+
+            # Check if next_update is too far in the future
+            max_future = current_time + timedelta(days=config.update_days * 2)
+            if state.next_update > max_future:
+                issues.append(f"Next update time {state.next_update} is too far in the future")
+
+        # Check if last_update and next_update are consistent
+        if state.last_update and state.next_update:
+            expected_interval = timedelta(days=config.update_days)
+            actual_interval = state.next_update - state.last_update
+
+            # Allow some tolerance (±1 day)
+            if abs((actual_interval - expected_interval).days) > 1:
+                issues.append(
+                    f"Inconsistent interval: expected {expected_interval.days} days, "
+                    + f"got {actual_interval.days} days"
+                )
+
+        # Check for excessive consecutive failures
+        if state.consecutive_failures > 10:
+            issues.append(f"Excessive consecutive failures: {state.consecutive_failures}")
+
+        # Check if last_failure is too old compared to consecutive_failures
+        if state.consecutive_failures > 0 and state.last_failure:
+            time_since_failure = current_time - state.last_failure
+            if time_since_failure.days > 7:  # More than a week old
+                issues.append(
+                    f"Last failure is {time_since_failure.days} days old but "
+                    + f"consecutive_failures is {state.consecutive_failures}"
+                )
+
+        is_valid = len(issues) == 0
+        if not is_valid:
+            logger.warning(f"Schedule integrity validation failed: {issues}")
+        else:
+            logger.debug("Schedule integrity validation passed")
+
+        return is_valid, issues
+
+    def repair_schedule_state(
+        self,
+        current_time: datetime,
+        state: ScheduleState,
+        config: SchedulingConfig
+    ) -> ScheduleState:
+        """
+        Attempt to repair inconsistent schedule state.
+
+        Args:
+            current_time: Current datetime
+            state: Current schedule state (may be modified)
+            config: Current scheduling configuration
+
+        Returns:
+            Repaired schedule state
+        """
+        logger.info("Attempting to repair schedule state")
+
+        # Create a new schedule calculator for repairs
+        schedule = UpdateSchedule(config, state)
+
+        # Fix next_update if it's in the past or invalid
+        if not state.next_update or state.next_update <= current_time:
+            new_next_update = schedule.calculate_next_update(current_time)
+            logger.info(f"Repairing next_update: {state.next_update} -> {new_next_update}")
+            state.set_next_update(new_next_update)
+
+        # Reset excessive consecutive failures if last failure is old
+        if state.consecutive_failures > 5 and state.last_failure:
+            time_since_failure = current_time - state.last_failure
+            if time_since_failure.days > 3:  # More than 3 days old
+                logger.info(f"Resetting consecutive failures from {state.consecutive_failures} to 0 (last failure was {time_since_failure.days} days ago)")
+                state.consecutive_failures = 0
+
+        # Clear running state if we're not actually running
+        if state.is_running:
+            logger.info("Clearing running state during repair")
+            state.stop_scheduler()
+
+        logger.info("Schedule state repair completed")
+        return state
+
+    async def perform_recovery(
+        self,
+        current_time: datetime,
+        state: ScheduleState,
+        config: SchedulingConfig,
+        update_callback: Callable[[], Awaitable[None]] | None = None
+    ) -> tuple[ScheduleState, list[MissedUpdate]]:
+        """
+        Perform comprehensive recovery operations.
+
+        Args:
+            current_time: Current datetime
+            state: Current schedule state
+            config: Current scheduling configuration
+            update_callback: Optional callback to process missed updates
+
+        Returns:
+            Tuple of (recovered_state, processed_missed_updates)
+        """
+        logger.info("Starting comprehensive recovery process")
+
+        # Detect missed updates
+        missed_updates = self.detect_missed_updates(
+            current_time, state.last_update, state.next_update, config
+        )
+
+        # Validate and repair schedule integrity
+        is_valid, issues = self.validate_schedule_integrity(current_time, state, config)
+        if not is_valid:
+            logger.warning(f"Schedule integrity issues detected: {issues}")
+            state = self.repair_schedule_state(current_time, state, config)
+
+        # Process missed updates if callback is provided
+        processed_updates: list[MissedUpdate] = []
+        if update_callback and missed_updates:
+            logger.info(f"Processing {len(missed_updates)} missed updates")
+
+            for missed_update in missed_updates:
+                try:
+                    logger.info(f"Processing missed update from {missed_update.scheduled_time}")
+                    await update_callback()
+                    processed_updates.append(missed_update)
+
+                    # Update state to reflect processed update
+                    state.record_successful_update(current_time)
+
+                except Exception as e:
+                    logger.error(f"Failed to process missed update from {missed_update.scheduled_time}: {e}")
+                    state.record_failure(current_time, e)
+                    # Continue with other missed updates
+
+        # Save recovered state
+        try:
+            self.state_manager.save_state(state, config)
+            logger.info("Recovered state saved successfully")
+        except Exception as e:
+            logger.error(f"Failed to save recovered state: {e}")
+
+        logger.info(f"Recovery process completed. Processed {len(processed_updates)} missed updates")
+        return state, processed_updates
+
 
 class UpdateSchedule:
     """Handles calculation of update schedules based on configuration and state."""
@@ -888,13 +1349,14 @@ class UpdateTracker:
     the BackgroundTaskManager for robust task lifecycle management.
     """
 
-    def __init__(self, bot: "commands.Bot", retry_config: RetryConfig | None = None) -> None:
+    def __init__(self, bot: "commands.Bot", retry_config: RetryConfig | None = None, state_file_path: Path | None = None) -> None:
         """
-        Initialize the update tracker with enhanced error handling.
+        Initialize the update tracker with enhanced error handling and recovery.
 
         Args:
             bot: The Discord bot instance
             retry_config: Configuration for retry policies and circuit breakers
+            state_file_path: Optional custom path for state persistence
         """
         self.bot: "commands.Bot" = bot
         self.update_callback: Callable[[], Awaitable[None]] | None = None
@@ -916,6 +1378,11 @@ class UpdateTracker:
         self._update_metrics: ErrorMetrics = ErrorMetrics()
         self._circuit_breaker: CircuitBreaker = CircuitBreaker(self._retry_config)
 
+        # Recovery and persistence components
+        self._state_manager: StateManager = StateManager(state_file_path)
+        self._recovery_manager: RecoveryManager = RecoveryManager(self._state_manager)
+        self._recovery_enabled: bool = True
+
     def set_update_callback(self, callback: Callable[[], Awaitable[None]]) -> None:
         """
         Set the callback function to call when updates are triggered.
@@ -931,7 +1398,7 @@ class UpdateTracker:
         fixed_update_time: str | None = None
     ) -> None:
         """
-        Start the automatic update scheduler using BackgroundTaskManager.
+        Start the automatic update scheduler with recovery and persistence.
 
         Args:
             update_days: Interval in days between updates
@@ -943,11 +1410,17 @@ class UpdateTracker:
 
         # Initialize scheduling configuration
         fixed_time_str = fixed_update_time if fixed_update_time else "XX:XX"
-        self._config = SchedulingConfig(
+        new_config = SchedulingConfig(
             update_days=update_days,
             fixed_update_time=fixed_time_str
         )
-        self._schedule = UpdateSchedule(self._config, self._state)
+
+        # Attempt to load previous state and perform recovery
+        if self._recovery_enabled:
+            await self._perform_startup_recovery(new_config)
+        else:
+            self._config = new_config
+            self._schedule = UpdateSchedule(self._config, self._state)
 
         logger.info(f"Starting update scheduler (every {update_days} days)")
         if fixed_update_time and fixed_update_time != "XX:XX":
@@ -966,13 +1439,89 @@ class UpdateTracker:
         self._state.start_scheduler()
         self._is_started = True
 
+        # Save initial state
+        if self._recovery_enabled:
+            try:
+                self._state_manager.save_state(self._state, self._config)
+                logger.debug("Initial state saved after scheduler start")
+            except Exception as e:
+                logger.error(f"Failed to save initial state: {e}")
+
+    async def _perform_startup_recovery(self, new_config: SchedulingConfig) -> None:
+        """
+        Perform startup recovery by loading previous state and handling missed updates.
+
+        Args:
+            new_config: New configuration to apply
+        """
+        logger.info("Performing startup recovery")
+
+        try:
+            # Load previous state
+            loaded_state, loaded_config = self._state_manager.load_state()
+
+            # Use loaded state if available
+            if loaded_state:
+                self._state = loaded_state
+                logger.info("Previous state loaded successfully")
+
+                # Check if configuration changed
+                config_changed = False
+                if loaded_config:
+                    if (loaded_config.update_days != new_config.update_days or
+                        loaded_config.fixed_update_time != new_config.fixed_update_time):
+                        config_changed = True
+                        logger.info("Configuration changed since last run")
+
+                # Use new configuration (may have changed)
+                self._config = new_config
+
+                # Perform recovery operations
+                current_time = datetime.now()
+                recovered_state, missed_updates = await self._recovery_manager.perform_recovery(
+                    current_time=current_time,
+                    state=self._state,
+                    config=self._config,
+                    update_callback=self.update_callback if config_changed else None
+                )
+
+                self._state = recovered_state
+
+                if missed_updates:
+                    logger.info(f"Recovery completed: processed {len(missed_updates)} missed updates")
+                    for missed in missed_updates:
+                        logger.info(f"  - Processed missed update from {missed.scheduled_time} ({missed.reason})")
+
+            else:
+                # No previous state, use new configuration
+                self._config = new_config
+                logger.info("No previous state found, starting fresh")
+
+            # Create schedule with current state and config
+            self._schedule = UpdateSchedule(self._config, self._state)
+
+        except Exception as e:
+            logger.error(f"Recovery failed, starting with fresh state: {e}")
+            # Fallback to fresh state
+            self._config = new_config
+            self._state = ScheduleState()
+            self._schedule = UpdateSchedule(self._config, self._state)
+
     async def stop_scheduler(self) -> None:
-        """Stop the automatic update scheduler and task manager."""
+        """Stop the automatic update scheduler and save state."""
         if not self._is_started:
             logger.debug("Update scheduler not running")
             return
 
         logger.info("Stopping update scheduler")
+
+        # Save current state before stopping
+        if self._recovery_enabled and self._config:
+            try:
+                self._state_manager.save_state(self._state, self._config)
+                logger.debug("State saved before scheduler stop")
+            except Exception as e:
+                logger.error(f"Failed to save state during shutdown: {e}")
 
         # Stop the background task manager (this will cancel all tasks)
         await self._task_manager.stop()
@@ -1094,6 +1643,15 @@ class UpdateTracker:
                 success_msg = f"Scheduled update completed successfully in {duration:.1f}s (success rate: {self._update_metrics.get_success_rate():.2%})"
                 logger.info(success_msg)
                 self._log_update_audit("update_completed", success_msg)
+
+                # Save state after successful update
+                if self._recovery_enabled and self._config:
+                    try:
+                        self._state_manager.save_state(self._state, self._config)
+                        logger.debug("State saved after successful update")
+                    except Exception as e:
+                        logger.error(f"Failed to save state after update: {e}")
+
                 return
 
             except asyncio.TimeoutError as e:
@@ -1308,3 +1866,149 @@ class UpdateTracker:
     async def _trigger_update_for_testing(self) -> None:
         """Trigger update for testing purposes."""
         await self._trigger_update()
+
+    # Recovery and persistence methods
+
+    def enable_recovery(self) -> None:
+        """Enable recovery and persistence features."""
+        self._recovery_enabled = True
+        logger.info("Recovery and persistence enabled")
+
+    def disable_recovery(self) -> None:
+        """Disable recovery and persistence features."""
+        self._recovery_enabled = False
+        logger.info("Recovery and persistence disabled")
+
+    def is_recovery_enabled(self) -> bool:
+        """Check if recovery is enabled."""
+        return self._recovery_enabled
+
+    async def force_recovery(self) -> dict[str, object]:
+        """
+        Force a recovery operation and return results.
+
+        Returns:
+            Dictionary with recovery results and statistics
+        """
+        if not self._config:
+            raise RuntimeError("Cannot perform recovery: no configuration available")
+
+        logger.info("Forcing recovery operation")
+        current_time = datetime.now()
+
+        # Perform recovery
+        recovered_state, missed_updates = await self._recovery_manager.perform_recovery(
+            current_time=current_time,
+            state=self._state,
+            config=self._config,
+            update_callback=self.update_callback
+        )
+
+        self._state = recovered_state
+
+        # Save recovered state
+        if self._recovery_enabled:
+            try:
+                self._state_manager.save_state(self._state, self._config)
+            except Exception as e:
+                logger.error(f"Failed to save recovered state: {e}")
+
+        return {
+            "recovery_time": current_time.isoformat(),
+            "missed_updates_detected": len(missed_updates),
+            "missed_updates": [update.to_dict() for update in missed_updates],
+            "state_after_recovery": self._state.to_dict(),
+        }
+
+    def get_recovery_status(self) -> dict[str, object]:
+        """
+        Get comprehensive recovery and persistence status.
+
+        Returns:
+            Dictionary with recovery status information
+        """
+        status: dict[str, object] = {
+            "recovery_enabled": self._recovery_enabled,
+            "state_file_exists": self._state_manager.state_exists(),
+            "state_file_path": str(self._state_manager.state_file_path),
+        }
+
+        # Add schedule integrity check if we have configuration
+        if self._config:
+            current_time = datetime.now()
+            is_valid, issues = self._recovery_manager.validate_schedule_integrity(
+                current_time, self._state, self._config
+            )
+            status["schedule_integrity_valid"] = is_valid
+            status["schedule_integrity_issues"] = issues
+
+        return status
+
+    def clear_persistent_state(self) -> None:
+        """Clear persistent state file (for testing or reset purposes)."""
+        try:
+            self._state_manager.delete_state()
+            logger.info("Persistent state cleared")
+        except Exception as e:
+            logger.error(f"Failed to clear persistent state: {e}")
+            raise
+
+    async def validate_and_repair_schedule(self) -> dict[str, object]:
+        """
+        Validate schedule integrity and repair if necessary.
+
+        Returns:
+            Dictionary with validation and repair results
+        """
+        if not self._config:
+            raise RuntimeError("Cannot validate schedule: no configuration available")
+
+        current_time = datetime.now()
+
+        # Validate current state
+        is_valid, issues = self._recovery_manager.validate_schedule_integrity(
+            current_time, self._state, self._config
+        )
+
+        result: dict[str, object] = {
+            "validation_time": current_time.isoformat(),
+            "was_valid": is_valid,
+            "issues_found": issues,
+            "repairs_performed": [],
+        }
+
+        # Repair if necessary
+        if not is_valid:
+            logger.info("Schedule integrity issues detected, performing repairs")
+            original_state = self._state.to_dict()
+
+            self._state = self._recovery_manager.repair_schedule_state(
+                current_time, self._state, self._config
+            )
+
+            # Save repaired state
+            if self._recovery_enabled:
+                try:
+                    self._state_manager.save_state(self._state, self._config)
+                    result["state_saved"] = True
+                except Exception as e:
+                    logger.error(f"Failed to save repaired state: {e}")
+                    result["state_saved"] = False
+                    result["save_error"] = str(e)
+
+            # Document what was repaired
+            repaired_state = self._state.to_dict()
+            repairs: list[dict[str, object]] = []
+            for key, original_value in original_state.items():
+                new_value = repaired_state.get(key)
+                if original_value != new_value:
+                    repairs.append({
+                        "field": key,
+                        "old_value": original_value,
+                        "new_value": new_value,
+                    })
+
+            result["repairs_performed"] = repairs
+            logger.info(f"Schedule repairs completed: {len(repairs)} fields modified")
+
+        return result
