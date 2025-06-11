@@ -16,6 +16,12 @@ from pydantic import ValidationError
 
 from config.manager import ConfigManager
 from config.schema import TGraphBotConfig
+from utils.error_handler import (
+    ErrorContext,
+    handle_command_error,
+    ValidationError as TGraphValidationError,
+    ConfigurationError
+)
 
 if TYPE_CHECKING:
     from main import TGraphBot
@@ -172,15 +178,16 @@ class ConfigCog(commands.Cog):
             _ = await interaction.response.send_message(embed=embed, ephemeral=True)
 
         except Exception as e:
-            logger.exception(f"Error viewing configuration: {e}")
-
-            error_embed = discord.Embed(
-                title="❌ Configuration Error",
-                description="Failed to retrieve configuration. Please check the logs.",
-                color=discord.Color.red()
+            # Create error context for comprehensive logging
+            context = ErrorContext(
+                user_id=interaction.user.id,
+                guild_id=interaction.guild.id if interaction.guild else None,
+                channel_id=interaction.channel.id if interaction.channel else None,
+                command_name="config_view"
             )
 
-            _ = await interaction.response.send_message(embed=error_embed, ephemeral=True)
+            # Use enhanced error handling
+            await handle_command_error(interaction, e, context)
         
     @config_group.command(
         name="edit",
@@ -212,18 +219,10 @@ class ConfigCog(commands.Cog):
 
             # Validate that the setting exists
             if not hasattr(current_config, setting):
-                error_embed = discord.Embed(
-                    title="❌ Invalid Setting",
-                    description=f"Configuration setting `{setting}` does not exist.",
-                    color=discord.Color.red()
+                raise TGraphValidationError(
+                    f"Configuration setting '{setting}' does not exist",
+                    user_message=f"Configuration setting `{setting}` does not exist. Use `/config view` to see all available settings."
                 )
-                _ = error_embed.add_field(
-                    name="Available Settings",
-                    value="Use `/config view` to see all available settings.",
-                    inline=False
-                )
-                _ = await interaction.response.send_message(embed=error_embed, ephemeral=True)
-                return
 
             # Get the current value and type
             current_value: Any = getattr(current_config, setting)  # pyright: ignore[reportExplicitAny]
@@ -232,23 +231,10 @@ class ConfigCog(commands.Cog):
             try:
                 converted_value: Any = self._convert_config_value(value, type(current_value))  # pyright: ignore[reportExplicitAny]
             except ValueError as e:
-                error_embed = discord.Embed(
-                    title="❌ Invalid Value",
-                    description=f"Invalid value for `{setting}`: {e}",
-                    color=discord.Color.red()
+                raise TGraphValidationError(
+                    f"Invalid value for setting '{setting}': {e}",
+                    user_message=f"Invalid value for `{setting}`: {e}. Current value: {current_value} (type: {type(current_value).__name__})"
                 )
-                _ = error_embed.add_field(
-                    name="Current Value",
-                    value=str(current_value),
-                    inline=True
-                )
-                _ = error_embed.add_field(
-                    name="Expected Type",
-                    value=type(current_value).__name__,
-                    inline=True
-                )
-                _ = await interaction.response.send_message(embed=error_embed, ephemeral=True)
-                return
 
             # Create updated configuration data
             config_data = current_config.model_dump()
@@ -258,69 +244,59 @@ class ConfigCog(commands.Cog):
             try:
                 new_config = TGraphBotConfig(**config_data)
             except ValidationError as e:
-                error_embed = discord.Embed(
-                    title="❌ Validation Error",
-                    description=f"Configuration validation failed: {e}",
-                    color=discord.Color.red()
+                raise ConfigurationError(
+                    f"Configuration validation failed: {e}",
+                    user_message=f"Configuration validation failed: {e}"
                 )
-                _ = await interaction.response.send_message(embed=error_embed, ephemeral=True)
-                return
 
             # Save the configuration to file
             config_path = Path("config.yml")
-            if config_path.exists():
-                try:
-                    ConfigManager.save_config(new_config, config_path)
-
-                    # Update runtime configuration
-                    self.tgraph_bot.config_manager.update_runtime_config(new_config)
-
-                    # Success message
-                    success_embed = discord.Embed(
-                        title="✅ Configuration Updated",
-                        description=f"Successfully updated `{setting}`",
-                        color=discord.Color.green()
-                    )
-                    _ = success_embed.add_field(
-                        name="Previous Value",
-                        value=str(current_value),
-                        inline=True
-                    )
-                    _ = success_embed.add_field(
-                        name="New Value",
-                        value=str(converted_value),
-                        inline=True
-                    )
-                    _ = success_embed.set_footer(text="Configuration saved and applied immediately")
-
-                    _ = await interaction.response.send_message(embed=success_embed, ephemeral=True)
-
-                except Exception as e:
-                    logger.exception(f"Error saving configuration: {e}")
-                    error_embed = discord.Embed(
-                        title="❌ Save Error",
-                        description="Failed to save configuration. Please check the logs.",
-                        color=discord.Color.red()
-                    )
-                    _ = await interaction.response.send_message(embed=error_embed, ephemeral=True)
-            else:
-                error_embed = discord.Embed(
-                    title="❌ Configuration File Not Found",
-                    description="config.yml file not found. Please ensure it exists.",
-                    color=discord.Color.red()
+            if not config_path.exists():
+                raise ConfigurationError(
+                    "config.yml file not found",
+                    user_message="config.yml file not found. Please ensure it exists."
                 )
-                _ = await interaction.response.send_message(embed=error_embed, ephemeral=True)
+
+            ConfigManager.save_config(new_config, config_path)
+
+            # Update runtime configuration
+            self.tgraph_bot.config_manager.update_runtime_config(new_config)
+
+            # Success message
+            success_embed = discord.Embed(
+                title="✅ Configuration Updated",
+                description=f"Successfully updated `{setting}`",
+                color=discord.Color.green()
+            )
+            _ = success_embed.add_field(
+                name="Previous Value",
+                value=str(current_value),
+                inline=True
+            )
+            _ = success_embed.add_field(
+                name="New Value",
+                value=str(converted_value),
+                inline=True
+            )
+            _ = success_embed.set_footer(text="Configuration saved and applied immediately")
+
+            _ = await interaction.response.send_message(embed=success_embed, ephemeral=True)
 
         except Exception as e:
-            logger.exception(f"Error editing configuration: {e}")
-
-            error_embed = discord.Embed(
-                title="❌ Configuration Error",
-                description="An unexpected error occurred. Please check the logs.",
-                color=discord.Color.red()
+            # Create error context for comprehensive logging
+            context = ErrorContext(
+                user_id=interaction.user.id,
+                guild_id=interaction.guild.id if interaction.guild else None,
+                channel_id=interaction.channel.id if interaction.channel else None,
+                command_name="config_edit",
+                additional_context={
+                    "setting": setting,
+                    "value": value
+                }
             )
 
-            _ = await interaction.response.send_message(embed=error_embed, ephemeral=True)
+            # Use enhanced error handling
+            await handle_command_error(interaction, e, context)
 
 
 async def setup(bot: commands.Bot) -> None:

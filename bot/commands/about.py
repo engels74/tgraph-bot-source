@@ -12,6 +12,11 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+from utils.error_handler import (
+    ErrorContext,
+    handle_command_error
+)
+
 if TYPE_CHECKING:
     pass
 
@@ -37,55 +42,68 @@ class AboutCog(commands.Cog):
     async def about(self, interaction: discord.Interaction) -> None:
         """
         Display information about TGraph Bot.
-        
+
         Args:
             interaction: The Discord interaction
         """
-        embed = discord.Embed(
-            title="TGraph Bot",
-            description="A Discord bot for automatically generating and posting Tautulli graphs",
-            color=discord.Color.blue()
-        )
-        
-        _ = embed.add_field(
-            name="Version",
-            value="1.0.0",
-            inline=True
-        )
+        try:
+            embed = discord.Embed(
+                title="TGraph Bot",
+                description="A Discord bot for automatically generating and posting Tautulli graphs",
+                color=discord.Color.blue()
+            )
 
-        _ = embed.add_field(
-            name="Author",
-            value="engels74",
-            inline=True
-        )
+            _ = embed.add_field(
+                name="Version",
+                value="1.0.0",
+                inline=True
+            )
 
-        _ = embed.add_field(
-            name="GitHub",
-            value="[tgraph-bot-source](https://github.com/engels74/tgraph-bot-source)",
-            inline=True
-        )
+            _ = embed.add_field(
+                name="Author",
+                value="engels74",
+                inline=True
+            )
 
-        _ = embed.add_field(
-            name="License",
-            value="MIT License",
-            inline=True
-        )
+            _ = embed.add_field(
+                name="GitHub",
+                value="[tgraph-bot-source](https://github.com/engels74/tgraph-bot-source)",
+                inline=True
+            )
 
-        _ = embed.add_field(
-            name="Python Version",
-            value="3.13+",
-            inline=True
-        )
+            _ = embed.add_field(
+                name="License",
+                value="MIT License",
+                inline=True
+            )
 
-        _ = embed.add_field(
-            name="Discord.py Version",
-            value=discord.__version__,
-            inline=True
-        )
+            _ = embed.add_field(
+                name="Python Version",
+                value="3.13+",
+                inline=True
+            )
 
-        _ = embed.set_footer(text="TGraph Bot - Bringing Tautulli stats to Discord")
+            _ = embed.add_field(
+                name="Discord.py Version",
+                value=discord.__version__,
+                inline=True
+            )
 
-        _ = await interaction.response.send_message(embed=embed)
+            _ = embed.set_footer(text="TGraph Bot - Bringing Tautulli stats to Discord")
+
+            _ = await interaction.response.send_message(embed=embed)
+
+        except Exception as e:
+            # Create error context for comprehensive logging
+            context = ErrorContext(
+                user_id=interaction.user.id,
+                guild_id=interaction.guild.id if interaction.guild else None,
+                channel_id=interaction.channel.id if interaction.channel else None,
+                command_name="about"
+            )
+
+            # Use enhanced error handling
+            await handle_command_error(interaction, e, context)
 
 
 async def setup(bot: commands.Bot) -> None:

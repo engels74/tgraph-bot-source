@@ -13,6 +13,11 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+from utils.error_handler import (
+    ErrorContext,
+    handle_command_error
+)
+
 if TYPE_CHECKING:
     pass
 
@@ -38,54 +43,67 @@ class UptimeCog(commands.Cog):
     async def uptime(self, interaction: discord.Interaction) -> None:
         """
         Display how long the bot has been running.
-        
+
         Args:
             interaction: The Discord interaction
         """
-        # Get start time from bot instance
-        start_time = getattr(self.bot, 'start_time', time.time())
-        current_time = time.time()
-        uptime_seconds = int(current_time - start_time)
-        
-        # Calculate uptime components
-        days = uptime_seconds // 86400
-        hours = (uptime_seconds % 86400) // 3600
-        minutes = (uptime_seconds % 3600) // 60
-        seconds = uptime_seconds % 60
-        
-        # Format uptime string
-        uptime_parts: list[str] = []
-        if days > 0:
-            uptime_parts.append(f"{days} day{'s' if days != 1 else ''}")
-        if hours > 0:
-            uptime_parts.append(f"{hours} hour{'s' if hours != 1 else ''}")
-        if minutes > 0:
-            uptime_parts.append(f"{minutes} minute{'s' if minutes != 1 else ''}")
-        if seconds > 0 or not uptime_parts:
-            uptime_parts.append(f"{seconds} second{'s' if seconds != 1 else ''}")
+        try:
+            # Get start time from bot instance
+            start_time = getattr(self.bot, 'start_time', time.time())
+            current_time = time.time()
+            uptime_seconds = int(current_time - start_time)
 
-        uptime_string = ", ".join(uptime_parts)
-        
-        embed = discord.Embed(
-            title="Bot Uptime",
-            color=discord.Color.green()
-        )
-        
-        _ = embed.add_field(
-            name="Uptime",
-            value=uptime_string,
-            inline=False
-        )
+            # Calculate uptime components
+            days = uptime_seconds // 86400
+            hours = (uptime_seconds % 86400) // 3600
+            minutes = (uptime_seconds % 3600) // 60
+            seconds = uptime_seconds % 60
 
-        _ = embed.add_field(
-            name="Started",
-            value=f"<t:{int(start_time)}:F>",
-            inline=False
-        )
+            # Format uptime string
+            uptime_parts: list[str] = []
+            if days > 0:
+                uptime_parts.append(f"{days} day{'s' if days != 1 else ''}")
+            if hours > 0:
+                uptime_parts.append(f"{hours} hour{'s' if hours != 1 else ''}")
+            if minutes > 0:
+                uptime_parts.append(f"{minutes} minute{'s' if minutes != 1 else ''}")
+            if seconds > 0 or not uptime_parts:
+                uptime_parts.append(f"{seconds} second{'s' if seconds != 1 else ''}")
 
-        _ = embed.set_footer(text="TGraph Bot is running smoothly!")
+            uptime_string = ", ".join(uptime_parts)
 
-        _ = await interaction.response.send_message(embed=embed)
+            embed = discord.Embed(
+                title="Bot Uptime",
+                color=discord.Color.green()
+            )
+
+            _ = embed.add_field(
+                name="Uptime",
+                value=uptime_string,
+                inline=False
+            )
+
+            _ = embed.add_field(
+                name="Started",
+                value=f"<t:{int(start_time)}:F>",
+                inline=False
+            )
+
+            _ = embed.set_footer(text="TGraph Bot is running smoothly!")
+
+            _ = await interaction.response.send_message(embed=embed)
+
+        except Exception as e:
+            # Create error context for comprehensive logging
+            context = ErrorContext(
+                user_id=interaction.user.id,
+                guild_id=interaction.guild.id if interaction.guild else None,
+                channel_id=interaction.channel.id if interaction.channel else None,
+                command_name="uptime"
+            )
+
+            # Use enhanced error handling
+            await handle_command_error(interaction, e, context)
 
 
 async def setup(bot: commands.Bot) -> None:
