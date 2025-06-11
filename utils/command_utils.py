@@ -2,16 +2,22 @@
 Command utility functions for TGraph Bot.
 
 This module contains utility functions specifically related to Discord commands,
-such as formatting command output or complex argument parsing.
+such as formatting command output, argument parsing, response handling,
+permission checking, and standardized interaction management.
 """
 
 from __future__ import annotations
 
 import logging
+import re
+from typing import TypeVar
 
 import discord
 
 logger = logging.getLogger(__name__)
+
+# Type variable for generic functions
+T = TypeVar('T')
 
 
 def create_error_embed(
@@ -210,17 +216,83 @@ def format_uptime(seconds: int) -> str:
 def validate_email(email: str) -> bool:
     """
     Basic email validation.
-    
+
     Args:
         email: Email address to validate
-        
+
     Returns:
         True if email appears valid, False otherwise
     """
-    import re
-    
     pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     return bool(re.match(pattern, email))
+
+
+def validate_channel_id(channel_id: str) -> int | None:
+    """
+    Validate and convert a Discord channel ID string to integer.
+
+    Args:
+        channel_id: Channel ID string to validate
+
+    Returns:
+        Channel ID as integer if valid, None otherwise
+    """
+    try:
+        channel_id_int = int(channel_id)
+        # Discord snowflake IDs are typically 17-19 digits long
+        # and must be positive 64-bit integers
+        if len(channel_id) >= 17 and 0 < channel_id_int < 2**63:
+            return channel_id_int
+        return None
+    except ValueError:
+        return None
+
+
+def validate_positive_integer(value: str, min_value: int = 1, max_value: int | None = None) -> int | None:
+    """
+    Validate and convert a string to a positive integer within bounds.
+
+    Args:
+        value: String value to validate
+        min_value: Minimum allowed value (default: 1)
+        max_value: Maximum allowed value (default: None for no limit)
+
+    Returns:
+        Integer value if valid, None otherwise
+    """
+    try:
+        int_value = int(value)
+        if int_value < min_value:
+            return None
+        if max_value is not None and int_value > max_value:
+            return None
+        return int_value
+    except ValueError:
+        return None
+
+
+def validate_color_hex(color: str) -> bool:
+    """
+    Validate a hexadecimal color string.
+
+    Args:
+        color: Color string to validate (e.g., "#FF0000" or "FF0000")
+
+    Returns:
+        True if valid hex color, False otherwise
+    """
+    # Remove # if present
+    color = color.lstrip('#')
+
+    # Check if it's a valid 6-character hex string
+    if len(color) != 6:
+        return False
+
+    try:
+        _ = int(color, 16)
+        return True
+    except ValueError:
+        return False
 
 
 def create_progress_embed(
@@ -298,5 +370,204 @@ def create_cooldown_embed(
         value="This prevents server overload during graph generation",
         inline=False
     )
+
+    return embed
+
+
+# Interaction Response Utilities
+
+async def safe_interaction_response(
+    interaction: discord.Interaction,
+    embed: discord.Embed | None = None,
+    content: str | None = None,
+    ephemeral: bool = False
+) -> bool:
+    """
+    Safely respond to an interaction, handling already-responded cases.
+
+    Args:
+        interaction: Discord interaction to respond to
+        embed: Embed to send (optional)
+        content: Text content to send (optional)
+        ephemeral: Whether response should be ephemeral
+
+    Returns:
+        True if response was sent successfully, False otherwise
+    """
+    try:
+        if interaction.response.is_done():
+            # Use followup if already responded
+            if content is not None and embed is not None:
+                _ = await interaction.followup.send(content=content, embed=embed, ephemeral=ephemeral)
+            elif content is not None:
+                _ = await interaction.followup.send(content=content, ephemeral=ephemeral)
+            elif embed is not None:
+                _ = await interaction.followup.send(embed=embed, ephemeral=ephemeral)
+            else:
+                _ = await interaction.followup.send(content="No content provided", ephemeral=ephemeral)
+        else:
+            # Use initial response
+            if content is not None and embed is not None:
+                _ = await interaction.response.send_message(content=content, embed=embed, ephemeral=ephemeral)
+            elif content is not None:
+                _ = await interaction.response.send_message(content=content, ephemeral=ephemeral)
+            elif embed is not None:
+                _ = await interaction.response.send_message(embed=embed, ephemeral=ephemeral)
+            else:
+                _ = await interaction.response.send_message(content="No content provided", ephemeral=ephemeral)
+        return True
+    except discord.HTTPException as e:
+        logger.error(f"Failed to respond to interaction: {e}")
+        return False
+    except Exception as e:
+        logger.exception(f"Unexpected error responding to interaction: {e}")
+        return False
+
+
+async def safe_interaction_edit(
+    interaction: discord.Interaction,
+    embed: discord.Embed | None = None,
+    content: str | None = None
+) -> bool:
+    """
+    Safely edit an interaction response.
+
+    Args:
+        interaction: Discord interaction to edit
+        embed: New embed content (optional)
+        content: New text content (optional)
+
+    Returns:
+        True if edit was successful, False otherwise
+    """
+    try:
+        _ = await interaction.edit_original_response(
+            content=content,
+            embed=embed
+        )
+        return True
+    except discord.HTTPException as e:
+        logger.error(f"Failed to edit interaction response: {e}")
+        return False
+    except Exception as e:
+        logger.exception(f"Unexpected error editing interaction response: {e}")
+        return False
+
+
+async def send_error_response(
+    interaction: discord.Interaction,
+    title: str = "Error",
+    description: str = "An error occurred",
+    ephemeral: bool = True
+) -> bool:
+    """
+    Send a standardized error response to an interaction.
+
+    Args:
+        interaction: Discord interaction to respond to
+        title: Error title
+        description: Error description
+        ephemeral: Whether response should be ephemeral
+
+    Returns:
+        True if response was sent successfully, False otherwise
+    """
+    error_embed = create_error_embed(title=title, description=description)
+    return await safe_interaction_response(
+        interaction=interaction,
+        embed=error_embed,
+        ephemeral=ephemeral
+    )
+
+
+async def send_success_response(
+    interaction: discord.Interaction,
+    title: str = "Success",
+    description: str = "Operation completed successfully",
+    ephemeral: bool = False
+) -> bool:
+    """
+    Send a standardized success response to an interaction.
+
+    Args:
+        interaction: Discord interaction to respond to
+        title: Success title
+        description: Success description
+        ephemeral: Whether response should be ephemeral
+
+    Returns:
+        True if response was sent successfully, False otherwise
+    """
+    success_embed = create_success_embed(title=title, description=description)
+    return await safe_interaction_response(
+        interaction=interaction,
+        embed=success_embed,
+        ephemeral=ephemeral
+    )
+
+
+# Permission and Command Utilities
+
+def check_manage_guild_permission(interaction: discord.Interaction) -> bool:
+    """
+    Check if the user has manage guild permissions.
+
+    Args:
+        interaction: Discord interaction to check
+
+    Returns:
+        True if user has manage guild permissions, False otherwise
+    """
+    if interaction.guild is None:
+        return False
+
+    # Check if user is guild owner
+    if interaction.guild.owner_id == interaction.user.id:
+        return True
+
+    # Check if user has manage guild permission
+    if isinstance(interaction.user, discord.Member):
+        return interaction.user.guild_permissions.manage_guild
+
+    return False
+
+
+def format_command_help(
+    command_name: str,
+    description: str,
+    usage: str | None = None,
+    examples: list[str] | None = None
+) -> discord.Embed:
+    """
+    Create a standardized help embed for a command.
+
+    Args:
+        command_name: Name of the command
+        description: Description of what the command does
+        usage: Usage syntax (optional)
+        examples: List of usage examples (optional)
+
+    Returns:
+        Discord embed with command help information
+    """
+    embed = create_info_embed(
+        title=f"Command: /{command_name}",
+        description=description
+    )
+
+    if usage:
+        _ = embed.add_field(
+            name="Usage",
+            value=f"`{usage}`",
+            inline=False
+        )
+
+    if examples:
+        example_text = "\n".join(f"`{example}`" for example in examples)
+        _ = embed.add_field(
+            name="Examples",
+            value=example_text,
+            inline=False
+        )
 
     return embed
