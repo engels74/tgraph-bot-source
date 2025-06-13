@@ -9,7 +9,7 @@ import threading
 import time
 from pathlib import Path
 from typing import Any, Callable, override
-from watchdog.events import FileSystemEventHandler
+from watchdog.events import FileSystemEventHandler, FileSystemEvent
 from watchdog.observers import Observer
 
 import yaml
@@ -35,13 +35,14 @@ class ConfigFileHandler(FileSystemEventHandler):
         self._last_modified: float = 0.0
 
     @override
-    def on_modified(self, event: Any) -> None:
+    def on_modified(self, event: FileSystemEvent) -> None:
         """Handle file modification events."""
         if event.is_directory:
             return
 
         # Check if the modified file is our config file
-        if Path(event.src_path).resolve() == self.config_path.resolve():
+        src_path_str = event.src_path if isinstance(event.src_path, str) else event.src_path.decode('utf-8')
+        if Path(src_path_str).resolve() == self.config_path.resolve():
             # Debounce rapid file changes
             current_time = time.time()
             if current_time - self._last_modified < 0.5:  # 500ms debounce
@@ -105,7 +106,7 @@ class ConfigManager:
         parsed_data = ConfigManager._parse_config_data(config_data)
         
         try:
-            return TGraphBotConfig(**parsed_data)
+            return TGraphBotConfig(**parsed_data)  # pyright: ignore[reportArgumentType]
         except ValidationError as e:
             # Re-raise the original ValidationError with additional context
             raise e
@@ -332,7 +333,7 @@ class ConfigManager:
             'CHANNEL_ID': 123456789012345678,
         }
         
-        return TGraphBotConfig(**default_data)
+        return TGraphBotConfig(**default_data)  # pyright: ignore[reportArgumentType]
 
     @staticmethod
     def validate_config(config: TGraphBotConfig) -> bool:
@@ -350,7 +351,7 @@ class ConfigManager:
         """
         # Re-validate the configuration by creating a new instance
         try:
-            _ = TGraphBotConfig(**config.model_dump())
+            _ = TGraphBotConfig(**config.model_dump())  # pyright: ignore[reportArgumentType]
             return True
         except ValidationError:
             raise

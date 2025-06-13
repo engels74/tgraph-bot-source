@@ -463,7 +463,7 @@ def compile_po_to_mo(po_file: Path, mo_file: Path | None = None) -> None:
         logger.info(f"Compiled {po_file} to {mo_file}")
 
     except subprocess.CalledProcessError as e:
-        logger.error(f"Failed to compile {po_file}: {e.stderr}")
+        logger.error(f"Failed to compile {po_file}: {e.stderr}")  # pyright: ignore[reportAny]
         raise
     except FileNotFoundError:
         logger.warning("msgfmt command not found. Install gettext tools to compile .po files.")

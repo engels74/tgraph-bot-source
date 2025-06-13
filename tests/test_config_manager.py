@@ -4,8 +4,7 @@ import tempfile
 import threading
 import time
 from pathlib import Path
-from typing import Any
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
 import yaml
@@ -59,7 +58,7 @@ CHANNEL_ID: 123456789012345678
 UPDATE_DAYS: 14  # Number of days between updates
 TV_COLOR: '#1f77b4'  # Color for TV shows
 """
-            f.write(content)
+            _ = f.write(content)
             return Path(f.name)
 
     def test_load_config_success(self, temp_config_file: Path) -> None:
@@ -79,21 +78,21 @@ TV_COLOR: '#1f77b4'  # Color for TV shows
         non_existent_path = Path('/non/existent/config.yml')
         
         with pytest.raises(FileNotFoundError):
-            ConfigManager.load_config(non_existent_path)
+            _ = ConfigManager.load_config(non_existent_path)
 
     def test_load_config_invalid_yaml(self) -> None:
         """Test loading config with invalid YAML syntax."""
         with tempfile.NamedTemporaryFile(mode='w', suffix='.yml', delete=False) as f:
-            f.write('invalid: yaml: content: [')
+            _ = f.write('invalid: yaml: content: [')
             invalid_yaml_path = Path(f.name)
         
         with pytest.raises(yaml.YAMLError):
-            ConfigManager.load_config(invalid_yaml_path)
+            _ = ConfigManager.load_config(invalid_yaml_path)
 
     def test_load_config_validation_error(self, invalid_config_file: Path) -> None:
         """Test loading config with validation errors."""
         with pytest.raises(ValidationError):
-            ConfigManager.load_config(invalid_config_file)
+            _ = ConfigManager.load_config(invalid_config_file)
 
     def test_save_config_success(self, temp_config_file: Path) -> None:
         """Test successful configuration saving."""
@@ -153,7 +152,7 @@ TV_COLOR: '#1f77b4'  # Color for TV shows
     def test_validate_config_failure(self) -> None:
         """Test configuration validation failure."""
         # Create invalid config data
-        invalid_data: dict[str, Any] = {
+        invalid_data: dict[str, object] = {
             'TAUTULLI_API_KEY': '',  # Empty string should fail validation
             'TAUTULLI_URL': 'invalid_url',  # Invalid URL format
             'DISCORD_TOKEN': 'short',  # Too short
@@ -161,7 +160,7 @@ TV_COLOR: '#1f77b4'  # Color for TV shows
         }
 
         with pytest.raises(ValidationError):
-            TGraphBotConfig(**invalid_data)
+            _ = TGraphBotConfig(**invalid_data)  # pyright: ignore[reportArgumentType]
 
     def test_create_sample_config(self) -> None:
         """Test creating sample configuration file."""

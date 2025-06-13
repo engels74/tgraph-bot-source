@@ -225,12 +225,12 @@ class ConfigCog(BaseCommandCog):
                 )
 
             # Create updated configuration data
-            config_data = current_config.model_dump()
+            config_data: dict[str, object] = current_config.model_dump()
             config_data[setting] = converted_value
 
             # Validate the new configuration
             try:
-                new_config = TGraphBotConfig(**config_data)
+                new_config = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
             except ValidationError as e:
                 raise ConfigurationError(
                     f"Configuration validation failed: {e}",

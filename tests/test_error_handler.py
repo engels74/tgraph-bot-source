@@ -126,9 +126,9 @@ class TestErrorTracker:
         tracker.record_error("test_error", ErrorSeverity.LOW)
         tracker.record_error("other_error", ErrorSeverity.MEDIUM)
         
-        assert tracker._error_counts["test_error"] == 2
-        assert tracker._error_counts["other_error"] == 1
-        assert len(tracker._error_history) == 3
+        assert tracker._error_counts["test_error"] == 2  # pyright: ignore[reportPrivateUsage]
+        assert tracker._error_counts["other_error"] == 1  # pyright: ignore[reportPrivateUsage]
+        assert len(tracker._error_history) == 3  # pyright: ignore[reportPrivateUsage]
     
     def test_error_tracker_get_error_rate(self) -> None:
         """Test error rate calculation."""
