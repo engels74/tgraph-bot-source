@@ -142,12 +142,12 @@ class DailyPlayCountGraph(BaseGraph):
                 )
 
                 # Customize the plot
-                _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)  # pyright: ignore[reportUnknownMemberType]
-                _ = ax.set_xlabel('Date', fontsize=12)  # pyright: ignore[reportUnknownMemberType]
-                _ = ax.set_ylabel('Play Count', fontsize=12)  # pyright: ignore[reportUnknownMemberType]
+                _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)
+                _ = ax.set_xlabel('Date', fontsize=12)
+                _ = ax.set_ylabel('Play Count', fontsize=12)
 
                 # Rotate x-axis labels for better readability
-                _ = ax.tick_params(axis='x', rotation=45)  # pyright: ignore[reportUnknownMemberType]
+                _ = ax.tick_params(axis='x', rotation=45)
 
                 # Add annotations if enabled
                 if self.config and self.config.ANNOTATE_DAILY_PLAY_COUNT:

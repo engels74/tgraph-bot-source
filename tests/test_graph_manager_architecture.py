@@ -6,7 +6,6 @@ to ensure proper dependency injection, async context management, and
 integration with existing components.
 """
 
-import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest

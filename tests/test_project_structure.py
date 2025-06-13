@@ -6,7 +6,6 @@ and that all required dependencies are available and importable.
 """
 
 import importlib
-import sys
 from pathlib import Path
 
 import pytest

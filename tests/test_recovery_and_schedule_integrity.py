@@ -6,12 +6,10 @@ missed update detection, and schedule integrity validation and repair.
 """
 
 import asyncio
-import json
 import tempfile
 from datetime import datetime, timedelta
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
-from typing import Any
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -21,9 +19,6 @@ from bot.update_tracker import (
     SchedulingConfig,
     StateManager,
     RecoveryManager,
-    MissedUpdate,
-    PersistentScheduleData,
-    RetryConfig,
 )
 
 

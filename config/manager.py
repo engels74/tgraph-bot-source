@@ -9,8 +9,8 @@ import threading
 import time
 from pathlib import Path
 from typing import Any, Callable, override
-from watchdog.events import FileSystemEventHandler  # pyright: ignore[reportMissingTypeStubs]
-from watchdog.observers import Observer  # pyright: ignore[reportMissingTypeStubs]
+from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
 
 import yaml
 from pydantic import ValidationError
@@ -567,11 +567,11 @@ MY_STATS_GLOBAL_COOLDOWN_SECONDS: 60
             config_path: Path to the configuration file to monitor
         """
         with self._config_lock:
-            if self._file_observer is not None:  # pyright: ignore[reportUnknownMemberType]
+            if self._file_observer is not None:
                 self.stop_file_monitoring()
 
             self._monitored_file = config_path.resolve()
-            self._file_observer = Observer()  # pyright: ignore[reportUnknownMemberType]
+            self._file_observer = Observer()
 
             # Create event handler
             handler = ConfigFileHandler(self, self._monitored_file)

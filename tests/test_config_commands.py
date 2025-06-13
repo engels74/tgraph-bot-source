@@ -133,14 +133,14 @@ class TestConfigCog:
     ) -> None:
         """Test successful configuration viewing."""
                 # Call the method directly using the callback
-        _ = await config_cog.config_view.callback(config_cog, mock_interaction)  # pyright: ignore[reportCallIssue]
+        _ = await config_cog.config_view.callback(config_cog, mock_interaction)
 
         # Verify interaction response was called
-        mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportUnknownMemberType]
+        mock_interaction.response.send_message.assert_called_once()
 
         # Get the embed from the call
-        call_args = mock_interaction.response.send_message.call_args  # pyright: ignore[reportUnknownMemberType]
-        embed = call_args[1]['embed']  # pyright: ignore[reportUnknownArgumentType]
+        call_args = mock_interaction.response.send_message.call_args
+        embed = call_args[1]['embed']
 
         assert embed.title == "🔧 Bot Configuration"
         assert embed.color == discord.Color.blue()
@@ -156,10 +156,10 @@ class TestConfigCog:
         # Mock the config manager to raise an exception
         with patch.object(config_cog.tgraph_bot.config_manager, 'get_current_config', side_effect=RuntimeError("Test error")), \
              patch('utils.command_utils.safe_interaction_response') as mock_safe_response:
-            _ = await config_cog.config_view.callback(config_cog, mock_interaction)  # pyright: ignore[reportCallIssue]
+            _ = await config_cog.config_view.callback(mock_interaction)
 
         # Verify error response was sent through the new error handling system
-        mock_safe_response.assert_called_once()  # pyright: ignore[reportUnknownMemberType]
+        mock_safe_response.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_config_edit_invalid_setting(

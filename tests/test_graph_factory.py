@@ -7,12 +7,10 @@ based on configuration settings.
 
 import tempfile
 from pathlib import Path
-from typing import cast
 
 import pytest
 
 from graphs.graph_modules.graph_factory import GraphFactory
-from config.schema import TGraphBotConfig
 
 
 class TestGraphFactory:

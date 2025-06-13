@@ -62,8 +62,8 @@ def setup_i18n(language: str = "en", locale_dir: Optional[Path] = None) -> None:
             _locale_dir = locale_dir
 
         # Configure gettext domain and locale directory
-        gettext.bindtextdomain(_domain, str(_locale_dir))
-        gettext.textdomain(_domain)
+        _result = gettext.bindtextdomain(_domain, str(_locale_dir))
+        _result = gettext.textdomain(_domain)
 
         # Try to load the specified language
         translation = gettext.translation(
@@ -148,8 +148,8 @@ def install_translation(language: str = "en") -> None:
             _locale_dir = Path(__file__).parent / "locale"
 
         # Configure gettext
-        gettext.bindtextdomain(_domain, str(_locale_dir))
-        gettext.textdomain(_domain)
+        _result = gettext.bindtextdomain(_domain, str(_locale_dir))
+        _result = gettext.textdomain(_domain)
 
         # Install translation as builtin
         gettext.install(_domain, str(_locale_dir), names=["gettext", "ngettext"])

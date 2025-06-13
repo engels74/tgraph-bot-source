@@ -79,11 +79,11 @@ class TestEndToEndCustomization:
             
             # Verify configuration is properly applied (colors are normalized to lowercase)
             assert graph.config is not None
-            assert graph.config.TV_COLOR == "#2e86ab"  # pyright: ignore[reportOptionalMemberAccess]
-            assert graph.config.MOVIE_COLOR == "#a23b72"  # pyright: ignore[reportOptionalMemberAccess]
-            assert graph.config.GRAPH_BACKGROUND_COLOR == "#f8f9fa"  # pyright: ignore[reportOptionalMemberAccess]
-            assert graph.config.ENABLE_GRAPH_GRID is True  # pyright: ignore[reportOptionalMemberAccess]
-            assert graph.config.CENSOR_USERNAMES is True  # pyright: ignore[reportOptionalMemberAccess]
+            assert graph.config.TV_COLOR == "#2e86ab"
+            assert graph.config.MOVIE_COLOR == "#a23b72"
+            assert graph.config.GRAPH_BACKGROUND_COLOR == "#f8f9fa"
+            assert graph.config.ENABLE_GRAPH_GRID is True
+            assert graph.config.CENSOR_USERNAMES is True
             
             # Verify graph properties are set correctly
             assert graph.background_color == "#f8f9fa"
@@ -110,10 +110,10 @@ class TestEndToEndCustomization:
         # Test that default values are applied correctly
         graph = factory.create_graph_by_type("daily_play_count")
         assert graph.config is not None
-        assert graph.config.TV_COLOR == "#1f77b4"  # pyright: ignore[reportOptionalMemberAccess] # Default blue
-        assert graph.config.MOVIE_COLOR == "#ff7f0e"  # pyright: ignore[reportOptionalMemberAccess] # Default orange
-        assert graph.config.CENSOR_USERNAMES is True  # pyright: ignore[reportOptionalMemberAccess] # Default privacy
-        assert graph.config.ENABLE_GRAPH_GRID is False  # pyright: ignore[reportOptionalMemberAccess] # Default no grid
+        assert graph.config.TV_COLOR == "#1f77b4"  # Default blue
+        assert graph.config.MOVIE_COLOR == "#ff7f0e"  # Default orange
+        assert graph.config.CENSOR_USERNAMES is True  # Default privacy
+        assert graph.config.ENABLE_GRAPH_GRID is False  # Default no grid
 
     def test_selective_graph_enabling_workflow(self) -> None:
         """Test workflow with selective graph type enabling."""
@@ -234,11 +234,11 @@ class TestEndToEndCustomization:
         
         # Verify high contrast colors are applied (colors are normalized to lowercase)
         assert graph.config is not None
-        assert graph.config.GRAPH_BACKGROUND_COLOR == "#2b2b2b"  # pyright: ignore[reportOptionalMemberAccess]
-        assert graph.config.TV_COLOR == "#00ff00"  # pyright: ignore[reportOptionalMemberAccess]
-        assert graph.config.MOVIE_COLOR == "#ff6600"  # pyright: ignore[reportOptionalMemberAccess]
-        assert graph.config.ANNOTATION_COLOR == "#ffffff"  # pyright: ignore[reportOptionalMemberAccess]
-        assert graph.config.ENABLE_GRAPH_GRID is True  # pyright: ignore[reportOptionalMemberAccess]
+        assert graph.config.GRAPH_BACKGROUND_COLOR == "#2b2b2b"
+        assert graph.config.TV_COLOR == "#00ff00"
+        assert graph.config.MOVIE_COLOR == "#ff6600"
+        assert graph.config.ANNOTATION_COLOR == "#ffffff"
+        assert graph.config.ENABLE_GRAPH_GRID is True
 
         # Verify graph background is applied
         assert graph.background_color == "#2b2b2b"
@@ -293,6 +293,6 @@ class TestEndToEndCustomization:
         
         # Verify boundary values are accepted
         assert graph.config is not None
-        assert graph.config.UPDATE_DAYS == 1  # pyright: ignore[reportOptionalMemberAccess]
-        assert graph.config.KEEP_DAYS == 365  # pyright: ignore[reportOptionalMemberAccess]
-        assert graph.config.TIME_RANGE_DAYS == 1  # pyright: ignore[reportOptionalMemberAccess]
+        assert graph.config.UPDATE_DAYS == 1
+        assert graph.config.KEEP_DAYS == 365
+        assert graph.config.TIME_RANGE_DAYS == 1

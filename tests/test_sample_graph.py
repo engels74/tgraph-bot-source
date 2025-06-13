@@ -6,7 +6,6 @@ for specific graph implementations and demonstrate the complete
 end-to-end workflow.
 """
 
-import tempfile
 from pathlib import Path
 
 import pytest
