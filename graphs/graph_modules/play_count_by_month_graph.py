@@ -6,6 +6,7 @@ by month.
 """
 
 import logging
+from collections.abc import Mapping
 from typing import TYPE_CHECKING, override
 
 import pandas as pd
@@ -65,7 +66,7 @@ class PlayCountByMonthGraph(BaseGraph):
         return "Play Count by Month"
 
     @override
-    def generate(self, data: dict[str, object]) -> str:
+    def generate(self, data: Mapping[str, object]) -> str:
         """
         Generate the play count by month graph using the provided data.
         

@@ -6,6 +6,7 @@ by day of the week, resulting in a cleaner implementation and superior visual ou
 """
 
 import logging
+from collections.abc import Mapping
 from typing import TYPE_CHECKING, override
 
 import pandas as pd
@@ -65,7 +66,7 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
         return "Play Count by Day of Week"
 
     @override
-    def generate(self, data: dict[str, object]) -> str:
+    def generate(self, data: Mapping[str, object]) -> str:
         """
         Generate the play count by day of week graph using the provided data.
         

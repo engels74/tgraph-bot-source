@@ -5,6 +5,7 @@ This module inherits from BaseGraph and uses Seaborn to plot the top 10 platform
 """
 
 import logging
+from collections.abc import Mapping
 from typing import TYPE_CHECKING, override
 
 import pandas as pd
@@ -64,7 +65,7 @@ class Top10PlatformsGraph(BaseGraph):
         return "Top 10 Platforms"
 
     @override
-    def generate(self, data: dict[str, object]) -> str:
+    def generate(self, data: Mapping[str, object]) -> str:
         """
         Generate the top 10 platforms graph using the provided data.
         

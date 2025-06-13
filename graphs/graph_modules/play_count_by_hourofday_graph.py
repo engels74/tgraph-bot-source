@@ -2,10 +2,11 @@
 Play count by hour of day graph for TGraph Bot.
 
 This module inherits from BaseGraph and uses Seaborn to plot play counts
-by hour of the day.
+by hour of the day, resulting in a cleaner implementation and superior visual output.
 """
 
 import logging
+from collections.abc import Mapping
 from typing import TYPE_CHECKING, override
 
 import pandas as pd
@@ -65,7 +66,7 @@ class PlayCountByHourOfDayGraph(BaseGraph):
         return "Play Count by Hour of Day"
 
     @override
-    def generate(self, data: dict[str, object]) -> str:
+    def generate(self, data: Mapping[str, object]) -> str:
         """
         Generate the play count by hour of day graph using the provided data.
 
