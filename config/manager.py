@@ -91,7 +91,7 @@ class ConfigManager:
         
         try:
             with config_path.open('r', encoding='utf-8') as f:
-                raw_config_data: object = yaml.safe_load(f)
+                raw_config_data = yaml.safe_load(f)  # pyright: ignore[reportAny]
         except yaml.YAMLError as e:
             raise yaml.YAMLError(f"Invalid YAML syntax in {config_path}: {e}") from e
 

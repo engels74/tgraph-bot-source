@@ -86,8 +86,8 @@ class TestNonBlockingGraphGeneration:
         graph_manager = GraphManager(mock_config_manager)
 
         # Mock the components to avoid actual initialization
-        with patch.object(graph_manager, '_initialize_components') as mock_init, \
-             patch.object(graph_manager, '_cleanup_components') as mock_cleanup:
+        with patch.object(graph_manager, '_initialize_components'), \
+             patch.object(graph_manager, '_cleanup_components'):
             
             # Mock the internal components
             mock_data_fetcher = AsyncMock()

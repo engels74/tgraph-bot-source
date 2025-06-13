@@ -213,11 +213,11 @@ class ConfigCog(BaseCommandCog):
                 )
 
             # Get the current value and type
-            current_value = getattr(current_config, setting)
+            current_value = getattr(current_config, setting)  # pyright: ignore[reportAny]
 
             # Convert the string value to the appropriate type
             try:
-                converted_value: object = self._convert_config_value(value, type(current_value))
+                converted_value = self._convert_config_value(value, type(current_value))  # pyright: ignore[reportAny]
             except ValueError as e:
                 raise TGraphValidationError(
                     f"Invalid value for setting '{setting}': {e}",
@@ -263,7 +263,7 @@ class ConfigCog(BaseCommandCog):
             )
             _ = success_embed.add_field(
                 name="New Value",
-                value=str(converted_value),
+                value=str(converted_value),  # pyright: ignore[reportAny]
                 inline=True
             )
             _ = success_embed.set_footer(text="Configuration saved and applied immediately")

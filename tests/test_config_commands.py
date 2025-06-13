@@ -12,7 +12,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import discord
 import pytest
 from discord.ext import commands
-from pydantic import ValidationError
+
 
 from bot.commands.config import ConfigCog
 from config.manager import ConfigManager

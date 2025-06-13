@@ -143,7 +143,7 @@ class TestBaseGraph:
         """Test that concrete implementation's generate method works."""
         graph = ConcreteGraph()
         
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with tempfile.TemporaryDirectory():
             # Generate graph
             output_path = graph.generate({"test": "data"})
             

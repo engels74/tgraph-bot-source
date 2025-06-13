@@ -91,7 +91,7 @@ class TestDirectoryUtilities:
                 mock_path_instance = MagicMock()
                 mock_path.return_value = mock_path_instance
 
-                result = ensure_graph_directory()
+                _ = ensure_graph_directory()
 
                 mock_path.assert_called_once_with("graphs")
                 mock_path_instance.mkdir.assert_called_once_with(parents=True, exist_ok=True)
