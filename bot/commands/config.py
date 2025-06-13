@@ -213,7 +213,7 @@ class ConfigCog(BaseCommandCog):
                 )
 
             # Get the current value and type
-            current_value: object = getattr(current_config, setting)
+            current_value = getattr(current_config, setting)
 
             # Convert the string value to the appropriate type
             try:

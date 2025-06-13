@@ -3,7 +3,7 @@
 import re
 from typing import Annotated
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 
 
 class TGraphBotConfig(BaseModel):
@@ -205,9 +205,9 @@ class TGraphBotConfig(BaseModel):
             raise ValueError("DISCORD_TOKEN appears to be too short")
         return v
     
-    model_config = {
-        "str_strip_whitespace": True,
-        "validate_assignment": True,
-        "extra": "forbid",
-        "frozen": False,  # Allow modification for live config updates
-    }
+    model_config = ConfigDict(
+        str_strip_whitespace=True,
+        validate_assignment=True,
+        extra="forbid",
+        frozen=False,  # Allow modification for live config updates
+    )

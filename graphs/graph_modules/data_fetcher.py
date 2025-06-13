@@ -108,13 +108,13 @@ class DataFetcher:
                 if not isinstance(data, dict):
                     raise ValueError("Invalid API response format")
 
-                response_data = data.get("response", {})  # pyright: ignore[reportUnknownMemberType]
-                if response_data.get("result") != "success":  # pyright: ignore[reportUnknownMemberType]
-                    error_msg = response_data.get("message", "Unknown API error")  # pyright: ignore[reportUnknownMemberType]
+                response_data = data.get("response", {})
+                if response_data.get("result") != "success":
+                    error_msg = response_data.get("message", "Unknown API error")
                     raise ValueError(f"API error: {error_msg}")
 
                 logger.debug(f"Successfully fetched data from {endpoint}")
-                return response_data.get("data", {})  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+                return response_data.get("data", {})
                 
             except httpx.TimeoutException:
                 logger.warning(f"Timeout on attempt {attempt + 1} for {endpoint}")
@@ -247,7 +247,7 @@ class DataFetcher:
         # users_data should be a list of user dictionaries
         if isinstance(users_data, list):
             for user in users_data:
-                if isinstance(user, dict) and user.get("email") == email:  # pyright: ignore[reportUnknownMemberType]
+                if isinstance(user, dict) and user.get("email") == email:
                     return user
 
         logger.warning(f"User not found with email: {email}")

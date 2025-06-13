@@ -8,7 +8,7 @@ import tempfile
 import threading
 import time
 from pathlib import Path
-from typing import Any, Callable, override
+from typing import Callable, override
 from watchdog.events import FileSystemEventHandler, FileSystemEvent
 from watchdog.observers import Observer
 
@@ -98,7 +98,7 @@ class ConfigManager:
         if raw_config_data is None:
             config_data: dict[str, object] = {}
         elif isinstance(raw_config_data, dict):
-            config_data = raw_config_data
+            config_data = raw_config_data  # pyright: ignore[reportUnknownVariableType]
         else:
             raise ValueError(f"Configuration file must contain a YAML dictionary, got {type(raw_config_data)}")
 
@@ -332,7 +332,7 @@ class ConfigManager:
             'DISCORD_TOKEN': 'your_discord_bot_token_here',
             'CHANNEL_ID': 123456789012345678,
         }
-        
+
         return TGraphBotConfig(**default_data)  # pyright: ignore[reportArgumentType]
 
     @staticmethod
@@ -572,24 +572,25 @@ MY_STATS_GLOBAL_COOLDOWN_SECONDS: 60
                 self.stop_file_monitoring()
 
             self._monitored_file = config_path.resolve()
-            self._file_observer = Observer()
+            observer = Observer()
+            self._file_observer = observer
 
             # Create event handler
             handler = ConfigFileHandler(self, self._monitored_file)
 
             # Watch the directory containing the config file
             watch_dir = self._monitored_file.parent
-            self._file_observer.schedule(handler, str(watch_dir), recursive=False)  # pyright: ignore[reportUnknownMemberType,reportOptionalMemberAccess]
+            observer.schedule(handler, str(watch_dir), recursive=False)
 
             # Start monitoring
-            self._file_observer.start()  # pyright: ignore[reportUnknownMemberType,reportOptionalMemberAccess]
+            observer.start()
 
     def stop_file_monitoring(self) -> None:
         """Stop monitoring the configuration file for changes."""
         with self._config_lock:
-            if self._file_observer is not None:  # pyright: ignore[reportUnknownMemberType]
-                self._file_observer.stop()  # pyright: ignore[reportUnknownMemberType]
-                self._file_observer.join()  # pyright: ignore[reportUnknownMemberType]
+            if self._file_observer is not None:
+                self._file_observer.stop()
+                self._file_observer.join()
                 self._file_observer = None
                 self._monitored_file = None
 

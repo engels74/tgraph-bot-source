@@ -160,7 +160,7 @@ class DailyPlayCountGraph(BaseGraph):
                     # Convert date to timestamp for annotation
                     max_date_ts = pd.to_datetime(max_date)
                     if hasattr(max_date_ts, 'timestamp'):
-                        x_coord = float(max_date_ts.timestamp())  # pyright: ignore[reportUnknownMemberType]
+                        x_coord = float(max_date_ts.timestamp())
                     else:
                         x_coord = float(max_date_idx)
 
