@@ -132,8 +132,8 @@ class TestConfigCog:
         mock_interaction: MagicMock
     ) -> None:
         """Test successful configuration viewing."""
-                # Call the method directly using the callback
-        _ = await config_cog.config_view.callback(config_cog, mock_interaction)
+        # Call the method directly using the callback
+        _ = await config_cog.config_view.callback(config_cog, mock_interaction)  # pyright: ignore[reportCallIssue]
 
         # Verify interaction response was called
         mock_interaction.response.send_message.assert_called_once()
@@ -156,7 +156,7 @@ class TestConfigCog:
         # Mock the config manager to raise an exception
         with patch.object(config_cog.tgraph_bot.config_manager, 'get_current_config', side_effect=RuntimeError("Test error")), \
              patch('utils.command_utils.safe_interaction_response') as mock_safe_response:
-            _ = await config_cog.config_view.callback(mock_interaction)
+            _ = await config_cog.config_view.callback(config_cog, mock_interaction)  # pyright: ignore[reportCallIssue]
 
         # Verify error response was sent through the new error handling system
         mock_safe_response.assert_called_once()
