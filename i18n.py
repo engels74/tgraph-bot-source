@@ -27,7 +27,7 @@ Usage Examples:
 import gettext
 import logging
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Callable, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -162,7 +162,7 @@ def install_translation(language: str = "en") -> None:
         logger.info("Translation functions may not be available globally")
 
 
-def translate(message: str, **kwargs: Any) -> str:
+def translate(message: str, **kwargs: object) -> str:
     """
     Translate a message with optional formatting.
 
@@ -191,7 +191,7 @@ def translate(message: str, **kwargs: Any) -> str:
     return translated
 
 
-def ngettext(singular: str, plural: str, n: int, **kwargs: Any) -> str:
+def ngettext(singular: str, plural: str, n: int, **kwargs: object) -> str:
     """
     Translate a message with plural forms.
 

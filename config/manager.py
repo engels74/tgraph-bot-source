@@ -91,12 +91,12 @@ class ConfigManager:
         
         try:
             with config_path.open('r', encoding='utf-8') as f:
-                raw_config_data: Any = yaml.safe_load(f)
+                raw_config_data: object = yaml.safe_load(f)
         except yaml.YAMLError as e:
             raise yaml.YAMLError(f"Invalid YAML syntax in {config_path}: {e}") from e
 
         if raw_config_data is None:
-            config_data: dict[str, Any] = {}
+            config_data: dict[str, object] = {}
         elif isinstance(raw_config_data, dict):
             config_data = raw_config_data
         else:
@@ -112,7 +112,7 @@ class ConfigManager:
             raise e
 
     @staticmethod
-    def _parse_config_data(config_data: dict[str, Any]) -> dict[str, Any]:
+    def _parse_config_data(config_data: dict[str, object]) -> dict[str, object]:
         """
         Parse configuration data using match statements for specific fields.
         
@@ -202,7 +202,7 @@ class ConfigManager:
                 suffix='.tmp',
                 delete=False,
             ) as temp_file:
-                temp_file.write(content_to_write)
+                _ = temp_file.write(content_to_write)
                 temp_file.flush()
                 temp_path = Path(temp_file.name)
 
@@ -216,7 +216,7 @@ class ConfigManager:
             raise OSError(f"Failed to save configuration to {config_path}: {e}") from e
 
     @staticmethod
-    def _preserve_comments(original_content: str, new_config: dict[str, Any]) -> str:
+    def _preserve_comments(original_content: str, new_config: dict[str, object]) -> str:
         """
         Preserve comments from original YAML content while updating values.
 
@@ -326,7 +326,7 @@ class ConfigManager:
             This creates a minimal config with placeholder values for required fields.
             Real configuration should be loaded from a proper config file.
         """
-        default_data: dict[str, Any] = {
+        default_data: dict[str, object] = {
             'TAUTULLI_API_KEY': 'your_tautulli_api_key_here',
             'TAUTULLI_URL': 'http://localhost:8181/api/v2',
             'DISCORD_TOKEN': 'your_discord_bot_token_here',

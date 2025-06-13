@@ -68,21 +68,21 @@ Examples:
         """
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         '--source-dir',
         type=Path,
         default=Path('.'),
         help='Source directory to scan for translatable strings (default: current directory)'
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         '--output',
         type=Path,
         default=Path('locale/messages.pot'),
         help='Output .pot file path (default: locale/messages.pot)'
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         '--exclude',
         action='append',
         default=[],

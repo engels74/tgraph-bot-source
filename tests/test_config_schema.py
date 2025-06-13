@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+
 
 import pytest
 from pydantic import ValidationError
@@ -15,13 +15,13 @@ class TestTGraphBotConfig:
 
     def test_valid_minimal_config(self) -> None:
         """Test that minimal required configuration is valid."""
-        config_data: dict[str, Any] = {
+        config_data = {
             "TAUTULLI_API_KEY": "test_api_key",
             "TAUTULLI_URL": "http://localhost:8181/api/v2",
             "DISCORD_TOKEN": "test_discord_token",
             "CHANNEL_ID": 123456789012345678,
         }
-        config = TGraphBotConfig(**config_data)
+        config = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
         
         assert config.TAUTULLI_API_KEY == "test_api_key"
         assert config.TAUTULLI_URL == "http://localhost:8181/api/v2"
@@ -30,7 +30,7 @@ class TestTGraphBotConfig:
 
     def test_valid_full_config(self) -> None:
         """Test that full configuration with all options is valid."""
-        config_data: dict[str, Any] = {
+        config_data = {
             "TAUTULLI_API_KEY": "test_api_key",
             "TAUTULLI_URL": "http://localhost:8181/api/v2",
             "DISCORD_TOKEN": "test_discord_token",
@@ -67,7 +67,7 @@ class TestTGraphBotConfig:
             "MY_STATS_COOLDOWN_MINUTES": 5,
             "MY_STATS_GLOBAL_COOLDOWN_SECONDS": 60,
         }
-        config = TGraphBotConfig(**config_data)
+        config = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
         
         assert config.UPDATE_DAYS == 14
         assert config.FIXED_UPDATE_TIME == "12:30"
@@ -76,13 +76,13 @@ class TestTGraphBotConfig:
 
     def test_default_values(self) -> None:
         """Test that default values are applied correctly."""
-        config_data: dict[str, Any] = {
+        config_data = {
             "TAUTULLI_API_KEY": "test_api_key",
             "TAUTULLI_URL": "http://localhost:8181/api/v2",
             "DISCORD_TOKEN": "test_discord_token",
             "CHANNEL_ID": 123456789012345678,
         }
-        config = TGraphBotConfig(**config_data)
+        config = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
         
         # Test some default values from PRD
         assert config.UPDATE_DAYS == 7
@@ -107,7 +107,7 @@ class TestTGraphBotConfig:
 
     def test_invalid_color_format(self) -> None:
         """Test that invalid color formats raise ValidationError."""
-        config_data: dict[str, Any] = {
+        config_data = {
             "TAUTULLI_API_KEY": "test_api_key",
             "TAUTULLI_URL": "http://localhost:8181/api/v2",
             "DISCORD_TOKEN": "test_discord_token",
@@ -116,14 +116,14 @@ class TestTGraphBotConfig:
         }
         
         with pytest.raises(ValidationError) as exc_info:
-            TGraphBotConfig(**config_data)
+            TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
         
         errors = exc_info.value.errors()
         assert any(error["loc"] == ("TV_COLOR",) for error in errors)
 
     def test_invalid_time_format(self) -> None:
         """Test that invalid time formats raise ValidationError."""
-        config_data: dict[str, Any] = {
+        config_data = {
             "TAUTULLI_API_KEY": "test_api_key",
             "TAUTULLI_URL": "http://localhost:8181/api/v2",
             "DISCORD_TOKEN": "test_discord_token",
@@ -132,11 +132,11 @@ class TestTGraphBotConfig:
         }
         
         with pytest.raises(ValidationError):
-            TGraphBotConfig(**config_data)
+            TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
 
     def test_negative_values_validation(self) -> None:
         """Test that negative values for certain fields raise ValidationError."""
-        config_data: dict[str, Any] = {
+        config_data = {
             "TAUTULLI_API_KEY": "test_api_key",
             "TAUTULLI_URL": "http://localhost:8181/api/v2",
             "DISCORD_TOKEN": "test_discord_token",
@@ -145,11 +145,11 @@ class TestTGraphBotConfig:
         }
         
         with pytest.raises(ValidationError):
-            TGraphBotConfig(**config_data)
+            TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
 
     def test_channel_id_validation(self) -> None:
         """Test that channel ID validation works correctly."""
-        config_data: dict[str, Any] = {
+        config_data = {
             "TAUTULLI_API_KEY": "test_api_key",
             "TAUTULLI_URL": "http://localhost:8181/api/v2",
             "DISCORD_TOKEN": "test_discord_token",
@@ -157,4 +157,4 @@ class TestTGraphBotConfig:
         }
         
         with pytest.raises(ValidationError):
-            TGraphBotConfig(**config_data)
+            TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
