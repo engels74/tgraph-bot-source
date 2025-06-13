@@ -8,6 +8,7 @@ username censoring, and common graph operations.
 import tempfile
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -61,7 +62,7 @@ class TestDateUtilities:
             parse_date("invalid-date")
     
     @patch('graphs.graph_modules.utils.datetime')
-    def test_get_date_range(self, mock_datetime: any) -> None:  # pyright: ignore[reportExplicitAny]
+    def test_get_date_range(self, mock_datetime: Any) -> None:  # pyright: ignore[reportExplicitAny]
         """Test getting date range."""
         # Mock current time
         mock_now = datetime(2023, 12, 25, 12, 0, 0)

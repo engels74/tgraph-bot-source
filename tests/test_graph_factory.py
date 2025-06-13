@@ -116,7 +116,7 @@ class TestGraphFactory:
         from graphs.graph_modules.play_count_by_dayofweek_graph import PlayCountByDayOfWeekGraph
         from graphs.graph_modules.top_10_users_graph import Top10UsersGraph
 
-        factory = GraphFactory({})
+        factory = GraphFactory({})  # pyright: ignore[reportArgumentType]
 
         daily_graph = factory.create_graph_by_type("daily_play_count")
         assert isinstance(daily_graph, DailyPlayCountGraph)
@@ -129,7 +129,7 @@ class TestGraphFactory:
     
     def test_get_enabled_graph_types_empty_config(self) -> None:
         """Test getting enabled graph types with empty configuration."""
-        factory = GraphFactory({})
+        factory = GraphFactory({})  # pyright: ignore[reportArgumentType]
         enabled_types = factory.get_enabled_graph_types()
         
         # All types should be enabled by default (True is the default)
@@ -154,7 +154,7 @@ class TestGraphFactory:
             "ENABLE_TOP_10_PLATFORMS": False,
             "ENABLE_TOP_10_USERS": False,
         }
-        factory = GraphFactory(config)
+        factory = GraphFactory(config)  # pyright: ignore[reportArgumentType]
         enabled_types = factory.get_enabled_graph_types()
         
         assert enabled_types == []
@@ -169,7 +169,7 @@ class TestGraphFactory:
             "ENABLE_TOP_10_PLATFORMS": True,
             "ENABLE_TOP_10_USERS": False,
         }
-        factory = GraphFactory(config)
+        factory = GraphFactory(config)  # pyright: ignore[reportArgumentType]
         enabled_types = factory.get_enabled_graph_types()
         
         expected_types = [
@@ -190,7 +190,7 @@ class TestGraphFactory:
             "ENABLE_TOP_10_PLATFORMS": None,  # Falsy
             "ENABLE_TOP_10_USERS": "false",  # Truthy (non-empty string)
         }
-        factory = GraphFactory(config)
+        factory = GraphFactory(config)  # pyright: ignore[reportArgumentType]
         enabled_types = factory.get_enabled_graph_types()
         
         expected_types = [
@@ -209,7 +209,7 @@ class TestGraphFactory:
         }
         config_copy = original_config.copy()
         
-        factory = GraphFactory(config_copy)
+        factory = GraphFactory(config_copy)  # pyright: ignore[reportArgumentType]
         _ = factory.get_enabled_graph_types()
         _ = factory.create_enabled_graphs()
         
@@ -221,7 +221,7 @@ class TestGraphFactory:
         # This test verifies the factory pattern structure supports
         # adding new graph types without modifying existing code
         
-        factory = GraphFactory({})
+        factory = GraphFactory({})  # pyright: ignore[reportArgumentType]
         
         # Verify the type mapping exists and has expected structure
         enabled_types = factory.get_enabled_graph_types()
@@ -243,7 +243,7 @@ class TestGraphFactory:
     def test_sample_graph_integration(self) -> None:
         """Test that sample graph can be created through factory."""
         config = {"ENABLE_SAMPLE_GRAPH": True}
-        factory = GraphFactory(config)
+        factory = GraphFactory(config)  # pyright: ignore[reportArgumentType]
 
         # Test creating sample graph by type
         sample_graph = factory.create_graph_by_type("sample_graph")
@@ -255,7 +255,7 @@ class TestGraphFactory:
     def test_sample_graph_in_enabled_graphs(self) -> None:
         """Test that sample graph appears in enabled graphs when configured."""
         config = {"ENABLE_SAMPLE_GRAPH": True}
-        factory = GraphFactory(config)
+        factory = GraphFactory(config)  # pyright: ignore[reportArgumentType]
 
         enabled_types = factory.get_enabled_graph_types()
         assert "sample_graph" in enabled_types
@@ -266,7 +266,7 @@ class TestGraphFactory:
 
     def test_sample_graph_disabled_by_default(self) -> None:
         """Test that sample graph is disabled by default."""
-        factory = GraphFactory({})  # Empty config
+        factory = GraphFactory({})  # pyright: ignore[reportArgumentType]  # Empty config
 
         enabled_types = factory.get_enabled_graph_types()
         assert "sample_graph" not in enabled_types
@@ -280,7 +280,7 @@ class TestGraphFactory:
         from graphs.graph_modules.sample_graph import SampleGraph
 
         config = {"ENABLE_SAMPLE_GRAPH": True}
-        factory = GraphFactory(config)
+        factory = GraphFactory(config)  # pyright: ignore[reportArgumentType]
 
         # Create graph through factory
         sample_graph = factory.create_graph_by_type("sample_graph")
@@ -299,7 +299,7 @@ class TestGraphFactory:
 
     def test_setup_graph_environment(self) -> None:
         """Test that setup_graph_environment creates directory and returns path."""
-        factory = GraphFactory({})
+        factory = GraphFactory({})  # pyright: ignore[reportArgumentType]
 
         with tempfile.TemporaryDirectory() as temp_dir:
             base_path = Path(temp_dir) / "test_graphs"
@@ -314,7 +314,7 @@ class TestGraphFactory:
 
     def test_cleanup_old_graphs_with_directory(self) -> None:
         """Test cleanup of old graph files from specified directory."""
-        factory = GraphFactory({})
+        factory = GraphFactory({})  # pyright: ignore[reportArgumentType]
 
         with tempfile.TemporaryDirectory() as temp_dir:
             graph_dir = Path(temp_dir)
@@ -342,7 +342,7 @@ class TestGraphFactory:
 
     def test_cleanup_old_graphs_default_directory(self) -> None:
         """Test cleanup using default graph directory."""
-        factory = GraphFactory({})
+        factory = GraphFactory({})  # pyright: ignore[reportArgumentType]
 
         # This should not raise an error even if directory doesn't exist
         deleted_count = factory.cleanup_old_graphs()

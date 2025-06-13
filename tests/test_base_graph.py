@@ -7,6 +7,8 @@ for the graph generation system.
 
 import tempfile
 from pathlib import Path
+from collections.abc import Mapping
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 
@@ -18,7 +20,7 @@ from graphs.graph_modules.base_graph import BaseGraph
 class ConcreteGraph(BaseGraph):
     """Concrete implementation of BaseGraph for testing."""
     
-    def generate(self, data: dict[str, object]) -> str:
+    def generate(self, data: Mapping[str, object]) -> str:
         """Generate a test graph."""
         self.setup_figure()
         if self.axes is not None:
@@ -200,7 +202,7 @@ class TestBaseGraph:
         class PartialGraph(BaseGraph):
             """Partial implementation with only one abstract method."""
             
-            def generate(self, data: dict[str, any]) -> str:  # pyright: ignore[reportExplicitAny]
+            def generate(self, data: Mapping[str, object]) -> str:
                 return "test.png"
             # Missing get_title method
         

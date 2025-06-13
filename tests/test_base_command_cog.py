@@ -44,6 +44,9 @@ class TestBaseCooldownConfig:
 class TestBaseCommandCog:
     """Test the BaseCommandCog class."""
 
+    mock_bot: Mock  # pyright: ignore[reportUninitializedInstanceVariable]
+    cooldown_config: BaseCooldownConfig  # pyright: ignore[reportUninitializedInstanceVariable]
+
     def setup_method(self) -> None:
         """Set up test fixtures."""
         self.mock_bot = Mock(spec=commands.Bot)
