@@ -8,7 +8,6 @@ for the graph generation system.
 import tempfile
 from pathlib import Path
 from collections.abc import Mapping
-from typing import Any
 from unittest.mock import MagicMock, patch
 
 

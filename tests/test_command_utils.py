@@ -5,7 +5,7 @@ This module tests utility functions for Discord command formatting,
 argument parsing, response handling, and interaction management.
 """
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import discord
 import pytest

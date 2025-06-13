@@ -6,7 +6,7 @@ to ensure proper cooldown management, error handling, and configuration access.
 """
 
 import time
-from unittest.mock import MagicMock, Mock
+from unittest.mock import Mock
 
 import discord
 import pytest

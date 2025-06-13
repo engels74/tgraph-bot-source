@@ -8,9 +8,6 @@ options work correctly in realistic scenarios.
 
 from __future__ import annotations
 
-import tempfile
-from pathlib import Path
-
 from config.schema import TGraphBotConfig
 from graphs.graph_modules.graph_factory import GraphFactory
 
