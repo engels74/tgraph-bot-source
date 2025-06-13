@@ -1,74 +1,19 @@
-# Danish translations for TGraph Bot
-# Copyright (C) 2024 engels74
+# Danish translation for TGraph Bot
+# Copyright (C) 2024 TGraph Bot
 # This file is distributed under the same license as the TGraph Bot package.
-# engels74 <141435164+engels74@users.noreply.github.com>, 2024.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: TGraph Bot 1.0.0\n"
-"Report-Msgid-Bugs-To: https://github.com/engels74/tgraph-bot-source/issues\n"
+"Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2024-01-01 12:00+0000\n"
 "PO-Revision-Date: 2024-01-01 12:00+0000\n"
-"Last-Translator: engels74 <141435164+engels74@users.noreply.github.com>\n"
-"Language-Team: Danish <https://hosted.weblate.org/projects/tgraph-bot/tgraph-bot/da/>\n"
+"Last-Translator: TGraph Bot Team\n"
+"Language-Team: Danish\n"
 "Language: da\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.0\n"
 
-# Bot information messages
-msgid "TGraph Bot - Tautulli Discord Graph Generator"
-msgstr "TGraph Bot - Tautulli Discord Graf Generator"
-
-msgid "A Discord bot for automatically generating and posting Tautulli graphs"
-msgstr "En Discord bot til automatisk generering og posting af Tautulli grafer"
-
-msgid "Bot is online and ready!"
-msgstr "Bot er online og klar!"
-
-msgid "Uptime: {uptime}"
-msgstr "Oppetid: {uptime}"
-
-# Command descriptions
-msgid "Display information about the bot"
-msgstr "Vis information om botten"
-
-msgid "View or edit bot configuration"
-msgstr "Se eller rediger bot konfiguration"
-
-msgid "Get your personal Plex statistics"
-msgstr "Få dine personlige Plex statistikker"
-
-msgid "Manually update server graphs"
-msgstr "Opdater server grafer manuelt"
-
-msgid "Show bot uptime"
-msgstr "Vis bot oppetid"
-
-# Error messages
-msgid "An error occurred while processing your request"
-msgstr "Der opstod en fejl under behandling af din anmodning"
-
-msgid "Configuration file not found"
-msgstr "Konfigurationsfil ikke fundet"
-
-msgid "Invalid configuration format"
-msgstr "Ugyldigt konfigurationsformat"
-
-msgid "Failed to connect to Tautulli API"
-msgstr "Kunne ikke oprette forbindelse til Tautulli API"
-
-msgid "Failed to generate graph"
-msgstr "Kunne ikke generere graf"
-
-# Success messages
-msgid "Configuration updated successfully"
-msgstr "Konfiguration opdateret med succes"
-
-msgid "Graphs updated successfully"
-msgstr "Grafer opdateret med succes"
-
-msgid "Personal statistics sent via DM"
-msgstr "Personlige statistikker sendt via DM"
+msgid "Hello"
+msgstr "Hej"

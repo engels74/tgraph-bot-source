@@ -29,6 +29,7 @@ import re
 import subprocess
 from datetime import datetime
 from pathlib import Path
+from typing import override
 
 logger = logging.getLogger(__name__)
 
@@ -68,9 +69,10 @@ class StringExtractor(ast.NodeVisitor):
         Args:
             filename: Name of the file being processed (for context)
         """
-        self.filename = filename
+        self.filename: str = filename
         self.strings: list[tuple[str, int, str | None]] = []
 
+    @override
     def visit_Call(self, node: ast.Call) -> None:
         """
         Visit function call nodes to find translation function calls.
@@ -262,7 +264,7 @@ def generate_pot_file(
     string_locations: dict[str, list[tuple[str, int]]] = {}
     
     for filepath, strings in all_strings.items():
-        for string_value, line_number, context in strings:
+        for string_value, line_number, _context in strings:
             if string_value not in string_locations:
                 string_locations[string_value] = []
             string_locations[string_value].append((filepath, line_number))
@@ -283,9 +285,9 @@ def generate_pot_file(
         content += 'msgstr ""\n\n'
     
     # Write the .pot file
-    output_file.parent.mkdir(parents=True, exist_ok=True)
+    _ = output_file.parent.mkdir(parents=True, exist_ok=True)
     with open(output_file, 'w', encoding='utf-8') as file:
-        file.write(content)
+        _ = file.write(content)
     
     logger.info(f"Generated .pot file with {len(string_locations)} unique strings: {output_file}")
 
@@ -384,9 +386,9 @@ def update_po_file(pot_file: Path, po_file: Path, preserve_translations: bool = 
             po_content += f'msgstr "{msgstr}"\n\n'
 
     # Write the updated .po file
-    po_file.parent.mkdir(parents=True, exist_ok=True)
+    _ = po_file.parent.mkdir(parents=True, exist_ok=True)
     with open(po_file, 'w', encoding='utf-8') as file:
-        file.write(po_content)
+        _ = file.write(po_content)
 
     logger.info(f"Updated .po file: {po_file}")
 
@@ -451,7 +453,7 @@ def compile_po_to_mo(po_file: Path, mo_file: Path | None = None) -> None:
 
     try:
         # Use msgfmt command to compile .po to .mo
-        subprocess.run(
+        _ = subprocess.run(
             ['msgfmt', '-o', str(mo_file), str(po_file)],
             capture_output=True,
             text=True,

@@ -90,14 +90,14 @@ class ConfigManager:
         
         try:
             with config_path.open('r', encoding='utf-8') as f:
-                raw_config_data = yaml.safe_load(f)
+                raw_config_data: Any = yaml.safe_load(f)
         except yaml.YAMLError as e:
             raise yaml.YAMLError(f"Invalid YAML syntax in {config_path}: {e}") from e
 
         if raw_config_data is None:
             config_data: dict[str, Any] = {}
         elif isinstance(raw_config_data, dict):
-            config_data = raw_config_data  # pyright: ignore[reportUnknownVariableType]
+            config_data = raw_config_data
         else:
             raise ValueError(f"Configuration file must contain a YAML dictionary, got {type(raw_config_data)}")
 
@@ -136,7 +136,7 @@ class ConfigManager:
                             parsed_data[key] = value
                         case _:
                             parsed_data[key] = value
-                
+
                 case 'LANGUAGE':
                     # Validate language code
                     match value:
@@ -144,7 +144,7 @@ class ConfigManager:
                             parsed_data[key] = value.lower()
                         case _:
                             parsed_data[key] = value
-                
+
                 case key if key.endswith('_COLOR'):
                     # Normalize color values to lowercase
                     match value:
