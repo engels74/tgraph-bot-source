@@ -235,7 +235,7 @@ class TestConfigCog:
                      patch('bot.commands.config.Path', return_value=temp_path), \
                      patch.object(ConfigManager, 'save_config') as mock_save:
 
-                    _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "UPDATE_DAYS", "14")
+                    _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "UPDATE_DAYS", "14")  # pyright: ignore[reportCallIssue]
                 
                 # Verify success response was sent
                 mock_interaction.response.send_message.assert_called_once()
@@ -262,7 +262,7 @@ class TestConfigCog:
              patch.object(ConfigManager, 'save_config', side_effect=Exception("Save failed")), \
              patch('utils.command_utils.safe_interaction_response') as mock_safe_response:
 
-            _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "UPDATE_DAYS", "14")
+            _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "UPDATE_DAYS", "14")  # pyright: ignore[reportCallIssue]
 
         # Verify error response was sent through the new error handling system
         mock_safe_response.assert_called_once()

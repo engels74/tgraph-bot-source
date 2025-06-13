@@ -97,7 +97,7 @@ class TestTGraphBotConfig:
     def test_missing_required_fields(self) -> None:
         """Test that missing required fields raise ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
-            TGraphBotConfig()
+            _ = TGraphBotConfig()  # pyright: ignore[reportCallIssue]
         
         errors = exc_info.value.errors()
         required_fields = {"TAUTULLI_API_KEY", "TAUTULLI_URL", "DISCORD_TOKEN", "CHANNEL_ID"}
