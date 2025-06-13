@@ -7,10 +7,12 @@ based on configuration settings.
 
 import tempfile
 from pathlib import Path
+from typing import cast
 
 import pytest
 
 from graphs.graph_modules.graph_factory import GraphFactory
+from config.schema import TGraphBotConfig
 
 
 class TestGraphFactory:
@@ -19,7 +21,7 @@ class TestGraphFactory:
     def test_factory_initialization(self) -> None:
         """Test GraphFactory initialization."""
         config = {"ENABLE_DAILY_PLAY_COUNT": True}
-        factory = GraphFactory(config)
+        factory = GraphFactory(config)  # pyright: ignore[reportArgumentType]
         assert factory.config == config
     
     def test_create_enabled_graphs_empty_config(self) -> None:

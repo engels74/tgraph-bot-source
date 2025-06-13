@@ -153,8 +153,10 @@ class TestErrorTracker:
         
         assert summary["total_errors"] == 2
         assert summary["critical_errors_1h"] == 1
-        assert "error1" in summary["error_types"]
-        assert "error2" in summary["error_types"]
+        error_types = summary["error_types"]
+        assert isinstance(error_types, (list, set, dict))
+        assert "error1" in error_types
+        assert "error2" in error_types
 
 
 class TestErrorClassification:

@@ -9,6 +9,7 @@ import gc
 import tempfile
 from pathlib import Path
 from typing import override
+from collections.abc import Mapping
 from unittest.mock import MagicMock, patch
 import psutil
 import os
@@ -41,7 +42,7 @@ class MemoryTestGraph(BaseGraph):
     """Simple test graph for memory testing."""
 
     @override
-    def generate(self, data: dict[str, object]) -> str:
+    def generate(self, data: Mapping[str, object]) -> str:
         """Generate a simple test graph."""
         try:
             _ = self.setup_figure()
@@ -119,7 +120,7 @@ class TestMemoryManagement:
         
         class FailingGraph(BaseGraph):
             @override
-            def generate(self, data: dict[str, object]) -> str:
+            def generate(self, data: Mapping[str, object]) -> str:
                 try:
                     _ = self.setup_figure()
                     # Simulate an error during generation

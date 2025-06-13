@@ -81,16 +81,22 @@ class TestEmbedCreation:
         assert embed.title == "Processing"
         assert embed.description == "Working on it..."
         assert embed.color == discord.Color.blue()
-        assert "50.0%" in embed.fields[0].value
-        assert "50/100" in embed.fields[0].value
+        field_value = embed.fields[0].value
+        assert field_value is not None
+        assert "50.0%" in field_value
+        assert "50/100" in field_value
 
     def test_create_cooldown_embed(self) -> None:
         """Test cooldown embed creation."""
         embed = create_cooldown_embed("test_command", 120.5)
         
         assert embed.title == "Command on Cooldown"
-        assert "test_command" in embed.description
-        assert "2.0 minutes" in embed.fields[0].value
+        description = embed.description
+        assert description is not None
+        assert "test_command" in description
+        field_value = embed.fields[0].value
+        assert field_value is not None
+        assert "2.0 minutes" in field_value
 
 
 class TestValidationFunctions:

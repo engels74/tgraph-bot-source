@@ -117,7 +117,7 @@ class BaseGraph(ABC):
         sns.set_style("whitegrid" if self.get_grid_enabled() else "white")
 
         # Set color palette if available
-        if self.config is not None:
+        if self.config is not None and hasattr(self.config, 'TV_COLOR'):
             # Create a custom palette using TV and Movie colors
             custom_palette = [self.config.TV_COLOR, self.config.MOVIE_COLOR]
             sns.set_palette(custom_palette)

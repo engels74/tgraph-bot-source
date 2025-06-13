@@ -107,6 +107,7 @@ class TestExtensionManager:
         
         assert status.name == "test.extension"
         assert status.loaded is False
+        assert status.error is not None
         assert "Extension not found" in status.error
         assert "test.extension" in manager._failed_extensions
 
@@ -121,6 +122,7 @@ class TestExtensionManager:
         
         assert status.name == "test.extension"
         assert status.loaded is False
+        assert status.error is not None
         assert "No setup function found" in status.error
         assert "test.extension" in manager._failed_extensions
 
@@ -135,6 +137,7 @@ class TestExtensionManager:
         
         assert status.name == "test.extension"
         assert status.loaded is False
+        assert status.error is not None
         assert "Extension setup failed" in status.error
         assert "test.extension" in manager._failed_extensions
 
@@ -149,6 +152,7 @@ class TestExtensionManager:
         
         assert status.name == "test.extension"
         assert status.loaded is False
+        assert status.error is not None
         assert "Unexpected error loading extension" in status.error
         assert "test.extension" in manager._failed_extensions
 
@@ -305,6 +309,7 @@ class TestExtensionFunctions:
         
         assert status.name == "test.extension"
         assert status.loaded is False
+        assert status.error is not None
         assert "Extension not loaded, cannot reload" in status.error
 
     @pytest.mark.asyncio

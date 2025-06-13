@@ -1,0 +1,13 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Follow these guidelines:
+- Use `uv` or `uvx` for all Python commands (e.g., `uv run`, `uv run pytest`, `uv pip`).
+- Adhere to Python 3.13 best practices.
+- Employ TDD (test-driven development).
+- Verify type safety using `uvx basedpyright`.
+- Install type stubs for dependencies (e.g., `uv pip install types-requests`) only when `basedpyright` reports missing type stubs.
+- Prefer `# pyright:ignore` over `# type:ignore` comments.
+- Use global and targeted ignores only where absolutely necessary.
