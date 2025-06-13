@@ -26,7 +26,7 @@ class TestGraphFactory:
     
     def test_create_enabled_graphs_empty_config(self) -> None:
         """Test creating graphs with empty configuration."""
-        factory = GraphFactory({})
+        factory = GraphFactory({})  # pyright: ignore[reportArgumentType]
         graphs = factory.create_enabled_graphs()
 
         # With empty config, all graphs are enabled by default (True is the default)
@@ -43,7 +43,7 @@ class TestGraphFactory:
             "ENABLE_TOP_10_PLATFORMS": False,
             "ENABLE_TOP_10_USERS": False,
         }
-        factory = GraphFactory(config)
+        factory = GraphFactory(config)  # pyright: ignore[reportArgumentType]
         graphs = factory.create_enabled_graphs()
         
         assert isinstance(graphs, list)
@@ -59,7 +59,7 @@ class TestGraphFactory:
             "ENABLE_TOP_10_PLATFORMS": True,
             "ENABLE_TOP_10_USERS": True,
         }
-        factory = GraphFactory(config)
+        factory = GraphFactory(config)  # pyright: ignore[reportArgumentType]
         graphs = factory.create_enabled_graphs()
 
         # All graph types are enabled, so all 6 should be created
@@ -76,7 +76,7 @@ class TestGraphFactory:
             "ENABLE_TOP_10_PLATFORMS": True,
             "ENABLE_TOP_10_USERS": False,
         }
-        factory = GraphFactory(config)
+        factory = GraphFactory(config)  # pyright: ignore[reportArgumentType]
         graphs = factory.create_enabled_graphs()
 
         # Only 3 graph types are enabled (daily, hourofday, platforms)
@@ -85,14 +85,14 @@ class TestGraphFactory:
     
     def test_create_graph_by_type_unknown_type(self) -> None:
         """Test creating graph with unknown type raises ValueError."""
-        factory = GraphFactory({})
+        factory = GraphFactory({})  # pyright: ignore[reportArgumentType]
         
         with pytest.raises(ValueError, match="Unknown graph type: unknown_type"):
             _ = factory.create_graph_by_type("unknown_type")
     
     def test_create_graph_by_type_valid_types(self) -> None:
         """Test creating graph by type with valid type names."""
-        factory = GraphFactory({})
+        factory = GraphFactory({})  # pyright: ignore[reportArgumentType]
 
         valid_types = [
             "daily_play_count",

@@ -256,7 +256,7 @@ TV_COLOR: '#1f77b4'  # Color for TV shows
                 field_name: input_value,
             }
             
-            config = TGraphBotConfig(**config_data)
+            config = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
             assert getattr(config, field_name) == expected_value
 
     def teardown_method(self) -> None:

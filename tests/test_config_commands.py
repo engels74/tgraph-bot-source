@@ -132,8 +132,8 @@ class TestConfigCog:
         mock_interaction: MagicMock
     ) -> None:
         """Test successful configuration viewing."""
-        # Call the method directly using the callback
-        _ = await config_cog.config_view.callback(config_cog, mock_interaction)
+                # Call the method directly using the callback
+        _ = await config_cog.config_view.callback(config_cog, mock_interaction)  # pyright: ignore[reportCallIssue]
 
         # Verify interaction response was called
         mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportUnknownMemberType]
@@ -156,7 +156,7 @@ class TestConfigCog:
         # Mock the config manager to raise an exception
         with patch.object(config_cog.tgraph_bot.config_manager, 'get_current_config', side_effect=RuntimeError("Test error")), \
              patch('utils.command_utils.safe_interaction_response') as mock_safe_response:
-            _ = await config_cog.config_view.callback(config_cog, mock_interaction)
+            _ = await config_cog.config_view.callback(config_cog, mock_interaction)  # pyright: ignore[reportCallIssue]
 
         # Verify error response was sent through the new error handling system
         mock_safe_response.assert_called_once()  # pyright: ignore[reportUnknownMemberType]
@@ -169,7 +169,7 @@ class TestConfigCog:
     ) -> None:
         """Test configuration editing with invalid setting."""
         with patch('utils.command_utils.safe_interaction_response') as mock_safe_response:
-            _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "INVALID_SETTING", "value")
+            _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "INVALID_SETTING", "value")  # pyright: ignore[reportCallIssue]
 
         # Verify error response was sent through the new error handling system
         mock_safe_response.assert_called_once()  # pyright: ignore[reportUnknownMemberType]
@@ -182,7 +182,7 @@ class TestConfigCog:
     ) -> None:
         """Test configuration editing with invalid value."""
         with patch('utils.command_utils.safe_interaction_response') as mock_safe_response:
-            _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "UPDATE_DAYS", "not_a_number")
+            _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "UPDATE_DAYS", "not_a_number")  # pyright: ignore[reportCallIssue]
 
         # Verify error response was sent through the new error handling system
         mock_safe_response.assert_called_once()
@@ -196,7 +196,7 @@ class TestConfigCog:
         """Test configuration editing with validation error."""
         # Try to set UPDATE_DAYS to an invalid value (outside range)
         with patch('utils.command_utils.safe_interaction_response') as mock_safe_response:
-            _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "UPDATE_DAYS", "999")
+            _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "UPDATE_DAYS", "999")  # pyright: ignore[reportCallIssue]
 
         # Verify error response was sent through the new error handling system
         mock_safe_response.assert_called_once()
@@ -210,7 +210,7 @@ class TestConfigCog:
         """Test configuration editing when config file doesn't exist."""
         with patch('pathlib.Path.exists', return_value=False), \
              patch('utils.command_utils.safe_interaction_response') as mock_safe_response:
-            _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "UPDATE_DAYS", "14")
+            _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "UPDATE_DAYS", "14")  # pyright: ignore[reportCallIssue]
 
         # Verify error response was sent through the new error handling system
         mock_safe_response.assert_called_once()

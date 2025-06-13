@@ -230,7 +230,7 @@ class TestRecoveryManager:
         )
         
         # Check repairs
-        assert repaired_state.next_update > current_time  # Fixed future time
+        assert repaired_state.next_update is not None and repaired_state.next_update > current_time  # Fixed future time
         assert repaired_state.consecutive_failures == 0  # Reset old failures
         assert not repaired_state.is_running  # Cleared running state
     
@@ -287,7 +287,7 @@ class TestUpdateTrackerRecovery:
             status = tracker.get_recovery_status()
             assert status["recovery_enabled"] is True
             assert status["state_file_exists"] is False
-            assert str(state_file) in status["state_file_path"]
+            assert isinstance(status["state_file_path"], str) and str(state_file) in status["state_file_path"]
     
     @pytest.mark.asyncio
     async def test_clear_persistent_state(self) -> None:
