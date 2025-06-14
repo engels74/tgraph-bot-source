@@ -225,11 +225,11 @@ class TestNonBlockingGraphGeneration:
             mock_data_fetcher = AsyncMock()
             mock_graph_factory = MagicMock()
             
-            user_graph_manager._data_fetcher = mock_data_fetcher
-            user_graph_manager._graph_factory = mock_graph_factory
-            
+            user_graph_manager._data_fetcher = mock_data_fetcher  # pyright: ignore[reportPrivateUsage]
+            user_graph_manager._graph_factory = mock_graph_factory  # pyright: ignore[reportPrivateUsage]
+
             # Mock user data fetching
-            mock_data_fetcher.get_user_play_history.return_value = mock_graph_data
+            mock_data_fetcher.get_user_play_history.return_value = mock_graph_data  # pyright: ignore[reportAny]
 
             def simulate_user_graph_work(_data: dict[str, object], _progress_tracker: object = None) -> list[str]:
                 """Simulate user graph generation work."""
@@ -278,11 +278,11 @@ class TestNonBlockingGraphGeneration:
             mock_data_fetcher = AsyncMock()
             mock_graph_factory = MagicMock()
             
-            user_graph_manager._data_fetcher = mock_data_fetcher
-            user_graph_manager._graph_factory = mock_graph_factory
-            
+            user_graph_manager._data_fetcher = mock_data_fetcher  # pyright: ignore[reportPrivateUsage]
+            user_graph_manager._graph_factory = mock_graph_factory  # pyright: ignore[reportPrivateUsage]
+
             # Mock user data fetching
-            mock_data_fetcher.get_user_play_history.return_value = mock_graph_data
+            mock_data_fetcher.get_user_play_history.return_value = mock_graph_data  # pyright: ignore[reportAny]
 
             def simulate_user_graph_work(_data: dict[str, object], _progress_tracker: object = None) -> list[str]:
                 """Simulate user graph generation work."""
@@ -330,10 +330,10 @@ class TestNonBlockingGraphGeneration:
             mock_data_fetcher = AsyncMock()
             mock_graph_factory = MagicMock()
             
-            graph_manager._data_fetcher = mock_data_fetcher
-            graph_manager._graph_factory = mock_graph_factory
-            
-            mock_data_fetcher.get_play_history.return_value = mock_graph_data
+            graph_manager._data_fetcher = mock_data_fetcher  # pyright: ignore[reportPrivateUsage]
+            graph_manager._graph_factory = mock_graph_factory  # pyright: ignore[reportPrivateUsage]
+
+            mock_data_fetcher.get_play_history.return_value = mock_graph_data  # pyright: ignore[reportAny]
 
             def simulate_slow_work(_data: dict[str, object], _progress_tracker: object = None) -> list[str]:
                 """Simulate work that exceeds timeout."""
@@ -359,7 +359,7 @@ class TestNonBlockingGraphGeneration:
 
         # Get initial memory usage
         process = psutil.Process(os.getpid())
-        initial_memory: int = process.memory_info().rss
+        initial_memory: int = process.memory_info().rss  # pyright: ignore[reportAny]
 
         graph_manager = GraphManager(mock_config_manager)
 
@@ -370,10 +370,10 @@ class TestNonBlockingGraphGeneration:
             mock_data_fetcher = AsyncMock()
             mock_graph_factory = MagicMock()
 
-            graph_manager._data_fetcher = mock_data_fetcher
-            graph_manager._graph_factory = mock_graph_factory
+            graph_manager._data_fetcher = mock_data_fetcher  # pyright: ignore[reportPrivateUsage]
+            graph_manager._graph_factory = mock_graph_factory  # pyright: ignore[reportPrivateUsage]
 
-            mock_data_fetcher.get_play_history.return_value = mock_graph_data
+            mock_data_fetcher.get_play_history.return_value = mock_graph_data  # pyright: ignore[reportAny]
 
             def simulate_memory_intensive_work(_data: dict[str, object], _progress_tracker: object = None) -> list[str]:
                 """Simulate memory-intensive graph generation."""
@@ -394,7 +394,7 @@ class TestNonBlockingGraphGeneration:
 
                         # Check memory usage periodically
                         if i % 3 == 0:
-                            current_memory: int = process.memory_info().rss
+                            current_memory: int = process.memory_info().rss  # pyright: ignore[reportAny]
                             memory_increase = current_memory - initial_memory
 
                             # Memory increase should be reasonable (< 100MB)
@@ -428,10 +428,10 @@ class TestNonBlockingGraphGeneration:
             mock_data_fetcher = AsyncMock()
             mock_graph_factory = MagicMock()
 
-            graph_manager._data_fetcher = mock_data_fetcher
-            graph_manager._graph_factory = mock_graph_factory
+            graph_manager._data_fetcher = mock_data_fetcher  # pyright: ignore[reportPrivateUsage]
+            graph_manager._graph_factory = mock_graph_factory  # pyright: ignore[reportPrivateUsage]
 
-            mock_data_fetcher.get_play_history.return_value = mock_graph_data
+            mock_data_fetcher.get_play_history.return_value = mock_graph_data  # pyright: ignore[reportAny]
 
             def simulate_error_work(_data: dict[str, object], _progress_tracker: object = None) -> list[str]:
                 """Simulate work that raises an error."""
@@ -484,10 +484,10 @@ class TestNonBlockingGraphGeneration:
             mock_data_fetcher = AsyncMock()
             mock_graph_factory = MagicMock()
 
-            graph_manager._data_fetcher = mock_data_fetcher
-            graph_manager._graph_factory = mock_graph_factory
+            graph_manager._data_fetcher = mock_data_fetcher  # pyright: ignore[reportPrivateUsage]
+            graph_manager._graph_factory = mock_graph_factory  # pyright: ignore[reportPrivateUsage]
 
-            mock_data_fetcher.get_play_history.return_value = mock_graph_data
+            mock_data_fetcher.get_play_history.return_value = mock_graph_data  # pyright: ignore[reportAny]
 
             def simulate_tracked_work(_data: dict[str, object], _progress_tracker: object = None) -> list[str]:
                 """Simulate work with progress tracking."""
