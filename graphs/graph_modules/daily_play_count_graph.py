@@ -128,7 +128,7 @@ class DailyPlayCountGraph(BaseGraph):
                     'date': pd.to_datetime(dates),
                     'play_count': counts
                 })
-                df = df.sort_values('date')  # pyright: ignore[reportUnknownMemberType]
+                df = df.sort_values('date')
 
                 # Create line plot with markers
                 _ = sns.lineplot(

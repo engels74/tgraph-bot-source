@@ -12,7 +12,7 @@ from collections import defaultdict
 from collections.abc import Mapping
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import TypeVar, TYPE_CHECKING, Any, TypedDict
+from typing import TypeVar, TYPE_CHECKING, TypedDict
 
 if TYPE_CHECKING:
     pass
@@ -44,7 +44,7 @@ class PlatformAggregateRecord(TypedDict):
 
 
 # Type aliases for common data structures
-GraphData = dict[str, int] | list[dict[str, Any]]
+GraphData = dict[str, int] | list[dict[str, object]]
 ProcessedRecords = list[ProcessedPlayRecord]
 UserAggregates = list[UserAggregateRecord]
 PlatformAggregates = list[PlatformAggregateRecord]
@@ -343,39 +343,49 @@ def process_play_history_data(raw_data: Mapping[str, object]) -> ProcessedRecord
             continue
 
         try:
-            # Extract and validate required fields
-            processed_record: dict[str, object] = {
-                'date': safe_get_nested_value(record, ['date'], ''),
-                'user': safe_get_nested_value(record, ['user'], ''),
-                'platform': safe_get_nested_value(record, ['platform'], ''),
-                'media_type': safe_get_nested_value(record, ['media_type'], ''),
-                'duration': safe_get_nested_value(record, ['duration'], 0),
-                'stopped': safe_get_nested_value(record, ['stopped'], 0),
-                'paused_counter': safe_get_nested_value(record, ['paused_counter'], 0),
-            }
+            # Extract and validate required fields with proper type conversion
+            date_value = safe_get_nested_value(record, ['date'], '')
+            user_value = safe_get_nested_value(record, ['user'], '')
+            platform_value = safe_get_nested_value(record, ['platform'], '')
+            media_type_value = safe_get_nested_value(record, ['media_type'], '')
+            duration_value = safe_get_nested_value(record, ['duration'], 0)
+            stopped_value = safe_get_nested_value(record, ['stopped'], 0)
+            paused_counter_value = safe_get_nested_value(record, ['paused_counter'], 0)
 
             # Convert timestamps to datetime objects if they're valid
-            if processed_record['date']:
+            if date_value:
                 try:
                     # Safely convert to int, handling various input types
-                    if isinstance(processed_record['date'], (int, float)):
-                        timestamp = int(processed_record['date'])
-                    elif isinstance(processed_record['date'], str):
-                        timestamp = int(processed_record['date'])
+                    if isinstance(date_value, (int, float)):
+                        timestamp = int(date_value)
+                    elif isinstance(date_value, str):
+                        timestamp = int(date_value)
                     else:
-                        logger.warning(f"Invalid timestamp type: {type(processed_record['date'])}")
+                        logger.warning(f"Invalid timestamp type: {type(date_value)}")
                         continue
 
-                    processed_record['datetime'] = datetime.fromtimestamp(timestamp)
+                    datetime_obj = datetime.fromtimestamp(timestamp)
                 except (ValueError, TypeError) as e:
-                    logger.warning(f"Invalid timestamp: {processed_record['date']}, error: {e}")
+                    logger.warning(f"Invalid timestamp: {date_value}, error: {e}")
                     continue
             else:
                 logger.warning("Missing date in record")
                 continue
 
-            # Add to processed records - cast to correct type
-            processed_records.append(processed_record)  # type: ignore[arg-type]
+            # Construct a properly typed ProcessedPlayRecord
+            processed_record: ProcessedPlayRecord = {
+                'date': str(date_value),
+                'user': str(user_value),
+                'platform': str(platform_value),
+                'media_type': str(media_type_value),
+                'duration': int(duration_value) if isinstance(duration_value, (int, float)) else 0,
+                'stopped': int(stopped_value) if isinstance(stopped_value, (int, float)) else 0,
+                'paused_counter': int(paused_counter_value) if isinstance(paused_counter_value, (int, float)) else 0,
+                'datetime': datetime_obj,
+            }
+
+            # Add to processed records
+            processed_records.append(processed_record)
 
         except Exception as e:
             logger.warning(f"Error processing record: {e}")

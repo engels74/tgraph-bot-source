@@ -155,22 +155,22 @@ class DataFetcher:
                 response = await self._client.get(url, params=request_params)
                 _ = response.raise_for_status()
 
-                data = response.json()
+                data: object = response.json()
 
                 # Check for API-level errors
                 if not isinstance(data, dict):
                     raise ValueError("Invalid API response format")
 
-                response_data = data.get("response", {})
+                response_data: object = data.get("response", {})
                 if not isinstance(response_data, dict):
                     raise ValueError("API response is not a dictionary")
 
                 if response_data.get("result") != "success":
-                    error_msg = response_data.get("message", "Unknown API error")
+                    error_msg: object = response_data.get("message", "Unknown API error")
                     raise ValueError(f"API error: {error_msg}")
 
                 logger.debug(f"Successfully fetched data from {endpoint}")
-                data_result = response_data.get("data", {})
+                data_result: object = response_data.get("data", {})
                 if not isinstance(data_result, dict):
                     return {}
                 return data_result
@@ -308,14 +308,30 @@ class DataFetcher:
         users_data = await self.get_users()
 
         # The API returns a dict with a 'data' key containing the list of users
-        users_list = users_data.get("data", [])
+        users_list: object = users_data.get("data", [])
         if isinstance(users_list, list):
             for user in users_list:
                 if isinstance(user, dict):
-                    user_email = user.get("email")
+                    user_email: object = user.get("email")
                     if user_email == email:
-                        # Return user data - cast to correct type
-                        return user  # type: ignore[return-value]
+                        # Construct a properly typed UserRecord from the API response
+                        # Safely convert API response values to expected types
+                        user_id_raw: object = user.get('user_id', 0)
+                        username_raw: object = user.get('username', '')
+                        friendly_name_raw: object = user.get('friendly_name', '')
+                        email_raw: object = user.get('email', '')
+                        thumb_raw: object = user.get('thumb', '')
+                        is_active_raw: object = user.get('is_active', 0)
+
+                        user_record: UserRecord = {
+                            'user_id': int(user_id_raw) if isinstance(user_id_raw, (int, float, str)) else 0,
+                            'username': str(username_raw) if username_raw is not None else '',
+                            'friendly_name': str(friendly_name_raw) if friendly_name_raw is not None else '',
+                            'email': str(email_raw) if email_raw is not None else '',
+                            'thumb': str(thumb_raw) if thumb_raw is not None else '',
+                            'is_active': int(is_active_raw) if isinstance(is_active_raw, (int, float, str)) else 0,
+                        }
+                        return user_record
 
         logger.warning(f"User not found with email: {email}")
         return None
