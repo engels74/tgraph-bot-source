@@ -42,7 +42,7 @@ dev = [
     "ruff>=0.11.13",
     
     # Type checking
-    "basedpyright>=1.29.2",
+    "basedpyright>=1.29.4",
     
     # Translation/i18n utilities
     "polib>=1.2.0",
@@ -108,7 +108,7 @@ exclude = ["htmlcov", ".venv"]
 
 [dependency-groups]
 dev = [
-    "basedpyright>=1.29.2",
+    "basedpyright>=1.29.4",
     "pandas-stubs>=2.2.3.250527",
     "polib>=1.2.0",
     "pytest>=8.4.0",
