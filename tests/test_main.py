@@ -12,14 +12,19 @@ import logging
 import signal
 import tempfile
 from pathlib import Path
+from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import discord
 import pytest
 from discord.ext import commands
 
 from main import TGraphBot, main, setup_logging, setup_signal_handlers
 from config.manager import ConfigManager
 from config.schema import TGraphBotConfig
+
+if TYPE_CHECKING:
+    pass
 
 
 class TestTGraphBot:
@@ -437,8 +442,11 @@ class TestEnhancedErrorHandling:
         mock_user.name = "TestBot"
         mock_user.id = 123456789
 
+        def mock_empty_guilds() -> list[discord.Guild]:
+            return []
+
         with patch.object(type(bot), "user", new_callable=lambda: mock_user), \
-             patch.object(type(bot), "guilds", new_callable=lambda: []), \
+             patch.object(type(bot), "guilds", new_callable=mock_empty_guilds), \
              patch.object(bot, "close", new_callable=AsyncMock) as mock_close:
 
             await bot.on_ready()
