@@ -582,7 +582,7 @@ MY_STATS_GLOBAL_COOLDOWN_SECONDS: 60
 
             # Watch the directory containing the config file
             watch_dir = self._monitored_file.parent
-            observer.schedule(handler, str(watch_dir), recursive=False)
+            _ = observer.schedule(handler, str(watch_dir), recursive=False)
 
             # Start monitoring
             observer.start()

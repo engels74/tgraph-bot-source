@@ -21,10 +21,10 @@ class ConcreteGraph(BaseGraph):
     
     def generate(self, data: Mapping[str, object]) -> str:
         """Generate a test graph."""
-        self.setup_figure()
+        _ = self.setup_figure()
         if self.axes is not None:
-            self.axes.plot([1, 2, 3], [1, 4, 2])
-            self.axes.set_title(self.get_title())
+            _ = self.axes.plot([1, 2, 3], [1, 4, 2])
+            _ = self.axes.set_title(self.get_title())
         
         with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
             output_path = tmp.name
@@ -42,7 +42,7 @@ class TestBaseGraph:
     def test_cannot_instantiate_base_graph_directly(self) -> None:
         """Test that BaseGraph cannot be instantiated directly."""
         with pytest.raises(TypeError, match="Can't instantiate abstract class"):
-            BaseGraph()  # pyright: ignore[reportAbstractUsage]
+            _ = BaseGraph()  # pyright: ignore[reportAbstractUsage]
     
     def test_concrete_graph_instantiation(self) -> None:
         """Test that concrete implementation can be instantiated."""
@@ -90,7 +90,7 @@ class TestBaseGraph:
         graph = ConcreteGraph()
         
         with pytest.raises(ValueError, match="Figure not initialized"):
-            graph.save_figure(output_path="test.png")
+            _ = graph.save_figure(output_path="test.png")
     
     def test_save_figure_creates_directory(self) -> None:
         """Test that save_figure creates output directory if it doesn't exist."""
@@ -100,9 +100,9 @@ class TestBaseGraph:
             output_path = Path(temp_dir) / "subdir" / "test_graph.png"
             
             # Setup figure
-            graph.setup_figure()
+            _ = graph.setup_figure()
             if graph.axes is not None:
-                graph.axes.plot([1, 2, 3], [1, 4, 2])
+                _ = graph.axes.plot([1, 2, 3], [1, 4, 2])
             
             # Save figure
             saved_path = graph.save_figure(output_path=str(output_path))
@@ -117,7 +117,7 @@ class TestBaseGraph:
     def test_cleanup(self) -> None:
         """Test cleanup functionality."""
         graph = ConcreteGraph()
-        graph.setup_figure()
+        _ = graph.setup_figure()
         
         assert graph.figure is not None
         assert graph.axes is not None
@@ -131,7 +131,7 @@ class TestBaseGraph:
         """Test BaseGraph as context manager."""
         with ConcreteGraph() as graph:
             assert isinstance(graph, ConcreteGraph)
-            graph.setup_figure()
+            _ = graph.setup_figure()
             assert graph.figure is not None
             assert graph.axes is not None
         
@@ -164,7 +164,7 @@ class TestBaseGraph:
     def test_cleanup_calls_plt_close(self, mock_close: MagicMock) -> None:
         """Test that cleanup properly calls plt.close."""
         graph = ConcreteGraph()
-        graph.setup_figure()
+        _ = graph.setup_figure()
         
         figure = graph.figure
         graph.cleanup()
@@ -193,7 +193,7 @@ class TestBaseGraph:
             pass
         
         with pytest.raises(TypeError, match="Can't instantiate abstract class"):
-            IncompleteGraph()  # pyright: ignore[reportAbstractUsage]
+            _ = IncompleteGraph()  # pyright: ignore[reportAbstractUsage]
     
     def test_partial_implementation_still_abstract(self) -> None:
         """Test that partial implementation is still abstract."""
@@ -206,7 +206,7 @@ class TestBaseGraph:
             # Missing get_title method
         
         with pytest.raises(TypeError, match="Can't instantiate abstract class"):
-            PartialGraph()  # pyright: ignore[reportAbstractUsage]
+            _ = PartialGraph()  # pyright: ignore[reportAbstractUsage]
 
     def test_color_validation_in_constructor(self) -> None:
         """Test that invalid colors are rejected in constructor."""
@@ -286,4 +286,4 @@ class TestBaseGraph:
         _ = graph.setup_figure()
 
         with pytest.raises(ValueError, match="Either output_path or graph_type must be provided"):
-            graph.save_figure()
+            _ = graph.save_figure()

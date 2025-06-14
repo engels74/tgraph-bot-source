@@ -89,13 +89,13 @@ Examples:
         help='Directory names to exclude from scanning (can be used multiple times)'
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         '--verbose',
         action='store_true',
         help='Enable verbose logging'
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         '--dry-run',
         action='store_true',
         help='Show what would be done without actually creating files'
