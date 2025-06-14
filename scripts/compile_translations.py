@@ -157,38 +157,38 @@ Examples:
         """
     )
 
-    _ = parser.add_argument(
+    parser.add_argument(
         '--locale-dir',
         type=Path,
         default=Path('locale'),
         help='Path to the locale directory (default: locale)'
     )
 
-    _ = parser.add_argument(
+    parser.add_argument(
         '--language',
         type=str,
         help='Compile only the specified language (e.g., "en", "da")'
     )
 
-    _ = parser.add_argument(
+    parser.add_argument(
         '--force',
         action='store_true',
         help='Force compilation even if .mo files are newer than .po files'
     )
 
-    _ = parser.add_argument(
+    parser.add_argument(
         '--check-only',
         action='store_true',
         help='Check which files need compilation without actually compiling'
     )
 
-    _ = parser.add_argument(
+    parser.add_argument(
         '--verbose',
         action='store_true',
         help='Enable verbose logging'
     )
 
-    _ = parser.add_argument(
+    parser.add_argument(
         '--dry-run',
         action='store_true',
         help='Show what would be done without actually compiling files'

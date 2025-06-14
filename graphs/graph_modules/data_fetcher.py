@@ -12,12 +12,11 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from typing import Any, cast
 from types import TracebackType
 from urllib.parse import urljoin
 
 import httpx
-
-
 
 logger = logging.getLogger(__name__)
 
@@ -102,25 +101,25 @@ class DataFetcher:
                 response = await self._client.get(url, params=request_params)
                 _ = response.raise_for_status()
 
-                data = response.json()  # pyright: ignore[reportAny]
+                data: dict[str, object] = response.json()
 
                 # Check for API-level errors
                 if not isinstance(data, dict):
                     raise ValueError("Invalid API response format")
 
-                response_data: object = data.get("response", {})  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+                response_data = data.get("response", {})
                 if not isinstance(response_data, dict):
                     raise ValueError("API response is not a dictionary")
 
-                if response_data.get("result") != "success":  # pyright: ignore[reportUnknownMemberType]
-                    error_msg: object = response_data.get("message", "Unknown API error")  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+                if response_data.get("result") != "success":
+                    error_msg = response_data.get("message", "Unknown API error")
                     raise ValueError(f"API error: {error_msg}")
 
                 logger.debug(f"Successfully fetched data from {endpoint}")
-                data_result: object = response_data.get("data", {})  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+                data_result = response_data.get("data", {})
                 if not isinstance(data_result, dict):
                     raise ValueError("API response data is not a dictionary")
-                return data_result  # pyright: ignore[reportUnknownVariableType]
+                return data_result
                 
             except httpx.TimeoutException:
                 logger.warning(f"Timeout on attempt {attempt + 1} for {endpoint}")
@@ -175,7 +174,7 @@ class DataFetcher:
         
         return data
         
-    async def get_user_stats(self, user_id: int) -> dict[str, object]:
+    async def get_user_stats(self, user_id: int) -> dict[str, Any]:
         """
         Fetch statistics for a specific user.
         
@@ -198,7 +197,7 @@ class DataFetcher:
         
         return data
         
-    async def get_library_stats(self) -> dict[str, object]:
+    async def get_library_stats(self) -> dict[str, Any]:
         """
         Fetch library statistics.
         
@@ -218,7 +217,7 @@ class DataFetcher:
         
         return data
         
-    async def get_users(self) -> dict[str, object]:
+    async def get_users(self) -> dict[str, Any]:
         """
         Fetch all users from Tautulli.
 
@@ -238,7 +237,7 @@ class DataFetcher:
 
         return data
 
-    async def find_user_by_email(self, email: str) -> dict[str, object] | None:
+    async def find_user_by_email(self, email: str) -> dict[str, Any] | None:
         """
         Find a user by their email address.
 
@@ -254,7 +253,7 @@ class DataFetcher:
         if isinstance(users_data, list):
             for user in users_data:
                 if isinstance(user, dict):
-                    user_email: object = user.get("email")
+                    user_email = user.get("email")
                     if user_email == email:
                         return user
 

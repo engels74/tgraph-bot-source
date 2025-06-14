@@ -108,45 +108,45 @@ Examples:
         """
     )
 
-    _ = parser.add_argument(
+    parser.add_argument(
         '--pot-file',
         type=Path,
         default=Path('locale/messages.pot'),
         help='Path to the .pot template file (default: locale/messages.pot)'
     )
 
-    _ = parser.add_argument(
+    parser.add_argument(
         '--locale-dir',
         type=Path,
         default=Path('locale'),
         help='Path to the locale directory (default: locale)'
     )
 
-    _ = parser.add_argument(
+    parser.add_argument(
         '--language',
         type=str,
         help='Update only the specified language (e.g., "en", "da")'
     )
 
-    _ = parser.add_argument(
+    parser.add_argument(
         '--no-preserve',
         action='store_true',
         help='Do not preserve existing translations (start fresh)'
     )
 
-    _ = parser.add_argument(
+    parser.add_argument(
         '--compile',
         action='store_true',
         help='Also compile .po files to .mo binary format'
     )
 
-    _ = parser.add_argument(
+    parser.add_argument(
         '--verbose',
         action='store_true',
         help='Enable verbose logging'
     )
 
-    _ = parser.add_argument(
+    parser.add_argument(
         '--dry-run',
         action='store_true',
         help='Show what would be done without actually updating files'

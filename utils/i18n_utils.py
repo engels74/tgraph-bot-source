@@ -126,7 +126,7 @@ class StringExtractor(ast.NodeVisitor):
         # Look for context in keyword arguments
         for keyword in node.keywords:
             if keyword.arg == "context" and isinstance(keyword.value, ast.Constant):
-                value = keyword.value.value
+                value: object = keyword.value.value  # ast.Constant.value is Any, so we type it as object
                 if isinstance(value, str):
                     return value
         return None
