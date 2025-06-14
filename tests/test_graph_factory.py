@@ -4,7 +4,6 @@ Tests for the graph factory system in TGraph Bot.
 This module tests the factory pattern for creating graph instances
 based on configuration settings.
 """
-# pyright: reportPrivateUsage=false, reportAny=false
 
 import tempfile
 from pathlib import Path
