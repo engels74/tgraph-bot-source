@@ -4,7 +4,6 @@ Tests for the error handling utilities.
 
 import pytest
 from datetime import datetime
-# pyright: reportPrivateUsage=false, reportAny=false
 from unittest.mock import Mock, patch
 
 import discord
@@ -127,9 +126,9 @@ class TestErrorTracker:
         tracker.record_error("test_error", ErrorSeverity.LOW)
         tracker.record_error("other_error", ErrorSeverity.MEDIUM)
         
-        assert tracker._error_counts["test_error"] == 2
-        assert tracker._error_counts["other_error"] == 1
-        assert len(tracker._error_history) == 3
+        assert tracker._error_counts["test_error"] == 2  # pyright: ignore[reportPrivateUsage]
+        assert tracker._error_counts["other_error"] == 1  # pyright: ignore[reportPrivateUsage]
+        assert len(tracker._error_history) == 3  # pyright: ignore[reportPrivateUsage]
     
     def test_error_tracker_get_error_rate(self) -> None:
         """Test error rate calculation."""
@@ -232,13 +231,13 @@ class TestErrorHandling:
         # Mock interaction
         interaction = Mock(spec=discord.Interaction)
         interaction.user = Mock()
-        interaction.user.id = 123
+        interaction.user.id = 123  # pyright: ignore[reportAny]
         interaction.guild = Mock()
-        interaction.guild.id = 456
+        interaction.guild.id = 456  # pyright: ignore[reportAny]
         interaction.channel = Mock()
-        interaction.channel.id = 789
+        interaction.channel.id = 789  # pyright: ignore[reportAny]
         interaction.command = Mock()
-        interaction.command.name = "test_command"
+        interaction.command.name = "test_command"  # pyright: ignore[reportAny]
         
         error = ValueError("Test validation error")
         
@@ -249,7 +248,7 @@ class TestErrorHandling:
             mock_send.assert_called_once()
             call_args = mock_send.call_args
             assert call_args[1]['title'] == "Command Error"
-            assert "invalid" in call_args[1]['description'].lower()
+            assert "invalid" in call_args[1]['description'].lower()  # pyright: ignore[reportAny]
     
     def test_log_error_with_context(self) -> None:
         """Test error logging with context."""
@@ -260,7 +259,7 @@ class TestErrorHandling:
             log_error_with_context(error, context)
             
             # Should log at info level for low severity validation error
-            mock_logger.info.assert_called_once()
+            mock_logger.info.assert_called_once()  # pyright: ignore[reportAny]
 
 
 class TestErrorDecorators:
@@ -308,10 +307,10 @@ class TestErrorDecorators:
         """Test command_error_handler decorator."""
         interaction = Mock(spec=discord.Interaction)
         interaction.user = Mock()
-        interaction.user.id = 123
+        interaction.user.id = 123  # pyright: ignore[reportAny]
         interaction.guild = None
         interaction.channel = Mock()
-        interaction.channel.id = 789
+        interaction.channel.id = 789  # pyright: ignore[reportAny]
         
         @command_error_handler()
         async def test_command(_self: Mock, _interaction: discord.Interaction) -> None:
@@ -329,9 +328,9 @@ class TestGlobalErrorTracker:
     
     def test_global_error_tracker_exists(self) -> None:
         """Test that global error tracker exists and works."""
-        initial_count = len(error_tracker._error_history)
+        initial_count = len(error_tracker._error_history)  # pyright: ignore[reportPrivateUsage]
         
         error_tracker.record_error("test_global_error")
         
-        assert len(error_tracker._error_history) == initial_count + 1
-        assert "test_global_error" in error_tracker._error_counts
+        assert len(error_tracker._error_history) == initial_count + 1  # pyright: ignore[reportPrivateUsage]
+        assert "test_global_error" in error_tracker._error_counts  # pyright: ignore[reportPrivateUsage]
