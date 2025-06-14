@@ -126,13 +126,13 @@ class Top10PlatformsGraph(BaseGraph):
                 )
 
                 # Step 8: Customize the plot
-                _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)
-                _ = ax.set_xlabel("Play Count", fontsize=14, fontweight='bold')
-                _ = ax.set_ylabel("Platform", fontsize=14, fontweight='bold')
+                _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)  # pyright: ignore[reportUnknownMemberType]
+                _ = ax.set_xlabel("Play Count", fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
+                _ = ax.set_ylabel("Platform", fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
 
                 # Adjust tick parameters
-                ax.tick_params(axis='x', labelsize=12)
-                ax.tick_params(axis='y', labelsize=12)
+                ax.tick_params(axis='x', labelsize=12)  # pyright: ignore[reportUnknownMemberType]
+                ax.tick_params(axis='y', labelsize=12)  # pyright: ignore[reportUnknownMemberType]
 
                 # Add value annotations if enabled
                 if self.config and getattr(self.config, 'ENABLE_ANNOTATION_OUTLINE', False):
@@ -144,19 +144,19 @@ class Top10PlatformsGraph(BaseGraph):
                             play_counts.append(count)
                     max_play_count = max(play_counts) if play_counts else 1
                     for bar in ax.patches:
-                        width = bar.get_width()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+                        width = bar.get_width()  # pyright: ignore[reportUnknownVariableType]
                         if width and width > 0:  # Only annotate non-zero values
                             _ = ax.text(  # pyright: ignore[reportUnknownMemberType]
                                 width + max_play_count * 0.01,  # pyright: ignore[reportUnknownArgumentType]
-                                bar.get_y() + bar.get_height()/2.,  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+                                bar.get_y() + bar.get_height()/2.,  # pyright: ignore[reportUnknownArgumentType]
                                 f'{int(width)}',  # pyright: ignore[reportUnknownArgumentType]
                                 ha='left', va='center', fontsize=10, fontweight='bold'
                             )
             else:
                 # Handle empty data case
-                _ = ax.text(0.5, 0.5, "No platform data available",
+                _ = ax.text(0.5, 0.5, "No platform data available",  # pyright: ignore[reportUnknownMemberType]
                            ha='center', va='center', transform=ax.transAxes, fontsize=16)
-                _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold')
+                _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
 
             # Adjust layout to prevent label cutoff
             if self.figure is not None:

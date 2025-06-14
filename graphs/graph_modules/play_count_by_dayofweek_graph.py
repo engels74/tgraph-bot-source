@@ -134,13 +134,13 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
             )
 
             # Step 8: Customize the plot
-            _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)
-            _ = ax.set_xlabel("Day of Week", fontsize=14, fontweight='bold')
-            _ = ax.set_ylabel("Play Count", fontsize=14, fontweight='bold')
+            _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
+            _ = ax.set_xlabel('Day of Week', fontsize=12)  # pyright: ignore[reportUnknownMemberType]
+            _ = ax.set_ylabel('Play Count', fontsize=12)  # pyright: ignore[reportUnknownMemberType]
 
-            # Rotate x-axis labels for better readability
-            ax.tick_params(axis='x', rotation=45, labelsize=12)
-            ax.tick_params(axis='y', labelsize=12)
+            # Rotate x-axis labels for better readability and style adjustments
+            _ = ax.tick_params(axis='x', rotation=0)  # pyright: ignore[reportUnknownMemberType]
+            _ = ax.tick_params(axis='y', rotation=0)  # pyright: ignore[reportUnknownMemberType]
 
             # Add value annotations if enabled (check for annotation settings)
             if self.config and getattr(self.config, 'ENABLE_ANNOTATION_OUTLINE', False):

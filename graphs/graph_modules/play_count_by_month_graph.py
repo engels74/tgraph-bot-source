@@ -134,13 +134,13 @@ class PlayCountByMonthGraph(BaseGraph):
                 )
 
                 # Step 8: Customize the plot
-                _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)
-                _ = ax.set_xlabel("Month", fontsize=14, fontweight='bold')
-                _ = ax.set_ylabel("Play Count", fontsize=14, fontweight='bold')
+                _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)  # pyright: ignore[reportUnknownMemberType]
+                _ = ax.set_xlabel("Month", fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
+                _ = ax.set_ylabel("Play Count", fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
 
                 # Rotate x-axis labels for better readability
-                ax.tick_params(axis='x', rotation=45, labelsize=12)
-                ax.tick_params(axis='y', labelsize=12)
+                ax.tick_params(axis='x', rotation=45, labelsize=12)  # pyright: ignore[reportUnknownMemberType]
+                ax.tick_params(axis='y', labelsize=12)  # pyright: ignore[reportUnknownMemberType]
 
                 # Add value annotations if enabled
                 if self.config and getattr(self.config, 'ENABLE_ANNOTATION_OUTLINE', False):
@@ -155,9 +155,9 @@ class PlayCountByMonthGraph(BaseGraph):
                             )
             else:
                 # Handle empty data case
-                _ = ax.text(0.5, 0.5, "No data available for monthly play counts",
+                _ = ax.text(0.5, 0.5, "No data available for monthly play counts",  # pyright: ignore[reportUnknownMemberType]
                            ha='center', va='center', transform=ax.transAxes, fontsize=16)
-                _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold')
+                _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
 
             # Adjust layout to prevent label cutoff
             if self.figure is not None:

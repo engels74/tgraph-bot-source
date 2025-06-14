@@ -321,7 +321,7 @@ def parse_po_file(po_file: Path) -> dict[str, str]:
         msgstrs = msgstr_pattern.findall(content)
 
         # Pair up msgids with their corresponding msgstrs
-        for msgid, msgstr in zip(msgids, msgstrs):  # pyright: ignore[reportAny]
+        for msgid, msgstr in zip(msgids, msgstrs, strict=False):  # pyright: ignore[reportAny]
             if msgid and msgstr:  # Only include non-empty translations
                 translations[msgid] = msgstr
 
