@@ -4,7 +4,6 @@ from __future__ import annotations
 
 
 from unittest.mock import AsyncMock, Mock, patch
-# pyright: reportPrivateUsage=false, reportAny=false
 
 import httpx
 import pytest
@@ -63,8 +62,8 @@ class TestDataFetcher:
         assert data_fetcher.api_key == "test_api_key"
         assert data_fetcher.timeout == 30.0
         assert data_fetcher.max_retries == 3
-        assert data_fetcher._client is None
-        assert data_fetcher._cache == {}
+        assert data_fetcher._client is None  # pyright: ignore[reportPrivateUsage]
+        assert data_fetcher._cache == {}  # pyright: ignore[reportPrivateUsage]
 
     def test_init_strips_trailing_slash(self) -> None:
         """Test that trailing slash is stripped from base URL."""
@@ -78,17 +77,17 @@ class TestDataFetcher:
     async def test_context_manager(self, data_fetcher: DataFetcher) -> None:
         """Test async context manager functionality."""
         async with data_fetcher as fetcher:
-            assert fetcher._client is not None
-            assert isinstance(fetcher._client, httpx.AsyncClient)
+            assert fetcher._client is not None  # pyright: ignore[reportPrivateUsage]
+            assert isinstance(fetcher._client, httpx.AsyncClient)  # pyright: ignore[reportPrivateUsage]
         
         # Client should be closed after exiting context
-        assert fetcher._client is None
+        assert fetcher._client is None  # pyright: ignore[reportPrivateUsage]
 
     @pytest.mark.asyncio
     async def test_make_request_not_initialized(self, data_fetcher: DataFetcher) -> None:
         """Test that _make_request raises error when not initialized."""
         with pytest.raises(RuntimeError, match="DataFetcher not initialized"):
-            _ = await data_fetcher._make_request("get_history")
+            _ = await data_fetcher._make_request("get_history")  # pyright: ignore[reportPrivateUsage]
 
     @pytest.mark.asyncio
     async def test_make_request_success(
@@ -103,16 +102,16 @@ class TestDataFetcher:
             
             # Mock successful response
             mock_response = Mock()
-            mock_response.json.return_value = mock_successful_response
-            mock_response.raise_for_status.return_value = None
-            mock_client.get.return_value = mock_response
+            mock_response.json.return_value = mock_successful_response  # pyright: ignore[reportAny]
+            mock_response.raise_for_status.return_value = None  # pyright: ignore[reportAny]
+            mock_client.get.return_value = mock_response  # pyright: ignore[reportAny]
             
             async with data_fetcher:
-                result = await data_fetcher._make_request("get_history", {"user_id": 1})
+                result = await data_fetcher._make_request("get_history", {"user_id": 1})  # pyright: ignore[reportPrivateUsage]
             
             # Verify request was made with correct parameters
-            mock_client.get.assert_called_once()
-            call_args = mock_client.get.call_args
+            mock_client.get.assert_called_once()  # pyright: ignore[reportAny]
+            call_args = mock_client.get.call_args  # pyright: ignore[reportAny]
             assert call_args[0][0] == "http://localhost:8181/api/v2"
             assert call_args[1]["params"]["apikey"] == "test_api_key"
             assert call_args[1]["params"]["cmd"] == "get_history"
@@ -137,13 +136,13 @@ class TestDataFetcher:
             
             # Mock error response
             mock_response = Mock()
-            mock_response.json.return_value = mock_error_response
-            mock_response.raise_for_status.return_value = None
-            mock_client.get.return_value = mock_response
+            mock_response.json.return_value = mock_error_response  # pyright: ignore[reportAny]
+            mock_response.raise_for_status.return_value = None  # pyright: ignore[reportAny]
+            mock_client.get.return_value = mock_response  # pyright: ignore[reportAny]
             
             async with data_fetcher:
                 with pytest.raises(ValueError, match="API error: Invalid API key"):
-                    _ = await data_fetcher._make_request("get_history")
+                    _ = await data_fetcher._make_request("get_history")  # pyright: ignore[reportPrivateUsage]
 
     @pytest.mark.asyncio
     async def test_make_request_invalid_response_format(self, data_fetcher: DataFetcher) -> None:
@@ -154,13 +153,13 @@ class TestDataFetcher:
             
             # Mock invalid response (not a dict)
             mock_response = Mock()
-            mock_response.json.return_value = "invalid response"
-            mock_response.raise_for_status.return_value = None
-            mock_client.get.return_value = mock_response
+            mock_response.json.return_value = "invalid response"  # pyright: ignore[reportAny]
+            mock_response.raise_for_status.return_value = None  # pyright: ignore[reportAny]
+            mock_client.get.return_value = mock_response  # pyright: ignore[reportAny]
             
             async with data_fetcher:
                 with pytest.raises(ValueError, match="Invalid API response format"):
-                    _ = await data_fetcher._make_request("get_history")
+                    _ = await data_fetcher._make_request("get_history")  # pyright: ignore[reportPrivateUsage]
 
     @pytest.mark.asyncio
     async def test_make_request_timeout_retry(self, data_fetcher: DataFetcher) -> None:
@@ -170,7 +169,7 @@ class TestDataFetcher:
             mock_client_class.return_value = mock_client
             
             # Mock timeout on first two attempts, success on third
-            mock_client.get.side_effect = [
+            mock_client.get.side_effect = [  # pyright: ignore[reportAny]
                 httpx.TimeoutException("Timeout"),
                 httpx.TimeoutException("Timeout"),
                 Mock(json=lambda: {"response": {"result": "success", "data": {}}},  # pyright: ignore[reportUnknownLambdaType]
@@ -179,7 +178,7 @@ class TestDataFetcher:
             
             with patch('asyncio.sleep') as mock_sleep:
                 async with data_fetcher:
-                    result = await data_fetcher._make_request("get_history")
+                    result = await data_fetcher._make_request("get_history")  # pyright: ignore[reportPrivateUsage]
                 
                 # Verify exponential backoff sleep calls
                 assert mock_sleep.call_count == 2
@@ -196,15 +195,15 @@ class TestDataFetcher:
             mock_client_class.return_value = mock_client
             
             # Mock timeout on all attempts
-            mock_client.get.side_effect = httpx.TimeoutException("Timeout")
+            mock_client.get.side_effect = httpx.TimeoutException("Timeout")  # pyright: ignore[reportAny]
             
             with patch('asyncio.sleep'):
                 async with data_fetcher:
                     with pytest.raises(httpx.TimeoutException):
-                        _ = await data_fetcher._make_request("get_history")
+                        _ = await data_fetcher._make_request("get_history")  # pyright: ignore[reportPrivateUsage]
                 
                 # Should attempt max_retries + 1 times (4 total)
-                assert mock_client.get.call_count == 4
+                assert mock_client.get.call_count == 4  # pyright: ignore[reportAny]
 
     @pytest.mark.asyncio
     async def test_get_play_history_success(
@@ -318,9 +317,9 @@ class TestDataFetcher:
     def test_clear_cache(self, data_fetcher: DataFetcher) -> None:
         """Test cache clearing functionality."""
         # Add some data to cache
-        data_fetcher._cache["test_key"] = {"test": "data"}
-        assert len(data_fetcher._cache) == 1
+        data_fetcher._cache["test_key"] = {"test": "data"}  # pyright: ignore[reportPrivateUsage]
+        assert len(data_fetcher._cache) == 1  # pyright: ignore[reportPrivateUsage]
 
         # Clear cache
         data_fetcher.clear_cache()
-        assert len(data_fetcher._cache) == 0
+        assert len(data_fetcher._cache) == 0  # pyright: ignore[reportPrivateUsage]
