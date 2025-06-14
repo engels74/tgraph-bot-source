@@ -307,7 +307,7 @@ def safe_get_nested_value(data: Mapping[str, object], keys: list[str], default: 
     Returns:
         The value at the key path, or default if not found
     """
-    current: object = data
+    current: Mapping[str, object] | object = data
     for key in keys:
         if isinstance(current, dict) and key in current:
             current = current[key]
@@ -337,20 +337,20 @@ def process_play_history_data(raw_data: Mapping[str, object]) -> ProcessedRecord
 
     processed_records: ProcessedRecords = []
 
-    for record in history_data:
+    for record in history_data:  # pyright: ignore[reportUnknownVariableType]
         if not isinstance(record, dict):
             logger.warning("Skipping invalid record: not a dictionary")
             continue
 
         try:
             # Extract and validate required fields with proper type conversion
-            date_value = safe_get_nested_value(record, ['date'], '')
-            user_value = safe_get_nested_value(record, ['user'], '')
-            platform_value = safe_get_nested_value(record, ['platform'], '')
-            media_type_value = safe_get_nested_value(record, ['media_type'], '')
-            duration_value = safe_get_nested_value(record, ['duration'], 0)
-            stopped_value = safe_get_nested_value(record, ['stopped'], 0)
-            paused_counter_value = safe_get_nested_value(record, ['paused_counter'], 0)
+            date_value = safe_get_nested_value(record, ['date'], '')  # pyright: ignore[reportUnknownArgumentType]
+            user_value = safe_get_nested_value(record, ['user'], '')  # pyright: ignore[reportUnknownArgumentType]
+            platform_value = safe_get_nested_value(record, ['platform'], '')  # pyright: ignore[reportUnknownArgumentType]
+            media_type_value = safe_get_nested_value(record, ['media_type'], '')  # pyright: ignore[reportUnknownArgumentType]
+            duration_value = safe_get_nested_value(record, ['duration'], 0)  # pyright: ignore[reportUnknownArgumentType]
+            stopped_value = safe_get_nested_value(record, ['stopped'], 0)  # pyright: ignore[reportUnknownArgumentType]
+            paused_counter_value = safe_get_nested_value(record, ['paused_counter'], 0)  # pyright: ignore[reportUnknownArgumentType]
 
             # Convert timestamps to datetime objects if they're valid
             if date_value:
@@ -391,7 +391,7 @@ def process_play_history_data(raw_data: Mapping[str, object]) -> ProcessedRecord
             logger.warning(f"Error processing record: {e}")
             continue
 
-    logger.info(f"Processed {len(processed_records)} valid records from {len(history_data)} total")
+    logger.info(f"Processed {len(processed_records)} valid records from {len(history_data)} total")  # pyright: ignore[reportUnknownArgumentType]
     return processed_records
 
 

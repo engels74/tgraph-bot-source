@@ -161,19 +161,19 @@ class DataFetcher:
                 if not isinstance(data, dict):
                     raise ValueError("Invalid API response format")
 
-                response_data: object = data.get("response", {})
+                response_data = data.get("response", {})  # pyright: ignore[reportUnknownVariableType]
                 if not isinstance(response_data, dict):
                     raise ValueError("API response is not a dictionary")
 
-                if response_data.get("result") != "success":
-                    error_msg: object = response_data.get("message", "Unknown API error")
+                if response_data.get("result") != "success":  # pyright: ignore[reportUnknownMemberType]
+                    error_msg = response_data.get("message", "Unknown API error")  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
                     raise ValueError(f"API error: {error_msg}")
 
                 logger.debug(f"Successfully fetched data from {endpoint}")
-                data_result: object = response_data.get("data", {})
+                data_result = response_data.get("data", {})  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
                 if not isinstance(data_result, dict):
                     return {}
-                return data_result
+                return data_result  # pyright: ignore[reportUnknownVariableType]
                 
             except httpx.TimeoutException:
                 logger.warning(f"Timeout on attempt {attempt + 1} for {endpoint}")
@@ -308,27 +308,27 @@ class DataFetcher:
         users_data = await self.get_users()
 
         # The API returns a dict with a 'data' key containing the list of users
-        users_list: object = users_data.get("data", [])
+        users_list = users_data.get("data", [])
         if isinstance(users_list, list):
-            for user in users_list:
+            for user in users_list:  # pyright: ignore[reportUnknownVariableType]
                 if isinstance(user, dict):
-                    user_email: object = user.get("email")
+                    user_email = user.get("email")  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
                     if user_email == email:
                         # Construct a properly typed UserRecord from the API response
                         # Safely convert API response values to expected types
-                        user_id_raw: object = user.get('user_id', 0)
-                        username_raw: object = user.get('username', '')
-                        friendly_name_raw: object = user.get('friendly_name', '')
-                        email_raw: object = user.get('email', '')
-                        thumb_raw: object = user.get('thumb', '')
-                        is_active_raw: object = user.get('is_active', 0)
+                        user_id_raw = user.get('user_id', 0)  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
+                        username_raw = user.get('username', '')  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
+                        friendly_name_raw = user.get('friendly_name', '')  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
+                        email_raw = user.get('email', '')  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
+                        thumb_raw = user.get('thumb', '')  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
+                        is_active_raw = user.get('is_active', 0)  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
 
                         user_record: UserRecord = {
                             'user_id': int(user_id_raw) if isinstance(user_id_raw, (int, float, str)) else 0,
-                            'username': str(username_raw) if username_raw is not None else '',
-                            'friendly_name': str(friendly_name_raw) if friendly_name_raw is not None else '',
-                            'email': str(email_raw) if email_raw is not None else '',
-                            'thumb': str(thumb_raw) if thumb_raw is not None else '',
+                            'username': str(username_raw) if username_raw is not None else '',  # pyright: ignore[reportUnknownArgumentType]
+                            'friendly_name': str(friendly_name_raw) if friendly_name_raw is not None else '',  # pyright: ignore[reportUnknownArgumentType]
+                            'email': str(email_raw) if email_raw is not None else '',  # pyright: ignore[reportUnknownArgumentType]
+                            'thumb': str(thumb_raw) if thumb_raw is not None else '',  # pyright: ignore[reportUnknownArgumentType]
                             'is_active': int(is_active_raw) if isinstance(is_active_raw, (int, float, str)) else 0,
                         }
                         return user_record

@@ -146,7 +146,7 @@ class Top10PlatformsGraph(BaseGraph):
                     for bar in ax.patches:
                         width = bar.get_width()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
                         if width and width > 0:  # Only annotate non-zero values
-                            _ = ax.text(
+                            _ = ax.text(  # pyright: ignore[reportUnknownMemberType]
                                 width + max_play_count * 0.01,  # pyright: ignore[reportUnknownArgumentType]
                                 bar.get_y() + bar.get_height()/2.,  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownArgumentType]
                                 f'{int(width)}',  # pyright: ignore[reportUnknownArgumentType]

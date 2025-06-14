@@ -151,8 +151,8 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
                     # Use type ignores for matplotlib patch attributes
                     height = bar.get_height()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
                     if height and height > 0:  # Only annotate non-zero values
-                        _ = ax.text(
-                            bar.get_x() + bar.get_width()/2.,  # pyright: ignore[reportAttributeAccessIssue]
+                        _ = ax.text(  # pyright: ignore[reportUnknownMemberType]
+                            bar.get_x() + bar.get_width()/2.,  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownArgumentType]
                             height + max_count * 0.01,  # pyright: ignore[reportUnknownArgumentType]
                             f'{int(height)}',  # pyright: ignore[reportUnknownArgumentType]
                             ha='center', va='bottom', fontsize=10, fontweight='bold'
