@@ -4,8 +4,6 @@ Tests for bot/extensions.py extension management functionality.
 This module tests the enhanced extension management system including
 dynamic discovery, robust error handling, and extension lifecycle management.
 """
-# pyright: reportPrivateUsage=false, reportAny=false
-
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -32,8 +30,8 @@ class TestExtensionManager:
         """Test ExtensionManager initialization."""
         manager = ExtensionManager()
         
-        assert manager._loaded_extensions == set()
-        assert manager._failed_extensions == {}
+        assert manager._loaded_extensions == set()  # pyright: ignore[reportPrivateUsage]
+        assert manager._failed_extensions == {}  # pyright: ignore[reportPrivateUsage]
 
     def test_discover_extensions_with_commands_directory(self) -> None:
         """Test extension discovery when commands directory exists."""
@@ -80,29 +78,29 @@ class TestExtensionManager:
         assert status.name == "test.extension"
         assert status.loaded is True
         assert status.error is None
-        assert "test.extension" in manager._loaded_extensions
-        mock_bot.load_extension.assert_called_once_with("test.extension")
+        assert "test.extension" in manager._loaded_extensions  # pyright: ignore[reportPrivateUsage]
+        mock_bot.load_extension.assert_called_once_with("test.extension")  # pyright: ignore[reportAny]
 
     @pytest.mark.asyncio
     async def test_load_extension_safe_already_loaded(self) -> None:
         """Test loading an already loaded extension."""
         manager = ExtensionManager()
         mock_bot = AsyncMock(spec=commands.Bot)
-        mock_bot.load_extension.side_effect = commands.ExtensionAlreadyLoaded("test.extension")
+        mock_bot.load_extension.side_effect = commands.ExtensionAlreadyLoaded("test.extension")  # pyright: ignore[reportAny]
         
         status = await manager.load_extension_safe(mock_bot, "test.extension")
         
         assert status.name == "test.extension"
         assert status.loaded is True
         assert status.error is None
-        assert "test.extension" in manager._loaded_extensions
+        assert "test.extension" in manager._loaded_extensions  # pyright: ignore[reportPrivateUsage]
 
     @pytest.mark.asyncio
     async def test_load_extension_safe_not_found(self) -> None:
         """Test loading a non-existent extension."""
         manager = ExtensionManager()
         mock_bot = AsyncMock(spec=commands.Bot)
-        mock_bot.load_extension.side_effect = commands.ExtensionNotFound("test.extension")
+        mock_bot.load_extension.side_effect = commands.ExtensionNotFound("test.extension")  # pyright: ignore[reportAny]
         
         status = await manager.load_extension_safe(mock_bot, "test.extension")
         
@@ -110,14 +108,14 @@ class TestExtensionManager:
         assert status.loaded is False
         assert status.error is not None
         assert "Extension not found" in status.error
-        assert "test.extension" in manager._failed_extensions
+        assert "test.extension" in manager._failed_extensions  # pyright: ignore[reportPrivateUsage]
 
     @pytest.mark.asyncio
     async def test_load_extension_safe_no_entry_point(self) -> None:
         """Test loading an extension without setup function."""
         manager = ExtensionManager()
         mock_bot = AsyncMock(spec=commands.Bot)
-        mock_bot.load_extension.side_effect = commands.NoEntryPointError("test.extension")
+        mock_bot.load_extension.side_effect = commands.NoEntryPointError("test.extension")  # pyright: ignore[reportAny]
         
         status = await manager.load_extension_safe(mock_bot, "test.extension")
         
@@ -125,14 +123,14 @@ class TestExtensionManager:
         assert status.loaded is False
         assert status.error is not None
         assert "No setup function found" in status.error
-        assert "test.extension" in manager._failed_extensions
+        assert "test.extension" in manager._failed_extensions  # pyright: ignore[reportPrivateUsage]
 
     @pytest.mark.asyncio
     async def test_load_extension_safe_extension_failed(self) -> None:
         """Test loading an extension that fails during setup."""
         manager = ExtensionManager()
         mock_bot = AsyncMock(spec=commands.Bot)
-        mock_bot.load_extension.side_effect = commands.ExtensionFailed("test.extension", Exception("Setup error"))
+        mock_bot.load_extension.side_effect = commands.ExtensionFailed("test.extension", Exception("Setup error"))  # pyright: ignore[reportAny]
         
         status = await manager.load_extension_safe(mock_bot, "test.extension")
         
@@ -140,14 +138,14 @@ class TestExtensionManager:
         assert status.loaded is False
         assert status.error is not None
         assert "Extension setup failed" in status.error
-        assert "test.extension" in manager._failed_extensions
+        assert "test.extension" in manager._failed_extensions  # pyright: ignore[reportPrivateUsage]
 
     @pytest.mark.asyncio
     async def test_load_extension_safe_unexpected_error(self) -> None:
         """Test loading an extension with unexpected error."""
         manager = ExtensionManager()
         mock_bot = AsyncMock(spec=commands.Bot)
-        mock_bot.load_extension.side_effect = RuntimeError("Unexpected error")
+        mock_bot.load_extension.side_effect = RuntimeError("Unexpected error")  # pyright: ignore[reportAny]
         
         status = await manager.load_extension_safe(mock_bot, "test.extension")
         
@@ -155,31 +153,31 @@ class TestExtensionManager:
         assert status.loaded is False
         assert status.error is not None
         assert "Unexpected error loading extension" in status.error
-        assert "test.extension" in manager._failed_extensions
+        assert "test.extension" in manager._failed_extensions  # pyright: ignore[reportPrivateUsage]
 
     def test_mark_extension_unloaded(self) -> None:
         """Test marking an extension as unloaded."""
         manager = ExtensionManager()
-        manager._loaded_extensions.add("test.extension")
+        manager._loaded_extensions.add("test.extension")  # pyright: ignore[reportPrivateUsage]
         
         manager.mark_extension_unloaded("test.extension")
         
-        assert "test.extension" not in manager._loaded_extensions
+        assert "test.extension" not in manager._loaded_extensions  # pyright: ignore[reportPrivateUsage]
 
     def test_mark_extension_loaded(self) -> None:
         """Test marking an extension as loaded."""
         manager = ExtensionManager()
-        manager._failed_extensions["test.extension"] = "Some error"
+        manager._failed_extensions["test.extension"] = "Some error"  # pyright: ignore[reportPrivateUsage]
         
         manager.mark_extension_loaded("test.extension")
         
-        assert "test.extension" in manager._loaded_extensions
-        assert "test.extension" not in manager._failed_extensions
+        assert "test.extension" in manager._loaded_extensions  # pyright: ignore[reportPrivateUsage]
+        assert "test.extension" not in manager._failed_extensions  # pyright: ignore[reportPrivateUsage]
 
     def test_get_loaded_extensions(self) -> None:
         """Test getting loaded extensions."""
         manager = ExtensionManager()
-        manager._loaded_extensions.update(["ext1", "ext2", "ext3"])
+        manager._loaded_extensions.update(["ext1", "ext2", "ext3"])  # pyright: ignore[reportPrivateUsage]
         
         loaded = manager.get_loaded_extensions()
         
@@ -188,7 +186,7 @@ class TestExtensionManager:
     def test_get_failed_extensions(self) -> None:
         """Test getting failed extensions."""
         manager = ExtensionManager()
-        manager._failed_extensions.update({
+        manager._failed_extensions.update({  # pyright: ignore[reportPrivateUsage]
             "ext1": "Error 1",
             "ext2": "Error 2"
         })
@@ -200,7 +198,7 @@ class TestExtensionManager:
     def test_is_extension_loaded(self) -> None:
         """Test checking if extension is loaded."""
         manager = ExtensionManager()
-        manager._loaded_extensions.add("loaded.extension")
+        manager._loaded_extensions.add("loaded.extension")  # pyright: ignore[reportPrivateUsage]
         
         assert manager.is_extension_loaded("loaded.extension") is True
         assert manager.is_extension_loaded("not.loaded") is False
@@ -208,7 +206,7 @@ class TestExtensionManager:
     def test_get_extension_error(self) -> None:
         """Test getting extension error."""
         manager = ExtensionManager()
-        manager._failed_extensions["failed.extension"] = "Test error"
+        manager._failed_extensions["failed.extension"] = "Test error"  # pyright: ignore[reportPrivateUsage]
         
         assert manager.get_extension_error("failed.extension") == "Test error"
         assert manager.get_extension_error("no.error") is None
@@ -272,14 +270,14 @@ class TestExtensionFunctions:
             assert status.name == "test.extension"
             assert status.loaded is True
             assert status.error is None
-            mock_bot.unload_extension.assert_called_once_with("test.extension")
+            mock_bot.unload_extension.assert_called_once_with("test.extension")  # pyright: ignore[reportAny]
             mock_mark.assert_called_once_with("test.extension")
 
     @pytest.mark.asyncio
     async def test_unload_extension_safe_not_loaded(self) -> None:
         """Test unloading an extension that's not loaded."""
         mock_bot = AsyncMock(spec=commands.Bot)
-        mock_bot.unload_extension.side_effect = commands.ExtensionNotLoaded("test.extension")
+        mock_bot.unload_extension.side_effect = commands.ExtensionNotLoaded("test.extension")  # pyright: ignore[reportAny]
         
         status = await unload_extension_safe(mock_bot, "test.extension")
         
@@ -297,14 +295,14 @@ class TestExtensionFunctions:
             assert status.name == "test.extension"
             assert status.loaded is True
             assert status.error is None
-            mock_bot.reload_extension.assert_called_once_with("test.extension")
+            mock_bot.reload_extension.assert_called_once_with("test.extension")  # pyright: ignore[reportAny]
             mock_mark.assert_called_once_with("test.extension")
 
     @pytest.mark.asyncio
     async def test_reload_extension_not_loaded(self) -> None:
         """Test reloading an extension that's not loaded."""
         mock_bot = AsyncMock(spec=commands.Bot)
-        mock_bot.reload_extension.side_effect = commands.ExtensionNotLoaded("test.extension")
+        mock_bot.reload_extension.side_effect = commands.ExtensionNotLoaded("test.extension")  # pyright: ignore[reportAny]
         
         status = await reload_extension(mock_bot, "test.extension")
         
