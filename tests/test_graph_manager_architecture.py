@@ -4,7 +4,6 @@ Tests for GraphManager architecture design and implementation.
 This module tests the core architectural components of the GraphManager
 to ensure proper dependency injection, async context management, and
 integration with existing components.
-# pyright: reportPrivateUsage=false, reportAny=false
 """
 
 from unittest.mock import AsyncMock, MagicMock, patch
