@@ -48,7 +48,7 @@ class TestAsyncThreading:
             mock_data_fetcher.get_play_history.return_value = {"data": []}
 
             # Mock the synchronous graph generation method
-            def mock_sync_generation(_data, _progress_tracker=None):
+            def mock_sync_generation(_data: dict[str, object], _progress_tracker: object | None = None) -> list[str]:
                 return ["test_graph.png"]
 
             # Test that asyncio.to_thread is used
@@ -98,7 +98,7 @@ class TestAsyncThreading:
             mock_data_fetcher.find_user_by_email.return_value = {"user_id": 123}
 
             # Mock the synchronous graph generation method
-            def mock_sync_user_generation(_user_data, _progress_tracker=None):
+            def mock_sync_user_generation(_user_data: dict[str, object], _progress_tracker: object | None = None) -> list[str]:
                 return []
 
             # Test that asyncio.to_thread is used
@@ -181,7 +181,7 @@ class TestAsyncThreading:
             counter_task = asyncio.create_task(increment_counter())
             
             # Mock graph generation with actual asyncio.to_thread
-            def slow_sync_operation(_data, _progress_tracker=None):
+            def slow_sync_operation(_data: dict[str, object], _progress_tracker: object | None = None) -> list[str]:
                 time.sleep(0.1)  # Simulate CPU-bound work
                 return ["test_graph.png"]
 

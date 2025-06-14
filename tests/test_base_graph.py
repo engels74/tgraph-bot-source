@@ -1,15 +1,20 @@
 """
-Tests for the base graph system in TGraph Bot.
+Test module for the BaseGraph abstract base class.
 
-This module tests the abstract base class, factory pattern, and utility functions
-for the graph generation system.
+This module tests the BaseGraph functionality including:
+- Abstract method requirements
+- Figure setup and management
+- Color validation
+- Context manager behavior
+- Cleanup operations
 """
 
 import tempfile
+from abc import ABC
 from pathlib import Path
 from collections.abc import Mapping
+from typing import override
 from unittest.mock import MagicMock, patch
-
 
 import pytest
 
@@ -19,6 +24,7 @@ from graphs.graph_modules.base_graph import BaseGraph
 class ConcreteGraph(BaseGraph):
     """Concrete implementation of BaseGraph for testing."""
     
+    @override
     def generate(self, data: Mapping[str, object]) -> str:
         """Generate a test graph."""
         _ = self.setup_figure()
@@ -31,6 +37,7 @@ class ConcreteGraph(BaseGraph):
             
         return self.save_figure(output_path=output_path)
     
+    @override
     def get_title(self) -> str:
         """Get the title for this test graph."""
         return "Test Graph"
@@ -188,7 +195,7 @@ class TestBaseGraph:
     def test_abstract_methods_must_be_implemented(self) -> None:
         """Test that abstract methods must be implemented in subclasses."""
         
-        class IncompleteGraph(BaseGraph):
+        class IncompleteGraph(BaseGraph, ABC):
             """Incomplete implementation missing abstract methods."""
             pass
         
@@ -198,9 +205,10 @@ class TestBaseGraph:
     def test_partial_implementation_still_abstract(self) -> None:
         """Test that partial implementation is still abstract."""
         
-        class PartialGraph(BaseGraph):
+        class PartialGraph(BaseGraph, ABC):
             """Partial implementation with only one abstract method."""
             
+            @override
             def generate(self, data: Mapping[str, object]) -> str:
                 return "test.png"
             # Missing get_title method
