@@ -4,6 +4,7 @@ Test enhanced error handling, progress tracking, and resource cleanup for graph 
 This module tests the improved error handling mechanisms, progress tracking with
 detailed reporting, and resource cleanup with timeout protection.
 """
+# pyright: reportPrivateUsage=false, reportAny=false
 # pyright: reportAny=false, reportPrivateUsage=false, reportUnknownVariableType=false, reportUnknownMemberType=false, reportUnknownArgumentType=false, reportUnusedCallResult=false, reportUnusedParameter=false, reportExplicitAny=false
 
 import asyncio

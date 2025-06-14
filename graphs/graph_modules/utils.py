@@ -310,10 +310,10 @@ def safe_get_nested_value(data: Mapping[str, object], keys: list[str], default: 
     current: Mapping[str, object] | object = data
     for key in keys:
         if isinstance(current, dict) and key in current:
-            current = current[key]
+            current = current[key]  # pyright: ignore[reportUnknownVariableType]
         else:
             return default
-    return current
+    return current  # pyright: ignore[reportUnknownVariableType]
 
 
 def process_play_history_data(raw_data: Mapping[str, object]) -> ProcessedRecords:

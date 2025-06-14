@@ -4,6 +4,7 @@ Tests for Weblate configuration validation.
 This module tests the Weblate configuration file and related functionality
 to ensure proper setup for collaborative translation management.
 """
+# pyright: reportPrivateUsage=false, reportAny=false
 
 from __future__ import annotations
 
@@ -131,8 +132,8 @@ class TestLocaleStructureValidation:
     def test_check_missing_locale_directory(self, mock_path_class: MagicMock) -> None:
         """Test validation when locale directory is missing."""
         # Mock the Path class to return a mock object
-        mock_locale_dir = mock_path_class.return_value  # pyright: ignore[reportAny]
-        mock_locale_dir.exists.return_value = False  # pyright: ignore[reportAny]
+        mock_locale_dir = mock_path_class.return_value
+        mock_locale_dir.exists.return_value = False
 
         result = check_locale_structure()
         assert result is False
@@ -171,8 +172,8 @@ class TestWeblateIntegration:
         config = configparser.ConfigParser()
         _ = config.read('.weblate')
         
-        for section_name in config.sections():  # pyright: ignore[reportAny]
-            if not section_name.startswith('component '):  # pyright: ignore[reportAny]
+        for section_name in config.sections():
+            if not section_name.startswith('component '):
                 continue
                 
             section = config[section_name]
@@ -192,8 +193,8 @@ class TestWeblateIntegration:
         config = configparser.ConfigParser()
         _ = config.read('.weblate')
 
-        for section_name in config.sections():  # pyright: ignore[reportAny]
-            if not section_name.startswith('component '):  # pyright: ignore[reportAny]
+        for section_name in config.sections():
+            if not section_name.startswith('component '):
                 continue
                 
             section = config[section_name]
@@ -213,8 +214,8 @@ class TestWeblateIntegration:
         config = configparser.ConfigParser()
         _ = config.read('.weblate')
 
-        for section_name in config.sections():  # pyright: ignore[reportAny]
-            if not section_name.startswith('component '):  # pyright: ignore[reportAny]
+        for section_name in config.sections():
+            if not section_name.startswith('component '):
                 continue
                 
             section = config[section_name]

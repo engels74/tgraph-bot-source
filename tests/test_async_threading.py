@@ -5,6 +5,7 @@ This module tests that CPU-bound operations are properly executed
 in separate threads using asyncio.to_thread() to prevent blocking
 the event loop.
 """
+# pyright: reportPrivateUsage=false, reportAny=false
 
 import time
 import asyncio
@@ -28,7 +29,7 @@ class TestAsyncThreading:
         mock_config.TAUTULLI_API_KEY = "test_key"
         mock_config.TIME_RANGE_DAYS = 30
         mock_config.KEEP_DAYS = 7
-        mock_config_manager.get_current_config.return_value = mock_config  # pyright: ignore[reportAny]
+        mock_config_manager.get_current_config.return_value = mock_config
 
         # Create GraphManager instance
         graph_manager = GraphManager(mock_config_manager)
@@ -41,11 +42,11 @@ class TestAsyncThreading:
             mock_data_fetcher = AsyncMock()
             mock_graph_factory = MagicMock()
             
-            graph_manager._data_fetcher = mock_data_fetcher  # pyright: ignore[reportPrivateUsage]
-            graph_manager._graph_factory = mock_graph_factory  # pyright: ignore[reportPrivateUsage]
+            graph_manager._data_fetcher = mock_data_fetcher
+            graph_manager._graph_factory = mock_graph_factory
             
             # Mock the data fetching
-            mock_data_fetcher.get_play_history.return_value = {"data": []}  # pyright: ignore[reportAny]
+            mock_data_fetcher.get_play_history.return_value = {"data": []}
 
             # Mock the synchronous graph generation method
             def mock_sync_generation(_data: dict[str, object], _progress_tracker: object | None = None) -> list[str]:
@@ -77,7 +78,7 @@ class TestAsyncThreading:
         mock_config.TAUTULLI_API_KEY = "test_key"
         mock_config.TIME_RANGE_DAYS = 30
         mock_config.KEEP_DAYS = 7
-        mock_config_manager.get_current_config.return_value = mock_config  # pyright: ignore[reportAny]
+        mock_config_manager.get_current_config.return_value = mock_config
 
         # Create UserGraphManager instance
         user_graph_manager = UserGraphManager(mock_config_manager)
@@ -90,12 +91,12 @@ class TestAsyncThreading:
             mock_data_fetcher = AsyncMock()
             mock_graph_factory = MagicMock()
             
-            user_graph_manager._data_fetcher = mock_data_fetcher  # pyright: ignore[reportPrivateUsage]
-            user_graph_manager._graph_factory = mock_graph_factory  # pyright: ignore[reportPrivateUsage]
+            user_graph_manager._data_fetcher = mock_data_fetcher
+            user_graph_manager._graph_factory = mock_graph_factory
             
             # Mock the data fetching methods
-            mock_data_fetcher.get_play_history.return_value = {"data": []}  # pyright: ignore[reportAny]
-            mock_data_fetcher.find_user_by_email.return_value = {"user_id": 123}  # pyright: ignore[reportAny]
+            mock_data_fetcher.get_play_history.return_value = {"data": []}
+            mock_data_fetcher.find_user_by_email.return_value = {"user_id": 123}
 
             # Mock the synchronous graph generation method
             def mock_sync_user_generation(_user_data: dict[str, object], _progress_tracker: object | None = None) -> list[str]:
@@ -124,7 +125,7 @@ class TestAsyncThreading:
         mock_config_manager = MagicMock()
         mock_config = MagicMock()
         mock_config.KEEP_DAYS = 7
-        mock_config_manager.get_current_config.return_value = mock_config  # pyright: ignore[reportAny]
+        mock_config_manager.get_current_config.return_value = mock_config
 
         # Create GraphManager instance
         graph_manager = GraphManager(mock_config_manager)
@@ -152,7 +153,7 @@ class TestAsyncThreading:
         mock_config.TAUTULLI_URL = "http://localhost:8181"
         mock_config.TAUTULLI_API_KEY = "test_key"
         mock_config.TIME_RANGE_DAYS = 30
-        mock_config_manager.get_current_config.return_value = mock_config  # pyright: ignore[reportAny]
+        mock_config_manager.get_current_config.return_value = mock_config
 
         graph_manager = GraphManager(mock_config_manager)
 
@@ -163,10 +164,10 @@ class TestAsyncThreading:
             mock_data_fetcher = AsyncMock()
             mock_graph_factory = MagicMock()
             
-            graph_manager._data_fetcher = mock_data_fetcher  # pyright: ignore[reportPrivateUsage]
-            graph_manager._graph_factory = mock_graph_factory  # pyright: ignore[reportPrivateUsage]
+            graph_manager._data_fetcher = mock_data_fetcher
+            graph_manager._graph_factory = mock_graph_factory
             
-            mock_data_fetcher.get_play_history.return_value = {"data": []}  # pyright: ignore[reportAny]
+            mock_data_fetcher.get_play_history.return_value = {"data": []}
             
             # Create a counter to verify the event loop is responsive
             counter = 0

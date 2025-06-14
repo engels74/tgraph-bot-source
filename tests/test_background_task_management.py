@@ -4,6 +4,7 @@ Test background task management system for UpdateTracker.
 This module tests the enhanced BackgroundTaskManager and its integration
 with the UpdateTracker for robust task lifecycle management.
 """
+# pyright: reportPrivateUsage=false, reportAny=false
 
 import asyncio
 import pytest
@@ -34,13 +35,13 @@ class TestBackgroundTaskManager:
         
         # Test start
         await manager.start()
-        assert manager._health_check_task is not None  # pyright: ignore[reportPrivateUsage]
-        assert not manager._shutdown_event.is_set()  # pyright: ignore[reportPrivateUsage]
+        assert manager._health_check_task is not None
+        assert not manager._shutdown_event.is_set()
 
         # Test stop
         await manager.stop()
-        assert manager._health_check_task is None  # pyright: ignore[reportPrivateUsage]
-        assert manager._shutdown_event.is_set()  # pyright: ignore[reportPrivateUsage]
+        assert manager._health_check_task is None
+        assert manager._shutdown_event.is_set()
         
     @pytest.mark.asyncio
     async def test_add_and_remove_task(self, task_manager: BackgroundTaskManager) -> None:
@@ -56,7 +57,7 @@ class TestBackgroundTaskManager:
         task_manager.add_task("test_task", test_task, restart_on_failure=False)
         
         # Verify task is tracked
-        assert "test_task" in task_manager._tasks  # pyright: ignore[reportPrivateUsage]
+        assert "test_task" in task_manager._tasks
         assert task_manager.get_task_status("test_task") == TaskStatus.RUNNING
 
         # Wait for task to complete
@@ -65,7 +66,7 @@ class TestBackgroundTaskManager:
 
         # Remove task
         task_manager.remove_task("test_task")
-        assert "test_task" not in task_manager._tasks  # pyright: ignore[reportPrivateUsage]
+        assert "test_task" not in task_manager._tasks
         
     @pytest.mark.asyncio
     async def test_task_failure_and_restart(self, task_manager: BackgroundTaskManager) -> None:
@@ -153,7 +154,7 @@ class TestEnhancedUpdateTracker:
         tracker = UpdateTracker(mock_bot)
         yield tracker
         # Cleanup
-        if tracker._is_started:  # pyright: ignore[reportPrivateUsage]
+        if tracker._is_started:
             await tracker.stop_scheduler()
             
     @pytest.mark.asyncio
@@ -165,14 +166,14 @@ class TestEnhancedUpdateTracker:
         # Test start
         await update_tracker.start_scheduler(update_days=1, fixed_update_time="12:00")
         
-        assert update_tracker._is_started  # pyright: ignore[reportPrivateUsage]
-        assert update_tracker._task_manager.get_task_status("update_scheduler") == TaskStatus.RUNNING  # pyright: ignore[reportPrivateUsage]
+        assert update_tracker._is_started
+        assert update_tracker._task_manager.get_task_status("update_scheduler") == TaskStatus.RUNNING
 
         # Test stop
         await update_tracker.stop_scheduler()
 
-        assert not update_tracker._is_started  # pyright: ignore[reportPrivateUsage]
-        assert update_tracker._task_manager.get_task_status("update_scheduler") is None  # pyright: ignore[reportPrivateUsage]
+        assert not update_tracker._is_started
+        assert update_tracker._task_manager.get_task_status("update_scheduler") is None
         
     @pytest.mark.asyncio
     async def test_scheduler_health_monitoring(
@@ -213,17 +214,17 @@ class TestEnhancedUpdateTracker:
         # Start scheduler
         await update_tracker.start_scheduler(update_days=7, fixed_update_time="10:00")
 
-        original_config = update_tracker._config  # pyright: ignore[reportPrivateUsage]
+        original_config = update_tracker._config
         assert original_config is not None
 
         # Restart scheduler
         await update_tracker.restart_scheduler()
 
         # Verify it restarted with same configuration
-        assert update_tracker._is_started  # pyright: ignore[reportPrivateUsage]
-        assert update_tracker._config is not None  # pyright: ignore[reportPrivateUsage]
-        assert update_tracker._config.update_days == original_config.update_days  # pyright: ignore[reportPrivateUsage]
-        assert update_tracker._config.fixed_update_time == original_config.fixed_update_time  # pyright: ignore[reportPrivateUsage]
+        assert update_tracker._is_started
+        assert update_tracker._config is not None
+        assert update_tracker._config.update_days == original_config.update_days
+        assert update_tracker._config.fixed_update_time == original_config.fixed_update_time
         
     @pytest.mark.asyncio
     async def test_callback_execution(
@@ -272,8 +273,8 @@ class TestEnhancedUpdateTracker:
             
         # Verify error was recorded
         assert error_count == 1
-        assert update_tracker._state.consecutive_failures > 0  # pyright: ignore[reportPrivateUsage]
-        assert update_tracker._state.last_failure is not None  # pyright: ignore[reportPrivateUsage]
+        assert update_tracker._state.consecutive_failures > 0
+        assert update_tracker._state.last_failure is not None
 
 
 @pytest.mark.asyncio
@@ -289,7 +290,7 @@ async def test_integration_with_main_bot() -> None:
     
     # Test that tracker can be created and basic methods work
     assert tracker.bot is mock_bot
-    assert not tracker._is_started  # pyright: ignore[reportPrivateUsage]
+    assert not tracker._is_started
     assert tracker.get_next_update_time() is None
     
     # Test callback setting

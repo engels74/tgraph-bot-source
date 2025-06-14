@@ -4,6 +4,7 @@ Tests for the base command cog utilities.
 This module tests the BaseCommandCog class and BaseCooldownConfig
 to ensure proper cooldown management, error handling, and configuration access.
 """
+# pyright: reportPrivateUsage=false, reportAny=false
 
 import time
 from typing import cast
@@ -59,7 +60,7 @@ class TestBaseCommandCog:
     def test_init_without_cooldown(self) -> None:
         """Test BaseCommandCog initialization without cooldown config."""
         cog = BaseCommandCog(self.mock_bot)
-        
+
         assert cog.bot == self.mock_bot
         assert cog.cooldown_config is None
         assert not hasattr(cog, '_user_cooldowns')
@@ -67,14 +68,14 @@ class TestBaseCommandCog:
 
     def test_init_with_cooldown(self) -> None:
         """Test BaseCommandCog initialization with cooldown config."""
-        cog = BaseCommandCog(self.mock_bot, self.cooldown_config)  # pyright: ignore[reportAny]
+        cog = BaseCommandCog(self.mock_bot, self.cooldown_config)
 
-        assert cog.bot == self.mock_bot  # pyright: ignore[reportAny]
+        assert cog.bot == self.mock_bot
         assert cog.cooldown_config == self.cooldown_config
         assert hasattr(cog, '_user_cooldowns')
         assert hasattr(cog, '_global_cooldown')
-        assert cog._user_cooldowns == {}  # pyright: ignore[reportPrivateUsage]
-        assert cog._global_cooldown == 0.0  # pyright: ignore[reportPrivateUsage]
+        assert cog._user_cooldowns == {}
+        assert cog._global_cooldown == 0.0
 
     def test_tgraph_bot_property_success(self) -> None:
         """Test tgraph_bot property with valid TGraphBot instance."""
@@ -96,7 +97,7 @@ class TestBaseCommandCog:
     def test_check_cooldowns_no_config(self) -> None:
         """Test cooldown checking without cooldown config."""
         cog = BaseCommandCog(self.mock_bot)
-        mock_interaction = Mock(spec=discord.Interaction)
+        mock_interaction = cast(discord.Interaction, Mock(spec=discord.Interaction))
         
         is_on_cooldown, retry_after = cog.check_cooldowns(mock_interaction)
         
@@ -111,10 +112,10 @@ class TestBaseCommandCog:
         mock_config = Mock()
         mock_config.TEST_COOLDOWN_MINUTES = 0
         mock_config.TEST_GLOBAL_COOLDOWN_SECONDS = 0
-        
+
         cog.get_current_config = Mock(return_value=mock_config)  # type: ignore[method-assign]
         
-        mock_interaction = Mock(spec=discord.Interaction)
+        mock_interaction = cast(discord.Interaction, Mock(spec=discord.Interaction))
         mock_interaction.user.id = 12345
         
         is_on_cooldown, retry_after = cog.check_cooldowns(mock_interaction)
@@ -128,7 +129,7 @@ class TestBaseCommandCog:
         
         # Set global cooldown to future time
         future_time = time.time() + 30
-        cog._global_cooldown = future_time  # pyright: ignore[reportPrivateUsage]
+        cog._global_cooldown = future_time
         
         # Mock config
         mock_config = Mock()
@@ -146,7 +147,7 @@ class TestBaseCommandCog:
     def test_update_cooldowns_no_config(self) -> None:
         """Test cooldown updating without cooldown config."""
         cog = BaseCommandCog(self.mock_bot)
-        mock_interaction = Mock(spec=discord.Interaction)
+        mock_interaction = cast(discord.Interaction, Mock(spec=discord.Interaction))
         
         # Should not raise any errors
         cog.update_cooldowns(mock_interaction)
@@ -159,7 +160,7 @@ class TestBaseCommandCog:
         mock_config = Mock()
         mock_config.TEST_COOLDOWN_MINUTES = 5
         mock_config.TEST_GLOBAL_COOLDOWN_SECONDS = 60
-        
+
         cog.get_current_config = Mock(return_value=mock_config)  # type: ignore[method-assign]
 
         mock_interaction = cast(discord.Interaction, Mock(spec=discord.Interaction))
@@ -170,9 +171,9 @@ class TestBaseCommandCog:
         cog.update_cooldowns(mock_interaction)
         
         # Check that cooldowns were set
-        assert cog._global_cooldown > current_time  # pyright: ignore[reportPrivateUsage]
-        assert 12345 in cog._user_cooldowns  # pyright: ignore[reportPrivateUsage]
-        assert cog._user_cooldowns[12345] > current_time  # pyright: ignore[reportPrivateUsage]
+        assert cog._global_cooldown > current_time
+        assert 12345 in cog._user_cooldowns
+        assert cog._user_cooldowns[12345] > current_time
 
     def test_create_error_context(self) -> None:
         """Test error context creation."""

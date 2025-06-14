@@ -4,6 +4,7 @@ from __future__ import annotations
 
 
 from unittest.mock import AsyncMock, Mock, patch
+# pyright: reportPrivateUsage=false, reportAny=false
 
 import httpx
 import pytest
@@ -62,8 +63,8 @@ class TestDataFetcher:
         assert data_fetcher.api_key == "test_api_key"
         assert data_fetcher.timeout == 30.0
         assert data_fetcher.max_retries == 3
-        assert data_fetcher._client is None  # pyright: ignore[reportPrivateUsage]
-        assert data_fetcher._cache == {}  # pyright: ignore[reportPrivateUsage]
+        assert data_fetcher._client is None
+        assert data_fetcher._cache == {}
 
     def test_init_strips_trailing_slash(self) -> None:
         """Test that trailing slash is stripped from base URL."""
@@ -77,17 +78,17 @@ class TestDataFetcher:
     async def test_context_manager(self, data_fetcher: DataFetcher) -> None:
         """Test async context manager functionality."""
         async with data_fetcher as fetcher:
-            assert fetcher._client is not None  # pyright: ignore[reportPrivateUsage]
-            assert isinstance(fetcher._client, httpx.AsyncClient)  # pyright: ignore[reportPrivateUsage]
+            assert fetcher._client is not None
+            assert isinstance(fetcher._client, httpx.AsyncClient)
         
         # Client should be closed after exiting context
-        assert fetcher._client is None  # pyright: ignore[reportPrivateUsage]
+        assert fetcher._client is None
 
     @pytest.mark.asyncio
     async def test_make_request_not_initialized(self, data_fetcher: DataFetcher) -> None:
         """Test that _make_request raises error when not initialized."""
         with pytest.raises(RuntimeError, match="DataFetcher not initialized"):
-            _ = await data_fetcher._make_request("get_history")  # pyright: ignore[reportPrivateUsage]
+            _ = await data_fetcher._make_request("get_history")
 
     @pytest.mark.asyncio
     async def test_make_request_success(
@@ -107,7 +108,7 @@ class TestDataFetcher:
             mock_client.get.return_value = mock_response
             
             async with data_fetcher:
-                result = await data_fetcher._make_request("get_history", {"user_id": 1})  # pyright: ignore[reportPrivateUsage]
+                result = await data_fetcher._make_request("get_history", {"user_id": 1})
             
             # Verify request was made with correct parameters
             mock_client.get.assert_called_once()
@@ -142,7 +143,7 @@ class TestDataFetcher:
             
             async with data_fetcher:
                 with pytest.raises(ValueError, match="API error: Invalid API key"):
-                    _ = await data_fetcher._make_request("get_history")  # pyright: ignore[reportPrivateUsage]
+                    _ = await data_fetcher._make_request("get_history")
 
     @pytest.mark.asyncio
     async def test_make_request_invalid_response_format(self, data_fetcher: DataFetcher) -> None:
@@ -159,7 +160,7 @@ class TestDataFetcher:
             
             async with data_fetcher:
                 with pytest.raises(ValueError, match="Invalid API response format"):
-                    _ = await data_fetcher._make_request("get_history")  # pyright: ignore[reportPrivateUsage]
+                    _ = await data_fetcher._make_request("get_history")
 
     @pytest.mark.asyncio
     async def test_make_request_timeout_retry(self, data_fetcher: DataFetcher) -> None:
@@ -178,7 +179,7 @@ class TestDataFetcher:
             
             with patch('asyncio.sleep') as mock_sleep:
                 async with data_fetcher:
-                    result = await data_fetcher._make_request("get_history")  # pyright: ignore[reportPrivateUsage]
+                    result = await data_fetcher._make_request("get_history")
                 
                 # Verify exponential backoff sleep calls
                 assert mock_sleep.call_count == 2
@@ -200,7 +201,7 @@ class TestDataFetcher:
             with patch('asyncio.sleep'):
                 async with data_fetcher:
                     with pytest.raises(httpx.TimeoutException):
-                        _ = await data_fetcher._make_request("get_history")  # pyright: ignore[reportPrivateUsage]
+                        _ = await data_fetcher._make_request("get_history")
                 
                 # Should attempt max_retries + 1 times (4 total)
                 assert mock_client.get.call_count == 4
@@ -317,9 +318,9 @@ class TestDataFetcher:
     def test_clear_cache(self, data_fetcher: DataFetcher) -> None:
         """Test cache clearing functionality."""
         # Add some data to cache
-        data_fetcher._cache["test_key"] = {"test": "data"}  # pyright: ignore[reportPrivateUsage]
-        assert len(data_fetcher._cache) == 1  # pyright: ignore[reportPrivateUsage]
+        data_fetcher._cache["test_key"] = {"test": "data"}
+        assert len(data_fetcher._cache) == 1
 
         # Clear cache
         data_fetcher.clear_cache()
-        assert len(data_fetcher._cache) == 0  # pyright: ignore[reportPrivateUsage]
+        assert len(data_fetcher._cache) == 0

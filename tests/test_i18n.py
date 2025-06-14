@@ -4,6 +4,7 @@ Tests for the internationalization (i18n) module.
 This module tests the translation loading, fallback behavior, string formatting,
 and language switching functionality of the i18n system.
 """
+# pyright: reportPrivateUsage=false, reportAny=false
 
 from pathlib import Path
 from unittest.mock import patch, MagicMock

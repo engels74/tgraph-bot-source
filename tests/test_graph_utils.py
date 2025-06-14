@@ -4,6 +4,7 @@ Tests for graph utility functions in TGraph Bot.
 This module tests utility functions for date formatting, folder management,
 username censoring, and common graph operations.
 """
+# pyright: reportPrivateUsage=false, reportAny=false
 
 import tempfile
 from datetime import datetime, timedelta

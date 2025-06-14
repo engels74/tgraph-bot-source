@@ -4,6 +4,7 @@ Tests for bot/extensions.py extension management functionality.
 This module tests the enhanced extension management system including
 dynamic discovery, robust error handling, and extension lifecycle management.
 """
+# pyright: reportPrivateUsage=false, reportAny=false
 
 from unittest.mock import AsyncMock, patch
 

@@ -4,6 +4,7 @@ Tests for update tracker scheduling configuration and data structures.
 This module tests the scheduling configuration parsing, validation,
 and data structure management for the automated update system.
 """
+# pyright: reportPrivateUsage=false, reportAny=false
 
 import pytest
 from datetime import datetime, time, timedelta

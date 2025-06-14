@@ -4,6 +4,7 @@ Tests for command utility functions in TGraph Bot.
 This module tests utility functions for Discord command formatting,
 argument parsing, response handling, and interaction management.
 """
+# pyright: reportPrivateUsage=false, reportAny=false
 
 from typing import cast
 from unittest.mock import AsyncMock, MagicMock

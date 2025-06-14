@@ -161,7 +161,7 @@ class DataFetcher:
                 if not isinstance(data, dict):
                     raise ValueError("Invalid API response format")
 
-                response_data = data.get("response", {})  # pyright: ignore[reportUnknownVariableType]
+                response_data = data.get("response", {})  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
                 if not isinstance(response_data, dict):
                     raise ValueError("API response is not a dictionary")
 

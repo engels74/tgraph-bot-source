@@ -4,6 +4,7 @@ Tests for translation compiler utilities.
 This module tests the high-level translation compilation functionality
 including batch processing, status checking, and validation.
 """
+# pyright: reportPrivateUsage=false, reportAny=false
 
 from __future__ import annotations
 

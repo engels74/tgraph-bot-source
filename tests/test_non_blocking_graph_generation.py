@@ -4,6 +4,7 @@ End-to-end tests for non-blocking and responsive graph generation.
 This module provides comprehensive stress tests and concurrent user simulations
 to ensure that all graph generation operations are non-blocking and the system
 remains responsive under load. Tests monitor event loop latency and user-facing
+# pyright: reportPrivateUsage=false, reportAny=false
 response times during heavy graph generation workloads.
 """
 
@@ -93,8 +94,8 @@ class TestNonBlockingGraphGeneration:
             mock_data_fetcher = AsyncMock()
             mock_graph_factory = MagicMock()
 
-            graph_manager._data_fetcher = mock_data_fetcher  # pyright: ignore[reportPrivateUsage]
-            graph_manager._graph_factory = mock_graph_factory  # pyright: ignore[reportPrivateUsage]
+            graph_manager._data_fetcher = mock_data_fetcher
+            graph_manager._graph_factory = mock_graph_factory
             
             # Mock data fetching to return our test data
             mock_data_fetcher.get_play_history.return_value = mock_graph_data
@@ -152,8 +153,8 @@ class TestNonBlockingGraphGeneration:
                 mock_data_fetcher = AsyncMock()
                 mock_graph_factory = MagicMock()
 
-                manager._data_fetcher = mock_data_fetcher  # pyright: ignore[reportPrivateUsage]
-                manager._graph_factory = mock_graph_factory  # pyright: ignore[reportPrivateUsage]
+                manager._data_fetcher = mock_data_fetcher
+                manager._graph_factory = mock_graph_factory
                 
                 mock_data_fetcher.get_play_history.return_value = mock_graph_data
 
@@ -224,8 +225,8 @@ class TestNonBlockingGraphGeneration:
             mock_data_fetcher = AsyncMock()
             mock_graph_factory = MagicMock()
             
-            user_graph_manager._data_fetcher = mock_data_fetcher  # pyright: ignore[reportPrivateUsage]
-            user_graph_manager._graph_factory = mock_graph_factory  # pyright: ignore[reportPrivateUsage]
+            user_graph_manager._data_fetcher = mock_data_fetcher
+            user_graph_manager._graph_factory = mock_graph_factory
             
             # Mock user data fetching
             mock_data_fetcher.get_user_play_history.return_value = mock_graph_data
@@ -277,8 +278,8 @@ class TestNonBlockingGraphGeneration:
             mock_data_fetcher = AsyncMock()
             mock_graph_factory = MagicMock()
             
-            user_graph_manager._data_fetcher = mock_data_fetcher  # pyright: ignore[reportPrivateUsage]
-            user_graph_manager._graph_factory = mock_graph_factory  # pyright: ignore[reportPrivateUsage]
+            user_graph_manager._data_fetcher = mock_data_fetcher
+            user_graph_manager._graph_factory = mock_graph_factory
             
             # Mock user data fetching
             mock_data_fetcher.get_user_play_history.return_value = mock_graph_data
@@ -329,8 +330,8 @@ class TestNonBlockingGraphGeneration:
             mock_data_fetcher = AsyncMock()
             mock_graph_factory = MagicMock()
             
-            graph_manager._data_fetcher = mock_data_fetcher  # pyright: ignore[reportPrivateUsage]
-            graph_manager._graph_factory = mock_graph_factory  # pyright: ignore[reportPrivateUsage]
+            graph_manager._data_fetcher = mock_data_fetcher
+            graph_manager._graph_factory = mock_graph_factory
             
             mock_data_fetcher.get_play_history.return_value = mock_graph_data
 
@@ -369,8 +370,8 @@ class TestNonBlockingGraphGeneration:
             mock_data_fetcher = AsyncMock()
             mock_graph_factory = MagicMock()
 
-            graph_manager._data_fetcher = mock_data_fetcher  # pyright: ignore[reportPrivateUsage]
-            graph_manager._graph_factory = mock_graph_factory  # pyright: ignore[reportPrivateUsage]
+            graph_manager._data_fetcher = mock_data_fetcher
+            graph_manager._graph_factory = mock_graph_factory
 
             mock_data_fetcher.get_play_history.return_value = mock_graph_data
 
@@ -427,8 +428,8 @@ class TestNonBlockingGraphGeneration:
             mock_data_fetcher = AsyncMock()
             mock_graph_factory = MagicMock()
 
-            graph_manager._data_fetcher = mock_data_fetcher  # pyright: ignore[reportPrivateUsage]
-            graph_manager._graph_factory = mock_graph_factory  # pyright: ignore[reportPrivateUsage]
+            graph_manager._data_fetcher = mock_data_fetcher
+            graph_manager._graph_factory = mock_graph_factory
 
             mock_data_fetcher.get_play_history.return_value = mock_graph_data
 
@@ -483,8 +484,8 @@ class TestNonBlockingGraphGeneration:
             mock_data_fetcher = AsyncMock()
             mock_graph_factory = MagicMock()
 
-            graph_manager._data_fetcher = mock_data_fetcher  # pyright: ignore[reportPrivateUsage]
-            graph_manager._graph_factory = mock_graph_factory  # pyright: ignore[reportPrivateUsage]
+            graph_manager._data_fetcher = mock_data_fetcher
+            graph_manager._graph_factory = mock_graph_factory
 
             mock_data_fetcher.get_play_history.return_value = mock_graph_data
 

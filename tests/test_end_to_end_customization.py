@@ -4,6 +4,7 @@ End-to-end integration tests for graph customization and feature validation.
 This module provides comprehensive integration tests that validate the complete
 workflow from configuration to graph generation, ensuring all customization
 options work correctly in realistic scenarios.
+# pyright: reportPrivateUsage=false, reportAny=false
 """
 
 from __future__ import annotations

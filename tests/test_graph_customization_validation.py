@@ -4,6 +4,7 @@ Comprehensive validation tests for graph customization options and feature toggl
 This module systematically tests all customization options including colors,
 annotations, grid settings, feature toggles, and username censoring to ensure
 they work correctly across all graph types.
+# pyright: reportPrivateUsage=false, reportAny=false
 """
 
 from __future__ import annotations
