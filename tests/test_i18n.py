@@ -18,7 +18,7 @@ class TestI18nModule:
     def setup_method(self) -> None:
         """Set up test fixtures before each test method."""
         # Reset the global translation function to default
-        i18n._ = lambda x: x
+        i18n._ = lambda x: x  # pyright: ignore[reportUnknownLambdaType]
 
     def test_setup_i18n_default_language(self) -> None:
         """Test setting up i18n with default English language."""

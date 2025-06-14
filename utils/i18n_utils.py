@@ -86,13 +86,17 @@ class StringExtractor(ast.NodeVisitor):
         if func_name in TRANSLATION_FUNCTIONS:
             # Extract string arguments (handle both single and plural forms)
             for arg in node.args:
-                if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
-                    string_value = arg.value
-                    line_number = node.lineno
-                    context = self._extract_context(node)
+                if isinstance(arg, ast.Constant):
+                    # ast.Constant.value can be str, int, float, bool, None, bytes, or complex
+                    # We only care about string values for translation extraction
+                    value = arg.value  # pyright: ignore[reportAny] # ast.Constant.value is typed as Any
+                    if isinstance(value, str):
+                        string_value: str = value
+                        line_number = node.lineno
+                        context = self._extract_context(node)
 
-                    self.strings.append((string_value, line_number, context))
-                    logger.debug(f"Found translatable string: '{string_value}' at line {line_number}")
+                        self.strings.append((string_value, line_number, context))
+                        logger.debug(f"Found translatable string: '{string_value}' at line {line_number}")
 
         # Continue visiting child nodes
         self.generic_visit(node)
@@ -126,7 +130,8 @@ class StringExtractor(ast.NodeVisitor):
         # Look for context in keyword arguments
         for keyword in node.keywords:
             if keyword.arg == "context" and isinstance(keyword.value, ast.Constant):
-                value: object = keyword.value.value  # ast.Constant.value is Any, so we type it as object
+                # ast.Constant.value can be various types, we only want strings
+                value = keyword.value.value  # pyright: ignore[reportAny] # ast.Constant.value is typed as Any
                 if isinstance(value, str):
                     return value
         return None
