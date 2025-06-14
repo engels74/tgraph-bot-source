@@ -142,7 +142,7 @@ class TestDataFetcher:
             
             async with data_fetcher:
                 with pytest.raises(ValueError, match="API error: Invalid API key"):
-                    _ = await data_fetcher._make_request("get_history")
+                    _ = await data_fetcher._make_request("get_history")  # pyright: ignore[reportPrivateUsage]
 
     @pytest.mark.asyncio
     async def test_make_request_invalid_response_format(self, data_fetcher: DataFetcher) -> None:
@@ -159,7 +159,7 @@ class TestDataFetcher:
             
             async with data_fetcher:
                 with pytest.raises(ValueError, match="Invalid API response format"):
-                    _ = await data_fetcher._make_request("get_history")
+                    _ = await data_fetcher._make_request("get_history")  # pyright: ignore[reportPrivateUsage]
 
     @pytest.mark.asyncio
     async def test_make_request_timeout_retry(self, data_fetcher: DataFetcher) -> None:
@@ -178,7 +178,7 @@ class TestDataFetcher:
             
             with patch('asyncio.sleep') as mock_sleep:
                 async with data_fetcher:
-                    result = await data_fetcher._make_request("get_history")
+                    result = await data_fetcher._make_request("get_history")  # pyright: ignore[reportPrivateUsage]
                 
                 # Verify exponential backoff sleep calls
                 assert mock_sleep.call_count == 2
@@ -200,7 +200,7 @@ class TestDataFetcher:
             with patch('asyncio.sleep'):
                 async with data_fetcher:
                     with pytest.raises(httpx.TimeoutException):
-                        _ = await data_fetcher._make_request("get_history")
+                        _ = await data_fetcher._make_request("get_history")  # pyright: ignore[reportPrivateUsage]
                 
                 # Should attempt max_retries + 1 times (4 total)
                 assert mock_client.get.call_count == 4
@@ -317,9 +317,9 @@ class TestDataFetcher:
     def test_clear_cache(self, data_fetcher: DataFetcher) -> None:
         """Test cache clearing functionality."""
         # Add some data to cache
-        data_fetcher._cache["test_key"] = {"test": "data"}
-        assert len(data_fetcher._cache) == 1
-        
+        data_fetcher._cache["test_key"] = {"test": "data"}  # pyright: ignore[reportPrivateUsage]
+        assert len(data_fetcher._cache) == 1  # pyright: ignore[reportPrivateUsage]
+
         # Clear cache
         data_fetcher.clear_cache()
-        assert len(data_fetcher._cache) == 0
+        assert len(data_fetcher._cache) == 0  # pyright: ignore[reportPrivateUsage]

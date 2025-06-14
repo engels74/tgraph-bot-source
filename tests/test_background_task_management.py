@@ -172,7 +172,7 @@ class TestEnhancedUpdateTracker:
         await update_tracker.stop_scheduler()
 
         assert not update_tracker._is_started  # pyright: ignore[reportPrivateUsage]
-        assert update_tracker._task_manager.get_task_status("update_scheduler") is None
+        assert update_tracker._task_manager.get_task_status("update_scheduler") is None  # pyright: ignore[reportPrivateUsage]
         
     @pytest.mark.asyncio
     async def test_scheduler_health_monitoring(

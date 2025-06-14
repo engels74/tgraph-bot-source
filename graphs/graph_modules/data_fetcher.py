@@ -155,7 +155,7 @@ class DataFetcher:
                 response = await self._client.get(url, params=request_params)
                 _ = response.raise_for_status()
 
-                data: object = response.json()
+                data = response.json()  # pyright: ignore[reportAny]
 
                 # Check for API-level errors
                 if not isinstance(data, dict):

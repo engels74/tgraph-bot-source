@@ -67,14 +67,14 @@ class TestBaseCommandCog:
 
     def test_init_with_cooldown(self) -> None:
         """Test BaseCommandCog initialization with cooldown config."""
-        cog = BaseCommandCog(self.mock_bot, self.cooldown_config)
-        
-        assert cog.bot == self.mock_bot
+        cog = BaseCommandCog(self.mock_bot, self.cooldown_config)  # pyright: ignore[reportAny]
+
+        assert cog.bot == self.mock_bot  # pyright: ignore[reportAny]
         assert cog.cooldown_config == self.cooldown_config
         assert hasattr(cog, '_user_cooldowns')
         assert hasattr(cog, '_global_cooldown')
-        assert cog._user_cooldowns == {}
-        assert cog._global_cooldown == 0.0
+        assert cog._user_cooldowns == {}  # pyright: ignore[reportPrivateUsage]
+        assert cog._global_cooldown == 0.0  # pyright: ignore[reportPrivateUsage]
 
     def test_tgraph_bot_property_success(self) -> None:
         """Test tgraph_bot property with valid TGraphBot instance."""
@@ -128,7 +128,7 @@ class TestBaseCommandCog:
         
         # Set global cooldown to future time
         future_time = time.time() + 30
-        cog._global_cooldown = future_time
+        cog._global_cooldown = future_time  # pyright: ignore[reportPrivateUsage]
         
         # Mock config
         mock_config = Mock()
@@ -170,9 +170,9 @@ class TestBaseCommandCog:
         cog.update_cooldowns(mock_interaction)
         
         # Check that cooldowns were set
-        assert cog._global_cooldown > current_time
-        assert 12345 in cog._user_cooldowns
-        assert cog._user_cooldowns[12345] > current_time
+        assert cog._global_cooldown > current_time  # pyright: ignore[reportPrivateUsage]
+        assert 12345 in cog._user_cooldowns  # pyright: ignore[reportPrivateUsage]
+        assert cog._user_cooldowns[12345] > current_time  # pyright: ignore[reportPrivateUsage]
 
     def test_create_error_context(self) -> None:
         """Test error context creation."""
