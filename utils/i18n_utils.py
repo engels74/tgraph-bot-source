@@ -318,8 +318,8 @@ def parse_po_file(po_file: Path) -> dict[str, str]:
         msgid_pattern = re.compile(r'msgid\s+"([^"]*)"', re.MULTILINE)
         msgstr_pattern = re.compile(r'msgstr\s+"([^"]*)"', re.MULTILINE)
 
-        msgids = msgid_pattern.findall(content)
-        msgstrs = msgstr_pattern.findall(content)
+        msgids: list[str] = msgid_pattern.findall(content)
+        msgstrs: list[str] = msgstr_pattern.findall(content)
 
         # Pair up msgids with their corresponding msgstrs
         for msgid, msgstr in zip(msgids, msgstrs, strict=False):
@@ -464,7 +464,7 @@ def compile_po_to_mo(po_file: Path, mo_file: Path | None = None) -> None:
         logger.info(f"Compiled {po_file} to {mo_file}")
 
     except subprocess.CalledProcessError as e:
-        logger.error(f"Failed to compile {po_file}: {e.stderr}")  # pyright: ignore[reportAny]
+        logger.error(f"Failed to compile {po_file}: {e.stderr}")  # pyright: ignore[reportAny] # subprocess.CalledProcessError.stderr can be None
         raise
     except FileNotFoundError:
         logger.warning("msgfmt command not found. Install gettext tools to compile .po files.")

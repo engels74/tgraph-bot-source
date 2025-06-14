@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any, cast
+from typing import Any
 from types import TracebackType
 from urllib.parse import urljoin
 
@@ -45,7 +45,7 @@ class DataFetcher:
         self.timeout: float = timeout
         self.max_retries: int = max_retries
         self._client: httpx.AsyncClient | None = None
-        self._cache: dict[str, dict[str, object]] = {}
+        self._cache: dict[str, Any] = {}
 
     async def __aenter__(self) -> DataFetcher:
         """Async context manager entry."""
@@ -76,7 +76,7 @@ class DataFetcher:
             params: Additional parameters for the request
             
         Returns:
-            JSON response data
+            JSON response data as a dictionary
             
         Raises:
             httpx.HTTPError: For HTTP-related errors
@@ -101,7 +101,7 @@ class DataFetcher:
                 response = await self._client.get(url, params=request_params)
                 _ = response.raise_for_status()
 
-                data: dict[str, object] = response.json()
+                data = response.json()
 
                 # Check for API-level errors
                 if not isinstance(data, dict):
@@ -118,7 +118,7 @@ class DataFetcher:
                 logger.debug(f"Successfully fetched data from {endpoint}")
                 data_result = response_data.get("data", {})
                 if not isinstance(data_result, dict):
-                    raise ValueError("API response data is not a dictionary")
+                    return {}
                 return data_result
                 
             except httpx.TimeoutException:
@@ -151,13 +151,15 @@ class DataFetcher:
             user_id: Specific user ID to filter by (None for all users)
             
         Returns:
-            Play history data
+            Play history data as a dictionary
         """
         cache_key = f"play_history_{time_range}_{user_id}"
         
         if cache_key in self._cache:
             logger.debug(f"Using cached data for {cache_key}")
-            return self._cache[cache_key]
+            cached_data = self._cache[cache_key]
+            if isinstance(cached_data, dict):
+                return cached_data
             
         params: dict[str, str | int | float | bool] = {
             "length": 1000,  # Maximum number of records
@@ -174,7 +176,7 @@ class DataFetcher:
         
         return data
         
-    async def get_user_stats(self, user_id: int) -> dict[str, Any]:
+    async def get_user_stats(self, user_id: int) -> dict[str, object]:
         """
         Fetch statistics for a specific user.
         
@@ -182,13 +184,15 @@ class DataFetcher:
             user_id: The user ID to fetch stats for
             
         Returns:
-            User statistics data
+            User statistics data as a dictionary
         """
         cache_key = f"user_stats_{user_id}"
         
         if cache_key in self._cache:
             logger.debug(f"Using cached data for {cache_key}")
-            return self._cache[cache_key]
+            cached_data = self._cache[cache_key]
+            if isinstance(cached_data, dict):
+                return cached_data
             
         data = await self._make_request("get_user", {"user_id": user_id})
         
@@ -197,18 +201,20 @@ class DataFetcher:
         
         return data
         
-    async def get_library_stats(self) -> dict[str, Any]:
+    async def get_library_stats(self) -> dict[str, object]:
         """
         Fetch library statistics.
         
         Returns:
-            Library statistics data
+            Library statistics data as a dictionary
         """
         cache_key = "library_stats"
         
         if cache_key in self._cache:
             logger.debug(f"Using cached data for {cache_key}")
-            return self._cache[cache_key]
+            cached_data = self._cache[cache_key]
+            if isinstance(cached_data, dict):
+                return cached_data
             
         data = await self._make_request("get_libraries")
         
@@ -217,18 +223,20 @@ class DataFetcher:
         
         return data
         
-    async def get_users(self) -> dict[str, Any]:
+    async def get_users(self) -> dict[str, object]:
         """
         Fetch all users from Tautulli.
 
         Returns:
-            Users data containing list of all users
+            Users data containing list of all users as a dictionary
         """
         cache_key = "users"
 
         if cache_key in self._cache:
             logger.debug(f"Using cached data for {cache_key}")
-            return self._cache[cache_key]
+            cached_data = self._cache[cache_key]
+            if isinstance(cached_data, dict):
+                return cached_data
 
         data = await self._make_request("get_users")
 
@@ -237,7 +245,7 @@ class DataFetcher:
 
         return data
 
-    async def find_user_by_email(self, email: str) -> dict[str, Any] | None:
+    async def find_user_by_email(self, email: str) -> dict[str, object] | None:
         """
         Find a user by their email address.
 
@@ -249,13 +257,15 @@ class DataFetcher:
         """
         users_data = await self.get_users()
 
-        # users_data should be a list of user dictionaries
-        if isinstance(users_data, list):
-            for user in users_data:
-                if isinstance(user, dict):
-                    user_email = user.get("email")
-                    if user_email == email:
-                        return user
+        # The API returns a dict with a 'data' key containing the list of users
+        if isinstance(users_data, dict):
+            users_list = users_data.get("data", [])
+            if isinstance(users_list, list):
+                for user in users_list:
+                    if isinstance(user, dict):
+                        user_email = user.get("email")
+                        if user_email == email:
+                            return user
 
         logger.warning(f"User not found with email: {email}")
         return None

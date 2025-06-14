@@ -152,7 +152,7 @@ class DailyPlayCountGraph(BaseGraph):
                 # Add annotations if enabled
                 if self.config and self.config.ANNOTATE_DAILY_PLAY_COUNT:
                     # Convert counts to integers for proper comparison
-                    int_counts = [int(c) if isinstance(c, (int, float)) else 0 for c in counts]
+                    int_counts = [int(c) if c is not None else 0 for c in counts]
                     max_count = max(int_counts)
                     max_date_idx = int_counts.index(max_count)
                     max_date = dates[max_date_idx]

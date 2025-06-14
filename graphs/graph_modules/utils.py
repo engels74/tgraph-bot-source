@@ -12,8 +12,10 @@ from collections import defaultdict
 from collections.abc import Mapping
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import TypeVar
+from typing import TypeVar, TYPE_CHECKING, Any
 
+if TYPE_CHECKING:
+    from config.schema import TGraphBotConfig
 
 logger = logging.getLogger(__name__)
 
@@ -240,30 +242,28 @@ def validate_color(color: str) -> bool:
 
 # Data Processing Utilities for Graph Generation
 
-def validate_graph_data(data: Mapping[str, object], required_keys: list[str]) -> tuple[bool, str]:
+def validate_graph_data(data: Mapping[str, Any], required_keys: list[str]) -> tuple[bool, str]:
     """
-    Validate that graph data contains required keys and has valid structure.
+    Validate that graph data contains all required keys.
 
     Args:
-        data: Data dictionary to validate
-        required_keys: List of required keys that must be present
+        data: The data dictionary to validate
+        required_keys: List of keys that must be present
 
     Returns:
         Tuple of (is_valid, error_message)
     """
-    # Check for required keys
-    missing_keys = [key for key in required_keys if key not in data]
-    if missing_keys:
-        return False, f"Missing required keys: {', '.join(missing_keys)}"
+    if not isinstance(data, dict):
+        return False, "Data must be a dictionary"
 
-    # Check for empty data
-    if not data:
-        return False, "Data dictionary is empty"
+    for key in required_keys:
+        if key not in data:
+            return False, f"Missing required key: {key}"
 
     return True, ""
 
 
-def safe_get_nested_value(data: Mapping[str, object], keys: list[str], default: object = None) -> object:
+def safe_get_nested_value(data: Mapping[str, Any], keys: list[str], default: Any = None) -> Any:
     """
     Safely get a nested value from a dictionary using a list of keys.
 
@@ -275,7 +275,7 @@ def safe_get_nested_value(data: Mapping[str, object], keys: list[str], default: 
     Returns:
         The value at the key path, or default if not found
     """
-    current: object = data
+    current: Any = data
     for key in keys:
         if isinstance(current, dict) and key in current:
             current = current[key]
@@ -284,7 +284,7 @@ def safe_get_nested_value(data: Mapping[str, object], keys: list[str], default: 
     return current
 
 
-def process_play_history_data(raw_data: Mapping[str, object]) -> list[dict[str, object]]:
+def process_play_history_data(raw_data: Mapping[str, Any]) -> list[dict[str, Any]]:
     """
     Process raw play history data from Tautulli API into a standardized format.
 
@@ -303,7 +303,7 @@ def process_play_history_data(raw_data: Mapping[str, object]) -> list[dict[str, 
     if not isinstance(history_data, list):
         raise ValueError("Play history data must be a list")
 
-    processed_records = []
+    processed_records: list[dict[str, Any]] = []
 
     for record in history_data:
         if not isinstance(record, dict):
@@ -312,7 +312,7 @@ def process_play_history_data(raw_data: Mapping[str, object]) -> list[dict[str, 
 
         try:
             # Extract and validate required fields
-            processed_record = {
+            processed_record: dict[str, Any] = {
                 'date': safe_get_nested_value(record, ['date'], ''),
                 'user': safe_get_nested_value(record, ['user'], ''),
                 'platform': safe_get_nested_value(record, ['platform'], ''),
@@ -352,7 +352,7 @@ def process_play_history_data(raw_data: Mapping[str, object]) -> list[dict[str, 
     return processed_records
 
 
-def aggregate_by_date(records: list[dict[str, object]]) -> dict[str, int]:
+def aggregate_by_date(records: list[dict[str, Any]]) -> dict[str, int]:
     """
     Aggregate play records by date.
 
@@ -372,7 +372,7 @@ def aggregate_by_date(records: list[dict[str, object]]) -> dict[str, int]:
     return dict(date_counts)
 
 
-def aggregate_by_day_of_week(records: list[dict[str, object]]) -> dict[str, int]:
+def aggregate_by_day_of_week(records: list[dict[str, Any]]) -> dict[str, int]:
     """
     Aggregate play records by day of week.
 
@@ -393,7 +393,7 @@ def aggregate_by_day_of_week(records: list[dict[str, object]]) -> dict[str, int]
     return day_counts
 
 
-def aggregate_by_hour_of_day(records: list[dict[str, object]]) -> dict[int, int]:
+def aggregate_by_hour_of_day(records: list[dict[str, Any]]) -> dict[int, int]:
     """
     Aggregate play records by hour of day.
 
@@ -413,7 +413,7 @@ def aggregate_by_hour_of_day(records: list[dict[str, object]]) -> dict[int, int]
     return hour_counts
 
 
-def aggregate_by_month(records: list[dict[str, object]]) -> dict[str, int]:
+def aggregate_by_month(records: list[dict[str, Any]]) -> dict[str, int]:
     """
     Aggregate play records by month.
 
@@ -433,7 +433,7 @@ def aggregate_by_month(records: list[dict[str, object]]) -> dict[str, int]:
     return dict(month_counts)
 
 
-def aggregate_top_users(records: list[dict[str, object]], limit: int = 10, censor: bool = True) -> list[dict[str, object]]:
+def aggregate_top_users(records: list[dict[str, Any]], limit: int = 10, censor: bool = True) -> list[dict[str, Any]]:
     """
     Aggregate play records to get top users by play count.
 
@@ -455,7 +455,7 @@ def aggregate_top_users(records: list[dict[str, object]], limit: int = 10, censo
     # Sort by play count and take top N
     sorted_users = sorted(user_counts.items(), key=lambda x: x[1], reverse=True)[:limit]
 
-    result = []
+    result: list[dict[str, Any]] = []
     for username, count in sorted_users:
         processed_username = censor_username(username) if censor else username
         result.append({
@@ -466,7 +466,7 @@ def aggregate_top_users(records: list[dict[str, object]], limit: int = 10, censo
     return result
 
 
-def aggregate_top_platforms(records: list[dict[str, object]], limit: int = 10) -> list[dict[str, object]]:
+def aggregate_top_platforms(records: list[dict[str, Any]], limit: int = 10) -> list[dict[str, Any]]:
     """
     Aggregate play records to get top platforms by play count.
 
@@ -487,7 +487,7 @@ def aggregate_top_platforms(records: list[dict[str, object]], limit: int = 10) -
     # Sort by play count and take top N
     sorted_platforms = sorted(platform_counts.items(), key=lambda x: x[1], reverse=True)[:limit]
 
-    result = []
+    result: list[dict[str, Any]] = []
     for platform, count in sorted_platforms:
         result.append({
             'platform': platform,
@@ -497,7 +497,7 @@ def aggregate_top_platforms(records: list[dict[str, object]], limit: int = 10) -
     return result
 
 
-def handle_empty_data(graph_type: str) -> dict[str, object] | list[dict[str, object]]:
+def handle_empty_data(graph_type: str) -> dict[str, Any] | list[dict[str, Any]]:
     """
     Generate appropriate empty data structure for different graph types.
 

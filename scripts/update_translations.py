@@ -108,45 +108,45 @@ Examples:
         """
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         '--pot-file',
         type=Path,
         default=Path('locale/messages.pot'),
         help='Path to the .pot template file (default: locale/messages.pot)'
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         '--locale-dir',
         type=Path,
         default=Path('locale'),
         help='Path to the locale directory (default: locale)'
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         '--language',
         type=str,
         help='Update only the specified language (e.g., "en", "da")'
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         '--no-preserve',
         action='store_true',
         help='Do not preserve existing translations (start fresh)'
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         '--compile',
         action='store_true',
         help='Also compile .po files to .mo binary format'
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         '--verbose',
         action='store_true',
         help='Enable verbose logging'
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         '--dry-run',
         action='store_true',
         help='Show what would be done without actually updating files'
@@ -155,14 +155,23 @@ Examples:
     args = parser.parse_args()
 
     # Convert to type-safe container - argparse returns Any types
+    # Add explicit type annotations to help type checker
+    pot_file: Path = args.pot_file
+    locale_dir: Path = args.locale_dir
+    language: str | None = args.language
+    no_preserve: bool = args.no_preserve
+    compile_flag: bool = args.compile
+    verbose: bool = args.verbose
+    dry_run: bool = args.dry_run
+    
     return UpdateArgs(
-        pot_file=args.pot_file,
-        locale_dir=args.locale_dir,
-        language=args.language,
-        no_preserve=args.no_preserve,
-        compile=args.compile,
-        verbose=args.verbose,
-        dry_run=args.dry_run
+        pot_file=pot_file,
+        locale_dir=locale_dir,
+        language=language,
+        no_preserve=no_preserve,
+        compile=compile_flag,
+        verbose=verbose,
+        dry_run=dry_run
     )
 
 

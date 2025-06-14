@@ -144,11 +144,11 @@ class Top10PlatformsGraph(BaseGraph):
                             play_counts.append(count)
                     max_play_count = max(play_counts) if play_counts else 1
                     for bar in ax.patches:
-                        width = bar.get_width()  # pyright: ignore[reportAttributeAccessIssue]
+                        width = bar.get_width()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
                         if width and width > 0:  # Only annotate non-zero values
-                            _ = ax.text(  # pyright: ignore[reportUnknownMemberType]
+                            _ = ax.text(  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
                                 width + max_play_count * 0.01,  # pyright: ignore[reportUnknownArgumentType]
-                                bar.get_y() + bar.get_height()/2.,  # pyright: ignore[reportAttributeAccessIssue]
+                                bar.get_y() + bar.get_height()/2.,  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownArgumentType]
                                 f'{int(width)}',  # pyright: ignore[reportUnknownArgumentType]
                                 ha='left', va='center', fontsize=10, fontweight='bold'
                             )

@@ -149,9 +149,9 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
                 max_count = max(numeric_values) if numeric_values else 1
                 for bar in ax.patches:
                     # Use type ignores for matplotlib patch attributes
-                    height = bar.get_height()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+                    height = bar.get_height()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
                     if height and height > 0:  # Only annotate non-zero values
-                        _ = ax.text(  # pyright: ignore[reportUnknownMemberType]
+                        _ = ax.text(  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
                             bar.get_x() + bar.get_width()/2.,  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
                             height + max_count * 0.01,  # pyright: ignore[reportUnknownArgumentType]
                             f'{int(height)}',  # pyright: ignore[reportUnknownArgumentType]
