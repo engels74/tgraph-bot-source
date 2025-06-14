@@ -213,7 +213,7 @@ class ConfigCog(BaseCommandCog):
                 )
 
             # Get the current value and type
-            current_value = getattr(current_config, setting)
+            current_value: object = getattr(current_config, setting)  # pyright: ignore[reportAny]
 
             # Convert the string value to the appropriate type
             try:
@@ -230,7 +230,7 @@ class ConfigCog(BaseCommandCog):
 
             # Validate the new configuration
             try:
-                new_config = TGraphBotConfig(**config_data)
+                new_config = TGraphBotConfig(**config_data)  # pyright: ignore[reportAny]
             except ValidationError as e:
                 raise ConfigurationError(
                     f"Configuration validation failed: {e}",

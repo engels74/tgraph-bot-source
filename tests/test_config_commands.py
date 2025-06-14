@@ -217,10 +217,10 @@ class TestConfigCog:
 
     @pytest.mark.asyncio
     async def test_config_edit_success(
-        self, 
-        config_cog: ConfigCog, 
+        self,
+        config_cog: ConfigCog,
         mock_interaction: MagicMock,
-        mock_config: TGraphBotConfig
+        _mock_config: TGraphBotConfig
     ) -> None:
         """Test successful configuration editing."""
         with tempfile.NamedTemporaryFile(mode='w', suffix='.yml', delete=False) as temp_file:

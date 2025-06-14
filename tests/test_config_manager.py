@@ -435,10 +435,10 @@ class TestLiveConfigurationManagement:
         callback1_called = threading.Event()
         callback2_called = threading.Event()
 
-        def callback1(old_cfg: TGraphBotConfig, new_cfg: TGraphBotConfig) -> None:
+        def callback1(_old_cfg: TGraphBotConfig, _new_cfg: TGraphBotConfig) -> None:
             callback1_called.set()
 
-        def callback2(old_cfg: TGraphBotConfig, new_cfg: TGraphBotConfig) -> None:
+        def callback2(_old_cfg: TGraphBotConfig, _new_cfg: TGraphBotConfig) -> None:
             callback2_called.set()
 
         # Register both callbacks
