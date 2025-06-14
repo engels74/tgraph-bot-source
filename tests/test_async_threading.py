@@ -6,8 +6,8 @@ in separate threads using asyncio.to_thread() to prevent blocking
 the event loop.
 """
 
-import asyncio
 import time
+import asyncio
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -28,7 +28,7 @@ class TestAsyncThreading:
         mock_config.TAUTULLI_API_KEY = "test_key"
         mock_config.TIME_RANGE_DAYS = 30
         mock_config.KEEP_DAYS = 7
-        mock_config_manager.get_current_config.return_value = mock_config
+        mock_config_manager.get_current_config.return_value = mock_config  # pyright: ignore[reportAny]
 
         # Create GraphManager instance
         graph_manager = GraphManager(mock_config_manager)
@@ -45,7 +45,7 @@ class TestAsyncThreading:
             graph_manager._graph_factory = mock_graph_factory
             
             # Mock the data fetching
-            mock_data_fetcher.get_play_history.return_value = {"data": []}
+            mock_data_fetcher.get_play_history.return_value = {"data": []}  # pyright: ignore[reportAny]
 
             # Mock the synchronous graph generation method
             def mock_sync_generation(_data: dict[str, object], _progress_tracker: object | None = None) -> list[str]:
@@ -54,8 +54,8 @@ class TestAsyncThreading:
             # Test that asyncio.to_thread is used
             with patch('asyncio.to_thread') as mock_to_thread:
                 # Mock to_thread to return an awaitable that resolves to the result
-                future = asyncio.Future()
-                future.set_result(["test_graph.png"])
+                future = asyncio.Future()  # pyright: ignore[reportUnknownVariableType]
+                future.set_result(["test_graph.png"])  # pyright: ignore[reportUnknownMemberType]
                 mock_to_thread.return_value = future
 
                 # Patch the sync method
@@ -77,7 +77,7 @@ class TestAsyncThreading:
         mock_config.TAUTULLI_API_KEY = "test_key"
         mock_config.TIME_RANGE_DAYS = 30
         mock_config.KEEP_DAYS = 7
-        mock_config_manager.get_current_config.return_value = mock_config
+        mock_config_manager.get_current_config.return_value = mock_config  # pyright: ignore[reportAny]
 
         # Create UserGraphManager instance
         user_graph_manager = UserGraphManager(mock_config_manager)
@@ -94,8 +94,8 @@ class TestAsyncThreading:
             user_graph_manager._graph_factory = mock_graph_factory
             
             # Mock the data fetching methods
-            mock_data_fetcher.get_play_history.return_value = {"data": []}
-            mock_data_fetcher.find_user_by_email.return_value = {"user_id": 123}
+            mock_data_fetcher.get_play_history.return_value = {"data": []}  # pyright: ignore[reportAny]
+            mock_data_fetcher.find_user_by_email.return_value = {"user_id": 123}  # pyright: ignore[reportAny]
 
             # Mock the synchronous graph generation method
             def mock_sync_user_generation(_user_data: dict[str, object], _progress_tracker: object | None = None) -> list[str]:
@@ -104,8 +104,8 @@ class TestAsyncThreading:
             # Test that asyncio.to_thread is used
             with patch('asyncio.to_thread') as mock_to_thread:
                 # Mock to_thread to return an awaitable that resolves to the result
-                future = asyncio.Future()
-                future.set_result([])
+                future = asyncio.Future()  # pyright: ignore[reportUnknownVariableType]
+                future.set_result([])  # pyright: ignore[reportUnknownMemberType]
                 mock_to_thread.return_value = future
 
                 # Patch the sync method
@@ -124,7 +124,7 @@ class TestAsyncThreading:
         mock_config_manager = MagicMock()
         mock_config = MagicMock()
         mock_config.KEEP_DAYS = 7
-        mock_config_manager.get_current_config.return_value = mock_config
+        mock_config_manager.get_current_config.return_value = mock_config  # pyright: ignore[reportAny]
 
         # Create GraphManager instance
         graph_manager = GraphManager(mock_config_manager)
@@ -132,8 +132,8 @@ class TestAsyncThreading:
         # Test cleanup_old_graphs uses asyncio.to_thread
         with patch('asyncio.to_thread') as mock_to_thread:
             # Mock to_thread to return an awaitable that resolves to the result
-            future = asyncio.Future()
-            future.set_result(5)  # Mock return value for cleanup_old_files
+            future = asyncio.Future()  # pyright: ignore[reportUnknownVariableType]
+            future.set_result(5)  # Mock return value for cleanup_old_files  # pyright: ignore[reportUnknownMemberType]
             mock_to_thread.return_value = future
 
             _ = await graph_manager.cleanup_old_graphs()
@@ -152,7 +152,7 @@ class TestAsyncThreading:
         mock_config.TAUTULLI_URL = "http://localhost:8181"
         mock_config.TAUTULLI_API_KEY = "test_key"
         mock_config.TIME_RANGE_DAYS = 30
-        mock_config_manager.get_current_config.return_value = mock_config
+        mock_config_manager.get_current_config.return_value = mock_config  # pyright: ignore[reportAny]
 
         graph_manager = GraphManager(mock_config_manager)
 
@@ -166,7 +166,7 @@ class TestAsyncThreading:
             graph_manager._data_fetcher = mock_data_fetcher
             graph_manager._graph_factory = mock_graph_factory
             
-            mock_data_fetcher.get_play_history.return_value = {"data": []}
+            mock_data_fetcher.get_play_history.return_value = {"data": []}  # pyright: ignore[reportAny]
             
             # Create a counter to verify the event loop is responsive
             counter = 0

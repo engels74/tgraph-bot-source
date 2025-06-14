@@ -264,7 +264,7 @@ class TestCompileAllTranslations:
         """Test compilation with some failures."""
         files = self.create_test_structure(tmp_path)
         
-        def mock_compile_side_effect(po_file: Path, **kwargs: object) -> bool:
+        def mock_compile_side_effect(po_file: Path, **_kwargs: object) -> bool:
             if 'en' in str(po_file):
                 return True
             else:

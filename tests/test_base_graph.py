@@ -29,8 +29,8 @@ class ConcreteGraph(BaseGraph):
         """Generate a test graph."""
         _ = self.setup_figure()
         if self.axes is not None:
-            _ = self.axes.plot([1, 2, 3], [1, 4, 2])
-            _ = self.axes.set_title(self.get_title())
+            _ = self.axes.plot([1, 2, 3], [1, 4, 2])  # pyright: ignore[reportUnknownMemberType]
+            _ = self.axes.set_title(self.get_title())  # pyright: ignore[reportUnknownMemberType]
         
         with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
             output_path = tmp.name
@@ -109,7 +109,7 @@ class TestBaseGraph:
             # Setup figure
             _ = graph.setup_figure()
             if graph.axes is not None:
-                _ = graph.axes.plot([1, 2, 3], [1, 4, 2])
+                _ = graph.axes.plot([1, 2, 3], [1, 4, 2])  # pyright: ignore[reportUnknownMemberType]
             
             # Save figure
             saved_path = graph.save_figure(output_path=str(output_path))
@@ -253,7 +253,7 @@ class TestBaseGraph:
         _ = graph.setup_figure()
 
         if graph.axes is not None:
-            _ = graph.axes.plot([1, 2, 3], [1, 4, 2])
+            _ = graph.axes.plot([1, 2, 3], [1, 4, 2])  # pyright: ignore[reportUnknownMemberType]
 
         # Save with graph_type instead of output_path
         saved_path = graph.save_figure(graph_type="test_graph")
@@ -273,7 +273,7 @@ class TestBaseGraph:
         _ = graph.setup_figure()
 
         if graph.axes is not None:
-            _ = graph.axes.plot([1, 2, 3], [1, 4, 2])
+            _ = graph.axes.plot([1, 2, 3], [1, 4, 2])  # pyright: ignore[reportUnknownMemberType]
 
         # Save with graph_type and user_id
         saved_path = graph.save_figure(graph_type="test_graph", user_id="user123")
