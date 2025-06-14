@@ -116,7 +116,7 @@ class TestTGraphBotConfig:
         }
         
         with pytest.raises(ValidationError) as exc_info:
-            TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
+            _ = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
         
         errors = exc_info.value.errors()
         assert any(error["loc"] == ("TV_COLOR",) for error in errors)
@@ -132,7 +132,7 @@ class TestTGraphBotConfig:
         }
         
         with pytest.raises(ValidationError):
-            TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
+            _ = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
 
     def test_negative_values_validation(self) -> None:
         """Test that negative values for certain fields raise ValidationError."""
@@ -145,7 +145,7 @@ class TestTGraphBotConfig:
         }
         
         with pytest.raises(ValidationError):
-            TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
+            _ = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
 
     def test_channel_id_validation(self) -> None:
         """Test that channel ID validation works correctly."""
@@ -157,4 +157,4 @@ class TestTGraphBotConfig:
         }
         
         with pytest.raises(ValidationError):
-            TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
+            _ = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]

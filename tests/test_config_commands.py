@@ -93,7 +93,7 @@ class TestConfigCog:
     def test_convert_config_value_int_invalid(self, config_cog: ConfigCog) -> None:
         """Test invalid integer value conversion."""
         with pytest.raises(ValueError, match="'not_a_number' is not a valid integer"):
-            config_cog._convert_config_value("not_a_number", int)
+            _ = config_cog._convert_config_value("not_a_number", int)
 
     def test_convert_config_value_bool_true(self, config_cog: ConfigCog) -> None:
         """Test boolean true value conversion."""
@@ -112,7 +112,7 @@ class TestConfigCog:
     def test_convert_config_value_bool_invalid(self, config_cog: ConfigCog) -> None:
         """Test invalid boolean value conversion."""
         with pytest.raises(ValueError, match="'maybe' is not a valid boolean"):
-            config_cog._convert_config_value("maybe", bool)
+            _ = config_cog._convert_config_value("maybe", bool)
 
     def test_convert_config_value_float(self, config_cog: ConfigCog) -> None:
         """Test float value conversion."""
@@ -123,7 +123,7 @@ class TestConfigCog:
     def test_convert_config_value_float_invalid(self, config_cog: ConfigCog) -> None:
         """Test invalid float value conversion."""
         with pytest.raises(ValueError, match="'not_a_float' is not a valid number"):
-            config_cog._convert_config_value("not_a_float", float)
+            _ = config_cog._convert_config_value("not_a_float", float)
 
     @pytest.mark.asyncio
     async def test_config_view_success(
@@ -227,7 +227,7 @@ class TestConfigCog:
             temp_path = Path(temp_file.name)
             
             # Write initial config
-            temp_file.write("UPDATE_DAYS: 7\nLANGUAGE: en\n")
+            _ = temp_file.write("UPDATE_DAYS: 7\nLANGUAGE: en\n")
             temp_file.flush()
             
             try:
