@@ -4,7 +4,6 @@ Tests for configuration command functionality.
 This module tests the /config command group including /config view and /config edit
 commands with proper validation, error handling, and Discord integration.
 """
-# pyright: reportPrivateUsage=false, reportAny=false
 
 import tempfile
 from pathlib import Path
@@ -81,50 +80,50 @@ class TestConfigCog:
 
     def test_convert_config_value_string(self, config_cog: ConfigCog) -> None:
         """Test string value conversion."""
-        result = config_cog._convert_config_value("test_value", str)
+        result = config_cog._convert_config_value("test_value", str)  # pyright: ignore[reportPrivateUsage]
         assert result == "test_value"
         assert isinstance(result, str)
 
     def test_convert_config_value_int(self, config_cog: ConfigCog) -> None:
         """Test integer value conversion."""
-        result = config_cog._convert_config_value("42", int)
+        result = config_cog._convert_config_value("42", int)  # pyright: ignore[reportPrivateUsage]
         assert result == 42
         assert isinstance(result, int)
 
     def test_convert_config_value_int_invalid(self, config_cog: ConfigCog) -> None:
         """Test invalid integer value conversion."""
         with pytest.raises(ValueError, match="'not_a_number' is not a valid integer"):
-            _ = config_cog._convert_config_value("not_a_number", int)
+            _ = config_cog._convert_config_value("not_a_number", int)  # pyright: ignore[reportPrivateUsage]
 
     def test_convert_config_value_bool_true(self, config_cog: ConfigCog) -> None:
         """Test boolean true value conversion."""
         true_values = ["true", "yes", "1", "on", "enabled", "TRUE", "YES"]
         for value in true_values:
-            result = config_cog._convert_config_value(value, bool)
+            result = config_cog._convert_config_value(value, bool)  # pyright: ignore[reportPrivateUsage]
             assert result is True
 
     def test_convert_config_value_bool_false(self, config_cog: ConfigCog) -> None:
         """Test boolean false value conversion."""
         false_values = ["false", "no", "0", "off", "disabled", "FALSE", "NO"]
         for value in false_values:
-            result = config_cog._convert_config_value(value, bool)
+            result = config_cog._convert_config_value(value, bool)  # pyright: ignore[reportPrivateUsage]
             assert result is False
 
     def test_convert_config_value_bool_invalid(self, config_cog: ConfigCog) -> None:
         """Test invalid boolean value conversion."""
         with pytest.raises(ValueError, match="'maybe' is not a valid boolean"):
-            _ = config_cog._convert_config_value("maybe", bool)
+            _ = config_cog._convert_config_value("maybe", bool)  # pyright: ignore[reportPrivateUsage]
 
     def test_convert_config_value_float(self, config_cog: ConfigCog) -> None:
         """Test float value conversion."""
-        result = config_cog._convert_config_value("3.14", float)
+        result = config_cog._convert_config_value("3.14", float)  # pyright: ignore[reportPrivateUsage]
         assert result == 3.14
         assert isinstance(result, float)
 
     def test_convert_config_value_float_invalid(self, config_cog: ConfigCog) -> None:
         """Test invalid float value conversion."""
         with pytest.raises(ValueError, match="'not_a_float' is not a valid number"):
-            _ = config_cog._convert_config_value("not_a_float", float)
+            _ = config_cog._convert_config_value("not_a_float", float)  # pyright: ignore[reportPrivateUsage]
 
     @pytest.mark.asyncio
     async def test_config_view_success(
@@ -137,15 +136,15 @@ class TestConfigCog:
         _ = await config_cog.config_view.callback(config_cog, mock_interaction)  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
 
         # Verify interaction response was called
-        mock_interaction.response.send_message.assert_called_once()
+        mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportAny]
 
         # Get the embed from the call
-        call_args = mock_interaction.response.send_message.call_args
-        embed = call_args[1]['embed']
+        call_args = mock_interaction.response.send_message.call_args  # pyright: ignore[reportAny]
+        embed = call_args[1]['embed']  # pyright: ignore[reportAny]
 
-        assert embed.title == "🔧 Bot Configuration"
-        assert embed.color == discord.Color.blue()
-        assert len(embed.fields) >= 3  # Should have multiple fields
+        assert embed.title == "🔧 Bot Configuration"  # pyright: ignore[reportAny]
+        assert embed.color == discord.Color.blue()  # pyright: ignore[reportAny]
+        assert len(embed.fields) >= 3  # Should have multiple fields  # pyright: ignore[reportAny]
 
     @pytest.mark.asyncio
     async def test_config_view_error(
@@ -239,12 +238,12 @@ class TestConfigCog:
                     _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "UPDATE_DAYS", "14")  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
                 
                 # Verify success response was sent
-                mock_interaction.response.send_message.assert_called_once()
-                call_args = mock_interaction.response.send_message.call_args
-                embed = call_args[1]['embed']
+                mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportAny]
+                call_args = mock_interaction.response.send_message.call_args  # pyright: ignore[reportAny]
+                embed = call_args[1]['embed']  # pyright: ignore[reportAny]
                 
-                assert embed.title == "✅ Configuration Updated"
-                assert embed.color == discord.Color.green()
+                assert embed.title == "✅ Configuration Updated"  # pyright: ignore[reportAny]
+                assert embed.color == discord.Color.green()  # pyright: ignore[reportAny]
                 
                 # Verify save was called
                 mock_save.assert_called_once()
