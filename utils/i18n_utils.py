@@ -126,8 +126,9 @@ class StringExtractor(ast.NodeVisitor):
         # Look for context in keyword arguments
         for keyword in node.keywords:
             if keyword.arg == "context" and isinstance(keyword.value, ast.Constant):
-                if isinstance(keyword.value.value, str):
-                    return keyword.value.value
+                value = keyword.value.value
+                if isinstance(value, str):
+                    return value
         return None
 
 
@@ -321,8 +322,8 @@ def parse_po_file(po_file: Path) -> dict[str, str]:
         msgstrs = msgstr_pattern.findall(content)
 
         # Pair up msgids with their corresponding msgstrs
-        for msgid, msgstr in zip(msgids, msgstrs, strict=False):  # pyright: ignore[reportAny]
-            if msgid and msgstr:  # Only include non-empty translations
+        for msgid, msgstr in zip(msgids, msgstrs, strict=False):
+            if msgid and msgstr:  # Skip empty strings
                 translations[msgid] = msgstr
 
         logger.info(f"Parsed {len(translations)} translations from {po_file}")

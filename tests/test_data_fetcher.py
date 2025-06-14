@@ -62,8 +62,8 @@ class TestDataFetcher:
         assert data_fetcher.api_key == "test_api_key"
         assert data_fetcher.timeout == 30.0
         assert data_fetcher.max_retries == 3
-        assert data_fetcher._client is None
-        assert data_fetcher._cache == {}
+        assert data_fetcher._client is None  # pyright: ignore[reportPrivateUsage]
+        assert data_fetcher._cache == {}  # pyright: ignore[reportPrivateUsage]
 
     def test_init_strips_trailing_slash(self) -> None:
         """Test that trailing slash is stripped from base URL."""
@@ -77,17 +77,17 @@ class TestDataFetcher:
     async def test_context_manager(self, data_fetcher: DataFetcher) -> None:
         """Test async context manager functionality."""
         async with data_fetcher as fetcher:
-            assert fetcher._client is not None
-            assert isinstance(fetcher._client, httpx.AsyncClient)
+            assert fetcher._client is not None  # pyright: ignore[reportPrivateUsage]
+            assert isinstance(fetcher._client, httpx.AsyncClient)  # pyright: ignore[reportPrivateUsage]
         
         # Client should be closed after exiting context
-        assert fetcher._client is None
+        assert fetcher._client is None  # pyright: ignore[reportPrivateUsage]
 
     @pytest.mark.asyncio
     async def test_make_request_not_initialized(self, data_fetcher: DataFetcher) -> None:
         """Test that _make_request raises error when not initialized."""
         with pytest.raises(RuntimeError, match="DataFetcher not initialized"):
-            _ = await data_fetcher._make_request("get_history")
+            _ = await data_fetcher._make_request("get_history")  # pyright: ignore[reportPrivateUsage]
 
     @pytest.mark.asyncio
     async def test_make_request_success(
@@ -107,7 +107,7 @@ class TestDataFetcher:
             mock_client.get.return_value = mock_response
             
             async with data_fetcher:
-                result = await data_fetcher._make_request("get_history", {"user_id": 1})
+                result = await data_fetcher._make_request("get_history", {"user_id": 1})  # pyright: ignore[reportPrivateUsage]
             
             # Verify request was made with correct parameters
             mock_client.get.assert_called_once()

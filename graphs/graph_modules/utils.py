@@ -278,10 +278,10 @@ def safe_get_nested_value(data: Mapping[str, object], keys: list[str], default: 
     current: object = data
     for key in keys:
         if isinstance(current, dict) and key in current:
-            current = current[key]  # pyright: ignore[reportUnknownVariableType]
+            current = current[key]
         else:
             return default
-    return current  # pyright: ignore[reportUnknownVariableType]
+    return current
 
 
 def process_play_history_data(raw_data: Mapping[str, object]) -> list[dict[str, object]]:
@@ -305,7 +305,7 @@ def process_play_history_data(raw_data: Mapping[str, object]) -> list[dict[str, 
 
     processed_records = []
 
-    for record in history_data:  # pyright: ignore[reportUnknownVariableType]
+    for record in history_data:
         if not isinstance(record, dict):
             logger.warning("Skipping invalid record: not a dictionary")
             continue
@@ -313,13 +313,13 @@ def process_play_history_data(raw_data: Mapping[str, object]) -> list[dict[str, 
         try:
             # Extract and validate required fields
             processed_record = {
-                'date': safe_get_nested_value(record, ['date'], ''),  # pyright: ignore[reportUnknownArgumentType]
-                'user': safe_get_nested_value(record, ['user'], ''),  # pyright: ignore[reportUnknownArgumentType]
-                'platform': safe_get_nested_value(record, ['platform'], ''),  # pyright: ignore[reportUnknownArgumentType]
-                'media_type': safe_get_nested_value(record, ['media_type'], ''),  # pyright: ignore[reportUnknownArgumentType]
-                'duration': safe_get_nested_value(record, ['duration'], 0),  # pyright: ignore[reportUnknownArgumentType]
-                'stopped': safe_get_nested_value(record, ['stopped'], 0),  # pyright: ignore[reportUnknownArgumentType]
-                'paused_counter': safe_get_nested_value(record, ['paused_counter'], 0),  # pyright: ignore[reportUnknownArgumentType]
+                'date': safe_get_nested_value(record, ['date'], ''),
+                'user': safe_get_nested_value(record, ['user'], ''),
+                'platform': safe_get_nested_value(record, ['platform'], ''),
+                'media_type': safe_get_nested_value(record, ['media_type'], ''),
+                'duration': safe_get_nested_value(record, ['duration'], 0),
+                'stopped': safe_get_nested_value(record, ['stopped'], 0),
+                'paused_counter': safe_get_nested_value(record, ['paused_counter'], 0),
             }
 
             # Convert timestamps to datetime objects if they're valid
@@ -342,14 +342,14 @@ def process_play_history_data(raw_data: Mapping[str, object]) -> list[dict[str, 
                 logger.warning("Missing date in record")
                 continue
 
-            processed_records.append(processed_record)  # pyright: ignore[reportUnknownMemberType]
+            processed_records.append(processed_record)
 
         except Exception as e:
             logger.warning(f"Error processing record: {e}")
             continue
 
-    logger.info(f"Processed {len(processed_records)} valid records from {len(history_data)} total")  # pyright: ignore[reportUnknownArgumentType]
-    return processed_records  # pyright: ignore[reportUnknownVariableType]
+    logger.info(f"Processed {len(processed_records)} valid records from {len(history_data)} total")
+    return processed_records
 
 
 def aggregate_by_date(records: list[dict[str, object]]) -> dict[str, int]:
@@ -458,12 +458,12 @@ def aggregate_top_users(records: list[dict[str, object]], limit: int = 10, censo
     result = []
     for username, count in sorted_users:
         processed_username = censor_username(username) if censor else username
-        result.append({  # pyright: ignore[reportUnknownMemberType]
+        result.append({
             'username': processed_username,
             'play_count': count
         })
 
-    return result  # pyright: ignore[reportUnknownVariableType]
+    return result
 
 
 def aggregate_top_platforms(records: list[dict[str, object]], limit: int = 10) -> list[dict[str, object]]:
@@ -489,12 +489,12 @@ def aggregate_top_platforms(records: list[dict[str, object]], limit: int = 10) -
 
     result = []
     for platform, count in sorted_platforms:
-        result.append({  # pyright: ignore[reportUnknownMemberType]
+        result.append({
             'platform': platform,
             'play_count': count
         })
 
-    return result  # pyright: ignore[reportUnknownVariableType]
+    return result
 
 
 def handle_empty_data(graph_type: str) -> dict[str, object] | list[dict[str, object]]:

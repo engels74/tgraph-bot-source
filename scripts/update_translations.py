@@ -156,13 +156,13 @@ Examples:
 
     # Convert to type-safe container - argparse returns Any types
     return UpdateArgs(
-        pot_file=args.pot_file,  # pyright: ignore[reportAny]
-        locale_dir=args.locale_dir,  # pyright: ignore[reportAny]
-        language=args.language,  # pyright: ignore[reportAny]
-        no_preserve=args.no_preserve,  # pyright: ignore[reportAny]
-        compile=args.compile,  # pyright: ignore[reportAny]
-        verbose=args.verbose,  # pyright: ignore[reportAny]
-        dry_run=args.dry_run  # pyright: ignore[reportAny]
+        pot_file=args.pot_file,
+        locale_dir=args.locale_dir,
+        language=args.language,
+        no_preserve=args.no_preserve,
+        compile=args.compile,
+        verbose=args.verbose,
+        dry_run=args.dry_run
     )
 
 

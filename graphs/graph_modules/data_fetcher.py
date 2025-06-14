@@ -254,7 +254,7 @@ class DataFetcher:
         if isinstance(users_data, list):
             for user in users_data:
                 if isinstance(user, dict):
-                    user_email: object = user.get("email")  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+                    user_email: object = user.get("email")
                     if user_email == email:
                         return user
 

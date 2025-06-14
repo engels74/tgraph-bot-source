@@ -198,12 +198,12 @@ Examples:
 
     # Convert to type-safe container - argparse returns Any types
     return CompileArgs(
-        locale_dir=args.locale_dir,  # pyright: ignore[reportAny]
-        language=args.language,  # pyright: ignore[reportAny]
-        force=args.force,  # pyright: ignore[reportAny]
-        check_only=args.check_only,  # pyright: ignore[reportAny]
-        verbose=args.verbose,  # pyright: ignore[reportAny]
-        dry_run=args.dry_run  # pyright: ignore[reportAny]
+        locale_dir=args.locale_dir,
+        language=args.language,
+        force=args.force,
+        check_only=args.check_only,
+        verbose=args.verbose,
+        dry_run=args.dry_run
     )
 
 
