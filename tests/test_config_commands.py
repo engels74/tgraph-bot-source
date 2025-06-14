@@ -4,6 +4,7 @@ Tests for configuration command functionality.
 This module tests the /config command group including /config view and /config edit
 commands with proper validation, error handling, and Discord integration.
 """
+# pyright: reportPrivateUsage=false, reportAny=false
 
 import tempfile
 from pathlib import Path
@@ -12,7 +13,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import discord
 import pytest
 from discord.ext import commands
-from pydantic import ValidationError
+
 
 from bot.commands.config import ConfigCog
 from config.manager import ConfigManager
@@ -93,7 +94,7 @@ class TestConfigCog:
     def test_convert_config_value_int_invalid(self, config_cog: ConfigCog) -> None:
         """Test invalid integer value conversion."""
         with pytest.raises(ValueError, match="'not_a_number' is not a valid integer"):
-            config_cog._convert_config_value("not_a_number", int)
+            _ = config_cog._convert_config_value("not_a_number", int)
 
     def test_convert_config_value_bool_true(self, config_cog: ConfigCog) -> None:
         """Test boolean true value conversion."""
@@ -112,7 +113,7 @@ class TestConfigCog:
     def test_convert_config_value_bool_invalid(self, config_cog: ConfigCog) -> None:
         """Test invalid boolean value conversion."""
         with pytest.raises(ValueError, match="'maybe' is not a valid boolean"):
-            config_cog._convert_config_value("maybe", bool)
+            _ = config_cog._convert_config_value("maybe", bool)
 
     def test_convert_config_value_float(self, config_cog: ConfigCog) -> None:
         """Test float value conversion."""
@@ -123,7 +124,7 @@ class TestConfigCog:
     def test_convert_config_value_float_invalid(self, config_cog: ConfigCog) -> None:
         """Test invalid float value conversion."""
         with pytest.raises(ValueError, match="'not_a_float' is not a valid number"):
-            config_cog._convert_config_value("not_a_float", float)
+            _ = config_cog._convert_config_value("not_a_float", float)
 
     @pytest.mark.asyncio
     async def test_config_view_success(
@@ -133,7 +134,7 @@ class TestConfigCog:
     ) -> None:
         """Test successful configuration viewing."""
         # Call the method directly using the callback
-        _ = await config_cog.config_view.callback(config_cog, mock_interaction)  # pyright: ignore[reportCallIssue]
+        _ = await config_cog.config_view.callback(config_cog, mock_interaction)  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
 
         # Verify interaction response was called
         mock_interaction.response.send_message.assert_called_once()
@@ -156,7 +157,7 @@ class TestConfigCog:
         # Mock the config manager to raise an exception
         with patch.object(config_cog.tgraph_bot.config_manager, 'get_current_config', side_effect=RuntimeError("Test error")), \
              patch('utils.command_utils.safe_interaction_response') as mock_safe_response:
-            _ = await config_cog.config_view.callback(config_cog, mock_interaction)  # pyright: ignore[reportCallIssue]
+            _ = await config_cog.config_view.callback(config_cog, mock_interaction)  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
 
         # Verify error response was sent through the new error handling system
         mock_safe_response.assert_called_once()
@@ -169,10 +170,10 @@ class TestConfigCog:
     ) -> None:
         """Test configuration editing with invalid setting."""
         with patch('utils.command_utils.safe_interaction_response') as mock_safe_response:
-            _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "INVALID_SETTING", "value")  # pyright: ignore[reportCallIssue]
+            _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "INVALID_SETTING", "value")  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
 
         # Verify error response was sent through the new error handling system
-        mock_safe_response.assert_called_once()  # pyright: ignore[reportUnknownMemberType]
+        mock_safe_response.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_config_edit_invalid_value(
@@ -182,7 +183,7 @@ class TestConfigCog:
     ) -> None:
         """Test configuration editing with invalid value."""
         with patch('utils.command_utils.safe_interaction_response') as mock_safe_response:
-            _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "UPDATE_DAYS", "not_a_number")  # pyright: ignore[reportCallIssue]
+            _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "UPDATE_DAYS", "not_a_number")  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
 
         # Verify error response was sent through the new error handling system
         mock_safe_response.assert_called_once()
@@ -196,7 +197,7 @@ class TestConfigCog:
         """Test configuration editing with validation error."""
         # Try to set UPDATE_DAYS to an invalid value (outside range)
         with patch('utils.command_utils.safe_interaction_response') as mock_safe_response:
-            _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "UPDATE_DAYS", "999")  # pyright: ignore[reportCallIssue]
+            _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "UPDATE_DAYS", "999")  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
 
         # Verify error response was sent through the new error handling system
         mock_safe_response.assert_called_once()
@@ -210,24 +211,24 @@ class TestConfigCog:
         """Test configuration editing when config file doesn't exist."""
         with patch('pathlib.Path.exists', return_value=False), \
              patch('utils.command_utils.safe_interaction_response') as mock_safe_response:
-            _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "UPDATE_DAYS", "14")  # pyright: ignore[reportCallIssue]
+            _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "UPDATE_DAYS", "14")  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
 
         # Verify error response was sent through the new error handling system
         mock_safe_response.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_config_edit_success(
-        self, 
-        config_cog: ConfigCog, 
+        self,
+        config_cog: ConfigCog,
         mock_interaction: MagicMock,
-        mock_config: TGraphBotConfig
+        _mock_config: TGraphBotConfig
     ) -> None:
         """Test successful configuration editing."""
         with tempfile.NamedTemporaryFile(mode='w', suffix='.yml', delete=False) as temp_file:
             temp_path = Path(temp_file.name)
             
             # Write initial config
-            temp_file.write("UPDATE_DAYS: 7\nLANGUAGE: en\n")
+            _ = temp_file.write("UPDATE_DAYS: 7\nLANGUAGE: en\n")
             temp_file.flush()
             
             try:
@@ -235,7 +236,7 @@ class TestConfigCog:
                      patch('bot.commands.config.Path', return_value=temp_path), \
                      patch.object(ConfigManager, 'save_config') as mock_save:
 
-                    _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "UPDATE_DAYS", "14")  # pyright: ignore[reportCallIssue]
+                    _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "UPDATE_DAYS", "14")  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
                 
                 # Verify success response was sent
                 mock_interaction.response.send_message.assert_called_once()
@@ -262,7 +263,7 @@ class TestConfigCog:
              patch.object(ConfigManager, 'save_config', side_effect=Exception("Save failed")), \
              patch('utils.command_utils.safe_interaction_response') as mock_safe_response:
 
-            _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "UPDATE_DAYS", "14")  # pyright: ignore[reportCallIssue]
+            _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "UPDATE_DAYS", "14")  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
 
         # Verify error response was sent through the new error handling system
         mock_safe_response.assert_called_once()

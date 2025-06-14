@@ -4,6 +4,7 @@ End-to-end integration tests for graph customization and feature validation.
 This module provides comprehensive integration tests that validate the complete
 workflow from configuration to graph generation, ensuring all customization
 options work correctly in realistic scenarios.
+# pyright: reportPrivateUsage=false, reportAny=false
 """
 
 from __future__ import annotations
@@ -255,7 +256,7 @@ class TestEndToEndCustomization:
         factory = GraphFactory(config)
         
         # Create multiple graphs to test resource management
-        graphs = []
+        graphs: list[object] = []
         for graph_type in ["daily_play_count", "top_10_users", "play_count_by_hourofday"]:
             graph = factory.create_graph_by_type(graph_type)
             graphs.append(graph)
@@ -269,9 +270,9 @@ class TestEndToEndCustomization:
         
         # Test cleanup functionality
         for graph in graphs:
-            graph.cleanup()
-            assert graph.figure is None
-            assert graph.axes is None
+            graph.cleanup()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+            assert graph.figure is None  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+            assert graph.axes is None  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
 
     def test_configuration_validation_edge_cases(self) -> None:
         """Test configuration validation with edge case values."""

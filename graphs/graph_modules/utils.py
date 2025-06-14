@@ -12,9 +12,46 @@ from collections import defaultdict
 from collections.abc import Mapping
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import TypeVar, TYPE_CHECKING, TypedDict
 
+if TYPE_CHECKING:
+    pass
+
+
+# Type definitions for processed data structures
+class ProcessedPlayRecord(TypedDict):
+    """Structure for processed play history records."""
+    date: str
+    user: str
+    platform: str
+    media_type: str
+    duration: int
+    stopped: int
+    paused_counter: int
+    datetime: datetime
+
+
+class UserAggregateRecord(TypedDict):
+    """Structure for aggregated user data."""
+    username: str
+    play_count: int
+
+
+class PlatformAggregateRecord(TypedDict):
+    """Structure for aggregated platform data."""
+    platform: str
+    play_count: int
+
+
+# Type aliases for common data structures
+GraphData = dict[str, int] | list[dict[str, object]]
+ProcessedRecords = list[ProcessedPlayRecord]
+UserAggregates = list[UserAggregateRecord]
+PlatformAggregates = list[PlatformAggregateRecord]
 
 logger = logging.getLogger(__name__)
+
+T = TypeVar('T')
 
 
 def format_date(date_obj: datetime, format_string: str = "%Y-%m-%d") -> str:
@@ -239,23 +276,21 @@ def validate_color(color: str) -> bool:
 
 def validate_graph_data(data: Mapping[str, object], required_keys: list[str]) -> tuple[bool, str]:
     """
-    Validate that graph data contains required keys and has valid structure.
+    Validate that graph data contains all required keys.
 
     Args:
-        data: Data dictionary to validate
-        required_keys: List of required keys that must be present
+        data: The data dictionary to validate
+        required_keys: List of keys that must be present
 
     Returns:
         Tuple of (is_valid, error_message)
     """
-    # Check for required keys
-    missing_keys = [key for key in required_keys if key not in data]
-    if missing_keys:
-        return False, f"Missing required keys: {', '.join(missing_keys)}"
+    if not isinstance(data, dict):
+        return False, "Data must be a dictionary"
 
-    # Check for empty data
-    if not data:
-        return False, "Data dictionary is empty"
+    for key in required_keys:
+        if key not in data:
+            return False, f"Missing required key: {key}"
 
     return True, ""
 
@@ -272,16 +307,16 @@ def safe_get_nested_value(data: Mapping[str, object], keys: list[str], default: 
     Returns:
         The value at the key path, or default if not found
     """
-    current = data
+    current: Mapping[str, object] | object = data
     for key in keys:
         if isinstance(current, dict) and key in current:
-            current = current[key]
+            current = current[key]  # pyright: ignore[reportUnknownVariableType]
         else:
             return default
-    return current
+    return current  # pyright: ignore[reportUnknownVariableType]
 
 
-def process_play_history_data(raw_data: Mapping[str, object]) -> list[dict[str, object]]:
+def process_play_history_data(raw_data: Mapping[str, object]) -> ProcessedRecords:
     """
     Process raw play history data from Tautulli API into a standardized format.
 
@@ -300,7 +335,7 @@ def process_play_history_data(raw_data: Mapping[str, object]) -> list[dict[str, 
     if not isinstance(history_data, list):
         raise ValueError("Play history data must be a list")
 
-    processed_records = []
+    processed_records: ProcessedRecords = []
 
     for record in history_data:  # pyright: ignore[reportUnknownVariableType]
         if not isinstance(record, dict):
@@ -308,48 +343,59 @@ def process_play_history_data(raw_data: Mapping[str, object]) -> list[dict[str, 
             continue
 
         try:
-            # Extract and validate required fields
-            processed_record = {
-                'date': safe_get_nested_value(record, ['date'], ''),  # pyright: ignore[reportUnknownArgumentType]
-                'user': safe_get_nested_value(record, ['user'], ''),  # pyright: ignore[reportUnknownArgumentType]
-                'platform': safe_get_nested_value(record, ['platform'], ''),  # pyright: ignore[reportUnknownArgumentType]
-                'media_type': safe_get_nested_value(record, ['media_type'], ''),  # pyright: ignore[reportUnknownArgumentType]
-                'duration': safe_get_nested_value(record, ['duration'], 0),  # pyright: ignore[reportUnknownArgumentType]
-                'stopped': safe_get_nested_value(record, ['stopped'], 0),  # pyright: ignore[reportUnknownArgumentType]
-                'paused_counter': safe_get_nested_value(record, ['paused_counter'], 0),  # pyright: ignore[reportUnknownArgumentType]
-            }
+            # Extract and validate required fields with proper type conversion
+            date_value = safe_get_nested_value(record, ['date'], '')  # pyright: ignore[reportUnknownArgumentType]
+            user_value = safe_get_nested_value(record, ['user'], '')  # pyright: ignore[reportUnknownArgumentType]
+            platform_value = safe_get_nested_value(record, ['platform'], '')  # pyright: ignore[reportUnknownArgumentType]
+            media_type_value = safe_get_nested_value(record, ['media_type'], '')  # pyright: ignore[reportUnknownArgumentType]
+            duration_value = safe_get_nested_value(record, ['duration'], 0)  # pyright: ignore[reportUnknownArgumentType]
+            stopped_value = safe_get_nested_value(record, ['stopped'], 0)  # pyright: ignore[reportUnknownArgumentType]
+            paused_counter_value = safe_get_nested_value(record, ['paused_counter'], 0)  # pyright: ignore[reportUnknownArgumentType]
 
             # Convert timestamps to datetime objects if they're valid
-            if processed_record['date']:
+            if date_value:
                 try:
                     # Safely convert to int, handling various input types
-                    if isinstance(processed_record['date'], (int, float)):
-                        timestamp = int(processed_record['date'])
-                    elif isinstance(processed_record['date'], str):
-                        timestamp = int(processed_record['date'])
+                    if isinstance(date_value, (int, float)):
+                        timestamp = int(date_value)
+                    elif isinstance(date_value, str):
+                        timestamp = int(date_value)
                     else:
-                        logger.warning(f"Invalid timestamp type: {type(processed_record['date'])}")
+                        logger.warning(f"Invalid timestamp type: {type(date_value)}")
                         continue
 
-                    processed_record['datetime'] = datetime.fromtimestamp(timestamp)
+                    datetime_obj = datetime.fromtimestamp(timestamp)
                 except (ValueError, TypeError) as e:
-                    logger.warning(f"Invalid timestamp: {processed_record['date']}, error: {e}")
+                    logger.warning(f"Invalid timestamp: {date_value}, error: {e}")
                     continue
             else:
                 logger.warning("Missing date in record")
                 continue
 
-            processed_records.append(processed_record)  # pyright: ignore[reportUnknownMemberType]
+            # Construct a properly typed ProcessedPlayRecord
+            processed_record: ProcessedPlayRecord = {
+                'date': str(date_value),
+                'user': str(user_value),
+                'platform': str(platform_value),
+                'media_type': str(media_type_value),
+                'duration': int(duration_value) if isinstance(duration_value, (int, float)) else 0,
+                'stopped': int(stopped_value) if isinstance(stopped_value, (int, float)) else 0,
+                'paused_counter': int(paused_counter_value) if isinstance(paused_counter_value, (int, float)) else 0,
+                'datetime': datetime_obj,
+            }
+
+            # Add to processed records
+            processed_records.append(processed_record)
 
         except Exception as e:
             logger.warning(f"Error processing record: {e}")
             continue
 
     logger.info(f"Processed {len(processed_records)} valid records from {len(history_data)} total")  # pyright: ignore[reportUnknownArgumentType]
-    return processed_records  # pyright: ignore[reportUnknownVariableType]
+    return processed_records
 
 
-def aggregate_by_date(records: list[dict[str, object]]) -> dict[str, int]:
+def aggregate_by_date(records: ProcessedRecords) -> dict[str, int]:
     """
     Aggregate play records by date.
 
@@ -362,14 +408,14 @@ def aggregate_by_date(records: list[dict[str, object]]) -> dict[str, int]:
     date_counts: dict[str, int] = defaultdict(int)
 
     for record in records:
-        if 'datetime' in record and isinstance(record['datetime'], datetime):
+        if 'datetime' in record:
             date_str = record['datetime'].strftime('%Y-%m-%d')
             date_counts[date_str] += 1
 
     return dict(date_counts)
 
 
-def aggregate_by_day_of_week(records: list[dict[str, object]]) -> dict[str, int]:
+def aggregate_by_day_of_week(records: ProcessedRecords) -> dict[str, int]:
     """
     Aggregate play records by day of week.
 
@@ -383,14 +429,14 @@ def aggregate_by_day_of_week(records: list[dict[str, object]]) -> dict[str, int]
     day_counts: dict[str, int] = {day: 0 for day in day_names}
 
     for record in records:
-        if 'datetime' in record and isinstance(record['datetime'], datetime):
+        if 'datetime' in record:
             day_name = day_names[record['datetime'].weekday()]
             day_counts[day_name] += 1
 
     return day_counts
 
 
-def aggregate_by_hour_of_day(records: list[dict[str, object]]) -> dict[int, int]:
+def aggregate_by_hour_of_day(records: ProcessedRecords) -> dict[int, int]:
     """
     Aggregate play records by hour of day.
 
@@ -403,14 +449,14 @@ def aggregate_by_hour_of_day(records: list[dict[str, object]]) -> dict[int, int]
     hour_counts: dict[int, int] = {hour: 0 for hour in range(24)}
 
     for record in records:
-        if 'datetime' in record and isinstance(record['datetime'], datetime):
+        if 'datetime' in record:
             hour = record['datetime'].hour
             hour_counts[hour] += 1
 
     return hour_counts
 
 
-def aggregate_by_month(records: list[dict[str, object]]) -> dict[str, int]:
+def aggregate_by_month(records: ProcessedRecords) -> dict[str, int]:
     """
     Aggregate play records by month.
 
@@ -423,14 +469,14 @@ def aggregate_by_month(records: list[dict[str, object]]) -> dict[str, int]:
     month_counts: dict[str, int] = defaultdict(int)
 
     for record in records:
-        if 'datetime' in record and isinstance(record['datetime'], datetime):
+        if 'datetime' in record:
             month_str = record['datetime'].strftime('%Y-%m')
             month_counts[month_str] += 1
 
     return dict(month_counts)
 
 
-def aggregate_top_users(records: list[dict[str, object]], limit: int = 10, censor: bool = True) -> list[dict[str, object]]:
+def aggregate_top_users(records: ProcessedRecords, limit: int = 10, censor: bool = True) -> UserAggregates:
     """
     Aggregate play records to get top users by play count.
 
@@ -446,24 +492,24 @@ def aggregate_top_users(records: list[dict[str, object]], limit: int = 10, censo
 
     for record in records:
         username = record.get('user', 'Unknown')
-        if username and isinstance(username, str):
+        if username:
             user_counts[username] += 1
 
     # Sort by play count and take top N
     sorted_users = sorted(user_counts.items(), key=lambda x: x[1], reverse=True)[:limit]
 
-    result = []
+    result: UserAggregates = []
     for username, count in sorted_users:
         processed_username = censor_username(username) if censor else username
-        result.append({  # pyright: ignore[reportUnknownMemberType]
+        result.append({
             'username': processed_username,
             'play_count': count
         })
 
-    return result  # pyright: ignore[reportUnknownVariableType]
+    return result
 
 
-def aggregate_top_platforms(records: list[dict[str, object]], limit: int = 10) -> list[dict[str, object]]:
+def aggregate_top_platforms(records: ProcessedRecords, limit: int = 10) -> PlatformAggregates:
     """
     Aggregate play records to get top platforms by play count.
 
@@ -478,23 +524,23 @@ def aggregate_top_platforms(records: list[dict[str, object]], limit: int = 10) -
 
     for record in records:
         platform = record.get('platform', 'Unknown')
-        if platform and isinstance(platform, str):
+        if platform:
             platform_counts[platform] += 1
 
     # Sort by play count and take top N
     sorted_platforms = sorted(platform_counts.items(), key=lambda x: x[1], reverse=True)[:limit]
 
-    result = []
+    result: PlatformAggregates = []
     for platform, count in sorted_platforms:
-        result.append({  # pyright: ignore[reportUnknownMemberType]
+        result.append({
             'platform': platform,
             'play_count': count
         })
 
-    return result  # pyright: ignore[reportUnknownVariableType]
+    return result
 
 
-def handle_empty_data(graph_type: str) -> dict[str, object] | list[dict[str, object]]:
+def handle_empty_data(graph_type: str) -> GraphData:
     """
     Generate appropriate empty data structure for different graph types.
 

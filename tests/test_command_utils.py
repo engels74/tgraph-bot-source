@@ -4,7 +4,9 @@ Tests for command utility functions in TGraph Bot.
 This module tests utility functions for Discord command formatting,
 argument parsing, response handling, and interaction management.
 """
+# pyright: reportPrivateUsage=false, reportAny=false
 
+from typing import cast
 from unittest.mock import AsyncMock, MagicMock
 
 import discord
@@ -234,17 +236,17 @@ class TestInteractionUtilities:
     """Test cases for interaction utility functions."""
 
     @pytest.fixture
-    def mock_interaction(self) -> MagicMock:
+    def mock_interaction(self) -> discord.Interaction:
         """Create a mock Discord interaction."""
-        interaction = MagicMock(spec=discord.Interaction)
+        interaction = cast(discord.Interaction, MagicMock())
         interaction.response = MagicMock()
         interaction.followup = AsyncMock()
         interaction.response.send_message = AsyncMock()
-        interaction.response.is_done.return_value = False
+        interaction.response.is_done = MagicMock(return_value=False)
         return interaction
 
     @pytest.mark.asyncio
-    async def test_safe_interaction_response_initial(self, mock_interaction: MagicMock) -> None:
+    async def test_safe_interaction_response_initial(self, mock_interaction: discord.Interaction) -> None:
         """Test safe interaction response with initial response."""
         embed = create_info_embed("Test", "Test message")
         
@@ -255,12 +257,12 @@ class TestInteractionUtilities:
         )
         
         assert result is True
-        mock_interaction.response.send_message.assert_called_once()
+        mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
 
     @pytest.mark.asyncio
-    async def test_safe_interaction_response_followup(self, mock_interaction: MagicMock) -> None:
+    async def test_safe_interaction_response_followup(self, mock_interaction: discord.Interaction) -> None:
         """Test safe interaction response with followup."""
-        mock_interaction.response.is_done.return_value = True
+        mock_interaction.response.is_done.return_value = True  # pyright: ignore[reportAttributeAccessIssue]
         
         result = await safe_interaction_response(
             interaction=mock_interaction,
@@ -269,10 +271,10 @@ class TestInteractionUtilities:
         )
         
         assert result is True
-        mock_interaction.followup.send.assert_called_once()
+        mock_interaction.followup.send.assert_called_once()  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
 
     @pytest.mark.asyncio
-    async def test_send_error_response(self, mock_interaction: MagicMock) -> None:
+    async def test_send_error_response(self, mock_interaction: discord.Interaction) -> None:
         """Test sending error response."""
         result = await send_error_response(
             interaction=mock_interaction,
@@ -281,10 +283,10 @@ class TestInteractionUtilities:
         )
         
         assert result is True
-        mock_interaction.response.send_message.assert_called_once()
+        mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
 
     @pytest.mark.asyncio
-    async def test_send_success_response(self, mock_interaction: MagicMock) -> None:
+    async def test_send_success_response(self, mock_interaction: discord.Interaction) -> None:
         """Test sending success response."""
         result = await send_success_response(
             interaction=mock_interaction,
@@ -293,7 +295,7 @@ class TestInteractionUtilities:
         )
         
         assert result is True
-        mock_interaction.response.send_message.assert_called_once()
+        mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
 
 
 class TestPermissionUtilities:
@@ -301,16 +303,16 @@ class TestPermissionUtilities:
 
     def test_check_manage_guild_permission_no_guild(self) -> None:
         """Test permission check with no guild."""
-        interaction = MagicMock(spec=discord.Interaction)
-        interaction.guild = None
+        interaction = cast(discord.Interaction, MagicMock())
+        interaction.guild = None  # pyright: ignore[reportAttributeAccessIssue]
         
         result = check_manage_guild_permission(interaction)
         assert result is False
 
     def test_check_manage_guild_permission_owner(self) -> None:
         """Test permission check for guild owner."""
-        interaction = MagicMock(spec=discord.Interaction)
-        interaction.guild = MagicMock()
+        interaction = cast(discord.Interaction, MagicMock())
+        interaction.guild = MagicMock()  # pyright: ignore[reportAttributeAccessIssue]
         interaction.guild.owner_id = 123456789
         interaction.user = MagicMock()
         interaction.user.id = 123456789
@@ -320,10 +322,10 @@ class TestPermissionUtilities:
 
     def test_check_manage_guild_permission_member_with_perms(self) -> None:
         """Test permission check for member with manage guild permission."""
-        interaction = MagicMock(spec=discord.Interaction)
-        interaction.guild = MagicMock()
+        interaction = cast(discord.Interaction, MagicMock())
+        interaction.guild = MagicMock()  # pyright: ignore[reportAttributeAccessIssue]
         interaction.guild.owner_id = 987654321
-        interaction.user = MagicMock(spec=discord.Member)
+        interaction.user = MagicMock()
         interaction.user.id = 123456789
         interaction.user.guild_permissions = MagicMock()
         interaction.user.guild_permissions.manage_guild = True

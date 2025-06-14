@@ -190,10 +190,7 @@ class UserGraphManager:
                 raise ValueError(f"User ID not found for email: {user_email}")
 
             # Convert user_id to int safely
-            if isinstance(user_id, (int, str)):
-                user_id_int = int(user_id)
-            else:
-                raise ValueError(f"Invalid user ID type for email: {user_email}")
+            user_id_int = int(user_id)
 
             # Fetch play history data for the specific user
             play_history = await self._data_fetcher.get_play_history(

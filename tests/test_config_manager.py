@@ -4,8 +4,8 @@ import tempfile
 import threading
 import time
 from pathlib import Path
-from typing import Any
-from unittest.mock import Mock, patch
+# pyright: reportPrivateUsage=false, reportAny=false
+from unittest.mock import patch
 
 import pytest
 import yaml
@@ -59,7 +59,7 @@ CHANNEL_ID: 123456789012345678
 UPDATE_DAYS: 14  # Number of days between updates
 TV_COLOR: '#1f77b4'  # Color for TV shows
 """
-            f.write(content)
+            _ = f.write(content)
             return Path(f.name)
 
     def test_load_config_success(self, temp_config_file: Path) -> None:
@@ -79,21 +79,21 @@ TV_COLOR: '#1f77b4'  # Color for TV shows
         non_existent_path = Path('/non/existent/config.yml')
         
         with pytest.raises(FileNotFoundError):
-            ConfigManager.load_config(non_existent_path)
+            _ = ConfigManager.load_config(non_existent_path)
 
     def test_load_config_invalid_yaml(self) -> None:
         """Test loading config with invalid YAML syntax."""
         with tempfile.NamedTemporaryFile(mode='w', suffix='.yml', delete=False) as f:
-            f.write('invalid: yaml: content: [')
+            _ = f.write('invalid: yaml: content: [')
             invalid_yaml_path = Path(f.name)
         
         with pytest.raises(yaml.YAMLError):
-            ConfigManager.load_config(invalid_yaml_path)
+            _ = ConfigManager.load_config(invalid_yaml_path)
 
     def test_load_config_validation_error(self, invalid_config_file: Path) -> None:
         """Test loading config with validation errors."""
         with pytest.raises(ValidationError):
-            ConfigManager.load_config(invalid_config_file)
+            _ = ConfigManager.load_config(invalid_config_file)
 
     def test_save_config_success(self, temp_config_file: Path) -> None:
         """Test successful configuration saving."""
@@ -153,7 +153,7 @@ TV_COLOR: '#1f77b4'  # Color for TV shows
     def test_validate_config_failure(self) -> None:
         """Test configuration validation failure."""
         # Create invalid config data
-        invalid_data: dict[str, Any] = {
+        invalid_data: dict[str, object] = {
             'TAUTULLI_API_KEY': '',  # Empty string should fail validation
             'TAUTULLI_URL': 'invalid_url',  # Invalid URL format
             'DISCORD_TOKEN': 'short',  # Too short
@@ -161,7 +161,7 @@ TV_COLOR: '#1f77b4'  # Color for TV shows
         }
 
         with pytest.raises(ValidationError):
-            TGraphBotConfig(**invalid_data)
+            _ = TGraphBotConfig(**invalid_data)  # pyright: ignore[reportArgumentType]
 
     def test_create_sample_config(self) -> None:
         """Test creating sample configuration file."""
@@ -384,8 +384,8 @@ class TestLiveConfigurationManagement:
         initial_config = manager.load_config(temp_config_file)
         manager.set_current_config(initial_config)
 
-        results = []
-        errors = []
+        results: list[int] = []
+        errors: list[Exception] = []
 
         def config_reader() -> None:
             """Function to read config from multiple threads."""
@@ -409,7 +409,7 @@ class TestLiveConfigurationManagement:
                 errors.append(e)
 
         # Start multiple threads
-        threads = []
+        threads: list[threading.Thread] = []
         for _ in range(3):
             threads.append(threading.Thread(target=config_reader))
         for _ in range(2):
@@ -436,10 +436,10 @@ class TestLiveConfigurationManagement:
         callback1_called = threading.Event()
         callback2_called = threading.Event()
 
-        def callback1(old_cfg: TGraphBotConfig, new_cfg: TGraphBotConfig) -> None:
+        def callback1(_old_cfg: TGraphBotConfig, _new_cfg: TGraphBotConfig) -> None:
             callback1_called.set()
 
-        def callback2(old_cfg: TGraphBotConfig, new_cfg: TGraphBotConfig) -> None:
+        def callback2(_old_cfg: TGraphBotConfig, _new_cfg: TGraphBotConfig) -> None:
             callback2_called.set()
 
         # Register both callbacks

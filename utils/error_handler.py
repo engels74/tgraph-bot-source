@@ -24,7 +24,7 @@ import discord
 from utils.command_utils import send_error_response
 
 if TYPE_CHECKING:
-    from typing import Any
+    pass
 
 logger = logging.getLogger(__name__)
 
@@ -105,51 +105,79 @@ class TGraphBotError(Exception):
 
 class NetworkError(TGraphBotError):
     """Network-related errors (timeouts, connection issues)."""
-    
-    def __init__(self, message: str, **kwargs: "Any") -> None:  # pyright: ignore[reportExplicitAny]
+
+    def __init__(
+        self,
+        message: str,
+        user_message: str | None = None,
+        context: ErrorContext | None = None,
+        recoverable: bool = True
+    ) -> None:
         super().__init__(
             message,
             category=ErrorCategory.NETWORK,
             severity=ErrorSeverity.MEDIUM,
-            **kwargs
+            user_message=user_message,
+            context=context,
+            recoverable=recoverable
         )
 
 
 class APIError(TGraphBotError):
     """API-related errors (Tautulli, Discord API)."""
 
-    def __init__(self, message: str, **kwargs: "Any") -> None:  # pyright: ignore[reportExplicitAny]
+    def __init__(
+        self,
+        message: str,
+        user_message: str | None = None,
+        context: ErrorContext | None = None,
+        recoverable: bool = True
+    ) -> None:
         super().__init__(
             message,
             category=ErrorCategory.API,
             severity=ErrorSeverity.MEDIUM,
-            **kwargs
+            user_message=user_message,
+            context=context,
+            recoverable=recoverable
         )
 
 
 class ValidationError(TGraphBotError):
     """Input validation errors."""
 
-    def __init__(self, message: str, **kwargs: "Any") -> None:  # pyright: ignore[reportExplicitAny]
+    def __init__(
+        self,
+        message: str,
+        user_message: str | None = None,
+        context: ErrorContext | None = None
+    ) -> None:
         super().__init__(
             message,
             category=ErrorCategory.VALIDATION,
             severity=ErrorSeverity.LOW,
             recoverable=False,
-            **kwargs
+            user_message=user_message,
+            context=context
         )
 
 
 class ConfigurationError(TGraphBotError):
     """Configuration-related errors."""
 
-    def __init__(self, message: str, **kwargs: "Any") -> None:  # pyright: ignore[reportExplicitAny]
+    def __init__(
+        self,
+        message: str,
+        user_message: str | None = None,
+        context: ErrorContext | None = None
+    ) -> None:
         super().__init__(
             message,
             category=ErrorCategory.CONFIGURATION,
             severity=ErrorSeverity.HIGH,
             recoverable=False,
-            **kwargs
+            user_message=user_message,
+            context=context
         )
 
 
@@ -261,7 +289,7 @@ def classify_exception(exception: Exception) -> tuple[ErrorCategory, ErrorSeveri
 
 
 def create_user_friendly_message(
-    exception: Exception,
+    exception: Exception,  # pyright: ignore[reportUnusedParameter]
     category: ErrorCategory,
     context: ErrorContext | None = None
 ) -> str:
@@ -315,7 +343,7 @@ async def handle_command_error(
     user_message = create_user_friendly_message(error, category, context)
     
     # Send error response to user
-    await send_error_response(
+    _ = await send_error_response(
         interaction=interaction,
         title="Command Error",
         description=user_message,
@@ -438,7 +466,7 @@ def command_error_handler(
     """
     def decorator(func: Callable[..., Awaitable[None]]) -> Callable[..., Awaitable[None]]:
         @functools.wraps(func)
-        async def wrapper(self: "Any", interaction: discord.Interaction, *args: "Any", **kwargs: "Any") -> None:  # pyright: ignore[reportExplicitAny]
+        async def wrapper(self: object, interaction: discord.Interaction, *args: object, **kwargs: object) -> None:
             try:
                 await func(self, interaction, *args, **kwargs)
             except Exception as e:

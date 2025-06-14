@@ -4,6 +4,7 @@ Test project structure and dependencies for TGraph Bot.
 This test module verifies that the project structure is correctly set up
 and that all required dependencies are available and importable.
 """
+# pyright: reportPrivateUsage=false, reportAny=false
 
 import importlib
 from pathlib import Path
@@ -88,7 +89,7 @@ class TestDependencies:
     def test_required_dependencies_importable(self, module_name: str) -> None:
         """Test that required dependencies can be imported."""
         try:
-            importlib.import_module(module_name)
+            _ = importlib.import_module(module_name)
         except ImportError as e:
             pytest.fail(f"Failed to import required dependency {module_name}: {e}")
     

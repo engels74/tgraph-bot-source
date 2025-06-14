@@ -4,6 +4,7 @@ Tests for translation compilation functionality.
 This module tests the compilation of .po files to .mo format including
 version checking, batch compilation, and error handling.
 """
+# pyright: reportPrivateUsage=false, reportAny=false
 
 from __future__ import annotations
 

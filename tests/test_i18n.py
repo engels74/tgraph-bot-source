@@ -4,6 +4,7 @@ Tests for the internationalization (i18n) module.
 This module tests the translation loading, fallback behavior, string formatting,
 and language switching functionality of the i18n system.
 """
+# pyright: reportPrivateUsage=false, reportAny=false
 
 from pathlib import Path
 from unittest.mock import patch, MagicMock
@@ -83,7 +84,7 @@ class TestI18nModule:
     def test_translate_formatting_error_logging(self, mock_logger: MagicMock) -> None:
         """Test that formatting errors are logged properly."""
         # Test with invalid format string
-        result = i18n.translate("Hello, {invalid_key}", valid_key="value")
+        _ = i18n.translate("Hello, {invalid_key}", valid_key="value")
         
         # Should log a warning about formatting error
         mock_logger.warning.assert_called()

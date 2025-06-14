@@ -27,7 +27,7 @@ Usage Examples:
 import gettext
 import logging
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Callable
 
 logger = logging.getLogger(__name__)
 
@@ -36,11 +36,11 @@ _: Callable[[str], str] = lambda x: x  # Default fallback
 
 # Global variables for gettext configuration
 _current_language: str = "en"
-_locale_dir: Optional[Path] = None
+_locale_dir: Path | None = None
 _domain: str = "messages"
 
 
-def setup_i18n(language: str = "en", locale_dir: Optional[Path] = None) -> None:
+def setup_i18n(language: str = "en", locale_dir: Path | None = None) -> None:
     """
     Setup internationalization for the specified language.
 
@@ -107,7 +107,7 @@ def get_current_language() -> str:
     return _current_language
 
 
-def get_locale_directory() -> Optional[Path]:
+def get_locale_directory() -> Path | None:
     """
     Get the current locale directory path.
 
@@ -162,7 +162,7 @@ def install_translation(language: str = "en") -> None:
         logger.info("Translation functions may not be available globally")
 
 
-def translate(message: str, **kwargs: Any) -> str:
+def translate(message: str, **kwargs: object) -> str:
     """
     Translate a message with optional formatting.
 
@@ -191,7 +191,7 @@ def translate(message: str, **kwargs: Any) -> str:
     return translated
 
 
-def ngettext(singular: str, plural: str, n: int, **kwargs: Any) -> str:
+def ngettext(singular: str, plural: str, n: int, **kwargs: object) -> str:
     """
     Translate a message with plural forms.
 

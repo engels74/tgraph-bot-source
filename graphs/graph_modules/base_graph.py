@@ -63,7 +63,8 @@ class BaseGraph(ABC):
             if hasattr(config, 'GRAPH_BACKGROUND_COLOR'):
                 background_color = str(config.GRAPH_BACKGROUND_COLOR)
             elif isinstance(config, dict) and 'GRAPH_BACKGROUND_COLOR' in config:
-                bg_color = config.get('GRAPH_BACKGROUND_COLOR')  # pyright: ignore[reportUnknownMemberType]
+                config_dict: dict[str, object] = config
+                bg_color: object | None = config_dict.get('GRAPH_BACKGROUND_COLOR')  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
                 background_color = str(bg_color) if bg_color is not None else "#ffffff"  # pyright: ignore[reportUnknownArgumentType]
             else:
                 background_color = "#ffffff"

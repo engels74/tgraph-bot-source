@@ -5,9 +5,10 @@ This module tests that CPU-bound operations are properly executed
 in separate threads using asyncio.to_thread() to prevent blocking
 the event loop.
 """
+# pyright: reportPrivateUsage=false, reportAny=false
 
-import asyncio
 import time
+import asyncio
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -34,8 +35,8 @@ class TestAsyncThreading:
         graph_manager = GraphManager(mock_config_manager)
 
         # Mock the components to avoid actual initialization
-        with patch.object(graph_manager, '_initialize_components') as mock_init, \
-             patch.object(graph_manager, '_cleanup_components') as mock_cleanup:
+        with patch.object(graph_manager, '_initialize_components'), \
+             patch.object(graph_manager, '_cleanup_components'):
             
             # Mock the internal components
             mock_data_fetcher = AsyncMock()
@@ -48,14 +49,14 @@ class TestAsyncThreading:
             mock_data_fetcher.get_play_history.return_value = {"data": []}
 
             # Mock the synchronous graph generation method
-            def mock_sync_generation(data, progress_tracker=None):
+            def mock_sync_generation(_data: dict[str, object], _progress_tracker: object | None = None) -> list[str]:
                 return ["test_graph.png"]
 
             # Test that asyncio.to_thread is used
             with patch('asyncio.to_thread') as mock_to_thread:
                 # Mock to_thread to return an awaitable that resolves to the result
-                future = asyncio.Future()
-                future.set_result(["test_graph.png"])
+                future = asyncio.Future()  # pyright: ignore[reportUnknownVariableType]
+                future.set_result(["test_graph.png"])  # pyright: ignore[reportUnknownMemberType]
                 mock_to_thread.return_value = future
 
                 # Patch the sync method
@@ -83,8 +84,8 @@ class TestAsyncThreading:
         user_graph_manager = UserGraphManager(mock_config_manager)
 
         # Mock the components to avoid actual initialization
-        with patch.object(user_graph_manager, '_initialize_components') as mock_init, \
-             patch.object(user_graph_manager, '_cleanup_components') as mock_cleanup:
+        with patch.object(user_graph_manager, '_initialize_components'), \
+             patch.object(user_graph_manager, '_cleanup_components'):
             
             # Mock the internal components
             mock_data_fetcher = AsyncMock()
@@ -98,14 +99,14 @@ class TestAsyncThreading:
             mock_data_fetcher.find_user_by_email.return_value = {"user_id": 123}
 
             # Mock the synchronous graph generation method
-            def mock_sync_user_generation(user_data, progress_tracker=None):
+            def mock_sync_user_generation(_user_data: dict[str, object], _progress_tracker: object | None = None) -> list[str]:
                 return []
 
             # Test that asyncio.to_thread is used
             with patch('asyncio.to_thread') as mock_to_thread:
                 # Mock to_thread to return an awaitable that resolves to the result
-                future = asyncio.Future()
-                future.set_result([])
+                future = asyncio.Future()  # pyright: ignore[reportUnknownVariableType]
+                future.set_result([])  # pyright: ignore[reportUnknownMemberType]
                 mock_to_thread.return_value = future
 
                 # Patch the sync method
@@ -132,11 +133,11 @@ class TestAsyncThreading:
         # Test cleanup_old_graphs uses asyncio.to_thread
         with patch('asyncio.to_thread') as mock_to_thread:
             # Mock to_thread to return an awaitable that resolves to the result
-            future = asyncio.Future()
-            future.set_result(5)  # Mock return value for cleanup_old_files
+            future = asyncio.Future()  # pyright: ignore[reportUnknownVariableType]
+            future.set_result(5)  # Mock return value for cleanup_old_files  # pyright: ignore[reportUnknownMemberType]
             mock_to_thread.return_value = future
 
-            await graph_manager.cleanup_old_graphs()
+            _ = await graph_manager.cleanup_old_graphs()
 
             # Verify asyncio.to_thread was called for file operations
             mock_to_thread.assert_called_once()
@@ -181,7 +182,7 @@ class TestAsyncThreading:
             counter_task = asyncio.create_task(increment_counter())
             
             # Mock graph generation with actual asyncio.to_thread
-            def slow_sync_operation(data, progress_tracker=None):
+            def slow_sync_operation(_data: dict[str, object], _progress_tracker: object | None = None) -> list[str]:
                 time.sleep(0.1)  # Simulate CPU-bound work
                 return ["test_graph.png"]
 

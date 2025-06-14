@@ -134,25 +134,25 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
             )
 
             # Step 8: Customize the plot
-            _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)
-            _ = ax.set_xlabel("Day of Week", fontsize=14, fontweight='bold')
-            _ = ax.set_ylabel("Play Count", fontsize=14, fontweight='bold')
+            _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
+            _ = ax.set_xlabel('Day of Week', fontsize=12)  # pyright: ignore[reportUnknownMemberType]
+            _ = ax.set_ylabel('Play Count', fontsize=12)  # pyright: ignore[reportUnknownMemberType]
 
-            # Rotate x-axis labels for better readability
-            ax.tick_params(axis='x', rotation=45, labelsize=12)
-            ax.tick_params(axis='y', labelsize=12)
+            # Rotate x-axis labels for better readability and style adjustments
+            _ = ax.tick_params(axis='x', rotation=0)  # pyright: ignore[reportUnknownMemberType]
+            _ = ax.tick_params(axis='y', rotation=0)  # pyright: ignore[reportUnknownMemberType]
 
             # Add value annotations if enabled (check for annotation settings)
             if self.config and getattr(self.config, 'ENABLE_ANNOTATION_OUTLINE', False):
                 # Ensure we have numeric values for max calculation
-                numeric_values = [v for v in day_counts.values() if isinstance(v, (int, float))]
+                numeric_values = list(day_counts.values())
                 max_count = max(numeric_values) if numeric_values else 1
                 for bar in ax.patches:
                     # Use type ignores for matplotlib patch attributes
-                    height = bar.get_height()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+                    height = bar.get_height()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
                     if height and height > 0:  # Only annotate non-zero values
                         _ = ax.text(  # pyright: ignore[reportUnknownMemberType]
-                            bar.get_x() + bar.get_width()/2.,  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+                            bar.get_x() + bar.get_width()/2.,  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownArgumentType]
                             height + max_count * 0.01,  # pyright: ignore[reportUnknownArgumentType]
                             f'{int(height)}',  # pyright: ignore[reportUnknownArgumentType]
                             ha='center', va='bottom', fontsize=10, fontweight='bold'

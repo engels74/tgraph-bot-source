@@ -25,12 +25,22 @@ import argparse
 import logging
 import sys
 from pathlib import Path
+from typing import NamedTuple
 
 # Add the project root to the Python path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from utils.i18n_utils import generate_pot_file, EXCLUDED_DIRS
+
+
+class ExtractArgs(NamedTuple):
+    """Type-safe container for command-line arguments."""
+    source_dir: Path
+    output: Path
+    exclude: list[str]
+    verbose: bool
+    dry_run: bool
 
 
 def setup_logging(verbose: bool = False) -> None:
@@ -48,12 +58,12 @@ def setup_logging(verbose: bool = False) -> None:
     )
 
 
-def parse_arguments() -> argparse.Namespace:
+def parse_arguments() -> ExtractArgs:
     """
     Parse command-line arguments.
 
     Returns:
-        Parsed arguments namespace
+        Parsed arguments in a type-safe container
     """
     parser = argparse.ArgumentParser(
         description='Extract translatable strings from Python source code',
@@ -68,40 +78,49 @@ Examples:
         """
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         '--source-dir',
         type=Path,
         default=Path('.'),
         help='Source directory to scan for translatable strings (default: current directory)'
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         '--output',
         type=Path,
         default=Path('locale/messages.pot'),
         help='Output .pot file path (default: locale/messages.pot)'
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         '--exclude',
         action='append',
         default=[],
         help='Directory names to exclude from scanning (can be used multiple times)'
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         '--verbose',
         action='store_true',
         help='Enable verbose logging'
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         '--dry-run',
         action='store_true',
         help='Show what would be done without actually creating files'
     )
 
-    return parser.parse_args()
+    args = parser.parse_args()
+
+    # Convert to type-safe container - argparse returns Any types
+    return ExtractArgs(
+        source_dir=args.source_dir,  # pyright: ignore[reportAny]
+        output=args.output,  # pyright: ignore[reportAny]
+        exclude=args.exclude or [],  # pyright: ignore[reportAny]
+        verbose=args.verbose,  # pyright: ignore[reportAny]
+        dry_run=args.dry_run  # pyright: ignore[reportAny]
+    )
 
 
 def main() -> int:

@@ -7,7 +7,7 @@ for viewing and modifying bot configuration settings with live editing capabilit
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import discord
 from discord import app_commands
@@ -45,7 +45,7 @@ class ConfigCog(BaseCommandCog):
         # Create configuration helper
         self.config_helper: ConfigurationHelper = ConfigurationHelper(self.tgraph_bot.config_manager)
 
-    def _convert_config_value(self, value: str, target_type: type) -> Any:  # pyright: ignore[reportExplicitAny]
+    def _convert_config_value(self, value: str, target_type: type[object]) -> object:
         """
         Convert a string value to the appropriate configuration type.
 
@@ -82,7 +82,7 @@ class ConfigCog(BaseCommandCog):
         else:
             # For other types, try direct conversion
             try:
-                return target_type(value)
+                return target_type(value)  # pyright: ignore[reportCallIssue]
             except (ValueError, TypeError):
                 raise ValueError(f"Cannot convert '{value}' to {target_type.__name__}")
 
@@ -213,15 +213,15 @@ class ConfigCog(BaseCommandCog):
                 )
 
             # Get the current value and type
-            current_value: Any = getattr(current_config, setting)  # pyright: ignore[reportExplicitAny]
+            current_value: object = getattr(current_config, setting)  # pyright: ignore[reportAny]
 
             # Convert the string value to the appropriate type
             try:
-                converted_value: Any = self._convert_config_value(value, type(current_value))  # pyright: ignore[reportExplicitAny]
+                converted_value = self._convert_config_value(value, type(current_value))
             except ValueError as e:
                 raise TGraphValidationError(
                     f"Invalid value for setting '{setting}': {e}",
-                    user_message=f"Invalid value for `{setting}`: {e}. Current value: {current_value} (type: {type(current_value).__name__})"
+                    user_message=f"Invalid value for `{setting}`: {e}. Current value: {current_value!r} (type: {type(current_value).__name__})"
                 )
 
             # Create updated configuration data
@@ -230,7 +230,7 @@ class ConfigCog(BaseCommandCog):
 
             # Validate the new configuration
             try:
-                new_config = TGraphBotConfig(**config_data)
+                new_config = TGraphBotConfig(**config_data)  # pyright: ignore[reportAny]
             except ValidationError as e:
                 raise ConfigurationError(
                     f"Configuration validation failed: {e}",

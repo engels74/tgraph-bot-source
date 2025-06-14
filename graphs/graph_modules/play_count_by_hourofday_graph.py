@@ -119,7 +119,7 @@ class PlayCountByHourOfDayGraph(BaseGraph):
                 sns.set_style("white")
 
             # Step 6: Create visualization
-            if any(isinstance(count, int) and count > 0 for count in hourly_counts.values()):
+            if any(count > 0 for count in hourly_counts.values()):
                 # Convert to pandas DataFrame for easier plotting
                 hours = list(range(24))
                 counts = [hourly_counts.get(hour, 0) for hour in hours]

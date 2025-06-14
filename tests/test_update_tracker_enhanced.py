@@ -4,6 +4,7 @@ Tests for enhanced update tracker scheduling logic.
 This module tests the enhanced scheduling features including failure handling,
 exponential backoff, and improved edge case handling.
 """
+# pyright: reportPrivateUsage=false, reportAny=false
 
 import pytest
 from datetime import datetime, timedelta
@@ -152,11 +153,11 @@ class TestUpdateTrackerEnhanced:
         update_tracker.set_update_callback(callback)
 
         # Trigger update
-        await update_tracker._trigger_update_for_testing()  # pyright: ignore[reportPrivateUsage]
+        await update_tracker._trigger_update_for_testing()
 
         # Verify callback was called and state updated
         callback.assert_called_once()
-        state = update_tracker._get_state_for_testing()  # pyright: ignore[reportPrivateUsage]
+        state = update_tracker._get_state_for_testing()
         assert state.last_update is not None
         assert state.consecutive_failures == 0
 
@@ -169,10 +170,10 @@ class TestUpdateTrackerEnhanced:
 
         # Trigger update (should raise exception)
         with pytest.raises(Exception, match="Test error"):
-            await update_tracker._trigger_update_for_testing()  # pyright: ignore[reportPrivateUsage]
+            await update_tracker._trigger_update_for_testing()
 
         # Verify failure was recorded
-        state = update_tracker._get_state_for_testing()  # pyright: ignore[reportPrivateUsage]
+        state = update_tracker._get_state_for_testing()
         assert state.consecutive_failures == 1
         assert state.last_failure is not None
     

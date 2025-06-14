@@ -4,6 +4,7 @@ Tests for i18n string extraction utilities.
 This module tests the functionality of the i18n_utils module including
 string extraction from Python files, .pot file generation, and .po file updates.
 """
+# pyright: reportPrivateUsage=false, reportAny=false
 
 from __future__ import annotations
 
@@ -71,7 +72,7 @@ def test_function():
     return message
 '''
         with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
-            f.write(code)
+            _ = f.write(code)
             f.flush()
             
             strings = extract_strings_from_file(Path(f.name))
@@ -92,7 +93,7 @@ def test_function():
     return msg1, msg2, msg3, msg4, msg5
 '''
         with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
-            f.write(code)
+            _ = f.write(code)
             f.flush()
             
             strings = extract_strings_from_file(Path(f.name))
@@ -120,7 +121,7 @@ def test_function():
     return message
 '''
         with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
-            f.write(code)
+            _ = f.write(code)
             f.flush()
             
             strings = extract_strings_from_file(Path(f.name))
@@ -135,11 +136,11 @@ def test_function(
     # Missing closing parenthesis and colon
 '''
         with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
-            f.write(code)
+            _ = f.write(code)
             f.flush()
             
             with pytest.raises(SyntaxError):
-                extract_strings_from_file(Path(f.name))
+                _ = extract_strings_from_file(Path(f.name))
 
 
 class TestDirectoryScanning:
@@ -151,12 +152,12 @@ class TestDirectoryScanning:
             temp_path = Path(temp_dir)
             
             # Create test files
-            (temp_path / "file1.py").write_text('''
+            _ = (temp_path / "file1.py").write_text('''
 def func1():
     return _("Message from file1")
 ''')
             
-            (temp_path / "file2.py").write_text('''
+            _ = (temp_path / "file2.py").write_text('''
 def func2():
     return translate("Message from file2")
 ''')
@@ -164,7 +165,7 @@ def func2():
             # Create subdirectory
             subdir = temp_path / "subdir"
             subdir.mkdir()
-            (subdir / "file3.py").write_text('''
+            _ = (subdir / "file3.py").write_text('''
 def func3():
     return t("Message from subdir")
 ''')
@@ -177,7 +178,7 @@ def func3():
             assert "subdir/file3.py" in results
             
             # Check extracted strings
-            all_strings = []
+            all_strings: list[str] = []
             for strings in results.values():
                 all_strings.extend([s[0] for s in strings])
             
@@ -191,12 +192,12 @@ def func3():
             temp_path = Path(temp_dir)
             
             # Create files in included directory
-            (temp_path / "included.py").write_text('_("Included message")')
+            _ = (temp_path / "included.py").write_text('_("Included message")')
             
             # Create files in excluded directory
             excluded_dir = temp_path / "excluded"
             excluded_dir.mkdir()
-            (excluded_dir / "excluded.py").write_text('_("Excluded message")')
+            _ = (excluded_dir / "excluded.py").write_text('_("Excluded message")')
             
             results = scan_directory_for_strings(temp_path, exclude_dirs={"excluded"})
             
@@ -224,7 +225,7 @@ class TestPotFileGeneration:
             temp_path = Path(temp_dir)
             
             # Create test source file
-            (temp_path / "test.py").write_text('''
+            _ = (temp_path / "test.py").write_text('''
 def test():
     msg1 = _("First message")
     msg2 = translate("Second message")
@@ -266,7 +267,7 @@ msgstr ""
 '''
         
         with tempfile.NamedTemporaryFile(mode='w', suffix='.po', delete=False) as f:
-            f.write(po_content)
+            _ = f.write(po_content)
             f.flush()
             
             translations = parse_po_file(Path(f.name))
@@ -303,7 +304,7 @@ msgid "Existing message"
 msgstr ""
 '''
             pot_file = temp_path / "messages.pot"
-            pot_file.write_text(pot_content)
+            _ = pot_file.write_text(pot_content)
             
             # Create existing .po file with some translations
             po_content = '''# Existing translations
@@ -318,7 +319,7 @@ msgstr "Gammel besked"
 '''
             po_file = temp_path / "da" / "LC_MESSAGES" / "messages.po"
             po_file.parent.mkdir(parents=True)
-            po_file.write_text(po_content)
+            _ = po_file.write_text(po_content)
             
             # Update .po file
             update_po_file(pot_file, po_file, preserve_translations=True)
@@ -337,7 +338,7 @@ class TestErrorHandling:
     def test_extract_from_nonexistent_file(self) -> None:
         """Test handling of non-existent files."""
         with pytest.raises(FileNotFoundError):
-            extract_strings_from_file(Path("/nonexistent/file.py"))
+            _ = extract_strings_from_file(Path("/nonexistent/file.py"))
 
     def test_parse_nonexistent_po_file(self) -> None:
         """Test parsing non-existent .po file."""

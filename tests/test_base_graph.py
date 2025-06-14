@@ -1,15 +1,21 @@
 """
-Tests for the base graph system in TGraph Bot.
+Test module for the BaseGraph abstract base class.
 
-This module tests the abstract base class, factory pattern, and utility functions
-for the graph generation system.
+This module tests the BaseGraph functionality including:
+- Abstract method requirements
+- Figure setup and management
+# pyright: reportPrivateUsage=false, reportAny=false
+- Color validation
+- Context manager behavior
+- Cleanup operations
 """
 
 import tempfile
+from abc import ABC
 from pathlib import Path
 from collections.abc import Mapping
+from typing import override
 from unittest.mock import MagicMock, patch
-
 
 import pytest
 
@@ -19,18 +25,20 @@ from graphs.graph_modules.base_graph import BaseGraph
 class ConcreteGraph(BaseGraph):
     """Concrete implementation of BaseGraph for testing."""
     
+    @override
     def generate(self, data: Mapping[str, object]) -> str:
         """Generate a test graph."""
-        self.setup_figure()
+        _ = self.setup_figure()
         if self.axes is not None:
-            self.axes.plot([1, 2, 3], [1, 4, 2])
-            self.axes.set_title(self.get_title())
+            _ = self.axes.plot([1, 2, 3], [1, 4, 2])  # pyright: ignore[reportUnknownMemberType]
+            _ = self.axes.set_title(self.get_title())  # pyright: ignore[reportUnknownMemberType]
         
         with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
             output_path = tmp.name
             
         return self.save_figure(output_path=output_path)
     
+    @override
     def get_title(self) -> str:
         """Get the title for this test graph."""
         return "Test Graph"
@@ -42,7 +50,7 @@ class TestBaseGraph:
     def test_cannot_instantiate_base_graph_directly(self) -> None:
         """Test that BaseGraph cannot be instantiated directly."""
         with pytest.raises(TypeError, match="Can't instantiate abstract class"):
-            BaseGraph()  # pyright: ignore[reportAbstractUsage]
+            _ = BaseGraph()  # pyright: ignore[reportAbstractUsage]
     
     def test_concrete_graph_instantiation(self) -> None:
         """Test that concrete implementation can be instantiated."""
@@ -90,7 +98,7 @@ class TestBaseGraph:
         graph = ConcreteGraph()
         
         with pytest.raises(ValueError, match="Figure not initialized"):
-            graph.save_figure(output_path="test.png")
+            _ = graph.save_figure(output_path="test.png")
     
     def test_save_figure_creates_directory(self) -> None:
         """Test that save_figure creates output directory if it doesn't exist."""
@@ -100,9 +108,9 @@ class TestBaseGraph:
             output_path = Path(temp_dir) / "subdir" / "test_graph.png"
             
             # Setup figure
-            graph.setup_figure()
+            _ = graph.setup_figure()
             if graph.axes is not None:
-                graph.axes.plot([1, 2, 3], [1, 4, 2])
+                _ = graph.axes.plot([1, 2, 3], [1, 4, 2])  # pyright: ignore[reportUnknownMemberType]
             
             # Save figure
             saved_path = graph.save_figure(output_path=str(output_path))
@@ -117,7 +125,7 @@ class TestBaseGraph:
     def test_cleanup(self) -> None:
         """Test cleanup functionality."""
         graph = ConcreteGraph()
-        graph.setup_figure()
+        _ = graph.setup_figure()
         
         assert graph.figure is not None
         assert graph.axes is not None
@@ -131,7 +139,7 @@ class TestBaseGraph:
         """Test BaseGraph as context manager."""
         with ConcreteGraph() as graph:
             assert isinstance(graph, ConcreteGraph)
-            graph.setup_figure()
+            _ = graph.setup_figure()
             assert graph.figure is not None
             assert graph.axes is not None
         
@@ -143,7 +151,7 @@ class TestBaseGraph:
         """Test that concrete implementation's generate method works."""
         graph = ConcreteGraph()
         
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with tempfile.TemporaryDirectory():
             # Generate graph
             output_path = graph.generate({"test": "data"})
             
@@ -164,7 +172,7 @@ class TestBaseGraph:
     def test_cleanup_calls_plt_close(self, mock_close: MagicMock) -> None:
         """Test that cleanup properly calls plt.close."""
         graph = ConcreteGraph()
-        graph.setup_figure()
+        _ = graph.setup_figure()
         
         figure = graph.figure
         graph.cleanup()
@@ -188,25 +196,26 @@ class TestBaseGraph:
     def test_abstract_methods_must_be_implemented(self) -> None:
         """Test that abstract methods must be implemented in subclasses."""
         
-        class IncompleteGraph(BaseGraph):
+        class IncompleteGraph(BaseGraph, ABC):
             """Incomplete implementation missing abstract methods."""
             pass
         
         with pytest.raises(TypeError, match="Can't instantiate abstract class"):
-            IncompleteGraph()  # pyright: ignore[reportAbstractUsage]
+            _ = IncompleteGraph()  # pyright: ignore[reportAbstractUsage]
     
     def test_partial_implementation_still_abstract(self) -> None:
         """Test that partial implementation is still abstract."""
         
-        class PartialGraph(BaseGraph):
+        class PartialGraph(BaseGraph, ABC):
             """Partial implementation with only one abstract method."""
             
+            @override
             def generate(self, data: Mapping[str, object]) -> str:
                 return "test.png"
             # Missing get_title method
         
         with pytest.raises(TypeError, match="Can't instantiate abstract class"):
-            PartialGraph()  # pyright: ignore[reportAbstractUsage]
+            _ = PartialGraph()  # pyright: ignore[reportAbstractUsage]
 
     def test_color_validation_in_constructor(self) -> None:
         """Test that invalid colors are rejected in constructor."""
@@ -245,7 +254,7 @@ class TestBaseGraph:
         _ = graph.setup_figure()
 
         if graph.axes is not None:
-            _ = graph.axes.plot([1, 2, 3], [1, 4, 2])
+            _ = graph.axes.plot([1, 2, 3], [1, 4, 2])  # pyright: ignore[reportUnknownMemberType]
 
         # Save with graph_type instead of output_path
         saved_path = graph.save_figure(graph_type="test_graph")
@@ -265,7 +274,7 @@ class TestBaseGraph:
         _ = graph.setup_figure()
 
         if graph.axes is not None:
-            _ = graph.axes.plot([1, 2, 3], [1, 4, 2])
+            _ = graph.axes.plot([1, 2, 3], [1, 4, 2])  # pyright: ignore[reportUnknownMemberType]
 
         # Save with graph_type and user_id
         saved_path = graph.save_figure(graph_type="test_graph", user_id="user123")
@@ -286,4 +295,4 @@ class TestBaseGraph:
         _ = graph.setup_figure()
 
         with pytest.raises(ValueError, match="Either output_path or graph_type must be provided"):
-            graph.save_figure()
+            _ = graph.save_figure()

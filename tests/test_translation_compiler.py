@@ -4,6 +4,7 @@ Tests for translation compiler utilities.
 This module tests the high-level translation compilation functionality
 including batch processing, status checking, and validation.
 """
+# pyright: reportPrivateUsage=false, reportAny=false
 
 from __future__ import annotations
 
@@ -264,7 +265,7 @@ class TestCompileAllTranslations:
         """Test compilation with some failures."""
         files = self.create_test_structure(tmp_path)
         
-        def mock_compile_side_effect(po_file, **kwargs):
+        def mock_compile_side_effect(po_file: Path, **_kwargs: object) -> bool:
             if 'en' in str(po_file):
                 return True
             else:

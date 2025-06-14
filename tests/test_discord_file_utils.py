@@ -4,6 +4,7 @@ Tests for Discord file upload utilities in TGraph Bot.
 This module tests file validation, Discord file creation, and upload functionality
 for both channel and DM uploads with comprehensive error handling scenarios.
 """
+# pyright: reportPrivateUsage=false, reportAny=false
 
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -197,7 +198,7 @@ class TestChannelUpload:
             assert result.files_uploaded == 3
             assert result.message_id == 12345
             # Use pyright ignore for mock method call
-            mock_channel.send.assert_called_once()  # pyright: ignore[reportAny]
+            mock_channel.send.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_upload_files_to_channel_no_files(self) -> None:
@@ -238,7 +239,7 @@ class TestChannelUpload:
         _ = test_file.write_bytes(b"test image data")
 
         mock_channel = AsyncMock(spec=discord.TextChannel)
-        mock_channel.send.side_effect = discord.HTTPException(MagicMock(), "Upload failed")  # pyright: ignore[reportAny]
+        mock_channel.send.side_effect = discord.HTTPException(MagicMock(), "Upload failed")
 
         with patch('utils.discord_file_utils.create_discord_file_safe') as mock_create_file:
             mock_create_file.return_value = MagicMock(spec=discord.File)
@@ -265,7 +266,7 @@ class TestUserDMUpload:
         mock_user = AsyncMock(spec=discord.User)
         mock_message = MagicMock()
         mock_message.id = 67890
-        mock_user.send.return_value = mock_message  # pyright: ignore[reportAny]
+        mock_user.send.return_value = mock_message
 
         with patch('utils.discord_file_utils.create_discord_file_safe') as mock_create_file:
             mock_create_file.return_value = MagicMock(spec=discord.File)
@@ -278,7 +279,7 @@ class TestUserDMUpload:
             assert result.success is True
             assert result.files_uploaded == 1
             assert result.message_id == 67890
-            mock_user.send.assert_called_once()  # pyright: ignore[reportAny]
+            mock_user.send.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_upload_files_to_user_dm_with_embed(self, tmp_path: Path) -> None:
@@ -289,7 +290,7 @@ class TestUserDMUpload:
         mock_user = AsyncMock(spec=discord.User)
         mock_message = MagicMock()
         mock_message.id = 67890
-        mock_user.send.return_value = mock_message  # pyright: ignore[reportAny]
+        mock_user.send.return_value = mock_message
 
         test_embed = discord.Embed(title="Test Embed")
 
@@ -304,10 +305,10 @@ class TestUserDMUpload:
 
             assert result.success is True
             # Verify embed was passed to send method
-            call_args = mock_user.send.call_args  # pyright: ignore[reportAny]
+            call_args = mock_user.send.call_args
             assert call_args is not None
             _, kwargs = call_args
-            assert kwargs.get('embed') == test_embed  # pyright: ignore[reportAny]
+            assert kwargs.get('embed') == test_embed
 
 
 class TestUtilityFunctions:

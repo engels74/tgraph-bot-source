@@ -25,12 +25,24 @@ import argparse
 import logging
 import sys
 from pathlib import Path
+from typing import NamedTuple
 
 # Add the project root to the Python path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from utils.i18n_utils import update_po_file, compile_po_to_mo
+
+
+class UpdateArgs(NamedTuple):
+    """Type-safe container for command-line arguments."""
+    pot_file: Path
+    locale_dir: Path
+    language: str | None
+    no_preserve: bool
+    compile: bool
+    verbose: bool
+    dry_run: bool
 
 
 def setup_logging(verbose: bool = False) -> None:
@@ -59,7 +71,7 @@ def find_po_files(locale_dir: Path, language: str | None = None) -> list[Path]:
     Returns:
         List of .po file paths
     """
-    po_files = []
+    po_files: list[Path] = []
 
     if language:
         # Look for specific language
@@ -75,12 +87,12 @@ def find_po_files(locale_dir: Path, language: str | None = None) -> list[Path]:
     return po_files
 
 
-def parse_arguments() -> argparse.Namespace:
+def parse_arguments() -> UpdateArgs:
     """
     Parse command-line arguments.
 
     Returns:
-        Parsed arguments namespace
+        Parsed arguments in a type-safe container
     """
     parser = argparse.ArgumentParser(
         description='Update translation files from .pot templates',
@@ -96,51 +108,71 @@ Examples:
         """
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         '--pot-file',
         type=Path,
         default=Path('locale/messages.pot'),
         help='Path to the .pot template file (default: locale/messages.pot)'
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         '--locale-dir',
         type=Path,
         default=Path('locale'),
         help='Path to the locale directory (default: locale)'
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         '--language',
         type=str,
         help='Update only the specified language (e.g., "en", "da")'
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         '--no-preserve',
         action='store_true',
         help='Do not preserve existing translations (start fresh)'
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         '--compile',
         action='store_true',
         help='Also compile .po files to .mo binary format'
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         '--verbose',
         action='store_true',
         help='Enable verbose logging'
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         '--dry-run',
         action='store_true',
         help='Show what would be done without actually updating files'
     )
 
-    return parser.parse_args()
+    args = parser.parse_args()
+
+    # Convert to type-safe container - argparse returns Any types
+    # Add explicit type annotations to help type checker
+    pot_file: Path = args.pot_file  # pyright: ignore[reportAny]
+    locale_dir: Path = args.locale_dir  # pyright: ignore[reportAny]
+    language: str | None = args.language  # pyright: ignore[reportAny]
+    no_preserve: bool = args.no_preserve  # pyright: ignore[reportAny]
+    compile_flag: bool = args.compile  # pyright: ignore[reportAny]
+    verbose: bool = args.verbose  # pyright: ignore[reportAny]
+    dry_run: bool = args.dry_run  # pyright: ignore[reportAny]
+    
+    return UpdateArgs(
+        pot_file=pot_file,
+        locale_dir=locale_dir,
+        language=language,
+        no_preserve=no_preserve,
+        compile=compile_flag,
+        verbose=verbose,
+        dry_run=dry_run
+    )
 
 
 def main() -> int:
@@ -188,7 +220,7 @@ def main() -> int:
 
         # Update each .po file
         preserve_translations = not args.no_preserve
-        updated_files = []
+        updated_files: list[Path] = []
 
         for po_file in po_files:
             try:

@@ -4,6 +4,7 @@ Tests for Weblate configuration validation.
 This module tests the Weblate configuration file and related functionality
 to ensure proper setup for collaborative translation management.
 """
+# pyright: reportPrivateUsage=false, reportAny=false
 
 from __future__ import annotations
 
@@ -45,7 +46,7 @@ class TestWeblateConfigValidation:
         """Test validation with invalid configuration content."""
         with tempfile.NamedTemporaryFile(mode='w', suffix='.weblate', delete=False) as f:
             # Write invalid config (missing required sections)
-            f.write("[invalid]\nkey = value\n")
+            _ = f.write("[invalid]\nkey = value\n")
             f.flush()
             
             config_path = Path(f.name)
@@ -59,7 +60,7 @@ class TestWeblateConfigValidation:
         """Test validation with minimal valid configuration."""
         with tempfile.NamedTemporaryFile(mode='w', suffix='.weblate', delete=False) as f:
             # Write minimal valid config
-            f.write("""[weblate]
+            _ = f.write("""[weblate]
 url = https://hosted.weblate.org/
 
 [component "test"]
@@ -84,7 +85,7 @@ file_format = po
     def test_config_file_structure(self) -> None:
         """Test that the actual config file has the expected structure."""
         config = configparser.ConfigParser()
-        config.read('.weblate')
+        _ = config.read('.weblate')
         
         # Check main weblate section
         assert 'weblate' in config
@@ -131,8 +132,8 @@ class TestLocaleStructureValidation:
     def test_check_missing_locale_directory(self, mock_path_class: MagicMock) -> None:
         """Test validation when locale directory is missing."""
         # Mock the Path class to return a mock object
-        mock_locale_dir = mock_path_class.return_value  # pyright: ignore[reportAny]
-        mock_locale_dir.exists.return_value = False  # pyright: ignore[reportAny]
+        mock_locale_dir = mock_path_class.return_value
+        mock_locale_dir.exists.return_value = False
 
         result = check_locale_structure()
         assert result is False
@@ -169,7 +170,7 @@ class TestWeblateIntegration:
     def test_filemask_pattern_validity(self) -> None:
         """Test that filemask patterns are valid."""
         config = configparser.ConfigParser()
-        config.read('.weblate')
+        _ = config.read('.weblate')
         
         for section_name in config.sections():
             if not section_name.startswith('component '):
@@ -190,8 +191,8 @@ class TestWeblateIntegration:
     def test_template_file_references(self) -> None:
         """Test that template files referenced in config exist."""
         config = configparser.ConfigParser()
-        config.read('.weblate')
-        
+        _ = config.read('.weblate')
+
         for section_name in config.sections():
             if not section_name.startswith('component '):
                 continue
@@ -211,8 +212,8 @@ class TestWeblateIntegration:
     def test_repository_configuration(self) -> None:
         """Test repository configuration in Weblate config."""
         config = configparser.ConfigParser()
-        config.read('.weblate')
-        
+        _ = config.read('.weblate')
+
         for section_name in config.sections():
             if not section_name.startswith('component '):
                 continue
@@ -236,4 +237,4 @@ class TestWeblateIntegration:
 
 
 if __name__ == '__main__':
-    pytest.main([__file__])
+    _ = pytest.main([__file__])

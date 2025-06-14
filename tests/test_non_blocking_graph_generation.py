@@ -4,6 +4,7 @@ End-to-end tests for non-blocking and responsive graph generation.
 This module provides comprehensive stress tests and concurrent user simulations
 to ensure that all graph generation operations are non-blocking and the system
 remains responsive under load. Tests monitor event loop latency and user-facing
+# pyright: reportPrivateUsage=false, reportAny=false
 response times during heavy graph generation workloads.
 """
 
@@ -11,7 +12,7 @@ from __future__ import annotations
 
 import asyncio
 import time
-from typing import Any
+
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -39,11 +40,11 @@ class TestNonBlockingGraphGeneration:
         mock_config.ENABLE_PLAY_COUNT_BY_DAYOFWEEK = True
         mock_config.ENABLE_PLAY_COUNT_BY_HOUROFDAY = True
         mock_config.ENABLE_PLAY_COUNT_BY_MONTH = True
-        mock_config_manager.get_current_config.return_value = mock_config
+        mock_config_manager.get_current_config.return_value = mock_config  # pyright: ignore[reportAny]
         return mock_config_manager
 
     @pytest.fixture
-    def mock_graph_data(self) -> dict[str, Any]:
+    def mock_graph_data(self) -> dict[str, object]:
         """Create mock graph data for testing."""
         return {
             "data": [
@@ -60,9 +61,9 @@ class TestNonBlockingGraphGeneration:
 
     @pytest.mark.asyncio
     async def test_event_loop_responsiveness_under_load(
-        self, 
+        self,
         mock_config_manager: MagicMock,
-        mock_graph_data: dict[str, Any]
+        mock_graph_data: dict[str, object]
     ) -> None:
         """Test that event loop remains responsive during heavy graph generation."""
         # Counter to track event loop responsiveness
@@ -86,8 +87,8 @@ class TestNonBlockingGraphGeneration:
         graph_manager = GraphManager(mock_config_manager)
 
         # Mock the components to avoid actual initialization
-        with patch.object(graph_manager, '_initialize_components') as mock_init, \
-             patch.object(graph_manager, '_cleanup_components') as mock_cleanup:
+        with patch.object(graph_manager, '_initialize_components'), \
+             patch.object(graph_manager, '_cleanup_components'):
             
             # Mock the internal components
             mock_data_fetcher = AsyncMock()
@@ -95,18 +96,18 @@ class TestNonBlockingGraphGeneration:
 
             graph_manager._data_fetcher = mock_data_fetcher  # pyright: ignore[reportPrivateUsage]
             graph_manager._graph_factory = mock_graph_factory  # pyright: ignore[reportPrivateUsage]
-            
+
             # Mock data fetching to return our test data
-            mock_data_fetcher.get_play_history.return_value = mock_graph_data
+            mock_data_fetcher.get_play_history.return_value = mock_graph_data  # pyright: ignore[reportAny]
             
             # Mock graph generation to simulate CPU-intensive work
-            def simulate_heavy_cpu_work(data: dict[str, Any], progress_tracker: Any = None) -> list[str]:
+            def simulate_heavy_cpu_work(_data: dict[str, object], _progress_tracker: object = None) -> list[str]:
                 """Simulate CPU-intensive graph generation."""
                 # Simulate heavy CPU work (but not too heavy for tests)
                 time.sleep(0.2)  # 200ms of CPU work
                 return ["test_graph_1.png", "test_graph_2.png", "test_graph_3.png"]
-            
-            def mock_validate_files(files: list[str], tracker: Any) -> list[str]:
+
+            def mock_validate_files(files: list[str], _tracker: object) -> list[str]:
                 return files
 
             with patch.object(graph_manager, '_generate_graphs_sync', simulate_heavy_cpu_work), \
@@ -138,7 +139,7 @@ class TestNonBlockingGraphGeneration:
     async def test_concurrent_graph_generation_requests(
         self,
         mock_config_manager: MagicMock,
-        mock_graph_data: dict[str, Any]
+        mock_graph_data: dict[str, object]
     ) -> None:
         """Test handling multiple concurrent graph generation requests."""
         # Create multiple GraphManager instances to simulate concurrent requests
@@ -154,17 +155,17 @@ class TestNonBlockingGraphGeneration:
 
                 manager._data_fetcher = mock_data_fetcher  # pyright: ignore[reportPrivateUsage]
                 manager._graph_factory = mock_graph_factory  # pyright: ignore[reportPrivateUsage]
-                
-                mock_data_fetcher.get_play_history.return_value = mock_graph_data
 
-        def simulate_graph_work(data: dict[str, Any], progress_tracker: Any = None) -> list[str]:
+                mock_data_fetcher.get_play_history.return_value = mock_graph_data  # pyright: ignore[reportAny]
+
+        def simulate_graph_work(_data: dict[str, object], _progress_tracker: object = None) -> list[str]:
             """Simulate graph generation work."""
             time.sleep(0.1)  # 100ms of work
-            return [f"graph_{id(data)}.png"]
+            return [f"graph_{id(_data)}.png"]
 
         async def generate_graphs_for_manager(manager: GraphManager, manager_id: int) -> tuple[int, list[str]]:
             """Generate graphs for a specific manager."""
-            def mock_validate_files(files: list[str], tracker: Any) -> list[str]:
+            def mock_validate_files(files: list[str], _tracker: object) -> list[str]:
                 return files
 
             with patch.object(manager, '_generate_graphs_sync', simulate_graph_work), \
@@ -189,7 +190,7 @@ class TestNonBlockingGraphGeneration:
 
         # Verify all managers completed successfully
         assert len(results) == 3
-        for manager_id, graph_files in results:
+        for _, graph_files in results:
             assert len(graph_files) == 1
             assert graph_files[0].endswith('.png')
 
@@ -201,7 +202,7 @@ class TestNonBlockingGraphGeneration:
     async def test_user_graph_generation_responsiveness(
         self,
         mock_config_manager: MagicMock,
-        mock_graph_data: dict[str, Any]
+        mock_graph_data: dict[str, object]
     ) -> None:
         """Test that user graph generation doesn't block other operations."""
         # Counter for background task
@@ -226,16 +227,16 @@ class TestNonBlockingGraphGeneration:
             
             user_graph_manager._data_fetcher = mock_data_fetcher  # pyright: ignore[reportPrivateUsage]
             user_graph_manager._graph_factory = mock_graph_factory  # pyright: ignore[reportPrivateUsage]
-            
-            # Mock user data fetching
-            mock_data_fetcher.get_user_play_history.return_value = mock_graph_data
 
-            def simulate_user_graph_work(data: dict[str, Any], progress_tracker: Any = None) -> list[str]:
+            # Mock user data fetching
+            mock_data_fetcher.get_user_play_history.return_value = mock_graph_data  # pyright: ignore[reportAny]
+
+            def simulate_user_graph_work(_data: dict[str, object], _progress_tracker: object = None) -> list[str]:
                 """Simulate user graph generation work."""
                 time.sleep(0.15)  # 150ms of work
                 return ["user_graph.png"]
 
-            def mock_validate_user_files(files: list[str], tracker: Any) -> list[str]:
+            def mock_validate_user_files(files: list[str], _tracker: object) -> list[str]:
                 return files
 
             with patch.object(user_graph_manager, '_generate_user_graphs_sync', simulate_user_graph_work), \
@@ -262,7 +263,7 @@ class TestNonBlockingGraphGeneration:
     async def test_stress_test_multiple_users_concurrent(
         self,
         mock_config_manager: MagicMock,
-        mock_graph_data: dict[str, Any]
+        mock_graph_data: dict[str, object]
     ) -> None:
         """Stress test with multiple users requesting graphs concurrently."""
         user_emails = [f"user{i}@example.com" for i in range(5)]
@@ -279,14 +280,14 @@ class TestNonBlockingGraphGeneration:
             
             user_graph_manager._data_fetcher = mock_data_fetcher  # pyright: ignore[reportPrivateUsage]
             user_graph_manager._graph_factory = mock_graph_factory  # pyright: ignore[reportPrivateUsage]
-            
-            # Mock user data fetching
-            mock_data_fetcher.get_user_play_history.return_value = mock_graph_data
 
-            def simulate_user_graph_work(data: dict[str, Any], progress_tracker: Any = None) -> list[str]:
+            # Mock user data fetching
+            mock_data_fetcher.get_user_play_history.return_value = mock_graph_data  # pyright: ignore[reportAny]
+
+            def simulate_user_graph_work(_data: dict[str, object], _progress_tracker: object = None) -> list[str]:
                 """Simulate user graph generation work."""
                 time.sleep(0.08)  # 80ms of work per user
-                return [f"user_graph_{id(data)}.png"]
+                return [f"user_graph_{id(_data)}.png"]
 
             with patch.object(user_graph_manager, '_generate_user_graphs_sync', simulate_user_graph_work):
                 async with user_graph_manager:
@@ -317,7 +318,7 @@ class TestNonBlockingGraphGeneration:
     async def test_timeout_handling_during_load(
         self,
         mock_config_manager: MagicMock,
-        mock_graph_data: dict[str, Any]
+        mock_graph_data: dict[str, object]
     ) -> None:
         """Test that timeout handling works correctly under load."""
         graph_manager = GraphManager(mock_config_manager)
@@ -331,10 +332,10 @@ class TestNonBlockingGraphGeneration:
             
             graph_manager._data_fetcher = mock_data_fetcher  # pyright: ignore[reportPrivateUsage]
             graph_manager._graph_factory = mock_graph_factory  # pyright: ignore[reportPrivateUsage]
-            
-            mock_data_fetcher.get_play_history.return_value = mock_graph_data
 
-            def simulate_slow_work(data: dict[str, Any], progress_tracker: Any = None) -> list[str]:
+            mock_data_fetcher.get_play_history.return_value = mock_graph_data  # pyright: ignore[reportAny]
+
+            def simulate_slow_work(_data: dict[str, object], _progress_tracker: object = None) -> list[str]:
                 """Simulate work that exceeds timeout."""
                 time.sleep(2.0)  # 2 seconds - should exceed our timeout
                 return ["slow_graph.png"]
@@ -343,13 +344,13 @@ class TestNonBlockingGraphGeneration:
                 async with graph_manager:
                     # Test with short timeout
                     with pytest.raises(asyncio.TimeoutError):
-                        await graph_manager.generate_all_graphs(timeout_seconds=0.5)
+                        _ = await graph_manager.generate_all_graphs(timeout_seconds=0.5)
 
     @pytest.mark.asyncio
     async def test_memory_stability_under_load(
         self,
         mock_config_manager: MagicMock,
-        mock_graph_data: dict[str, Any]
+        mock_graph_data: dict[str, object]
     ) -> None:
         """Test that memory usage remains stable during repeated graph generation."""
         import psutil
@@ -358,7 +359,7 @@ class TestNonBlockingGraphGeneration:
 
         # Get initial memory usage
         process = psutil.Process(os.getpid())
-        initial_memory: int = process.memory_info().rss
+        initial_memory: int = process.memory_info().rss  # pyright: ignore[reportAny]
 
         graph_manager = GraphManager(mock_config_manager)
 
@@ -372,9 +373,9 @@ class TestNonBlockingGraphGeneration:
             graph_manager._data_fetcher = mock_data_fetcher  # pyright: ignore[reportPrivateUsage]
             graph_manager._graph_factory = mock_graph_factory  # pyright: ignore[reportPrivateUsage]
 
-            mock_data_fetcher.get_play_history.return_value = mock_graph_data
+            mock_data_fetcher.get_play_history.return_value = mock_graph_data  # pyright: ignore[reportAny]
 
-            def simulate_memory_intensive_work(data: dict[str, Any], progress_tracker: Any = None) -> list[str]:
+            def simulate_memory_intensive_work(_data: dict[str, object], _progress_tracker: object = None) -> list[str]:
                 """Simulate memory-intensive graph generation."""
                 # Create some temporary data structures
                 temp_data = [list(range(1000)) for _ in range(100)]
@@ -386,14 +387,14 @@ class TestNonBlockingGraphGeneration:
                 async with graph_manager:
                     # Generate graphs multiple times
                     for i in range(10):
-                        await graph_manager.generate_all_graphs()
+                        _ = await graph_manager.generate_all_graphs()
 
                         # Force garbage collection
-                        gc.collect()
+                        _ = gc.collect()
 
                         # Check memory usage periodically
                         if i % 3 == 0:
-                            current_memory: int = process.memory_info().rss
+                            current_memory: int = process.memory_info().rss  # pyright: ignore[reportAny]
                             memory_increase = current_memory - initial_memory
 
                             # Memory increase should be reasonable (< 100MB)
@@ -405,7 +406,7 @@ class TestNonBlockingGraphGeneration:
     async def test_error_handling_doesnt_block_event_loop(
         self,
         mock_config_manager: MagicMock,
-        mock_graph_data: dict[str, Any]
+        mock_graph_data: dict[str, object]
     ) -> None:
         """Test that error handling during graph generation doesn't block the event loop."""
         # Counter for background operations
@@ -430,9 +431,9 @@ class TestNonBlockingGraphGeneration:
             graph_manager._data_fetcher = mock_data_fetcher  # pyright: ignore[reportPrivateUsage]
             graph_manager._graph_factory = mock_graph_factory  # pyright: ignore[reportPrivateUsage]
 
-            mock_data_fetcher.get_play_history.return_value = mock_graph_data
+            mock_data_fetcher.get_play_history.return_value = mock_graph_data  # pyright: ignore[reportAny]
 
-            def simulate_error_work(data: dict[str, Any], progress_tracker: Any = None) -> list[str]:
+            def simulate_error_work(_data: dict[str, object], _progress_tracker: object = None) -> list[str]:
                 """Simulate work that raises an error."""
                 time.sleep(0.1)  # Some work before error
                 raise RuntimeError("Simulated graph generation error")
@@ -445,7 +446,7 @@ class TestNonBlockingGraphGeneration:
                     # Start graph generation (should fail)
                     with pytest.raises(GraphGenerationError):
                         graph_task = asyncio.create_task(graph_manager.generate_all_graphs())
-                        await asyncio.gather(graph_task, monitor_task, return_exceptions=True)
+                        _ = await asyncio.gather(graph_task, monitor_task, return_exceptions=True)
 
                     # Verify monitor completed (proving event loop wasn't blocked during error)
                     assert error_counter == 30, f"Error monitor only completed {error_counter}/30 iterations"
@@ -454,13 +455,13 @@ class TestNonBlockingGraphGeneration:
     async def test_progress_tracking_responsiveness(
         self,
         mock_config_manager: MagicMock,
-        mock_graph_data: dict[str, Any]
+        mock_graph_data: dict[str, object]
     ) -> None:
         """Test that progress tracking callbacks don't block the event loop."""
         progress_updates: list[tuple[str, int, int]] = []
         callback_counter = 0
 
-        def progress_callback(message: str, current: int, total: int, metadata: dict[str, object]) -> None:
+        def progress_callback(message: str, current: int, total: int, _metadata: dict[str, object]) -> None:
             """Track progress updates."""
             nonlocal callback_counter
             progress_updates.append((message, current, total))
@@ -486,9 +487,9 @@ class TestNonBlockingGraphGeneration:
             graph_manager._data_fetcher = mock_data_fetcher  # pyright: ignore[reportPrivateUsage]
             graph_manager._graph_factory = mock_graph_factory  # pyright: ignore[reportPrivateUsage]
 
-            mock_data_fetcher.get_play_history.return_value = mock_graph_data
+            mock_data_fetcher.get_play_history.return_value = mock_graph_data  # pyright: ignore[reportAny]
 
-            def simulate_tracked_work(data: dict[str, Any], progress_tracker: Any = None) -> list[str]:
+            def simulate_tracked_work(_data: dict[str, object], _progress_tracker: object = None) -> list[str]:
                 """Simulate work with progress tracking."""
                 time.sleep(0.1)  # 100ms of work
                 return ["tracked_graph.png"]
@@ -531,7 +532,7 @@ class TestNonBlockingGraphGeneration:
         graph_manager = GraphManager(mock_config_manager)
 
         # Mock file operations to simulate cleanup work
-        def simulate_cleanup_work() -> int:
+        def _simulate_cleanup_work() -> int:  # pyright: ignore[reportUnusedFunction]
             """Simulate file cleanup work."""
             time.sleep(0.1)  # 100ms of file operations
             return 5  # Number of files cleaned

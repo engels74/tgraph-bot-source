@@ -47,12 +47,24 @@ class GraphFactory:
         graphs: list[BaseGraph] = []
 
         # Check each graph type and create if enabled
-        # Handle both TGraphBotConfig objects and dict configs for backward compatibility
+        # Get config values from TGraphBotConfig object
         def get_config_value(key: str, default: bool = True) -> bool:
-            if hasattr(self.config, key):
-                return bool(getattr(self.config, key))
-            elif isinstance(self.config, dict):
-                return bool(self.config.get(key, default))  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+            # Use direct attribute access for known boolean config attributes
+            if key == 'ENABLE_DAILY_PLAY_COUNT':
+                return self.config.ENABLE_DAILY_PLAY_COUNT
+            elif key == 'ENABLE_PLAY_COUNT_BY_DAYOFWEEK':
+                return self.config.ENABLE_PLAY_COUNT_BY_DAYOFWEEK
+            elif key == 'ENABLE_PLAY_COUNT_BY_HOUROFDAY':
+                return self.config.ENABLE_PLAY_COUNT_BY_HOUROFDAY
+            elif key == 'ENABLE_PLAY_COUNT_BY_MONTH':
+                return self.config.ENABLE_PLAY_COUNT_BY_MONTH
+            elif key == 'ENABLE_TOP_10_PLATFORMS':
+                return self.config.ENABLE_TOP_10_PLATFORMS
+            elif key == 'ENABLE_TOP_10_USERS':
+                return self.config.ENABLE_TOP_10_USERS
+            elif key == 'ENABLE_SAMPLE_GRAPH':
+                # Sample graph is not in the main config schema, default to False
+                return False
             return default
 
         if get_config_value('ENABLE_DAILY_PLAY_COUNT'):
@@ -126,12 +138,24 @@ class GraphFactory:
         """
         enabled_types: list[str] = []
 
-        # Helper function to get config values with backward compatibility
+        # Get config values from TGraphBotConfig object
         def get_config_value(key: str, default: bool = True) -> bool:
-            if hasattr(self.config, key):
-                return bool(getattr(self.config, key))
-            elif isinstance(self.config, dict):
-                return bool(self.config.get(key, default))  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+            # Use direct attribute access for known boolean config attributes
+            if key == 'ENABLE_DAILY_PLAY_COUNT':
+                return self.config.ENABLE_DAILY_PLAY_COUNT
+            elif key == 'ENABLE_PLAY_COUNT_BY_DAYOFWEEK':
+                return self.config.ENABLE_PLAY_COUNT_BY_DAYOFWEEK
+            elif key == 'ENABLE_PLAY_COUNT_BY_HOUROFDAY':
+                return self.config.ENABLE_PLAY_COUNT_BY_HOUROFDAY
+            elif key == 'ENABLE_PLAY_COUNT_BY_MONTH':
+                return self.config.ENABLE_PLAY_COUNT_BY_MONTH
+            elif key == 'ENABLE_TOP_10_PLATFORMS':
+                return self.config.ENABLE_TOP_10_PLATFORMS
+            elif key == 'ENABLE_TOP_10_USERS':
+                return self.config.ENABLE_TOP_10_USERS
+            elif key == 'ENABLE_SAMPLE_GRAPH':
+                # Sample graph is not in the main config schema, default to False
+                return False
             return default
 
         # Check each graph type directly from config attributes

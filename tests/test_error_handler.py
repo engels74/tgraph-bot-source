@@ -4,6 +4,7 @@ Tests for the error handling utilities.
 
 import pytest
 from datetime import datetime
+# pyright: reportPrivateUsage=false, reportAny=false
 from unittest.mock import Mock, patch
 
 import discord
@@ -300,7 +301,7 @@ class TestErrorDecorators:
             raise ConfigurationError("Permanent config error")
         
         with pytest.raises(ConfigurationError):
-            await test_function()
+            _ = await test_function()
     
     @pytest.mark.asyncio
     async def test_command_error_handler_decorator(self) -> None:
@@ -313,7 +314,7 @@ class TestErrorDecorators:
         interaction.channel.id = 789
         
         @command_error_handler()
-        async def test_command(self: Mock, interaction: discord.Interaction) -> None:
+        async def test_command(_self: Mock, _interaction: discord.Interaction) -> None:
             raise ValueError("Test error")
         
         mock_self = Mock()

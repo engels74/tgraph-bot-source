@@ -4,6 +4,7 @@ Tests for the sample graph implementation.
 This module tests the SampleGraph class to validate the foundation
 for specific graph implementations and demonstrate the complete
 end-to-end workflow.
+# pyright: reportPrivateUsage=false, reportAny=false
 """
 
 from pathlib import Path
@@ -87,7 +88,7 @@ class TestSampleGraph:
         """Test data validation with empty values."""
         graph = SampleGraph()
         
-        invalid_data = {
+        invalid_data: dict[str, list[int]] = {
             'x_values': [],
             'y_values': []
         }
@@ -123,8 +124,8 @@ class TestSampleGraph:
         x_values = sample_data['x_values']
         y_values = sample_data['y_values']
         assert isinstance(x_values, list) and isinstance(y_values, list)
-        assert len(x_values) == len(y_values)
-        assert len(x_values) == 10  # Should be 1 to 10
+        assert len(x_values) == len(y_values)  # pyright: ignore[reportUnknownArgumentType]
+        assert len(x_values) == 10  # Should be 1 to 10  # pyright: ignore[reportUnknownArgumentType]
         assert sample_data['title'] == 'Sample Data Points'
         assert sample_data['user_id'] == 'demo_user'
         
@@ -198,7 +199,7 @@ class TestSampleGraph:
         }
         
         with pytest.raises(ValueError, match="Both 'x_values' and 'y_values' are required"):
-            graph.generate(invalid_data)
+            _ = graph.generate(invalid_data)
             
     def test_generate_with_mismatched_data_raises_error(self) -> None:
         """Test that generate raises ValueError with mismatched data lengths."""
@@ -210,7 +211,7 @@ class TestSampleGraph:
         }
         
         with pytest.raises(ValueError, match="x_values and y_values must have the same length"):
-            graph.generate(invalid_data)
+            _ = graph.generate(invalid_data)
             
     def test_context_manager_usage(self) -> None:
         """Test using SampleGraph as a context manager."""

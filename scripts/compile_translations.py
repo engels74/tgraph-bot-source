@@ -26,8 +26,19 @@ import argparse
 import logging
 import sys
 from pathlib import Path
+from typing import NamedTuple
 
 from utils.i18n_utils import compile_po_to_mo
+
+
+class CompileArgs(NamedTuple):
+    """Type-safe container for command-line arguments."""
+    locale_dir: Path
+    language: str | None
+    force: bool
+    check_only: bool
+    verbose: bool
+    dry_run: bool
 
 
 def setup_logging(verbose: bool = False) -> None:
@@ -126,12 +137,12 @@ def compile_file(po_file: Path, force: bool = False, dry_run: bool = False) -> b
         raise
 
 
-def parse_arguments() -> argparse.Namespace:
+def parse_arguments() -> CompileArgs:
     """
     Parse command-line arguments.
 
     Returns:
-        Parsed arguments namespace
+        Parsed arguments in a type-safe container
     """
     parser = argparse.ArgumentParser(
         description='Compile translation files from .po to .mo format',
@@ -146,44 +157,62 @@ Examples:
         """
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         '--locale-dir',
         type=Path,
         default=Path('locale'),
         help='Path to the locale directory (default: locale)'
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         '--language',
         type=str,
         help='Compile only the specified language (e.g., "en", "da")'
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         '--force',
         action='store_true',
         help='Force compilation even if .mo files are newer than .po files'
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         '--check-only',
         action='store_true',
         help='Check which files need compilation without actually compiling'
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         '--verbose',
         action='store_true',
         help='Enable verbose logging'
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         '--dry-run',
         action='store_true',
         help='Show what would be done without actually compiling files'
     )
 
-    return parser.parse_args()
+    args = parser.parse_args()
+
+    # Convert to type-safe container - argparse returns Any types
+    # Add explicit type annotations to help type checker
+    locale_dir: Path = args.locale_dir  # pyright: ignore[reportAny]
+    language: str | None = args.language  # pyright: ignore[reportAny]
+    force: bool = args.force  # pyright: ignore[reportAny]
+    check_only: bool = args.check_only  # pyright: ignore[reportAny]
+    verbose: bool = args.verbose  # pyright: ignore[reportAny]
+    dry_run: bool = args.dry_run  # pyright: ignore[reportAny]
+    
+    return CompileArgs(
+        locale_dir=locale_dir,
+        language=language,
+        force=force,
+        check_only=check_only,
+        verbose=verbose,
+        dry_run=dry_run
+    )
 
 
 def main() -> int:
@@ -217,7 +246,7 @@ def main() -> int:
         logger.info(f"Found {len(po_files)} .po file(s)")
 
         # Check which files need compilation
-        files_to_compile = []
+        files_to_compile: list[Path] = []
         for po_file in po_files:
             mo_file = po_file.with_suffix('.mo')
             if args.force or needs_compilation(po_file, mo_file):

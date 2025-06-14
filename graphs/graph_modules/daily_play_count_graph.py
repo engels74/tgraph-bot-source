@@ -125,10 +125,10 @@ class DailyPlayCountGraph(BaseGraph):
 
                 # Create DataFrame
                 df = pd.DataFrame({
-                    'date': pd.to_datetime(dates),
+                    'date': pd.to_datetime(dates),  # pyright: ignore[reportUnknownMemberType]
                     'play_count': counts
                 })
-                df = df.sort_values('date')
+                df = df.sort_values('date')  # pyright: ignore[reportUnknownMemberType]
 
                 # Create line plot with markers
                 _ = sns.lineplot(
@@ -142,25 +142,25 @@ class DailyPlayCountGraph(BaseGraph):
                 )
 
                 # Customize the plot
-                _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)
-                _ = ax.set_xlabel('Date', fontsize=12)
-                _ = ax.set_ylabel('Play Count', fontsize=12)
+                _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)  # pyright: ignore[reportUnknownMemberType]
+                _ = ax.set_xlabel('Date', fontsize=12)  # pyright: ignore[reportUnknownMemberType]
+                _ = ax.set_ylabel('Play Count', fontsize=12)  # pyright: ignore[reportUnknownMemberType]
 
                 # Rotate x-axis labels for better readability
-                _ = ax.tick_params(axis='x', rotation=45)
+                _ = ax.tick_params(axis='x', rotation=45)  # pyright: ignore[reportUnknownMemberType]
 
                 # Add annotations if enabled
                 if self.config and self.config.ANNOTATE_DAILY_PLAY_COUNT:
                     # Convert counts to integers for proper comparison
-                    int_counts = [int(c) if isinstance(c, (int, float)) else 0 for c in counts]
+                    int_counts = [int(c) for c in counts]
                     max_count = max(int_counts)
                     max_date_idx = int_counts.index(max_count)
                     max_date = dates[max_date_idx]
 
                     # Convert date to timestamp for annotation
-                    max_date_ts = pd.to_datetime(max_date)
+                    max_date_ts = pd.to_datetime(max_date)  # pyright: ignore[reportUnknownMemberType]
                     if hasattr(max_date_ts, 'timestamp'):
-                        x_coord = float(max_date_ts.timestamp())  # pyright: ignore[reportUnknownMemberType]
+                        x_coord = float(max_date_ts.timestamp())
                     else:
                         x_coord = float(max_date_idx)
 

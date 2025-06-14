@@ -4,6 +4,7 @@ Tests for main.py entry point functionality.
 This module tests the TGraphBot class initialization, configuration loading,
 error handling, logging, graceful shutdown, and main entry point function
 with proper mocking of Discord API calls.
+# pyright: reportPrivateUsage=false, reportAny=false
 """
 
 import asyncio
@@ -11,14 +12,19 @@ import logging
 import signal
 import tempfile
 from pathlib import Path
+from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import discord
 import pytest
 from discord.ext import commands
 
 from main import TGraphBot, main, setup_logging, setup_signal_handlers
 from config.manager import ConfigManager
 from config.schema import TGraphBotConfig
+
+if TYPE_CHECKING:
+    pass
 
 
 class TestTGraphBot:
@@ -302,9 +308,9 @@ class TestEnhancedErrorHandling:
         assert hasattr(bot, '_background_tasks')
         assert hasattr(bot, '_shutdown_event')
         assert hasattr(bot, '_is_shutting_down')
-        assert isinstance(bot._background_tasks, set)
-        assert isinstance(bot._shutdown_event, asyncio.Event)
-        assert bot._is_shutting_down is False
+        assert isinstance(bot._background_tasks, set)  # pyright: ignore[reportPrivateUsage]
+        assert isinstance(bot._shutdown_event, asyncio.Event)  # pyright: ignore[reportPrivateUsage]
+        assert bot._is_shutting_down is False  # pyright: ignore[reportPrivateUsage]
         assert bot.is_shutting_down() is False
 
     @pytest.mark.asyncio
@@ -356,14 +362,14 @@ class TestEnhancedErrorHandling:
             await asyncio.sleep(0.1)
 
         task = bot.create_background_task(dummy_task(), "test_task")
-        assert task in bot._background_tasks
+        assert task in bot._background_tasks  # pyright: ignore[reportPrivateUsage]
         assert task.get_name() == "test_task"
 
         # Wait for task to complete
         await task
 
         # Task should be automatically removed from set when done
-        assert task not in bot._background_tasks
+        assert task not in bot._background_tasks  # pyright: ignore[reportPrivateUsage]
 
     @pytest.mark.asyncio
     async def test_cleanup_background_tasks(self) -> None:
@@ -378,12 +384,12 @@ class TestEnhancedErrorHandling:
         task1 = bot.create_background_task(long_running_task(), "task1")
         task2 = bot.create_background_task(long_running_task(), "task2")
 
-        assert len(bot._background_tasks) == 2
+        assert len(bot._background_tasks) == 2  # pyright: ignore[reportPrivateUsage]
 
         # Cleanup should cancel and wait for tasks
         await bot.cleanup_background_tasks()
 
-        assert len(bot._background_tasks) == 0
+        assert len(bot._background_tasks) == 0  # pyright: ignore[reportPrivateUsage]
         assert task1.cancelled()
         assert task2.cancelled()
 
@@ -404,8 +410,8 @@ class TestEnhancedErrorHandling:
 
             # Verify shutdown state
             assert bot.is_shutting_down() is True
-            assert bot._shutdown_event.is_set()
-            assert len(bot._background_tasks) == 0
+            assert bot._shutdown_event.is_set()  # pyright: ignore[reportPrivateUsage]
+            assert len(bot._background_tasks) == 0  # pyright: ignore[reportPrivateUsage]
             mock_parent_close.assert_called_once()
 
     @pytest.mark.asyncio
@@ -430,14 +436,17 @@ class TestEnhancedErrorHandling:
         bot = TGraphBot(config_manager)
 
         # Set shutdown event before on_ready
-        bot._shutdown_event.set()
+        bot._shutdown_event.set()  # pyright: ignore[reportPrivateUsage]
 
         mock_user = MagicMock()
         mock_user.name = "TestBot"
         mock_user.id = 123456789
 
+        def mock_empty_guilds() -> list[discord.Guild]:
+            return []
+
         with patch.object(type(bot), "user", new_callable=lambda: mock_user), \
-             patch.object(type(bot), "guilds", new_callable=lambda: []), \
+             patch.object(type(bot), "guilds", new_callable=mock_empty_guilds), \
              patch.object(bot, "close", new_callable=AsyncMock) as mock_close:
 
             await bot.on_ready()
@@ -546,7 +555,7 @@ class TestSignalHandling:
 
         # Create a mock event loop
         mock_loop = MagicMock()
-        mock_loop.is_running.return_value = True
+        mock_loop.is_running.return_value = True  # pyright: ignore[reportAny]
 
         with patch("signal.signal") as mock_signal, \
              patch("asyncio.get_event_loop", return_value=mock_loop):
@@ -554,13 +563,13 @@ class TestSignalHandling:
             setup_signal_handlers(bot)
 
             # Get the signal handler function
-            signal_handler = mock_signal.call_args_list[0][0][1]
+            signal_handler = mock_signal.call_args_list[0][0][1]  # pyright: ignore[reportAny]
 
             # Call the signal handler
             signal_handler(signal.SIGTERM, None)
 
             # Should create a task to close the bot
-            mock_loop.create_task.assert_called_once()
+            mock_loop.create_task.assert_called_once()  # pyright: ignore[reportAny]
 
 
 class TestMainFunctionEnhancements:

@@ -4,6 +4,7 @@ Test recovery and schedule integrity mechanisms for UpdateTracker.
 This module tests the enhanced recovery capabilities, persistent state management,
 missed update detection, and schedule integrity validation and repair.
 """
+# pyright: reportPrivateUsage=false, reportAny=false
 
 import asyncio
 import tempfile
@@ -92,7 +93,7 @@ class TestStateManager:
             manager = StateManager(state_file)
             
             # Create corrupted JSON file
-            state_file.write_text("{ invalid json }")
+            _ = state_file.write_text("{ invalid json }")
             
             state, config = manager.load_state()
             

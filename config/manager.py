@@ -8,9 +8,10 @@ import tempfile
 import threading
 import time
 from pathlib import Path
-from typing import Any, Callable, override
-from watchdog.events import FileSystemEventHandler
-from watchdog.observers import Observer
+from typing import Callable, override, Any
+from watchdog.events import FileSystemEventHandler, FileSystemEvent
+
+
 
 import yaml
 from pydantic import ValidationError
@@ -35,13 +36,14 @@ class ConfigFileHandler(FileSystemEventHandler):
         self._last_modified: float = 0.0
 
     @override
-    def on_modified(self, event: Any) -> None:
+    def on_modified(self, event: FileSystemEvent) -> None:
         """Handle file modification events."""
         if event.is_directory:
             return
 
         # Check if the modified file is our config file
-        if Path(event.src_path).resolve() == self.config_path.resolve():
+        src_path_str = event.src_path if isinstance(event.src_path, str) else event.src_path.decode('utf-8')
+        if Path(src_path_str).resolve() == self.config_path.resolve():
             # Debounce rapid file changes
             current_time = time.time()
             if current_time - self._last_modified < 0.5:  # 500ms debounce
@@ -66,7 +68,7 @@ class ConfigManager:
         self._current_config: TGraphBotConfig | None = None
         self._config_lock: threading.RLock = threading.RLock()
         self._change_callbacks: list[Callable[[TGraphBotConfig, TGraphBotConfig], None]] = []
-        self._file_observer: Observer | None = None  # pyright: ignore[reportInvalidTypeForm]
+        self._file_observer: Any = None  # Observer | None  # pyright: ignore[reportExplicitAny]
         self._monitored_file: Path | None = None
 
     @staticmethod
@@ -90,28 +92,28 @@ class ConfigManager:
         
         try:
             with config_path.open('r', encoding='utf-8') as f:
-                raw_config_data = yaml.safe_load(f)
+                raw_config_data: object = yaml.safe_load(f)  # pyright: ignore[reportAny]
         except yaml.YAMLError as e:
             raise yaml.YAMLError(f"Invalid YAML syntax in {config_path}: {e}") from e
 
         if raw_config_data is None:
-            config_data: dict[str, Any] = {}
+            config_data: dict[str, object] = {}
         elif isinstance(raw_config_data, dict):
             config_data = raw_config_data  # pyright: ignore[reportUnknownVariableType]
         else:
-            raise ValueError(f"Configuration file must contain a YAML dictionary, got {type(raw_config_data)}")
+            raise ValueError(f"Configuration file must contain a YAML dictionary, got {type(raw_config_data).__name__}")
 
         # Parse configuration using match statement for specific fields
         parsed_data = ConfigManager._parse_config_data(config_data)
         
         try:
-            return TGraphBotConfig(**parsed_data)
+            return TGraphBotConfig(**parsed_data)  # pyright: ignore[reportArgumentType]
         except ValidationError as e:
             # Re-raise the original ValidationError with additional context
             raise e
 
     @staticmethod
-    def _parse_config_data(config_data: dict[str, Any]) -> dict[str, Any]:
+    def _parse_config_data(config_data: dict[str, object]) -> dict[str, object]:
         """
         Parse configuration data using match statements for specific fields.
         
@@ -136,7 +138,7 @@ class ConfigManager:
                             parsed_data[key] = value
                         case _:
                             parsed_data[key] = value
-                
+
                 case 'LANGUAGE':
                     # Validate language code
                     match value:
@@ -144,7 +146,7 @@ class ConfigManager:
                             parsed_data[key] = value.lower()
                         case _:
                             parsed_data[key] = value
-                
+
                 case key if key.endswith('_COLOR'):
                     # Normalize color values to lowercase
                     match value:
@@ -201,7 +203,7 @@ class ConfigManager:
                 suffix='.tmp',
                 delete=False,
             ) as temp_file:
-                temp_file.write(content_to_write)
+                _ = temp_file.write(content_to_write)
                 temp_file.flush()
                 temp_path = Path(temp_file.name)
 
@@ -215,7 +217,7 @@ class ConfigManager:
             raise OSError(f"Failed to save configuration to {config_path}: {e}") from e
 
     @staticmethod
-    def _preserve_comments(original_content: str, new_config: dict[str, Any]) -> str:
+    def _preserve_comments(original_content: str, new_config: dict[str, object]) -> str:
         """
         Preserve comments from original YAML content while updating values.
 
@@ -325,14 +327,14 @@ class ConfigManager:
             This creates a minimal config with placeholder values for required fields.
             Real configuration should be loaded from a proper config file.
         """
-        default_data: dict[str, Any] = {
+        default_data: dict[str, object] = {
             'TAUTULLI_API_KEY': 'your_tautulli_api_key_here',
             'TAUTULLI_URL': 'http://localhost:8181/api/v2',
             'DISCORD_TOKEN': 'your_discord_bot_token_here',
             'CHANNEL_ID': 123456789012345678,
         }
-        
-        return TGraphBotConfig(**default_data)
+
+        return TGraphBotConfig(**default_data)  # pyright: ignore[reportArgumentType]
 
     @staticmethod
     def validate_config(config: TGraphBotConfig) -> bool:
@@ -350,7 +352,8 @@ class ConfigManager:
         """
         # Re-validate the configuration by creating a new instance
         try:
-            _ = TGraphBotConfig(**config.model_dump())
+            # model_dump() returns dict[str, Any] which is expected for Pydantic models
+            _ = TGraphBotConfig(**config.model_dump())  # pyright: ignore[reportAny]
             return True
         except ValidationError:
             raise
@@ -567,28 +570,30 @@ MY_STATS_GLOBAL_COOLDOWN_SECONDS: 60
             config_path: Path to the configuration file to monitor
         """
         with self._config_lock:
-            if self._file_observer is not None:
+            if self._file_observer is not None:  # pyright: ignore[reportAny]
                 self.stop_file_monitoring()
 
             self._monitored_file = config_path.resolve()
-            self._file_observer = Observer()
+            from watchdog.observers import Observer
+            observer = Observer()
+            self._file_observer = observer
 
             # Create event handler
             handler = ConfigFileHandler(self, self._monitored_file)
 
             # Watch the directory containing the config file
             watch_dir = self._monitored_file.parent
-            self._file_observer.schedule(handler, str(watch_dir), recursive=False)  # pyright: ignore[reportUnknownMemberType,reportOptionalMemberAccess]
+            _ = observer.schedule(handler, str(watch_dir), recursive=False)
 
             # Start monitoring
-            self._file_observer.start()  # pyright: ignore[reportUnknownMemberType,reportOptionalMemberAccess]
+            observer.start()
 
     def stop_file_monitoring(self) -> None:
         """Stop monitoring the configuration file for changes."""
         with self._config_lock:
-            if self._file_observer is not None:  # pyright: ignore[reportUnknownMemberType]
-                self._file_observer.stop()  # pyright: ignore[reportUnknownMemberType]
-                self._file_observer.join()  # pyright: ignore[reportUnknownMemberType]
+            if self._file_observer is not None:  # pyright: ignore[reportAny]
+                self._file_observer.stop()  # pyright: ignore[reportAny]
+                self._file_observer.join()  # pyright: ignore[reportAny]
                 self._file_observer = None
                 self._monitored_file = None
 

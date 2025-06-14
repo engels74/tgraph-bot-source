@@ -4,11 +4,11 @@ Tests for graph utility functions in TGraph Bot.
 This module tests utility functions for date formatting, folder management,
 username censoring, and common graph operations.
 """
+# pyright: reportPrivateUsage=false, reportAny=false
 
 import tempfile
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -59,10 +59,10 @@ class TestDateUtilities:
     def test_parse_date_invalid_format(self) -> None:
         """Test date parsing with invalid format raises ValueError."""
         with pytest.raises(ValueError):
-            parse_date("invalid-date")
+            _ = parse_date("invalid-date")
     
     @patch('graphs.graph_modules.utils.datetime')
-    def test_get_date_range(self, mock_datetime: Any) -> None:  # pyright: ignore[reportExplicitAny]
+    def test_get_date_range(self, mock_datetime: MagicMock) -> None:
         """Test getting date range."""
         # Mock current time
         mock_now = datetime(2023, 12, 25, 12, 0, 0)
@@ -87,12 +87,12 @@ class TestDirectoryUtilities:
     
     def test_ensure_graph_directory_default_path(self) -> None:
         """Test ensuring graph directory with default path."""
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with tempfile.TemporaryDirectory() as _temp_dir:
             with patch('graphs.graph_modules.utils.Path') as mock_path:
                 mock_path_instance = MagicMock()
                 mock_path.return_value = mock_path_instance
 
-                result = ensure_graph_directory()
+                _ = ensure_graph_directory()
 
                 mock_path.assert_called_once_with("graphs")
                 mock_path_instance.mkdir.assert_called_once_with(parents=True, exist_ok=True)
@@ -130,8 +130,8 @@ class TestDirectoryUtilities:
             old_file = directory / "old_file.txt"
             new_file = directory / "new_file.txt"
 
-            old_file.write_text("old content")
-            new_file.write_text("new content")
+            _ = old_file.write_text("old content")
+            _ = new_file.write_text("new content")
 
             # For this test, we'll just verify the function runs without error
             # since mocking file times is complex and the function logic is simple
