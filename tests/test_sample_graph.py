@@ -198,7 +198,7 @@ class TestSampleGraph:
         }
         
         with pytest.raises(ValueError, match="Both 'x_values' and 'y_values' are required"):
-            graph.generate(invalid_data)
+            _ = graph.generate(invalid_data)
             
     def test_generate_with_mismatched_data_raises_error(self) -> None:
         """Test that generate raises ValueError with mismatched data lengths."""
@@ -210,7 +210,7 @@ class TestSampleGraph:
         }
         
         with pytest.raises(ValueError, match="x_values and y_values must have the same length"):
-            graph.generate(invalid_data)
+            _ = graph.generate(invalid_data)
             
     def test_context_manager_usage(self) -> None:
         """Test using SampleGraph as a context manager."""

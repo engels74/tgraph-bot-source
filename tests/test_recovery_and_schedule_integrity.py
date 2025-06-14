@@ -92,7 +92,7 @@ class TestStateManager:
             manager = StateManager(state_file)
             
             # Create corrupted JSON file
-            state_file.write_text("{ invalid json }")
+            _ = state_file.write_text("{ invalid json }")
             
             state, config = manager.load_state()
             

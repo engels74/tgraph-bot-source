@@ -87,7 +87,7 @@ class TestDataFetcher:
     async def test_make_request_not_initialized(self, data_fetcher: DataFetcher) -> None:
         """Test that _make_request raises error when not initialized."""
         with pytest.raises(RuntimeError, match="DataFetcher not initialized"):
-            await data_fetcher._make_request("get_history")
+            _ = await data_fetcher._make_request("get_history")
 
     @pytest.mark.asyncio
     async def test_make_request_success(
@@ -140,7 +140,7 @@ class TestDataFetcher:
             
             async with data_fetcher:
                 with pytest.raises(ValueError, match="API error: Invalid API key"):
-                    await data_fetcher._make_request("get_history")
+                    _ = await data_fetcher._make_request("get_history")
 
     @pytest.mark.asyncio
     async def test_make_request_invalid_response_format(self, data_fetcher: DataFetcher) -> None:
@@ -157,7 +157,7 @@ class TestDataFetcher:
             
             async with data_fetcher:
                 with pytest.raises(ValueError, match="Invalid API response format"):
-                    await data_fetcher._make_request("get_history")
+                    _ = await data_fetcher._make_request("get_history")
 
     @pytest.mark.asyncio
     async def test_make_request_timeout_retry(self, data_fetcher: DataFetcher) -> None:
@@ -198,7 +198,7 @@ class TestDataFetcher:
             with patch('asyncio.sleep'):
                 async with data_fetcher:
                     with pytest.raises(httpx.TimeoutException):
-                        await data_fetcher._make_request("get_history")
+                        _ = await data_fetcher._make_request("get_history")
                 
                 # Should attempt max_retries + 1 times (4 total)
                 assert mock_client.get.call_count == 4

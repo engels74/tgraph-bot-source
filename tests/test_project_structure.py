@@ -88,7 +88,7 @@ class TestDependencies:
     def test_required_dependencies_importable(self, module_name: str) -> None:
         """Test that required dependencies can be imported."""
         try:
-            importlib.import_module(module_name)
+            _ = importlib.import_module(module_name)
         except ImportError as e:
             pytest.fail(f"Failed to import required dependency {module_name}: {e}")
     

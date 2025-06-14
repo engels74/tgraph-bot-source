@@ -108,13 +108,16 @@ class DataFetcher:
                 if not isinstance(data, dict):
                     raise ValueError("Invalid API response format")
 
-                response_data = data.get("response", {})
+                response_data: dict[str, object] = data.get("response", {})
                 if response_data.get("result") != "success":
-                    error_msg = response_data.get("message", "Unknown API error")
+                    error_msg: str = response_data.get("message", "Unknown API error")  # pyright: ignore[reportAssignmentType]
                     raise ValueError(f"API error: {error_msg}")
 
                 logger.debug(f"Successfully fetched data from {endpoint}")
-                return response_data.get("data", {})
+                data_result = response_data.get("data", {})
+                if not isinstance(data_result, dict):
+                    raise ValueError("API response data is not a dictionary")
+                return data_result
                 
             except httpx.TimeoutException:
                 logger.warning(f"Timeout on attempt {attempt + 1} for {endpoint}")

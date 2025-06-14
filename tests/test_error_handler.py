@@ -300,7 +300,7 @@ class TestErrorDecorators:
             raise ConfigurationError("Permanent config error")
         
         with pytest.raises(ConfigurationError):
-            await test_function()
+            _ = await test_function()
     
     @pytest.mark.asyncio
     async def test_command_error_handler_decorator(self) -> None:

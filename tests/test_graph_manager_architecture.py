@@ -144,7 +144,7 @@ class TestGraphManagerArchitecture:
         
         # Test error when components not initialized
         with pytest.raises(RuntimeError, match="GraphManager components not initialized"):
-            await graph_manager.generate_all_graphs()
+            _ = await graph_manager.generate_all_graphs()
 
     def test_architecture_interfaces(self) -> None:
         """Test that GraphManager has the expected interface methods."""

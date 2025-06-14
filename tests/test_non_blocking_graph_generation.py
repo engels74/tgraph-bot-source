@@ -343,7 +343,7 @@ class TestNonBlockingGraphGeneration:
                 async with graph_manager:
                     # Test with short timeout
                     with pytest.raises(asyncio.TimeoutError):
-                        await graph_manager.generate_all_graphs(timeout_seconds=0.5)
+                        _ = await graph_manager.generate_all_graphs(timeout_seconds=0.5)
 
     @pytest.mark.asyncio
     async def test_memory_stability_under_load(
@@ -386,10 +386,10 @@ class TestNonBlockingGraphGeneration:
                 async with graph_manager:
                     # Generate graphs multiple times
                     for i in range(10):
-                        await graph_manager.generate_all_graphs()
+                        _ = await graph_manager.generate_all_graphs()
 
                         # Force garbage collection
-                        gc.collect()
+                        _ = gc.collect()
 
                         # Check memory usage periodically
                         if i % 3 == 0:
@@ -445,7 +445,7 @@ class TestNonBlockingGraphGeneration:
                     # Start graph generation (should fail)
                     with pytest.raises(GraphGenerationError):
                         graph_task = asyncio.create_task(graph_manager.generate_all_graphs())
-                        await asyncio.gather(graph_task, monitor_task, return_exceptions=True)
+                        _ = await asyncio.gather(graph_task, monitor_task, return_exceptions=True)
 
                     # Verify monitor completed (proving event loop wasn't blocked during error)
                     assert error_counter == 30, f"Error monitor only completed {error_counter}/30 iterations"

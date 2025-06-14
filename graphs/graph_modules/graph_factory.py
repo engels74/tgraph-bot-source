@@ -52,7 +52,8 @@ class GraphFactory:
             if hasattr(self.config, key):
                 return bool(getattr(self.config, key))
             elif isinstance(self.config, dict):
-                return bool(self.config.get(key, default))
+                config_dict: dict[str, object] = self.config
+                return bool(config_dict.get(key, default))
             return default
 
         if get_config_value('ENABLE_DAILY_PLAY_COUNT'):
@@ -131,7 +132,8 @@ class GraphFactory:
             if hasattr(self.config, key):
                 return bool(getattr(self.config, key))
             elif isinstance(self.config, dict):
-                return bool(self.config.get(key, default))
+                config_dict: dict[str, object] = self.config
+                return bool(config_dict.get(key, default))
             return default
 
         # Check each graph type directly from config attributes
