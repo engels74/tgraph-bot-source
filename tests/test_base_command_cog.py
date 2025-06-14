@@ -6,6 +6,7 @@ to ensure proper cooldown management, error handling, and configuration access.
 """
 
 import time
+from typing import cast
 from unittest.mock import Mock
 
 import discord
@@ -49,7 +50,7 @@ class TestBaseCommandCog:
 
     def setup_method(self) -> None:
         """Set up test fixtures."""
-        self.mock_bot = Mock(spec=commands.Bot)
+        self.mock_bot = cast(commands.Bot, Mock(spec=commands.Bot))
         self.cooldown_config = BaseCooldownConfig(
             user_cooldown_config_key="TEST_COOLDOWN_MINUTES",
             global_cooldown_config_key="TEST_GLOBAL_COOLDOWN_SECONDS"
@@ -79,10 +80,10 @@ class TestBaseCommandCog:
         """Test tgraph_bot property with valid TGraphBot instance."""
         # Import here to avoid circular imports in test
         from main import TGraphBot
-        
-        mock_tgraph_bot = Mock(spec=TGraphBot)
+
+        mock_tgraph_bot = cast(TGraphBot, Mock(spec=TGraphBot))
         cog = BaseCommandCog(mock_tgraph_bot)
-        
+
         assert cog.tgraph_bot == mock_tgraph_bot
 
     def test_tgraph_bot_property_failure(self) -> None:
@@ -132,10 +133,10 @@ class TestBaseCommandCog:
         # Mock config
         mock_config = Mock()
         mock_config.TEST_GLOBAL_COOLDOWN_SECONDS = 60
-        
+
         cog.get_current_config = Mock(return_value=mock_config)  # type: ignore[method-assign]
-        
-        mock_interaction = Mock(spec=discord.Interaction)
+
+        mock_interaction = cast(discord.Interaction, Mock(spec=discord.Interaction))
         
         is_on_cooldown, retry_after = cog.check_cooldowns(mock_interaction)
         
@@ -160,8 +161,8 @@ class TestBaseCommandCog:
         mock_config.TEST_GLOBAL_COOLDOWN_SECONDS = 60
         
         cog.get_current_config = Mock(return_value=mock_config)  # type: ignore[method-assign]
-        
-        mock_interaction = Mock(spec=discord.Interaction)
+
+        mock_interaction = cast(discord.Interaction, Mock(spec=discord.Interaction))
         mock_interaction.user.id = 12345
         
         current_time = time.time()
@@ -177,9 +178,12 @@ class TestBaseCommandCog:
         """Test error context creation."""
         cog = BaseCommandCog(self.mock_bot)
         
-        mock_interaction = Mock(spec=discord.Interaction)
+        mock_interaction = Mock()
+        mock_interaction.user = Mock()
         mock_interaction.user.id = 12345
+        mock_interaction.guild = Mock()
         mock_interaction.guild.id = 67890
+        mock_interaction.channel = Mock()
         mock_interaction.channel.id = 11111
         
         context = cog.create_error_context(
@@ -199,9 +203,11 @@ class TestBaseCommandCog:
         """Test error context creation without guild."""
         cog = BaseCommandCog(self.mock_bot)
         
-        mock_interaction = Mock(spec=discord.Interaction)
+        mock_interaction = Mock()
+        mock_interaction.user = Mock()
         mock_interaction.user.id = 12345
         mock_interaction.guild = None
+        mock_interaction.channel = Mock()
         mock_interaction.channel.id = 11111
         
         context = cog.create_error_context(mock_interaction, "test_command")
@@ -215,9 +221,12 @@ class TestBaseCommandCog:
         """Test that handle_command_error creates proper error context."""
         cog = BaseCommandCog(self.mock_bot)
 
-        mock_interaction = Mock(spec=discord.Interaction)
+        mock_interaction = Mock()
+        mock_interaction.user = Mock()
         mock_interaction.user.id = 12345
+        mock_interaction.guild = Mock()
         mock_interaction.guild.id = 67890
+        mock_interaction.channel = Mock()
         mock_interaction.channel.id = 11111
 
         # Test the context creation part directly

@@ -313,7 +313,7 @@ class TestErrorDecorators:
         interaction.channel.id = 789
         
         @command_error_handler()
-        async def test_command(_self: Mock, interaction: discord.Interaction) -> None:
+        async def test_command(_self: Mock, _interaction: discord.Interaction) -> None:
             raise ValueError("Test error")
         
         mock_self = Mock()

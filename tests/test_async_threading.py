@@ -41,8 +41,8 @@ class TestAsyncThreading:
             mock_data_fetcher = AsyncMock()
             mock_graph_factory = MagicMock()
             
-            graph_manager._data_fetcher = mock_data_fetcher
-            graph_manager._graph_factory = mock_graph_factory
+            graph_manager._data_fetcher = mock_data_fetcher  # pyright: ignore[reportPrivateUsage]
+            graph_manager._graph_factory = mock_graph_factory  # pyright: ignore[reportPrivateUsage]
             
             # Mock the data fetching
             mock_data_fetcher.get_play_history.return_value = {"data": []}  # pyright: ignore[reportAny]
@@ -90,8 +90,8 @@ class TestAsyncThreading:
             mock_data_fetcher = AsyncMock()
             mock_graph_factory = MagicMock()
             
-            user_graph_manager._data_fetcher = mock_data_fetcher
-            user_graph_manager._graph_factory = mock_graph_factory
+            user_graph_manager._data_fetcher = mock_data_fetcher  # pyright: ignore[reportPrivateUsage]
+            user_graph_manager._graph_factory = mock_graph_factory  # pyright: ignore[reportPrivateUsage]
             
             # Mock the data fetching methods
             mock_data_fetcher.get_play_history.return_value = {"data": []}  # pyright: ignore[reportAny]
@@ -163,8 +163,8 @@ class TestAsyncThreading:
             mock_data_fetcher = AsyncMock()
             mock_graph_factory = MagicMock()
             
-            graph_manager._data_fetcher = mock_data_fetcher
-            graph_manager._graph_factory = mock_graph_factory
+            graph_manager._data_fetcher = mock_data_fetcher  # pyright: ignore[reportPrivateUsage]
+            graph_manager._graph_factory = mock_graph_factory  # pyright: ignore[reportPrivateUsage]
             
             mock_data_fetcher.get_play_history.return_value = {"data": []}  # pyright: ignore[reportAny]
             
