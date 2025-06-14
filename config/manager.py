@@ -8,9 +8,11 @@ import tempfile
 import threading
 import time
 from pathlib import Path
-from typing import Callable, override
+from typing import Callable, override, TYPE_CHECKING, Optional, Any
 from watchdog.events import FileSystemEventHandler, FileSystemEvent
-from watchdog.observers import Observer
+
+if TYPE_CHECKING:
+    from watchdog.observers import Observer
 
 
 
@@ -69,7 +71,7 @@ class ConfigManager:
         self._current_config: TGraphBotConfig | None = None
         self._config_lock: threading.RLock = threading.RLock()
         self._change_callbacks: list[Callable[[TGraphBotConfig, TGraphBotConfig], None]] = []
-        self._file_observer: Observer | None = None  # pyright: ignore[reportInvalidTypeForm]
+        self._file_observer: Any = None  # Observer | None
         self._monitored_file: Path | None = None
 
     @staticmethod
@@ -102,7 +104,7 @@ class ConfigManager:
         elif isinstance(raw_config_data, dict):
             config_data = raw_config_data  # pyright: ignore[reportUnknownVariableType]
         else:
-            raise ValueError(f"Configuration file must contain a YAML dictionary, got {type(raw_config_data)}")
+            raise ValueError(f"Configuration file must contain a YAML dictionary, got {type(raw_config_data).__name__}")
 
         # Parse configuration using match statement for specific fields
         parsed_data = ConfigManager._parse_config_data(config_data)
@@ -570,10 +572,11 @@ MY_STATS_GLOBAL_COOLDOWN_SECONDS: 60
             config_path: Path to the configuration file to monitor
         """
         with self._config_lock:
-            if self._file_observer is not None:  # pyright: ignore[reportUnknownMemberType]
+            if self._file_observer is not None:
                 self.stop_file_monitoring()
 
             self._monitored_file = config_path.resolve()
+            from watchdog.observers import Observer
             observer = Observer()
             self._file_observer = observer
 
@@ -591,8 +594,8 @@ MY_STATS_GLOBAL_COOLDOWN_SECONDS: 60
         """Stop monitoring the configuration file for changes."""
         with self._config_lock:
             if self._file_observer is not None:
-                self._file_observer.stop()  # pyright: ignore[reportUnknownMemberType]
-                self._file_observer.join()  # pyright: ignore[reportUnknownMemberType]
+                self._file_observer.stop()
+                self._file_observer.join()
                 self._file_observer = None
                 self._monitored_file = None
 

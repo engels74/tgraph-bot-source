@@ -7,7 +7,7 @@ for viewing and modifying bot configuration settings with live editing capabilit
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import discord
 from discord import app_commands
@@ -45,7 +45,7 @@ class ConfigCog(BaseCommandCog):
         # Create configuration helper
         self.config_helper: ConfigurationHelper = ConfigurationHelper(self.tgraph_bot.config_manager)
 
-    def _convert_config_value(self, value: str, target_type: type[object]) -> object:
+    def _convert_config_value(self, value: str, target_type: type[Any]) -> Any:
         """
         Convert a string value to the appropriate configuration type.
 
@@ -213,19 +213,19 @@ class ConfigCog(BaseCommandCog):
                 )
 
             # Get the current value and type
-            current_value = getattr(current_config, setting)  # pyright: ignore[reportAny]
+            current_value = getattr(current_config, setting)
 
             # Convert the string value to the appropriate type
             try:
-                converted_value = self._convert_config_value(value, type(current_value))  # pyright: ignore[reportAny]
+                converted_value = self._convert_config_value(value, type(current_value))
             except ValueError as e:
                 raise TGraphValidationError(
                     f"Invalid value for setting '{setting}': {e}",
-                    user_message=f"Invalid value for `{setting}`: {e}. Current value: {current_value} (type: {type(current_value).__name__})"
+                    user_message=f"Invalid value for `{setting}`: {e}. Current value: {current_value!r} (type: {type(current_value).__name__})"
                 )
 
             # Create updated configuration data
-            config_data: dict[str, object] = current_config.model_dump()
+            config_data: dict[str, Any] = current_config.model_dump()
             config_data[setting] = converted_value
 
             # Validate the new configuration
