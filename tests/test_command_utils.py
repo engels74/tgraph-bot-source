@@ -4,7 +4,6 @@ Tests for command utility functions in TGraph Bot.
 This module tests utility functions for Discord command formatting,
 argument parsing, response handling, and interaction management.
 """
-# pyright: reportPrivateUsage=false, reportAny=false
 
 from unittest.mock import AsyncMock, MagicMock
 
@@ -240,8 +239,8 @@ class TestInteractionUtilities:
         interaction = MagicMock(spec=discord.Interaction)
         interaction.response = MagicMock()
         interaction.followup = AsyncMock()
-        interaction.response.send_message = AsyncMock()
-        interaction.response.is_done = MagicMock(return_value=False)
+        interaction.response.send_message = AsyncMock()  # pyright: ignore[reportAny]
+        interaction.response.is_done = MagicMock(return_value=False)  # pyright: ignore[reportAny]
         return interaction
 
     @pytest.mark.asyncio
@@ -256,7 +255,7 @@ class TestInteractionUtilities:
         )
         
         assert result is True
-        mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportFunctionMemberAccess]
+        mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportAny, reportFunctionMemberAccess]
 
     @pytest.mark.asyncio
     async def test_safe_interaction_response_followup(self, mock_interaction: discord.Interaction) -> None:
@@ -270,7 +269,7 @@ class TestInteractionUtilities:
         )
         
         assert result is True
-        mock_interaction.followup.send.assert_called_once()  # pyright: ignore[reportFunctionMemberAccess]
+        mock_interaction.followup.send.assert_called_once()  # pyright: ignore[reportAny, reportFunctionMemberAccess]
 
     @pytest.mark.asyncio
     async def test_send_error_response(self, mock_interaction: discord.Interaction) -> None:
@@ -282,7 +281,7 @@ class TestInteractionUtilities:
         )
         
         assert result is True
-        mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportFunctionMemberAccess]
+        mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportAny, reportFunctionMemberAccess]
 
     @pytest.mark.asyncio
     async def test_send_success_response(self, mock_interaction: discord.Interaction) -> None:
@@ -294,7 +293,7 @@ class TestInteractionUtilities:
         )
         
         assert result is True
-        mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportFunctionMemberAccess]
+        mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportAny, reportFunctionMemberAccess]
 
 
 class TestPermissionUtilities:
@@ -312,9 +311,9 @@ class TestPermissionUtilities:
         """Test permission check for guild owner."""
         interaction = MagicMock(spec=discord.Interaction)
         interaction.guild = MagicMock()
-        interaction.guild.owner_id = 123456789
+        interaction.guild.owner_id = 123456789  # pyright: ignore[reportAny]
         interaction.user = MagicMock()
-        interaction.user.id = 123456789
+        interaction.user.id = 123456789  # pyright: ignore[reportAny]
         
         result = check_manage_guild_permission(interaction)
         assert result is True
@@ -323,11 +322,11 @@ class TestPermissionUtilities:
         """Test permission check for member with manage guild permission."""
         interaction = MagicMock(spec=discord.Interaction)
         interaction.guild = MagicMock()
-        interaction.guild.owner_id = 987654321
+        interaction.guild.owner_id = 987654321  # pyright: ignore[reportAny]
         interaction.user = MagicMock()
-        interaction.user.id = 123456789
-        interaction.user.guild_permissions = MagicMock()
-        interaction.user.guild_permissions.manage_guild = True
+        interaction.user.id = 123456789  # pyright: ignore[reportAny]
+        interaction.user.guild_permissions = MagicMock()  # pyright: ignore[reportAny]
+        interaction.user.guild_permissions.manage_guild = True  # pyright: ignore[reportAny]
         
         result = check_manage_guild_permission(interaction)
         assert result is True
