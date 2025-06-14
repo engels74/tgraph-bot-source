@@ -198,12 +198,12 @@ Examples:
 
     # Convert to type-safe container - argparse returns Any types
     # Add explicit type annotations to help type checker
-    locale_dir: Path = args.locale_dir
-    language: str | None = args.language
-    force: bool = args.force
-    check_only: bool = args.check_only
-    verbose: bool = args.verbose
-    dry_run: bool = args.dry_run
+    locale_dir: Path = args.locale_dir  # pyright: ignore[reportAny]
+    language: str | None = args.language  # pyright: ignore[reportAny]
+    force: bool = args.force  # pyright: ignore[reportAny]
+    check_only: bool = args.check_only  # pyright: ignore[reportAny]
+    verbose: bool = args.verbose  # pyright: ignore[reportAny]
+    dry_run: bool = args.dry_run  # pyright: ignore[reportAny]
     
     return CompileArgs(
         locale_dir=locale_dir,

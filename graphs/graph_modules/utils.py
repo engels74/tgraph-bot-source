@@ -12,10 +12,42 @@ from collections import defaultdict
 from collections.abc import Mapping
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import TypeVar, TYPE_CHECKING, Any
+from typing import TypeVar, TYPE_CHECKING, Any, TypedDict
 
 if TYPE_CHECKING:
-    from config.schema import TGraphBotConfig
+    pass
+
+
+# Type definitions for processed data structures
+class ProcessedPlayRecord(TypedDict):
+    """Structure for processed play history records."""
+    date: str
+    user: str
+    platform: str
+    media_type: str
+    duration: int
+    stopped: int
+    paused_counter: int
+    datetime: datetime
+
+
+class UserAggregateRecord(TypedDict):
+    """Structure for aggregated user data."""
+    username: str
+    play_count: int
+
+
+class PlatformAggregateRecord(TypedDict):
+    """Structure for aggregated platform data."""
+    platform: str
+    play_count: int
+
+
+# Type aliases for common data structures
+GraphData = dict[str, int] | list[dict[str, Any]]
+ProcessedRecords = list[ProcessedPlayRecord]
+UserAggregates = list[UserAggregateRecord]
+PlatformAggregates = list[PlatformAggregateRecord]
 
 logger = logging.getLogger(__name__)
 
@@ -242,7 +274,7 @@ def validate_color(color: str) -> bool:
 
 # Data Processing Utilities for Graph Generation
 
-def validate_graph_data(data: Mapping[str, Any], required_keys: list[str]) -> tuple[bool, str]:
+def validate_graph_data(data: Mapping[str, object], required_keys: list[str]) -> tuple[bool, str]:
     """
     Validate that graph data contains all required keys.
 
@@ -263,7 +295,7 @@ def validate_graph_data(data: Mapping[str, Any], required_keys: list[str]) -> tu
     return True, ""
 
 
-def safe_get_nested_value(data: Mapping[str, Any], keys: list[str], default: Any = None) -> Any:
+def safe_get_nested_value(data: Mapping[str, object], keys: list[str], default: object = None) -> object:
     """
     Safely get a nested value from a dictionary using a list of keys.
 
@@ -275,7 +307,7 @@ def safe_get_nested_value(data: Mapping[str, Any], keys: list[str], default: Any
     Returns:
         The value at the key path, or default if not found
     """
-    current: Any = data
+    current: object = data
     for key in keys:
         if isinstance(current, dict) and key in current:
             current = current[key]
@@ -284,7 +316,7 @@ def safe_get_nested_value(data: Mapping[str, Any], keys: list[str], default: Any
     return current
 
 
-def process_play_history_data(raw_data: Mapping[str, Any]) -> list[dict[str, Any]]:
+def process_play_history_data(raw_data: Mapping[str, object]) -> ProcessedRecords:
     """
     Process raw play history data from Tautulli API into a standardized format.
 
@@ -303,7 +335,7 @@ def process_play_history_data(raw_data: Mapping[str, Any]) -> list[dict[str, Any
     if not isinstance(history_data, list):
         raise ValueError("Play history data must be a list")
 
-    processed_records: list[dict[str, Any]] = []
+    processed_records: ProcessedRecords = []
 
     for record in history_data:
         if not isinstance(record, dict):
@@ -312,7 +344,7 @@ def process_play_history_data(raw_data: Mapping[str, Any]) -> list[dict[str, Any
 
         try:
             # Extract and validate required fields
-            processed_record: dict[str, Any] = {
+            processed_record: dict[str, object] = {
                 'date': safe_get_nested_value(record, ['date'], ''),
                 'user': safe_get_nested_value(record, ['user'], ''),
                 'platform': safe_get_nested_value(record, ['platform'], ''),
@@ -342,7 +374,8 @@ def process_play_history_data(raw_data: Mapping[str, Any]) -> list[dict[str, Any
                 logger.warning("Missing date in record")
                 continue
 
-            processed_records.append(processed_record)
+            # Add to processed records - cast to correct type
+            processed_records.append(processed_record)  # type: ignore[arg-type]
 
         except Exception as e:
             logger.warning(f"Error processing record: {e}")
@@ -352,7 +385,7 @@ def process_play_history_data(raw_data: Mapping[str, Any]) -> list[dict[str, Any
     return processed_records
 
 
-def aggregate_by_date(records: list[dict[str, Any]]) -> dict[str, int]:
+def aggregate_by_date(records: ProcessedRecords) -> dict[str, int]:
     """
     Aggregate play records by date.
 
@@ -365,14 +398,14 @@ def aggregate_by_date(records: list[dict[str, Any]]) -> dict[str, int]:
     date_counts: dict[str, int] = defaultdict(int)
 
     for record in records:
-        if 'datetime' in record and isinstance(record['datetime'], datetime):
+        if 'datetime' in record:
             date_str = record['datetime'].strftime('%Y-%m-%d')
             date_counts[date_str] += 1
 
     return dict(date_counts)
 
 
-def aggregate_by_day_of_week(records: list[dict[str, Any]]) -> dict[str, int]:
+def aggregate_by_day_of_week(records: ProcessedRecords) -> dict[str, int]:
     """
     Aggregate play records by day of week.
 
@@ -386,14 +419,14 @@ def aggregate_by_day_of_week(records: list[dict[str, Any]]) -> dict[str, int]:
     day_counts: dict[str, int] = {day: 0 for day in day_names}
 
     for record in records:
-        if 'datetime' in record and isinstance(record['datetime'], datetime):
+        if 'datetime' in record:
             day_name = day_names[record['datetime'].weekday()]
             day_counts[day_name] += 1
 
     return day_counts
 
 
-def aggregate_by_hour_of_day(records: list[dict[str, Any]]) -> dict[int, int]:
+def aggregate_by_hour_of_day(records: ProcessedRecords) -> dict[int, int]:
     """
     Aggregate play records by hour of day.
 
@@ -406,14 +439,14 @@ def aggregate_by_hour_of_day(records: list[dict[str, Any]]) -> dict[int, int]:
     hour_counts: dict[int, int] = {hour: 0 for hour in range(24)}
 
     for record in records:
-        if 'datetime' in record and isinstance(record['datetime'], datetime):
+        if 'datetime' in record:
             hour = record['datetime'].hour
             hour_counts[hour] += 1
 
     return hour_counts
 
 
-def aggregate_by_month(records: list[dict[str, Any]]) -> dict[str, int]:
+def aggregate_by_month(records: ProcessedRecords) -> dict[str, int]:
     """
     Aggregate play records by month.
 
@@ -426,14 +459,14 @@ def aggregate_by_month(records: list[dict[str, Any]]) -> dict[str, int]:
     month_counts: dict[str, int] = defaultdict(int)
 
     for record in records:
-        if 'datetime' in record and isinstance(record['datetime'], datetime):
+        if 'datetime' in record:
             month_str = record['datetime'].strftime('%Y-%m')
             month_counts[month_str] += 1
 
     return dict(month_counts)
 
 
-def aggregate_top_users(records: list[dict[str, Any]], limit: int = 10, censor: bool = True) -> list[dict[str, Any]]:
+def aggregate_top_users(records: ProcessedRecords, limit: int = 10, censor: bool = True) -> UserAggregates:
     """
     Aggregate play records to get top users by play count.
 
@@ -449,13 +482,13 @@ def aggregate_top_users(records: list[dict[str, Any]], limit: int = 10, censor: 
 
     for record in records:
         username = record.get('user', 'Unknown')
-        if username and isinstance(username, str):
+        if username:
             user_counts[username] += 1
 
     # Sort by play count and take top N
     sorted_users = sorted(user_counts.items(), key=lambda x: x[1], reverse=True)[:limit]
 
-    result: list[dict[str, Any]] = []
+    result: UserAggregates = []
     for username, count in sorted_users:
         processed_username = censor_username(username) if censor else username
         result.append({
@@ -466,7 +499,7 @@ def aggregate_top_users(records: list[dict[str, Any]], limit: int = 10, censor: 
     return result
 
 
-def aggregate_top_platforms(records: list[dict[str, Any]], limit: int = 10) -> list[dict[str, Any]]:
+def aggregate_top_platforms(records: ProcessedRecords, limit: int = 10) -> PlatformAggregates:
     """
     Aggregate play records to get top platforms by play count.
 
@@ -481,13 +514,13 @@ def aggregate_top_platforms(records: list[dict[str, Any]], limit: int = 10) -> l
 
     for record in records:
         platform = record.get('platform', 'Unknown')
-        if platform and isinstance(platform, str):
+        if platform:
             platform_counts[platform] += 1
 
     # Sort by play count and take top N
     sorted_platforms = sorted(platform_counts.items(), key=lambda x: x[1], reverse=True)[:limit]
 
-    result: list[dict[str, Any]] = []
+    result: PlatformAggregates = []
     for platform, count in sorted_platforms:
         result.append({
             'platform': platform,
@@ -497,7 +530,7 @@ def aggregate_top_platforms(records: list[dict[str, Any]], limit: int = 10) -> l
     return result
 
 
-def handle_empty_data(graph_type: str) -> dict[str, Any] | list[dict[str, Any]]:
+def handle_empty_data(graph_type: str) -> GraphData:
     """
     Generate appropriate empty data structure for different graph types.
 

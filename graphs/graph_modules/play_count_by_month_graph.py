@@ -144,10 +144,10 @@ class PlayCountByMonthGraph(BaseGraph):
 
                 # Add value annotations if enabled
                 if self.config and getattr(self.config, 'ENABLE_ANNOTATION_OUTLINE', False):
-                    numeric_values = [v for v in month_counts.values() if isinstance(v, (int, float))]
+                    numeric_values = list(month_counts.values())
                     max_count = max(numeric_values) if numeric_values else 1
                     for i, (month, count) in enumerate(sorted_months):
-                        if isinstance(count, (int, float)) and count > 0:
+                        if count > 0:
                             _ = ax.text(  # pyright: ignore[reportUnknownMemberType]
                                 i, count + max_count * 0.01,
                                 f'{int(count)}',

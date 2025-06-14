@@ -145,14 +145,14 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
             # Add value annotations if enabled (check for annotation settings)
             if self.config and getattr(self.config, 'ENABLE_ANNOTATION_OUTLINE', False):
                 # Ensure we have numeric values for max calculation
-                numeric_values = [v for v in day_counts.values() if isinstance(v, (int, float))]
+                numeric_values = list(day_counts.values())
                 max_count = max(numeric_values) if numeric_values else 1
                 for bar in ax.patches:
                     # Use type ignores for matplotlib patch attributes
                     height = bar.get_height()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
                     if height and height > 0:  # Only annotate non-zero values
-                        _ = ax.text(  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
-                            bar.get_x() + bar.get_width()/2.,  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+                        _ = ax.text(
+                            bar.get_x() + bar.get_width()/2.,  # pyright: ignore[reportAttributeAccessIssue]
                             height + max_count * 0.01,  # pyright: ignore[reportUnknownArgumentType]
                             f'{int(height)}',  # pyright: ignore[reportUnknownArgumentType]
                             ha='center', va='bottom', fontsize=10, fontweight='bold'

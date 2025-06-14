@@ -12,13 +12,67 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any
+from typing import TypedDict
 from types import TracebackType
 from urllib.parse import urljoin
 
 import httpx
 
 logger = logging.getLogger(__name__)
+
+
+# Type definitions for Tautulli API responses
+class TautulliResponse(TypedDict):
+    """Base structure for Tautulli API responses."""
+    response: dict[str, object]
+
+
+class PlayHistoryRecord(TypedDict, total=False):
+    """Structure for individual play history records."""
+    date: str
+    tv_plays: int
+    movie_plays: int
+    music_plays: int
+    total_plays: int
+    duration: int
+    user: str
+    platform: str
+    title: str
+    media_type: str
+    user_id: int
+    friendly_name: str
+
+
+class UserRecord(TypedDict, total=False):
+    """Structure for user records."""
+    user_id: int
+    username: str
+    friendly_name: str
+    email: str
+    thumb: str
+    is_active: int
+
+
+class PlatformRecord(TypedDict, total=False):
+    """Structure for platform records."""
+    platform: str
+    total_plays: int
+    total_duration: int
+
+
+class LibraryRecord(TypedDict, total=False):
+    """Structure for library records."""
+    section_id: int
+    section_name: str
+    section_type: str
+    count: int
+    parent_count: int
+    child_count: int
+
+
+# Type aliases for common data structures
+TautulliData = dict[str, object]
+CacheData = dict[str, TautulliData]
 
 
 class DataFetcher:
@@ -45,7 +99,7 @@ class DataFetcher:
         self.timeout: float = timeout
         self.max_retries: int = max_retries
         self._client: httpx.AsyncClient | None = None
-        self._cache: dict[str, Any] = {}
+        self._cache: CacheData = {}
 
     async def __aenter__(self) -> DataFetcher:
         """Async context manager entry."""
@@ -67,7 +121,7 @@ class DataFetcher:
         self,
         endpoint: str,
         params: dict[str, str | int | float | bool] | None = None
-    ) -> dict[str, object]:
+    ) -> TautulliData:
         """
         Make an authenticated request to the Tautulli API.
         
@@ -142,7 +196,7 @@ class DataFetcher:
         self,
         time_range: int = 30,
         user_id: int | None = None
-    ) -> dict[str, object]:
+    ) -> TautulliData:
         """
         Fetch play history data from Tautulli.
         
@@ -158,8 +212,7 @@ class DataFetcher:
         if cache_key in self._cache:
             logger.debug(f"Using cached data for {cache_key}")
             cached_data = self._cache[cache_key]
-            if isinstance(cached_data, dict):
-                return cached_data
+            return cached_data
             
         params: dict[str, str | int | float | bool] = {
             "length": 1000,  # Maximum number of records
@@ -176,13 +229,13 @@ class DataFetcher:
         
         return data
         
-    async def get_user_stats(self, user_id: int) -> dict[str, object]:
+    async def get_user_stats(self, user_id: int) -> TautulliData:
         """
         Fetch statistics for a specific user.
-        
+
         Args:
             user_id: The user ID to fetch stats for
-            
+
         Returns:
             User statistics data as a dictionary
         """
@@ -191,8 +244,7 @@ class DataFetcher:
         if cache_key in self._cache:
             logger.debug(f"Using cached data for {cache_key}")
             cached_data = self._cache[cache_key]
-            if isinstance(cached_data, dict):
-                return cached_data
+            return cached_data
             
         data = await self._make_request("get_user", {"user_id": user_id})
         
@@ -201,10 +253,10 @@ class DataFetcher:
         
         return data
         
-    async def get_library_stats(self) -> dict[str, object]:
+    async def get_library_stats(self) -> TautulliData:
         """
         Fetch library statistics.
-        
+
         Returns:
             Library statistics data as a dictionary
         """
@@ -213,8 +265,7 @@ class DataFetcher:
         if cache_key in self._cache:
             logger.debug(f"Using cached data for {cache_key}")
             cached_data = self._cache[cache_key]
-            if isinstance(cached_data, dict):
-                return cached_data
+            return cached_data
             
         data = await self._make_request("get_libraries")
         
@@ -223,7 +274,7 @@ class DataFetcher:
         
         return data
         
-    async def get_users(self) -> dict[str, object]:
+    async def get_users(self) -> TautulliData:
         """
         Fetch all users from Tautulli.
 
@@ -235,8 +286,7 @@ class DataFetcher:
         if cache_key in self._cache:
             logger.debug(f"Using cached data for {cache_key}")
             cached_data = self._cache[cache_key]
-            if isinstance(cached_data, dict):
-                return cached_data
+            return cached_data
 
         data = await self._make_request("get_users")
 
@@ -245,7 +295,7 @@ class DataFetcher:
 
         return data
 
-    async def find_user_by_email(self, email: str) -> dict[str, object] | None:
+    async def find_user_by_email(self, email: str) -> UserRecord | None:
         """
         Find a user by their email address.
 
@@ -258,14 +308,14 @@ class DataFetcher:
         users_data = await self.get_users()
 
         # The API returns a dict with a 'data' key containing the list of users
-        if isinstance(users_data, dict):
-            users_list = users_data.get("data", [])
-            if isinstance(users_list, list):
-                for user in users_list:
-                    if isinstance(user, dict):
-                        user_email = user.get("email")
-                        if user_email == email:
-                            return user
+        users_list = users_data.get("data", [])
+        if isinstance(users_list, list):
+            for user in users_list:
+                if isinstance(user, dict):
+                    user_email = user.get("email")
+                    if user_email == email:
+                        # Return user data - cast to correct type
+                        return user  # type: ignore[return-value]
 
         logger.warning(f"User not found with email: {email}")
         return None

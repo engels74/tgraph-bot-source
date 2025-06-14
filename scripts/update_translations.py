@@ -156,13 +156,13 @@ Examples:
 
     # Convert to type-safe container - argparse returns Any types
     # Add explicit type annotations to help type checker
-    pot_file: Path = args.pot_file
-    locale_dir: Path = args.locale_dir
-    language: str | None = args.language
-    no_preserve: bool = args.no_preserve
-    compile_flag: bool = args.compile
-    verbose: bool = args.verbose
-    dry_run: bool = args.dry_run
+    pot_file: Path = args.pot_file  # pyright: ignore[reportAny]
+    locale_dir: Path = args.locale_dir  # pyright: ignore[reportAny]
+    language: str | None = args.language  # pyright: ignore[reportAny]
+    no_preserve: bool = args.no_preserve  # pyright: ignore[reportAny]
+    compile_flag: bool = args.compile  # pyright: ignore[reportAny]
+    verbose: bool = args.verbose  # pyright: ignore[reportAny]
+    dry_run: bool = args.dry_run  # pyright: ignore[reportAny]
     
     return UpdateArgs(
         pot_file=pot_file,
