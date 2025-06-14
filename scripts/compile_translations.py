@@ -26,8 +26,19 @@ import argparse
 import logging
 import sys
 from pathlib import Path
+from typing import NamedTuple
 
 from utils.i18n_utils import compile_po_to_mo
+
+
+class CompileArgs(NamedTuple):
+    """Type-safe container for command-line arguments."""
+    locale_dir: Path
+    language: str | None
+    force: bool
+    check_only: bool
+    verbose: bool
+    dry_run: bool
 
 
 def setup_logging(verbose: bool = False) -> None:
@@ -126,12 +137,12 @@ def compile_file(po_file: Path, force: bool = False, dry_run: bool = False) -> b
         raise
 
 
-def parse_arguments() -> argparse.Namespace:
+def parse_arguments() -> CompileArgs:
     """
     Parse command-line arguments.
 
     Returns:
-        Parsed arguments namespace
+        Parsed arguments in a type-safe container
     """
     parser = argparse.ArgumentParser(
         description='Compile translation files from .po to .mo format',
@@ -183,7 +194,17 @@ Examples:
         help='Show what would be done without actually compiling files'
     )
 
-    return parser.parse_args()
+    args = parser.parse_args()
+
+    # Convert to type-safe container - argparse returns Any types
+    return CompileArgs(
+        locale_dir=args.locale_dir,  # pyright: ignore[reportAny]
+        language=args.language,  # pyright: ignore[reportAny]
+        force=args.force,  # pyright: ignore[reportAny]
+        check_only=args.check_only,  # pyright: ignore[reportAny]
+        verbose=args.verbose,  # pyright: ignore[reportAny]
+        dry_run=args.dry_run  # pyright: ignore[reportAny]
+    )
 
 
 def main() -> int:
@@ -194,24 +215,24 @@ def main() -> int:
         Exit code (0 for success, 1 for error)
     """
     args = parse_arguments()
-    setup_logging(args.verbose)  # pyright: ignore[reportAny]
+    setup_logging(args.verbose)
 
     logger = logging.getLogger(__name__)
 
     try:
         # Validate locale directory
-        if not args.locale_dir.exists():  # pyright: ignore[reportAny]
-            logger.error(f"Locale directory does not exist: {args.locale_dir}")  # pyright: ignore[reportAny]
+        if not args.locale_dir.exists():
+            logger.error(f"Locale directory does not exist: {args.locale_dir}")
             return 1
 
         # Find .po files
-        po_files = find_po_files(args.locale_dir, args.language)  # pyright: ignore[reportAny]
+        po_files = find_po_files(args.locale_dir, args.language)
 
         if not po_files:
-            if args.language:  # pyright: ignore[reportAny]
-                logger.warning(f"No .po files found for language: {args.language}")  # pyright: ignore[reportAny]
+            if args.language:
+                logger.warning(f"No .po files found for language: {args.language}")
             else:
-                logger.warning(f"No .po files found in: {args.locale_dir}")  # pyright: ignore[reportAny]
+                logger.warning(f"No .po files found in: {args.locale_dir}")
             return 0
 
         logger.info(f"Found {len(po_files)} .po file(s)")
@@ -220,7 +241,7 @@ def main() -> int:
         files_to_compile = []
         for po_file in po_files:
             mo_file = po_file.with_suffix('.mo')
-            if args.force or needs_compilation(po_file, mo_file):  # pyright: ignore[reportAny]
+            if args.force or needs_compilation(po_file, mo_file):
                 files_to_compile.append(po_file)
 
         if not files_to_compile:
@@ -231,18 +252,18 @@ def main() -> int:
         for po_file in files_to_compile:
             logger.info(f"  {po_file}")
 
-        if args.check_only:  # pyright: ignore[reportAny]
+        if args.check_only:
             logger.info("CHECK ONLY: Use --force or modify .po files to trigger compilation")
             return 0
 
-        if args.dry_run:  # pyright: ignore[reportAny]
+        if args.dry_run:
             logger.info("DRY RUN: Would compile the above files")
             return 0
 
         # Compile files
         compiled_count = 0
         for po_file in files_to_compile:
-            if compile_file(po_file, args.force, args.dry_run):  # pyright: ignore[reportAny]
+            if compile_file(po_file, args.force, args.dry_run):
                 compiled_count += 1
 
         logger.info(f"Successfully compiled {compiled_count} file(s)")
@@ -253,7 +274,7 @@ def main() -> int:
         return 1
     except Exception as e:
         logger.error(f"Error during compilation: {e}")
-        if args.verbose:  # pyright: ignore[reportAny]
+        if args.verbose:
             logger.exception("Full traceback:")
         return 1
 

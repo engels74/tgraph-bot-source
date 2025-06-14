@@ -25,12 +25,24 @@ import argparse
 import logging
 import sys
 from pathlib import Path
+from typing import NamedTuple
 
 # Add the project root to the Python path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from utils.i18n_utils import update_po_file, compile_po_to_mo
+
+
+class UpdateArgs(NamedTuple):
+    """Type-safe container for command-line arguments."""
+    pot_file: Path
+    locale_dir: Path
+    language: str | None
+    no_preserve: bool
+    compile: bool
+    verbose: bool
+    dry_run: bool
 
 
 def setup_logging(verbose: bool = False) -> None:
@@ -75,12 +87,12 @@ def find_po_files(locale_dir: Path, language: str | None = None) -> list[Path]:
     return po_files
 
 
-def parse_arguments() -> argparse.Namespace:
+def parse_arguments() -> UpdateArgs:
     """
     Parse command-line arguments.
 
     Returns:
-        Parsed arguments namespace
+        Parsed arguments in a type-safe container
     """
     parser = argparse.ArgumentParser(
         description='Update translation files from .pot templates',
@@ -140,7 +152,18 @@ Examples:
         help='Show what would be done without actually updating files'
     )
 
-    return parser.parse_args()
+    args = parser.parse_args()
+
+    # Convert to type-safe container - argparse returns Any types
+    return UpdateArgs(
+        pot_file=args.pot_file,  # pyright: ignore[reportAny]
+        locale_dir=args.locale_dir,  # pyright: ignore[reportAny]
+        language=args.language,  # pyright: ignore[reportAny]
+        no_preserve=args.no_preserve,  # pyright: ignore[reportAny]
+        compile=args.compile,  # pyright: ignore[reportAny]
+        verbose=args.verbose,  # pyright: ignore[reportAny]
+        dry_run=args.dry_run  # pyright: ignore[reportAny]
+    )
 
 
 def main() -> int:
