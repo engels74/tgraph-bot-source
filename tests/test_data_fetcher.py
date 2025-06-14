@@ -25,7 +25,7 @@ class TestDataFetcher:
         )
 
     @pytest.fixture
-    def mock_successful_response(self) -> dict[str, Any]:
+    def mock_successful_response(self) -> dict[str, object]:
         """Mock successful API response."""
         return {
             "response": {
@@ -46,7 +46,7 @@ class TestDataFetcher:
         }
 
     @pytest.fixture
-    def mock_error_response(self) -> dict[str, Any]:
+    def mock_error_response(self) -> dict[str, object]:
         """Mock error API response."""
         return {
             "response": {
@@ -91,9 +91,9 @@ class TestDataFetcher:
 
     @pytest.mark.asyncio
     async def test_make_request_success(
-        self, 
-        data_fetcher: DataFetcher, 
-        mock_successful_response: dict[str, Any]
+        self,
+        data_fetcher: DataFetcher,
+        mock_successful_response: dict[str, object]
     ) -> None:
         """Test successful API request."""
         with patch('httpx.AsyncClient') as mock_client_class:
@@ -118,14 +118,16 @@ class TestDataFetcher:
             assert call_args[1]["params"]["user_id"] == 1
             
             # Verify result
-            expected_data = mock_successful_response["response"]["data"]
+            response_obj = mock_successful_response["response"]
+            assert isinstance(response_obj, dict)
+            expected_data = response_obj["data"]
             assert result == expected_data
 
     @pytest.mark.asyncio
     async def test_make_request_api_error(
-        self, 
-        data_fetcher: DataFetcher, 
-        mock_error_response: dict[str, Any]
+        self,
+        data_fetcher: DataFetcher,
+        mock_error_response: dict[str, object]
     ) -> None:
         """Test API error response handling."""
         with patch('httpx.AsyncClient') as mock_client_class:
@@ -205,13 +207,15 @@ class TestDataFetcher:
 
     @pytest.mark.asyncio
     async def test_get_play_history_success(
-        self, 
+        self,
         data_fetcher: DataFetcher,
-        mock_successful_response: dict[str, Any]
+        mock_successful_response: dict[str, object]
     ) -> None:
         """Test successful play history retrieval."""
         with patch.object(data_fetcher, '_make_request') as mock_make_request:
-            mock_make_request.return_value = mock_successful_response["response"]["data"]
+            response_obj = mock_successful_response["response"]
+            assert isinstance(response_obj, dict)
+            mock_make_request.return_value = response_obj["data"]
             
             async with data_fetcher:
                 result = await data_fetcher.get_play_history(time_range=30, user_id=1)
@@ -220,17 +224,21 @@ class TestDataFetcher:
                 "get_history", 
                 {"length": 1000, "start": 0, "user_id": 1}
             )
-            assert result == mock_successful_response["response"]["data"]
+            response_obj = mock_successful_response["response"]
+            assert isinstance(response_obj, dict)
+            assert result == response_obj["data"]
 
     @pytest.mark.asyncio
     async def test_get_play_history_no_user_id(
-        self, 
+        self,
         data_fetcher: DataFetcher,
-        mock_successful_response: dict[str, Any]
+        mock_successful_response: dict[str, object]
     ) -> None:
         """Test play history retrieval without user ID filter."""
         with patch.object(data_fetcher, '_make_request') as mock_make_request:
-            mock_make_request.return_value = mock_successful_response["response"]["data"]
+            response_obj = mock_successful_response["response"]
+            assert isinstance(response_obj, dict)
+            mock_make_request.return_value = response_obj["data"]
             
             async with data_fetcher:
                 result = await data_fetcher.get_play_history(time_range=30)
@@ -239,17 +247,21 @@ class TestDataFetcher:
                 "get_history", 
                 {"length": 1000, "start": 0}
             )
-            assert result == mock_successful_response["response"]["data"]
+            response_obj = mock_successful_response["response"]
+            assert isinstance(response_obj, dict)
+            assert result == response_obj["data"]
 
     @pytest.mark.asyncio
     async def test_get_play_history_caching(
-        self, 
+        self,
         data_fetcher: DataFetcher,
-        mock_successful_response: dict[str, Any]
+        mock_successful_response: dict[str, object]
     ) -> None:
         """Test that play history results are cached."""
         with patch.object(data_fetcher, '_make_request') as mock_make_request:
-            mock_make_request.return_value = mock_successful_response["response"]["data"]
+            response_obj = mock_successful_response["response"]
+            assert isinstance(response_obj, dict)
+            mock_make_request.return_value = response_obj["data"]
             
             async with data_fetcher:
                 # First call should make request
@@ -264,35 +276,43 @@ class TestDataFetcher:
 
     @pytest.mark.asyncio
     async def test_get_user_stats(
-        self, 
+        self,
         data_fetcher: DataFetcher,
-        mock_successful_response: dict[str, Any]
+        mock_successful_response: dict[str, object]
     ) -> None:
         """Test user statistics retrieval."""
         with patch.object(data_fetcher, '_make_request') as mock_make_request:
-            mock_make_request.return_value = mock_successful_response["response"]["data"]
+            response_obj = mock_successful_response["response"]
+            assert isinstance(response_obj, dict)
+            mock_make_request.return_value = response_obj["data"]
             
             async with data_fetcher:
                 result = await data_fetcher.get_user_stats(user_id=1)
             
             mock_make_request.assert_called_once_with("get_user", {"user_id": 1})
-            assert result == mock_successful_response["response"]["data"]
+            response_obj = mock_successful_response["response"]
+            assert isinstance(response_obj, dict)
+            assert result == response_obj["data"]
 
     @pytest.mark.asyncio
     async def test_get_library_stats(
-        self, 
+        self,
         data_fetcher: DataFetcher,
-        mock_successful_response: dict[str, Any]
+        mock_successful_response: dict[str, object]
     ) -> None:
         """Test library statistics retrieval."""
         with patch.object(data_fetcher, '_make_request') as mock_make_request:
-            mock_make_request.return_value = mock_successful_response["response"]["data"]
+            response_obj = mock_successful_response["response"]
+            assert isinstance(response_obj, dict)
+            mock_make_request.return_value = response_obj["data"]
             
             async with data_fetcher:
                 result = await data_fetcher.get_library_stats()
             
             mock_make_request.assert_called_once_with("get_libraries")
-            assert result == mock_successful_response["response"]["data"]
+            response_obj = mock_successful_response["response"]
+            assert isinstance(response_obj, dict)
+            assert result == response_obj["data"]
 
     def test_clear_cache(self, data_fetcher: DataFetcher) -> None:
         """Test cache clearing functionality."""

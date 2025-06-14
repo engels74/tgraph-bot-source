@@ -43,7 +43,7 @@ class TestNonBlockingGraphGeneration:
         return mock_config_manager
 
     @pytest.fixture
-    def mock_graph_data(self) -> dict[str, Any]:
+    def mock_graph_data(self) -> dict[str, object]:
         """Create mock graph data for testing."""
         return {
             "data": [
@@ -60,9 +60,9 @@ class TestNonBlockingGraphGeneration:
 
     @pytest.mark.asyncio
     async def test_event_loop_responsiveness_under_load(
-        self, 
+        self,
         mock_config_manager: MagicMock,
-        mock_graph_data: dict[str, Any]
+        mock_graph_data: dict[str, object]
     ) -> None:
         """Test that event loop remains responsive during heavy graph generation."""
         # Counter to track event loop responsiveness
@@ -100,13 +100,13 @@ class TestNonBlockingGraphGeneration:
             mock_data_fetcher.get_play_history.return_value = mock_graph_data
             
             # Mock graph generation to simulate CPU-intensive work
-            def simulate_heavy_cpu_work(data: dict[str, Any], progress_tracker: Any = None) -> list[str]:
+            def simulate_heavy_cpu_work(data: dict[str, object], progress_tracker: object = None) -> list[str]:
                 """Simulate CPU-intensive graph generation."""
                 # Simulate heavy CPU work (but not too heavy for tests)
                 time.sleep(0.2)  # 200ms of CPU work
                 return ["test_graph_1.png", "test_graph_2.png", "test_graph_3.png"]
-            
-            def mock_validate_files(files: list[str], tracker: Any) -> list[str]:
+
+            def mock_validate_files(files: list[str], tracker: object) -> list[str]:
                 return files
 
             with patch.object(graph_manager, '_generate_graphs_sync', simulate_heavy_cpu_work), \
@@ -138,7 +138,7 @@ class TestNonBlockingGraphGeneration:
     async def test_concurrent_graph_generation_requests(
         self,
         mock_config_manager: MagicMock,
-        mock_graph_data: dict[str, Any]
+        mock_graph_data: dict[str, object]
     ) -> None:
         """Test handling multiple concurrent graph generation requests."""
         # Create multiple GraphManager instances to simulate concurrent requests
@@ -157,14 +157,14 @@ class TestNonBlockingGraphGeneration:
                 
                 mock_data_fetcher.get_play_history.return_value = mock_graph_data
 
-        def simulate_graph_work(data: dict[str, Any], progress_tracker: Any = None) -> list[str]:
+        def simulate_graph_work(data: dict[str, object], progress_tracker: object = None) -> list[str]:
             """Simulate graph generation work."""
             time.sleep(0.1)  # 100ms of work
             return [f"graph_{id(data)}.png"]
 
         async def generate_graphs_for_manager(manager: GraphManager, manager_id: int) -> tuple[int, list[str]]:
             """Generate graphs for a specific manager."""
-            def mock_validate_files(files: list[str], tracker: Any) -> list[str]:
+            def mock_validate_files(files: list[str], tracker: object) -> list[str]:
                 return files
 
             with patch.object(manager, '_generate_graphs_sync', simulate_graph_work), \
@@ -201,7 +201,7 @@ class TestNonBlockingGraphGeneration:
     async def test_user_graph_generation_responsiveness(
         self,
         mock_config_manager: MagicMock,
-        mock_graph_data: dict[str, Any]
+        mock_graph_data: dict[str, object]
     ) -> None:
         """Test that user graph generation doesn't block other operations."""
         # Counter for background task
@@ -230,12 +230,12 @@ class TestNonBlockingGraphGeneration:
             # Mock user data fetching
             mock_data_fetcher.get_user_play_history.return_value = mock_graph_data
 
-            def simulate_user_graph_work(data: dict[str, Any], progress_tracker: Any = None) -> list[str]:
+            def simulate_user_graph_work(data: dict[str, object], progress_tracker: object = None) -> list[str]:
                 """Simulate user graph generation work."""
                 time.sleep(0.15)  # 150ms of work
                 return ["user_graph.png"]
 
-            def mock_validate_user_files(files: list[str], tracker: Any) -> list[str]:
+            def mock_validate_user_files(files: list[str], tracker: object) -> list[str]:
                 return files
 
             with patch.object(user_graph_manager, '_generate_user_graphs_sync', simulate_user_graph_work), \
@@ -262,7 +262,7 @@ class TestNonBlockingGraphGeneration:
     async def test_stress_test_multiple_users_concurrent(
         self,
         mock_config_manager: MagicMock,
-        mock_graph_data: dict[str, Any]
+        mock_graph_data: dict[str, object]
     ) -> None:
         """Stress test with multiple users requesting graphs concurrently."""
         user_emails = [f"user{i}@example.com" for i in range(5)]
@@ -283,7 +283,7 @@ class TestNonBlockingGraphGeneration:
             # Mock user data fetching
             mock_data_fetcher.get_user_play_history.return_value = mock_graph_data
 
-            def simulate_user_graph_work(data: dict[str, Any], progress_tracker: Any = None) -> list[str]:
+            def simulate_user_graph_work(data: dict[str, object], progress_tracker: object = None) -> list[str]:
                 """Simulate user graph generation work."""
                 time.sleep(0.08)  # 80ms of work per user
                 return [f"user_graph_{id(data)}.png"]
@@ -317,7 +317,7 @@ class TestNonBlockingGraphGeneration:
     async def test_timeout_handling_during_load(
         self,
         mock_config_manager: MagicMock,
-        mock_graph_data: dict[str, Any]
+        mock_graph_data: dict[str, object]
     ) -> None:
         """Test that timeout handling works correctly under load."""
         graph_manager = GraphManager(mock_config_manager)
@@ -334,7 +334,7 @@ class TestNonBlockingGraphGeneration:
             
             mock_data_fetcher.get_play_history.return_value = mock_graph_data
 
-            def simulate_slow_work(data: dict[str, Any], progress_tracker: Any = None) -> list[str]:
+            def simulate_slow_work(data: dict[str, object], progress_tracker: object = None) -> list[str]:
                 """Simulate work that exceeds timeout."""
                 time.sleep(2.0)  # 2 seconds - should exceed our timeout
                 return ["slow_graph.png"]
@@ -349,7 +349,7 @@ class TestNonBlockingGraphGeneration:
     async def test_memory_stability_under_load(
         self,
         mock_config_manager: MagicMock,
-        mock_graph_data: dict[str, Any]
+        mock_graph_data: dict[str, object]
     ) -> None:
         """Test that memory usage remains stable during repeated graph generation."""
         import psutil
@@ -374,7 +374,7 @@ class TestNonBlockingGraphGeneration:
 
             mock_data_fetcher.get_play_history.return_value = mock_graph_data
 
-            def simulate_memory_intensive_work(data: dict[str, Any], progress_tracker: Any = None) -> list[str]:
+            def simulate_memory_intensive_work(data: dict[str, object], progress_tracker: object = None) -> list[str]:
                 """Simulate memory-intensive graph generation."""
                 # Create some temporary data structures
                 temp_data = [list(range(1000)) for _ in range(100)]
@@ -405,7 +405,7 @@ class TestNonBlockingGraphGeneration:
     async def test_error_handling_doesnt_block_event_loop(
         self,
         mock_config_manager: MagicMock,
-        mock_graph_data: dict[str, Any]
+        mock_graph_data: dict[str, object]
     ) -> None:
         """Test that error handling during graph generation doesn't block the event loop."""
         # Counter for background operations
@@ -432,7 +432,7 @@ class TestNonBlockingGraphGeneration:
 
             mock_data_fetcher.get_play_history.return_value = mock_graph_data
 
-            def simulate_error_work(data: dict[str, Any], progress_tracker: Any = None) -> list[str]:
+            def simulate_error_work(data: dict[str, object], progress_tracker: object = None) -> list[str]:
                 """Simulate work that raises an error."""
                 time.sleep(0.1)  # Some work before error
                 raise RuntimeError("Simulated graph generation error")
@@ -454,7 +454,7 @@ class TestNonBlockingGraphGeneration:
     async def test_progress_tracking_responsiveness(
         self,
         mock_config_manager: MagicMock,
-        mock_graph_data: dict[str, Any]
+        mock_graph_data: dict[str, object]
     ) -> None:
         """Test that progress tracking callbacks don't block the event loop."""
         progress_updates: list[tuple[str, int, int]] = []
@@ -488,7 +488,7 @@ class TestNonBlockingGraphGeneration:
 
             mock_data_fetcher.get_play_history.return_value = mock_graph_data
 
-            def simulate_tracked_work(data: dict[str, Any], progress_tracker: Any = None) -> list[str]:
+            def simulate_tracked_work(data: dict[str, object], progress_tracker: object = None) -> list[str]:
                 """Simulate work with progress tracking."""
                 time.sleep(0.1)  # 100ms of work
                 return ["tracked_graph.png"]

@@ -53,7 +53,7 @@ class GraphFactory:
                 return bool(getattr(self.config, key))
             elif isinstance(self.config, dict):
                 config_dict: dict[str, object] = self.config
-                return bool(config_dict.get(key, default))
+                return bool(config_dict.get(key, default))  # pyright: ignore[reportUnknownArgumentType]
             return default
 
         if get_config_value('ENABLE_DAILY_PLAY_COUNT'):
@@ -133,7 +133,7 @@ class GraphFactory:
                 return bool(getattr(self.config, key))
             elif isinstance(self.config, dict):
                 config_dict: dict[str, object] = self.config
-                return bool(config_dict.get(key, default))
+                return bool(config_dict.get(key, default))  # pyright: ignore[reportUnknownArgumentType]
             return default
 
         # Check each graph type directly from config attributes

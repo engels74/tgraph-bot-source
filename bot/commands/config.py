@@ -7,7 +7,7 @@ for viewing and modifying bot configuration settings with live editing capabilit
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import discord
 from discord import app_commands
@@ -45,7 +45,7 @@ class ConfigCog(BaseCommandCog):
         # Create configuration helper
         self.config_helper: ConfigurationHelper = ConfigurationHelper(self.tgraph_bot.config_manager)
 
-    def _convert_config_value(self, value: str, target_type: type[Any]) -> Any:
+    def _convert_config_value(self, value: str, target_type: type[object]) -> object:
         """
         Convert a string value to the appropriate configuration type.
 
@@ -225,12 +225,12 @@ class ConfigCog(BaseCommandCog):
                 )
 
             # Create updated configuration data
-            config_data: dict[str, Any] = current_config.model_dump()
+            config_data = current_config.model_dump()
             config_data[setting] = converted_value
 
             # Validate the new configuration
             try:
-                new_config = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
+                new_config = TGraphBotConfig(**config_data)
             except ValidationError as e:
                 raise ConfigurationError(
                     f"Configuration validation failed: {e}",

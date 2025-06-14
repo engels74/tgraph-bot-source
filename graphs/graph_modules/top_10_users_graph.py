@@ -141,9 +141,9 @@ class Top10UsersGraph(BaseGraph):
 
                 # Add value labels on bars if enabled
                 if self.config and self.config.ANNOTATE_TOP_10_USERS:
-                    max_count = float(max(df['play_count']))  # pyright: ignore[reportUnknownArgumentType]
+                    max_count = float(max(df['play_count']))
                     for i, (_, row) in enumerate(df.iterrows()):
-                        play_count = float(row['play_count'])  # pyright: ignore[reportUnknownArgumentType]
+                        play_count = float(row['play_count'])
                         _ = ax.text(  # pyright: ignore[reportUnknownMemberType]
                             play_count + max_count * 0.01,
                             i,
