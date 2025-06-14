@@ -263,7 +263,7 @@ class ConfigCog(BaseCommandCog):
             )
             _ = success_embed.add_field(
                 name="New Value",
-                value=str(converted_value),  # pyright: ignore[reportAny]
+                value=str(converted_value),
                 inline=True
             )
             _ = success_embed.set_footer(text="Configuration saved and applied immediately")

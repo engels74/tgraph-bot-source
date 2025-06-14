@@ -12,6 +12,8 @@ from typing import Callable, override
 from watchdog.events import FileSystemEventHandler, FileSystemEvent
 from watchdog.observers import Observer
 
+
+
 import yaml
 from pydantic import ValidationError
 
@@ -351,7 +353,7 @@ class ConfigManager:
         """
         # Re-validate the configuration by creating a new instance
         try:
-            _ = TGraphBotConfig(**config.model_dump())  # pyright: ignore[reportArgumentType]
+            _ = TGraphBotConfig(**config.model_dump())
             return True
         except ValidationError:
             raise
@@ -589,8 +591,8 @@ MY_STATS_GLOBAL_COOLDOWN_SECONDS: 60
         """Stop monitoring the configuration file for changes."""
         with self._config_lock:
             if self._file_observer is not None:
-                self._file_observer.stop()
-                self._file_observer.join()
+                self._file_observer.stop()  # pyright: ignore[reportUnknownMemberType]
+                self._file_observer.join()  # pyright: ignore[reportUnknownMemberType]
                 self._file_observer = None
                 self._monitored_file = None
 

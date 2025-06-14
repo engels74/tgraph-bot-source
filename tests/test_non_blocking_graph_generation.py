@@ -189,7 +189,7 @@ class TestNonBlockingGraphGeneration:
 
         # Verify all managers completed successfully
         assert len(results) == 3
-        for manager_id, graph_files in results:
+        for _, graph_files in results:
             assert len(graph_files) == 1
             assert graph_files[0].endswith('.png')
 

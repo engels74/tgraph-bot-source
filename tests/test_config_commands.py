@@ -172,7 +172,7 @@ class TestConfigCog:
             _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "INVALID_SETTING", "value")  # pyright: ignore[reportCallIssue]
 
         # Verify error response was sent through the new error handling system
-        mock_safe_response.assert_called_once()  # pyright: ignore[reportUnknownMemberType]
+        mock_safe_response.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_config_edit_invalid_value(
