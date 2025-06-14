@@ -12,9 +12,12 @@ from collections import defaultdict
 from collections.abc import Mapping
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import TypeVar
 
 
 logger = logging.getLogger(__name__)
+
+T = TypeVar('T')
 
 
 def format_date(date_obj: datetime, format_string: str = "%Y-%m-%d") -> str:
@@ -272,13 +275,13 @@ def safe_get_nested_value(data: Mapping[str, object], keys: list[str], default: 
     Returns:
         The value at the key path, or default if not found
     """
-    current = data
+    current: object = data
     for key in keys:
         if isinstance(current, dict) and key in current:
-            current = current[key]
+            current = current[key]  # pyright: ignore[reportUnknownVariableType]
         else:
             return default
-    return current
+    return current  # pyright: ignore[reportUnknownVariableType]
 
 
 def process_play_history_data(raw_data: Mapping[str, object]) -> list[dict[str, object]]:
