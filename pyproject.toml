@@ -111,6 +111,7 @@ dev = [
     "basedpyright>=1.29.4",
     "pandas-stubs>=2.2.3.250527",
     "polib>=1.2.0",
+    "psutil>=7.0.0",
     "pytest>=8.4.0",
     "pytest-asyncio>=1.0.0",
     "pytest-cov>=6.1.1",
