@@ -4,7 +4,6 @@ Test module for the BaseGraph abstract base class.
 This module tests the BaseGraph functionality including:
 - Abstract method requirements
 - Figure setup and management
-# pyright: reportPrivateUsage=false, reportAny=false
 - Color validation
 - Context manager behavior
 - Cleanup operations
