@@ -2,9 +2,6 @@
 
 from __future__ import annotations
 
-
-
-# pyright: reportPrivateUsage=false, reportAny=false
 import pytest
 from pydantic import ValidationError
 
