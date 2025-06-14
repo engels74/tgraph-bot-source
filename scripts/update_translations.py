@@ -71,7 +71,7 @@ def find_po_files(locale_dir: Path, language: str | None = None) -> list[Path]:
     Returns:
         List of .po file paths
     """
-    po_files = []
+    po_files: list[Path] = []
 
     if language:
         # Look for specific language
@@ -211,7 +211,7 @@ def main() -> int:
 
         # Update each .po file
         preserve_translations = not args.no_preserve
-        updated_files = []
+        updated_files: list[Path] = []
 
         for po_file in po_files:
             try:

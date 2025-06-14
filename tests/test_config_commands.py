@@ -80,50 +80,50 @@ class TestConfigCog:
 
     def test_convert_config_value_string(self, config_cog: ConfigCog) -> None:
         """Test string value conversion."""
-        result = config_cog._convert_config_value("test_value", str)
+        result = config_cog._convert_config_value("test_value", str)  # pyright: ignore[reportPrivateUsage]
         assert result == "test_value"
         assert isinstance(result, str)
 
     def test_convert_config_value_int(self, config_cog: ConfigCog) -> None:
         """Test integer value conversion."""
-        result = config_cog._convert_config_value("42", int)
+        result = config_cog._convert_config_value("42", int)  # pyright: ignore[reportPrivateUsage]
         assert result == 42
         assert isinstance(result, int)
 
     def test_convert_config_value_int_invalid(self, config_cog: ConfigCog) -> None:
         """Test invalid integer value conversion."""
         with pytest.raises(ValueError, match="'not_a_number' is not a valid integer"):
-            _ = config_cog._convert_config_value("not_a_number", int)
+            _ = config_cog._convert_config_value("not_a_number", int)  # pyright: ignore[reportPrivateUsage]
 
     def test_convert_config_value_bool_true(self, config_cog: ConfigCog) -> None:
         """Test boolean true value conversion."""
         true_values = ["true", "yes", "1", "on", "enabled", "TRUE", "YES"]
         for value in true_values:
-            result = config_cog._convert_config_value(value, bool)
+            result = config_cog._convert_config_value(value, bool)  # pyright: ignore[reportPrivateUsage]
             assert result is True
 
     def test_convert_config_value_bool_false(self, config_cog: ConfigCog) -> None:
         """Test boolean false value conversion."""
         false_values = ["false", "no", "0", "off", "disabled", "FALSE", "NO"]
         for value in false_values:
-            result = config_cog._convert_config_value(value, bool)
+            result = config_cog._convert_config_value(value, bool)  # pyright: ignore[reportPrivateUsage]
             assert result is False
 
     def test_convert_config_value_bool_invalid(self, config_cog: ConfigCog) -> None:
         """Test invalid boolean value conversion."""
         with pytest.raises(ValueError, match="'maybe' is not a valid boolean"):
-            _ = config_cog._convert_config_value("maybe", bool)
+            _ = config_cog._convert_config_value("maybe", bool)  # pyright: ignore[reportPrivateUsage]
 
     def test_convert_config_value_float(self, config_cog: ConfigCog) -> None:
         """Test float value conversion."""
-        result = config_cog._convert_config_value("3.14", float)
+        result = config_cog._convert_config_value("3.14", float)  # pyright: ignore[reportPrivateUsage]
         assert result == 3.14
         assert isinstance(result, float)
 
     def test_convert_config_value_float_invalid(self, config_cog: ConfigCog) -> None:
         """Test invalid float value conversion."""
         with pytest.raises(ValueError, match="'not_a_float' is not a valid number"):
-            _ = config_cog._convert_config_value("not_a_float", float)
+            _ = config_cog._convert_config_value("not_a_float", float)  # pyright: ignore[reportPrivateUsage]
 
     @pytest.mark.asyncio
     async def test_config_view_success(

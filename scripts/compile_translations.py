@@ -238,7 +238,7 @@ def main() -> int:
         logger.info(f"Found {len(po_files)} .po file(s)")
 
         # Check which files need compilation
-        files_to_compile = []
+        files_to_compile: list[Path] = []
         for po_file in po_files:
             mo_file = po_file.with_suffix('.mo')
             if args.force or needs_compilation(po_file, mo_file):
