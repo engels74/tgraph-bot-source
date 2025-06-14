@@ -228,7 +228,7 @@ class TestConfigCog:
             temp_path = Path(temp_file.name)
             
             # Write initial config
-            _ = temp_file.write("UPDATE_DAYS: 7\nLANGUAGE: en\n")
+            temp_file.write("UPDATE_DAYS: 7\nLANGUAGE: en\n")
             temp_file.flush()
             
             try:

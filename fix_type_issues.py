@@ -45,7 +45,7 @@ def fix_file(file_path: Path) -> None:
     )
     
     file_path.write_text(content)
-    _ = print(f"Fixed {file_path}")
+    print(f"Fixed {file_path}")
 
 def main() -> None:
     """Main function."""

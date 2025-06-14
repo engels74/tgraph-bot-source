@@ -121,7 +121,7 @@ class TestDataFetcher:
             # Verify result
             response_obj = mock_successful_response["response"]
             assert isinstance(response_obj, dict)
-            expected_data = response_obj["data"]
+            expected_data: dict[str, object] = response_obj["data"]  # pyright: ignore[reportUnknownVariableType]
             assert result == expected_data
 
     @pytest.mark.asyncio
@@ -173,7 +173,7 @@ class TestDataFetcher:
             mock_client.get.side_effect = [
                 httpx.TimeoutException("Timeout"),
                 httpx.TimeoutException("Timeout"),
-                Mock(json=lambda: {"response": {"result": "success", "data": {}}}, 
+                Mock(json=lambda: {"response": {"result": "success", "data": {}}},  # pyright: ignore[reportUnknownLambdaType]
                      raise_for_status=lambda: None)
             ]
             

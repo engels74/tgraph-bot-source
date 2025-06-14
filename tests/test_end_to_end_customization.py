@@ -256,7 +256,7 @@ class TestEndToEndCustomization:
         factory = GraphFactory(config)
         
         # Create multiple graphs to test resource management
-        graphs = []
+        graphs: list[object] = []
         for graph_type in ["daily_play_count", "top_10_users", "play_count_by_hourofday"]:
             graph = factory.create_graph_by_type(graph_type)
             graphs.append(graph)
@@ -270,9 +270,9 @@ class TestEndToEndCustomization:
         
         # Test cleanup functionality
         for graph in graphs:
-            graph.cleanup()
-            assert graph.figure is None
-            assert graph.axes is None
+            graph.cleanup()  # pyright: ignore[reportAttributeAccessIssue]
+            assert graph.figure is None  # pyright: ignore[reportAttributeAccessIssue]
+            assert graph.axes is None  # pyright: ignore[reportAttributeAccessIssue]
 
     def test_configuration_validation_edge_cases(self) -> None:
         """Test configuration validation with edge case values."""

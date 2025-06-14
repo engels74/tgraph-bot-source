@@ -178,7 +178,7 @@ def func3():
             assert "subdir/file3.py" in results
             
             # Check extracted strings
-            all_strings = []
+            all_strings: list[str] = []
             for strings in results.values():
                 all_strings.extend([s[0] for s in strings])
             

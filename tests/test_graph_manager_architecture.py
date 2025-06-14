@@ -35,8 +35,8 @@ class TestGraphManagerArchitecture:
         graph_manager = GraphManager(config_manager)
         
         assert graph_manager.config_manager is config_manager
-        assert graph_manager._data_fetcher is None
-        assert graph_manager._graph_factory is None
+        assert graph_manager._data_fetcher is None  # pyright: ignore[reportPrivateUsage]
+        assert graph_manager._graph_factory is None  # pyright: ignore[reportPrivateUsage]
 
     @pytest.mark.asyncio
     async def test_async_context_manager(self) -> None:
@@ -66,8 +66,8 @@ class TestGraphManagerArchitecture:
                 # Test context manager
                 async with GraphManager(config_manager) as graph_manager:
                     # Verify components are initialized
-                    assert graph_manager._data_fetcher is not None
-                    assert graph_manager._graph_factory is not None
+                    assert graph_manager._data_fetcher is not None  # pyright: ignore[reportPrivateUsage]
+                    assert graph_manager._graph_factory is not None  # pyright: ignore[reportPrivateUsage]
                     
                     # Verify DataFetcher was created with correct parameters
                     mock_data_fetcher_class.assert_called_once_with(
@@ -81,7 +81,7 @@ class TestGraphManagerArchitecture:
                     mock_graph_factory_class.assert_called_once_with(mock_config)
                 
                 # Verify cleanup was called
-                mock_data_fetcher.__aexit__.assert_called_once()
+                mock_data_fetcher.__aexit__.assert_called_once()  # pyright: ignore[reportAny]
 
     @pytest.mark.asyncio
     async def test_generate_all_graphs_architecture(self) -> None:
@@ -119,7 +119,7 @@ class TestGraphManagerArchitecture:
                         result = await graph_manager.generate_all_graphs()
                         
                         # Verify data fetching was called
-                        mock_data_fetcher.get_play_history.assert_called_once_with(time_range=30)
+                        mock_data_fetcher.get_play_history.assert_called_once_with(time_range=30)  # pyright: ignore[reportAny]
                         
                         # Verify asyncio.to_thread was used for graph generation
                         mock_to_thread.assert_called_once()

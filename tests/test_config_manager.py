@@ -384,8 +384,8 @@ class TestLiveConfigurationManagement:
         initial_config = manager.load_config(temp_config_file)
         manager.set_current_config(initial_config)
 
-        results = []
-        errors = []
+        results: list[int] = []
+        errors: list[Exception] = []
 
         def config_reader() -> None:
             """Function to read config from multiple threads."""
@@ -409,7 +409,7 @@ class TestLiveConfigurationManagement:
                 errors.append(e)
 
         # Start multiple threads
-        threads = []
+        threads: list[threading.Thread] = []
         for _ in range(3):
             threads.append(threading.Thread(target=config_reader))
         for _ in range(2):
