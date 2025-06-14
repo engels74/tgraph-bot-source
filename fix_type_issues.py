@@ -44,7 +44,7 @@ def fix_file(file_path: Path) -> None:
         content
     )
     
-    file_path.write_text(content)
+    _ = file_path.write_text(content)
     print(f"Fixed {file_path}")
 
 def main() -> None:

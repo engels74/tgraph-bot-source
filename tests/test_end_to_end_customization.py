@@ -270,9 +270,9 @@ class TestEndToEndCustomization:
         
         # Test cleanup functionality
         for graph in graphs:
-            graph.cleanup()  # pyright: ignore[reportAttributeAccessIssue]
-            assert graph.figure is None  # pyright: ignore[reportAttributeAccessIssue]
-            assert graph.axes is None  # pyright: ignore[reportAttributeAccessIssue]
+            graph.cleanup()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+            assert graph.figure is None  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+            assert graph.axes is None  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
 
     def test_configuration_validation_edge_cases(self) -> None:
         """Test configuration validation with edge case values."""
