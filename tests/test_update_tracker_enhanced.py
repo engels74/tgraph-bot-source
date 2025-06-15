@@ -152,11 +152,11 @@ class TestUpdateTrackerEnhanced:
         update_tracker.set_update_callback(callback)
 
         # Trigger update
-        await update_tracker._trigger_update_for_testing()
+        await update_tracker._trigger_update_for_testing()  # pyright: ignore[reportPrivateUsage]
 
         # Verify callback was called and state updated
         callback.assert_called_once()
-        state = update_tracker._get_state_for_testing()
+        state = update_tracker._get_state_for_testing()  # pyright: ignore[reportPrivateUsage]
         assert state.last_update is not None
         assert state.consecutive_failures == 0
 
@@ -169,10 +169,10 @@ class TestUpdateTrackerEnhanced:
 
         # Trigger update (should raise exception)
         with pytest.raises(Exception, match="Test error"):
-            await update_tracker._trigger_update_for_testing()
+            await update_tracker._trigger_update_for_testing()  # pyright: ignore[reportPrivateUsage]
 
         # Verify failure was recorded
-        state = update_tracker._get_state_for_testing()
+        state = update_tracker._get_state_for_testing()  # pyright: ignore[reportPrivateUsage]
         assert state.consecutive_failures == 1
         assert state.last_failure is not None
     

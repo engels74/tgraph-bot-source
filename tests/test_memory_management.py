@@ -8,7 +8,7 @@ and that repeated graph generation doesn't cause memory leaks.
 import gc
 import tempfile
 from pathlib import Path
-from typing import override
+from typing import override, cast
 from collections.abc import Mapping
 from unittest.mock import MagicMock, patch
 import psutil
@@ -213,7 +213,8 @@ class TestMemoryManagement:
         """Test that repeated graph generation doesn't continuously increase memory."""
         # Get initial memory usage
         process = psutil.Process(os.getpid())
-        initial_memory = process.memory_info().rss
+        memory_info = process.memory_info()
+        initial_memory: int = cast(int, memory_info.rss)
         
         # Generate multiple graphs
         for i in range(10):
@@ -226,8 +227,9 @@ class TestMemoryManagement:
             _ = gc.collect()
         
         # Get final memory usage
-        final_memory = process.memory_info().rss
-        memory_increase = final_memory - initial_memory
+        final_memory_info = process.memory_info()
+        final_memory: int = cast(int, final_memory_info.rss)
+        memory_increase: int = final_memory - initial_memory
         
         # Memory increase should be minimal (less than 50MB)
         # This is a reasonable threshold for matplotlib overhead

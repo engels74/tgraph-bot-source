@@ -266,7 +266,7 @@ class TestUpdateTrackerRecovery:
             tracker = UpdateTracker(mock_bot, state_file_path=state_file)
             
             assert tracker.is_recovery_enabled()
-            assert tracker._state_manager.state_file_path == state_file
+            assert tracker._state_manager.state_file_path == state_file  # pyright: ignore[reportPrivateUsage]
     
     @pytest.mark.asyncio
     async def test_recovery_status_reporting(self) -> None:
@@ -295,7 +295,7 @@ class TestUpdateTrackerRecovery:
             tracker = UpdateTracker(mock_bot, state_file_path=state_file)
             
             # Create some state
-            tracker._state_manager.save_state(ScheduleState())
+            tracker._state_manager.save_state(ScheduleState())  # pyright: ignore[reportPrivateUsage]
             assert state_file.exists()
             
             # Clear state

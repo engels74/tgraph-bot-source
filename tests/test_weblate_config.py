@@ -10,6 +10,7 @@ from __future__ import annotations
 import configparser
 import tempfile
 from pathlib import Path
+from typing import cast
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -92,14 +93,15 @@ file_format = po
         assert config['weblate']['url'] == 'https://hosted.weblate.org/'
         
         # Check for expected components
-        components = [section for section in config.sections() 
-                     if section.startswith('component ')]
+        all_sections = config.sections()
+        components: list[str] = [section for section in all_sections 
+                                if section.startswith('component ')]
         assert len(components) >= 1, "Should have at least one component"
         
         # Check main bot component
-        bot_component = None
+        bot_component: str | None = None
         for component in components:
-            if 'tgraph-bot' in component and 'readme' not in component.lower():
+            if 'tgraph-bot' in component and 'readme' not in component.lower():  # pyright: ignore[reportAny]
                 bot_component = component
                 break
         
@@ -131,8 +133,9 @@ class TestLocaleStructureValidation:
     def test_check_missing_locale_directory(self, mock_path_class: MagicMock) -> None:
         """Test validation when locale directory is missing."""
         # Mock the Path class to return a mock object
-        mock_locale_dir = mock_path_class.return_value
-        mock_locale_dir.exists.return_value = False
+        mock_path_instance = cast(MagicMock, mock_path_class.return_value)
+        mock_locale_dir: MagicMock = mock_path_instance
+        mock_locale_dir.exists.return_value = False  # pyright: ignore[reportAny]
 
         result = check_locale_structure()
         assert result is False
@@ -166,12 +169,14 @@ class TestLocaleStructureValidation:
 class TestWeblateIntegration:
     """Test Weblate integration aspects."""
 
-    def test_filemask_pattern_validity(self) -> None:
+    def test_filemask_pattern_validity(self) -> None:  # pyright: ignore[reportAny]
         """Test that filemask patterns are valid."""
         config = configparser.ConfigParser()
         _ = config.read('.weblate')
         
-        for section_name in config.sections():
+        section_names = config.sections()
+        for section_name in section_names:
+            section_name = cast(str, section_name)  # pyright: ignore[reportAny]
             if not section_name.startswith('component '):
                 continue
                 
@@ -179,7 +184,7 @@ class TestWeblateIntegration:
             if 'filemask' not in section:
                 continue
                 
-            filemask = section['filemask']
+            filemask: str = section['filemask']
             
             # Should contain wildcard for language
             assert '*' in filemask, f"Filemask should contain wildcard: {filemask}"
@@ -187,12 +192,14 @@ class TestWeblateIntegration:
             # Should be a reasonable path pattern
             assert '/' in filemask, f"Filemask should contain path separator: {filemask}"
 
-    def test_template_file_references(self) -> None:
+    def test_template_file_references(self) -> None:  # pyright: ignore[reportAny]
         """Test that template files referenced in config exist."""
         config = configparser.ConfigParser()
         _ = config.read('.weblate')
 
-        for section_name in config.sections():
+        section_names = config.sections()
+        for section_name in section_names:
+            section_name = cast(str, section_name)  # pyright: ignore[reportAny]
             if not section_name.startswith('component '):
                 continue
                 
@@ -208,12 +215,14 @@ class TestWeblateIntegration:
             elif 'README.md' in str(template_path):
                 assert template_path.exists(), f"README template should exist: {template_path}"
 
-    def test_repository_configuration(self) -> None:
+    def test_repository_configuration(self) -> None:  # pyright: ignore[reportAny]
         """Test repository configuration in Weblate config."""
         config = configparser.ConfigParser()
         _ = config.read('.weblate')
 
-        for section_name in config.sections():
+        section_names = config.sections()
+        for section_name in section_names:
+            section_name = cast(str, section_name)  # pyright: ignore[reportAny]
             if not section_name.startswith('component '):
                 continue
                 
@@ -225,8 +234,8 @@ class TestWeblateIntegration:
             assert 'branch' in section, "Component should have branch"
             
             # URLs should be reasonable
-            repo_url = section['repo']
-            push_url = section['push']
+            repo_url: str = section['repo']
+            push_url: str = section['push']
             
             assert 'github.com' in repo_url, "Should use GitHub"
             assert 'tgraph-bot-source' in repo_url, "Should reference correct repository"
