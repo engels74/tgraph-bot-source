@@ -4,7 +4,6 @@ Tests for graph utility functions in TGraph Bot.
 This module tests utility functions for date formatting, folder management,
 username censoring, and common graph operations.
 """
-# pyright: reportPrivateUsage=false, reportAny=false
 
 import tempfile
 from datetime import datetime, timedelta
@@ -66,7 +65,7 @@ class TestDateUtilities:
         """Test getting date range."""
         # Mock current time
         mock_now = datetime(2023, 12, 25, 12, 0, 0)
-        mock_datetime.now.return_value = mock_now
+        mock_datetime.now.return_value = mock_now  # pyright: ignore[reportAny]
         
         start_date, end_date = get_date_range(7)
         
@@ -95,7 +94,7 @@ class TestDirectoryUtilities:
                 _ = ensure_graph_directory()
 
                 mock_path.assert_called_once_with("graphs")
-                mock_path_instance.mkdir.assert_called_once_with(parents=True, exist_ok=True)
+                mock_path_instance.mkdir.assert_called_once_with(parents=True, exist_ok=True)  # pyright: ignore[reportAny]
     
     def test_ensure_graph_directory_custom_path(self) -> None:
         """Test ensuring graph directory with custom path."""
