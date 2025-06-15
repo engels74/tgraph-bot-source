@@ -5,6 +5,7 @@ This module tests utility functions for Discord command formatting,
 argument parsing, response handling, and interaction management.
 """
 
+from typing import cast
 from unittest.mock import AsyncMock, MagicMock
 
 import discord
@@ -237,11 +238,17 @@ class TestInteractionUtilities:
     def mock_interaction(self) -> discord.Interaction:
         """Create a mock Discord interaction."""
         interaction = MagicMock(spec=discord.Interaction)
-        interaction.response = MagicMock()
-        interaction.followup = AsyncMock()
-        interaction.response.send_message = AsyncMock()  # pyright: ignore[reportAny]
-        interaction.response.is_done = MagicMock(return_value=False)  # pyright: ignore[reportAny]
-        return interaction
+        mock_response = MagicMock()
+        mock_send_message = AsyncMock()
+        mock_response.send_message = mock_send_message
+        mock_is_done = MagicMock(return_value=False)
+        mock_response.is_done = mock_is_done
+        interaction.response = mock_response
+        mock_followup = AsyncMock()
+        mock_send = AsyncMock()
+        mock_followup.send = mock_send
+        interaction.followup = mock_followup
+        return cast(discord.Interaction, interaction)
 
     @pytest.mark.asyncio
     async def test_safe_interaction_response_initial(self, mock_interaction: discord.Interaction) -> None:
@@ -255,12 +262,16 @@ class TestInteractionUtilities:
         )
         
         assert result is True
-        mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportAny, reportFunctionMemberAccess]
+        mock_response = cast(MagicMock, mock_interaction.response)
+        mock_send_message = cast(AsyncMock, mock_response.send_message)
+        mock_send_message.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_safe_interaction_response_followup(self, mock_interaction: discord.Interaction) -> None:
         """Test safe interaction response with followup."""
-        mock_interaction.response.is_done.return_value = True  # pyright: ignore[reportFunctionMemberAccess]
+        mock_response = cast(MagicMock, mock_interaction.response)
+        mock_is_done = cast(MagicMock, mock_response.is_done)
+        mock_is_done.return_value = True
         
         result = await safe_interaction_response(
             interaction=mock_interaction,
@@ -269,7 +280,9 @@ class TestInteractionUtilities:
         )
         
         assert result is True
-        mock_interaction.followup.send.assert_called_once()  # pyright: ignore[reportAny, reportFunctionMemberAccess]
+        mock_followup = cast(AsyncMock, mock_interaction.followup)
+        mock_send = cast(AsyncMock, mock_followup.send)
+        mock_send.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_send_error_response(self, mock_interaction: discord.Interaction) -> None:
@@ -281,7 +294,9 @@ class TestInteractionUtilities:
         )
         
         assert result is True
-        mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportAny, reportFunctionMemberAccess]
+        mock_response = cast(MagicMock, mock_interaction.response)
+        mock_send_message = cast(AsyncMock, mock_response.send_message)
+        mock_send_message.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_send_success_response(self, mock_interaction: discord.Interaction) -> None:
@@ -293,7 +308,9 @@ class TestInteractionUtilities:
         )
         
         assert result is True
-        mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportAny, reportFunctionMemberAccess]
+        mock_response = cast(MagicMock, mock_interaction.response)
+        mock_send_message = cast(AsyncMock, mock_response.send_message)
+        mock_send_message.assert_called_once()
 
 
 class TestPermissionUtilities:
@@ -310,10 +327,12 @@ class TestPermissionUtilities:
     def test_check_manage_guild_permission_owner(self) -> None:
         """Test permission check for guild owner."""
         interaction = MagicMock(spec=discord.Interaction)
-        interaction.guild = MagicMock()
-        interaction.guild.owner_id = 123456789  # pyright: ignore[reportAny]
-        interaction.user = MagicMock()
-        interaction.user.id = 123456789  # pyright: ignore[reportAny]
+        mock_guild = MagicMock()
+        mock_guild.owner_id = 123456789
+        interaction.guild = mock_guild
+        mock_user = MagicMock()
+        mock_user.id = 123456789
+        interaction.user = mock_user
         
         result = check_manage_guild_permission(interaction)
         assert result is True
@@ -321,12 +340,15 @@ class TestPermissionUtilities:
     def test_check_manage_guild_permission_member_with_perms(self) -> None:
         """Test permission check for member with manage guild permission."""
         interaction = MagicMock(spec=discord.Interaction)
-        interaction.guild = MagicMock()
-        interaction.guild.owner_id = 987654321  # pyright: ignore[reportAny]
-        interaction.user = MagicMock()
-        interaction.user.id = 123456789  # pyright: ignore[reportAny]
-        interaction.user.guild_permissions = MagicMock()  # pyright: ignore[reportAny]
-        interaction.user.guild_permissions.manage_guild = True  # pyright: ignore[reportAny]
+        mock_guild = MagicMock()
+        mock_guild.owner_id = 987654321
+        interaction.guild = mock_guild
+        mock_user = MagicMock()
+        mock_user.id = 123456789
+        mock_permissions = MagicMock()
+        mock_permissions.manage_guild = True
+        mock_user.guild_permissions = mock_permissions
+        interaction.user = mock_user
         
         result = check_manage_guild_permission(interaction)
         assert result is True
