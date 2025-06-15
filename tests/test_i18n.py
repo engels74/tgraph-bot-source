@@ -4,7 +4,6 @@ Tests for the internationalization (i18n) module.
 This module tests the translation loading, fallback behavior, string formatting,
 and language switching functionality of the i18n system.
 """
-# pyright: reportPrivateUsage=false, reportAny=false
 
 from pathlib import Path
 from unittest.mock import patch, MagicMock
@@ -77,8 +76,8 @@ class TestI18nModule:
             i18n.setup_i18n("invalid")
             
             # Should log a warning
-            mock_logger.warning.assert_called()
-            mock_logger.info.assert_called_with("Using default English strings")
+            mock_logger.warning.assert_called()  # pyright: ignore[reportAny]
+            mock_logger.info.assert_called_with("Using default English strings")  # pyright: ignore[reportAny]
 
     @patch('i18n.logger')
     def test_translate_formatting_error_logging(self, mock_logger: MagicMock) -> None:
@@ -87,8 +86,8 @@ class TestI18nModule:
         _ = i18n.translate("Hello, {invalid_key}", valid_key="value")
         
         # Should log a warning about formatting error
-        mock_logger.warning.assert_called()
-        assert "Translation formatting error" in str(mock_logger.warning.call_args)
+        mock_logger.warning.assert_called()  # pyright: ignore[reportAny]
+        assert "Translation formatting error" in str(mock_logger.warning.call_args)  # pyright: ignore[reportAny]
 
     def test_get_translation_returns_callable(self) -> None:
         """Test that get_translation returns a callable function."""
@@ -238,5 +237,5 @@ class TestI18nEnhancedFeatures:
         i18n.install_translation("en")
 
         # Should log success
-        mock_logger.info.assert_called()
-        assert "Installed translations globally" in str(mock_logger.info.call_args)
+        mock_logger.info.assert_called()  # pyright: ignore[reportAny]
+        assert "Installed translations globally" in str(mock_logger.info.call_args)  # pyright: ignore[reportAny]
