@@ -4,7 +4,6 @@ Tests for i18n string extraction utilities.
 This module tests the functionality of the i18n_utils module including
 string extraction from Python files, .pot file generation, and .po file updates.
 """
-# pyright: reportPrivateUsage=false, reportAny=false
 
 from __future__ import annotations
 

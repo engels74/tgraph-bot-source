@@ -4,7 +4,6 @@ Test suite for locale directory structure and translation file validation.
 This module tests that the locale directory structure is properly set up
 according to gettext standards and that translation files are correctly formatted.
 """
-# pyright: reportPrivateUsage=false, reportAny=false
 
 from pathlib import Path
 import polib
