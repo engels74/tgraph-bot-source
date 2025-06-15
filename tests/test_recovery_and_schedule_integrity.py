@@ -4,7 +4,6 @@ Test recovery and schedule integrity mechanisms for UpdateTracker.
 This module tests the enhanced recovery capabilities, persistent state management,
 missed update detection, and schedule integrity validation and repair.
 """
-# pyright: reportPrivateUsage=false, reportAny=false
 
 import asyncio
 import tempfile

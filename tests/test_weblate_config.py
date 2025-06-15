@@ -4,7 +4,6 @@ Tests for Weblate configuration validation.
 This module tests the Weblate configuration file and related functionality
 to ensure proper setup for collaborative translation management.
 """
-# pyright: reportPrivateUsage=false, reportAny=false
 
 from __future__ import annotations
 

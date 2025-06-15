@@ -4,7 +4,6 @@ Test enhanced error handling, retry mechanisms, and logging for UpdateTracker.
 This module tests the comprehensive error handling features added to the
 UpdateTracker including circuit breakers, retry logic, and audit logging.
 """
-# pyright: reportPrivateUsage=false, reportAny=false
 
 import pytest
 from unittest.mock import AsyncMock, Mock

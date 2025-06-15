@@ -4,7 +4,6 @@ Tests for memory management and resource cleanup in TGraph Bot graphs.
 This module tests that matplotlib figures are properly cleaned up
 and that repeated graph generation doesn't cause memory leaks.
 """
-# pyright: reportPrivateUsage=false, reportAny=false
 
 import gc
 import tempfile

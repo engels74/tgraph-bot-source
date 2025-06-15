@@ -4,7 +4,6 @@ Test project structure and dependencies for TGraph Bot.
 This test module verifies that the project structure is correctly set up
 and that all required dependencies are available and importable.
 """
-# pyright: reportPrivateUsage=false, reportAny=false
 
 import importlib
 from pathlib import Path

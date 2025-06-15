@@ -4,7 +4,6 @@ Tests for the sample graph implementation.
 This module tests the SampleGraph class to validate the foundation
 for specific graph implementations and demonstrate the complete
 end-to-end workflow.
-# pyright: reportPrivateUsage=false, reportAny=false
 """
 
 from pathlib import Path

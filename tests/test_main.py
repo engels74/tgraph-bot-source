@@ -4,7 +4,6 @@ Tests for main.py entry point functionality.
 This module tests the TGraphBot class initialization, configuration loading,
 error handling, logging, graceful shutdown, and main entry point function
 with proper mocking of Discord API calls.
-# pyright: reportPrivateUsage=false, reportAny=false
 """
 
 import asyncio

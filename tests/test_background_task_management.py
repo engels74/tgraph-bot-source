@@ -4,7 +4,6 @@ Test background task management system for UpdateTracker.
 This module tests the enhanced BackgroundTaskManager and its integration
 with the UpdateTracker for robust task lifecycle management.
 """
-# Type safety fixes: targeted pyright ignores added for test file requirements
 
 import asyncio
 import pytest

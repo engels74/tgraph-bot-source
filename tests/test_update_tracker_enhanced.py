@@ -4,7 +4,6 @@ Tests for enhanced update tracker scheduling logic.
 This module tests the enhanced scheduling features including failure handling,
 exponential backoff, and improved edge case handling.
 """
-# pyright: reportPrivateUsage=false, reportAny=false
 
 import pytest
 from datetime import datetime, timedelta
