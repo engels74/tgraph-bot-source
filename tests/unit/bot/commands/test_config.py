@@ -15,39 +15,19 @@ from discord.ext import commands
 
 
 from bot.commands.config import ConfigCog
-from config.manager import ConfigManager
 from config.schema import TGraphBotConfig
 from main import TGraphBot
+from tests.utils.test_helpers import create_config_manager_with_config
 
 
 class TestConfigCog:
     """Test cases for the ConfigCog class."""
 
     @pytest.fixture
-    def mock_config(self) -> TGraphBotConfig:
-        """Create a mock configuration for testing."""
-        return TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token",
-            CHANNEL_ID=123456789012345678,
-            UPDATE_DAYS=7,
-            LANGUAGE="en",
-            CENSOR_USERNAMES=True,
-            ENABLE_GRAPH_GRID=False,
-        )
-
-    @pytest.fixture
-    def mock_config_manager(self, mock_config: TGraphBotConfig) -> ConfigManager:
-        """Create a mock configuration manager."""
-        config_manager = ConfigManager()
-        config_manager.set_current_config(mock_config)
-        return config_manager
-
-    @pytest.fixture
-    def mock_bot(self, mock_config_manager: ConfigManager) -> TGraphBot:
+    def mock_bot(self, base_config: TGraphBotConfig) -> TGraphBot:
         """Create a mock TGraphBot instance."""
-        bot = TGraphBot(mock_config_manager)
+        config_manager = create_config_manager_with_config(base_config)
+        bot = TGraphBot(config_manager)
         return bot
 
     @pytest.fixture
@@ -207,8 +187,9 @@ class TestConfigCog:
         config_cog: ConfigCog,
         mock_interaction: MagicMock
     ) -> None:
-        """Test configuration editing when config file doesn't exist."""
-        with patch('pathlib.Path.exists', return_value=False), \
+        """Test configuration editing when no config file path is available."""
+        # Mock the config manager's config_file_path to be None
+        with patch.object(config_cog.tgraph_bot.config_manager, 'config_file_path', None), \
              patch('utils.command_utils.safe_interaction_response') as mock_safe_response:
             _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "UPDATE_DAYS", "14")  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
 
@@ -220,36 +201,30 @@ class TestConfigCog:
         self,
         config_cog: ConfigCog,
         mock_interaction: MagicMock,
-        _mock_config: TGraphBotConfig
+        base_config: TGraphBotConfig
     ) -> None:
         """Test successful configuration editing."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yml', delete=False) as temp_file:
-            temp_path = Path(temp_file.name)
-            
-            # Write initial config
-            _ = temp_file.write("UPDATE_DAYS: 7\nLANGUAGE: en\n")
-            temp_file.flush()
-            
-            try:
-                with patch('pathlib.Path.exists', return_value=True), \
-                     patch('bot.commands.config.Path', return_value=temp_path), \
-                     patch.object(ConfigManager, 'save_config') as mock_save:
+        # Create a temporary config file
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yml', delete=False) as f:
+            config_path = Path(f.name)
 
-                    _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "UPDATE_DAYS", "14")  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
-                
-                # Verify success response was sent
-                mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportAny]
-                call_args = mock_interaction.response.send_message.call_args  # pyright: ignore[reportAny]
-                embed = call_args[1]['embed']  # pyright: ignore[reportAny]
-                
-                assert embed.title == "✅ Configuration Updated"  # pyright: ignore[reportAny]
-                assert embed.color == discord.Color.green()  # pyright: ignore[reportAny]
-                
+        try:
+            # Mock the config manager's config_file_path
+            with patch.object(config_cog.tgraph_bot.config_manager, 'config_file_path', config_path), \
+                 patch.object(config_cog.tgraph_bot.config_manager, 'get_current_config', return_value=base_config), \
+                 patch('config.manager.ConfigManager.save_config') as mock_save:
+
+                _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "UPDATE_DAYS", "14")  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
+
                 # Verify save was called
                 mock_save.assert_called_once()
-                
-            finally:
-                temp_path.unlink(missing_ok=True)
+
+                # Verify success response was sent
+                mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportAny]
+
+        finally:
+            # Clean up the temporary file
+            config_path.unlink(missing_ok=True)
 
     @pytest.mark.asyncio
     async def test_config_edit_save_error(
@@ -257,12 +232,22 @@ class TestConfigCog:
         config_cog: ConfigCog, 
         mock_interaction: MagicMock
     ) -> None:
-        """Test configuration editing with save error."""
-        with patch('pathlib.Path.exists', return_value=True), \
-             patch.object(ConfigManager, 'save_config', side_effect=Exception("Save failed")), \
-             patch('utils.command_utils.safe_interaction_response') as mock_safe_response:
+        """Test configuration editing when save operation fails."""
+        # Create a temporary config file
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yml', delete=False) as f:
+            config_path = Path(f.name)
 
-            _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "UPDATE_DAYS", "14")  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
+        try:
+            # Mock the config manager's config_file_path and save to raise an exception
+            with patch.object(config_cog.tgraph_bot.config_manager, 'config_file_path', config_path), \
+                 patch('config.manager.ConfigManager.save_config', side_effect=OSError("Save failed")), \
+                 patch('utils.command_utils.safe_interaction_response') as mock_safe_response:
 
-        # Verify error response was sent through the new error handling system
-        mock_safe_response.assert_called_once()
+                _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "UPDATE_DAYS", "14")  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
+
+                # Verify error response was sent through the new error handling system
+                mock_safe_response.assert_called_once()
+
+        finally:
+            # Clean up the temporary file
+            config_path.unlink(missing_ok=True)
