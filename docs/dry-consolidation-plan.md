@@ -104,29 +104,29 @@ Establish foundational test infrastructure with core fixtures and utilities that
 - `tests/unit/bot/commands/test_config.py`
 
 **Implementation Steps**:
-- [ ] Replace inline TGraphBotConfig creation with fixture usage in `test_manager.py`
-- [ ] Remove duplicate `temp_config_file` fixtures, use global version
-- [ ] Update `test_main.py` to use centralized configuration fixtures
-- [ ] Modify `test_config.py` to use standardized config manager setup
-- [ ] Remove redundant fixture definitions from individual files
+- [x] Replace inline TGraphBotConfig creation with fixture usage in `test_manager.py`
+- [x] Remove duplicate `temp_config_file` fixtures, use global version
+- [x] Update `test_main.py` to use centralized configuration fixtures
+- [x] Modify `test_config.py` to use standardized config manager setup
+- [x] Remove redundant fixture definitions from individual files
 
 **Validation**:
-- [ ] Run affected test files individually to ensure no regressions
-- [ ] Verify all tests pass with new fixture usage
-- [ ] Confirm type safety compliance for modified files
+- [x] Run affected test files individually to ensure no regressions
+- [x] Verify all tests pass with new fixture usage
+- [x] Confirm type safety compliance for modified files
 
 #### Subtask 1.4: Create Mock Object Utilities
 **Files Modified**: `tests/utils/test_helpers.py`
 
 **Implementation Steps**:
-- [ ] Add `create_mock_discord_bot` function with configurable attributes
-- [ ] Add `create_mock_interaction` function with optional parameters
-- [ ] Add `create_mock_user` and `create_mock_guild` helper functions
-- [ ] Implement parameter validation and default value handling
+- [x] Add `create_mock_discord_bot` function with configurable attributes
+- [x] Add `create_mock_interaction` function with optional parameters
+- [x] Add `create_mock_user` and `create_mock_guild` helper functions
+- [x] Implement parameter validation and default value handling
 
 **Validation**:
-- [ ] Test mock creation functions with various parameter combinations
-- [ ] Verify mock objects have expected attributes and behaviors
+- [x] Test mock creation functions with various parameter combinations
+- [x] Verify mock objects have expected attributes and behaviors
 
 ### Phase 2: Async and Mock Consolidation (Week 2)
 
