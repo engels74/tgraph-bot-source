@@ -18,24 +18,18 @@ import pytest
 import matplotlib.pyplot as plt
 
 from graphs.graph_modules.base_graph import BaseGraph
-from graphs.graph_modules.graph_factory import GraphFactory
-from config.schema import TGraphBotConfig
+# Removed unused imports - now using utility functions
+from tests.utils.graph_helpers import (
+    create_test_config_minimal,
+    create_memory_test_graph,
+    create_graph_factory_with_config,
+    matplotlib_cleanup,
+    assert_graph_cleanup,
+    create_mock_graph_data,
+)
 
 
-def create_test_config() -> TGraphBotConfig:
-    """Create a minimal test configuration."""
-    return TGraphBotConfig(
-        TAUTULLI_API_KEY="test_key",
-        TAUTULLI_URL="http://test.local",
-        DISCORD_TOKEN="test_token",
-        CHANNEL_ID=123456789,
-        ENABLE_DAILY_PLAY_COUNT=True,
-        ENABLE_TOP_10_USERS=False,
-        ENABLE_TOP_10_PLATFORMS=False,
-        ENABLE_PLAY_COUNT_BY_DAYOFWEEK=False,
-        ENABLE_PLAY_COUNT_BY_HOUROFDAY=False,
-        ENABLE_PLAY_COUNT_BY_MONTH=False,
-    )
+# Removed - now using utility function from graph_helpers
 
 
 class MemoryTestGraph(BaseGraph):
@@ -69,51 +63,60 @@ class TestMemoryManagement:
     
     def test_single_graph_cleanup(self) -> None:
         """Test that a single graph properly cleans up its resources."""
-        graph = MemoryTestGraph()
+        with matplotlib_cleanup():
+            test_graph = create_memory_test_graph()
+            graph = test_graph.graph
 
-        # Generate graph
-        with tempfile.TemporaryDirectory():
-            output_path = graph.generate({"test": "data"})
-
-            # Verify file was created
-            assert Path(output_path).exists()
-
-            # Verify cleanup occurred (figure should be None after generate)
-            assert graph.figure is None
-            assert graph.axes is None
-
-            # Clean up test file
-            Path(output_path).unlink(missing_ok=True)
-    
-    def test_context_manager_cleanup(self) -> None:
-        """Test that context manager properly cleans up resources."""
-        with MemoryTestGraph() as graph:
-            _ = graph.setup_figure()
-            assert graph.figure is not None
-            assert graph.axes is not None
-        
-        # After context exit, resources should be cleaned up
-        assert graph.figure is None
-        assert graph.axes is None
-    
-    def test_multiple_graphs_sequential_cleanup(self) -> None:
-        """Test that multiple graphs generated sequentially clean up properly."""
-        initial_figures = len(plt.get_fignums())
-        
-        for i in range(5):
-            graph = MemoryTestGraph()
+            # Generate graph
             with tempfile.TemporaryDirectory():
-                output_path = graph.generate({"test": f"data_{i}"})
+                mock_data = create_mock_graph_data()
+                output_path = graph.generate(mock_data)
 
                 # Verify file was created
                 assert Path(output_path).exists()
 
+                # Verify cleanup occurred (figure should be None after generate)
+                assert_graph_cleanup(graph)
+
                 # Clean up test file
                 Path(output_path).unlink(missing_ok=True)
-        
-        # Verify no figures remain open
-        final_figures = len(plt.get_fignums())
-        assert final_figures == initial_figures
+    
+    def test_context_manager_cleanup(self) -> None:
+        """Test that context manager properly cleans up resources."""
+        with matplotlib_cleanup():
+            test_graph = create_memory_test_graph()
+            graph = test_graph.graph
+            
+            with graph:
+                _ = graph.setup_figure()
+                assert graph.figure is not None
+                assert graph.axes is not None
+            
+            # After context exit, resources should be cleaned up
+            assert_graph_cleanup(graph)
+    
+    def test_multiple_graphs_sequential_cleanup(self) -> None:
+        """Test that multiple graphs generated sequentially clean up properly."""
+        with matplotlib_cleanup():
+            initial_figures = len(plt.get_fignums())
+            
+            for _ in range(5):
+                test_graph = create_memory_test_graph()
+                graph = test_graph.graph
+                
+                with tempfile.TemporaryDirectory():
+                    mock_data = create_mock_graph_data()
+                    output_path = graph.generate(mock_data)
+
+                    # Verify file was created
+                    assert Path(output_path).exists()
+
+                    # Clean up test file
+                    Path(output_path).unlink(missing_ok=True)
+            
+            # Verify no figures remain open
+            final_figures = len(plt.get_fignums())
+            assert final_figures == initial_figures
     
     def test_exception_during_generation_still_cleans_up(self) -> None:
         """Test that cleanup occurs even when graph generation fails."""
@@ -139,8 +142,7 @@ class TestMemoryManagement:
             _ = graph.generate({"test": "data"})
         
         # Even after exception, cleanup should have occurred
-        assert graph.figure is None
-        assert graph.axes is None
+        assert_graph_cleanup(graph)
     
     def test_cleanup_all_figures_method(self) -> None:
         """Test the cleanup_all_figures class method."""
@@ -172,31 +174,28 @@ class TestMemoryManagement:
         graph.cleanup()
         
         # References should still be cleared
-        assert graph.figure is None
-        assert graph.axes is None
+        assert_graph_cleanup(graph)
     
     def test_graph_factory_bulk_generation_cleanup(self) -> None:
         """Test that GraphFactory properly cleans up when generating multiple graphs."""
-        # Create a minimal config for testing
-        config = create_test_config()
-        
-        factory = GraphFactory(config)
-        
-        # Mock data for graph generation
-        mock_data: dict[str, object] = {
-            "data": [
-                {"date": "2024-01-01", "user": "test_user", "title": "Test Movie"}
-            ]
-        }
-        
-        initial_figures = len(plt.get_fignums())
-        
-        # Generate all graphs
-        with patch.object(factory, 'create_enabled_graphs') as mock_create:
-            # Return a list with our test graph
-            mock_create.return_value = [MemoryTestGraph()]
+        with matplotlib_cleanup():
+            # Create a minimal config for testing
+            config = create_test_config_minimal()
             
-            generated_paths = factory.generate_all_graphs(mock_data)
+            factory = create_graph_factory_with_config(config)
+            
+            # Mock data for graph generation
+            mock_data = create_mock_graph_data()
+            
+            initial_figures = len(plt.get_fignums())
+            
+            # Generate all graphs
+            with patch.object(factory, 'create_enabled_graphs') as mock_create:
+                # Return a list with our test graph
+                test_graph = create_memory_test_graph()
+                mock_create.return_value = [test_graph.graph]
+                
+                generated_paths = factory.generate_all_graphs(mock_data)
             
             # Verify graphs were generated
             assert len(generated_paths) == 1
@@ -239,8 +238,8 @@ class TestMemoryManagement:
     
     def test_cleanup_all_graph_resources_method(self) -> None:
         """Test the GraphFactory cleanup_all_graph_resources method."""
-        config = create_test_config()
-        factory = GraphFactory(config)
+        config = create_test_config_minimal()
+        factory = create_graph_factory_with_config(config)
         
         # Create some figures
         _ = plt.figure()  # pyright: ignore[reportUnknownMemberType]

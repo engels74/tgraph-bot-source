@@ -11,6 +11,7 @@ from pathlib import Path
 import pytest
 
 from graphs.graph_modules.sample_graph import SampleGraph
+from tests.utils.graph_helpers import assert_graph_properties, assert_graph_cleanup
 
 
 class TestSampleGraph:
@@ -19,10 +20,13 @@ class TestSampleGraph:
     def test_sample_graph_instantiation(self) -> None:
         """Test that SampleGraph can be instantiated properly."""
         graph = SampleGraph()
-        assert graph.width == 10
-        assert graph.height == 6
-        assert graph.dpi == 100
-        assert graph.background_color == "#ffffff"
+        assert_graph_properties(
+            graph,
+            expected_width=10,
+            expected_height=6,
+            expected_dpi=100,
+            expected_background_color="#ffffff"
+        )
         
     def test_sample_graph_custom_parameters(self) -> None:
         """Test SampleGraph with custom initialization parameters."""
@@ -32,10 +36,13 @@ class TestSampleGraph:
             dpi=150,
             background_color="#f0f0f0"
         )
-        assert graph.width == 12
-        assert graph.height == 8
-        assert graph.dpi == 150
-        assert graph.background_color == "#f0f0f0"
+        assert_graph_properties(
+            graph,
+            expected_width=12,
+            expected_height=8,
+            expected_dpi=150,
+            expected_background_color="#f0f0f0"
+        )
         
     def test_get_title(self) -> None:
         """Test that get_title returns the expected title."""
@@ -229,5 +236,4 @@ class TestSampleGraph:
             Path(output_path).unlink(missing_ok=True)
             
         # After context exit, cleanup should have been called
-        assert graph.figure is None
-        assert graph.axes is None
+        assert_graph_cleanup(graph)

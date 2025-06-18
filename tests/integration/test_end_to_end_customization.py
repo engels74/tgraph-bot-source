@@ -8,8 +8,18 @@ options work correctly in realistic scenarios.
 
 from __future__ import annotations
 
-from config.schema import TGraphBotConfig
-from graphs.graph_modules.graph_factory import GraphFactory
+# Removed unused imports - now using utility functions
+from tests.utils.graph_helpers import (
+    create_test_config_comprehensive,
+    create_test_config_minimal,
+    create_test_config_selective,
+    create_test_config_privacy_focused,
+    create_graph_factory_with_config,
+    assert_factory_enabled_graphs,
+    assert_graph_properties,
+    assert_graph_cleanup,
+    matplotlib_cleanup,
+)
 
 
 class TestEndToEndCustomization:
@@ -17,188 +27,122 @@ class TestEndToEndCustomization:
 
     def test_complete_workflow_with_all_customizations(self) -> None:
         """Test complete workflow with all customization options enabled."""
-        # Create a comprehensive configuration with all options
-        config = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key_here",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token_1234567890",
-            CHANNEL_ID=123456789,
+        with matplotlib_cleanup():
+            # Create a comprehensive configuration with all options
+            config = create_test_config_comprehensive()
             
-            # Timing and retention
-            UPDATE_DAYS=14,
-            KEEP_DAYS=21,
-            TIME_RANGE_DAYS=60,
+            # Create factory with comprehensive config
+            factory = create_graph_factory_with_config(config)
             
-            # Graph feature toggles
-            ENABLE_DAILY_PLAY_COUNT=True,
-            ENABLE_PLAY_COUNT_BY_DAYOFWEEK=True,
-            ENABLE_PLAY_COUNT_BY_HOUROFDAY=True,
-            ENABLE_PLAY_COUNT_BY_MONTH=True,
-            ENABLE_TOP_10_PLATFORMS=True,
-            ENABLE_TOP_10_USERS=True,
-            
-            # Visual customizations
-            TV_COLOR="#2E86AB",
-            MOVIE_COLOR="#A23B72",
-            GRAPH_BACKGROUND_COLOR="#F8F9FA",
-            ANNOTATION_COLOR="#C73E1D",
-            ANNOTATION_OUTLINE_COLOR="#FFFFFF",
-            
-            # Graph options
-            ENABLE_GRAPH_GRID=True,
-            CENSOR_USERNAMES=True,
-            ENABLE_ANNOTATION_OUTLINE=True,
-            
-            # Annotation controls
-            ANNOTATE_DAILY_PLAY_COUNT=True,
-            ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK=True,
-            ANNOTATE_PLAY_COUNT_BY_HOUROFDAY=True,
-            ANNOTATE_TOP_10_PLATFORMS=True,
-            ANNOTATE_TOP_10_USERS=True,
-            ANNOTATE_PLAY_COUNT_BY_MONTH=True,
-        )
+            # Verify all expected graphs are enabled
+            expected_types = {
+                "daily_play_count",
+                "play_count_by_dayofweek",
+                "play_count_by_hourofday",
+                "play_count_by_month",
+                "top_10_platforms",
+                "top_10_users"
+            }
+            assert_factory_enabled_graphs(factory, expected_types)
         
-        # Create factory with comprehensive config
-        factory = GraphFactory(config)
-        
-        # Verify all expected graphs are enabled
-        enabled_types = factory.get_enabled_graph_types()
-        expected_types = {
-            "daily_play_count",
-            "play_count_by_dayofweek",
-            "play_count_by_hourofday",
-            "play_count_by_month",
-            "top_10_platforms",
-            "top_10_users"
-        }
-        assert set(enabled_types) == expected_types
-        
-        # Test each graph type can be created with full configuration
-        for graph_type in enabled_types:
-            graph = factory.create_graph_by_type(graph_type)
-            
-            # Verify configuration is properly applied (colors are normalized to lowercase)
-            assert graph.config is not None
-            assert graph.config.TV_COLOR == "#2e86ab"
-            assert graph.config.MOVIE_COLOR == "#a23b72"
-            assert graph.config.GRAPH_BACKGROUND_COLOR == "#f8f9fa"
-            assert graph.config.ENABLE_GRAPH_GRID is True
-            assert graph.config.CENSOR_USERNAMES is True
-            
-            # Verify graph properties are set correctly
-            assert graph.background_color == "#f8f9fa"
-            assert graph.width == 12  # Default width
-            assert graph.height == 8  # Default height
-            assert graph.dpi == 100  # Default DPI
+            # Test each graph type can be created with full configuration
+            enabled_types = factory.get_enabled_graph_types()
+            for graph_type in enabled_types:
+                graph = factory.create_graph_by_type(graph_type)
+                
+                # Verify configuration is properly applied (colors are normalized to lowercase)
+                assert graph.config is not None
+                assert graph.config.TV_COLOR == "#2e86ab"
+                assert graph.config.MOVIE_COLOR == "#a23b72"
+                assert graph.config.GRAPH_BACKGROUND_COLOR == "#f8f9fa"
+                assert graph.config.ENABLE_GRAPH_GRID is True
+                assert graph.config.CENSOR_USERNAMES is True
+                
+                # Verify graph properties are set correctly using utility
+                assert_graph_properties(
+                    graph,
+                    expected_background_color="#f8f9fa"
+                )
 
     def test_minimal_configuration_workflow(self) -> None:
         """Test workflow with minimal configuration using defaults."""
-        # Create minimal configuration
-        config = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key_here",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token_1234567890",
-            CHANNEL_ID=123456789,
-        )
-        
-        factory = GraphFactory(config)
-        
-        # With minimal config, all graphs should be enabled by default
-        enabled_types = factory.get_enabled_graph_types()
-        assert len(enabled_types) == 6  # All 6 graph types
-        
-        # Test that default values are applied correctly
-        graph = factory.create_graph_by_type("daily_play_count")
-        assert graph.config is not None
-        assert graph.config.TV_COLOR == "#1f77b4"  # Default blue
-        assert graph.config.MOVIE_COLOR == "#ff7f0e"  # Default orange
-        assert graph.config.CENSOR_USERNAMES is True  # Default privacy
-        assert graph.config.ENABLE_GRAPH_GRID is False  # Default no grid
+        with matplotlib_cleanup():
+            # Create minimal configuration
+            config = create_test_config_minimal()
+            
+            factory = create_graph_factory_with_config(config)
+            
+            # With minimal config, all graphs should be enabled by default
+            enabled_types = factory.get_enabled_graph_types()
+            assert len(enabled_types) == 6  # All 6 graph types
+            
+            # Test that default values are applied correctly
+            graph = factory.create_graph_by_type("daily_play_count")
+            assert graph.config is not None
+            assert graph.config.TV_COLOR == "#1f77b4"  # Default blue
+            assert graph.config.MOVIE_COLOR == "#ff7f0e"  # Default orange
+            assert graph.config.CENSOR_USERNAMES is True  # Default privacy
+            assert graph.config.ENABLE_GRAPH_GRID is False  # Default no grid
 
     def test_selective_graph_enabling_workflow(self) -> None:
         """Test workflow with selective graph type enabling."""
-        # Enable only specific graph types
-        config = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key_here",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token_1234567890",
-            CHANNEL_ID=123456789,
+        with matplotlib_cleanup():
+            # Enable only specific graph types
+            config = create_test_config_selective(
+                enable_daily_play_count=True,
+                enable_play_count_by_dayofweek=False,
+                enable_play_count_by_hourofday=False,
+                enable_play_count_by_month=True,
+                enable_top_10_platforms=False,
+                enable_top_10_users=True,
+            )
             
-            # Enable only 3 graph types
-            ENABLE_DAILY_PLAY_COUNT=True,
-            ENABLE_PLAY_COUNT_BY_DAYOFWEEK=False,
-            ENABLE_PLAY_COUNT_BY_HOUROFDAY=False,
-            ENABLE_PLAY_COUNT_BY_MONTH=True,
-            ENABLE_TOP_10_PLATFORMS=False,
-            ENABLE_TOP_10_USERS=True,
-        )
-        
-        factory = GraphFactory(config)
-        
-        # Verify only selected graphs are enabled
-        enabled_types = factory.get_enabled_graph_types()
-        expected_enabled = {"daily_play_count", "play_count_by_month", "top_10_users"}
-        assert set(enabled_types) == expected_enabled
-        
-        # Verify disabled graphs are not in the list
-        assert "play_count_by_dayofweek" not in enabled_types
-        assert "play_count_by_hourofday" not in enabled_types
-        assert "top_10_platforms" not in enabled_types
+            factory = create_graph_factory_with_config(config)
+            
+            # Verify only selected graphs are enabled
+            expected_enabled = {"daily_play_count", "play_count_by_month", "top_10_users"}
+            assert_factory_enabled_graphs(factory, expected_enabled)
+            
+            # Verify disabled graphs are not in the list
+            enabled_types = factory.get_enabled_graph_types()
+            assert "play_count_by_dayofweek" not in enabled_types
+            assert "play_count_by_hourofday" not in enabled_types
+            assert "top_10_platforms" not in enabled_types
 
     def test_privacy_focused_configuration(self) -> None:
         """Test configuration optimized for privacy."""
-        config = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key_here",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token_1234567890",
-            CHANNEL_ID=123456789,
+        with matplotlib_cleanup():
+            config = create_test_config_privacy_focused()
             
-            # Privacy-focused settings
-            CENSOR_USERNAMES=True,
-            ENABLE_TOP_10_USERS=False,  # Disable user-specific graphs
+            factory = create_graph_factory_with_config(config)
+            enabled_types = factory.get_enabled_graph_types()
             
-            # Disable user-related annotations
-            ANNOTATE_TOP_10_USERS=False,
-        )
-        
-        factory = GraphFactory(config)
-        enabled_types = factory.get_enabled_graph_types()
-        
-        # Verify user graphs are disabled
-        assert "top_10_users" not in enabled_types
-        
-        # Test remaining graphs have privacy settings applied
-        for graph_type in enabled_types:
-            if graph_type != "top_10_users":  # Skip disabled graph
-                graph = factory.create_graph_by_type(graph_type)
-                assert graph.should_censor_usernames() is True
+            # Verify user graphs are disabled
+            assert "top_10_users" not in enabled_types
+            
+            # Test remaining graphs have privacy settings applied
+            for graph_type in enabled_types:
+                if graph_type != "top_10_users":  # Skip disabled graph
+                    graph = factory.create_graph_by_type(graph_type)
+                    assert graph.should_censor_usernames() is True
 
     def test_performance_optimized_configuration(self) -> None:
         """Test configuration optimized for performance."""
-        config = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key_here",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token_1234567890",
-            CHANNEL_ID=123456789,
-            
-            # Performance optimizations
-            TIME_RANGE_DAYS=7,  # Shorter time range
-            
-            # Enable only essential graphs
-            ENABLE_DAILY_PLAY_COUNT=True,
-            ENABLE_PLAY_COUNT_BY_DAYOFWEEK=False,
-            ENABLE_PLAY_COUNT_BY_HOUROFDAY=False,
-            ENABLE_PLAY_COUNT_BY_MONTH=True,
-            ENABLE_TOP_10_PLATFORMS=False,
-            ENABLE_TOP_10_USERS=True,
-            
-            # Disable annotations for faster generation
-            ANNOTATE_DAILY_PLAY_COUNT=False,
-            ANNOTATE_PLAY_COUNT_BY_MONTH=False,
-            ANNOTATE_TOP_10_USERS=False,
+        config = create_test_config_selective(
+            enable_daily_play_count=True,
+            enable_play_count_by_dayofweek=False,
+            enable_play_count_by_hourofday=False,
+            enable_play_count_by_month=True,
+            enable_top_10_platforms=False,
+            enable_top_10_users=True,
         )
+        # Override for performance testing
+        config.TIME_RANGE_DAYS = 7
+        config.ANNOTATE_DAILY_PLAY_COUNT = False
+        config.ANNOTATE_PLAY_COUNT_BY_MONTH = False
+        config.ANNOTATE_TOP_10_USERS = False
         
-        factory = GraphFactory(config)
+        factory = create_graph_factory_with_config(config)
         enabled_types = factory.get_enabled_graph_types()
         
         # Verify only essential graphs are enabled
@@ -211,25 +155,17 @@ class TestEndToEndCustomization:
 
     def test_high_contrast_theme_configuration(self) -> None:
         """Test configuration with high contrast theme."""
-        config = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key_here",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token_1234567890",
-            CHANNEL_ID=123456789,
-            
-            # High contrast dark theme
-            GRAPH_BACKGROUND_COLOR="#2b2b2b",
-            TV_COLOR="#00ff00",
-            MOVIE_COLOR="#ff6600",
-            ANNOTATION_COLOR="#ffffff",
-            ANNOTATION_OUTLINE_COLOR="#000000",
-            
-            # Enable grid for better readability
-            ENABLE_GRAPH_GRID=True,
-            ENABLE_ANNOTATION_OUTLINE=True,
-        )
+        config = create_test_config_minimal()
+        # Override for high contrast theme
+        config.GRAPH_BACKGROUND_COLOR = "#2b2b2b"
+        config.TV_COLOR = "#00ff00"
+        config.MOVIE_COLOR = "#ff6600"
+        config.ANNOTATION_COLOR = "#ffffff"
+        config.ANNOTATION_OUTLINE_COLOR = "#000000"
+        config.ENABLE_GRAPH_GRID = True
+        config.ENABLE_ANNOTATION_OUTLINE = True
         
-        factory = GraphFactory(config)
+        factory = create_graph_factory_with_config(config)
         graph = factory.create_graph_by_type("daily_play_count")
         
         # Verify high contrast colors are applied (colors are normalized to lowercase)
@@ -245,14 +181,8 @@ class TestEndToEndCustomization:
 
     def test_factory_resource_management(self) -> None:
         """Test that factory properly manages resources across multiple operations."""
-        config = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key_here",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token_1234567890",
-            CHANNEL_ID=123456789,
-        )
-        
-        factory = GraphFactory(config)
+        config = create_test_config_minimal()
+        factory = create_graph_factory_with_config(config)
         
         # Create multiple graphs to test resource management
         graphs: list[object] = []
@@ -270,25 +200,18 @@ class TestEndToEndCustomization:
         # Test cleanup functionality
         for graph in graphs:
             graph.cleanup()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
-            assert graph.figure is None  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
-            assert graph.axes is None  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+            assert_graph_cleanup(graph)  # pyright: ignore[reportArgumentType]
 
     def test_configuration_validation_edge_cases(self) -> None:
         """Test configuration validation with edge case values."""
         # Test with boundary values
-        config = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key_here",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token_1234567890",
-            CHANNEL_ID=123456789,
-            
-            # Boundary values
-            UPDATE_DAYS=1,  # Minimum
-            KEEP_DAYS=365,  # Maximum
-            TIME_RANGE_DAYS=1,  # Minimum
-        )
+        config = create_test_config_minimal()
+        # Override for edge case testing
+        config.UPDATE_DAYS = 1  # Minimum
+        config.KEEP_DAYS = 365  # Maximum
+        config.TIME_RANGE_DAYS = 1  # Minimum
         
-        factory = GraphFactory(config)
+        factory = create_graph_factory_with_config(config)
         graph = factory.create_graph_by_type("daily_play_count")
         
         # Verify boundary values are accepted

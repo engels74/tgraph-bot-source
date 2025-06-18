@@ -19,6 +19,13 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from graphs.graph_modules.base_graph import BaseGraph
+from tests.utils.graph_helpers import (
+    create_memory_test_graph,
+    matplotlib_cleanup,
+    assert_graph_properties,
+    assert_graph_cleanup,
+    patch_matplotlib_save,
+)
 
 
 class ConcreteGraph(BaseGraph):
@@ -54,10 +61,7 @@ class TestBaseGraph:
     def test_concrete_graph_instantiation(self) -> None:
         """Test that concrete implementation can be instantiated."""
         graph = ConcreteGraph()
-        assert graph.width == 12
-        assert graph.height == 8
-        assert graph.dpi == 100
-        assert graph.background_color == "#ffffff"
+        assert_graph_properties(graph)  # Uses default values
         assert graph.figure is None
         assert graph.axes is None
     
@@ -69,10 +73,13 @@ class TestBaseGraph:
             dpi=150,
             background_color="#f0f0f0"
         )
-        assert graph.width == 10
-        assert graph.height == 6
-        assert graph.dpi == 150
-        assert graph.background_color == "#f0f0f0"
+        assert_graph_properties(
+            graph,
+            expected_width=10,
+            expected_height=6,
+            expected_dpi=150,
+            expected_background_color="#f0f0f0"
+        )
     
     def test_setup_figure(self) -> None:
         """Test figure setup functionality."""
@@ -130,9 +137,7 @@ class TestBaseGraph:
         assert graph.axes is not None
         
         graph.cleanup()
-        
-        assert graph.figure is None
-        assert graph.axes is None
+        assert_graph_cleanup(graph)
     
     def test_context_manager(self) -> None:
         """Test BaseGraph as context manager."""
@@ -143,23 +148,23 @@ class TestBaseGraph:
             assert graph.axes is not None
         
         # After context exit, cleanup should have been called
-        assert graph.figure is None
-        assert graph.axes is None
+        assert_graph_cleanup(graph)
     
     def test_generate_method_implementation(self) -> None:
         """Test that concrete implementation's generate method works."""
-        graph = ConcreteGraph()
-        
-        with tempfile.TemporaryDirectory():
-            # Generate graph
-            output_path = graph.generate({"test": "data"})
+        with matplotlib_cleanup():
+            graph = ConcreteGraph()
             
-            # Verify file was created
-            assert Path(output_path).exists()
-            assert Path(output_path).suffix == ".png"
-            
-            # Clean up
-            Path(output_path).unlink(missing_ok=True)
+            with tempfile.TemporaryDirectory():
+                # Generate graph
+                output_path = graph.generate({"test": "data"})
+                
+                # Verify file was created
+                assert Path(output_path).exists()
+                assert Path(output_path).suffix == ".png"
+                
+                # Clean up
+                Path(output_path).unlink(missing_ok=True)
     
     def test_get_title_method_implementation(self) -> None:
         """Test that concrete implementation's get_title method works."""
