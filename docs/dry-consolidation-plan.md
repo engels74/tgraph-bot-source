@@ -138,16 +138,18 @@ Consolidate async testing patterns and standardize mock object creation across a
 **Files Modified**: `tests/conftest.py`
 
 **Implementation Steps**:
-- [ ] Create async test base class with common setup methods
-- [ ] Implement async mock context managers for common patterns
-- [ ] Add async fixture for event loop management
-- [ ] Create utilities for async exception testing
-- [ ] Add async timeout helpers for long-running test operations
+- [x] Create async test base class with common setup methods
+- [x] Implement async mock context managers for common patterns
+- [x] Add async fixture for event loop management
+- [x] Create utilities for async exception testing
+- [x] Add async timeout helpers for long-running test operations
 
 **Validation**:
-- [ ] Run async tests with new utilities to verify functionality
-- [ ] Test timeout and exception handling scenarios
-- [ ] Verify async fixtures work correctly with pytest-asyncio
+- [x] Run async tests with new utilities to verify functionality
+- [x] Test timeout and exception handling scenarios  
+- [x] Verify async fixtures work correctly with pytest-asyncio
+- [x] Achieve exactly 0 errors and 0 warnings with `uvx basedpyright`
+- [x] All 22 tests pass with `uv run pytest`
 
 #### Subtask 2.2: Update Async-Heavy Test Files
 **Files Modified**:

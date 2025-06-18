@@ -4,13 +4,27 @@ Global test configuration fixtures for TGraph Bot tests.
 This module provides reusable pytest fixtures for creating TGraphBotConfig
 instances with different levels of configuration for testing purposes.
 All fixtures return properly typed and validated configuration objects.
+
+Additionally provides async fixtures for event loop management and common
+async testing patterns.
 """
 
 from __future__ import annotations
 
+import asyncio
+from collections.abc import AsyncGenerator, Coroutine, Generator
+from typing import TypedDict
+
 import pytest
 
 from config.schema import TGraphBotConfig
+
+
+class AsyncTestContext(TypedDict):
+    """Type definition for async test context dictionary."""
+    background_tasks: set[asyncio.Task[object]]
+    cleanup_tasks: list[Coroutine[object, object, object]]
+    start_time: float
 
 
 @pytest.fixture
@@ -158,3 +172,82 @@ def comprehensive_config() -> TGraphBotConfig:
         MY_STATS_COOLDOWN_MINUTES=5,
         MY_STATS_GLOBAL_COOLDOWN_SECONDS=120,
     )
+
+
+# Async Testing Fixtures
+
+@pytest.fixture
+def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
+    """
+    Create an event loop for async tests.
+    
+    This fixture ensures that each test gets a fresh event loop,
+    preventing test interference and providing clean async test isolation.
+    
+    Yields:
+        asyncio.AbstractEventLoop: A new event loop for the test
+    """
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        yield loop
+    finally:
+        # Clean up any remaining tasks
+        pending_tasks = [task for task in asyncio.all_tasks(loop) if not task.done()]
+        if pending_tasks:
+            for task in pending_tasks:
+                _ = task.cancel()
+            # Give tasks a chance to clean up
+            _ = loop.run_until_complete(asyncio.gather(*pending_tasks, return_exceptions=True))
+        
+        # Close the loop
+        loop.close()
+
+
+@pytest.fixture
+async def async_test_context() -> AsyncGenerator[AsyncTestContext, None]:
+    """
+    Provide async test context with common utilities.
+    
+    This fixture provides a context dictionary with utilities commonly
+    needed in async tests, including task tracking and cleanup helpers.
+    
+    Yields:
+        AsyncTestContext: Context dictionary with async test utilities
+    """
+    context: AsyncTestContext = {
+        "background_tasks": set(),
+        "cleanup_tasks": [],
+        "start_time": asyncio.get_event_loop().time(),
+    }
+    
+    try:
+        yield context
+    finally:
+        # Clean up any background tasks
+        if context["background_tasks"]:
+            for task in context["background_tasks"]:
+                if not task.done():
+                    _ = task.cancel()
+            
+            # Wait for cancellation to complete
+            _ = await asyncio.gather(*context["background_tasks"], return_exceptions=True)
+        
+        # Run any cleanup tasks
+        if context["cleanup_tasks"]:
+            _ = await asyncio.gather(*context["cleanup_tasks"], return_exceptions=True)
+
+
+@pytest.fixture
+def async_timeout() -> float:
+    """
+    Provide default timeout for async test operations.
+    
+    This fixture provides a consistent timeout value for async operations
+    in tests, helping to prevent hanging tests while allowing sufficient
+    time for operations to complete.
+    
+    Returns:
+        float: Default timeout in seconds (10.0)
+    """
+    return 10.0
