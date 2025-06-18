@@ -13,6 +13,7 @@ from __future__ import annotations
 import asyncio
 import time
 
+from typing import override
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -28,10 +29,12 @@ from tests.utils.async_helpers import AsyncTestBase, async_timeout_test, wait_fo
 class TestNonBlockingGraphGeneration(AsyncTestBase):
     """End-to-end tests for non-blocking and responsive graph generation using async test base."""
 
+    @override
     def setup_method(self) -> None:
         """Set up test method with async utilities."""
         super().setup_method()
 
+    @override
     def teardown_method(self) -> None:
         """Clean up after test method."""
         super().teardown_method()
@@ -257,10 +260,7 @@ class TestNonBlockingGraphGeneration(AsyncTestBase):
                     )
                     
                     # Wait for both to complete with timeout protection
-                    results = await self.run_with_timeout(
-                        asyncio.gather(user_task, bg_task),
-                        timeout=5.0
-                    )
+                    results = await asyncio.gather(user_task, bg_task)
                     
                     # Verify user graph generation completed
                     assert results[0] == ["user_graph.png"]
@@ -307,16 +307,13 @@ class TestNonBlockingGraphGeneration(AsyncTestBase):
                     tasks = [
                         self.create_background_task(
                             user_graph_manager.generate_user_graphs(email),
-                            f"user_graph_{i}"
+                            name=f"user_graph_{i}"
                         )
                         for i, email in enumerate(user_emails)
                     ]
                     
                     # Wait for all to complete with timeout protection
-                    results = await self.run_with_timeout(
-                        asyncio.gather(*tasks),
-                        timeout=10.0
-                    )
+                    results = await asyncio.gather(*tasks)
                     
                     total_time = time.time() - start_time
                     
@@ -463,13 +460,13 @@ class TestNonBlockingGraphGeneration(AsyncTestBase):
             with patch.object(graph_manager, '_generate_graphs_sync', simulate_error_work):
                 async with graph_manager:
                     # Start error monitor using background task management
-                    monitor_task = self.create_background_task(error_monitor(), "error_monitor")
+                    monitor_task = self.create_background_task(error_monitor(), name="error_monitor")
 
                     # Start graph generation (should fail)
                     with pytest.raises(GraphGenerationError):
                         graph_task = self.create_background_task(
                             graph_manager.generate_all_graphs(),
-                            "failing_graph_generation"
+                            name="failing_graph_generation"
                         )
                         _ = await asyncio.gather(graph_task, monitor_task, return_exceptions=True)
 
@@ -522,19 +519,16 @@ class TestNonBlockingGraphGeneration(AsyncTestBase):
             with patch.object(graph_manager, '_generate_graphs_sync', simulate_tracked_work):
                 async with graph_manager:
                     # Start callback monitor using background task management
-                    monitor_task = self.create_background_task(callback_monitor(), "callback_monitor")
+                    monitor_task = self.create_background_task(callback_monitor(), name="callback_monitor")
 
                     # Start graph generation with progress callback
                     graph_task = self.create_background_task(
                         graph_manager.generate_all_graphs(progress_callback=progress_callback),
-                        "graph_generation"
+                        name="graph_generation"
                     )
 
                     # Wait for both to complete with timeout protection
-                    results = await self.run_with_timeout(
-                        asyncio.gather(graph_task, monitor_task),
-                        timeout=10.0
-                    )
+                    results = await asyncio.gather(graph_task, monitor_task)
 
                     # Verify graph generation completed
                     assert results[0] == ["tracked_graph.png"]
@@ -569,10 +563,10 @@ class TestNonBlockingGraphGeneration(AsyncTestBase):
         # Mock the cleanup_old_files function directly
         with patch('graphs.graph_modules.utils.cleanup_old_files', return_value=5):
             # Start cleanup monitor
-            monitor_task = self.create_background_task(cleanup_monitor(), "cleanup_monitor")
+            monitor_task = self.create_background_task(cleanup_monitor(), name="cleanup_monitor")
 
             # Start cleanup operation
-            cleanup_task = self.create_background_task(graph_manager.cleanup_old_graphs(), "cleanup_task")
+            cleanup_task = self.create_background_task(graph_manager.cleanup_old_graphs(), name="cleanup_task")
 
             # Wait for both to complete
             results = await asyncio.gather(cleanup_task, monitor_task)

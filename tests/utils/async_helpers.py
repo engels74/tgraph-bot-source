@@ -42,12 +42,11 @@ class AsyncTestBase:
         ...         assert result is not None
     """
     
-    def __init__(self) -> None:
-        """Initialize the test base with empty collections."""
-        self._original_loop_policy: asyncio.AbstractEventLoopPolicy | None = None
-        self._test_loop: asyncio.AbstractEventLoop | None = None
-        self._background_tasks: set[asyncio.Task[object]] = set()
-        self._cleanup_tasks: list[Coroutine[object, object, object]] = []
+    # Declare instance variables that will be initialized in setup_method
+    _original_loop_policy: asyncio.AbstractEventLoopPolicy | None  # pyright: ignore[reportUninitializedInstanceVariable]
+    _test_loop: asyncio.AbstractEventLoop | None  # pyright: ignore[reportUninitializedInstanceVariable] 
+    _background_tasks: set[asyncio.Task[object]]  # pyright: ignore[reportUninitializedInstanceVariable]
+    _cleanup_tasks: list[Coroutine[object, object, object]]  # pyright: ignore[reportUninitializedInstanceVariable]
     
     def setup_method(self) -> None:
         """Set up test method with common async test configuration."""
