@@ -7,7 +7,7 @@ exponential backoff, and improved edge case handling.
 
 import pytest
 from datetime import datetime, timedelta
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, AsyncMock
 
 from bot.update_tracker import SchedulingConfig, ScheduleState, UpdateSchedule, UpdateTracker
 from tests.utils.test_helpers import create_mock_discord_bot
@@ -149,7 +149,7 @@ class TestUpdateTrackerEnhanced:
     async def test_trigger_update_success(self, update_tracker: UpdateTracker) -> None:
         """Test successful update trigger."""
         # Set up callback
-        callback = MagicMock()
+        callback = AsyncMock()
         update_tracker.set_update_callback(callback)
 
         # Trigger update
@@ -165,7 +165,7 @@ class TestUpdateTrackerEnhanced:
     async def test_trigger_update_failure(self, update_tracker: UpdateTracker) -> None:
         """Test failed update trigger."""
         # Set up failing callback
-        callback = MagicMock(side_effect=Exception("Test error"))
+        callback = AsyncMock(side_effect=Exception("Test error"))
         update_tracker.set_update_callback(callback)
 
         # Trigger update (should raise exception)

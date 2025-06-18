@@ -36,7 +36,7 @@ class BaseGraph(ABC):
 
     def __init__(
         self,
-        config: "TGraphBotConfig | None" = None,
+        config: "TGraphBotConfig | dict[str, object] | None" = None,
         width: int = 12,
         height: int = 8,
         dpi: int = 100,
@@ -55,21 +55,15 @@ class BaseGraph(ABC):
         Raises:
             ValueError: If background_color is not a valid color format
         """
-        self.config: "TGraphBotConfig | None" = config
+        self.config: "TGraphBotConfig | dict[str, object] | None" = config
 
         # Use background color from config if not explicitly provided
-        if background_color is None and config is not None:
-            # Handle both TGraphBotConfig objects and dict configs for backward compatibility
-            if hasattr(config, 'GRAPH_BACKGROUND_COLOR'):
-                background_color = str(config.GRAPH_BACKGROUND_COLOR)
-            elif isinstance(config, dict) and 'GRAPH_BACKGROUND_COLOR' in config:
-                config_dict: dict[str, object] = config
-                bg_color: object | None = config_dict.get('GRAPH_BACKGROUND_COLOR')  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
-                background_color = str(bg_color) if bg_color is not None else "#ffffff"  # pyright: ignore[reportUnknownArgumentType]
+        if background_color is None:
+            if config is not None:
+                bg_color = self.get_config_value('GRAPH_BACKGROUND_COLOR')
+                background_color = str(bg_color) if bg_color is not None else "#ffffff"
             else:
                 background_color = "#ffffff"
-        elif background_color is None:
-            background_color = "#ffffff"
 
         # Validate color format using utility function
         if not validate_color(background_color):
@@ -81,6 +75,26 @@ class BaseGraph(ABC):
         self.background_color: str = background_color
         self.figure: matplotlib.figure.Figure | None = None
         self.axes: Axes | None = None
+
+    def get_config_value(self, key: str, default: object = None) -> object:
+        """
+        Get a configuration value from either TGraphBotConfig object or dict.
+        
+        Args:
+            key: Configuration key to retrieve
+            default: Default value if key not found
+            
+        Returns:
+            Configuration value or default
+        """
+        if self.config is None:
+            return default
+            
+        if isinstance(self.config, dict):
+            return self.config.get(key, default)
+        else:
+            # TGraphBotConfig object
+            return getattr(self.config, key, default)
         
     def setup_figure(self) -> tuple[matplotlib.figure.Figure, Axes]:
         """
@@ -118,10 +132,13 @@ class BaseGraph(ABC):
         sns.set_style("whitegrid" if self.get_grid_enabled() else "white")
 
         # Set color palette if available
-        if self.config is not None and hasattr(self.config, 'TV_COLOR'):
-            # Create a custom palette using TV and Movie colors
-            custom_palette = [self.config.TV_COLOR, self.config.MOVIE_COLOR]
-            sns.set_palette(custom_palette)
+        if self.config is not None:
+            tv_color = self.get_config_value('TV_COLOR')
+            movie_color = self.get_config_value('MOVIE_COLOR')
+                
+            if tv_color and movie_color:
+                custom_palette = [str(tv_color), str(movie_color)]
+                sns.set_palette(custom_palette)
 
     def get_grid_enabled(self) -> bool:
         """
@@ -130,13 +147,8 @@ class BaseGraph(ABC):
         Returns:
             True if grid should be enabled, False otherwise
         """
-        if self.config is not None:
-            # Handle both TGraphBotConfig objects and dict configs for backward compatibility
-            if hasattr(self.config, 'ENABLE_GRAPH_GRID'):
-                return bool(self.config.ENABLE_GRAPH_GRID)
-            elif isinstance(self.config, dict) and 'ENABLE_GRAPH_GRID' in self.config:
-                return bool(self.config.get('ENABLE_GRAPH_GRID', False))  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
-        return False
+        grid_enabled = self.get_config_value('ENABLE_GRAPH_GRID', False)
+        return bool(grid_enabled)
 
     def get_tv_color(self) -> str:
         """
@@ -145,9 +157,8 @@ class BaseGraph(ABC):
         Returns:
             Hex color string for TV shows
         """
-        if self.config is not None:
-            return self.config.TV_COLOR
-        return "#1f77b4"  # Default blue
+        tv_color = self.get_config_value('TV_COLOR', "#1f77b4")
+        return str(tv_color)
 
     def get_movie_color(self) -> str:
         """
@@ -156,9 +167,8 @@ class BaseGraph(ABC):
         Returns:
             Hex color string for movies
         """
-        if self.config is not None:
-            return self.config.MOVIE_COLOR
-        return "#ff7f0e"  # Default orange
+        movie_color = self.get_config_value('MOVIE_COLOR', "#ff7f0e")
+        return str(movie_color)
 
     def get_annotation_color(self) -> str:
         """
@@ -167,9 +177,8 @@ class BaseGraph(ABC):
         Returns:
             Hex color string for annotations
         """
-        if self.config is not None:
-            return self.config.ANNOTATION_COLOR
-        return "#ff0000"  # Default red
+        annotation_color = self.get_config_value('ANNOTATION_COLOR', "#ff0000")
+        return str(annotation_color)
 
     def get_annotation_outline_color(self) -> str:
         """
@@ -178,9 +187,8 @@ class BaseGraph(ABC):
         Returns:
             Hex color string for annotation outlines
         """
-        if self.config is not None:
-            return self.config.ANNOTATION_OUTLINE_COLOR
-        return "#000000"  # Default black
+        outline_color = self.get_config_value('ANNOTATION_OUTLINE_COLOR', "#000000")
+        return str(outline_color)
 
     def is_annotation_outline_enabled(self) -> bool:
         """
@@ -189,9 +197,8 @@ class BaseGraph(ABC):
         Returns:
             True if annotation outlines should be enabled, False otherwise
         """
-        if self.config is not None:
-            return self.config.ENABLE_ANNOTATION_OUTLINE
-        return True  # Default enabled
+        outline_enabled = self.get_config_value('ENABLE_ANNOTATION_OUTLINE', True)
+        return bool(outline_enabled)
 
     def should_censor_usernames(self) -> bool:
         """
@@ -200,9 +207,8 @@ class BaseGraph(ABC):
         Returns:
             True if usernames should be censored, False otherwise
         """
-        if self.config is not None:
-            return self.config.CENSOR_USERNAMES
-        return True  # Default to censoring for privacy
+        censor_usernames = self.get_config_value('CENSOR_USERNAMES', True)
+        return bool(censor_usernames)
 
     @abstractmethod
     def generate(self, data: Mapping[str, object]) -> str:

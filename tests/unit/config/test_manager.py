@@ -214,15 +214,15 @@ TV_COLOR: '{base_config.TV_COLOR}'  # Color for TV shows
         with create_temp_config_file(config_data) as temp_config_file:
             config = ConfigManager.load_config(temp_config_file)
             
-            # Mock write operation to fail midway
-            original_write = Path.write_text
+            # Mock atomic move operation to fail
+            original_replace = Path.replace
             
-            def failing_write(self: Path, data: str, encoding: str | None = None, errors: str | None = None, newline: str | None = None) -> int:
-                if self == temp_config_file:
-                    raise OSError("Simulated write failure")
-                return original_write(self, data, encoding=encoding, errors=errors, newline=newline)
+            def failing_replace(self: Path, target: Path) -> Path:
+                if target == temp_config_file:
+                    raise OSError("Simulated atomic move failure")
+                return original_replace(self, target)
             
-            with patch.object(Path, 'write_text', failing_write):
+            with patch.object(Path, 'replace', failing_replace):
                 with pytest.raises(OSError):
                     ConfigManager.save_config(config, temp_config_file)
             

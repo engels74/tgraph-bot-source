@@ -28,14 +28,14 @@ logger = logging.getLogger(__name__)
 class GraphFactory:
     """Factory class for creating graph instances based on configuration."""
 
-    def __init__(self, config: "TGraphBotConfig") -> None:
+    def __init__(self, config: "TGraphBotConfig | dict[str, object]") -> None:
         """
         Initialize the graph factory.
 
         Args:
             config: Configuration object containing graph settings
         """
-        self.config: "TGraphBotConfig" = config
+        self.config: "TGraphBotConfig | dict[str, object]" = config
         
     def create_enabled_graphs(self) -> list[BaseGraph]:
         """
@@ -47,25 +47,28 @@ class GraphFactory:
         graphs: list[BaseGraph] = []
 
         # Check each graph type and create if enabled
-        # Get config values from TGraphBotConfig object
         def get_config_value(key: str, default: bool = True) -> bool:
-            # Use direct attribute access for known boolean config attributes
-            if key == 'ENABLE_DAILY_PLAY_COUNT':
-                return self.config.ENABLE_DAILY_PLAY_COUNT
-            elif key == 'ENABLE_PLAY_COUNT_BY_DAYOFWEEK':
-                return self.config.ENABLE_PLAY_COUNT_BY_DAYOFWEEK
-            elif key == 'ENABLE_PLAY_COUNT_BY_HOUROFDAY':
-                return self.config.ENABLE_PLAY_COUNT_BY_HOUROFDAY
-            elif key == 'ENABLE_PLAY_COUNT_BY_MONTH':
-                return self.config.ENABLE_PLAY_COUNT_BY_MONTH
-            elif key == 'ENABLE_TOP_10_PLATFORMS':
-                return self.config.ENABLE_TOP_10_PLATFORMS
-            elif key == 'ENABLE_TOP_10_USERS':
-                return self.config.ENABLE_TOP_10_USERS
-            elif key == 'ENABLE_SAMPLE_GRAPH':
-                # Sample graph is not in the main config schema, default to False
-                return False
-            return default
+            # Handle both dict and TGraphBotConfig objects
+            if isinstance(self.config, dict):
+                return bool(self.config.get(key, default))
+            else:
+                # Use direct attribute access for TGraphBotConfig objects
+                if key == 'ENABLE_DAILY_PLAY_COUNT':
+                    return self.config.ENABLE_DAILY_PLAY_COUNT
+                elif key == 'ENABLE_PLAY_COUNT_BY_DAYOFWEEK':
+                    return self.config.ENABLE_PLAY_COUNT_BY_DAYOFWEEK
+                elif key == 'ENABLE_PLAY_COUNT_BY_HOUROFDAY':
+                    return self.config.ENABLE_PLAY_COUNT_BY_HOUROFDAY
+                elif key == 'ENABLE_PLAY_COUNT_BY_MONTH':
+                    return self.config.ENABLE_PLAY_COUNT_BY_MONTH
+                elif key == 'ENABLE_TOP_10_PLATFORMS':
+                    return self.config.ENABLE_TOP_10_PLATFORMS
+                elif key == 'ENABLE_TOP_10_USERS':
+                    return self.config.ENABLE_TOP_10_USERS
+                elif key == 'ENABLE_SAMPLE_GRAPH':
+                    # Sample graph is not in the main config schema, default to False
+                    return False
+                return default
 
         if get_config_value('ENABLE_DAILY_PLAY_COUNT'):
             logger.debug("Creating daily play count graph")
@@ -138,25 +141,28 @@ class GraphFactory:
         """
         enabled_types: list[str] = []
 
-        # Get config values from TGraphBotConfig object
         def get_config_value(key: str, default: bool = True) -> bool:
-            # Use direct attribute access for known boolean config attributes
-            if key == 'ENABLE_DAILY_PLAY_COUNT':
-                return self.config.ENABLE_DAILY_PLAY_COUNT
-            elif key == 'ENABLE_PLAY_COUNT_BY_DAYOFWEEK':
-                return self.config.ENABLE_PLAY_COUNT_BY_DAYOFWEEK
-            elif key == 'ENABLE_PLAY_COUNT_BY_HOUROFDAY':
-                return self.config.ENABLE_PLAY_COUNT_BY_HOUROFDAY
-            elif key == 'ENABLE_PLAY_COUNT_BY_MONTH':
-                return self.config.ENABLE_PLAY_COUNT_BY_MONTH
-            elif key == 'ENABLE_TOP_10_PLATFORMS':
-                return self.config.ENABLE_TOP_10_PLATFORMS
-            elif key == 'ENABLE_TOP_10_USERS':
-                return self.config.ENABLE_TOP_10_USERS
-            elif key == 'ENABLE_SAMPLE_GRAPH':
-                # Sample graph is not in the main config schema, default to False
-                return False
-            return default
+            # Handle both dict and TGraphBotConfig objects
+            if isinstance(self.config, dict):
+                return bool(self.config.get(key, default))
+            else:
+                # Use direct attribute access for TGraphBotConfig objects
+                if key == 'ENABLE_DAILY_PLAY_COUNT':
+                    return self.config.ENABLE_DAILY_PLAY_COUNT
+                elif key == 'ENABLE_PLAY_COUNT_BY_DAYOFWEEK':
+                    return self.config.ENABLE_PLAY_COUNT_BY_DAYOFWEEK
+                elif key == 'ENABLE_PLAY_COUNT_BY_HOUROFDAY':
+                    return self.config.ENABLE_PLAY_COUNT_BY_HOUROFDAY
+                elif key == 'ENABLE_PLAY_COUNT_BY_MONTH':
+                    return self.config.ENABLE_PLAY_COUNT_BY_MONTH
+                elif key == 'ENABLE_TOP_10_PLATFORMS':
+                    return self.config.ENABLE_TOP_10_PLATFORMS
+                elif key == 'ENABLE_TOP_10_USERS':
+                    return self.config.ENABLE_TOP_10_USERS
+                elif key == 'ENABLE_SAMPLE_GRAPH':
+                    # Sample graph is not in the main config schema, default to False
+                    return False
+                return default
 
         # Check each graph type directly from config attributes
         if get_config_value('ENABLE_DAILY_PLAY_COUNT'):

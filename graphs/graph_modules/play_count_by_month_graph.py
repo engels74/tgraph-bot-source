@@ -31,7 +31,7 @@ class PlayCountByMonthGraph(BaseGraph):
 
     def __init__(
         self,
-        config: "TGraphBotConfig | None" = None,
+        config: "TGraphBotConfig | dict[str, object] | None" = None,
         width: int = 12,
         height: int = 8,
         dpi: int = 100,
@@ -104,7 +104,7 @@ class PlayCountByMonthGraph(BaseGraph):
             _, ax = self.setup_figure()
 
             # Step 5: Configure Seaborn styling
-            if self.config and self.config.ENABLE_GRAPH_GRID:
+            if self.get_grid_enabled():
                 sns.set_style("whitegrid")
             else:
                 sns.set_style("white")
@@ -121,7 +121,7 @@ class PlayCountByMonthGraph(BaseGraph):
                 df = pd.DataFrame(plot_data)
 
                 # Step 7: Create the line plot using Seaborn (better for time series)
-                color = self.config.TV_COLOR if self.config else "#1f77b4"
+                color = self.get_tv_color()
                 _ = sns.lineplot(
                     data=df,
                     x="month",

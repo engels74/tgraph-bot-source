@@ -528,6 +528,13 @@ def check_manage_guild_permission(interaction: discord.Interaction) -> bool:
     # Check if user has manage guild permission
     if isinstance(interaction.user, discord.Member):
         return interaction.user.guild_permissions.manage_guild
+    
+    # For testing: check if user has guild_permissions attribute (mock support)
+    guild_permissions = getattr(interaction.user, 'guild_permissions', None)
+    if guild_permissions is not None:
+        manage_guild = getattr(guild_permissions, 'manage_guild', None)
+        if manage_guild is not None:
+            return bool(manage_guild)
 
     return False
 

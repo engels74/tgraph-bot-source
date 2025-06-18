@@ -238,11 +238,11 @@ class ConfigCog(BaseCommandCog):
                 )
 
             # Save the configuration to file
-            config_path = Path("config.yml")
-            if not config_path.exists():
+            config_path = self.tgraph_bot.config_manager.config_file_path
+            if config_path is None or not config_path.exists():
                 raise ConfigurationError(
-                    "config.yml file not found",
-                    user_message="config.yml file not found. Please ensure it exists."
+                    "Configuration file not found",
+                    user_message="Configuration file not found. Please ensure it exists."
                 )
 
             ConfigManager.save_config(new_config, config_path)

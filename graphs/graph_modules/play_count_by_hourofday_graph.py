@@ -31,7 +31,7 @@ class PlayCountByHourOfDayGraph(BaseGraph):
 
     def __init__(
         self,
-        config: "TGraphBotConfig | None" = None,
+        config: "TGraphBotConfig | dict[str, object] | None" = None,
         width: int = 12,
         height: int = 8,
         dpi: int = 100,
@@ -113,7 +113,7 @@ class PlayCountByHourOfDayGraph(BaseGraph):
             _, ax = self.setup_figure()
 
             # Step 5: Configure Seaborn styling
-            if self.config and self.config.ENABLE_GRAPH_GRID:
+            if self.get_grid_enabled():
                 sns.set_style("whitegrid")
             else:
                 sns.set_style("white")

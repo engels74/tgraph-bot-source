@@ -27,7 +27,8 @@ class TestAsyncTestBase:
     def test_async_test_base_initialization(self) -> None:
         """Test that AsyncTestBase initializes correctly."""
         base = AsyncTestBase()
-        
+        base.setup_method()
+
         assert isinstance(base._background_tasks, set)  # pyright: ignore[reportPrivateUsage] # testing internal state
         assert isinstance(base._cleanup_tasks, list)  # pyright: ignore[reportPrivateUsage] # testing internal state
         assert len(base._background_tasks) == 0  # pyright: ignore[reportPrivateUsage] # testing internal state

@@ -31,7 +31,7 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
 
     def __init__(
         self,
-        config: "TGraphBotConfig | None" = None,
+        config: "TGraphBotConfig | dict[str, object] | None" = None,
         width: int = 12,
         height: int = 8,
         dpi: int = 100,
@@ -105,7 +105,7 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
             _, ax = self.setup_figure()
 
             # Step 5: Configure Seaborn styling
-            if self.config and self.config.ENABLE_GRAPH_GRID:
+            if self.get_grid_enabled():
                 sns.set_style("whitegrid")
             else:
                 sns.set_style("white")
@@ -123,7 +123,7 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
 
             # Step 7: Create the bar plot using Seaborn
             # Use TV_COLOR as the primary color for general graphs
-            color = self.config.TV_COLOR if self.config else "#1f77b4"
+            color = self.get_tv_color()
             _ = sns.barplot(
                 data=df,
                 x="day_of_week",

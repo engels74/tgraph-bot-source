@@ -32,7 +32,7 @@ class DailyPlayCountGraph(BaseGraph):
 
     def __init__(
         self,
-        config: "TGraphBotConfig | None" = None,
+        config: "TGraphBotConfig | dict[str, object] | None" = None,
         width: int = 12,
         height: int = 8,
         dpi: int = 100,
@@ -112,7 +112,7 @@ class DailyPlayCountGraph(BaseGraph):
             _, ax = self.setup_figure()
 
             # Step 5: Configure Seaborn styling
-            if self.config and self.config.ENABLE_GRAPH_GRID:
+            if self.get_grid_enabled():
                 sns.set_style("whitegrid")
             else:
                 sns.set_style("white")
@@ -150,7 +150,8 @@ class DailyPlayCountGraph(BaseGraph):
                 _ = ax.tick_params(axis='x', rotation=45)  # pyright: ignore[reportUnknownMemberType]
 
                 # Add annotations if enabled
-                if self.config and self.config.ANNOTATE_DAILY_PLAY_COUNT:
+                annotate_enabled = self.get_config_value('ANNOTATE_DAILY_PLAY_COUNT', False)
+                if annotate_enabled:
                     # Convert counts to integers for proper comparison
                     int_counts = [int(c) for c in counts]
                     max_count = max(int_counts)
@@ -169,7 +170,7 @@ class DailyPlayCountGraph(BaseGraph):
                         xy=(x_coord, float(max_count)),
                         xytext=(10, 10),
                         textcoords='offset points',
-                        bbox=dict(boxstyle='round,pad=0.3', facecolor=self.config.ANNOTATION_COLOR, alpha=0.7),
+                        bbox=dict(boxstyle='round,pad=0.3', facecolor=self.get_annotation_color(), alpha=0.7),
                         arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0')
                     )
 

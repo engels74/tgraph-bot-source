@@ -4,6 +4,7 @@ This module provides functionality for loading, validating, and saving
 YAML configuration files with Pydantic model validation and comment preservation.
 """
 
+import logging
 import tempfile
 import threading
 import time
@@ -17,6 +18,9 @@ import yaml
 from pydantic import ValidationError
 
 from config.schema import TGraphBotConfig
+
+
+logger = logging.getLogger(__name__)
 
 
 class ConfigFileHandler(FileSystemEventHandler):
@@ -70,6 +74,7 @@ class ConfigManager:
         self._change_callbacks: list[Callable[[TGraphBotConfig, TGraphBotConfig], None]] = []
         self._file_observer: Any = None  # Observer | None  # pyright: ignore[reportExplicitAny]
         self._monitored_file: Path | None = None
+        self._config_file_path: Path | None = None
 
     @staticmethod
     def load_config(config_path: Path) -> TGraphBotConfig:
@@ -500,10 +505,46 @@ MY_STATS_GLOBAL_COOLDOWN_SECONDS: 60
         Set the current configuration.
 
         Args:
-            config: The configuration to set as current
+            config: Configuration object to set as current
         """
         with self._config_lock:
+            old_config = self._current_config
             self._current_config = config
+
+            # Notify callbacks of the change
+            if old_config is not None:
+                for callback in self._change_callbacks:
+                    try:
+                        callback(old_config, config)
+                    except Exception as e:
+                        logger.error(f"Error in config change callback: {e}")
+
+    @property
+    def config_file_path(self) -> Path | None:
+        """
+        Get the current config file path.
+        
+        Returns:
+            Path to the current config file, or None if not set
+        """
+        return self._config_file_path
+
+    @config_file_path.setter
+    def config_file_path(self, path: Path | None) -> None:
+        """
+        Set the current config file path.
+        
+        Args:
+            path: Path to the config file, or None to clear
+        """
+        self._config_file_path = path
+
+    @config_file_path.deleter
+    def config_file_path(self) -> None:
+        """
+        Clear the current config file path.
+        """
+        self._config_file_path = None
 
     def get_current_config(self) -> TGraphBotConfig:
         """
