@@ -7,7 +7,7 @@ commands with proper validation, error handling, and Discord integration.
 
 import tempfile
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import patch
 
 import discord
 import pytest
@@ -17,7 +17,7 @@ from discord.ext import commands
 from bot.commands.config import ConfigCog
 from config.schema import TGraphBotConfig
 from main import TGraphBot
-from tests.utils.test_helpers import create_config_manager_with_config
+from tests.utils.test_helpers import create_config_manager_with_config, create_mock_interaction
 
 
 class TestConfigCog:
@@ -35,14 +35,7 @@ class TestConfigCog:
         """Create a ConfigCog instance for testing."""
         return ConfigCog(mock_bot)
 
-    @pytest.fixture
-    def mock_interaction(self) -> MagicMock:
-        """Create a mock Discord interaction."""
-        interaction = MagicMock(spec=discord.Interaction)
-        interaction.response = AsyncMock()
-        interaction.followup = AsyncMock()
-        interaction.user = MagicMock()
-        return interaction
+
 
     def test_init(self, mock_bot: TGraphBot) -> None:
         """Test ConfigCog initialization."""
@@ -108,10 +101,16 @@ class TestConfigCog:
     @pytest.mark.asyncio
     async def test_config_view_success(
         self,
-        config_cog: ConfigCog,
-        mock_interaction: MagicMock
+        config_cog: ConfigCog
     ) -> None:
         """Test successful configuration viewing."""
+        # Create mock interaction using standardized utility
+        mock_interaction = create_mock_interaction(
+            command_name="config_view",
+            user_id=123456,
+            username="TestUser"
+        )
+        
         # Call the method directly using the callback
         _ = await config_cog.config_view.callback(config_cog, mock_interaction)  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
 
@@ -129,10 +128,16 @@ class TestConfigCog:
     @pytest.mark.asyncio
     async def test_config_view_error(
         self,
-        config_cog: ConfigCog,
-        mock_interaction: MagicMock
+        config_cog: ConfigCog
     ) -> None:
         """Test configuration viewing with error."""
+        # Create mock interaction using standardized utility
+        mock_interaction = create_mock_interaction(
+            command_name="config_view",
+            user_id=123456,
+            username="TestUser"
+        )
+        
         # Mock the config manager to raise an exception
         with patch.object(config_cog.tgraph_bot.config_manager, 'get_current_config', side_effect=RuntimeError("Test error")), \
              patch('utils.command_utils.safe_interaction_response') as mock_safe_response:
@@ -144,10 +149,16 @@ class TestConfigCog:
     @pytest.mark.asyncio
     async def test_config_edit_invalid_setting(
         self,
-        config_cog: ConfigCog,
-        mock_interaction: MagicMock
+        config_cog: ConfigCog
     ) -> None:
         """Test configuration editing with invalid setting."""
+        # Create mock interaction using standardized utility
+        mock_interaction = create_mock_interaction(
+            command_name="config_edit",
+            user_id=123456,
+            username="TestUser"
+        )
+        
         with patch('utils.command_utils.safe_interaction_response') as mock_safe_response:
             _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "INVALID_SETTING", "value")  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
 
@@ -157,10 +168,16 @@ class TestConfigCog:
     @pytest.mark.asyncio
     async def test_config_edit_invalid_value(
         self,
-        config_cog: ConfigCog,
-        mock_interaction: MagicMock
+        config_cog: ConfigCog
     ) -> None:
         """Test configuration editing with invalid value."""
+        # Create mock interaction using standardized utility
+        mock_interaction = create_mock_interaction(
+            command_name="config_edit",
+            user_id=123456,
+            username="TestUser"
+        )
+        
         with patch('utils.command_utils.safe_interaction_response') as mock_safe_response:
             _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "UPDATE_DAYS", "not_a_number")  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
 
@@ -170,10 +187,16 @@ class TestConfigCog:
     @pytest.mark.asyncio
     async def test_config_edit_validation_error(
         self,
-        config_cog: ConfigCog,
-        mock_interaction: MagicMock
+        config_cog: ConfigCog
     ) -> None:
         """Test configuration editing with validation error."""
+        # Create mock interaction using standardized utility
+        mock_interaction = create_mock_interaction(
+            command_name="config_edit",
+            user_id=123456,
+            username="TestUser"
+        )
+        
         # Try to set UPDATE_DAYS to an invalid value (outside range)
         with patch('utils.command_utils.safe_interaction_response') as mock_safe_response:
             _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "UPDATE_DAYS", "999")  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
@@ -184,10 +207,16 @@ class TestConfigCog:
     @pytest.mark.asyncio
     async def test_config_edit_no_config_file(
         self,
-        config_cog: ConfigCog,
-        mock_interaction: MagicMock
+        config_cog: ConfigCog
     ) -> None:
         """Test configuration editing when no config file path is available."""
+        # Create mock interaction using standardized utility
+        mock_interaction = create_mock_interaction(
+            command_name="config_edit",
+            user_id=123456,
+            username="TestUser"
+        )
+        
         # Mock the config manager's config_file_path to be None
         with patch.object(config_cog.tgraph_bot.config_manager, 'config_file_path', None), \
              patch('utils.command_utils.safe_interaction_response') as mock_safe_response:
@@ -200,10 +229,16 @@ class TestConfigCog:
     async def test_config_edit_success(
         self,
         config_cog: ConfigCog,
-        mock_interaction: MagicMock,
         base_config: TGraphBotConfig
     ) -> None:
         """Test successful configuration editing."""
+        # Create mock interaction using standardized utility
+        mock_interaction = create_mock_interaction(
+            command_name="config_edit",
+            user_id=123456,
+            username="TestUser"
+        )
+        
         # Create a temporary config file
         with tempfile.NamedTemporaryFile(mode='w', suffix='.yml', delete=False) as f:
             config_path = Path(f.name)
@@ -229,10 +264,16 @@ class TestConfigCog:
     @pytest.mark.asyncio
     async def test_config_edit_save_error(
         self, 
-        config_cog: ConfigCog, 
-        mock_interaction: MagicMock
+        config_cog: ConfigCog
     ) -> None:
         """Test configuration editing when save operation fails."""
+        # Create mock interaction using standardized utility
+        mock_interaction = create_mock_interaction(
+            command_name="config_edit",
+            user_id=123456,
+            username="TestUser"
+        )
+        
         # Create a temporary config file
         with tempfile.NamedTemporaryFile(mode='w', suffix='.yml', delete=False) as f:
             config_path = Path(f.name)

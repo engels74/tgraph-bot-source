@@ -26,7 +26,7 @@ from utils.error_handler import (
     command_error_handler,
     error_tracker
 )
-from tests.utils.test_helpers import create_mock_interaction, create_mock_user
+from tests.utils.test_helpers import create_mock_interaction
 from tests.utils.async_helpers import async_mock_context
 
 

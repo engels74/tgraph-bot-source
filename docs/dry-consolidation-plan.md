@@ -159,16 +159,16 @@ Consolidate async testing patterns and standardize mock object creation across a
 - `tests/integration/test_non_blocking_graph_generation.py`
 
 **Implementation Steps**:
-- [ ] Replace inline AsyncMock patterns with utility functions in `test_main.py`
-- [ ] Consolidate async test setup in `test_update_tracker_enhanced.py`
-- [ ] Update error handler tests to use standardized async patterns
-- [ ] Modify integration tests to use centralized async utilities
-- [ ] Remove duplicate async setup code from individual files
+- [x] Replace inline AsyncMock patterns with utility functions in `test_main.py`
+- [x] Consolidate async test setup in `test_update_tracker_enhanced.py`
+- [x] Update error handler tests to use standardized async patterns
+- [x] Modify integration tests to use centralized async utilities
+- [x] Remove duplicate async setup code from individual files
 
 **Validation**:
-- [ ] Run all async tests to ensure no timing issues or regressions
-- [ ] Verify async mock behavior matches original implementations
-- [ ] Test error handling in async scenarios
+- [x] Run all async tests to ensure no timing issues or regressions
+- [x] Verify async mock behavior matches original implementations
+- [x] Test error handling in async scenarios
 
 #### Subtask 2.3: Standardize Mock Object Usage
 **Files Modified**:
@@ -177,16 +177,16 @@ Consolidate async testing patterns and standardize mock object creation across a
 - `tests/integration/test_non_blocking_graph_generation.py`
 
 **Implementation Steps**:
-- [ ] Replace inline Discord interaction mocking with utility functions
-- [ ] Update bot mocking to use centralized mock creation
-- [ ] Standardize mock attribute setting across test files
-- [ ] Remove duplicate mock setup code
-- [ ] Ensure consistent mock behavior across all tests
+- [x] Replace inline Discord interaction mocking with utility functions
+- [x] Update bot mocking to use centralized mock creation
+- [x] Standardize mock attribute setting across test files
+- [x] Remove duplicate mock setup code
+- [x] Ensure consistent mock behavior across all tests
 
 **Validation**:
-- [ ] Verify mock objects have consistent attributes across tests
-- [ ] Test mock interactions behave as expected
-- [ ] Confirm no test behavior changes due to mock standardization
+- [x] Verify mock objects have consistent attributes across tests
+- [x] Test mock interactions behave as expected
+- [x] Confirm no test behavior changes due to mock standardization
 
 ### Phase 3: Specialized Utilities (Week 3)
 

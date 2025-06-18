@@ -36,28 +36,12 @@ class TestNonBlockingGraphGeneration(AsyncTestBase):
         """Clean up after test method."""
         super().teardown_method()
 
-    @pytest.fixture
-    def mock_config(self) -> TGraphBotConfig:
-        """Create a mock configuration for testing."""
-        return TGraphBotConfig(
-            TAUTULLI_API_KEY="test_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_token",
-            CHANNEL_ID=123456789,
-            TIME_RANGE_DAYS=30,
-            KEEP_DAYS=7,
-            ENABLE_DAILY_PLAY_COUNT=True,
-            ENABLE_TOP_10_USERS=True,
-            ENABLE_TOP_10_PLATFORMS=True,
-            ENABLE_PLAY_COUNT_BY_DAYOFWEEK=True,
-            ENABLE_PLAY_COUNT_BY_HOUROFDAY=True,
-            ENABLE_PLAY_COUNT_BY_MONTH=True,
-        )
+
 
     @pytest.fixture
-    def mock_config_manager(self, mock_config: TGraphBotConfig) -> ConfigManager:
+    def mock_config_manager(self, base_config: TGraphBotConfig) -> ConfigManager:
         """Create a mock config manager for testing using standardized utility."""
-        return create_config_manager_with_config(mock_config)
+        return create_config_manager_with_config(base_config)
 
     @pytest.fixture
     def mock_graph_data(self) -> dict[str, object]:
@@ -131,10 +115,10 @@ class TestNonBlockingGraphGeneration(AsyncTestBase):
                  patch.object(graph_manager, '_validate_generated_files', mock_validate_files):
                 async with graph_manager:
                     # Start monitoring task using background task management
-                    monitor_task = self.create_background_task(monitor_event_loop(), "event_loop_monitor")
+                    monitor_task = self.create_background_task(monitor_event_loop(), name="event_loop_monitor")
                     
                     # Start graph generation task
-                    graph_task = self.create_background_task(graph_manager.generate_all_graphs(), "graph_generation")
+                    graph_task = self.create_background_task(graph_manager.generate_all_graphs(), name="graph_generation")
                     
                     # Wait for both tasks to complete
                     results = await asyncio.gather(graph_task, monitor_task)
@@ -199,7 +183,7 @@ class TestNonBlockingGraphGeneration(AsyncTestBase):
         tasks = [
             self.create_background_task(
                 generate_graphs_for_manager(manager, i),
-                f"manager_{i}_generation"
+                name=f"manager_{i}_generation"
             )
             for i, manager in enumerate(managers)
         ]
@@ -222,7 +206,7 @@ class TestNonBlockingGraphGeneration(AsyncTestBase):
     @pytest.mark.asyncio
     async def test_user_graph_generation_responsiveness(
         self,
-        mock_config_manager: MagicMock,
+        mock_config_manager: ConfigManager,
         mock_graph_data: dict[str, object]
     ) -> None:
         """Test that user graph generation doesn't block other operations."""
@@ -264,12 +248,12 @@ class TestNonBlockingGraphGeneration(AsyncTestBase):
                  patch.object(user_graph_manager, '_validate_generated_user_files', mock_validate_user_files):
                 async with user_graph_manager:
                     # Start background task using async utilities
-                    bg_task = self.create_background_task(background_task(), "background_monitor")
+                    bg_task = self.create_background_task(background_task(), name="background_monitor")
                     
                     # Start user graph generation
                     user_task = self.create_background_task(
                         user_graph_manager.generate_user_graphs("test@example.com"),
-                        "user_graph_generation"
+                        name="user_graph_generation"
                     )
                     
                     # Wait for both to complete with timeout protection
@@ -288,7 +272,7 @@ class TestNonBlockingGraphGeneration(AsyncTestBase):
     @async_timeout_test(timeout=15.0)
     async def test_stress_test_multiple_users_concurrent(
         self,
-        mock_config_manager: MagicMock,
+        mock_config_manager: ConfigManager,
         mock_graph_data: dict[str, object]
     ) -> None:
         """Stress test with multiple users requesting graphs concurrently."""
@@ -349,7 +333,7 @@ class TestNonBlockingGraphGeneration(AsyncTestBase):
     @pytest.mark.asyncio
     async def test_timeout_handling_during_load(
         self,
-        mock_config_manager: MagicMock,
+        mock_config_manager: ConfigManager,
         mock_graph_data: dict[str, object]
     ) -> None:
         """Test that timeout handling works correctly under load."""
@@ -384,7 +368,7 @@ class TestNonBlockingGraphGeneration(AsyncTestBase):
     @pytest.mark.asyncio
     async def test_memory_stability_under_load(
         self,
-        mock_config_manager: MagicMock,
+        mock_config_manager: ConfigManager,
         mock_graph_data: dict[str, object]
     ) -> None:
         """Test that memory usage remains stable during repeated graph generation."""
@@ -443,7 +427,7 @@ class TestNonBlockingGraphGeneration(AsyncTestBase):
     @pytest.mark.asyncio
     async def test_error_handling_doesnt_block_event_loop(
         self,
-        mock_config_manager: MagicMock,
+        mock_config_manager: ConfigManager,
         mock_graph_data: dict[str, object]
     ) -> None:
         """Test that error handling during graph generation doesn't block the event loop."""
@@ -495,7 +479,7 @@ class TestNonBlockingGraphGeneration(AsyncTestBase):
     @pytest.mark.asyncio
     async def test_progress_tracking_responsiveness(
         self,
-        mock_config_manager: MagicMock,
+        mock_config_manager: ConfigManager,
         mock_graph_data: dict[str, object]
     ) -> None:
         """Test that progress tracking callbacks don't block the event loop."""
@@ -562,7 +546,7 @@ class TestNonBlockingGraphGeneration(AsyncTestBase):
     @pytest.mark.asyncio
     async def test_cleanup_operations_non_blocking(
         self,
-        mock_config_manager: MagicMock
+        mock_config_manager: ConfigManager
     ) -> None:
         """Test that cleanup operations don't block the event loop."""
         cleanup_counter = 0
