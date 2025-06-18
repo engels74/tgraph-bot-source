@@ -20,28 +20,44 @@ import pytest
 from graphs.graph_manager import GraphManager, GraphGenerationError
 from graphs.user_graph_manager import UserGraphManager
 from config.manager import ConfigManager
+from config.schema import TGraphBotConfig
+from tests.utils.test_helpers import create_config_manager_with_config
+from tests.utils.async_helpers import AsyncTestBase, async_timeout_test, wait_for_condition
 
 
-class TestNonBlockingGraphGeneration:
-    """End-to-end tests for non-blocking and responsive graph generation."""
+class TestNonBlockingGraphGeneration(AsyncTestBase):
+    """End-to-end tests for non-blocking and responsive graph generation using async test base."""
+
+    def setup_method(self) -> None:
+        """Set up test method with async utilities."""
+        super().setup_method()
+
+    def teardown_method(self) -> None:
+        """Clean up after test method."""
+        super().teardown_method()
 
     @pytest.fixture
-    def mock_config_manager(self) -> MagicMock:
-        """Create a mock config manager for testing."""
-        mock_config_manager = MagicMock(spec=ConfigManager)
-        mock_config = MagicMock()
-        mock_config.TAUTULLI_URL = "http://localhost:8181"
-        mock_config.TAUTULLI_API_KEY = "test_key"
-        mock_config.TIME_RANGE_DAYS = 30
-        mock_config.KEEP_DAYS = 7
-        mock_config.ENABLE_DAILY_PLAY_COUNT = True
-        mock_config.ENABLE_TOP_10_USERS = True
-        mock_config.ENABLE_TOP_10_PLATFORMS = True
-        mock_config.ENABLE_PLAY_COUNT_BY_DAYOFWEEK = True
-        mock_config.ENABLE_PLAY_COUNT_BY_HOUROFDAY = True
-        mock_config.ENABLE_PLAY_COUNT_BY_MONTH = True
-        mock_config_manager.get_current_config.return_value = mock_config  # pyright: ignore[reportAny]
-        return mock_config_manager
+    def mock_config(self) -> TGraphBotConfig:
+        """Create a mock configuration for testing."""
+        return TGraphBotConfig(
+            TAUTULLI_API_KEY="test_key",
+            TAUTULLI_URL="http://localhost:8181/api/v2",
+            DISCORD_TOKEN="test_token",
+            CHANNEL_ID=123456789,
+            TIME_RANGE_DAYS=30,
+            KEEP_DAYS=7,
+            ENABLE_DAILY_PLAY_COUNT=True,
+            ENABLE_TOP_10_USERS=True,
+            ENABLE_TOP_10_PLATFORMS=True,
+            ENABLE_PLAY_COUNT_BY_DAYOFWEEK=True,
+            ENABLE_PLAY_COUNT_BY_HOUROFDAY=True,
+            ENABLE_PLAY_COUNT_BY_MONTH=True,
+        )
+
+    @pytest.fixture
+    def mock_config_manager(self, mock_config: TGraphBotConfig) -> ConfigManager:
+        """Create a mock config manager for testing using standardized utility."""
+        return create_config_manager_with_config(mock_config)
 
     @pytest.fixture
     def mock_graph_data(self) -> dict[str, object]:
@@ -60,9 +76,10 @@ class TestNonBlockingGraphGeneration:
         }
 
     @pytest.mark.asyncio
+    @async_timeout_test(timeout=15.0)
     async def test_event_loop_responsiveness_under_load(
         self,
-        mock_config_manager: MagicMock,
+        mock_config_manager: ConfigManager,
         mock_graph_data: dict[str, object]
     ) -> None:
         """Test that event loop remains responsive during heavy graph generation."""
@@ -113,11 +130,11 @@ class TestNonBlockingGraphGeneration:
             with patch.object(graph_manager, '_generate_graphs_sync', simulate_heavy_cpu_work), \
                  patch.object(graph_manager, '_validate_generated_files', mock_validate_files):
                 async with graph_manager:
-                    # Start monitoring task
-                    monitor_task = asyncio.create_task(monitor_event_loop())
+                    # Start monitoring task using background task management
+                    monitor_task = self.create_background_task(monitor_event_loop(), "event_loop_monitor")
                     
                     # Start graph generation task
-                    graph_task = asyncio.create_task(graph_manager.generate_all_graphs())
+                    graph_task = self.create_background_task(graph_manager.generate_all_graphs(), "graph_generation")
                     
                     # Wait for both tasks to complete
                     results = await asyncio.gather(graph_task, monitor_task)
@@ -136,9 +153,10 @@ class TestNonBlockingGraphGeneration:
                     assert avg_latency < 0.01, f"Average event loop latency was {avg_latency*1000:.2f}ms"
 
     @pytest.mark.asyncio
+    @async_timeout_test(timeout=10.0)
     async def test_concurrent_graph_generation_requests(
         self,
-        mock_config_manager: MagicMock,
+        mock_config_manager: ConfigManager,
         mock_graph_data: dict[str, object]
     ) -> None:
         """Test handling multiple concurrent graph generation requests."""
@@ -177,9 +195,12 @@ class TestNonBlockingGraphGeneration:
         # Test concurrent generation
         start_time = time.time()
 
-        # Create tasks for concurrent execution
+        # Create tasks for concurrent execution using background task management
         tasks = [
-            asyncio.create_task(generate_graphs_for_manager(manager, i))
+            self.create_background_task(
+                generate_graphs_for_manager(manager, i),
+                f"manager_{i}_generation"
+            )
             for i, manager in enumerate(managers)
         ]
 
@@ -242,16 +263,20 @@ class TestNonBlockingGraphGeneration:
             with patch.object(user_graph_manager, '_generate_user_graphs_sync', simulate_user_graph_work), \
                  patch.object(user_graph_manager, '_validate_generated_user_files', mock_validate_user_files):
                 async with user_graph_manager:
-                    # Start background task
-                    bg_task = asyncio.create_task(background_task())
+                    # Start background task using async utilities
+                    bg_task = self.create_background_task(background_task(), "background_monitor")
                     
                     # Start user graph generation
-                    user_task = asyncio.create_task(
-                        user_graph_manager.generate_user_graphs("test@example.com")
+                    user_task = self.create_background_task(
+                        user_graph_manager.generate_user_graphs("test@example.com"),
+                        "user_graph_generation"
                     )
                     
-                    # Wait for both to complete
-                    results = await asyncio.gather(user_task, bg_task)
+                    # Wait for both to complete with timeout protection
+                    results = await self.run_with_timeout(
+                        asyncio.gather(user_task, bg_task),
+                        timeout=5.0
+                    )
                     
                     # Verify user graph generation completed
                     assert results[0] == ["user_graph.png"]
@@ -260,6 +285,7 @@ class TestNonBlockingGraphGeneration:
                     assert background_counter == 20, f"Background task only completed {background_counter}/20 iterations"
 
     @pytest.mark.asyncio
+    @async_timeout_test(timeout=15.0)
     async def test_stress_test_multiple_users_concurrent(
         self,
         mock_config_manager: MagicMock,
@@ -293,14 +319,20 @@ class TestNonBlockingGraphGeneration:
                 async with user_graph_manager:
                     start_time = time.time()
                     
-                    # Create tasks for all users
+                    # Create tasks for all users using background task management
                     tasks = [
-                        asyncio.create_task(user_graph_manager.generate_user_graphs(email))
-                        for email in user_emails
+                        self.create_background_task(
+                            user_graph_manager.generate_user_graphs(email),
+                            f"user_graph_{i}"
+                        )
+                        for i, email in enumerate(user_emails)
                     ]
                     
-                    # Wait for all to complete
-                    results = await asyncio.gather(*tasks)
+                    # Wait for all to complete with timeout protection
+                    results = await self.run_with_timeout(
+                        asyncio.gather(*tasks),
+                        timeout=10.0
+                    )
                     
                     total_time = time.time() - start_time
                     
@@ -342,9 +374,12 @@ class TestNonBlockingGraphGeneration:
 
             with patch.object(graph_manager, '_generate_graphs_sync', simulate_slow_work):
                 async with graph_manager:
-                    # Test with short timeout
+                    # Test with short timeout using async utility
                     with pytest.raises(asyncio.TimeoutError):
-                        _ = await graph_manager.generate_all_graphs(timeout_seconds=0.5)
+                        _ = await self.run_with_timeout(
+                            graph_manager.generate_all_graphs(),
+                            timeout=0.5
+                        )
 
     @pytest.mark.asyncio
     async def test_memory_stability_under_load(
@@ -387,7 +422,10 @@ class TestNonBlockingGraphGeneration:
                 async with graph_manager:
                     # Generate graphs multiple times
                     for i in range(10):
-                        _ = await graph_manager.generate_all_graphs()
+                        _ = await self.run_with_timeout(
+                            graph_manager.generate_all_graphs(),
+                            timeout=5.0
+                        )
 
                         # Force garbage collection
                         _ = gc.collect()
@@ -440,12 +478,15 @@ class TestNonBlockingGraphGeneration:
 
             with patch.object(graph_manager, '_generate_graphs_sync', simulate_error_work):
                 async with graph_manager:
-                    # Start error monitor
-                    monitor_task = asyncio.create_task(error_monitor())
+                    # Start error monitor using background task management
+                    monitor_task = self.create_background_task(error_monitor(), "error_monitor")
 
                     # Start graph generation (should fail)
                     with pytest.raises(GraphGenerationError):
-                        graph_task = asyncio.create_task(graph_manager.generate_all_graphs())
+                        graph_task = self.create_background_task(
+                            graph_manager.generate_all_graphs(),
+                            "failing_graph_generation"
+                        )
                         _ = await asyncio.gather(graph_task, monitor_task, return_exceptions=True)
 
                     # Verify monitor completed (proving event loop wasn't blocked during error)
@@ -468,12 +509,12 @@ class TestNonBlockingGraphGeneration:
             callback_counter += 1
 
         async def callback_monitor() -> None:
-            """Monitor callback execution."""
-            # Wait for callbacks to be triggered
-            for _ in range(50):
-                await asyncio.sleep(0.01)
-                if callback_counter >= 4:  # Expected number of progress updates
-                    break
+            """Monitor callback execution using wait_for_condition utility."""
+            await wait_for_condition(
+                lambda: callback_counter >= 4,  # Expected number of progress updates
+                timeout=5.0,
+                description="progress callbacks to be triggered"
+            )
 
         graph_manager = GraphManager(mock_config_manager)
 
@@ -496,16 +537,20 @@ class TestNonBlockingGraphGeneration:
 
             with patch.object(graph_manager, '_generate_graphs_sync', simulate_tracked_work):
                 async with graph_manager:
-                    # Start callback monitor
-                    monitor_task = asyncio.create_task(callback_monitor())
+                    # Start callback monitor using background task management
+                    monitor_task = self.create_background_task(callback_monitor(), "callback_monitor")
 
                     # Start graph generation with progress callback
-                    graph_task = asyncio.create_task(
-                        graph_manager.generate_all_graphs(progress_callback=progress_callback)
+                    graph_task = self.create_background_task(
+                        graph_manager.generate_all_graphs(progress_callback=progress_callback),
+                        "graph_generation"
                     )
 
-                    # Wait for both to complete
-                    results = await asyncio.gather(graph_task, monitor_task)
+                    # Wait for both to complete with timeout protection
+                    results = await self.run_with_timeout(
+                        asyncio.gather(graph_task, monitor_task),
+                        timeout=10.0
+                    )
 
                     # Verify graph generation completed
                     assert results[0] == ["tracked_graph.png"]
@@ -540,13 +585,13 @@ class TestNonBlockingGraphGeneration:
         # Mock the cleanup_old_files function directly
         with patch('graphs.graph_modules.utils.cleanup_old_files', return_value=5):
             # Start cleanup monitor
-            monitor_task = asyncio.create_task(cleanup_monitor())
+            monitor_task = self.create_background_task(cleanup_monitor(), "cleanup_monitor")
 
             # Start cleanup operation
-            cleanup_task = asyncio.create_task(graph_manager.cleanup_old_graphs())
+            cleanup_task = self.create_background_task(graph_manager.cleanup_old_graphs(), "cleanup_task")
 
-            # Wait for both to complete
-            results = await asyncio.gather(cleanup_task, monitor_task)
+                    # Wait for both to complete
+        results = await asyncio.gather(cleanup_task, monitor_task)
 
             # Verify cleanup completed (returns dict with statistics)
             cleanup_result = results[0]

@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from unittest.mock import MagicMock
 
 from bot.update_tracker import SchedulingConfig, ScheduleState, UpdateSchedule, UpdateTracker
+from tests.utils.test_helpers import create_mock_discord_bot
 
 
 class TestEnhancedScheduling:
@@ -116,8 +117,8 @@ class TestUpdateTrackerEnhanced:
     
     @pytest.fixture
     def mock_bot(self) -> MagicMock:
-        """Create a mock Discord bot."""
-        return MagicMock()
+        """Create a mock Discord bot using standardized utility."""
+        return create_mock_discord_bot(user_name="UpdateTrackerBot", guild_count=1)
     
     @pytest.fixture
     def update_tracker(self, mock_bot: MagicMock) -> UpdateTracker:

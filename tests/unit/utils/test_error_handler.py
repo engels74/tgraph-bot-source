@@ -26,6 +26,8 @@ from utils.error_handler import (
     command_error_handler,
     error_tracker
 )
+from tests.utils.test_helpers import create_mock_interaction, create_mock_user
+from tests.utils.async_helpers import async_mock_context
 
 
 class TestErrorContext:
@@ -227,22 +229,20 @@ class TestErrorHandling:
     
     @pytest.mark.asyncio
     async def test_handle_command_error(self) -> None:
-        """Test command error handling."""
-        # Mock interaction
-        interaction = Mock(spec=discord.Interaction)
-        interaction.user = Mock()
-        interaction.user.id = 123  # pyright: ignore[reportAny]
-        interaction.guild = Mock()
-        interaction.guild.id = 456  # pyright: ignore[reportAny]
-        interaction.channel = Mock()
-        interaction.channel.id = 789  # pyright: ignore[reportAny]
-        interaction.command = Mock()
-        interaction.command.name = "test_command"  # pyright: ignore[reportAny]
+        """Test command error handling using standardized mock interaction."""
+        # Create mock interaction using utility
+        interaction = create_mock_interaction(
+            user_id=123,
+            username="TestUser",
+            guild_id=456,
+            guild_name="Test Guild",
+            channel_id=789,
+            command_name="test_command"
+        )
         
         error = ValueError("Test validation error")
         
-        with patch('utils.error_handler.send_error_response') as mock_send:
-            mock_send.return_value = True
+        async with async_mock_context('utils.error_handler.send_error_response', return_value=True) as mock_send:
             await handle_command_error(interaction, error)
             
             mock_send.assert_called_once()
@@ -305,12 +305,13 @@ class TestErrorDecorators:
     @pytest.mark.asyncio
     async def test_command_error_handler_decorator(self) -> None:
         """Test command_error_handler decorator."""
-        interaction = Mock(spec=discord.Interaction)
-        interaction.user = Mock()
-        interaction.user.id = 123  # pyright: ignore[reportAny]
-        interaction.guild = None
-        interaction.channel = Mock()
-        interaction.channel.id = 789  # pyright: ignore[reportAny]
+        # Create mock interaction using utility
+        interaction = create_mock_interaction(
+            user_id=123,
+            username="TestUser",
+            guild_id=None,  # DM context
+            channel_id=789
+        )
         
         @command_error_handler()
         async def test_command(_self: Mock, _interaction: discord.Interaction) -> None:
@@ -318,7 +319,7 @@ class TestErrorDecorators:
         
         mock_self = Mock()
         
-        with patch('utils.error_handler.handle_command_error') as mock_handle:
+        async with async_mock_context('utils.error_handler.handle_command_error') as mock_handle:
             await test_command(mock_self, interaction)
             mock_handle.assert_called_once()
 

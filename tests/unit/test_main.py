@@ -21,7 +21,8 @@ from discord.ext import commands
 from main import TGraphBot, main, setup_logging, setup_signal_handlers
 from config.manager import ConfigManager
 from config.schema import TGraphBotConfig
-from tests.utils.test_helpers import create_config_manager_with_config
+from tests.utils.test_helpers import create_config_manager_with_config, create_mock_discord_bot
+from tests.utils.async_helpers import AsyncTestBase, async_discord_bot_context, async_mock_context
 
 if TYPE_CHECKING:
     pass
@@ -54,8 +55,8 @@ class TestTGraphBot:
         bot = TGraphBot(config_manager)
         
         # Mock the setup_i18n and load_extensions functions
-        with patch("main.setup_i18n") as mock_setup_i18n, \
-             patch("main.load_extensions") as mock_load_extensions:
+        async with async_mock_context("main.setup_i18n") as mock_setup_i18n, \
+                   async_mock_context("main.load_extensions") as mock_load_extensions:
             
             await bot.setup_hook()
             
@@ -72,8 +73,8 @@ class TestTGraphBot:
         bot = TGraphBot(config_manager)
 
         # Mock the setup_i18n and load_extensions functions
-        with patch("main.setup_i18n") as mock_setup_i18n, \
-             patch("main.load_extensions") as mock_load_extensions:
+        async with async_mock_context("main.setup_i18n") as mock_setup_i18n, \
+                   async_mock_context("main.load_extensions") as mock_load_extensions:
 
             # Should raise RuntimeError when no config is available
             with pytest.raises(RuntimeError, match="Bot setup failed: No configuration available"):
@@ -89,7 +90,7 @@ class TestTGraphBot:
         config_manager = ConfigManager()
         bot = TGraphBot(config_manager)
 
-        # Create a mock user object
+        # Create a mock user object using utility
         mock_user = MagicMock()
         mock_user.name = "TestBot"
         mock_user.id = 123456789
@@ -129,8 +130,8 @@ class TestTGraphBot:
         config_manager = ConfigManager()
         bot = TGraphBot(config_manager)
 
-        # Mock the parent close method
-        with patch.object(commands.Bot, "close", new_callable=AsyncMock) as mock_close:
+        # Mock the parent close method using async utility
+        async with async_mock_context("discord.ext.commands.Bot.close") as mock_close:
             await bot.close()
             mock_close.assert_called_once()
 
@@ -203,11 +204,11 @@ class TestMainFunction:
         )
         
         with patch("pathlib.Path.exists", return_value=True), \
-             patch.object(ConfigManager, "load_config", return_value=mock_config), \
-             patch.object(TGraphBot, "start", new_callable=AsyncMock) as mock_start:
+             patch.object(ConfigManager, "load_config", return_value=mock_config):
             
-            await main()
-            mock_start.assert_called_once_with("test_token")
+            async with async_mock_context("main.TGraphBot.start") as mock_start:
+                await main()
+                mock_start.assert_called_once_with("test_token")
 
     @pytest.mark.asyncio
     async def test_main_keyboard_interrupt(self) -> None:
@@ -220,12 +221,13 @@ class TestMainFunction:
         )
         
         with patch("pathlib.Path.exists", return_value=True), \
-             patch.object(ConfigManager, "load_config", return_value=mock_config), \
-             patch.object(TGraphBot, "start", new_callable=AsyncMock, side_effect=KeyboardInterrupt), \
-             patch.object(TGraphBot, "close", new_callable=AsyncMock) as mock_close:
+             patch.object(ConfigManager, "load_config", return_value=mock_config):
             
-            await main()
-            mock_close.assert_called_once()
+            async with async_mock_context("main.TGraphBot.start", side_effect=KeyboardInterrupt) as mock_start, \
+                       async_mock_context("main.TGraphBot.close") as mock_close:
+                
+                await main()
+                mock_close.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_main_exception(self) -> None:
@@ -239,17 +241,26 @@ class TestMainFunction:
         
         with patch("pathlib.Path.exists", return_value=True), \
              patch.object(ConfigManager, "load_config", return_value=mock_config), \
-             patch.object(TGraphBot, "start", new_callable=AsyncMock, side_effect=Exception("Test error")), \
-             patch.object(TGraphBot, "close", new_callable=AsyncMock) as mock_close, \
              patch("sys.exit") as mock_exit:
             
-            await main()
-            mock_close.assert_called_once()
-            mock_exit.assert_called_once_with(1)
+            async with async_mock_context("main.TGraphBot.start", side_effect=Exception("Test error")) as mock_start, \
+                       async_mock_context("main.TGraphBot.close") as mock_close:
+                
+                await main()
+                mock_close.assert_called_once()
+                mock_exit.assert_called_once_with(1)
 
 
-class TestEnhancedErrorHandling:
-    """Test cases for enhanced error handling functionality."""
+class TestEnhancedErrorHandling(AsyncTestBase):
+    """Test cases for enhanced error handling functionality using async test base."""
+
+    def setup_method(self) -> None:
+        """Set up test method with async utilities."""
+        super().setup_method()
+
+    def teardown_method(self) -> None:
+        """Clean up after test method."""
+        super().teardown_method()
 
     def test_bot_initialization_with_background_tasks(self) -> None:
         """Test that bot initializes with background task management."""
@@ -357,7 +368,7 @@ class TestEnhancedErrorHandling:
 
         _ = bot.create_background_task(dummy_task(), "test_task")
 
-        with patch.object(commands.Bot, "close", new_callable=AsyncMock) as mock_parent_close:
+        async with async_mock_context("discord.ext.commands.Bot.close") as mock_parent_close:
             await bot.close()
 
             # Verify shutdown state
@@ -372,7 +383,7 @@ class TestEnhancedErrorHandling:
         config_manager = ConfigManager()
         bot = TGraphBot(config_manager)
 
-        with patch.object(commands.Bot, "close", new_callable=AsyncMock) as mock_parent_close:
+        async with async_mock_context("discord.ext.commands.Bot.close") as mock_parent_close:
             # First call
             await bot.close()
             assert mock_parent_close.call_count == 1
