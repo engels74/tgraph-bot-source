@@ -30,7 +30,7 @@ class Top10UsersGraph(BaseGraph):
 
     def __init__(
         self,
-        config: "TGraphBotConfig | None" = None,
+        config: "TGraphBotConfig | dict[str, object] | None" = None,
         width: int = 12,
         height: int = 8,
         dpi: int = 100,
@@ -97,7 +97,7 @@ class Top10UsersGraph(BaseGraph):
                 processed_records = []
 
             # Step 3: Aggregate top users data
-            censor_usernames = self.config.CENSOR_USERNAMES if self.config else True
+            censor_usernames = self.should_censor_usernames()
 
             if processed_records:
                 top_users = aggregate_top_users(processed_records, limit=10, censor=censor_usernames)
@@ -114,7 +114,7 @@ class Top10UsersGraph(BaseGraph):
             _, ax = self.setup_figure()
 
             # Step 5: Configure Seaborn styling
-            if self.config and self.config.ENABLE_GRAPH_GRID:
+            if self.get_grid_enabled():
                 sns.set_style("whitegrid")
             else:
                 sns.set_style("white")
@@ -140,7 +140,8 @@ class Top10UsersGraph(BaseGraph):
                 _ = ax.set_ylabel('Username', fontsize=12)  # pyright: ignore[reportUnknownMemberType]
 
                 # Add value labels on bars if enabled
-                if self.config and self.config.ANNOTATE_TOP_10_USERS:
+                annotate_enabled = self.get_config_value('ANNOTATE_TOP_10_USERS', False)
+                if annotate_enabled:
                     max_count = float(max(df['play_count']))  # pyright: ignore[reportUnknownArgumentType]
                     for i, (_, row) in enumerate(df.iterrows()):  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType,reportUnknownVariableType]
                         play_count = float(row['play_count'])  # pyright: ignore[reportUnknownArgumentType]
@@ -150,7 +151,7 @@ class Top10UsersGraph(BaseGraph):
                             str(int(play_count)),
                             va='center',
                             fontsize=10,
-                            color=self.config.ANNOTATION_COLOR
+                            color=self.get_annotation_color()
                         )
 
                 logger.info(f"Created top 10 users graph with {len(top_users)} users")

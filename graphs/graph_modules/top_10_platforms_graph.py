@@ -30,7 +30,7 @@ class Top10PlatformsGraph(BaseGraph):
 
     def __init__(
         self,
-        config: "TGraphBotConfig | None" = None,
+        config: "TGraphBotConfig | dict[str, object] | None" = None,
         width: int = 12,
         height: int = 8,
         dpi: int = 100,
@@ -103,7 +103,7 @@ class Top10PlatformsGraph(BaseGraph):
             _, ax = self.setup_figure()
 
             # Step 5: Configure Seaborn styling
-            if self.config and self.config.ENABLE_GRAPH_GRID:
+            if self.get_grid_enabled():
                 sns.set_style("whitegrid")
             else:
                 sns.set_style("white")
@@ -114,7 +114,7 @@ class Top10PlatformsGraph(BaseGraph):
                 df = pd.DataFrame(top_platforms)
 
                 # Step 7: Create horizontal bar plot using Seaborn
-                color = self.config.TV_COLOR if self.config else "#1f77b4"
+                color = self.get_tv_color()
                 _ = sns.barplot(
                     data=df,
                     x="play_count",

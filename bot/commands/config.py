@@ -6,7 +6,6 @@ for viewing and modifying bot configuration settings with live editing capabilit
 """
 
 import logging
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import discord

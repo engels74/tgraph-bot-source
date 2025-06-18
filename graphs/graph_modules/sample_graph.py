@@ -34,7 +34,7 @@ class SampleGraph(BaseGraph):
     
     def __init__(
         self,
-        config: "TGraphBotConfig | None" = None,
+        config: "TGraphBotConfig | dict[str, object] | None" = None,
         width: int = 10,
         height: int = 6,
         dpi: int = 100,

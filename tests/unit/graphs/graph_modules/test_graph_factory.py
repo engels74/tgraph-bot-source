@@ -18,8 +18,8 @@ class TestGraphFactory:
     
     def test_factory_initialization(self) -> None:
         """Test GraphFactory initialization."""
-        config = {"ENABLE_DAILY_PLAY_COUNT": True}
-        factory = GraphFactory(config)  # pyright: ignore[reportArgumentType]
+        config: dict[str, object] = {"ENABLE_DAILY_PLAY_COUNT": True}
+        factory = GraphFactory(config)
         assert factory.config == config
     
     def test_create_enabled_graphs_empty_config(self) -> None:

@@ -21,8 +21,8 @@ from discord.ext import commands
 from main import TGraphBot, main, setup_logging, setup_signal_handlers
 from config.manager import ConfigManager
 from config.schema import TGraphBotConfig
-from tests.utils.test_helpers import create_config_manager_with_config, create_mock_discord_bot
-from tests.utils.async_helpers import AsyncTestBase, async_discord_bot_context, async_mock_context
+from tests.utils.test_helpers import create_config_manager_with_config
+from tests.utils.async_helpers import AsyncTestBase, async_mock_context
 
 if TYPE_CHECKING:
     pass

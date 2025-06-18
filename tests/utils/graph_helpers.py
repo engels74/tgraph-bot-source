@@ -16,7 +16,7 @@ import tempfile
 from abc import ABC
 from collections.abc import Generator, Mapping
 from contextlib import contextmanager
-from pathlib import Path
+
 from typing import TYPE_CHECKING, Any, override
 from unittest.mock import MagicMock, patch
 
@@ -244,15 +244,18 @@ class TestGraph(ABC):
             @override
             def generate(self, data: Mapping[str, object]) -> str:
                 """Generate a test graph."""
-                _ = self.setup_figure()
-                if self.axes is not None:
-                    _ = self.axes.plot([1, 2, 3], [1, 4, 2])  # pyright: ignore[reportUnknownMemberType]
-                    _ = self.axes.set_title(self.get_title())  # pyright: ignore[reportUnknownMemberType]
-                
-                with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
-                    output_path = tmp.name
+                try:
+                    _ = self.setup_figure()
+                    if self.axes is not None:
+                        _ = self.axes.plot([1, 2, 3], [1, 4, 2])  # pyright: ignore[reportUnknownMemberType]
+                        _ = self.axes.set_title(self.get_title())  # pyright: ignore[reportUnknownMemberType]
                     
-                return self.save_figure(output_path=output_path)
+                    with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
+                        output_path = tmp.name
+                        
+                    return self.save_figure(output_path=output_path)
+                finally:
+                    self.cleanup()
             
             @override
             def get_title(self) -> str:
