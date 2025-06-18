@@ -574,8 +574,8 @@ class TestNonBlockingGraphGeneration(AsyncTestBase):
             # Start cleanup operation
             cleanup_task = self.create_background_task(graph_manager.cleanup_old_graphs(), "cleanup_task")
 
-                    # Wait for both to complete
-        results = await asyncio.gather(cleanup_task, monitor_task)
+            # Wait for both to complete
+            results = await asyncio.gather(cleanup_task, monitor_task)
 
             # Verify cleanup completed (returns dict with statistics)
             cleanup_result = results[0]
