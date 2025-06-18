@@ -6,19 +6,18 @@ and that repeated graph generation doesn't cause memory leaks.
 """
 
 import gc
-import tempfile
+import os
 from pathlib import Path
 from typing import override, cast
 from collections.abc import Mapping
 from unittest.mock import MagicMock, patch
 import psutil
-import os
 
 import pytest
 import matplotlib.pyplot as plt
 
 from graphs.graph_modules.base_graph import BaseGraph
-# Removed unused imports - now using utility functions
+# Use centralized test utilities
 from tests.utils.graph_helpers import (
     create_test_config_minimal,
     create_memory_test_graph,
@@ -27,6 +26,7 @@ from tests.utils.graph_helpers import (
     assert_graph_cleanup,
     create_mock_graph_data,
 )
+from tests.utils.test_helpers import create_temp_directory
 
 
 # Removed - now using utility function from graph_helpers
@@ -44,8 +44,8 @@ class MemoryTestGraph(BaseGraph):
                 _ = self.axes.plot([1, 2, 3], [1, 4, 2])  # pyright: ignore[reportUnknownMemberType]
                 _ = self.axes.set_title(self.get_title())  # pyright: ignore[reportUnknownMemberType]
 
-            with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
-                output_path = tmp.name
+            with create_temp_directory() as temp_dir:
+                output_path = str(temp_dir / "test_graph.png")
 
             return self.save_figure(output_path=output_path)
         finally:
@@ -68,7 +68,7 @@ class TestMemoryManagement:
             graph = test_graph.graph
 
             # Generate graph
-            with tempfile.TemporaryDirectory():
+            with create_temp_directory():
                 mock_data = create_mock_graph_data()
                 output_path = graph.generate(mock_data)
 
@@ -104,7 +104,7 @@ class TestMemoryManagement:
                 test_graph = create_memory_test_graph()
                 graph = test_graph.graph
                 
-                with tempfile.TemporaryDirectory():
+                with create_temp_directory():
                     mock_data = create_mock_graph_data()
                     output_path = graph.generate(mock_data)
 
@@ -218,7 +218,7 @@ class TestMemoryManagement:
         # Generate multiple graphs
         for i in range(10):
             graph = MemoryTestGraph()
-            with tempfile.TemporaryDirectory():
+            with create_temp_directory():
                 output_path = graph.generate({"test": f"data_{i}"})
                 Path(output_path).unlink(missing_ok=True)
             

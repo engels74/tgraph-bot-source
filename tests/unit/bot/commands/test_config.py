@@ -5,8 +5,6 @@ This module tests the /config command group including /config view and /config e
 commands with proper validation, error handling, and Discord integration.
 """
 
-import tempfile
-from pathlib import Path
 from unittest.mock import patch
 
 import discord
@@ -17,7 +15,7 @@ from discord.ext import commands
 from bot.commands.config import ConfigCog
 from config.schema import TGraphBotConfig
 from main import TGraphBot
-from tests.utils.test_helpers import create_config_manager_with_config, create_mock_interaction
+from tests.utils.test_helpers import create_config_manager_with_config, create_mock_interaction, create_temp_config_file
 
 
 class TestConfigCog:
@@ -239,11 +237,8 @@ class TestConfigCog:
             username="TestUser"
         )
         
-        # Create a temporary config file
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yml', delete=False) as f:
-            config_path = Path(f.name)
-
-        try:
+        # Create a temporary config file using centralized utility
+        with create_temp_config_file() as config_path:
             # Mock the config manager's config_file_path
             with patch.object(config_cog.tgraph_bot.config_manager, 'config_file_path', config_path), \
                  patch.object(config_cog.tgraph_bot.config_manager, 'get_current_config', return_value=base_config), \
@@ -256,10 +251,6 @@ class TestConfigCog:
 
                 # Verify success response was sent
                 mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportAny]
-
-        finally:
-            # Clean up the temporary file
-            config_path.unlink(missing_ok=True)
 
     @pytest.mark.asyncio
     async def test_config_edit_save_error(
@@ -274,11 +265,8 @@ class TestConfigCog:
             username="TestUser"
         )
         
-        # Create a temporary config file
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yml', delete=False) as f:
-            config_path = Path(f.name)
-
-        try:
+        # Create a temporary config file using centralized utility
+        with create_temp_config_file() as config_path:
             # Mock the config manager's config_file_path and save to raise an exception
             with patch.object(config_cog.tgraph_bot.config_manager, 'config_file_path', config_path), \
                  patch('config.manager.ConfigManager.save_config', side_effect=OSError("Save failed")), \
@@ -288,7 +276,3 @@ class TestConfigCog:
 
                 # Verify error response was sent through the new error handling system
                 mock_safe_response.assert_called_once()
-
-        finally:
-            # Clean up the temporary file
-            config_path.unlink(missing_ok=True)

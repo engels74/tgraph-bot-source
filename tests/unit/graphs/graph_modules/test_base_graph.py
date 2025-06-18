@@ -9,7 +9,6 @@ This module tests the BaseGraph functionality including:
 - Cleanup operations
 """
 
-import tempfile
 from abc import ABC
 from pathlib import Path
 from collections.abc import Mapping
@@ -20,12 +19,11 @@ import pytest
 
 from graphs.graph_modules.base_graph import BaseGraph
 from tests.utils.graph_helpers import (
-    create_memory_test_graph,
     matplotlib_cleanup,
     assert_graph_properties,
     assert_graph_cleanup,
-    patch_matplotlib_save,
 )
+from tests.utils.test_helpers import create_temp_directory
 
 
 class ConcreteGraph(BaseGraph):
@@ -39,8 +37,8 @@ class ConcreteGraph(BaseGraph):
             _ = self.axes.plot([1, 2, 3], [1, 4, 2])  # pyright: ignore[reportUnknownMemberType]
             _ = self.axes.set_title(self.get_title())  # pyright: ignore[reportUnknownMemberType]
         
-        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
-            output_path = tmp.name
+        with create_temp_directory() as temp_dir:
+            output_path = str(temp_dir / "test_graph.png")
             
         return self.save_figure(output_path=output_path)
     
@@ -110,8 +108,8 @@ class TestBaseGraph:
         """Test that save_figure creates output directory if it doesn't exist."""
         graph = ConcreteGraph()
         
-        with tempfile.TemporaryDirectory() as temp_dir:
-            output_path = Path(temp_dir) / "subdir" / "test_graph.png"
+        with create_temp_directory() as temp_dir:
+            output_path = temp_dir / "subdir" / "test_graph.png"
             
             # Setup figure
             _ = graph.setup_figure()
@@ -155,7 +153,7 @@ class TestBaseGraph:
         with matplotlib_cleanup():
             graph = ConcreteGraph()
             
-            with tempfile.TemporaryDirectory():
+            with create_temp_directory():
                 # Generate graph
                 output_path = graph.generate({"test": "data"})
                 
