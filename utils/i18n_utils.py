@@ -89,7 +89,7 @@ class StringExtractor(ast.NodeVisitor):
                 if isinstance(arg, ast.Constant):
                     # ast.Constant.value can be str, int, float, bool, None, bytes, or complex
                     # We only care about string values for translation extraction
-                    value = arg.value  # pyright: ignore[reportAny] # ast.Constant.value is typed as Any
+                    value = arg.value
                     if isinstance(value, str):
                         string_value: str = value
                         line_number = node.lineno
@@ -131,7 +131,7 @@ class StringExtractor(ast.NodeVisitor):
         for keyword in node.keywords:
             if keyword.arg == "context" and isinstance(keyword.value, ast.Constant):
                 # ast.Constant.value can be various types, we only want strings
-                value = keyword.value.value  # pyright: ignore[reportAny] # ast.Constant.value is typed as Any
+                value = keyword.value.value
                 if isinstance(value, str):
                     return value
         return None

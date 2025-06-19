@@ -247,7 +247,7 @@ class TestGraph(ABC):
                 try:
                     _ = self.setup_figure()
                     if self.axes is not None:
-                        _ = self.axes.plot([1, 2, 3], [1, 4, 2])  # pyright: ignore[reportUnknownMemberType]
+                        self.axes.plot([1, 2, 3], [1, 4, 2])  # pyright: ignore[reportUnknownMemberType]
                         _ = self.axes.set_title(self.get_title())  # pyright: ignore[reportUnknownMemberType]
                     
                     with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
@@ -262,7 +262,7 @@ class TestGraph(ABC):
                 """Get the title for this test graph."""
                 return "Test Graph"
         
-        self._graph = ConcreteTestGraph(
+        self._graph: BaseGraph = ConcreteTestGraph(
             width=width,
             height=height,
             dpi=dpi,
@@ -324,7 +324,7 @@ def matplotlib_cleanup() -> Generator[None, None, None]:
         
         for fig_num in new_figures:
             try:
-                plt.close(fig_num)  # pyright: ignore[reportUnknownMemberType]
+                plt.close(fig_num)
             except Exception:
                 # Ignore cleanup errors - figure might already be closed
                 pass

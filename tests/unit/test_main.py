@@ -11,7 +11,7 @@ import logging
 import signal
 import tempfile
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import discord
@@ -223,7 +223,7 @@ class TestMainFunction:
         with patch("pathlib.Path.exists", return_value=True), \
              patch.object(ConfigManager, "load_config", return_value=mock_config):
             
-            async with async_mock_context("main.TGraphBot.start", side_effect=KeyboardInterrupt) as mock_start, \
+            async with async_mock_context("main.TGraphBot.start", side_effect=KeyboardInterrupt) as _mock_start, \
                        async_mock_context("main.TGraphBot.close") as mock_close:
                 
                 await main()
@@ -243,7 +243,7 @@ class TestMainFunction:
              patch.object(ConfigManager, "load_config", return_value=mock_config), \
              patch("sys.exit") as mock_exit:
             
-            async with async_mock_context("main.TGraphBot.start", side_effect=Exception("Test error")) as mock_start, \
+            async with async_mock_context("main.TGraphBot.start", side_effect=Exception("Test error")) as _mock_start, \
                        async_mock_context("main.TGraphBot.close") as mock_close:
                 
                 await main()
@@ -254,10 +254,12 @@ class TestMainFunction:
 class TestEnhancedErrorHandling(AsyncTestBase):
     """Test cases for enhanced error handling functionality using async test base."""
 
+    @override
     def setup_method(self) -> None:
         """Set up test method with async utilities."""
         super().setup_method()
 
+    @override
     def teardown_method(self) -> None:
         """Clean up after test method."""
         super().teardown_method()

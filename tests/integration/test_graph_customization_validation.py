@@ -9,10 +9,20 @@ they work correctly across all graph types.
 
 from __future__ import annotations
 
-
+import pytest
+from collections.abc import Mapping
+from typing import TYPE_CHECKING
 
 from config.schema import TGraphBotConfig
 from graphs.graph_modules.graph_factory import GraphFactory
+from tests.utils.graph_helpers import (
+    create_test_config_minimal,
+    create_graph_factory_with_config,
+    matplotlib_cleanup,
+)
+
+if TYPE_CHECKING:
+    from config.schema import TGraphBotConfig
 
 
 class TestGraphCustomizationValidation:
@@ -48,11 +58,16 @@ class TestGraphCustomizationValidation:
             graph = factory.create_graph_by_type(graph_type)
 
             # Verify colors are applied to the graph's config
-            assert graph.config.TV_COLOR == "#ff0000"  # pyright: ignore[reportOptionalMemberAccess]
-            assert graph.config.MOVIE_COLOR == "#00ff00"  # pyright: ignore[reportOptionalMemberAccess]
-            assert graph.config.GRAPH_BACKGROUND_COLOR == "#f0f0f0"  # pyright: ignore[reportOptionalMemberAccess]
-            assert graph.config.ANNOTATION_COLOR == "#0000ff"  # pyright: ignore[reportOptionalMemberAccess]
-            assert graph.config.ANNOTATION_OUTLINE_COLOR == "#ffffff"  # pyright: ignore[reportOptionalMemberAccess]
+            assert graph.config is not None
+            # Type guard to ensure we're working with TGraphBotConfig
+            assert not isinstance(graph.config, dict), "Config should be TGraphBotConfig, not dict"
+            config_obj: TGraphBotConfig = graph.config
+            
+            assert config_obj.TV_COLOR == "#ff0000"
+            assert config_obj.MOVIE_COLOR == "#00ff00"
+            assert config_obj.GRAPH_BACKGROUND_COLOR == "#f0f0f0"
+            assert config_obj.ANNOTATION_COLOR == "#0000ff"
+            assert config_obj.ANNOTATION_OUTLINE_COLOR == "#ffffff"
 
             # Verify graph can be instantiated with custom colors
             assert graph.background_color == "#f0f0f0"
@@ -136,7 +151,12 @@ class TestGraphCustomizationValidation:
             graph = factory.create_graph_by_type(graph_type)
 
             # Verify annotation settings are applied
-            assert graph.config.ENABLE_ANNOTATION_OUTLINE is True  # pyright: ignore[reportOptionalMemberAccess]
+            assert graph.config is not None
+            # Type guard to ensure we're working with TGraphBotConfig
+            assert not isinstance(graph.config, dict), "Config should be TGraphBotConfig, not dict"
+            config_obj: TGraphBotConfig = graph.config
+            
+            assert config_obj.ENABLE_ANNOTATION_OUTLINE is True
 
     def test_grid_settings_validation(self) -> None:
         """Test that grid settings work correctly."""
@@ -152,7 +172,11 @@ class TestGraphCustomizationValidation:
         factory = GraphFactory(config_grid_enabled)
         graph = factory.create_graph_by_type("daily_play_count")
 
-        assert graph.config.ENABLE_GRAPH_GRID is True  # pyright: ignore[reportOptionalMemberAccess]
+        assert graph.config is not None
+        # Type guard to ensure we're working with TGraphBotConfig
+        assert not isinstance(graph.config, dict), "Config should be TGraphBotConfig, not dict"
+        config_obj: TGraphBotConfig = graph.config
+        assert config_obj.ENABLE_GRAPH_GRID is True
 
         # Test with grid disabled
         config_grid_disabled = TGraphBotConfig(
@@ -166,7 +190,11 @@ class TestGraphCustomizationValidation:
         factory = GraphFactory(config_grid_disabled)
         graph = factory.create_graph_by_type("daily_play_count")
 
-        assert graph.config.ENABLE_GRAPH_GRID is False  # pyright: ignore[reportOptionalMemberAccess]
+        assert graph.config is not None
+        # Type guard to ensure we're working with TGraphBotConfig
+        assert not isinstance(graph.config, dict), "Config should be TGraphBotConfig, not dict"
+        config_obj = graph.config  # pyright: ignore[reportAssignmentType]
+        assert config_obj.ENABLE_GRAPH_GRID is False
 
     def test_username_censoring_validation(self) -> None:
         """Test that username censoring works correctly."""
@@ -239,7 +267,218 @@ class TestGraphCustomizationValidation:
             graph = factory.create_graph_by_type(graph_type)
 
             # Verify all settings are applied
-            assert graph.config.TV_COLOR == "#ff4444"  # pyright: ignore[reportOptionalMemberAccess]
-            assert graph.config.MOVIE_COLOR == "#44ff44"  # pyright: ignore[reportOptionalMemberAccess]
-            assert graph.config.ENABLE_GRAPH_GRID is True  # pyright: ignore[reportOptionalMemberAccess]
-            assert graph.config.CENSOR_USERNAMES is True  # pyright: ignore[reportOptionalMemberAccess]
+            assert graph.config is not None
+            # Type guard to ensure we're working with TGraphBotConfig
+            assert not isinstance(graph.config, dict), "Config should be TGraphBotConfig, not dict"
+            config_obj: TGraphBotConfig = graph.config
+            
+            assert config_obj.TV_COLOR == "#ff4444"
+            assert config_obj.MOVIE_COLOR == "#44ff44"
+            assert config_obj.ENABLE_GRAPH_GRID is True
+            assert config_obj.CENSOR_USERNAMES is True
+
+    def test_invalid_color_format_handling(self) -> None:
+        """Test that invalid color formats are handled gracefully."""
+        with matplotlib_cleanup():
+            config = create_test_config_minimal()
+            factory = create_graph_factory_with_config(config)
+            
+            # Test with invalid color format - should fall back to defaults
+            # This tests the color validation in the BaseGraph class
+            with pytest.raises(ValueError, match="Invalid background color format"):
+                from graphs.graph_modules.base_graph import BaseGraph
+                # Create a mock graph class to test invalid color handling
+                class TestGraph(BaseGraph):
+                    def generate(self, data: Mapping[str, object]) -> str:
+                        return "test.png"
+                    
+                    def get_title(self) -> str:
+                        return "Test Graph"
+                
+                # This should raise ValueError due to invalid color
+                TestGraph(config=config, background_color="invalid_color")
+
+    def test_boolean_flag_customization(self) -> None:
+        """Test that boolean flag customizations are properly applied."""
+        with matplotlib_cleanup():
+            config = create_test_config_minimal()
+            # Set boolean flags
+            config.ENABLE_GRAPH_GRID = True
+            config.CENSOR_USERNAMES = False
+            config.ENABLE_ANNOTATION_OUTLINE = True
+            
+            factory = create_graph_factory_with_config(config)
+            graph = factory.create_graph_by_type("daily_play_count")
+            
+            # Verify boolean flags are applied
+            assert graph.config is not None
+            # Type guard to ensure we're working with TGraphBotConfig
+            assert not isinstance(graph.config, dict), "Config should be TGraphBotConfig, not dict"
+            config_obj: TGraphBotConfig = graph.config
+            
+            assert config_obj.ENABLE_ANNOTATION_OUTLINE is True
+            
+            # Test methods that use these flags
+            assert graph.get_grid_enabled() is True
+            assert graph.should_censor_usernames() is False
+            assert graph.is_annotation_outline_enabled() is True
+
+    def test_grid_enabling_consistency(self) -> None:
+        """Test that grid enabling is consistent across different graph types."""
+        with matplotlib_cleanup():
+            config = create_test_config_minimal()
+            config.ENABLE_GRAPH_GRID = True
+            
+            factory = create_graph_factory_with_config(config)
+            
+            # Test various graph types
+            graph_types = ["daily_play_count", "top_10_users", "play_count_by_hourofday"]
+            
+            for graph_type in graph_types:
+                graph = factory.create_graph_by_type(graph_type)
+                
+                # Verify grid is enabled for all graph types
+                assert graph.config is not None
+                # Type guard to ensure we're working with TGraphBotConfig
+                assert not isinstance(graph.config, dict), "Config should be TGraphBotConfig, not dict"
+                config_obj: TGraphBotConfig = graph.config
+                
+                assert config_obj.ENABLE_GRAPH_GRID is True
+                assert graph.get_grid_enabled() is True
+                
+                # Cleanup
+                graph.cleanup()
+
+    def test_grid_disabling_consistency(self) -> None:
+        """Test that grid disabling is consistent across different graph types."""
+        with matplotlib_cleanup():
+            config = create_test_config_minimal()
+            config.ENABLE_GRAPH_GRID = False
+            
+            factory = create_graph_factory_with_config(config)
+            
+            # Test various graph types
+            graph_types = ["daily_play_count", "top_10_users", "play_count_by_hourofday"]
+            
+            for graph_type in graph_types:
+                graph = factory.create_graph_by_type(graph_type)
+                
+                # Verify grid is disabled for all graph types
+                assert graph.config is not None
+                # Type guard to ensure we're working with TGraphBotConfig
+                assert not isinstance(graph.config, dict), "Config should be TGraphBotConfig, not dict"
+                config_obj: TGraphBotConfig = graph.config
+                
+                assert config_obj.ENABLE_GRAPH_GRID is False
+                assert graph.get_grid_enabled() is False
+                
+                # Cleanup
+                graph.cleanup()
+
+    def test_privacy_settings_validation(self) -> None:
+        """Test that privacy settings are properly validated and applied."""
+        with matplotlib_cleanup():
+            config = create_test_config_minimal()
+            # Enable privacy settings
+            config.CENSOR_USERNAMES = True
+            
+            factory = create_graph_factory_with_config(config)
+            
+            # Test user-related graphs
+            user_graphs = ["top_10_users"]
+            for graph_type in user_graphs:
+                graph = factory.create_graph_by_type(graph_type)
+                
+                # Verify privacy settings are applied
+                assert graph.config is not None
+                # Type guard to ensure we're working with TGraphBotConfig
+                assert not isinstance(graph.config, dict), "Config should be TGraphBotConfig, not dict"
+                config_obj: TGraphBotConfig = graph.config
+                
+                assert config_obj.CENSOR_USERNAMES is True
+                assert graph.should_censor_usernames() is True
+                
+                # Test username formatting
+                test_username = "TestUser123"
+                censored = graph.format_username(test_username, censor_enabled=True)
+                assert censored != test_username  # Should be censored
+                
+                uncensored = graph.format_username(test_username, censor_enabled=False)
+                assert uncensored == test_username  # Should be unchanged
+                
+                # Cleanup
+                graph.cleanup()
+
+    def test_comprehensive_customization_validation(self) -> None:
+        """Test comprehensive customization settings validation."""
+        with matplotlib_cleanup():
+            config = create_test_config_minimal()
+            # Apply comprehensive customizations
+            config.TV_COLOR = "#FF6B6B"
+            config.MOVIE_COLOR = "#4ECDC4"
+            config.ENABLE_GRAPH_GRID = True
+            config.CENSOR_USERNAMES = True
+            
+            factory = create_graph_factory_with_config(config)
+            graph = factory.create_graph_by_type("daily_play_count")
+            
+            # Comprehensive validation
+            assert graph.config is not None
+            # Type guard to ensure we're working with TGraphBotConfig
+            assert not isinstance(graph.config, dict), "Config should be TGraphBotConfig, not dict"
+            config_obj: TGraphBotConfig = graph.config
+            
+            assert config_obj.TV_COLOR == "#ff6b6b"  # Normalized to lowercase
+            assert config_obj.MOVIE_COLOR == "#4ecdc4"  # Normalized to lowercase
+            assert config_obj.ENABLE_GRAPH_GRID is True
+            assert config_obj.CENSOR_USERNAMES is True
+            
+            # Test that graph methods return expected values
+            assert graph.get_tv_color() == "#ff6b6b"
+            assert graph.get_movie_color() == "#4ecdc4"
+            assert graph.get_grid_enabled() is True
+            assert graph.should_censor_usernames() is True
+            
+            # Cleanup
+            graph.cleanup()
+
+    def test_annotation_customization_validation(self) -> None:
+        """Test that annotation customization settings are properly validated."""
+        with matplotlib_cleanup():
+            config = create_test_config_minimal()
+            # Set annotation customizations with valid colors
+            config.ANNOTATION_COLOR = "#ff0000"  # Valid red color
+            config.ANNOTATION_OUTLINE_COLOR = "#000000"
+            config.ENABLE_ANNOTATION_OUTLINE = True
+            
+            factory = create_graph_factory_with_config(config)
+            graph = factory.create_graph_by_type("daily_play_count")
+            
+            # Verify annotation settings
+            assert graph.config is not None
+            assert graph.get_annotation_color() == "#ff0000"
+            assert graph.get_annotation_outline_color() == "#000000"
+            assert graph.is_annotation_outline_enabled() is True
+            
+            # Cleanup
+            graph.cleanup()
+
+    def test_default_values_consistency(self) -> None:
+        """Test that default values are consistent when not specified."""
+        with matplotlib_cleanup():
+            config = create_test_config_minimal()
+            
+            factory = create_graph_factory_with_config(config)
+            graph = factory.create_graph_by_type("daily_play_count")
+            
+            # Verify default values are applied
+            assert graph.get_tv_color() == "#1f77b4"  # Default matplotlib blue
+            assert graph.get_movie_color() == "#ff7f0e"  # Default matplotlib orange
+            assert graph.get_annotation_color() == "#ff0000"  # Default red
+            assert graph.get_annotation_outline_color() == "#000000"  # Default black
+            assert graph.get_grid_enabled() is False  # Default disabled
+            assert graph.should_censor_usernames() is True  # Default privacy enabled
+            assert graph.is_annotation_outline_enabled() is True  # Default enabled
+            
+            # Cleanup
+            graph.cleanup()

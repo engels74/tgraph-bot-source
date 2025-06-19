@@ -21,6 +21,12 @@ from tests.utils.graph_helpers import (
     matplotlib_cleanup,
 )
 
+# Import for type checking
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from config.schema import TGraphBotConfig
+
 
 class TestEndToEndCustomization:
     """End-to-end integration tests for graph customization features."""
@@ -52,11 +58,15 @@ class TestEndToEndCustomization:
                 
                 # Verify configuration is properly applied (colors are normalized to lowercase)
                 assert graph.config is not None
-                assert graph.config.TV_COLOR == "#2e86ab"
-                assert graph.config.MOVIE_COLOR == "#a23b72"
-                assert graph.config.GRAPH_BACKGROUND_COLOR == "#f8f9fa"
-                assert graph.config.ENABLE_GRAPH_GRID is True
-                assert graph.config.CENSOR_USERNAMES is True
+                # Type guard to ensure we're working with TGraphBotConfig
+                assert not isinstance(graph.config, dict), "Config should be TGraphBotConfig, not dict"
+                config_obj: TGraphBotConfig = graph.config
+                
+                assert config_obj.TV_COLOR == "#2e86ab"
+                assert config_obj.MOVIE_COLOR == "#a23b72"
+                assert config_obj.GRAPH_BACKGROUND_COLOR == "#f8f9fa"
+                assert config_obj.ENABLE_GRAPH_GRID is True
+                assert config_obj.CENSOR_USERNAMES is True
                 
                 # Verify graph properties are set correctly using utility
                 assert_graph_properties(
@@ -79,10 +89,14 @@ class TestEndToEndCustomization:
             # Test that default values are applied correctly
             graph = factory.create_graph_by_type("daily_play_count")
             assert graph.config is not None
-            assert graph.config.TV_COLOR == "#1f77b4"  # Default blue
-            assert graph.config.MOVIE_COLOR == "#ff7f0e"  # Default orange
-            assert graph.config.CENSOR_USERNAMES is True  # Default privacy
-            assert graph.config.ENABLE_GRAPH_GRID is False  # Default no grid
+            # Type guard to ensure we're working with TGraphBotConfig
+            assert not isinstance(graph.config, dict), "Config should be TGraphBotConfig, not dict"
+            config_obj: TGraphBotConfig = graph.config
+            
+            assert config_obj.TV_COLOR == "#1f77b4"  # Default blue
+            assert config_obj.MOVIE_COLOR == "#ff7f0e"  # Default orange
+            assert config_obj.CENSOR_USERNAMES is True  # Default privacy
+            assert config_obj.ENABLE_GRAPH_GRID is False  # Default no grid
 
     def test_selective_graph_enabling_workflow(self) -> None:
         """Test workflow with selective graph type enabling."""
@@ -170,11 +184,15 @@ class TestEndToEndCustomization:
         
         # Verify high contrast colors are applied (colors are normalized to lowercase)
         assert graph.config is not None
-        assert graph.config.GRAPH_BACKGROUND_COLOR == "#2b2b2b"
-        assert graph.config.TV_COLOR == "#00ff00"
-        assert graph.config.MOVIE_COLOR == "#ff6600"
-        assert graph.config.ANNOTATION_COLOR == "#ffffff"
-        assert graph.config.ENABLE_GRAPH_GRID is True
+        # Type guard to ensure we're working with TGraphBotConfig
+        assert not isinstance(graph.config, dict), "Config should be TGraphBotConfig, not dict"
+        config_obj: TGraphBotConfig = graph.config
+        
+        assert config_obj.GRAPH_BACKGROUND_COLOR == "#2b2b2b"
+        assert config_obj.TV_COLOR == "#00ff00"
+        assert config_obj.MOVIE_COLOR == "#ff6600"
+        assert config_obj.ANNOTATION_COLOR == "#ffffff"
+        assert config_obj.ENABLE_GRAPH_GRID is True
 
         # Verify graph background is applied
         assert graph.background_color == "#2b2b2b"
@@ -214,8 +232,12 @@ class TestEndToEndCustomization:
         factory = create_graph_factory_with_config(config)
         graph = factory.create_graph_by_type("daily_play_count")
         
-        # Verify boundary values are accepted
+        # Type guard to ensure we're working with TGraphBotConfig
         assert graph.config is not None
-        assert graph.config.UPDATE_DAYS == 1
-        assert graph.config.KEEP_DAYS == 365
-        assert graph.config.TIME_RANGE_DAYS == 1
+        assert not isinstance(graph.config, dict), "Config should be TGraphBotConfig, not dict"
+        config_obj: TGraphBotConfig = graph.config
+        
+        # Verify boundary values are accepted
+        assert config_obj.UPDATE_DAYS == 1
+        assert config_obj.KEEP_DAYS == 365
+        assert config_obj.TIME_RANGE_DAYS == 1
