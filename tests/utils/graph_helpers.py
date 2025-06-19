@@ -17,7 +17,7 @@ from abc import ABC
 from collections.abc import Callable, Generator, Mapping
 from contextlib import contextmanager
 
-from typing import TYPE_CHECKING, Any, override
+from typing import TYPE_CHECKING, override
 from unittest.mock import MagicMock, patch
 
 import matplotlib.pyplot as plt
@@ -354,7 +354,7 @@ def memory_monitoring() -> Generator[dict[str, float], None, None]:
     
     # Get initial memory usage
     initial_memory = process.memory_info()
-    initial_rss_mb: float = initial_memory.rss / 1024 / 1024
+    initial_rss_mb: float = initial_memory.rss / 1024 / 1024  # pyright: ignore[reportAny]
     
     memory_info: dict[str, float] = {
         'initial_memory_mb': initial_rss_mb,
@@ -368,7 +368,7 @@ def memory_monitoring() -> Generator[dict[str, float], None, None]:
     finally:
         # Get final memory usage
         final_memory = process.memory_info()
-        final_rss_mb: float = final_memory.rss / 1024 / 1024
+        final_rss_mb: float = final_memory.rss / 1024 / 1024  # pyright: ignore[reportAny]
         
         memory_info['final_memory_mb'] = final_rss_mb
         memory_info['memory_used_mb'] = final_rss_mb - initial_rss_mb
@@ -560,14 +560,14 @@ def validate_no_memory_leaks(
         >>> validate_no_memory_leaks(test_operation, max_memory_increase_mb=5.0)
     """
     process = psutil.Process()
-    initial_memory: float = process.memory_info().rss / 1024 / 1024
+    initial_memory: float = process.memory_info().rss / 1024 / 1024  # pyright: ignore[reportAny]
     
     # Run the operation multiple times
     for _ in range(iterations):
         operation_func()
         _ = gc.collect()  # Force garbage collection
     
-    final_memory: float = process.memory_info().rss / 1024 / 1024
+    final_memory: float = process.memory_info().rss / 1024 / 1024  # pyright: ignore[reportAny]
     memory_increase: float = final_memory - initial_memory
     
     assert memory_increase <= max_memory_increase_mb, \

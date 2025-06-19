@@ -4,6 +4,7 @@ Test cases for test helper utilities.
 This module tests the test helper utilities to ensure they create properly
 configured mock objects with correct attributes and error handling.
 """
+# pyright: reportAny=false
 
 from __future__ import annotations
 

@@ -237,7 +237,7 @@ class TestNonBlockingGraphGeneration(AsyncTestBase):
             user_graph_manager._graph_factory = mock_graph_factory  # pyright: ignore[reportPrivateUsage]
 
             # Mock find_user_by_email to return proper user data
-            mock_data_fetcher.find_user_by_email.return_value = {
+            mock_data_fetcher.find_user_by_email.return_value = {  # pyright: ignore[reportAny]
                 "user_id": 123,
                 "username": "testuser",
                 "email": "test@example.com",
@@ -245,7 +245,7 @@ class TestNonBlockingGraphGeneration(AsyncTestBase):
             }
             
             # Mock get_play_history to return test data
-            mock_data_fetcher.get_play_history.return_value = mock_graph_data
+            mock_data_fetcher.get_play_history.return_value = mock_graph_data  # pyright: ignore[reportAny]
 
             def simulate_user_graph_work(_user_email: str, _data: dict[str, object], _progress_tracker: object = None) -> list[str]:
                 """Simulate user graph generation work."""
@@ -309,10 +309,10 @@ class TestNonBlockingGraphGeneration(AsyncTestBase):
                     "friendly_name": f"Test User {user_id}"
                 }
             
-            mock_data_fetcher.find_user_by_email.side_effect = mock_find_user_by_email
+            mock_data_fetcher.find_user_by_email.side_effect = mock_find_user_by_email  # pyright: ignore[reportAny]
             
             # Mock get_play_history to return test data
-            mock_data_fetcher.get_play_history.return_value = mock_graph_data
+            mock_data_fetcher.get_play_history.return_value = mock_graph_data  # pyright: ignore[reportAny]
 
             def simulate_user_graph_work(_user_email: str, _data: dict[str, object], _progress_tracker: object = None) -> list[str]:
                 """Simulate user graph generation work."""
@@ -560,7 +560,7 @@ class TestNonBlockingGraphGeneration(AsyncTestBase):
                  patch('pathlib.Path.stat') as mock_stat:
                 
                 # Mock file stat to show non-zero size
-                mock_stat.return_value.st_size = 1024
+                mock_stat.return_value.st_size = 1024  # pyright: ignore[reportAny]
                 
                 async with graph_manager:
                     # Start callback monitor using background task management
@@ -616,7 +616,7 @@ class TestNonBlockingGraphGeneration(AsyncTestBase):
                 # Simulate some work
                 await asyncio.sleep(0.1)
                 # Call the mocked cleanup_old_files function
-                files_deleted = mock_cleanup()
+                files_deleted = mock_cleanup()  # pyright: ignore[reportAny]
                 return {
                     "files_deleted": files_deleted,
                     "total_files": files_deleted,

@@ -155,9 +155,9 @@ class TestGraphCustomizationValidation:
             assert graph.config is not None
             # Type guard to ensure we're working with TGraphBotConfig
             assert not isinstance(graph.config, dict), "Config should be TGraphBotConfig, not dict"
-            config_obj: TGraphBotConfig = graph.config
+            annotation_config_obj: TGraphBotConfig = graph.config
             
-            assert config_obj.ENABLE_ANNOTATION_OUTLINE is True
+            assert annotation_config_obj.ENABLE_ANNOTATION_OUTLINE is True
 
     def test_grid_settings_validation(self) -> None:
         """Test that grid settings work correctly."""
@@ -194,8 +194,8 @@ class TestGraphCustomizationValidation:
         assert graph.config is not None
         # Type guard to ensure we're working with TGraphBotConfig
         assert not isinstance(graph.config, dict), "Config should be TGraphBotConfig, not dict"
-        config_obj: TGraphBotConfig = graph.config
-        assert config_obj.ENABLE_GRAPH_GRID is False
+        config_obj_disabled: TGraphBotConfig = graph.config
+        assert config_obj_disabled.ENABLE_GRAPH_GRID is False
 
     def test_username_censoring_validation(self) -> None:
         """Test that username censoring works correctly."""

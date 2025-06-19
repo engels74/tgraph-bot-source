@@ -532,9 +532,9 @@ def check_manage_guild_permission(interaction: discord.Interaction) -> bool:
     # For testing: check if user has guild_permissions attribute (mock support)
     guild_permissions = getattr(interaction.user, 'guild_permissions', None)
     if guild_permissions is not None:
-        manage_guild = getattr(guild_permissions, 'manage_guild', None)
+        manage_guild = getattr(guild_permissions, 'manage_guild', None)  # pyright: ignore[reportAny]
         if manage_guild is not None:
-            return bool(manage_guild)
+            return bool(manage_guild)  # pyright: ignore[reportAny]
 
     return False
 
