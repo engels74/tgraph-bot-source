@@ -14,7 +14,7 @@ from __future__ import annotations
 import gc
 import tempfile
 from abc import ABC
-from collections.abc import Generator, Mapping
+from collections.abc import Callable, Generator, Mapping
 from contextlib import contextmanager
 
 from typing import TYPE_CHECKING, Any, override
@@ -247,7 +247,7 @@ class TestGraph(ABC):
                 try:
                     _ = self.setup_figure()
                     if self.axes is not None:
-                        self.axes.plot([1, 2, 3], [1, 4, 2])  # pyright: ignore[reportUnknownMemberType]
+                        _ = self.axes.plot([1, 2, 3], [1, 4, 2])  # pyright: ignore[reportUnknownMemberType]
                         _ = self.axes.set_title(self.get_title())  # pyright: ignore[reportUnknownMemberType]
                     
                     with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
@@ -330,7 +330,7 @@ def matplotlib_cleanup() -> Generator[None, None, None]:
                 pass
         
         # Force garbage collection to help with memory cleanup
-        gc.collect()
+        _ = gc.collect()
 
 
 @contextmanager
@@ -354,7 +354,7 @@ def memory_monitoring() -> Generator[dict[str, float], None, None]:
     
     # Get initial memory usage
     initial_memory = process.memory_info()
-    initial_rss_mb = initial_memory.rss / 1024 / 1024
+    initial_rss_mb: float = initial_memory.rss / 1024 / 1024
     
     memory_info: dict[str, float] = {
         'initial_memory_mb': initial_rss_mb,
@@ -368,7 +368,7 @@ def memory_monitoring() -> Generator[dict[str, float], None, None]:
     finally:
         # Get final memory usage
         final_memory = process.memory_info()
-        final_rss_mb = final_memory.rss / 1024 / 1024
+        final_rss_mb: float = final_memory.rss / 1024 / 1024
         
         memory_info['final_memory_mb'] = final_rss_mb
         memory_info['memory_used_mb'] = final_rss_mb - initial_rss_mb
@@ -533,7 +533,7 @@ def patch_matplotlib_save() -> Generator[MagicMock, None, None]:
 
 
 def validate_no_memory_leaks(
-    operation_func: Any,
+    operation_func: Callable[[], None],
     *,
     max_memory_increase_mb: float = 10.0,
     iterations: int = 5,
@@ -560,15 +560,15 @@ def validate_no_memory_leaks(
         >>> validate_no_memory_leaks(test_operation, max_memory_increase_mb=5.0)
     """
     process = psutil.Process()
-    initial_memory = process.memory_info().rss / 1024 / 1024
+    initial_memory: float = process.memory_info().rss / 1024 / 1024
     
     # Run the operation multiple times
     for _ in range(iterations):
         operation_func()
-        gc.collect()  # Force garbage collection
+        _ = gc.collect()  # Force garbage collection
     
-    final_memory = process.memory_info().rss / 1024 / 1024
-    memory_increase = final_memory - initial_memory
+    final_memory: float = process.memory_info().rss / 1024 / 1024
+    memory_increase: float = final_memory - initial_memory
     
     assert memory_increase <= max_memory_increase_mb, \
         f"Memory increased by {memory_increase:.2f}MB, which exceeds the {max_memory_increase_mb}MB limit" 

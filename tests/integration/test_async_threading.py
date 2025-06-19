@@ -53,13 +53,14 @@ class TestAsyncThreading:
 
             # Test that asyncio.to_thread is used
             with patch('asyncio.to_thread') as mock_to_thread:
-                # Mock to_thread to return an awaitable that resolves to the result
-                future = asyncio.Future()  # pyright: ignore[reportUnknownVariableType]
+                # Create an awaitable future with the result
+                future = asyncio.Future()  # pyright: ignore[reportUnknownVariableType] 
                 future.set_result(["test_graph.png"])  # pyright: ignore[reportUnknownMemberType]
                 mock_to_thread.return_value = future
 
-                # Patch the sync method
-                with patch.object(graph_manager, '_generate_graphs_sync', mock_sync_generation):
+                # Patch the sync method and simplify file validation to just return expected result
+                with patch.object(graph_manager, '_generate_graphs_sync', mock_sync_generation), \
+                     patch.object(graph_manager, '_validate_generated_files', return_value=["test_graph.png"]):
                     async with graph_manager:
                         result = await graph_manager.generate_all_graphs()
 
@@ -103,13 +104,14 @@ class TestAsyncThreading:
 
             # Test that asyncio.to_thread is used
             with patch('asyncio.to_thread') as mock_to_thread:
-                # Mock to_thread to return an awaitable that resolves to the result
-                future = asyncio.Future()  # pyright: ignore[reportUnknownVariableType]
+                # Create an awaitable future with the result
+                future = asyncio.Future()  # pyright: ignore[reportUnknownVariableType] 
                 future.set_result([])  # pyright: ignore[reportUnknownMemberType]
                 mock_to_thread.return_value = future
 
-                # Patch the sync method
-                with patch.object(user_graph_manager, '_generate_user_graphs_sync', mock_sync_user_generation):
+                # Patch the sync method and simplify file validation to just return expected result
+                with patch.object(user_graph_manager, '_generate_user_graphs_sync', mock_sync_user_generation), \
+                     patch.object(user_graph_manager, '_validate_generated_user_files', return_value=[]):
                     async with user_graph_manager:
                         result = await user_graph_manager.generate_user_graphs("test@example.com")
 
@@ -131,8 +133,8 @@ class TestAsyncThreading:
 
         # Test cleanup_old_graphs uses asyncio.to_thread
         with patch('asyncio.to_thread') as mock_to_thread:
-            # Mock to_thread to return an awaitable that resolves to the result
-            future = asyncio.Future()  # pyright: ignore[reportUnknownVariableType]
+            # Create an awaitable future with the result
+            future = asyncio.Future()  # pyright: ignore[reportUnknownVariableType] 
             future.set_result(5)  # Mock return value for cleanup_old_files  # pyright: ignore[reportUnknownMemberType]
             mock_to_thread.return_value = future
 
@@ -185,7 +187,12 @@ class TestAsyncThreading:
                 time.sleep(0.1)  # Simulate CPU-bound work
                 return ["test_graph.png"]
 
-            with patch.object(graph_manager, '_generate_graphs_sync', slow_sync_operation):
+            # Mock the file validation to return files as-is (since they don't exist in test)
+            def mock_validate_files(files: list[str], _tracker: object) -> list[str]:
+                return files
+            
+            with patch.object(graph_manager, '_generate_graphs_sync', slow_sync_operation), \
+                 patch.object(graph_manager, '_validate_generated_files', mock_validate_files):
                 async with graph_manager:
                     # Run graph generation and counter concurrently
                     graph_task = asyncio.create_task(graph_manager.generate_all_graphs())

@@ -12,6 +12,7 @@ from __future__ import annotations
 import pytest
 from collections.abc import Mapping
 from typing import TYPE_CHECKING
+from typing_extensions import override
 
 from config.schema import TGraphBotConfig
 from graphs.graph_modules.graph_factory import GraphFactory
@@ -193,7 +194,7 @@ class TestGraphCustomizationValidation:
         assert graph.config is not None
         # Type guard to ensure we're working with TGraphBotConfig
         assert not isinstance(graph.config, dict), "Config should be TGraphBotConfig, not dict"
-        config_obj = graph.config  # pyright: ignore[reportAssignmentType]
+        config_obj: TGraphBotConfig = graph.config
         assert config_obj.ENABLE_GRAPH_GRID is False
 
     def test_username_censoring_validation(self) -> None:
@@ -281,7 +282,6 @@ class TestGraphCustomizationValidation:
         """Test that invalid color formats are handled gracefully."""
         with matplotlib_cleanup():
             config = create_test_config_minimal()
-            factory = create_graph_factory_with_config(config)
             
             # Test with invalid color format - should fall back to defaults
             # This tests the color validation in the BaseGraph class
@@ -289,14 +289,16 @@ class TestGraphCustomizationValidation:
                 from graphs.graph_modules.base_graph import BaseGraph
                 # Create a mock graph class to test invalid color handling
                 class TestGraph(BaseGraph):
+                    @override
                     def generate(self, data: Mapping[str, object]) -> str:
                         return "test.png"
                     
+                    @override
                     def get_title(self) -> str:
                         return "Test Graph"
                 
                 # This should raise ValueError due to invalid color
-                TestGraph(config=config, background_color="invalid_color")
+                _ = TestGraph(config=config, background_color="invalid_color")
 
     def test_boolean_flag_customization(self) -> None:
         """Test that boolean flag customizations are properly applied."""

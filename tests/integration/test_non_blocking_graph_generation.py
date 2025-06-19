@@ -150,19 +150,6 @@ class TestNonBlockingGraphGeneration(AsyncTestBase):
         # Create multiple GraphManager instances to simulate concurrent requests
         managers = [GraphManager(mock_config_manager) for _ in range(3)]
         
-        # Mock components for all managers
-        for manager in managers:
-            with patch.object(manager, '_initialize_components'), \
-                 patch.object(manager, '_cleanup_components'):
-                
-                mock_data_fetcher = AsyncMock()
-                mock_graph_factory = MagicMock()
-
-                manager._data_fetcher = mock_data_fetcher  # pyright: ignore[reportPrivateUsage]
-                manager._graph_factory = mock_graph_factory  # pyright: ignore[reportPrivateUsage]
-
-                mock_data_fetcher.get_play_history.return_value = mock_graph_data  # pyright: ignore[reportAny]
-
         def simulate_graph_work(_data: dict[str, object], _progress_tracker: object = None) -> list[str]:
             """Simulate graph generation work."""
             time.sleep(0.1)  # 100ms of work
@@ -173,8 +160,21 @@ class TestNonBlockingGraphGeneration(AsyncTestBase):
             def mock_validate_files(files: list[str], _tracker: object) -> list[str]:
                 return files
 
-            with patch.object(manager, '_generate_graphs_sync', simulate_graph_work), \
+            # Mock components within the manager's usage context
+            with patch.object(manager, '_initialize_components'), \
+                 patch.object(manager, '_cleanup_components'), \
+                 patch.object(manager, '_generate_graphs_sync', simulate_graph_work), \
                  patch.object(manager, '_validate_generated_files', mock_validate_files):
+                
+                # Set up mock components
+                mock_data_fetcher = AsyncMock()
+                mock_graph_factory = MagicMock()
+
+                manager._data_fetcher = mock_data_fetcher  # pyright: ignore[reportPrivateUsage]
+                manager._graph_factory = mock_graph_factory  # pyright: ignore[reportPrivateUsage]
+
+                mock_data_fetcher.get_play_history.return_value = mock_graph_data  # pyright: ignore[reportAny]
+                
                 async with manager:
                     result = await manager.generate_all_graphs()
                     return manager_id, result
