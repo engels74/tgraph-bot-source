@@ -113,15 +113,15 @@ class TestConfigCog:
         _ = await config_cog.config_view.callback(config_cog, mock_interaction)  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
 
         # Verify interaction response was called
-        mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportAny]
+        mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
 
         # Get the embed from the call
-        call_args = mock_interaction.response.send_message.call_args  # pyright: ignore[reportAny]
-        embed = call_args[1]['embed']  # pyright: ignore[reportAny]
+        call_args = mock_interaction.response.send_message.call_args  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue,reportUnknownVariableType]
+        embed: discord.Embed = call_args[1]['embed']  # pyright: ignore[reportUnknownVariableType]
 
-        assert embed.title == "🔧 Bot Configuration"  # pyright: ignore[reportAny]
-        assert embed.color == discord.Color.blue()  # pyright: ignore[reportAny]
-        assert len(embed.fields) >= 3  # Should have multiple fields  # pyright: ignore[reportAny]
+        assert embed.title == "🔧 Bot Configuration"  # pyright: ignore[reportUnknownMemberType]
+        assert embed.color == discord.Color.blue()  # pyright: ignore[reportUnknownMemberType]
+        assert len(embed.fields) >= 3  # Should have multiple fields  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
 
     @pytest.mark.asyncio
     async def test_config_view_error(
@@ -250,7 +250,7 @@ class TestConfigCog:
                 mock_save.assert_called_once()
 
                 # Verify success response was sent
-                mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportAny]
+                mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
 
     @pytest.mark.asyncio
     async def test_config_edit_save_error(

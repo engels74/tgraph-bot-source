@@ -26,13 +26,13 @@ class TestMockCreationUtilities:
         bot = create_mock_discord_bot()
         
         assert isinstance(bot, MagicMock)
-        assert bot.user.id == 123456789
-        assert bot.user.name == "TestBot"
-        assert len(bot.guilds) == 2
-        assert bot.intents.message_content is True
-        assert bot.intents.guilds is True
-        assert bot.command_prefix == "!"
-        assert bot.help_command is None
+        assert bot.user.id == 123456789  # pyright: ignore[reportAny]
+        assert bot.user.name == "TestBot"  # pyright: ignore[reportAny]
+        assert len(bot.guilds) == 2  # pyright: ignore[reportAny]
+        assert bot.intents.message_content is True  # pyright: ignore[reportAny]
+        assert bot.intents.guilds is True  # pyright: ignore[reportAny]
+        assert bot.command_prefix == "!"  # pyright: ignore[reportAny]
+        assert bot.help_command is None  # pyright: ignore[reportAny]
 
     def test_create_mock_discord_bot_custom_values(self) -> None:
         """Test creating a mock Discord bot with custom values."""
@@ -42,6 +42,7 @@ class TestMockCreationUtilities:
             guild_count=5
         )
         
+        assert bot.user is not None
         assert bot.user.id == 999888777
         assert bot.user.name == "CustomBot"
         assert len(bot.guilds) == 5
@@ -63,10 +64,10 @@ class TestMockCreationUtilities:
         user = create_mock_user()
         
         assert isinstance(user, MagicMock)
-        assert user.id == 987654321
-        assert user.name == "TestUser"
-        assert user.display_name == "TestUser"
-        assert user.bot is False
+        assert user.id == 987654321  # pyright: ignore[reportAny]
+        assert user.name == "TestUser"  # pyright: ignore[reportAny]
+        assert user.display_name == "TestUser"  # pyright: ignore[reportAny]
+        assert user.bot is False  # pyright: ignore[reportAny]
 
     def test_create_mock_user_custom_values(self) -> None:
         """Test creating a mock Discord user with custom values."""
@@ -95,10 +96,10 @@ class TestMockCreationUtilities:
         guild = create_mock_guild()
         
         assert isinstance(guild, MagicMock)
-        assert guild.id == 111222333444555666
-        assert guild.name == "Test Guild"
-        assert guild.owner_id == 777888999000111222
-        assert guild.member_count == 100
+        assert guild.id == 111222333444555666  # pyright: ignore[reportAny]
+        assert guild.name == "Test Guild"  # pyright: ignore[reportAny]
+        assert guild.owner_id == 777888999000111222  # pyright: ignore[reportAny]
+        assert guild.member_count == 100  # pyright: ignore[reportAny]
 
     def test_create_mock_guild_custom_values(self) -> None:
         """Test creating a mock Discord guild with custom values."""
@@ -130,13 +131,13 @@ class TestMockCreationUtilities:
         interaction = create_mock_interaction()
         
         assert isinstance(interaction, MagicMock)
-        assert interaction.user.id == 987654321
-        assert interaction.user.name == "TestUser"
-        assert interaction.guild.id == 111222333444555666
-        assert interaction.guild.name == "Test Guild"
-        assert interaction.channel.id == 333444555666777888
-        assert interaction.command.name == "test_command"
-        assert interaction.response.is_done() is False
+        assert interaction.user.id == 987654321  # pyright: ignore[reportAny]
+        assert interaction.user.name == "TestUser"  # pyright: ignore[reportAny]
+        assert interaction.guild.id == 111222333444555666  # pyright: ignore[reportAny]
+        assert interaction.guild.name == "Test Guild"  # pyright: ignore[reportAny]
+        assert interaction.channel.id == 333444555666777888  # pyright: ignore[reportAny]
+        assert interaction.command.name == "test_command"  # pyright: ignore[reportAny]
+        assert interaction.response.is_done() is False  # pyright: ignore[reportAny]
 
     def test_create_mock_interaction_custom_values(self) -> None:
         """Test creating a mock Discord interaction with custom values."""
@@ -150,11 +151,15 @@ class TestMockCreationUtilities:
             is_response_done=True
         )
         
+        assert interaction.user is not None
         assert interaction.user.id == 555444333
         assert interaction.user.name == "InteractionUser"
+        assert interaction.guild is not None
         assert interaction.guild.id == 777666555444333222
         assert interaction.guild.name == "Interaction Guild"
+        assert interaction.channel is not None
         assert interaction.channel.id == 999888777666555444
+        assert interaction.command is not None
         assert interaction.command.name == "custom_command"
         assert interaction.response.is_done() is True
 
@@ -162,8 +167,10 @@ class TestMockCreationUtilities:
         """Test creating a mock Discord interaction for DM (no guild)."""
         interaction = create_mock_interaction(guild_id=None)
         
+        assert interaction.user is not None
         assert interaction.user.id == 987654321
         assert interaction.guild is None
+        assert interaction.channel is not None
         assert interaction.channel.id == 333444555666777888
 
     def test_create_mock_interaction_validation(self) -> None:

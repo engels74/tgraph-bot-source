@@ -18,6 +18,7 @@ from collections.abc import AsyncGenerator, Awaitable, Callable, Coroutine
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING, TypeVar
 from unittest.mock import AsyncMock, MagicMock, patch
+from typing import cast
 
 T = TypeVar('T')
 P = TypeVar('P')
@@ -259,16 +260,17 @@ async def async_discord_bot_context(
     )
     
     # Add async method mocks
-    mock_bot.start = AsyncMock(side_effect=start_side_effect)
-    mock_bot.close = AsyncMock(side_effect=close_side_effect)
-    mock_bot.setup_hook = AsyncMock()
-    mock_bot.on_ready = AsyncMock()
+    mock_bot.start = AsyncMock(side_effect=start_side_effect)  # dynamic mock attribute
+    mock_bot.close = AsyncMock(side_effect=close_side_effect)  # dynamic mock attribute
+    mock_bot.setup_hook = AsyncMock()  # dynamic mock attribute
+    mock_bot.on_ready = AsyncMock()  # pyright: ignore[reportAttributeAccessIssue] # dynamic mock attribute
     mock_bot.on_error = AsyncMock()
-    mock_bot.on_disconnect = AsyncMock()
-    mock_bot.on_resumed = AsyncMock()
+    mock_bot.on_disconnect = AsyncMock()  # pyright: ignore[reportAttributeAccessIssue] # dynamic mock attribute
+    mock_bot.on_resumed = AsyncMock()  # pyright: ignore[reportAttributeAccessIssue] # dynamic mock attribute
     
     try:
-        yield mock_bot
+        # Cast to MagicMock to match return type
+        yield cast(MagicMock, mock_bot)
     finally:
         # Ensure all async methods are properly awaited/cancelled
         for attr_name in ['start', 'close', 'setup_hook', 'on_ready', 'on_error']:

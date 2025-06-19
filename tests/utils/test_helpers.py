@@ -15,11 +15,12 @@ import yaml
 from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 from unittest.mock import AsyncMock, MagicMock
 
 if TYPE_CHECKING:
     import discord
+    from discord.ext import commands
     
     from config.manager import ConfigManager
     from config.schema import TGraphBotConfig
@@ -191,7 +192,7 @@ def create_mock_discord_bot(
     user_name: str = "TestBot",
     guild_count: int = 2,
     intents: discord.Intents | None = None,
-) -> MagicMock:
+) -> commands.Bot:
     """
     Create a mock Discord bot with configurable attributes.
     
@@ -206,7 +207,7 @@ def create_mock_discord_bot(
         intents: Discord intents for the bot (default: None, creates basic intents)
         
     Returns:
-        MagicMock: A configured mock Discord bot with the specified attributes
+        commands.Bot: A configured mock Discord bot with the specified attributes
         
     Raises:
         ValueError: If user_id is not positive or guild_count is negative
@@ -264,7 +265,7 @@ def create_mock_discord_bot(
     mock_bot.command_prefix = "!"
     mock_bot.help_command = None
     
-    return mock_bot
+    return cast(commands.Bot, mock_bot)
 
 
 def create_mock_user(
@@ -274,7 +275,7 @@ def create_mock_user(
     display_name: str | None = None,
     bot: bool = False,
     guild_permissions: discord.Permissions | None = None,
-) -> MagicMock:
+) -> discord.User:
     """
     Create a mock Discord user with configurable attributes.
     
@@ -289,7 +290,7 @@ def create_mock_user(
         guild_permissions: Guild permissions for the user (default: None)
         
     Returns:
-        MagicMock: A configured mock Discord user with the specified attributes
+        discord.User: A configured mock Discord user with the specified attributes
         
     Raises:
         ValueError: If user_id is not positive
@@ -321,7 +322,7 @@ def create_mock_user(
     if guild_permissions is not None:
         mock_user.guild_permissions = guild_permissions
     
-    return mock_user
+    return cast(discord.User, mock_user)
 
 
 def create_mock_guild(
@@ -330,7 +331,7 @@ def create_mock_guild(
     name: str = "Test Guild",
     owner_id: int = 777888999000111222,
     member_count: int = 100,
-) -> MagicMock:
+) -> discord.Guild:
     """
     Create a mock Discord guild with configurable attributes.
     
@@ -344,7 +345,7 @@ def create_mock_guild(
         member_count: The number of members in the guild (default: 100)
         
     Returns:
-        MagicMock: A configured mock Discord guild with the specified attributes
+        discord.Guild: A configured mock Discord guild with the specified attributes
         
     Raises:
         ValueError: If guild_id or owner_id is not positive, or member_count is negative
@@ -379,7 +380,7 @@ def create_mock_guild(
     mock_guild.owner_id = owner_id
     mock_guild.member_count = member_count
     
-    return mock_guild
+    return cast(discord.Guild, mock_guild)
 
 
 def create_mock_interaction(
@@ -391,7 +392,7 @@ def create_mock_interaction(
     channel_id: int = 333444555666777888,
     command_name: str = "test_command",
     is_response_done: bool = False,
-) -> MagicMock:
+) -> discord.Interaction:
     """
     Create a mock Discord interaction with configurable attributes.
     
@@ -409,7 +410,7 @@ def create_mock_interaction(
         is_response_done: Whether the response has been sent (default: False)
         
     Returns:
-        MagicMock: A configured mock Discord interaction with the specified attributes
+        discord.Interaction: A configured mock Discord interaction with the specified attributes
         
     Raises:
         ValueError: If any ID is not positive (except guild_id which can be None)
@@ -473,4 +474,4 @@ def create_mock_interaction(
     mock_followup.send = AsyncMock()
     mock_interaction.followup = mock_followup
     
-    return mock_interaction
+    return cast(discord.Interaction, mock_interaction)
