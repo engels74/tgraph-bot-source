@@ -54,8 +54,8 @@ class TestTGraphBot:
         
         bot = TGraphBot(config_manager)
         
-        # Mock the setup_i18n and load_extensions functions
-        async with async_mock_context("main.setup_i18n") as mock_setup_i18n, \
+        # Mock the setup_i18n (synchronous) and load_extensions (async) functions
+        async with async_mock_context("main.setup_i18n", new_callable=MagicMock) as mock_setup_i18n, \
                    async_mock_context("main.load_extensions") as mock_load_extensions:
             
             await bot.setup_hook()
@@ -72,8 +72,8 @@ class TestTGraphBot:
         config_manager = ConfigManager()
         bot = TGraphBot(config_manager)
 
-        # Mock the setup_i18n and load_extensions functions
-        async with async_mock_context("main.setup_i18n") as mock_setup_i18n, \
+        # Mock the setup_i18n (synchronous) and load_extensions (async) functions
+        async with async_mock_context("main.setup_i18n", new_callable=MagicMock) as mock_setup_i18n, \
                    async_mock_context("main.load_extensions") as mock_load_extensions:
 
             # Should raise RuntimeError when no config is available
@@ -545,7 +545,8 @@ class TestMainFunctionEnhancements:
         """Test that main() sets up logging."""
         with patch("main.setup_logging") as mock_setup_logging, \
              patch("pathlib.Path.exists", return_value=False), \
-             patch("sys.exit"):
+             patch("sys.exit"), \
+             patch("main.TGraphBot"):
 
             await main()
             mock_setup_logging.assert_called_once()
