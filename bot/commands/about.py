@@ -47,9 +47,12 @@ class AboutCog(commands.Cog):
             interaction: The Discord interaction
         """
         try:
+            # Import i18n for translations
+            import i18n
+            
             embed = discord.Embed(
-                title="TGraph Bot",
-                description="A Discord bot for automatically generating and posting Tautulli graphs",
+                title=i18n.translate("TGraph Bot"),
+                description=i18n.translate("TGraph Bot - Tautulli Discord Graph Generator"),
                 color=discord.Color.blue()
             )
 

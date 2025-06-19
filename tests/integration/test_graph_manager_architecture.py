@@ -115,7 +115,9 @@ class TestGraphManagerArchitecture:
                     
                     # Test generate_all_graphs
                     async with GraphManager(config_manager) as graph_manager:
-                        result = await graph_manager.generate_all_graphs()
+                        # Mock the file validation to return the files as valid
+                        with patch.object(graph_manager, '_validate_generated_files', return_value=["graph1.png", "graph2.png"]):
+                            result = await graph_manager.generate_all_graphs()
                         
                         # Verify data fetching was called
                         mock_data_fetcher.get_play_history.assert_called_once_with(time_range=30)  # pyright: ignore[reportAny]

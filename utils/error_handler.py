@@ -294,15 +294,18 @@ def create_user_friendly_message(
     context: ErrorContext | None = None
 ) -> str:
     """Create a user-friendly error message based on error category."""
+    # Import i18n for translations
+    import i18n
+    
     base_messages = {
-        ErrorCategory.NETWORK: "There was a network connectivity issue. Please try again in a moment.",
-        ErrorCategory.API: "The external service is temporarily unavailable. Please try again later.",
-        ErrorCategory.PERMISSION: "You don't have permission to perform this action.",
-        ErrorCategory.VALIDATION: "The provided input is invalid. Please check your parameters and try again.",
-        ErrorCategory.CONFIGURATION: "There's a configuration issue. Please contact the server administrators.",
-        ErrorCategory.RESOURCE: "The server is experiencing resource constraints. Please try again later.",
-        ErrorCategory.DISCORD: "There was an issue communicating with Discord. Please try again.",
-        ErrorCategory.UNKNOWN: "An unexpected error occurred. Please try again or contact support if the issue persists."
+        ErrorCategory.NETWORK: i18n.translate("There was a network connectivity issue. Please try again in a moment."),
+        ErrorCategory.API: i18n.translate("The external service is temporarily unavailable. Please try again later."),
+        ErrorCategory.PERMISSION: i18n.translate("You don't have permission to perform this action."),
+        ErrorCategory.VALIDATION: i18n.translate("The provided input is invalid. Please check your parameters and try again."),
+        ErrorCategory.CONFIGURATION: i18n.translate("There's a configuration issue. Please contact the server administrators."),
+        ErrorCategory.RESOURCE: i18n.translate("The server is experiencing resource constraints. Please try again later."),
+        ErrorCategory.DISCORD: i18n.translate("There was an issue communicating with Discord. Please try again."),
+        ErrorCategory.UNKNOWN: i18n.translate("An error occurred while processing your request")
     }
     
     message = base_messages.get(category, base_messages[ErrorCategory.UNKNOWN])
