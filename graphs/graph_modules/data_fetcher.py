@@ -171,9 +171,16 @@ class DataFetcher:
 
                 logger.debug(f"Successfully fetched data from {endpoint}")
                 data_result = response_data.get("data", {})  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
-                if not isinstance(data_result, dict):
-                    return {}
-                return data_result  # pyright: ignore[reportUnknownVariableType]
+                
+                # For endpoints that return lists (like get_users), wrap in a dict with 'data' key
+                # For endpoints that return dicts, return as-is
+                if isinstance(data_result, list):
+                    return {"data": data_result}
+                elif isinstance(data_result, dict):
+                    return data_result  # pyright: ignore[reportUnknownVariableType]
+                else:
+                    # Fallback for other data types
+                    return {"data": data_result}
                 
             except httpx.TimeoutException:
                 logger.warning(f"Timeout on attempt {attempt + 1} for {endpoint}")
