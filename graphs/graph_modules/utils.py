@@ -123,6 +123,55 @@ def ensure_graph_directory(base_path: str = "graphs") -> Path:
     return graph_dir
 
 
+def generate_dated_graph_path(base_date: datetime | None = None, user_email: str | None = None) -> Path:
+    """
+    Generate a date-based path for graph storage following the new structure.
+    
+    Args:
+        base_date: Date to use for directory structure (defaults to current date)
+        user_email: User email for user-specific graphs (optional)
+        
+    Returns:
+        Path object for the date-based graph directory
+        
+    Examples:
+        - Server graphs: data/graphs/2025-01-21/
+        - User graphs: data/graphs/2025-01-21/users/user_at_example.com/
+    """
+    if base_date is None:
+        base_date = datetime.now()
+    
+    date_str = base_date.strftime("%Y-%m-%d")
+    
+    if user_email is not None:
+        # Sanitize email for use in file path
+        sanitized_email = user_email.replace('@', '_at_').replace('.', '_')
+        graph_path = Path("data") / "graphs" / date_str / "users" / sanitized_email
+    else:
+        graph_path = Path("data") / "graphs" / date_str
+    
+    # Ensure the directory exists
+    graph_path.mkdir(parents=True, exist_ok=True)
+    logger.debug(f"Ensured dated graph directory exists: {graph_path}")
+    
+    return graph_path
+
+
+def get_current_graph_storage_path(user_email: str | None = None) -> Path:
+    """
+    Get the current graph storage path using the new date-based structure.
+    
+    This is the main function that should be used for all new graph storage.
+    
+    Args:
+        user_email: User email for user-specific graphs (optional)
+        
+    Returns:
+        Path object for today's graph storage directory
+    """
+    return generate_dated_graph_path(user_email=user_email)
+
+
 def cleanup_old_files(directory: Path, keep_days: int = 7) -> int:
     """
     Clean up old files in a directory based on age.

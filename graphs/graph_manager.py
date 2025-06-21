@@ -19,11 +19,12 @@ Architecture:
 import asyncio
 import logging
 import time
+from pathlib import Path
 from typing import TYPE_CHECKING, Callable
 
 from .graph_modules.data_fetcher import DataFetcher
 from .graph_modules.graph_factory import GraphFactory
-from .graph_modules.utils import cleanup_old_files, ensure_graph_directory
+from .graph_modules.utils import cleanup_old_files, get_current_graph_storage_path
 
 if TYPE_CHECKING:
     from config.manager import ConfigManager
@@ -428,9 +429,8 @@ class GraphManager:
         logger.debug("Starting synchronous graph generation")
 
         try:
-            # Ensure graph output directory exists
-            graph_dir_path = "graphs/output"
-            _ = ensure_graph_directory(graph_dir_path)
+            # Ensure graph output directory exists using date-based structure
+            _ = get_current_graph_storage_path()
 
             # Use GraphFactory to generate all enabled graphs
             # This method already handles proper resource management and cleanup
@@ -506,13 +506,14 @@ class GraphManager:
             progress_tracker.update("Initializing cleanup operation", 1, 3)
 
             # Use asyncio.to_thread() for file I/O operations with timeout
-            graph_dir = Path("graphs/output")
+            # For cleanup, we need to handle the entire date-based structure  
+            base_graphs_dir = Path("data") / "graphs"
 
             progress_tracker.update("Scanning for old files", 2, 3)
 
             try:
                 deleted_count = await asyncio.wait_for(
-                    asyncio.to_thread(cleanup_old_files, graph_dir, keep_days),
+                    asyncio.to_thread(self._cleanup_dated_graphs, base_graphs_dir, keep_days),
                     timeout=timeout_seconds
                 )
             except asyncio.TimeoutError:
@@ -584,3 +585,53 @@ class GraphManager:
 
             logger.exception(f"Error in full graph update cycle after {cycle_time:.2f}s: {e}")
             raise
+
+    def _cleanup_dated_graphs(self, base_dir: Path, keep_days: int) -> int:
+        """
+        Clean up old graph files from the date-based directory structure.
+        
+        Args:
+            base_dir: Base directory containing date-based subdirectories
+            keep_days: Number of days to keep files
+            
+        Returns:
+            Number of files deleted
+        """
+        from datetime import datetime, timedelta
+        
+        total_deleted = 0
+        
+        if not base_dir.exists():
+            logger.debug(f"Base graphs directory does not exist: {base_dir}")
+            return 0
+        
+        cutoff_date = datetime.now() - timedelta(days=keep_days)
+        
+        # Iterate through date-based subdirectories
+        for date_dir in base_dir.iterdir():
+            if not date_dir.is_dir():
+                continue
+                
+            # Parse directory name to check if it's a date (YYYY-MM-DD format)
+            try:
+                dir_date = datetime.strptime(date_dir.name, "%Y-%m-%d")
+                if dir_date < cutoff_date:
+                    # This date directory is too old, clean it up
+                    deleted_count = cleanup_old_files(date_dir, 0)  # Delete all files in old date dir
+                    total_deleted += deleted_count
+                    
+                    # Remove empty directory after cleanup
+                    try:
+                        if not any(date_dir.iterdir()):  # Directory is empty
+                            date_dir.rmdir()
+                            logger.debug(f"Removed empty date directory: {date_dir}")
+                    except OSError as e:
+                        logger.warning(f"Could not remove empty directory {date_dir}: {e}")
+                        
+            except ValueError:
+                # Not a date directory, skip
+                logger.debug(f"Skipping non-date directory: {date_dir}")
+                continue
+        
+        logger.info(f"Cleaned up {total_deleted} files from date-based graph structure")
+        return total_deleted

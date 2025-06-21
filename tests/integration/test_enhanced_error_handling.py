@@ -252,7 +252,7 @@ class TestUserGraphManagerErrorHandling:
                 # Update test files to use temp directory
                 test_files = [str(user_dir / filename) for filename in test_files]
 
-                with patch('graphs.user_graph_manager.ensure_graph_directory', return_value=user_dir), \
+                with patch('graphs.user_graph_manager.get_current_graph_storage_path', return_value=user_dir), \
                      patch.object(Path, 'rename', return_value=None):
                     
                     async with user_graph_manager:

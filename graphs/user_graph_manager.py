@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Callable
 
 from .graph_modules.data_fetcher import DataFetcher
 from .graph_modules.graph_factory import GraphFactory
-from .graph_modules.utils import cleanup_old_files, ensure_graph_directory
+from .graph_modules.utils import cleanup_old_files, get_current_graph_storage_path
 
 # Import shared classes from graph_manager
 from .graph_manager import GraphGenerationError, ResourceCleanupError, ProgressTracker
@@ -361,9 +361,8 @@ class UserGraphManager:
         logger.debug(f"Starting synchronous user graph generation for {user_email}")
 
         try:
-            # Ensure user graph output directory exists
-            user_graph_dir_path = f"graphs/output/users/{user_email.replace('@', '_at_')}"
-            user_graph_dir = ensure_graph_directory(user_graph_dir_path)
+            # Ensure user graph output directory exists using date-based structure
+            user_graph_dir = get_current_graph_storage_path(user_email=user_email)
 
             # Generate user-specific graphs using GraphFactory
             # The data is already filtered for this specific user
@@ -603,11 +602,12 @@ class UserGraphManager:
         logger.info(f"Cleaning up user graphs for {user_email} older than {keep_days} days")
 
         try:
-            # Use asyncio.to_thread() for file I/O operations
-            user_graph_dir = Path(f"graphs/output/users/{user_email.replace('@', '_at_')}")
+            # Use asyncio.to_thread() for file I/O operations with date-based structure
+            base_graphs_dir = Path("data") / "graphs"
             _ = await asyncio.to_thread(
-                cleanup_old_files,
-                user_graph_dir,
+                self._cleanup_user_dated_graphs,
+                base_graphs_dir,
+                user_email,
                 keep_days
             )
 
@@ -680,3 +680,64 @@ class UserGraphManager:
 
             logger.exception(f"Error processing stats request for user {user_id} after {processing_time:.2f}s: {e}")
             return error_stats
+
+    def _cleanup_user_dated_graphs(self, base_dir: Path, user_email: str, keep_days: int) -> int:
+        """
+        Clean up old user graph files from the date-based directory structure.
+        
+        Args:
+            base_dir: Base directory containing date-based subdirectories
+            user_email: User email to clean up graphs for
+            keep_days: Number of days to keep files
+            
+        Returns:
+            Number of files deleted
+        """
+        from datetime import datetime, timedelta
+        
+        total_deleted = 0
+        
+        if not base_dir.exists():
+            logger.debug(f"Base graphs directory does not exist: {base_dir}")
+            return 0
+        
+        cutoff_date = datetime.now() - timedelta(days=keep_days)
+        sanitized_email = user_email.replace('@', '_at_').replace('.', '_')
+        
+        # Iterate through date-based subdirectories
+        for date_dir in base_dir.iterdir():
+            if not date_dir.is_dir():
+                continue
+                
+            # Parse directory name to check if it's a date (YYYY-MM-DD format)
+            try:
+                dir_date = datetime.strptime(date_dir.name, "%Y-%m-%d")
+                if dir_date < cutoff_date:
+                    # Check for user-specific subdirectory in this date directory
+                    user_dir = date_dir / "users" / sanitized_email
+                    if user_dir.exists():
+                        deleted_count = cleanup_old_files(user_dir, 0)  # Delete all files in old user dir
+                        total_deleted += deleted_count
+                        
+                        # Remove empty user directory after cleanup
+                        try:
+                            if not any(user_dir.iterdir()):  # Directory is empty
+                                user_dir.rmdir()
+                                logger.debug(f"Removed empty user directory: {user_dir}")
+                                
+                                # Also try to remove parent users directory if empty
+                                users_dir = user_dir.parent
+                                if users_dir.name == "users" and not any(users_dir.iterdir()):
+                                    users_dir.rmdir()
+                                    logger.debug(f"Removed empty users directory: {users_dir}")
+                                    
+                        except OSError as e:
+                            logger.warning(f"Could not remove empty directory {user_dir}: {e}")
+                        
+            except ValueError:
+                # Not a date directory, skip
+                logger.debug(f"Skipping non-date directory: {date_dir}")
+                continue
+        
+        logger.info(f"Cleaned up {total_deleted} files for user {user_email} from date-based graph structure")
+        return total_deleted

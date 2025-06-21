@@ -20,6 +20,7 @@ from matplotlib.axes import Axes
 
 from .utils import (
     ensure_graph_directory,
+    get_current_graph_storage_path,
     generate_graph_filename,
     validate_color,
     censor_username,
