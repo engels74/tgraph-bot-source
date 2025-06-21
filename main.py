@@ -12,6 +12,7 @@ import logging.handlers
 import signal
 import sys
 from collections.abc import Coroutine
+from datetime import datetime
 from pathlib import Path
 from typing import override
 
@@ -23,16 +24,85 @@ from i18n import setup_i18n
 from bot.extensions import load_extensions
 
 
+def rotate_logs_on_startup(logs_dir: Path) -> None:
+    """
+    Rotate existing log files on startup with timestamp-based naming.
+    
+    This function checks for existing log files and renames them with
+    timestamps to create a clean start for the new session.
+    
+    Args:
+        logs_dir: Directory containing log files
+    """
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    
+    log_files = [
+        "tgraph-bot.log",
+        "tgraph-bot-errors.log"
+    ]
+    
+    for log_file in log_files:
+        log_path = logs_dir / log_file
+        if log_path.exists():
+            # Create timestamped backup
+            backup_path = logs_dir / f"{log_file}.{timestamp}"
+            try:
+                log_path.rename(backup_path)
+                print(f"Rotated {log_file} to {backup_path.name}")
+            except Exception as e:
+                print(f"Warning: Failed to rotate {log_file}: {e}")
+
+
+def cleanup_old_logs(logs_dir: Path, max_files: int = 10) -> None:
+    """
+    Clean up old timestamped log files, keeping only the most recent ones.
+    
+    Args:
+        logs_dir: Directory containing log files
+        max_files: Maximum number of timestamped log files to keep per type
+    """
+    log_types = ["tgraph-bot.log", "tgraph-bot-errors.log"]
+    
+    for log_type in log_types:
+        # Find all timestamped files for this log type
+        pattern = f"{log_type}.*"
+        timestamped_files = []
+        
+        for file_path in logs_dir.glob(pattern):
+            # Skip the current active log file (no timestamp)
+            if file_path.name == log_type:
+                continue
+            timestamped_files.append(file_path)
+        
+        # Sort by modification time (newest first)
+        timestamped_files.sort(key=lambda x: x.stat().st_mtime, reverse=True)
+        
+        # Remove excess files
+        if len(timestamped_files) > max_files:
+            files_to_remove = timestamped_files[max_files:]
+            for file_path in files_to_remove:
+                try:
+                    file_path.unlink()
+                    print(f"Cleaned up old log file: {file_path.name}")
+                except Exception as e:
+                    print(f"Warning: Failed to remove {file_path.name}: {e}")
+
+
 def setup_logging() -> None:
     """
     Configure comprehensive logging with rotation and multiple handlers.
 
     Sets up both file and console logging with appropriate formatters,
-    log rotation, and different log levels for different components.
+    startup-based and size-based log rotation, and different log levels 
+    for different components.
     """
     # Create logs directory if it doesn't exist
     logs_dir = Path("logs")
     logs_dir.mkdir(exist_ok=True)
+    
+    # Rotate existing logs on startup and cleanup old logs
+    rotate_logs_on_startup(logs_dir)
+    cleanup_old_logs(logs_dir, max_files=10)
 
     # Configure root logger
     root_logger = logging.getLogger()
@@ -49,10 +119,10 @@ def setup_logging() -> None:
         "%(asctime)s - %(levelname)s - %(message)s"
     )
 
-    # File handler with rotation (10MB max, keep 5 backups)
+    # File handler with rotation (5MB max, keep 5 backups)
     file_handler = logging.handlers.RotatingFileHandler(
         logs_dir / "tgraph-bot.log",
-        maxBytes=10 * 1024 * 1024,  # 10MB
+        maxBytes=5 * 1024 * 1024,  # 5MB
         backupCount=5,
         encoding="utf-8"
     )
