@@ -501,6 +501,16 @@ class TGraphBot(commands.Bot):
         if self._shutdown_event.is_set():
             logger.warning("Shutdown requested during startup, initiating graceful shutdown")
             await self.close()
+            return
+
+        # Run the startup sequence
+        try:
+            from bot.startup_sequence import StartupSequence
+            startup = StartupSequence(self)
+            await startup.run()
+        except Exception as e:
+            logger.error(f"Error running startup sequence: {e}", exc_info=True)
+            # Continue bot operation even if startup fails
 
     @override
     async def on_error(self, event: str, *args: object, **kwargs: object) -> None:
