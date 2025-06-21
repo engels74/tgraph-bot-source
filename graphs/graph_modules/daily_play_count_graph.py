@@ -96,23 +96,20 @@ class DailyPlayCountGraph(BaseGraph):
         logger.info(f"Filtered {len(records)} records down to {len(filtered_records)} records within {time_range_days} days")
         return filtered_records
 
-    def _get_time_range_days_from_data(self, data: Mapping[str, object]) -> int:
+    def _get_time_range_days_from_config(self) -> int:
         """
-        Extract the time_range_days value from the data structure passed by GraphManager.
-
-        Args:
-            data: Data dictionary containing play_history and time_range_days
+        Extract the TIME_RANGE_DAYS value from the graph's configuration.
 
         Returns:
-            Number of days for the time range, defaults to 30 if not found
+            Number of days for the time range from config, defaults to 30 if not found
         """
-        time_range_days = data.get('time_range_days', 30)
+        time_range_days = self.get_config_value('TIME_RANGE_DAYS', 30)
         
         # Ensure it's an integer
         if isinstance(time_range_days, (int, float)):
             return int(time_range_days)
         else:
-            logger.warning(f"Invalid time_range_days value: {time_range_days}, using default 30")
+            logger.warning(f"Invalid TIME_RANGE_DAYS value: {time_range_days}, using default 30")
             return 30
 
     def _setup_aligned_date_axis(self, ax: Axes, sorted_dates: list[str], num_dates: int) -> None:
@@ -178,7 +175,7 @@ class DailyPlayCountGraph(BaseGraph):
 
         Args:
             data: Dictionary containing play history data from Tautulli API
-                 Expected structure: {'play_history': {...}, 'time_range_days': int}
+                 Expected structure: {'data': [list of play records]}
 
         Returns:
             Path to the generated graph image file
@@ -189,26 +186,18 @@ class DailyPlayCountGraph(BaseGraph):
         logger.info("Generating daily play count graph")
 
         try:
-            # Step 1: Validate input data structure
-            if 'play_history' not in data:
-                raise ValueError("Missing 'play_history' in data structure")
-            
-            play_history_data = data['play_history']
-            if not isinstance(play_history_data, dict):
-                raise ValueError("'play_history' must be a dictionary")
-
-            # Step 2: Validate play history data format
-            is_valid, error_msg = validate_graph_data(play_history_data, ['data'])
+            # Step 1: Validate input data
+            is_valid, error_msg = validate_graph_data(data, ['data'])
             if not is_valid:
-                raise ValueError(f"Invalid play history data: {error_msg}")
+                raise ValueError(f"Invalid data for daily play count graph: {error_msg}")
 
-            # Step 3: Extract time range configuration
-            time_range_days = self._get_time_range_days_from_data(data)
+            # Step 2: Extract time range configuration
+            time_range_days = self._get_time_range_days_from_config()
             logger.info(f"Using TIME_RANGE_DAYS configuration: {time_range_days} days")
 
-            # Step 4: Process raw play history data
+            # Step 3: Process raw play history data
             try:
-                processed_records = process_play_history_data(play_history_data)
+                processed_records = process_play_history_data(data)
                 logger.info(f"Processed {len(processed_records)} play history records")
                 
                 # Filter records to respect TIME_RANGE_DAYS configuration
@@ -220,13 +209,13 @@ class DailyPlayCountGraph(BaseGraph):
                 # Use empty data structure for graceful degradation
                 processed_records = []
 
-            # Step 5: Setup figure and axes
+            # Step 4: Setup figure and axes
             _, ax = self.setup_figure()
 
-            # Step 6: Apply modern Seaborn styling
+            # Step 5: Apply modern Seaborn styling
             self.apply_seaborn_style()
 
-            # Step 7: Check if media type separation is enabled
+            # Step 6: Check if media type separation is enabled
             use_separation = self.get_media_type_separation_enabled()
 
             if use_separation and processed_records:
@@ -236,7 +225,7 @@ class DailyPlayCountGraph(BaseGraph):
                 # Generate traditional combined visualization
                 self._generate_combined_visualization(ax, processed_records)
 
-            # Step 8: Improve layout and save
+            # Step 7: Improve layout and save
             if self.figure is not None:
                 self.figure.tight_layout()
 
