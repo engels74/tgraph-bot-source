@@ -110,9 +110,8 @@ class UserGraphManager:
 
         try:
             # Step 1: Clear cache to ensure fresh data respecting current TIME_RANGE_DAYS
-            if self._data_fetcher is not None:
-                self._data_fetcher.clear_cache()
-                logger.debug("Cleared DataFetcher cache for fresh user statistics")
+            self._data_fetcher.clear_cache()
+            logger.debug("Cleared DataFetcher cache for fresh user statistics")
             
             # Step 2: Fetch user-specific data with retry logic
             progress_tracker.update("Fetching user data from Tautulli API", 2, 4)

@@ -8,7 +8,7 @@ simplifies the plotting code and produces a more aesthetically pleasing result.
 
 import logging
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING, override, cast
 from datetime import datetime, timedelta
 
 import pandas as pd
@@ -153,7 +153,7 @@ class DailyPlayCountGraph(BaseGraph):
             selected_indices.append(num_dates - 1)
         
         # Set the tick positions to align perfectly with data points
-        _ = ax.set_xticks([i for i in selected_indices])
+        _ = ax.set_xticks([i for i in selected_indices])  # pyright: ignore[reportUnknownMemberType] # matplotlib method
         
         # Set the tick labels using the selected dates
         selected_dates = [sorted_dates[i] for i in selected_indices]
@@ -305,7 +305,7 @@ class DailyPlayCountGraph(BaseGraph):
             # Create the plot using numerical x-axis for better control
             import numpy as np
             x_positions = np.arange(len(sorted_dates))
-            _ = ax.plot(  # pyright: ignore[reportUnknownMemberType]
+            _ = ax.plot(  # pyright: ignore[reportUnknownMemberType] # matplotlib method
                 x_positions,
                 counts,
                 marker='o',
@@ -385,7 +385,7 @@ class DailyPlayCountGraph(BaseGraph):
             # Create line plot with numerical x-axis for better control
             import numpy as np
             x_positions = np.arange(len(sorted_dates))
-            _ = ax.plot(
+            _ = ax.plot(  # pyright: ignore[reportUnknownMemberType] # matplotlib method
                 x_positions,
                 sorted_counts,
                 marker='o',
@@ -411,7 +411,7 @@ class DailyPlayCountGraph(BaseGraph):
             annotate_enabled = self.get_config_value('ANNOTATE_DAILY_PLAY_COUNT', False)
             if annotate_enabled:
                 # Find peak for annotation
-                max_count = max(sorted_counts)
+                max_count = cast(int, max(sorted_counts))
                 max_idx = sorted_counts.index(max_count)
 
                 _ = ax.annotate(  # pyright: ignore[reportUnknownMemberType]
@@ -461,11 +461,11 @@ class DailyPlayCountGraph(BaseGraph):
             if not media_data:
                 continue
                 
-            counts = [media_data.get(date, 0) for date in sorted_dates]
+            counts: list[int] = [media_data.get(date, 0) for date in sorted_dates]
             if all(count == 0 for count in counts):
                 continue
                 
-            max_count = max(counts)
+            max_count: int = max(counts)
             if max_count > 0:
                 max_idx = counts.index(max_count)
                 
