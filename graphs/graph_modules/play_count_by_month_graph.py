@@ -150,6 +150,9 @@ class PlayCountByMonthGraph(BaseGraph):
             # Step 5: Configure Seaborn styling
             if self.get_grid_enabled():
                 sns.set_style("whitegrid")
+                # Customize grid for better bar plot appearance
+                ax.grid(True, alpha=0.3, zorder=1)  # pyright: ignore[reportUnknownMemberType]
+                ax.set_axisbelow(True)
             else:
                 sns.set_style("white")
 
@@ -158,35 +161,33 @@ class PlayCountByMonthGraph(BaseGraph):
                 # Sort months chronologically
                 sorted_months = sorted(month_counts.items())
 
-                # Step 7: Create the area plot (modern filled look)
+                # Step 7: Create the bar plot (perfect for discrete monthly data)
                 color = self.get_tv_color()
                 
-                # Create numerical x-positions for proper area plotting
+                # Create numerical x-positions for bar plotting
                 x_positions = np.arange(len(sorted_months))
                 y_values = [count for _, count in sorted_months]
                 
-                # Create the filled area
-                _ = ax.fill_between(
+                # Create modern bar plot with enhanced styling
+                bars = ax.bar(
                     x_positions,
                     y_values,
-                    alpha=0.7,
                     color=color,
-                    linewidth=0
+                    alpha=0.8,
+                    edgecolor='white',
+                    linewidth=2,
+                    capstyle='round',
+                    zorder=3  # Ensure bars are on top of grid
                 )
                 
-                # Add line on top for definition
-                _ = ax.plot(
-                    x_positions,
-                    y_values,
-                    color=color,
-                    linewidth=3,
-                    marker='o',
-                    markersize=8,
-                    markerfacecolor='white',
-                    markeredgecolor=color,
-                    markeredgewidth=2.5,
-                    alpha=0.9
-                )
+                # Add subtle gradient effect to bars
+                for bar in bars:
+                    # Get current color and create a lighter version for gradient effect
+                    height = bar.get_height()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+                    if height and height > 0:
+                        # Add subtle shadow effect
+                        bar.set_edgecolor('white')  # pyright: ignore[reportUnknownMemberType]
+                        bar.set_linewidth(2)  # pyright: ignore[reportUnknownMemberType]
 
                 # Step 8: Customize the plot
                 _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)  # pyright: ignore[reportUnknownMemberType]
@@ -205,18 +206,19 @@ class PlayCountByMonthGraph(BaseGraph):
                 # Add value annotations if enabled
                 annotate_enabled = self.get_config_value('ANNOTATE_PLAY_COUNT_BY_MONTH', False)
                 if annotate_enabled:
-                    numeric_values = list(month_counts.values())
-                    max_count = max(numeric_values) if numeric_values else 1
-                    for i, (_, count) in enumerate(sorted_months):
-                        if count > 0:
+                    # Add value annotations on top of bars
+                    for bar in bars:
+                        height = bar.get_height()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+                        if height and height > 0:  # Only annotate non-zero values
+                            x_val = bar.get_x() + bar.get_width() / 2  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
                             self.add_bar_value_annotation(
                                 ax,
-                                x=float(x_positions[i]),
-                                y=count,
-                                value=count,
+                                x=float(x_val),  # pyright: ignore[reportUnknownArgumentType]
+                                y=float(height),  # pyright: ignore[reportUnknownArgumentType]
+                                value=int(height),  # pyright: ignore[reportUnknownArgumentType]
                                 ha='center',
                                 va='bottom',
-                                offset_y=max_count * 0.01,
+                                offset_y=2,
                                 fontweight='bold'
                             )
             else:
