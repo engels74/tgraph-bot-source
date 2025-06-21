@@ -75,7 +75,7 @@ class PlayCountByMonthGraph(BaseGraph):
 
         Args:
             data: Dictionary containing monthly plays data from Tautulli API
-                 Expected structure: {'monthly_plays': {'data': {'categories': [...], 'series': [...]}}}
+                 Expected structure: {'monthly_plays': {'categories': [...], 'series': [...]}}
 
         Returns:
             Path to the generated graph image file
@@ -94,13 +94,14 @@ class PlayCountByMonthGraph(BaseGraph):
             # Cast to the proper type for type checker
             monthly_plays_data = cast(Mapping[str, object], monthly_plays_data_raw)
 
-            # Step 2: Validate the monthly plays data
-            is_valid, error_msg = validate_graph_data(monthly_plays_data, ['data'])
+            # Step 2: Validate the monthly plays data structure
+            # Monthly plays data should have 'categories' and 'series' keys directly (no 'data' wrapper)
+            is_valid, error_msg = validate_graph_data(monthly_plays_data, ['categories', 'series'])
             if not is_valid:
                 raise ValueError(f"Invalid monthly plays data for monthly graph: {error_msg}")
 
-            # Step 3: Extract the actual data from the response
-            response_data = monthly_plays_data.get('data', {})
+            # Step 3: Use the monthly plays data directly (no 'data' key extraction needed)
+            response_data = monthly_plays_data
             if not isinstance(response_data, dict):
                 raise ValueError("Invalid response data structure in monthly_plays")
 
