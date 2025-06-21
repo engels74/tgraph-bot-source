@@ -186,18 +186,23 @@ class DailyPlayCountGraph(BaseGraph):
         logger.info("Generating daily play count graph")
 
         try:
-            # Step 1: Validate input data
-            is_valid, error_msg = validate_graph_data(data, ['data'])
-            if not is_valid:
-                raise ValueError(f"Invalid data for daily play count graph: {error_msg}")
+            # Step 1: Extract play history data from the full data structure
+            play_history_data = data.get('play_history', {})
+            if not isinstance(play_history_data, dict):
+                raise ValueError("Missing or invalid 'play_history' data in input")
 
-            # Step 2: Extract time range configuration
+            # Step 2: Validate the play history data
+            is_valid, error_msg = validate_graph_data(play_history_data, ['data'])
+            if not is_valid:
+                raise ValueError(f"Invalid play history data for daily play count graph: {error_msg}")
+
+            # Step 3: Extract time range configuration
             time_range_days = self._get_time_range_days_from_config()
             logger.info(f"Using TIME_RANGE_DAYS configuration: {time_range_days} days")
 
-            # Step 3: Process raw play history data
+            # Step 4: Process raw play history data
             try:
-                processed_records = process_play_history_data(data)
+                processed_records = process_play_history_data(play_history_data)
                 logger.info(f"Processed {len(processed_records)} play history records")
                 
                 # Filter records to respect TIME_RANGE_DAYS configuration
@@ -209,13 +214,13 @@ class DailyPlayCountGraph(BaseGraph):
                 # Use empty data structure for graceful degradation
                 processed_records = []
 
-            # Step 4: Setup figure and axes
+            # Step 5: Setup figure and axes
             _, ax = self.setup_figure()
 
-            # Step 5: Apply modern Seaborn styling
+            # Step 6: Apply modern Seaborn styling
             self.apply_seaborn_style()
 
-            # Step 6: Check if media type separation is enabled
+            # Step 7: Check if media type separation is enabled
             use_separation = self.get_media_type_separation_enabled()
 
             if use_separation and processed_records:
@@ -225,7 +230,7 @@ class DailyPlayCountGraph(BaseGraph):
                 # Generate traditional combined visualization
                 self._generate_combined_visualization(ax, processed_records)
 
-            # Step 7: Improve layout and save
+            # Step 8: Improve layout and save
             if self.figure is not None:
                 self.figure.tight_layout()
 

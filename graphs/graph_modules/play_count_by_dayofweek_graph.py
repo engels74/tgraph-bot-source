@@ -87,26 +87,31 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
         logger.info("Generating play count by day of week graph")
 
         try:
-            # Step 1: Validate input data
-            is_valid, error_msg = validate_graph_data(data, ['data'])
-            if not is_valid:
-                raise ValueError(f"Invalid data for play count by day of week graph: {error_msg}")
+            # Step 1: Extract play history data from the full data structure
+            play_history_data = data.get('play_history', {})
+            if not isinstance(play_history_data, dict):
+                raise ValueError("Missing or invalid 'play_history' data in input")
 
-            # Step 2: Process raw play history data
+            # Step 2: Validate the play history data
+            is_valid, error_msg = validate_graph_data(play_history_data, ['data'])
+            if not is_valid:
+                raise ValueError(f"Invalid play history data for play count by day of week graph: {error_msg}")
+
+            # Step 3: Process raw play history data
             try:
-                processed_records = process_play_history_data(data)
+                processed_records = process_play_history_data(play_history_data)
                 logger.info(f"Processed {len(processed_records)} play history records")
             except Exception as e:
                 logger.error(f"Error processing play history data: {e}")
                 processed_records = []
 
-            # Step 3: Setup figure and axes
+            # Step 4: Setup figure and axes
             _, ax = self.setup_figure()
 
-            # Step 4: Apply modern Seaborn styling
+            # Step 5: Apply modern Seaborn styling
             self.apply_seaborn_style()
 
-            # Step 5: Check if media type separation is enabled
+            # Step 6: Check if media type separation is enabled
             use_separation = self.get_media_type_separation_enabled()
 
             if use_separation and processed_records:
@@ -116,7 +121,7 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
                 # Generate traditional combined visualization
                 self._generate_combined_visualization(ax, processed_records)
 
-            # Step 6: Improve layout and save
+            # Step 7: Improve layout and save
             if self.figure is not None:
                 self.figure.tight_layout()
 

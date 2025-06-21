@@ -78,16 +78,21 @@ class Top10PlatformsGraph(BaseGraph):
         logger.info("Generating top 10 platforms graph")
         
         try:
-            # Step 1: Validate input data
-            is_valid, error_msg = validate_graph_data(data, ['data'])
-            if not is_valid:
-                raise ValueError(f"Invalid graph data: {error_msg}")
+            # Step 1: Extract play history data from the full data structure
+            play_history_data = data.get('play_history', {})
+            if not isinstance(play_history_data, dict):
+                raise ValueError("Missing or invalid 'play_history' data in input")
 
-            # Step 2: Process play history data
-            processed_records = process_play_history_data(data)
+            # Step 2: Validate the play history data
+            is_valid, error_msg = validate_graph_data(play_history_data, ['data'])
+            if not is_valid:
+                raise ValueError(f"Invalid play history data: {error_msg}")
+
+            # Step 3: Process play history data
+            processed_records = process_play_history_data(play_history_data)
             logger.info(f"Processed {len(processed_records)} play history records")
 
-            # Step 3: Aggregate top platforms data
+            # Step 4: Aggregate top platforms data
             if processed_records:
                 top_platforms = aggregate_top_platforms(processed_records, limit=10)
                 logger.info(f"Found {len(top_platforms)} top platforms")
@@ -99,10 +104,10 @@ class Top10PlatformsGraph(BaseGraph):
                 else:
                     top_platforms = []
 
-            # Step 4: Setup figure and axes
+            # Step 5: Setup figure and axes
             _, ax = self.setup_figure()
 
-            # Step 5: Configure Seaborn styling
+            # Step 6: Configure Seaborn styling
             if self.get_grid_enabled():
                 sns.set_style("whitegrid")
             else:

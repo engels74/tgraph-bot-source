@@ -83,20 +83,25 @@ class PlayCountByHourOfDayGraph(BaseGraph):
         logger.info("Generating play count by hour of day graph")
 
         try:
-            # Step 1: Validate input data
-            is_valid, error_msg = validate_graph_data(data, ['data'])
-            if not is_valid:
-                raise ValueError(f"Invalid data for hour of day graph: {error_msg}")
+            # Step 1: Extract play history data from the full data structure
+            play_history_data = data.get('play_history', {})
+            if not isinstance(play_history_data, dict):
+                raise ValueError("Missing or invalid 'play_history' data in input")
 
-            # Step 2: Process raw play history data
+            # Step 2: Validate the play history data
+            is_valid, error_msg = validate_graph_data(play_history_data, ['data'])
+            if not is_valid:
+                raise ValueError(f"Invalid play history data for hour of day graph: {error_msg}")
+
+            # Step 3: Process raw play history data
             try:
-                processed_records = process_play_history_data(data)
+                processed_records = process_play_history_data(play_history_data)
                 logger.info(f"Processed {len(processed_records)} play history records")
             except Exception as e:
                 logger.error(f"Error processing play history data: {e}")
                 processed_records = []
 
-            # Step 3: Aggregate data by hour of day
+            # Step 4: Aggregate data by hour of day
             if processed_records:
                 hourly_counts = aggregate_by_hour_of_day(processed_records)
                 logger.info(f"Aggregated data for {len(hourly_counts)} hours")
@@ -109,16 +114,16 @@ class PlayCountByHourOfDayGraph(BaseGraph):
                 else:
                     hourly_counts = {hour: 0 for hour in range(24)}
 
-            # Step 4: Setup figure and axes
+            # Step 5: Setup figure and axes
             _, ax = self.setup_figure()
 
-            # Step 5: Configure Seaborn styling
+            # Step 6: Configure Seaborn styling
             if self.get_grid_enabled():
                 sns.set_style("whitegrid")
             else:
                 sns.set_style("white")
 
-            # Step 6: Create visualization
+            # Step 7: Create visualization
             if any(count > 0 for count in hourly_counts.values()):
                 # Convert to pandas DataFrame for easier plotting
                 hours = list(range(24))
@@ -175,7 +180,7 @@ class PlayCountByHourOfDayGraph(BaseGraph):
                 _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
                 logger.warning("Generated empty hour of day graph due to no data")
 
-            # Step 7: Improve layout and save
+            # Step 8: Improve layout and save
             if self.figure is not None:
                 self.figure.tight_layout()
 

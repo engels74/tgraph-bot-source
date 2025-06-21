@@ -288,25 +288,24 @@ class GraphFactory:
 
         logger.info(f"Starting generation of {len(graphs)} enabled graphs")
 
-        # Extract the play_history data from the wrapped structure
-        # GraphManager wraps the DataFetcher result as {"play_history": {...}, "time_range_days": int}
-        # But individual graphs expect the raw Tautulli API structure
-        play_history_raw = data.get('play_history', {})
-        if not isinstance(play_history_raw, dict):
-            logger.error("Invalid play_history data structure - expected dictionary")
+        # Pass the full data structure to all graphs - let each graph extract what it needs
+        # GraphManager provides: {"play_history": {...}, "monthly_plays": {...}, "time_range_days": int, "time_range_months": int}
+        # Different graphs can extract different parts of this data structure
+        if not isinstance(data, dict):
+            logger.error("Invalid data structure - expected dictionary")
             return generated_paths
 
         # Type cast to the expected mapping type for type checker
-        play_history_data = cast(Mapping[str, object], play_history_raw)
+        full_data = cast(Mapping[str, object], data)
 
-        logger.debug(f"Extracted play_history data with keys: {list(play_history_data.keys())}")
+        logger.debug(f"Passing full data structure with keys: {list(full_data.keys())}")
 
         for graph in graphs:
             try:
                 # Use context manager for automatic cleanup
                 with graph:
-                    # Pass the extracted play_history data instead of the wrapped data
-                    output_path = graph.generate(play_history_data)
+                    # Pass the full data structure - each graph will extract what it needs
+                    output_path = graph.generate(full_data)
                     generated_paths.append(output_path)
                     logger.debug(f"Generated {graph.__class__.__name__}: {output_path}")
 
