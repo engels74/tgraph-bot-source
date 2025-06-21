@@ -15,8 +15,6 @@ import seaborn as sns
 from .base_graph import BaseGraph
 from .utils import (
     validate_graph_data,
-    process_play_history_data,
-    aggregate_by_month,
     handle_empty_data,
 )
 
@@ -65,6 +63,47 @@ class PlayCountByMonthGraph(BaseGraph):
         """
         return "Play Count by Month"
 
+    def _process_monthly_tautulli_data(self, monthly_data: Mapping[str, object]) -> dict[str, int]:
+        """
+        Process monthly play data from Tautulli's get_plays_per_month API endpoint.
+        
+        Args:
+            monthly_data: Raw data from Tautulli's get_plays_per_month endpoint
+            
+        Returns:
+            Dictionary mapping month strings to total play counts
+        """
+        logger.debug(f"Processing Tautulli monthly data: {monthly_data}")
+        
+        month_counts: dict[str, int] = {}
+        
+        # The Tautulli API returns categories (months) and series (media types with data arrays)
+        categories = monthly_data.get('categories', [])
+        series = monthly_data.get('series', [])
+        
+        if not isinstance(categories, list) or not isinstance(series, list):
+            logger.warning("Invalid monthly data structure from Tautulli API")
+            return month_counts
+            
+        # Initialize months with zero counts
+        for month in categories:  # pyright: ignore[reportUnknownVariableType]
+            if isinstance(month, str):
+                month_counts[month] = 0
+        
+        # Sum up plays across all media types for each month
+        for media_series in series:  # pyright: ignore[reportUnknownVariableType]
+            if isinstance(media_series, dict):
+                data_array = media_series.get('data', [])  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
+                if isinstance(data_array, list):
+                    for i, count in enumerate(data_array):  # pyright: ignore[reportUnknownVariableType]
+                        if i < len(categories) and isinstance(count, (int, float)):
+                            month_key = categories[i]  # pyright: ignore[reportUnknownVariableType]
+                            if isinstance(month_key, str):
+                                month_counts[month_key] = month_counts.get(month_key, 0) + int(count)
+        
+        logger.debug(f"Processed {len(month_counts)} months with data: {month_counts}")
+        return month_counts
+
     @override
     def generate(self, data: Mapping[str, object]) -> str:
         """
@@ -80,20 +119,25 @@ class PlayCountByMonthGraph(BaseGraph):
         
         try:
             # Step 1: Validate input data
-            is_valid, error_msg = validate_graph_data(data, ['data'])
+            is_valid, error_msg = validate_graph_data(data, ['monthly_plays'])
             if not is_valid:
                 raise ValueError(f"Invalid graph data: {error_msg}")
 
-            # Step 2: Process play history data
-            processed_records = process_play_history_data(data)
-            logger.info(f"Processed {len(processed_records)} play history records")
+            # Step 2: Process monthly play data from Tautulli API
+            monthly_data_raw = data.get('monthly_plays', {})
+            logger.info(f"Processing monthly play data: {monthly_data_raw}")
 
-            # Step 3: Aggregate data by month
-            if processed_records:
-                month_counts = aggregate_by_month(processed_records)
-                logger.info(f"Aggregated data for {len(month_counts)} months")
+            # Step 3: Process the monthly data structure from Tautulli
+            if isinstance(monthly_data_raw, dict):
+                month_counts = self._process_monthly_tautulli_data(monthly_data_raw)
             else:
-                logger.warning("No valid records found, using empty data")
+                logger.warning("Monthly data is not a dictionary, using empty data")
+                month_counts = {}
+            
+            if month_counts:
+                logger.info(f"Processed data for {len(month_counts)} months")
+            else:
+                logger.warning("No valid monthly data found, using empty data")
                 month_data = handle_empty_data('month')
                 if isinstance(month_data, dict):
                     month_counts = month_data

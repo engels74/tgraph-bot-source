@@ -240,6 +240,44 @@ class DataFetcher:
         
         return data
         
+    async def get_plays_per_month(
+        self,
+        time_range_months: int = 12,
+        user_id: int | None = None
+    ) -> TautulliData:
+        """
+        Fetch play count data by month from Tautulli using the native get_plays_per_month endpoint.
+        
+        Args:
+            time_range_months: Number of months to fetch data for
+            user_id: Specific user ID to filter by (None for all users)
+            
+        Returns:
+            Monthly play count data as a dictionary
+        """
+        cache_key = f"plays_per_month_{time_range_months}_{user_id}"
+        
+        if cache_key in self._cache:
+            logger.debug(f"Using cached data for {cache_key}")
+            cached_data = self._cache[cache_key]
+            return cached_data
+            
+        params: dict[str, str | int | float | bool] = {
+            "time_range": time_range_months,
+            "y_axis": "plays",  # We want play counts, not duration
+            "grouping": 0  # No grouping
+        }
+
+        if user_id is not None:
+            params["user_id"] = user_id
+            
+        data = await self._make_request("get_plays_per_month", params)
+        
+        # Cache the result
+        self._cache[cache_key] = data
+        
+        return data
+        
     async def get_user_stats(self, user_id: int) -> TautulliData:
         """
         Fetch statistics for a specific user.

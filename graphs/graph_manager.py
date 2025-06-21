@@ -260,20 +260,27 @@ class GraphManager:
         if self._data_fetcher is None:
             raise RuntimeError("DataFetcher not initialized")
 
-        logger.debug(f"Fetching graph data for {time_range_days} days")
+        config = self.config_manager.get_current_config()
+        time_range_months = config.TIME_RANGE_MONTHS
+
+        logger.debug(f"Fetching graph data for {time_range_days} days and {time_range_months} months")
 
         try:
-            # Fetch play history data for all users
+            # Fetch play history data for all users (used by most graphs)
             play_history: dict[str, object] = await self._data_fetcher.get_play_history(
                 time_range=time_range_days
             )
 
-            # Additional data can be fetched here as needed
-            # For now, we'll use the play history as the primary data source
+            # Fetch monthly play data using the native Tautulli endpoint (for monthly graphs)
+            monthly_plays: dict[str, object] = await self._data_fetcher.get_plays_per_month(
+                time_range_months=time_range_months
+            )
 
             data: dict[str, object] = {
                 "play_history": play_history,
+                "monthly_plays": monthly_plays,
                 "time_range_days": time_range_days,
+                "time_range_months": time_range_months,
             }
 
             logger.debug("Successfully fetched graph data from Tautulli API")
@@ -345,17 +352,29 @@ class GraphManager:
                 progress_tracker.add_error("Missing 'play_history' in data")
                 return False
 
+            if "monthly_plays" not in data:
+                progress_tracker.add_error("Missing 'monthly_plays' in data")
+                return False
+
             play_history = data["play_history"]
+            monthly_plays = data["monthly_plays"]
 
             # Check if play_history has data
             if not isinstance(play_history, dict):
                 progress_tracker.add_error("Play history is not a dictionary")
                 return False
 
+            # Check if monthly_plays has data
+            if not isinstance(monthly_plays, dict):
+                progress_tracker.add_error("Monthly plays is not a dictionary")
+                return False
+
             # Check for data content (this depends on Tautulli API structure)
             if not play_history:
-                progress_tracker.add_warning("Play history is empty - graphs may be minimal")
-                return True  # Empty data is still valid, just results in empty graphs
+                progress_tracker.add_warning("Play history is empty - most graphs may be minimal")
+
+            if not monthly_plays:
+                progress_tracker.add_warning("Monthly plays is empty - monthly graph may be minimal")
 
             logger.debug("Data validation passed")
             return True

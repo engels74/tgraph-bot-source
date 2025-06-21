@@ -55,6 +55,10 @@ class TGraphBotConfig(BaseModel):
         default=30,
         description="Time range in days for graph data",
     )
+    TIME_RANGE_MONTHS: Annotated[int, Field(ge=1, le=60)] = Field(
+        default=12,
+        description="Time range in months for monthly graph data",
+    )
     LANGUAGE: str = Field(
         default="en",
         description="Language code for internationalization",
