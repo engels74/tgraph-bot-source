@@ -44,7 +44,7 @@ class TestTGraphBot:
         assert bot.help_command is None
         
         # Check intents
-        assert bot.intents.message_content is True
+        assert bot.intents.message_content is False  # Privileged intent not required for slash commands
         assert bot.intents.guilds is True
 
     @pytest.mark.asyncio
@@ -142,7 +142,7 @@ class TestTGraphBot:
         bot = TGraphBot(config_manager)
 
         # Verify required intents are enabled
-        assert bot.intents.message_content is True, "Message content intent required for commands"
+        assert bot.intents.message_content is False  # Privileged intent not required for slash commands
         assert bot.intents.guilds is True, "Guilds intent required for server information"
 
         # Verify bot configuration

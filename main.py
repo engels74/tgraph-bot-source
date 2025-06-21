@@ -176,11 +176,11 @@ class TGraphBot(commands.Bot):
 
     def __init__(self, config_manager: ConfigManager) -> None:
         """Initialize the TGraph Bot with required intents and configuration."""
-        # Configure intents for bot functionality
+        # Configure intents for bot functionality - no privileged intents needed
         intents = discord.Intents.default()
-        # Enable message content intent as required by tests and some functionality
-        intents.message_content = True
-        # Guilds intent is already included in default intents
+        # Note: message_content intent is privileged and not needed for slash commands
+        # The bot doesn't read user message content, only posts graphs via slash commands
+        # intents.message_content = True  # Privileged intent - not required
 
         super().__init__(
             command_prefix="!",  # Fallback prefix, mainly using slash commands
