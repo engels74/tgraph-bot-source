@@ -420,6 +420,9 @@ KEEP_DAYS: 7
 # Time range in days for graph data (1-365)
 TIME_RANGE_DAYS: 30
 
+# Time range in months for monthly graph data (1-60)
+TIME_RANGE_MONTHS: 12
+
 # Language code for internationalization (2-letter code)
 LANGUAGE: en
 
