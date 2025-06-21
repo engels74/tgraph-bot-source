@@ -20,7 +20,6 @@ from .utils import (
     process_play_history_data,
     aggregate_by_day_of_week,
     aggregate_by_day_of_week_separated,
-    handle_empty_data,
     get_media_type_display_info,
     ProcessedRecords,
 )
@@ -156,7 +155,7 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
         day_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
         # Prepare data for plotting
-        plot_data = []
+        plot_data: list[dict[str, str | int]] = []
         for media_type, media_data in separated_data.items():
             if not media_data or all(count == 0 for count in media_data.values()):
                 continue
@@ -187,12 +186,24 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
             self._handle_empty_data_case(ax)
             return
 
-        # Create DataFrame for Seaborn
+                # Create DataFrame for Seaborn
         df = pd.DataFrame(plot_data)
 
-        # Create grouped bar plot
-        unique_media_types = df['media_type'].unique()  # pyright: ignore[reportUnknownMemberType]
-        colors = [df[df['media_type'] == mt]['color'].iloc[0] for mt in unique_media_types]  # pyright: ignore[reportUnknownMemberType]
+        # Create grouped bar plot - build color mapping from original data to avoid pandas type issues        
+        # Build color mapping and unique media types from the original plot_data
+        color_mapping: dict[str, str] = {}
+        unique_media_types_set: set[str] = set()
+        
+        for item in plot_data:
+            media_type_key = str(item['media_type'])
+            color_key = str(item['color'])
+            unique_media_types_set.add(media_type_key)
+            if media_type_key not in color_mapping:
+                color_mapping[media_type_key] = color_key
+        
+        # Create ordered list for consistent plotting
+        unique_media_types_list: list[str] = sorted(unique_media_types_set)
+        colors: list[str] = [color_mapping[mt] for mt in unique_media_types_list]
         
         _ = sns.barplot(
             data=df,
@@ -220,7 +231,7 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
             fontsize=12
         )
 
-        logger.info(f"Created separated day of week graph with {len(unique_media_types)} media types")
+        logger.info(f"Created separated day of week graph with {len(unique_media_types_list)} media types")
 
     def _generate_combined_visualization(self, ax: Axes, processed_records: ProcessedRecords) -> None:
         """

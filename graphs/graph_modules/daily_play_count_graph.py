@@ -154,7 +154,7 @@ class DailyPlayCountGraph(BaseGraph):
             return
 
         # Prepare data for plotting
-        all_dates = set()
+        all_dates: set[str] = set()
         for media_type_data in separated_data.values():
             all_dates.update(media_type_data.keys())
 
@@ -163,11 +163,11 @@ class DailyPlayCountGraph(BaseGraph):
             return
 
         # Sort dates for proper timeline
-        sorted_dates = sorted(all_dates)
-        date_objects = [pd.to_datetime(date) for date in sorted_dates]  # pyright: ignore[reportUnknownMemberType]
+        sorted_dates: list[str] = sorted(all_dates)
+        date_objects: list[pd.Timestamp] = [pd.to_datetime(date) for date in sorted_dates]  # pyright: ignore[reportUnknownMemberType]
 
         # Plot each media type separately
-        media_types_plotted = []
+        media_types_plotted: list[str] = []
         for media_type, media_data in separated_data.items():
             if not media_data:
                 continue
@@ -194,8 +194,9 @@ class DailyPlayCountGraph(BaseGraph):
                 color = '#666666'  # Default gray for unknown types
 
             # Create the plot
+            import numpy as np
             _ = ax.plot(  # pyright: ignore[reportUnknownMemberType]
-                date_objects,
+                np.array(date_objects),
                 counts,
                 marker='o',
                 linewidth=3,
@@ -221,8 +222,8 @@ class DailyPlayCountGraph(BaseGraph):
 
         # Format dates on x-axis
         import matplotlib.dates as mdates
-        _ = ax.xaxis.set_major_formatter(mdates.DateFormatter('%m/%d'))  # pyright: ignore[reportUnknownMemberType]
-        _ = ax.xaxis.set_major_locator(mdates.DayLocator(interval=max(1, len(sorted_dates) // 10)))  # pyright: ignore[reportUnknownMemberType]
+        _ = ax.xaxis.set_major_formatter(mdates.DateFormatter('%m/%d'))
+        _ = ax.xaxis.set_major_locator(mdates.DayLocator(interval=max(1, len(sorted_dates) // 10)))
         _ = ax.tick_params(axis='x', rotation=45)  # pyright: ignore[reportUnknownMemberType]
 
         # Add legend
@@ -238,7 +239,7 @@ class DailyPlayCountGraph(BaseGraph):
         # Add annotations if enabled
         annotate_enabled = self.get_config_value('ANNOTATE_DAILY_PLAY_COUNT', False)
         if annotate_enabled:
-            self._add_peak_annotations(ax, separated_data, date_objects, sorted_dates)
+            self._add_peak_annotations(ax, separated_data, sorted_dates)
 
         logger.info(f"Created separated daily play count graph with {len(media_types_plotted)} media types")
 
@@ -342,7 +343,6 @@ class DailyPlayCountGraph(BaseGraph):
         self, 
         ax: Axes, 
         separated_data: dict[str, dict[str, int]], 
-        date_objects: list[object], 
         sorted_dates: list[str]
     ) -> None:
         """
@@ -351,7 +351,6 @@ class DailyPlayCountGraph(BaseGraph):
         Args:
             ax: The matplotlib axes to add annotations to
             separated_data: Dictionary of separated media type data
-            date_objects: List of datetime objects for dates
             sorted_dates: List of sorted date strings
         """
         display_info = get_media_type_display_info()
@@ -367,7 +366,6 @@ class DailyPlayCountGraph(BaseGraph):
             max_count = max(counts)
             if max_count > 0:
                 max_idx = counts.index(max_count)
-                max_date_obj = date_objects[max_idx]
                 
                 # Get label for this media type
                 label = display_info.get(media_type, {}).get('display_name', media_type.title())

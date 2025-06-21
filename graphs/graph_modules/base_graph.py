@@ -19,7 +19,6 @@ import matplotlib.figure
 from matplotlib.axes import Axes
 
 from .utils import (
-    ensure_graph_directory,
     get_current_graph_storage_path,
     generate_graph_filename,
     validate_color,
@@ -130,7 +129,6 @@ class BaseGraph(ABC):
         including grid settings and overall aesthetic preferences.
         """
         import seaborn as sns
-        import matplotlib.pyplot as plt
 
         # Apply modern styling
         apply_modern_seaborn_styling()
@@ -164,6 +162,8 @@ class BaseGraph(ABC):
             ax: The matplotlib axes to add the legend to
             media_types_present: List of media types present in the data
         """
+        import matplotlib.patches as mpatches
+        
         display_info = get_media_type_display_info()
         
         # Update display info with configuration colors
@@ -172,12 +172,11 @@ class BaseGraph(ABC):
             display_info['movie']['color'] = self.get_movie_color()
         
         # Create legend entries for present media types
-        legend_handles = []
-        legend_labels = []
+        legend_handles: list[mpatches.Patch] = []
+        legend_labels: list[str] = []
         
         for media_type in media_types_present:
             if media_type in display_info:
-                import matplotlib.patches as mpatches
                 patch = mpatches.Patch(
                     color=display_info[media_type]['color'],
                     label=display_info[media_type]['display_name']
@@ -186,7 +185,7 @@ class BaseGraph(ABC):
                 legend_labels.append(display_info[media_type]['display_name'])
         
         if legend_handles:
-            ax.legend(  # pyright: ignore[reportUnknownMemberType]
+            _ = ax.legend(  # pyright: ignore[reportUnknownMemberType]
                 handles=legend_handles,
                 labels=legend_labels,
                 loc='best',
