@@ -225,6 +225,10 @@ class DataFetcher:
             "length": 1000,  # Maximum number of records
             "start": 0,
         }
+        
+        # Add time_range parameter to limit data to the specified number of days
+        if time_range > 0:
+            params["time_range"] = time_range
 
         if user_id is not None:
             params["user_id"] = user_id

@@ -222,7 +222,7 @@ class TestDataFetcher:
             
             mock_make_request.assert_called_once_with(
                 "get_history", 
-                {"length": 1000, "start": 0, "user_id": 1}
+                {"length": 1000, "start": 0, "time_range": 30, "user_id": 1}
             )
             response_obj = mock_successful_response["response"]
             assert isinstance(response_obj, dict)
@@ -245,7 +245,7 @@ class TestDataFetcher:
             
             mock_make_request.assert_called_once_with(
                 "get_history", 
-                {"length": 1000, "start": 0}
+                {"length": 1000, "start": 0, "time_range": 30}
             )
             response_obj = mock_successful_response["response"]
             assert isinstance(response_obj, dict)

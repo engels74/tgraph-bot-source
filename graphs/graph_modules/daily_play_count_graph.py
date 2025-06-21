@@ -226,17 +226,9 @@ class DailyPlayCountGraph(BaseGraph):
         # Apply consistent date formatting logic (same as separated visualization)
         num_dates = len(sorted_dates)
         
-        if num_dates <= 7:
-            # Week or less: Show every day
+        if num_dates <= 35:
+            # Show every single day for up to ~35 days (covers TIME_RANGE_DAYS=30 plus some buffer)
             interval = 1
-            date_format = '%m/%d'
-        elif num_dates <= 14:
-            # Two weeks: Show every day
-            interval = 1
-            date_format = '%m/%d'
-        elif num_dates <= 31:
-            # Month: Show every 2-3 days for readability while keeping most dates visible
-            interval = max(1, num_dates // 12)  # Show ~12-15 labels for a month
             date_format = '%m/%d'
         elif num_dates <= 60:
             # Two months: Show every 3-4 days
@@ -332,17 +324,9 @@ class DailyPlayCountGraph(BaseGraph):
             # Apply consistent date formatting logic (same as separated visualization)
             num_dates = len(dates)
             
-            if num_dates <= 7:
-                # Week or less: Show every day
+            if num_dates <= 35:
+                # Show every single day for up to ~35 days (covers TIME_RANGE_DAYS=30 plus some buffer)
                 interval = 1
-                date_format = '%m/%d'
-            elif num_dates <= 14:
-                # Two weeks: Show every day
-                interval = 1
-                date_format = '%m/%d'
-            elif num_dates <= 31:
-                # Month: Show every 2-3 days for readability while keeping most dates visible
-                interval = max(1, num_dates // 12)  # Show ~12-15 labels for a month
                 date_format = '%m/%d'
             elif num_dates <= 60:
                 # Two months: Show every 3-4 days
