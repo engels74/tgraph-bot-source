@@ -2,20 +2,25 @@
 Play count by month graph for TGraph Bot.
 
 This module inherits from BaseGraph and uses Seaborn to plot play counts
-by month.
+by month, supporting both combined and separated media type visualization.
 """
 
 import logging
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, override
 
-import numpy as np
+import pandas as pd
 import seaborn as sns
+from matplotlib.axes import Axes
 
 from .base_graph import BaseGraph
 from .utils import (
     validate_graph_data,
-    handle_empty_data,
+    process_play_history_data,
+    aggregate_by_month,
+    aggregate_by_month_separated,
+    get_media_type_display_info,
+    ProcessedRecords,
 )
 
 if TYPE_CHECKING:
@@ -63,171 +68,59 @@ class PlayCountByMonthGraph(BaseGraph):
         """
         return "Play Count by Month"
 
-    def _process_monthly_tautulli_data(self, monthly_data: Mapping[str, object]) -> dict[str, int]:
-        """
-        Process monthly play data from Tautulli's get_plays_per_month API endpoint.
-        
-        Args:
-            monthly_data: Raw data from Tautulli's get_plays_per_month endpoint
-            
-        Returns:
-            Dictionary mapping month strings to total play counts
-        """
-        logger.debug(f"Processing Tautulli monthly data: {monthly_data}")
-        
-        month_counts: dict[str, int] = {}
-        
-        # The Tautulli API returns categories (months) and series (media types with data arrays)
-        categories = monthly_data.get('categories', [])
-        series = monthly_data.get('series', [])
-        
-        if not isinstance(categories, list) or not isinstance(series, list):
-            logger.warning("Invalid monthly data structure from Tautulli API")
-            return month_counts
-            
-        # Initialize months with zero counts
-        for month in categories:  # pyright: ignore[reportUnknownVariableType]
-            if isinstance(month, str):
-                month_counts[month] = 0
-        
-        # Sum up plays across all media types for each month
-        for media_series in series:  # pyright: ignore[reportUnknownVariableType]
-            if isinstance(media_series, dict):
-                data_array = media_series.get('data', [])  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
-                if isinstance(data_array, list):
-                    for i, count in enumerate(data_array):  # pyright: ignore[reportUnknownVariableType]
-                        if i < len(categories) and isinstance(count, (int, float)):
-                            month_key = categories[i]  # pyright: ignore[reportUnknownVariableType]
-                            if isinstance(month_key, str):
-                                month_counts[month_key] = month_counts.get(month_key, 0) + int(count)
-        
-        logger.debug(f"Processed {len(month_counts)} months with data: {month_counts}")
-        return month_counts
-
     @override
     def generate(self, data: Mapping[str, object]) -> str:
         """
         Generate the play count by month graph using the provided data.
-        
+
         Args:
-            data: Dictionary containing play count data by month
-            
+            data: Dictionary containing play history data from Tautulli API
+                 Expected structure: {'play_history': {'data': [list of play records]}}
+
         Returns:
             Path to the generated graph image file
+
+        Raises:
+            ValueError: If data is invalid or missing required fields
         """
         logger.info("Generating play count by month graph")
-        
+
         try:
-            # Step 1: Validate input data
-            is_valid, error_msg = validate_graph_data(data, ['monthly_plays'])
+            # Step 1: Extract play history data from the full data structure
+            play_history_data = data.get('play_history', {})
+            if not isinstance(play_history_data, dict):
+                raise ValueError("Missing or invalid 'play_history' data in input")
+
+            # Step 2: Validate the play history data
+            is_valid, error_msg = validate_graph_data(play_history_data, ['data'])
             if not is_valid:
-                raise ValueError(f"Invalid graph data: {error_msg}")
+                raise ValueError(f"Invalid play history data for play count by month graph: {error_msg}")
 
-            # Step 2: Process monthly play data from Tautulli API
-            monthly_data_raw = data.get('monthly_plays', {})
-            logger.info(f"Processing monthly play data: {monthly_data_raw}")
-
-            # Step 3: Process the monthly data structure from Tautulli
-            if isinstance(monthly_data_raw, dict):
-                month_counts = self._process_monthly_tautulli_data(monthly_data_raw)
-            else:
-                logger.warning("Monthly data is not a dictionary, using empty data")
-                month_counts = {}
-            
-            if month_counts:
-                logger.info(f"Processed data for {len(month_counts)} months")
-            else:
-                logger.warning("No valid monthly data found, using empty data")
-                month_data = handle_empty_data('month')
-                if isinstance(month_data, dict):
-                    month_counts = month_data
-                else:
-                    month_counts = {}
+            # Step 3: Process raw play history data
+            try:
+                processed_records = process_play_history_data(play_history_data)
+                logger.info(f"Processed {len(processed_records)} play history records")
+            except Exception as e:
+                logger.error(f"Error processing play history data: {e}")
+                processed_records = []
 
             # Step 4: Setup figure and axes
             _, ax = self.setup_figure()
 
-            # Step 5: Configure Seaborn styling
-            if self.get_grid_enabled():
-                sns.set_style("whitegrid")
-                # Customize grid for better bar plot appearance
-                ax.grid(True, alpha=0.3, zorder=1)  # pyright: ignore[reportUnknownMemberType]
-                ax.set_axisbelow(True)
+            # Step 5: Apply modern Seaborn styling
+            self.apply_seaborn_style()
+
+            # Step 6: Check if media type separation is enabled
+            use_separation = self.get_media_type_separation_enabled()
+
+            if use_separation and processed_records:
+                # Generate separated visualization
+                self._generate_separated_visualization(ax, processed_records)
             else:
-                sns.set_style("white")
+                # Generate traditional combined visualization
+                self._generate_combined_visualization(ax, processed_records)
 
-            # Step 6: Prepare data for Seaborn
-            if month_counts:
-                # Sort months chronologically
-                sorted_months = sorted(month_counts.items())
-
-                # Step 7: Create the bar plot (perfect for discrete monthly data)
-                color = self.get_tv_color()
-                
-                # Create numerical x-positions for bar plotting
-                x_positions = np.arange(len(sorted_months))
-                y_values = [count for _, count in sorted_months]
-                
-                # Create modern bar plot with enhanced styling
-                bars = ax.bar(
-                    x_positions,
-                    y_values,
-                    color=color,
-                    alpha=0.8,
-                    edgecolor='white',
-                    linewidth=2,
-                    capstyle='round',
-                    zorder=3  # Ensure bars are on top of grid
-                )
-                
-                # Add subtle gradient effect to bars
-                for bar in bars:
-                    # Get current color and create a lighter version for gradient effect
-                    height = bar.get_height()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
-                    if height and height > 0:
-                        # Add subtle shadow effect
-                        bar.set_edgecolor('white')  # pyright: ignore[reportUnknownMemberType]
-                        bar.set_linewidth(2)  # pyright: ignore[reportUnknownMemberType]
-
-                # Step 8: Customize the plot
-                _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)  # pyright: ignore[reportUnknownMemberType]
-                _ = ax.set_xlabel("Month", fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
-                _ = ax.set_ylabel("Play Count", fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
-
-                # Set x-axis ticks and labels
-                month_labels = [str(month) for month, _ in sorted_months]
-                _ = ax.set_xticks(x_positions)  # pyright: ignore[reportUnknownMemberType]
-                _ = ax.set_xticklabels(month_labels)  # pyright: ignore[reportUnknownMemberType]
-
-                # Rotate x-axis labels for better readability
-                ax.tick_params(axis='x', rotation=45, labelsize=12)  # pyright: ignore[reportUnknownMemberType]
-                ax.tick_params(axis='y', labelsize=12)  # pyright: ignore[reportUnknownMemberType]
-
-                # Add value annotations if enabled
-                annotate_enabled = self.get_config_value('ANNOTATE_PLAY_COUNT_BY_MONTH', False)
-                if annotate_enabled:
-                    # Add value annotations on top of bars
-                    for bar in bars:
-                        height = bar.get_height()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
-                        if height and height > 0:  # Only annotate non-zero values
-                            x_val = bar.get_x() + bar.get_width() / 2  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
-                            self.add_bar_value_annotation(
-                                ax,
-                                x=float(x_val),  # pyright: ignore[reportUnknownArgumentType]
-                                y=float(height),  # pyright: ignore[reportUnknownArgumentType]
-                                value=int(height),  # pyright: ignore[reportUnknownArgumentType]
-                                ha='center',
-                                va='bottom',
-                                offset_y=2,
-                                fontweight='bold'
-                            )
-            else:
-                # Handle empty data case
-                _ = ax.text(0.5, 0.5, "No data available for monthly play counts",  # pyright: ignore[reportUnknownMemberType]
-                           ha='center', va='center', transform=ax.transAxes, fontsize=16)
-                _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
-
-            # Adjust layout to prevent label cutoff
+            # Step 7: Improve layout and save
             if self.figure is not None:
                 self.figure.tight_layout()
 
@@ -239,9 +132,208 @@ class PlayCountByMonthGraph(BaseGraph):
 
             logger.info(f"Play count by month graph saved to: {output_path}")
             return output_path
-            
+
         except Exception as e:
             logger.exception(f"Error generating play count by month graph: {e}")
             raise
         finally:
             self.cleanup()
+
+    def _generate_separated_visualization(self, ax: Axes, processed_records: ProcessedRecords) -> None:
+        """
+        Generate separated visualization showing Movies and TV Series separately.
+
+        Args:
+            ax: The matplotlib axes to plot on
+            processed_records: List of processed play history records
+        """
+        # Aggregate data by month with media type separation
+        separated_data = aggregate_by_month_separated(processed_records)
+        display_info = get_media_type_display_info()
+
+        if not separated_data:
+            self._handle_empty_data_case(ax)
+            return
+
+        # Prepare data for plotting
+        plot_data: list[dict[str, str | int]] = []
+        for media_type, media_data in separated_data.items():
+            if not media_data or all(count == 0 for count in media_data.values()):
+                continue
+                
+            for month, count in media_data.items():
+                if media_type in display_info:
+                    label = display_info[media_type]['display_name']
+                    color = display_info[media_type]['color']
+                    
+                    # Override with config colors if available
+                    if media_type == 'tv':
+                        color = self.get_tv_color()
+                    elif media_type == 'movie':
+                        color = self.get_movie_color()
+                else:
+                    label = media_type.title()
+                    color = '#666666'
+                
+                plot_data.append({
+                    'month': month,
+                    'count': count,
+                    'media_type': label,
+                    'color': color
+                })
+
+        if not plot_data:
+            self._handle_empty_data_case(ax)
+            return
+
+        # Create DataFrame for Seaborn
+        df = pd.DataFrame(plot_data)
+
+        # Build color mapping and unique media types from the original plot_data
+        color_mapping: dict[str, str] = {}
+        unique_media_types_set: set[str] = set()
+        
+        for item in plot_data:
+            media_type_key = str(item['media_type'])
+            color_key = str(item['color'])
+            unique_media_types_set.add(media_type_key)
+            if media_type_key not in color_mapping:
+                color_mapping[media_type_key] = color_key
+        
+        # Create ordered list for consistent plotting
+        unique_media_types_list: list[str] = sorted(unique_media_types_set)
+        colors: list[str] = [color_mapping[mt] for mt in unique_media_types_list]
+
+        # Sort months chronologically for proper x-axis ordering
+        df['month_sort'] = pd.to_datetime(df['month'], format='%Y-%m')
+        df = df.sort_values('month_sort')
+        
+        # Create grouped bar plot
+        _ = sns.barplot(
+            data=df,
+            x='month',
+            y='count',
+            hue='media_type',
+            ax=ax,
+            palette=colors,
+            alpha=0.8
+        )
+
+        # Customize the plot
+        _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)  # pyright: ignore[reportUnknownMemberType]
+        _ = ax.set_xlabel('Month', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
+        _ = ax.set_ylabel('Play Count', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
+
+        # Enhance legend
+        _ = ax.legend(  # pyright: ignore[reportUnknownMemberType]
+            title='Media Type',
+            loc='best',
+            frameon=True,
+            fancybox=True,
+            shadow=True,
+            framealpha=0.9,
+            fontsize=12
+        )
+
+        # Rotate x-axis labels for better readability
+        ax.tick_params(axis='x', rotation=45, labelsize=12)  # pyright: ignore[reportUnknownMemberType]
+        ax.tick_params(axis='y', labelsize=12)  # pyright: ignore[reportUnknownMemberType]
+
+        # Add bar value annotations if enabled
+        annotate_enabled = self.get_config_value('ANNOTATE_PLAY_COUNT_BY_MONTH', False)
+        if annotate_enabled:
+            # Get all bar patches and annotate them
+            for patch in ax.patches:
+                height = patch.get_height()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
+                if height and height > 0:  # Only annotate non-zero values
+                    x_val = patch.get_x() + patch.get_width() / 2  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
+                    self.add_bar_value_annotation(
+                        ax,
+                        x=float(x_val),  # pyright: ignore[reportUnknownArgumentType]
+                        y=float(height),  # pyright: ignore[reportUnknownArgumentType]
+                        value=int(height),  # pyright: ignore[reportUnknownArgumentType]
+                        ha='center',
+                        va='bottom',
+                        offset_y=2,
+                        fontweight='bold'
+                    )
+
+        logger.info(f"Created separated monthly play count graph with {len(unique_media_types_list)} media types")
+
+    def _generate_combined_visualization(self, ax: Axes, processed_records: ProcessedRecords) -> None:
+        """
+        Generate traditional combined visualization (backward compatibility).
+
+        Args:
+            ax: The matplotlib axes to plot on
+            processed_records: List of processed play history records
+        """
+        # Use traditional aggregation method
+        if processed_records:
+            month_counts = aggregate_by_month(processed_records)
+            logger.info(f"Aggregated data for {len(month_counts)} months")
+        else:
+            logger.warning("No valid records found, using empty data")
+            month_counts = {}
+
+        if month_counts:
+            # Sort months chronologically
+            sorted_months = sorted(month_counts.items())
+
+            # Convert to pandas DataFrame for consistent handling
+            df = pd.DataFrame(sorted_months, columns=['month', 'count'])
+
+            # Create bar plot with modern styling
+            _ = sns.barplot(
+                data=df,
+                x='month',
+                y='count',
+                ax=ax,
+                color=self.get_tv_color(),  # Use TV color as default
+                alpha=0.8
+            )
+
+            # Customize the plot
+            _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)  # pyright: ignore[reportUnknownMemberType]
+            _ = ax.set_xlabel('Month', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
+            _ = ax.set_ylabel('Play Count', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
+
+            # Rotate x-axis labels for better readability
+            ax.tick_params(axis='x', rotation=45, labelsize=12)  # pyright: ignore[reportUnknownMemberType]
+            ax.tick_params(axis='y', labelsize=12)  # pyright: ignore[reportUnknownMemberType]
+
+            # Add bar value annotations if enabled
+            annotate_enabled = self.get_config_value('ANNOTATE_PLAY_COUNT_BY_MONTH', False)
+            if annotate_enabled:
+                # Get all bar patches and annotate them
+                for patch in ax.patches:
+                    height = patch.get_height()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
+                    if height and height > 0:  # Only annotate non-zero values
+                        x_val = patch.get_x() + patch.get_width() / 2  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
+                        self.add_bar_value_annotation(
+                            ax,
+                            x=float(x_val),  # pyright: ignore[reportUnknownArgumentType]
+                            y=float(height),  # pyright: ignore[reportUnknownArgumentType]
+                            value=int(height),  # pyright: ignore[reportUnknownArgumentType]
+                            ha='center',
+                            va='bottom',
+                            offset_y=2,
+                            fontweight='bold'
+                        )
+
+            logger.info(f"Created combined monthly play count graph with {len(sorted_months)} months")
+        else:
+            self._handle_empty_data_case(ax)
+
+    def _handle_empty_data_case(self, ax: Axes) -> None:
+        """
+        Handle the case where no data is available.
+
+        Args:
+            ax: The matplotlib axes to display the message on
+        """
+        _ = ax.text(0.5, 0.5, "No play data available\nfor the selected time period",  # pyright: ignore[reportUnknownMemberType]
+                   ha='center', va='center', transform=ax.transAxes, fontsize=16,
+                   bbox=dict(boxstyle='round,pad=0.5', facecolor='lightgray', alpha=0.7))
+        _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
+        logger.warning("Generated empty monthly play count graph due to no data")
