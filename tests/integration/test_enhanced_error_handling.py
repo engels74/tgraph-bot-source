@@ -193,12 +193,15 @@ class TestGraphManagerErrorHandling:
 
         graph_manager = GraphManager(mock_config_manager)
 
-        # Mock slow cleanup operation
-        def slow_cleanup(directory: Path, keep_days: int) -> int:  # pyright: ignore[reportUnusedParameter]
-            time.sleep(2.0)  # Simulate slow cleanup
-            return 5
-
-        with patch('graphs.graph_manager.cleanup_old_files', slow_cleanup):
+        # Patch the _cleanup_dated_graphs method to simulate slow operation
+        with patch.object(graph_manager, '_cleanup_dated_graphs') as mock_cleanup:
+            # Make the cleanup function block for longer than the timeout
+            def slow_cleanup(base_dir: Path, keep_days: int) -> int:  # pyright: ignore[reportUnusedParameter]
+                time.sleep(2.0)  # Simulate slow cleanup that exceeds timeout
+                return 5
+                
+            mock_cleanup.side_effect = slow_cleanup
+            
             with pytest.raises(asyncio.TimeoutError):
                 _ = await graph_manager.cleanup_old_graphs(timeout_seconds=0.1)
 
