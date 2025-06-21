@@ -80,7 +80,7 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
         
         try:
             # Step 1: Validate input data
-            is_valid, error_msg = validate_graph_data(data, ['response'])
+            is_valid, error_msg = validate_graph_data(data, ['data'])
             if not is_valid:
                 raise ValueError(f"Invalid graph data: {error_msg}")
 

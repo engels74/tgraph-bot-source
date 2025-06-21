@@ -226,6 +226,7 @@ class GraphFactory:
 
         Args:
             data: Dictionary containing the data needed for graph generation
+                 Expected structure: {"play_history": {...}, "time_range_days": int}
 
         Returns:
             List of paths to generated graph files
@@ -238,11 +239,22 @@ class GraphFactory:
 
         logger.info(f"Starting generation of {len(graphs)} enabled graphs")
 
+        # Extract the play_history data from the wrapped structure
+        # GraphManager wraps the DataFetcher result as {"play_history": {...}, "time_range_days": int}
+        # But individual graphs expect the raw Tautulli API structure
+        play_history_data = data.get('play_history', {})
+        if not isinstance(play_history_data, dict):
+            logger.error("Invalid play_history data structure - expected dictionary")
+            return generated_paths
+
+        logger.debug(f"Extracted play_history data with keys: {list(play_history_data.keys())}")
+
         for graph in graphs:
             try:
                 # Use context manager for automatic cleanup
                 with graph:
-                    output_path = graph.generate(data)
+                    # Pass the extracted play_history data instead of the wrapped data
+                    output_path = graph.generate(play_history_data)
                     generated_paths.append(output_path)
                     logger.debug(f"Generated {graph.__class__.__name__}: {output_path}")
 

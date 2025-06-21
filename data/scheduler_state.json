@@ -1,7 +1,7 @@
 {
   "state": {
     "last_update": null,
-    "next_update": "2025-06-20T10:00:00",
+    "next_update": "2025-06-28T12:14:44.148677",
     "is_running": true,
     "consecutive_failures": 0,
     "last_failure": null,
@@ -12,5 +12,5 @@
     "fixed_update_time": "XX:XX"
   },
   "version": "1.0",
-  "saved_at": "2025-06-19T22:16:04.182206"
+  "saved_at": "2025-06-21T12:19:38.576533"
 }
