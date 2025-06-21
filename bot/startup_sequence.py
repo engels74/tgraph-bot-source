@@ -10,11 +10,16 @@ This module handles the bot's startup sequence which includes:
 import asyncio
 import logging
 from datetime import datetime
+from typing import TYPE_CHECKING
 import discord
 from discord.ext import commands
 
 from graphs.graph_manager import GraphManager
 from utils.discord_file_utils import validate_file_for_discord, create_discord_file_safe, create_graph_specific_embed
+
+if TYPE_CHECKING:
+    from config.manager import ConfigManager
+    from bot.update_tracker import UpdateTracker
 
 logger = logging.getLogger(__name__)
 
@@ -34,9 +39,9 @@ class StartupSequence:
         Args:
             bot: The TGraph bot instance
         """
-        self.bot = bot  # The bot instance has config_manager and update_tracker attributes
-        self.cleanup_completed = False
-        self.initial_post_completed = False
+        self.bot: commands.Bot = bot  # The bot instance has config_manager and update_tracker attributes
+        self.cleanup_completed: bool = False
+        self.initial_post_completed: bool = False
         
     async def run(self) -> None:
         """
@@ -78,7 +83,8 @@ class StartupSequence:
         logger.info("Starting message cleanup...")
         
         try:
-            config = self.bot.config_manager.get_current_config()
+            config_manager: "ConfigManager" = getattr(self.bot, 'config_manager')
+            config = config_manager.get_current_config()
             channel = self.bot.get_channel(config.CHANNEL_ID)
             
             if not isinstance(channel, discord.TextChannel):
@@ -125,7 +131,7 @@ class StartupSequence:
             
             # Document ephemeral message limitations
             logger.info(
-                "Note: Ephemeral messages cannot be deleted by the bot after creation. "
+                "Note: Ephemeral messages cannot be deleted by the bot after creation. " +
                 "They persist until users dismiss them manually. This is a Discord API limitation."
             )
             
@@ -144,7 +150,8 @@ class StartupSequence:
         logger.info("Posting initial graphs...")
         
         try:
-            config = self.bot.config_manager.get_current_config()
+            config_manager: "ConfigManager" = getattr(self.bot, 'config_manager')
+            config = config_manager.get_current_config()
             channel = self.bot.get_channel(config.CHANNEL_ID)
             
             if not isinstance(channel, discord.TextChannel):
@@ -152,7 +159,7 @@ class StartupSequence:
                 return
             
             # Generate all graphs
-            async with GraphManager(self.bot.config_manager) as graph_manager:
+            async with GraphManager(config_manager) as graph_manager:
                 graph_files = await graph_manager.generate_all_graphs(
                     max_retries=3,
                     timeout_seconds=300.0
@@ -217,7 +224,7 @@ class StartupSequence:
                 embed = create_graph_specific_embed(graph_file)
                 
                 # Post the graph
-                await channel.send(file=discord_file, embed=embed)
+                _ = await channel.send(file=discord_file, embed=embed)
                 success_count += 1
                 logger.debug(f"Posted graph: {file_path.name}")
                 
@@ -247,24 +254,25 @@ class StartupSequence:
             current_time = datetime.now()
             
             # Update the last update time in the scheduler
-            if hasattr(self.bot, 'update_tracker') and self.bot.update_tracker:
+            update_tracker: "UpdateTracker | None" = getattr(self.bot, 'update_tracker', None)
+            if update_tracker is not None:
                 # Access the scheduler's state
-                if hasattr(self.bot.update_tracker, '_state'):
-                    self.bot.update_tracker._state.last_update = current_time
+                if hasattr(update_tracker, '_state'):
+                    update_tracker._state.last_update = current_time  # pyright: ignore[reportPrivateUsage]
                     logger.info(f"Set scheduler last update time to: {current_time}")
                     
                     # Save the state
-                    if hasattr(self.bot.update_tracker, '_state_manager'):
-                        state_manager = self.bot.update_tracker._state_manager
+                    if hasattr(update_tracker, '_state_manager'):
+                        state_manager = update_tracker._state_manager  # pyright: ignore[reportPrivateUsage]
                         state_manager.save_state(
-                            self.bot.update_tracker._state,
-                            self.bot.update_tracker._config
+                            update_tracker._state,  # pyright: ignore[reportPrivateUsage]
+                            update_tracker._config  # pyright: ignore[reportPrivateUsage]
                         )
                         logger.info("Scheduler state saved to disk")
                     
                     # Log next update time
-                    if hasattr(self.bot.update_tracker, 'get_next_update_time'):
-                        next_update = self.bot.update_tracker.get_next_update_time()
+                    if hasattr(update_tracker, 'get_next_update_time'):
+                        next_update = update_tracker.get_next_update_time()
                         if next_update:
                             logger.info(f"Next scheduled update: {next_update}")
                 else:
