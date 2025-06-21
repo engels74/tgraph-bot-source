@@ -311,7 +311,7 @@ class TGraphBot(commands.Bot):
         graph_files: list[str]
     ) -> int:
         """
-        Post generated graph files to a Discord channel.
+        Post generated graph files to a Discord channel as individual messages with specific embeds.
 
         Args:
             channel: Discord text channel to post to
@@ -320,8 +320,8 @@ class TGraphBot(commands.Bot):
         Returns:
             Number of successfully posted graphs
         """
-        import discord
         from pathlib import Path
+        from utils.discord_file_utils import validate_file_for_discord, create_discord_file_safe, create_graph_specific_embed
 
         success_count = 0
 
@@ -332,13 +332,25 @@ class TGraphBot(commands.Bot):
                     logger.warning(f"Graph file not found: {graph_file}")
                     continue
 
-                # Create Discord file object
-                discord_file = discord.File(file_path, filename=file_path.name)
+                # Validate the file first
+                validation = validate_file_for_discord(graph_file, use_nitro_limits=False)
+                if not validation.valid:
+                    logger.error(f"File validation failed for {graph_file}: {validation.error_message}")
+                    continue
 
-                # Post to channel
-                _ = await channel.send(file=discord_file)
+                # Create Discord file object
+                discord_file = create_discord_file_safe(graph_file)
+                if not discord_file:
+                    logger.error(f"Failed to create Discord file object for {graph_file}")
+                    continue
+
+                # Create graph-specific embed
+                embed = create_graph_specific_embed(graph_file)
+
+                # Post individual message with graph and its specific embed
+                _ = await channel.send(file=discord_file, embed=embed)
                 success_count += 1
-                logger.debug(f"Posted graph: {file_path.name}")
+                logger.debug(f"Posted graph with embed: {file_path.name}")
 
             except Exception as e:
                 logger.error(f"Failed to post graph {graph_file}: {e}")
