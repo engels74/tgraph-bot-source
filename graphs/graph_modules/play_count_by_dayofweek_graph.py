@@ -194,7 +194,7 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
             self._handle_empty_data_case(ax)
             return
 
-                # Create DataFrame for Seaborn
+        # Create DataFrame for Seaborn
         df = pd.DataFrame(plot_data)
 
         # Create grouped bar plot - build color mapping from original data to avoid pandas type issues        
@@ -209,8 +209,21 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
             if media_type_key not in color_mapping:
                 color_mapping[media_type_key] = color_key
         
-        # Create ordered list for consistent plotting
-        unique_media_types_list: list[str] = sorted(unique_media_types_set)
+        # Create ordered list for consistent plotting - use consistent order instead of alphabetical
+        # to ensure TV Series always gets blue and Movies get orange
+        preferred_order = ['TV Series', 'Movies', 'Music', 'Other']
+        unique_media_types_list: list[str] = []
+        
+        # Add media types in preferred order if they exist
+        for media_type in preferred_order:
+            if media_type in unique_media_types_set:
+                unique_media_types_list.append(media_type)
+        
+        # Add any remaining media types not in preferred order (shouldn't happen normally)
+        for media_type in sorted(unique_media_types_set):
+            if media_type not in unique_media_types_list:
+                unique_media_types_list.append(media_type)
+        
         colors: list[str] = [color_mapping[mt] for mt in unique_media_types_list]
         
         _ = sns.barplot(

@@ -222,8 +222,21 @@ class PlayCountByMonthGraph(BaseGraph):
             if media_type_key not in color_mapping:
                 color_mapping[media_type_key] = color_key
         
-        # Create ordered list for consistent plotting
-        unique_media_types_list: list[str] = sorted(unique_media_types_set)
+        # Create ordered list for consistent plotting - use consistent order instead of alphabetical
+        # to ensure TV Series always gets blue and Movies get orange
+        preferred_order = ['TV Series', 'Movies', 'Music', 'Other']
+        unique_media_types_list: list[str] = []
+        
+        # Add media types in preferred order if they exist
+        for media_type in preferred_order:
+            if media_type in unique_media_types_set:
+                unique_media_types_list.append(media_type)
+        
+        # Add any remaining media types not in preferred order (shouldn't happen normally)
+        for media_type in sorted(unique_media_types_set):
+            if media_type not in unique_media_types_list:
+                unique_media_types_list.append(media_type)
+        
         colors: list[str] = [color_mapping[mt] for mt in unique_media_types_list]
 
         # Create grouped bar plot with proper spacing
@@ -455,8 +468,21 @@ class PlayCountByMonthGraph(BaseGraph):
             if media_type_key not in color_mapping:
                 color_mapping[media_type_key] = color_key
         
-        # Create ordered list for consistent plotting
-        unique_media_types_list: list[str] = sorted(unique_media_types_set)
+        # Create ordered list for consistent plotting - use consistent order instead of alphabetical
+        # to ensure TV Series always gets blue and Movies get orange
+        preferred_order = ['TV Series', 'Movies', 'Music', 'Other']
+        unique_media_types_list: list[str] = []
+        
+        # Add media types in preferred order if they exist
+        for media_type in preferred_order:
+            if media_type in unique_media_types_set:
+                unique_media_types_list.append(media_type)
+        
+        # Add any remaining media types not in preferred order (shouldn't happen normally)
+        for media_type in sorted(unique_media_types_set):
+            if media_type not in unique_media_types_list:
+                unique_media_types_list.append(media_type)
+        
         colors: list[str] = [color_mapping[mt] for mt in unique_media_types_list]
 
         # Sort months chronologically for proper x-axis ordering
