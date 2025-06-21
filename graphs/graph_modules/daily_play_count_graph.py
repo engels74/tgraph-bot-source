@@ -252,8 +252,11 @@ class DailyPlayCountGraph(BaseGraph):
             ax: The matplotlib axes to plot on
             processed_records: List of processed play history records
         """
-        # Aggregate data by date with media type separation
-        separated_data = aggregate_by_date_separated(processed_records)
+        # Get time range configuration for consistent date filling
+        time_range_days = self._get_time_range_days_from_config()
+        
+        # Aggregate data by date with media type separation, filling missing dates
+        separated_data = aggregate_by_date_separated(processed_records, fill_missing_dates=True, time_range_days=time_range_days)
         display_info = get_media_type_display_info()
 
         if not separated_data:
@@ -356,9 +359,10 @@ class DailyPlayCountGraph(BaseGraph):
             ax: The matplotlib axes to plot on
             processed_records: List of processed play history records
         """
-        # Use traditional aggregation method
+        # Use traditional aggregation method with date filling
         if processed_records:
-            daily_counts = aggregate_by_date(processed_records)
+            time_range_days = self._get_time_range_days_from_config()
+            daily_counts = aggregate_by_date(processed_records, fill_missing_dates=True, time_range_days=time_range_days)
             logger.info(f"Aggregated data for {len(daily_counts)} days")
         else:
             logger.warning("No valid records found, using empty data")

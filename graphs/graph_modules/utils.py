@@ -454,12 +454,14 @@ def process_play_history_data(raw_data: Mapping[str, object]) -> ProcessedRecord
     return processed_records
 
 
-def aggregate_by_date(records: ProcessedRecords) -> dict[str, int]:
+def aggregate_by_date(records: ProcessedRecords, fill_missing_dates: bool = True, time_range_days: int = 30) -> dict[str, int]:
     """
     Aggregate play records by date.
 
     Args:
         records: List of processed play history records
+        fill_missing_dates: Whether to fill in missing dates with zero counts
+        time_range_days: Number of days to include when filling missing dates
 
     Returns:
         Dictionary mapping date strings to play counts
@@ -470,6 +472,22 @@ def aggregate_by_date(records: ProcessedRecords) -> dict[str, int]:
         if 'datetime' in record:
             date_str = record['datetime'].strftime('%Y-%m-%d')
             date_counts[date_str] += 1
+
+    # Fill in missing dates with zero counts if requested
+    if fill_missing_dates:
+        from datetime import datetime, timedelta
+        
+        # Calculate the date range to fill
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=time_range_days - 1)  # -1 because we include today
+        
+        # Generate all dates in the range
+        current_date = start_date
+        while current_date <= end_date:
+            date_str = current_date.strftime('%Y-%m-%d')
+            if date_str not in date_counts:
+                date_counts[date_str] = 0
+            current_date += timedelta(days=1)
 
     return dict(date_counts)
 
@@ -675,12 +693,14 @@ def get_media_type_display_info() -> dict[str, dict[str, str]]:
     }
 
 
-def aggregate_by_date_separated(records: ProcessedRecords) -> SeparatedGraphData:
+def aggregate_by_date_separated(records: ProcessedRecords, fill_missing_dates: bool = True, time_range_days: int = 30) -> SeparatedGraphData:
     """
     Aggregate play records by date with media type separation.
     
     Args:
         records: List of processed play history records
+        fill_missing_dates: Whether to fill in missing dates with zero counts
+        time_range_days: Number of days to include when filling missing dates
         
     Returns:
         Dictionary mapping media types to date-count dictionaries
@@ -701,6 +721,26 @@ def aggregate_by_date_separated(records: ProcessedRecords) -> SeparatedGraphData
             separated_data[media_type][date_str] = 0
             
         separated_data[media_type][date_str] += 1
+    
+    # Fill in missing dates with zero counts if requested
+    if fill_missing_dates:
+        from datetime import datetime, timedelta
+        
+        # Calculate the date range to fill
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=time_range_days - 1)  # -1 because we include today
+        
+        # Generate all dates in the range and fill for each media type
+        current_date = start_date
+        while current_date <= end_date:
+            date_str = current_date.strftime('%Y-%m-%d')
+            
+            # Ensure each media type has entries for all dates
+            for media_type in separated_data:
+                if date_str not in separated_data[media_type]:
+                    separated_data[media_type][date_str] = 0
+            
+            current_date += timedelta(days=1)
     
     return separated_data
 
