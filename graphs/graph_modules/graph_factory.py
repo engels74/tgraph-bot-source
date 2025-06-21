@@ -259,7 +259,7 @@ class GraphFactory:
         
         # Filter out excluded graph types
         if exclude_types:
-            excluded_classes = []
+            excluded_classes: list[type[BaseGraph]] = []
             for exclude_type in exclude_types:
                 if exclude_type == "top_10_users":
                     excluded_classes.append(Top10UsersGraph)
