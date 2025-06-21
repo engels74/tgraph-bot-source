@@ -9,7 +9,7 @@ import logging
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, override
 
-import pandas as pd
+import numpy as np
 import seaborn as sns
 
 from .base_graph import BaseGraph
@@ -157,30 +157,46 @@ class PlayCountByMonthGraph(BaseGraph):
             if month_counts:
                 # Sort months chronologically
                 sorted_months = sorted(month_counts.items())
-                plot_data: list[dict[str, object]] = []
-                for month, count in sorted_months:
-                    plot_data.append({'month': month, 'play_count': count})
 
-                # Convert to DataFrame for Seaborn
-                df = pd.DataFrame(plot_data)
-
-                # Step 7: Create the line plot using Seaborn (better for time series)
+                # Step 7: Create the area plot (modern filled look)
                 color = self.get_tv_color()
-                _ = sns.lineplot(
-                    data=df,
-                    x="month",
-                    y="play_count",
-                    ax=ax,
+                
+                # Create numerical x-positions for proper area plotting
+                x_positions = np.arange(len(sorted_months))
+                y_values = [count for _, count in sorted_months]
+                
+                # Create the filled area
+                _ = ax.fill_between(
+                    x_positions,
+                    y_values,
+                    alpha=0.7,
                     color=color,
+                    linewidth=0
+                )
+                
+                # Add line on top for definition
+                _ = ax.plot(
+                    x_positions,
+                    y_values,
+                    color=color,
+                    linewidth=3,
                     marker='o',
-                    linewidth=2.5,
-                    markersize=8
+                    markersize=8,
+                    markerfacecolor='white',
+                    markeredgecolor=color,
+                    markeredgewidth=2.5,
+                    alpha=0.9
                 )
 
                 # Step 8: Customize the plot
                 _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)  # pyright: ignore[reportUnknownMemberType]
                 _ = ax.set_xlabel("Month", fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
                 _ = ax.set_ylabel("Play Count", fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
+
+                # Set x-axis ticks and labels
+                month_labels = [str(month) for month, _ in sorted_months]
+                _ = ax.set_xticks(x_positions)  # pyright: ignore[reportUnknownMemberType]
+                _ = ax.set_xticklabels(month_labels)  # pyright: ignore[reportUnknownMemberType]
 
                 # Rotate x-axis labels for better readability
                 ax.tick_params(axis='x', rotation=45, labelsize=12)  # pyright: ignore[reportUnknownMemberType]
@@ -191,11 +207,11 @@ class PlayCountByMonthGraph(BaseGraph):
                 if annotate_enabled:
                     numeric_values = list(month_counts.values())
                     max_count = max(numeric_values) if numeric_values else 1
-                    for i, (month, count) in enumerate(sorted_months):
+                    for i, (_, count) in enumerate(sorted_months):
                         if count > 0:
                             self.add_bar_value_annotation(
                                 ax,
-                                x=i,
+                                x=float(x_positions[i]),
                                 y=count,
                                 value=count,
                                 ha='center',
