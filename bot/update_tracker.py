@@ -431,7 +431,11 @@ class BackgroundTaskManager:
                 self._log_audit_event(name, "task_started", "Task execution started")
 
                 # Execute the task with timeout protection
-                await asyncio.wait_for(coro(), timeout=300.0)  # 5 minute timeout
+                # Special handling for scheduler loop - it needs to run indefinitely
+                if name == "update_scheduler":
+                    await coro()  # No timeout for scheduler loop
+                else:
+                    await asyncio.wait_for(coro(), timeout=300.0)  # 5 minute timeout for other tasks
 
                 # Record successful execution
                 self._task_status[name] = TaskStatus.IDLE

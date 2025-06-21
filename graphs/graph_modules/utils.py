@@ -43,11 +43,21 @@ class PlatformAggregateRecord(TypedDict):
     play_count: int
 
 
+class MediaTypeAggregateRecord(TypedDict):
+    """Structure for aggregated media type data."""
+    media_type: str
+    display_name: str
+    play_count: int
+    color: str
+
+
 # Type aliases for common data structures
-GraphData = dict[str, int] | list[dict[str, object]]
+GraphData = dict[str, int] | dict[int, int] | list[dict[str, object]]
 ProcessedRecords = list[ProcessedPlayRecord]
 UserAggregates = list[UserAggregateRecord]
 PlatformAggregates = list[PlatformAggregateRecord]
+MediaTypeAggregates = list[MediaTypeAggregateRecord]
+SeparatedGraphData = dict[str, dict[str, int]]
 
 logger = logging.getLogger(__name__)
 
@@ -542,24 +552,262 @@ def aggregate_top_platforms(records: ProcessedRecords, limit: int = 10) -> Platf
 
 def handle_empty_data(graph_type: str) -> GraphData:
     """
-    Generate appropriate empty data structure for different graph types.
+    Handle empty data cases by returning appropriate empty data structures.
 
     Args:
-        graph_type: Type of graph (e.g., 'daily', 'users', 'platforms')
+        graph_type: Type of graph to generate empty data for
 
     Returns:
         Empty data structure appropriate for the graph type
     """
     if graph_type == 'daily':
         return {}
-    elif graph_type == 'day_of_week':
-        day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-        return {day: 0 for day in day_names}
-    elif graph_type == 'hour_of_day':
-        return {str(hour): 0 for hour in range(24)}
-    elif graph_type == 'month':
-        return {}
-    elif graph_type in ['users', 'platforms']:
+    elif graph_type == 'users':
         return []
+    elif graph_type == 'platforms':
+        return []
+    elif graph_type == 'hourly':
+        return {hour: 0 for hour in range(24)}
+    elif graph_type == 'monthly':
+        return {}
     else:
         return {}
+
+
+def classify_media_type(media_type: str) -> str:
+    """
+    Classify a Tautulli media type into standardized categories.
+    
+    Args:
+        media_type: The raw media type from Tautulli API
+        
+    Returns:
+        Standardized media type ('movie', 'tv', 'music', 'other')
+    """
+    if not media_type:
+        return 'other'
+    
+    media_type_lower = media_type.lower()
+    
+    if media_type_lower in ['movie']:
+        return 'movie'
+    elif media_type_lower in ['episode', 'show', 'tv']:
+        return 'tv'
+    elif media_type_lower in ['track', 'album', 'artist', 'music']:
+        return 'music'
+    else:
+        return 'other'
+
+
+def get_media_type_display_info() -> dict[str, dict[str, str]]:
+    """
+    Get display information for media types including colors and labels.
+    
+    Returns:
+        Dictionary mapping media type to display info (name, color)
+    """
+    return {
+        'movie': {
+            'display_name': 'Movies',
+            'color': '#ff7f0e'  # Orange - matches MOVIE_COLOR default
+        },
+        'tv': {
+            'display_name': 'TV Series',
+            'color': '#1f77b4'  # Blue - matches TV_COLOR default
+        },
+        'music': {
+            'display_name': 'Music',
+            'color': '#2ca02c'  # Green
+        },
+        'other': {
+            'display_name': 'Other',
+            'color': '#d62728'  # Red
+        }
+    }
+
+
+def aggregate_by_date_separated(records: ProcessedRecords) -> SeparatedGraphData:
+    """
+    Aggregate play records by date with media type separation.
+    
+    Args:
+        records: List of processed play history records
+        
+    Returns:
+        Dictionary mapping media types to date-count dictionaries
+    """
+    separated_data: SeparatedGraphData = {}
+    
+    for record in records:
+        if 'datetime' not in record:
+            continue
+            
+        date_str = record['datetime'].strftime('%Y-%m-%d')
+        media_type = classify_media_type(record.get('media_type', ''))
+        
+        if media_type not in separated_data:
+            separated_data[media_type] = {}
+            
+        if date_str not in separated_data[media_type]:
+            separated_data[media_type][date_str] = 0
+            
+        separated_data[media_type][date_str] += 1
+    
+    return separated_data
+
+
+def aggregate_by_day_of_week_separated(records: ProcessedRecords) -> SeparatedGraphData:
+    """
+    Aggregate play records by day of week with media type separation.
+    
+    Args:
+        records: List of processed play history records
+        
+    Returns:
+        Dictionary mapping media types to day-count dictionaries
+    """
+    day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    separated_data: SeparatedGraphData = {}
+    
+    for record in records:
+        if 'datetime' not in record:
+            continue
+            
+        day_name = day_names[record['datetime'].weekday()]
+        media_type = classify_media_type(record.get('media_type', ''))
+        
+        if media_type not in separated_data:
+            separated_data[media_type] = {day: 0 for day in day_names}
+            
+        separated_data[media_type][day_name] += 1
+    
+    return separated_data
+
+
+def aggregate_by_hour_of_day_separated(records: ProcessedRecords) -> dict[str, dict[int, int]]:
+    """
+    Aggregate play records by hour of day with media type separation.
+    
+    Args:
+        records: List of processed play history records
+        
+    Returns:
+        Dictionary mapping media types to hour-count dictionaries
+    """
+    separated_data: dict[str, dict[int, int]] = {}
+    
+    for record in records:
+        if 'datetime' not in record:
+            continue
+            
+        hour = record['datetime'].hour
+        media_type = classify_media_type(record.get('media_type', ''))
+        
+        if media_type not in separated_data:
+            separated_data[media_type] = {h: 0 for h in range(24)}
+            
+        separated_data[media_type][hour] += 1
+    
+    return separated_data
+
+
+def aggregate_by_month_separated(records: ProcessedRecords) -> SeparatedGraphData:
+    """
+    Aggregate play records by month with media type separation.
+    
+    Args:
+        records: List of processed play history records
+        
+    Returns:
+        Dictionary mapping media types to month-count dictionaries
+    """
+    separated_data: SeparatedGraphData = {}
+    
+    for record in records:
+        if 'datetime' not in record:
+            continue
+            
+        month_str = record['datetime'].strftime('%Y-%m')
+        media_type = classify_media_type(record.get('media_type', ''))
+        
+        if media_type not in separated_data:
+            separated_data[media_type] = {}
+            
+        if month_str not in separated_data[media_type]:
+            separated_data[media_type][month_str] = 0
+            
+        separated_data[media_type][month_str] += 1
+    
+    return separated_data
+
+
+def create_seaborn_style_context(enable_grid: bool = True) -> dict[str, object]:
+    """
+    Create a Seaborn style context for modern, professional graphs.
+    
+    Args:
+        enable_grid: Whether to enable grid lines
+        
+    Returns:
+        Dictionary of style parameters for Seaborn
+    """
+    return {
+        'axes.grid': enable_grid,
+        'axes.grid.axis': 'y',
+        'grid.linewidth': 0.5,
+        'grid.alpha': 0.7,
+        'axes.edgecolor': 'black',
+        'axes.linewidth': 1.2,
+        'xtick.bottom': True,
+        'xtick.top': False,
+        'ytick.left': True,
+        'ytick.right': False,
+        'axes.spines.left': True,
+        'axes.spines.bottom': True,
+        'axes.spines.top': False,
+        'axes.spines.right': False,
+        'font.size': 11,
+        'axes.titlesize': 16,
+        'axes.labelsize': 12,
+        'legend.fontsize': 11,
+        'xtick.labelsize': 10,
+        'ytick.labelsize': 10
+    }
+
+
+def apply_modern_seaborn_styling() -> None:
+    """
+    Apply modern Seaborn styling for professional-looking graphs.
+    """
+    import seaborn as sns
+    import matplotlib.pyplot as plt
+    
+    # Set the modern style
+    sns.set_style("whitegrid", {
+        'axes.grid': True,
+        'axes.grid.axis': 'y',
+        'grid.linewidth': 0.5,
+        'grid.alpha': 0.7,
+        'axes.edgecolor': '#333333',
+        'axes.linewidth': 1.2,
+    })
+    
+    # Set modern color palette
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b']
+    sns.set_palette(colors)
+    
+    # Configure matplotlib parameters for better appearance
+    plt.rcParams.update({
+        'font.size': 11,
+        'axes.titlesize': 16,
+        'axes.titleweight': 'bold',
+        'axes.labelsize': 12,
+        'legend.fontsize': 11,
+        'xtick.labelsize': 10,
+        'ytick.labelsize': 10,
+        'figure.titlesize': 18,
+        'legend.frameon': True,
+        'legend.fancybox': True,
+        'legend.shadow': True,
+        'legend.framealpha': 0.9
+    })

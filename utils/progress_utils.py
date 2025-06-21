@@ -42,7 +42,8 @@ class ProgressCallbackManager:
         self.interaction: discord.Interaction = interaction
         self.operation_name: str = operation_name
         self._last_update_time: float = 0.0
-        self._update_interval: float = 2.0  # Minimum seconds between updates
+        self._last_progress: float = 0.0  # Track last progress percentage
+        self._update_interval: float = 0.2  # Minimum seconds between updates (reduced for faster operations)
 
     def create_progress_callback(self) -> Callable[[str, int, int, dict[str, object]], None]:
         """
@@ -62,12 +63,31 @@ class ProgressCallbackManager:
                 metadata: Additional metadata about the operation
             """
             try:
-                # Schedule the async update in the event loop
-                _ = asyncio.create_task(
-                    self._update_progress_embed(message, current, total, metadata)
-                )
+                # Try to get the running event loop (more reliable than get_event_loop)
+                try:
+                    loop = asyncio.get_running_loop()
+                    # Schedule the async update in the main event loop from thread
+                    _ = asyncio.run_coroutine_threadsafe(
+                        self._update_progress_embed(message, current, total, metadata),
+                        loop
+                    )
+                    # Don't wait for completion to avoid blocking
+                    logger.debug(f"Scheduled progress update: {message} ({current}/{total})")
+                    
+                except RuntimeError:
+                    # No running loop, try to create a task directly (we're in main thread)
+                    try:
+                        _ = asyncio.create_task(
+                            self._update_progress_embed(message, current, total, metadata)
+                        )
+                        logger.debug(f"Created task for progress update: {message} ({current}/{total})")
+                    except RuntimeError:
+                        logger.warning(f"Could not schedule progress update: {message} ({current}/{total})")
+                        
             except Exception as e:
+                # Log the error but don't let it break the graph generation
                 logger.warning(f"Failed to schedule progress update for {self.operation_name}: {e}")
+                logger.debug(f"Progress update details - message: {message}, current: {current}, total: {total}")
 
         return progress_callback
 
@@ -89,9 +109,21 @@ class ProgressCallbackManager:
         """
         import time
 
-        # Rate limit updates to avoid Discord API spam
+        # Rate limit updates to avoid Discord API spam, but allow critical updates
         current_time = time.time()
-        if current_time - self._last_update_time < self._update_interval:
+        time_since_last = current_time - self._last_update_time
+        current_progress = (current / total * 100) if total > 0 else 0
+        
+        # Allow critical updates: final step, first update, normal interval passed, or significant progress jump
+        is_critical_update = (
+            current == total or  # Final step (100%)
+            self._last_update_time == 0.0 or  # First update
+            time_since_last >= self._update_interval or  # Normal rate limit passed
+            (current_progress - self._last_progress) >= 20.0  # Significant progress jump (20% or more)
+        )
+        
+        if not is_critical_update:
+            logger.debug(f"Rate limiting progress update: {message} ({current}/{total}) - {current_progress:.1f}%")
             return
 
         try:
@@ -146,6 +178,7 @@ class ProgressCallbackManager:
                     logger.debug(f"Could not update progress for {self.operation_name}")
             
             self._last_update_time = current_time
+            self._last_progress = current_progress
             
         except discord.NotFound:
             # Original message was deleted, stop updating

@@ -70,6 +70,10 @@ class TGraphBotConfig(BaseModel):
         default=False,
         description="Whether to enable grid lines in graphs",
     )
+    ENABLE_MEDIA_TYPE_SEPARATION: bool = Field(
+        default=True,
+        description="Whether to separate Movies and TV Series in graphs",
+    )
     ENABLE_DAILY_PLAY_COUNT: bool = Field(
         default=True,
         description="Enable daily play count graph generation",

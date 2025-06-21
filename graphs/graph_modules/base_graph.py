@@ -23,6 +23,8 @@ from .utils import (
     generate_graph_filename,
     validate_color,
     censor_username,
+    apply_modern_seaborn_styling,
+    get_media_type_display_info,
 )
 
 if TYPE_CHECKING:
@@ -127,18 +129,71 @@ class BaseGraph(ABC):
         including grid settings and overall aesthetic preferences.
         """
         import seaborn as sns
+        import matplotlib.pyplot as plt
 
-        # Set the default Seaborn style
-        sns.set_style("whitegrid" if self.get_grid_enabled() else "white")
+        # Apply modern styling
+        apply_modern_seaborn_styling()
 
-        # Set color palette if available
+        # Set the default Seaborn style with enhanced appearance
+        if self.get_grid_enabled():
+            sns.set_style("whitegrid", {
+                'axes.grid': True,
+                'axes.grid.axis': 'y',
+                'grid.linewidth': 0.5,
+                'grid.alpha': 0.7,
+                'axes.edgecolor': '#333333',
+                'axes.linewidth': 1.2,
+            })
+        else:
+            sns.set_style("white")
+
+        # Set color palette based on configuration
+        if self.config is not None and self.get_media_type_separation_enabled():
+            # Use colors from configuration for media type separation
+            tv_color = self.get_tv_color()
+            movie_color = self.get_movie_color()
+            custom_palette = [tv_color, movie_color, '#2ca02c', '#d62728']  # TV, Movies, Music, Other
+            sns.set_palette(custom_palette)
+
+    def create_separated_legend(self, ax: "Axes", media_types_present: list[str]) -> None:
+        """
+        Create a legend for separated media types.
+
+        Args:
+            ax: The matplotlib axes to add the legend to
+            media_types_present: List of media types present in the data
+        """
+        display_info = get_media_type_display_info()
+        
+        # Update display info with configuration colors
         if self.config is not None:
-            tv_color = self.get_config_value('TV_COLOR')
-            movie_color = self.get_config_value('MOVIE_COLOR')
-                
-            if tv_color and movie_color:
-                custom_palette = [str(tv_color), str(movie_color)]
-                sns.set_palette(custom_palette)
+            display_info['tv']['color'] = self.get_tv_color()
+            display_info['movie']['color'] = self.get_movie_color()
+        
+        # Create legend entries for present media types
+        legend_handles = []
+        legend_labels = []
+        
+        for media_type in media_types_present:
+            if media_type in display_info:
+                import matplotlib.patches as mpatches
+                patch = mpatches.Patch(
+                    color=display_info[media_type]['color'],
+                    label=display_info[media_type]['display_name']
+                )
+                legend_handles.append(patch)
+                legend_labels.append(display_info[media_type]['display_name'])
+        
+        if legend_handles:
+            ax.legend(  # pyright: ignore[reportUnknownMemberType]
+                handles=legend_handles,
+                labels=legend_labels,
+                loc='best',
+                frameon=True,
+                fancybox=True,
+                shadow=True,
+                framealpha=0.9
+            )
 
     def get_grid_enabled(self) -> bool:
         """
@@ -149,6 +204,16 @@ class BaseGraph(ABC):
         """
         grid_enabled = self.get_config_value('ENABLE_GRAPH_GRID', False)
         return bool(grid_enabled)
+
+    def get_media_type_separation_enabled(self) -> bool:
+        """
+        Get whether media type separation should be enabled for this graph.
+
+        Returns:
+            True if media type separation should be enabled, False otherwise
+        """
+        separation_enabled = self.get_config_value('ENABLE_MEDIA_TYPE_SEPARATION', True)
+        return bool(separation_enabled)
 
     def get_tv_color(self) -> str:
         """
