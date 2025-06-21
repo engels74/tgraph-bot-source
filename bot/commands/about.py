@@ -76,7 +76,7 @@ class AboutCog(commands.Cog):
 
             _ = embed.add_field(
                 name="License",
-                value="MIT License",
+                value="AGPL-3.0",
                 inline=True
             )
 
