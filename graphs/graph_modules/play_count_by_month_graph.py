@@ -16,7 +16,6 @@ from matplotlib.axes import Axes
 from .base_graph import BaseGraph
 from .utils import (
     validate_graph_data,
-    process_play_history_data,
     aggregate_by_month,
     aggregate_by_month_separated,
     get_media_type_display_info,
@@ -164,14 +163,16 @@ class PlayCountByMonthGraph(BaseGraph):
         plot_data: list[dict[str, str | int]] = []
         display_info = get_media_type_display_info()
         
-        for series_item in series:
+        # series comes from external Tautulli API - runtime type checking required
+        for series_item in series:  # pyright: ignore[reportUnknownVariableType] # external API data
+            # Runtime type validation for external API data
             if not isinstance(series_item, dict):
                 continue
                 
-            series_name = str(series_item.get('name', ''))
-            series_data = series_item.get('data', [])
+            series_name = str(series_item.get('name', ''))  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType] # external API data
+            series_data_raw = series_item.get('data', [])  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType] # external API data
             
-            if not isinstance(series_data, list) or len(series_data) != len(categories):
+            if not isinstance(series_data_raw, list) or len(series_data_raw) != len(categories):  # pyright: ignore[reportUnknownArgumentType] # external API data
                 continue
             
             # Map series name to media type
@@ -192,11 +193,13 @@ class PlayCountByMonthGraph(BaseGraph):
                 color = '#666666'
             
             # Add data points for each month
-            for i, (month, count) in enumerate(zip(categories, series_data)):
+            # External API data requires runtime validation
+            for month, count in zip(categories, series_data_raw):  # pyright: ignore[reportUnknownArgumentType,reportUnknownVariableType] # external API data
+                month_str = str(month)  # pyright: ignore[reportUnknownArgumentType] # external API data
                 if isinstance(count, (int, float)) and count > 0:  # Only include non-zero values
                     plot_data.append({
-                        'month': str(month),
-                        'count': int(count),
+                        'month': month_str,
+                        'count': int(count),  # external API data conversion
                         'media_type': label,
                         'color': color
                     })
@@ -236,13 +239,13 @@ class PlayCountByMonthGraph(BaseGraph):
             linewidth=0.7
         )
 
-        # Customize the plot
-        _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)  # pyright: ignore[reportUnknownMemberType]
-        _ = ax.set_xlabel('Month', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
-        _ = ax.set_ylabel('Play Count', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
+        # Customize the plot - matplotlib methods lack complete type stubs
+        _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+        _ = ax.set_xlabel('Month', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+        _ = ax.set_ylabel('Play Count', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
 
         # Enhance legend
-        _ = ax.legend(  # pyright: ignore[reportUnknownMemberType]
+        _ = ax.legend(  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
             title='Media Type',
             loc='best',
             frameon=True,
@@ -253,29 +256,29 @@ class PlayCountByMonthGraph(BaseGraph):
         )
 
         # Rotate x-axis labels for better readability
-        ax.tick_params(axis='x', rotation=45, labelsize=12)  # pyright: ignore[reportUnknownMemberType]
-        ax.tick_params(axis='y', labelsize=12)  # pyright: ignore[reportUnknownMemberType]
+        ax.tick_params(axis='x', rotation=45, labelsize=12)  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+        ax.tick_params(axis='y', labelsize=12)  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
 
         # Add bar value annotations if enabled
         annotate_enabled = self.get_config_value('ANNOTATE_PLAY_COUNT_BY_MONTH', False)
         if annotate_enabled:
             # Get all bar patches and annotate them
             for patch in ax.patches:
-                height = patch.get_height()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
+                height = patch.get_height()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType] # matplotlib patch attributes
                 if height and height > 0:  # Only annotate non-zero values
-                    x_val = patch.get_x() + patch.get_width() / 2  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
+                    x_val = patch.get_x() + patch.get_width() / 2  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType] # matplotlib patch attributes
                     self.add_bar_value_annotation(
                         ax,
-                        x=float(x_val),  # pyright: ignore[reportUnknownArgumentType]
-                        y=float(height),  # pyright: ignore[reportUnknownArgumentType]
-                        value=int(height),  # pyright: ignore[reportUnknownArgumentType]
+                        x=float(x_val),  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch result
+                        y=float(height),  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch result
+                        value=int(height),  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch result
                         ha='center',
                         va='bottom',
                         offset_y=2,
                         fontweight='bold'
                     )
 
-        logger.info(f"Created separated monthly play count graph with {len(unique_media_types_list)} media types and {len(categories)} months")
+        logger.info(f"Created separated monthly play count graph with {len(unique_media_types_list)} media types and {len(categories)} months")  # pyright: ignore[reportUnknownArgumentType] # external API data
 
     def _generate_combined_visualization_from_api(self, ax: Axes, response_data: Mapping[str, object]) -> None:
         """
@@ -300,23 +303,26 @@ class PlayCountByMonthGraph(BaseGraph):
         # Combine all series data into totals for each month
         month_totals: dict[str, int] = {}
         
-        for series_item in series:
+        # series comes from external Tautulli API - runtime type checking required
+        for series_item in series:  # pyright: ignore[reportUnknownVariableType] # external API data
+            # Runtime type validation for external API data
             if not isinstance(series_item, dict):
                 continue
                 
-            series_data = series_item.get('data', [])
+            series_data_raw = series_item.get('data', [])  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType] # external API data
             
-            if not isinstance(series_data, list) or len(series_data) != len(categories):
+            if not isinstance(series_data_raw, list) or len(series_data_raw) != len(categories):  # pyright: ignore[reportUnknownArgumentType] # external API data
                 continue
             
             # Add data for each month
-            for i, (month, count) in enumerate(zip(categories, series_data)):
-                month_str = str(month)
+            # External API data requires runtime validation
+            for month, count in zip(categories, series_data_raw):  # pyright: ignore[reportUnknownArgumentType,reportUnknownVariableType] # external API data
+                month_str = str(month)  # pyright: ignore[reportUnknownArgumentType] # external API data
                 if month_str not in month_totals:
                     month_totals[month_str] = 0
                     
                 if isinstance(count, (int, float)):
-                    month_totals[month_str] += int(count)
+                    month_totals[month_str] += int(count)  # external API data conversion
 
         if not month_totals or all(count == 0 for count in month_totals.values()):
             self._handle_empty_data_case(ax)
@@ -341,28 +347,28 @@ class PlayCountByMonthGraph(BaseGraph):
             linewidth=0.7
         )
 
-        # Customize the plot
-        _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)  # pyright: ignore[reportUnknownMemberType]
-        _ = ax.set_xlabel('Month', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
-        _ = ax.set_ylabel('Play Count', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
+        # Customize the plot - matplotlib methods lack complete type stubs
+        _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+        _ = ax.set_xlabel('Month', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+        _ = ax.set_ylabel('Play Count', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
 
         # Rotate x-axis labels for better readability
-        ax.tick_params(axis='x', rotation=45, labelsize=12)  # pyright: ignore[reportUnknownMemberType]
-        ax.tick_params(axis='y', labelsize=12)  # pyright: ignore[reportUnknownMemberType]
+        ax.tick_params(axis='x', rotation=45, labelsize=12)  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+        ax.tick_params(axis='y', labelsize=12)  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
 
         # Add bar value annotations if enabled
         annotate_enabled = self.get_config_value('ANNOTATE_PLAY_COUNT_BY_MONTH', False)
         if annotate_enabled:
             # Get all bar patches and annotate them
             for patch in ax.patches:
-                height = patch.get_height()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
+                height = patch.get_height()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType] # matplotlib patch attributes
                 if height and height > 0:  # Only annotate non-zero values
-                    x_val = patch.get_x() + patch.get_width() / 2  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
+                    x_val = patch.get_x() + patch.get_width() / 2  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType] # matplotlib patch attributes
                     self.add_bar_value_annotation(
                         ax,
-                        x=float(x_val),  # pyright: ignore[reportUnknownArgumentType]
-                        y=float(height),  # pyright: ignore[reportUnknownArgumentType]
-                        value=int(height),  # pyright: ignore[reportUnknownArgumentType]
+                        x=float(x_val),  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch result
+                        y=float(height),  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch result
+                        value=int(height),  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch result
                         ha='center',
                         va='bottom',
                         offset_y=2,
@@ -378,10 +384,10 @@ class PlayCountByMonthGraph(BaseGraph):
         Args:
             ax: The matplotlib axes to display the message on
         """
-        _ = ax.text(0.5, 0.5, "No play data available\nfor the selected time period",  # pyright: ignore[reportUnknownMemberType]
-                   ha='center', va='center', transform=ax.transAxes, fontsize=16,
-                   bbox=dict(boxstyle='round,pad=0.5', facecolor='lightgray', alpha=0.7))
-        _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
+        _ = ax.text(0.5, 0.5, "No play data available\nfor the selected time period",  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+                    ha='center', va='center', transform=ax.transAxes, fontsize=16,
+                    bbox=dict(boxstyle='round,pad=0.5', facecolor='lightgray', alpha=0.7))
+        _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold')  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
         logger.warning("Generated empty monthly play count graph due to no data")
 
     # Keep the old methods for backward compatibility
@@ -469,12 +475,12 @@ class PlayCountByMonthGraph(BaseGraph):
         )
 
         # Customize the plot
-        _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)  # pyright: ignore[reportUnknownMemberType]
-        _ = ax.set_xlabel('Month', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
-        _ = ax.set_ylabel('Play Count', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
+        _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+        _ = ax.set_xlabel('Month', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+        _ = ax.set_ylabel('Play Count', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
 
         # Enhance legend
-        _ = ax.legend(  # pyright: ignore[reportUnknownMemberType]
+        _ = ax.legend(  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
             title='Media Type',
             loc='best',
             frameon=True,
@@ -485,22 +491,22 @@ class PlayCountByMonthGraph(BaseGraph):
         )
 
         # Rotate x-axis labels for better readability
-        ax.tick_params(axis='x', rotation=45, labelsize=12)  # pyright: ignore[reportUnknownMemberType]
-        ax.tick_params(axis='y', labelsize=12)  # pyright: ignore[reportUnknownMemberType]
+        ax.tick_params(axis='x', rotation=45, labelsize=12)  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+        ax.tick_params(axis='y', labelsize=12)  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
 
         # Add bar value annotations if enabled
         annotate_enabled = self.get_config_value('ANNOTATE_PLAY_COUNT_BY_MONTH', False)
         if annotate_enabled:
             # Get all bar patches and annotate them
             for patch in ax.patches:
-                height = patch.get_height()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
+                height = patch.get_height()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType] # matplotlib patch attributes
                 if height and height > 0:  # Only annotate non-zero values
-                    x_val = patch.get_x() + patch.get_width() / 2  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
+                    x_val = patch.get_x() + patch.get_width() / 2  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType] # matplotlib patch attributes
                     self.add_bar_value_annotation(
                         ax,
-                        x=float(x_val),  # pyright: ignore[reportUnknownArgumentType]
-                        y=float(height),  # pyright: ignore[reportUnknownArgumentType]
-                        value=int(height),  # pyright: ignore[reportUnknownArgumentType]
+                        x=float(x_val),  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch result
+                        y=float(height),  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch result
+                        value=int(height),  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch result
                         ha='center',
                         va='bottom',
                         offset_y=2,
@@ -545,28 +551,28 @@ class PlayCountByMonthGraph(BaseGraph):
                 alpha=0.8
             )
 
-            # Customize the plot
-            _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)  # pyright: ignore[reportUnknownMemberType]
-            _ = ax.set_xlabel('Month', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
-            _ = ax.set_ylabel('Play Count', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
+            # Customize the plot - matplotlib methods lack complete type stubs
+            _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+            _ = ax.set_xlabel('Month', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+            _ = ax.set_ylabel('Play Count', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
 
             # Rotate x-axis labels for better readability
-            ax.tick_params(axis='x', rotation=45, labelsize=12)  # pyright: ignore[reportUnknownMemberType]
-            ax.tick_params(axis='y', labelsize=12)  # pyright: ignore[reportUnknownMemberType]
+            ax.tick_params(axis='x', rotation=45, labelsize=12)  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+            ax.tick_params(axis='y', labelsize=12)  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
 
             # Add bar value annotations if enabled
             annotate_enabled = self.get_config_value('ANNOTATE_PLAY_COUNT_BY_MONTH', False)
             if annotate_enabled:
                 # Get all bar patches and annotate them
                 for patch in ax.patches:
-                    height = patch.get_height()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
+                    height = patch.get_height()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType] # matplotlib patch attributes
                     if height and height > 0:  # Only annotate non-zero values
-                        x_val = patch.get_x() + patch.get_width() / 2  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
+                        x_val = patch.get_x() + patch.get_width() / 2  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType] # matplotlib patch attributes
                         self.add_bar_value_annotation(
                             ax,
-                            x=float(x_val),  # pyright: ignore[reportUnknownArgumentType]
-                            y=float(height),  # pyright: ignore[reportUnknownArgumentType]
-                            value=int(height),  # pyright: ignore[reportUnknownArgumentType]
+                            x=float(x_val),  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch result
+                            y=float(height),  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch result
+                            value=int(height),  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch result
                             ha='center',
                             va='bottom',
                             offset_y=2,
