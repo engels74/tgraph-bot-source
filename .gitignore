@@ -183,4 +183,6 @@ node_modules/
 tasks.json
 tasks/ 
 .cursor/mcp.json
+
+# TGraph Bot Specific
 config.yml
