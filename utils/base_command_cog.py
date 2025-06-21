@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import TYPE_CHECKING, final
+from typing import TYPE_CHECKING, cast, final
 
 import discord
 from discord.ext import commands
@@ -89,9 +89,13 @@ class BaseCommandCog(commands.Cog):
         # Import here to avoid circular imports
         from main import TGraphBot
         
-        if not isinstance(self.bot, TGraphBot):
-            raise TypeError(f"Expected TGraphBot instance, got {type(self.bot)}")
-        return self.bot
+        # Check if the bot is the expected TGraphBot type
+        # Use class name check to handle potential circular import issues during extension loading
+        if (isinstance(self.bot, TGraphBot) or 
+            (hasattr(self.bot, '__class__') and self.bot.__class__.__name__ == 'TGraphBot')):
+            return cast("TGraphBot", self.bot)
+        
+        raise TypeError(f"Expected TGraphBot instance, got {type(self.bot)}")
 
     def get_current_config(self) -> "TGraphBotConfig":
         """

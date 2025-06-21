@@ -106,9 +106,11 @@ class TGraphBot(commands.Bot):
 
     def __init__(self, config_manager: ConfigManager) -> None:
         """Initialize the TGraph Bot with required intents and configuration."""
+        # Use minimal intents for slash commands - no privileged intents required
         intents = discord.Intents.default()
-        intents.message_content = True
-        intents.guilds = True
+        # Remove privileged intents that require special Discord permissions
+        # intents.message_content = True  # Not needed for slash commands
+        # intents.guilds = True  # Default intents already include basic guild access
 
         super().__init__(
             command_prefix="!",  # Fallback prefix, mainly using slash commands
