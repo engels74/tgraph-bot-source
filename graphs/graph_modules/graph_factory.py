@@ -7,7 +7,8 @@ graph classes based on the enabled settings in the configuration.
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
+from collections.abc import Mapping
 
 from .base_graph import BaseGraph
 from .utils import cleanup_old_files, ensure_graph_directory
@@ -242,10 +243,13 @@ class GraphFactory:
         # Extract the play_history data from the wrapped structure
         # GraphManager wraps the DataFetcher result as {"play_history": {...}, "time_range_days": int}
         # But individual graphs expect the raw Tautulli API structure
-        play_history_data = data.get('play_history', {})
-        if not isinstance(play_history_data, dict):
+        play_history_raw = data.get('play_history', {})
+        if not isinstance(play_history_raw, dict):
             logger.error("Invalid play_history data structure - expected dictionary")
             return generated_paths
+
+        # Type cast to the expected mapping type for type checker
+        play_history_data = cast(Mapping[str, object], play_history_raw)
 
         logger.debug(f"Extracted play_history data with keys: {list(play_history_data.keys())}")
 
