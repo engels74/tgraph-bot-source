@@ -220,23 +220,40 @@ class DailyPlayCountGraph(BaseGraph):
         _ = ax.set_xlabel('Date', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
         _ = ax.set_ylabel('Play Count', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
 
-        # Format dates on x-axis with better readability
+        # Format dates on x-axis with improved readability and proper intervals
         import matplotlib.dates as mdates
         
-        # Calculate appropriate interval based on data span
+        # Apply consistent date formatting logic (same as separated visualization)
         num_dates = len(sorted_dates)
+        
         if num_dates <= 7:
-            interval = 1  # Show every day for a week or less
+            # Week or less: Show every day
+            interval = 1
             date_format = '%m/%d'
-        elif num_dates <= 30:
-            interval = max(1, num_dates // 6)  # Show ~6 labels for up to a month
+        elif num_dates <= 14:
+            # Two weeks: Show every day
+            interval = 1
+            date_format = '%m/%d'
+        elif num_dates <= 31:
+            # Month: Show every 2-3 days for readability while keeping most dates visible
+            interval = max(1, num_dates // 12)  # Show ~12-15 labels for a month
+            date_format = '%m/%d'
+        elif num_dates <= 60:
+            # Two months: Show every 3-4 days
+            interval = max(1, num_dates // 15)  # Show ~15 labels for two months
             date_format = '%m/%d'
         elif num_dates <= 90:
-            interval = max(1, num_dates // 8)  # Show ~8 labels for up to 3 months
+            # Three months: Show every 5-6 days
+            interval = max(1, num_dates // 15)  # Show ~15 labels for three months
+            date_format = '%m/%d'
+        elif num_dates <= 180:
+            # Six months: Show weekly intervals
+            interval = max(1, num_dates // 20)  # Show ~20 labels for six months
             date_format = '%m/%d'
         else:
-            interval = max(1, num_dates // 10)  # Show ~10 labels for longer periods
-            date_format = '%Y-%m'  # Use year-month for very long periods
+            # More than six months: Use year-month format with monthly intervals
+            interval = max(1, num_dates // 24)  # Show ~24 labels for longer periods
+            date_format = '%Y-%m'
         
         _ = ax.xaxis.set_major_formatter(mdates.DateFormatter(date_format))
         _ = ax.xaxis.set_major_locator(mdates.DayLocator(interval=interval))
@@ -309,7 +326,43 @@ class DailyPlayCountGraph(BaseGraph):
             _ = ax.set_xlabel('Date', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
             _ = ax.set_ylabel('Play Count', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
 
-            # Rotate x-axis labels for better readability
+            # Format dates on x-axis with improved readability and proper intervals
+            import matplotlib.dates as mdates
+            
+            # Apply consistent date formatting logic (same as separated visualization)
+            num_dates = len(dates)
+            
+            if num_dates <= 7:
+                # Week or less: Show every day
+                interval = 1
+                date_format = '%m/%d'
+            elif num_dates <= 14:
+                # Two weeks: Show every day
+                interval = 1
+                date_format = '%m/%d'
+            elif num_dates <= 31:
+                # Month: Show every 2-3 days for readability while keeping most dates visible
+                interval = max(1, num_dates // 12)  # Show ~12-15 labels for a month
+                date_format = '%m/%d'
+            elif num_dates <= 60:
+                # Two months: Show every 3-4 days
+                interval = max(1, num_dates // 15)  # Show ~15 labels for two months
+                date_format = '%m/%d'
+            elif num_dates <= 90:
+                # Three months: Show every 5-6 days
+                interval = max(1, num_dates // 15)  # Show ~15 labels for three months
+                date_format = '%m/%d'
+            elif num_dates <= 180:
+                # Six months: Show weekly intervals
+                interval = max(1, num_dates // 20)  # Show ~20 labels for six months
+                date_format = '%m/%d'
+            else:
+                # More than six months: Use year-month format with monthly intervals
+                interval = max(1, num_dates // 24)  # Show ~24 labels for longer periods
+                date_format = '%Y-%m'
+            
+            _ = ax.xaxis.set_major_formatter(mdates.DateFormatter(date_format))
+            _ = ax.xaxis.set_major_locator(mdates.DayLocator(interval=interval))
             _ = ax.tick_params(axis='x', rotation=45)  # pyright: ignore[reportUnknownMemberType]
 
             # Add annotations if enabled
