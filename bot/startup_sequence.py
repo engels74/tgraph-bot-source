@@ -10,16 +10,11 @@ This module handles the bot's startup sequence which includes:
 import asyncio
 import logging
 from datetime import datetime
-from typing import TYPE_CHECKING
 import discord
 from discord.ext import commands
 
 from graphs.graph_manager import GraphManager
 from utils.discord_file_utils import validate_file_for_discord, create_discord_file_safe, create_graph_specific_embed
-
-if TYPE_CHECKING:
-    from config.manager import ConfigManager
-    from bot.update_tracker import UpdateTracker
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +78,11 @@ class StartupSequence:
         logger.info("Starting message cleanup...")
         
         try:
-            config_manager: "ConfigManager" = getattr(self.bot, 'config_manager')
+            config_manager = getattr(self.bot, 'config_manager', None)
+            if config_manager is None:
+                logger.error("Config manager not found on bot instance")
+                return
+                
             config = config_manager.get_current_config()
             channel = self.bot.get_channel(config.CHANNEL_ID)
             
@@ -150,7 +149,11 @@ class StartupSequence:
         logger.info("Posting initial graphs...")
         
         try:
-            config_manager: "ConfigManager" = getattr(self.bot, 'config_manager')
+            config_manager = getattr(self.bot, 'config_manager', None)
+            if config_manager is None:
+                logger.error("Config manager not found on bot instance")
+                return
+                
             config = config_manager.get_current_config()
             channel = self.bot.get_channel(config.CHANNEL_ID)
             
@@ -254,19 +257,19 @@ class StartupSequence:
             current_time = datetime.now()
             
             # Update the last update time in the scheduler
-            update_tracker: "UpdateTracker | None" = getattr(self.bot, 'update_tracker', None)
+            update_tracker = getattr(self.bot, 'update_tracker', None)
             if update_tracker is not None:
                 # Access the scheduler's state
                 if hasattr(update_tracker, '_state'):
-                    update_tracker._state.last_update = current_time  # pyright: ignore[reportPrivateUsage]
+                    update_tracker._state.last_update = current_time
                     logger.info(f"Set scheduler last update time to: {current_time}")
                     
                     # Save the state
                     if hasattr(update_tracker, '_state_manager'):
-                        state_manager = update_tracker._state_manager  # pyright: ignore[reportPrivateUsage]
+                        state_manager = update_tracker._state_manager
                         state_manager.save_state(
-                            update_tracker._state,  # pyright: ignore[reportPrivateUsage]
-                            update_tracker._config  # pyright: ignore[reportPrivateUsage]
+                            update_tracker._state,
+                            update_tracker._config
                         )
                         logger.info("Scheduler state saved to disk")
                     

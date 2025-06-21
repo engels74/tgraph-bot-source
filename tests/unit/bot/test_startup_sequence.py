@@ -10,6 +10,7 @@ This module tests the startup sequence functionality including:
 import asyncio
 from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
+from collections.abc import AsyncGenerator
 
 import discord
 import pytest
@@ -60,7 +61,7 @@ class TestStartupSequence:
     async def test_cleanup_previous_messages_success(self, startup_sequence: StartupSequence, mock_bot: MagicMock, mock_config: TGraphBotConfig) -> None:
         """Test successful message cleanup."""
         # Setup mocks
-        mock_bot.config_manager.get_current_config.return_value = mock_config  # pyright: ignore[reportAttributeAccessIssue]
+        mock_bot.config_manager.get_current_config.return_value = mock_config
         
         # Create mock channel
         mock_channel = MagicMock(spec=discord.TextChannel)
@@ -75,33 +76,33 @@ class TestStartupSequence:
         
         # Create mock messages
         bot_message = MagicMock()
-        bot_message.author.id = mock_bot.user.id  # pyright: ignore[reportOptionalMemberAccess]
+        bot_message.author.id = mock_bot.user.id
         bot_message.delete = AsyncMock()
         
         other_message = MagicMock()
         other_message.author.id = 999999999  # Different user
         
-        # Mock history method - fix async generator typing
-        async def mock_history(limit: int | None = None):  # pyright: ignore[reportUnusedParameter]
+        # Mock history method with proper typing
+        async def mock_history(limit: int | None = None) -> AsyncGenerator[MagicMock, None]:  # pyright: ignore[reportUnusedParameter]
             for msg in [bot_message, other_message]:
                 yield msg
         
         mock_channel.history = mock_history
-        mock_bot.get_channel.return_value = mock_channel  # pyright: ignore[reportAttributeAccessIssue]
+        mock_bot.get_channel.return_value = mock_channel
         
         # Run cleanup
         await startup_sequence.cleanup_previous_messages()
         
         # Verify
         assert startup_sequence.cleanup_completed is True
-        bot_message.delete.assert_called_once()  # pyright: ignore[reportAttributeAccessIssue]
-        mock_bot.get_channel.assert_called_once_with(mock_config.CHANNEL_ID)  # pyright: ignore[reportAttributeAccessIssue]
+        bot_message.delete.assert_called_once()
+        mock_bot.get_channel.assert_called_once_with(mock_config.CHANNEL_ID)
     
     @pytest.mark.asyncio
     async def test_cleanup_previous_messages_no_channel(self, startup_sequence: StartupSequence, mock_bot: MagicMock, mock_config: TGraphBotConfig) -> None:
         """Test cleanup when channel is not found."""
-        mock_bot.config_manager.get_current_config.return_value = mock_config  # pyright: ignore[reportAttributeAccessIssue]
-        mock_bot.get_channel.return_value = None  # pyright: ignore[reportAttributeAccessIssue]
+        mock_bot.config_manager.get_current_config.return_value = mock_config
+        mock_bot.get_channel.return_value = None
         
         await startup_sequence.cleanup_previous_messages()
         
@@ -112,7 +113,7 @@ class TestStartupSequence:
     async def test_cleanup_handles_rate_limits(self, startup_sequence: StartupSequence, mock_bot: MagicMock, mock_config: TGraphBotConfig) -> None:
         """Test that cleanup handles Discord rate limits properly."""
         # Setup mocks
-        mock_bot.config_manager.get_current_config.return_value = mock_config  # pyright: ignore[reportAttributeAccessIssue]
+        mock_bot.config_manager.get_current_config.return_value = mock_config
         
         # Create mock channel
         mock_channel = MagicMock(spec=discord.TextChannel)
@@ -127,7 +128,7 @@ class TestStartupSequence:
         
         # Create mock message with rate limit error
         bot_message = MagicMock()
-        bot_message.author.id = mock_bot.user.id  # pyright: ignore[reportOptionalMemberAccess]
+        bot_message.author.id = mock_bot.user.id
         
         # Simulate rate limit error
         mock_response = MagicMock()
@@ -137,29 +138,29 @@ class TestStartupSequence:
         setattr(rate_limit_error, 'retry_after', 0.1)  # Short delay for testing
         bot_message.delete = AsyncMock(side_effect=rate_limit_error)
         
-        # Mock history
-        async def mock_history(limit: int | None = None):  # pyright: ignore[reportUnusedParameter]
+        # Mock history with proper typing
+        async def mock_history(limit: int | None = None) -> AsyncGenerator[MagicMock, None]:  # pyright: ignore[reportUnusedParameter]
             yield bot_message
         
         mock_channel.history = mock_history
-        mock_bot.get_channel.return_value = mock_channel  # pyright: ignore[reportAttributeAccessIssue]
+        mock_bot.get_channel.return_value = mock_channel
         
         # Run cleanup
         await startup_sequence.cleanup_previous_messages()
         
         # Should handle the rate limit gracefully
-        bot_message.delete.assert_called()  # pyright: ignore[reportAttributeAccessIssue]
+        bot_message.delete.assert_called()
     
     @pytest.mark.asyncio
     async def test_post_initial_graphs_success(self, startup_sequence: StartupSequence, mock_bot: MagicMock, mock_config: TGraphBotConfig) -> None:
         """Test successful initial graph posting."""
         # Setup mocks
-        mock_bot.config_manager.get_current_config.return_value = mock_config  # pyright: ignore[reportAttributeAccessIssue]
+        mock_bot.config_manager.get_current_config.return_value = mock_config
         
         # Create mock channel
         mock_channel = MagicMock(spec=discord.TextChannel)
         mock_channel.send = AsyncMock()
-        mock_bot.get_channel.return_value = mock_channel  # pyright: ignore[reportAttributeAccessIssue]
+        mock_bot.get_channel.return_value = mock_channel
         
         # Mock GraphManager
         with patch('bot.startup_sequence.GraphManager') as mock_graph_manager_class:
@@ -192,7 +193,7 @@ class TestStartupSequence:
         
         # Verify
         assert startup_sequence.initial_post_completed is True
-        assert mock_channel.send.call_count == 2  # Two graphs posted  # pyright: ignore[reportAttributeAccessIssue]
+        assert mock_channel.send.call_count == 2  # Two graphs posted
     
     @pytest.mark.asyncio
     async def test_update_scheduler_state(self, startup_sequence: StartupSequence, mock_bot: MagicMock) -> None:
@@ -203,16 +204,16 @@ class TestStartupSequence:
         # Setup update tracker mocks
         mock_state = MagicMock()
         mock_state_manager = MagicMock()
-        mock_bot.update_tracker._state = mock_state  # pyright: ignore[reportAttributeAccessIssue]
-        mock_bot.update_tracker._state_manager = mock_state_manager  # pyright: ignore[reportAttributeAccessIssue]
-        mock_bot.update_tracker.get_next_update_time.return_value = datetime.now()  # pyright: ignore[reportAttributeAccessIssue]
+        mock_bot.update_tracker._state = mock_state
+        mock_bot.update_tracker._state_manager = mock_state_manager
+        mock_bot.update_tracker.get_next_update_time.return_value = datetime.now()
         
         # Run scheduler update
         await startup_sequence.update_scheduler_state()
         
         # Verify state was updated
         assert mock_state.last_update is not None
-        mock_state_manager.save_state.assert_called_once()  # pyright: ignore[reportAttributeAccessIssue]
+        mock_state_manager.save_state.assert_called_once()
     
     @pytest.mark.asyncio
     async def test_update_scheduler_state_skips_if_no_graphs(self, startup_sequence: StartupSequence) -> None:
@@ -226,34 +227,34 @@ class TestStartupSequence:
     async def test_full_startup_sequence(self, startup_sequence: StartupSequence) -> None:
         """Test the complete startup sequence run."""
         # Mock all the individual methods
-        startup_sequence.cleanup_previous_messages = AsyncMock()  # pyright: ignore[reportAttributeAccessIssue]
-        startup_sequence.post_initial_graphs = AsyncMock()  # pyright: ignore[reportAttributeAccessIssue]
-        startup_sequence.update_scheduler_state = AsyncMock()  # pyright: ignore[reportAttributeAccessIssue]
+        startup_sequence.cleanup_previous_messages = AsyncMock()
+        startup_sequence.post_initial_graphs = AsyncMock()
+        startup_sequence.update_scheduler_state = AsyncMock()
         
         # Run the full sequence
         await startup_sequence.run()
         
         # Verify all steps were called
-        startup_sequence.cleanup_previous_messages.assert_called_once()  # pyright: ignore[reportAttributeAccessIssue]
-        startup_sequence.post_initial_graphs.assert_called_once()  # pyright: ignore[reportAttributeAccessIssue]
-        startup_sequence.update_scheduler_state.assert_called_once()  # pyright: ignore[reportAttributeAccessIssue]
+        startup_sequence.cleanup_previous_messages.assert_called_once()
+        startup_sequence.post_initial_graphs.assert_called_once()
+        startup_sequence.update_scheduler_state.assert_called_once()
     
     @pytest.mark.asyncio
     async def test_startup_sequence_continues_on_error(self, startup_sequence: StartupSequence) -> None:
         """Test that startup sequence continues even if steps fail."""
         # Make cleanup fail
-        startup_sequence.cleanup_previous_messages = AsyncMock(  # pyright: ignore[reportAttributeAccessIssue]
+        startup_sequence.cleanup_previous_messages = AsyncMock(
             side_effect=Exception("Cleanup failed")
         )
-        startup_sequence.post_initial_graphs = AsyncMock()  # pyright: ignore[reportAttributeAccessIssue]
-        startup_sequence.update_scheduler_state = AsyncMock()  # pyright: ignore[reportAttributeAccessIssue]
+        startup_sequence.post_initial_graphs = AsyncMock()
+        startup_sequence.update_scheduler_state = AsyncMock()
         
         # Run should not raise
         await startup_sequence.run()
         
         # Other steps should still be attempted
-        startup_sequence.post_initial_graphs.assert_called_once()  # pyright: ignore[reportAttributeAccessIssue]
-        startup_sequence.update_scheduler_state.assert_called_once()  # pyright: ignore[reportAttributeAccessIssue]
+        startup_sequence.post_initial_graphs.assert_called_once()
+        startup_sequence.update_scheduler_state.assert_called_once()
     
     def test_is_completed(self, startup_sequence: StartupSequence) -> None:
         """Test the is_completed method."""
