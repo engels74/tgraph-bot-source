@@ -162,9 +162,14 @@ class Top10PlatformsGraph(BaseGraph):
             if self.figure is not None:
                 self.figure.tight_layout()
 
-            # Save the figure
-            output_path = "graphs/top_10_platforms.png"
-            return self.save_figure(output_path)
+            # Save the figure using base class utility method
+            output_path = self.save_figure(
+                graph_type="top_10_platforms",
+                user_id=None
+            )
+
+            logger.info(f"Top 10 platforms graph saved to: {output_path}")
+            return output_path
             
         except Exception as e:
             logger.exception(f"Error generating top 10 platforms graph: {e}")

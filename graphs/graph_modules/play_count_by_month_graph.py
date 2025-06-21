@@ -163,9 +163,14 @@ class PlayCountByMonthGraph(BaseGraph):
             if self.figure is not None:
                 self.figure.tight_layout()
 
-            # Save the figure
-            output_path = "graphs/play_count_by_month.png"
-            return self.save_figure(output_path)
+            # Save the figure using base class utility method
+            output_path = self.save_figure(
+                graph_type="play_count_by_month",
+                user_id=None
+            )
+
+            logger.info(f"Play count by month graph saved to: {output_path}")
+            return output_path
             
         except Exception as e:
             logger.exception(f"Error generating play count by month graph: {e}")
