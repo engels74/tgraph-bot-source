@@ -109,8 +109,13 @@ class UserGraphManager:
         progress_tracker = ProgressTracker(progress_callback)
 
         try:
-            # Step 1: Fetch user-specific data with retry logic
-            progress_tracker.update("Fetching user data from Tautulli API", 1, 3)
+            # Step 1: Clear cache to ensure fresh data respecting current TIME_RANGE_DAYS
+            if self._data_fetcher is not None:
+                self._data_fetcher.clear_cache()
+                logger.debug("Cleared DataFetcher cache for fresh user statistics")
+            
+            # Step 2: Fetch user-specific data with retry logic
+            progress_tracker.update("Fetching user data from Tautulli API", 2, 4)
             config = self.config_manager.get_current_config()
 
             user_data = await self._fetch_user_graph_data_with_retry(
@@ -120,13 +125,13 @@ class UserGraphManager:
                 progress_tracker
             )
 
-            # Step 2: Validate user data
-            progress_tracker.update("Validating user data", 2, 3)
+            # Step 3: Validate user data
+            progress_tracker.update("Validating user data", 3, 4)
             if not self._validate_user_graph_data(user_data, progress_tracker):
                 raise GraphGenerationError(f"Invalid or insufficient data for user {user_email}")
 
-            # Step 3: Generate graphs with timeout protection
-            progress_tracker.update("Generating user graphs in separate thread", 3, 3)
+            # Step 4: Generate graphs with timeout protection
+            progress_tracker.update("Generating user graphs in separate thread", 4, 4)
             logger.debug("Starting user graph generation with timeout protection")
 
             try:
