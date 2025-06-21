@@ -47,7 +47,7 @@ def rotate_logs_on_startup(logs_dir: Path) -> None:
             # Create timestamped backup
             backup_path = logs_dir / f"{log_file}.{timestamp}"
             try:
-                log_path.rename(backup_path)
+                _ = log_path.rename(backup_path)
                 print(f"Rotated {log_file} to {backup_path.name}")
             except Exception as e:
                 print(f"Warning: Failed to rotate {log_file}: {e}")
@@ -66,7 +66,7 @@ def cleanup_old_logs(logs_dir: Path, max_files: int = 10) -> None:
     for log_type in log_types:
         # Find all timestamped files for this log type
         pattern = f"{log_type}.*"
-        timestamped_files = []
+        timestamped_files: list[Path] = []
         
         for file_path in logs_dir.glob(pattern):
             # Skip the current active log file (no timestamp)
@@ -98,7 +98,7 @@ def setup_logging() -> None:
     """
     # Create logs directory if it doesn't exist
     logs_dir = Path("logs")
-    logs_dir.mkdir(exist_ok=True)
+    _ = logs_dir.mkdir(exist_ok=True)
     
     # Rotate existing logs on startup and cleanup old logs
     rotate_logs_on_startup(logs_dir)
