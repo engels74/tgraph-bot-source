@@ -7,7 +7,7 @@ by hour of the day, resulting in a cleaner implementation and superior visual ou
 
 import logging
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING, override, cast
 
 import pandas as pd
 import seaborn as sns
@@ -84,9 +84,12 @@ class PlayCountByHourOfDayGraph(BaseGraph):
 
         try:
             # Step 1: Extract play history data from the full data structure
-            play_history_data = data.get('play_history', {})
-            if not isinstance(play_history_data, dict):
+            play_history_data_raw = data.get('play_history', {})
+            if not isinstance(play_history_data_raw, dict):
                 raise ValueError("Missing or invalid 'play_history' data in input")
+            
+            # Cast to the proper type for type checker
+            play_history_data = cast(Mapping[str, object], play_history_data_raw)
 
             # Step 2: Validate the play history data
             is_valid, error_msg = validate_graph_data(play_history_data, ['data'])

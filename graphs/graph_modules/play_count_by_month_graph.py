@@ -7,7 +7,7 @@ by month, supporting both combined and separated media type visualization.
 
 import logging
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING, override, cast
 
 import pandas as pd
 import seaborn as sns
@@ -87,9 +87,12 @@ class PlayCountByMonthGraph(BaseGraph):
 
         try:
             # Step 1: Extract play history data from the full data structure
-            play_history_data = data.get('play_history', {})
-            if not isinstance(play_history_data, dict):
+            play_history_data_raw = data.get('play_history', {})
+            if not isinstance(play_history_data_raw, dict):
                 raise ValueError("Missing or invalid 'play_history' data in input")
+            
+            # Cast to the proper type for type checker
+            play_history_data = cast(Mapping[str, object], play_history_data_raw)
 
             # Step 2: Validate the play history data
             is_valid, error_msg = validate_graph_data(play_history_data, ['data'])
@@ -205,8 +208,8 @@ class PlayCountByMonthGraph(BaseGraph):
         colors: list[str] = [color_mapping[mt] for mt in unique_media_types_list]
 
         # Sort months chronologically for proper x-axis ordering
-        df['month_sort'] = pd.to_datetime(df['month'], format='%Y-%m')
-        df = df.sort_values('month_sort')
+        df['month_sort'] = pd.to_datetime(df['month'], format='%Y-%m')  # pyright: ignore[reportUnknownMemberType] # pandas stubs incomplete
+        df = df.sort_values('month_sort')  # pyright: ignore[reportUnknownMemberType] # pandas stubs incomplete
         
         # Create grouped bar plot
         _ = sns.barplot(

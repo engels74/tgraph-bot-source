@@ -291,9 +291,6 @@ class GraphFactory:
         # Pass the full data structure to all graphs - let each graph extract what it needs
         # GraphManager provides: {"play_history": {...}, "monthly_plays": {...}, "time_range_days": int, "time_range_months": int}
         # Different graphs can extract different parts of this data structure
-        if not isinstance(data, dict):
-            logger.error("Invalid data structure - expected dictionary")
-            return generated_paths
 
         # Type cast to the expected mapping type for type checker
         full_data = cast(Mapping[str, object], data)
