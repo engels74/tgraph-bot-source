@@ -151,6 +151,20 @@ class TGraphBotConfig(BaseModel):
         description="Enable annotations on monthly graphs",
     )
     
+    # Peak Annotation Options (separate from bar value annotations)
+    ENABLE_PEAK_ANNOTATIONS: bool = Field(
+        default=True,
+        description="Whether to enable peak value annotations on graphs",
+    )
+    PEAK_ANNOTATION_COLOR: str = Field(
+        default="#ffcc00",
+        description="Background color for peak annotation boxes",
+    )
+    PEAK_ANNOTATION_TEXT_COLOR: str = Field(
+        default="#000000",
+        description="Text color for peak annotations",
+    )
+    
     # Command Cooldown Options
     CONFIG_COOLDOWN_MINUTES: Annotated[int, Field(ge=0, le=1440)] = Field(
         default=0,

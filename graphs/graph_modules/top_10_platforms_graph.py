@@ -135,7 +135,8 @@ class Top10PlatformsGraph(BaseGraph):
                 ax.tick_params(axis='y', labelsize=12)  # pyright: ignore[reportUnknownMemberType]
 
                 # Add value annotations if enabled
-                if self.config and getattr(self.config, 'ENABLE_ANNOTATION_OUTLINE', False):
+                annotate_enabled = self.get_config_value('ANNOTATE_TOP_10_PLATFORMS', False)
+                if annotate_enabled:
                     # Get max play count for positioning annotations
                     play_counts: list[int | float] = []
                     for p in top_platforms:
@@ -146,11 +147,17 @@ class Top10PlatformsGraph(BaseGraph):
                     for bar in ax.patches:
                         width = bar.get_width()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
                         if width and width > 0:  # Only annotate non-zero values
-                            _ = ax.text(  # pyright: ignore[reportUnknownMemberType]
-                                width + max_play_count * 0.01,  # pyright: ignore[reportUnknownArgumentType]
-                                bar.get_y() + bar.get_height()/2.,  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownArgumentType]
-                                f'{int(width)}',  # pyright: ignore[reportUnknownArgumentType]
-                                ha='left', va='center', fontsize=10, fontweight='bold'
+                            y_val = bar.get_y() + bar.get_height()/2.  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
+                            self.add_bar_value_annotation(
+                                ax,
+                                x=float(width),  # pyright: ignore[reportUnknownArgumentType]
+                                y=float(y_val),  # pyright: ignore[reportUnknownArgumentType]
+                                value=int(width),  # pyright: ignore[reportUnknownArgumentType]
+                                ha='left',
+                                va='center',
+                                offset_x=max_play_count * 0.01,
+                                fontsize=10,
+                                fontweight='bold'
                             )
             else:
                 # Handle empty data case

@@ -344,9 +344,29 @@ class DailyPlayCountGraph(BaseGraph):
             fontsize=12
         )
 
-        # Add annotations if enabled
+        # Add bar value annotations if enabled
         annotate_enabled = self.get_config_value('ANNOTATE_DAILY_PLAY_COUNT', False)
         if annotate_enabled:
+            # Add value annotations for each data point
+            for media_type, media_data in separated_data.items():
+                if not media_data or all(count == 0 for count in media_data.values()):
+                    continue
+                for i, date in enumerate(sorted_dates):
+                    count_value = media_data.get(date, 0)
+                    if count_value > 0:
+                        self.add_bar_value_annotation(
+                            ax,
+                            x=float(i),
+                            y=float(count_value),
+                            value=count_value,
+                            ha='center',
+                            va='bottom',
+                            offset_y=2,
+                            fontsize=8
+                        )
+        
+        # Add peak annotations if enabled (separate feature)
+        if self.is_peak_annotations_enabled():
             self._add_peak_annotations(ax, separated_data, sorted_dates)
 
         logger.info(f"Created separated daily play count graph with {len(media_types_plotted)} media types and {num_dates} data points")
@@ -407,9 +427,25 @@ class DailyPlayCountGraph(BaseGraph):
             num_dates = len(sorted_dates)
             self._setup_aligned_date_axis(ax, sorted_dates, num_dates)
 
-            # Add annotations if enabled
+            # Add bar value annotations if enabled
             annotate_enabled = self.get_config_value('ANNOTATE_DAILY_PLAY_COUNT', False)
             if annotate_enabled:
+                # Add value annotations for each data point
+                for i, count in enumerate(sorted_counts):  # pyright: ignore[reportAny]  # tuple unpacking from zip
+                    if count > 0:
+                        self.add_bar_value_annotation(
+                            ax,
+                            x=float(i),
+                            y=float(count),  # pyright: ignore[reportAny]
+                            value=int(count),  # pyright: ignore[reportAny]
+                            ha='center',
+                            va='bottom',
+                            offset_y=2,
+                            fontsize=8
+                        )
+            
+            # Add peak annotations if enabled (separate feature)
+            if self.is_peak_annotations_enabled():
                 # Find peak for annotation
                 max_count = cast(int, max(sorted_counts))
                 max_idx = sorted_counts.index(max_count)
@@ -419,8 +455,15 @@ class DailyPlayCountGraph(BaseGraph):
                     xy=(max_idx, max_count),  # Use index as x-coordinate
                     xytext=(10, 10),
                     textcoords='offset points',
-                    bbox=dict(boxstyle='round,pad=0.3', facecolor=self.get_annotation_color(), alpha=0.7),
-                    arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0')
+                    bbox=dict(
+                        boxstyle='round,pad=0.3', 
+                        facecolor=self.get_peak_annotation_color(), 
+                        edgecolor='black',
+                        alpha=0.9
+                    ),
+                    arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0'),
+                    color=self.get_peak_annotation_text_color(),
+                    fontweight='bold'
                 )
 
             logger.info(f"Created combined daily play count graph with {num_dates} data points")
@@ -477,7 +520,14 @@ class DailyPlayCountGraph(BaseGraph):
                     xy=(float(max_idx), max_count),  # Use index as x-coordinate
                     xytext=(10, 10),
                     textcoords='offset points',
-                    bbox=dict(boxstyle='round,pad=0.3', facecolor=self.get_annotation_color(), alpha=0.7),
+                    bbox=dict(
+                        boxstyle='round,pad=0.3', 
+                        facecolor=self.get_peak_annotation_color(), 
+                        edgecolor='black',
+                        alpha=0.9
+                    ),
                     arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0'),
-                    fontsize=10
+                    color=self.get_peak_annotation_text_color(),
+                    fontsize=10,
+                    fontweight='bold'
                 )

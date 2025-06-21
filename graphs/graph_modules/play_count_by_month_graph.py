@@ -143,15 +143,22 @@ class PlayCountByMonthGraph(BaseGraph):
                 ax.tick_params(axis='y', labelsize=12)  # pyright: ignore[reportUnknownMemberType]
 
                 # Add value annotations if enabled
-                if self.config and getattr(self.config, 'ENABLE_ANNOTATION_OUTLINE', False):
+                annotate_enabled = self.get_config_value('ANNOTATE_PLAY_COUNT_BY_MONTH', False)
+                if annotate_enabled:
                     numeric_values = list(month_counts.values())
                     max_count = max(numeric_values) if numeric_values else 1
                     for i, (month, count) in enumerate(sorted_months):
                         if count > 0:
-                            _ = ax.text(  # pyright: ignore[reportUnknownMemberType]
-                                i, count + max_count * 0.01,
-                                f'{int(count)}',
-                                ha='center', va='bottom', fontsize=10, fontweight='bold'
+                            self.add_bar_value_annotation(
+                                ax,
+                                x=i,
+                                y=count,
+                                value=count,
+                                ha='center',
+                                va='bottom',
+                                offset_y=max_count * 0.01,
+                                fontsize=10,
+                                fontweight='bold'
                             )
             else:
                 # Handle empty data case

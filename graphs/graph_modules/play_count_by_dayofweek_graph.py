@@ -231,6 +231,26 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
             fontsize=12
         )
 
+        # Add bar value annotations if enabled
+        annotate_enabled = self.get_config_value('ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK', False)
+        if annotate_enabled:
+            # Get all bar patches and annotate them
+            for patch in ax.patches:
+                height = patch.get_height()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
+                if height and height > 0:  # Only annotate non-zero values
+                    x_val = patch.get_x() + patch.get_width() / 2  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
+                    self.add_bar_value_annotation(
+                        ax,
+                        x=float(x_val),  # pyright: ignore[reportUnknownArgumentType]
+                        y=float(height),  # pyright: ignore[reportUnknownArgumentType]
+                        value=int(height),  # pyright: ignore[reportUnknownArgumentType]
+                        ha='center',
+                        va='bottom',
+                        offset_y=1,
+                        fontsize=9,
+                        fontweight='bold'
+                    )
+
         logger.info(f"Created separated day of week graph with {len(unique_media_types_list)} media types")
 
     def _generate_combined_visualization(self, ax: Axes, processed_records: ProcessedRecords) -> None:
@@ -277,6 +297,26 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
             _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)  # pyright: ignore[reportUnknownMemberType]
             _ = ax.set_xlabel('Day of Week', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
             _ = ax.set_ylabel('Play Count', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
+
+            # Add bar value annotations if enabled
+            annotate_enabled = self.get_config_value('ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK', False)
+            if annotate_enabled:
+                # Get all bar patches and annotate them
+                for patch in ax.patches:
+                    height = patch.get_height()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
+                    if height and height > 0:  # Only annotate non-zero values
+                        x_val = patch.get_x() + patch.get_width() / 2  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
+                        self.add_bar_value_annotation(
+                            ax,
+                            x=float(x_val),  # pyright: ignore[reportUnknownArgumentType]
+                            y=float(height),  # pyright: ignore[reportUnknownArgumentType]
+                            value=int(height),  # pyright: ignore[reportUnknownArgumentType]
+                            ha='center',
+                            va='bottom',
+                            offset_y=1,
+                            fontsize=10,
+                            fontweight='bold'
+                        )
 
             logger.info(f"Created combined day of week graph with {len(days)} days")
         else:

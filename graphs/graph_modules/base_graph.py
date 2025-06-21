@@ -265,6 +265,36 @@ class BaseGraph(ABC):
         outline_enabled = self.get_config_value('ENABLE_ANNOTATION_OUTLINE', True)
         return bool(outline_enabled)
 
+    def is_peak_annotations_enabled(self) -> bool:
+        """
+        Get whether peak annotations should be enabled.
+
+        Returns:
+            True if peak annotations should be enabled, False otherwise
+        """
+        peak_enabled = self.get_config_value('ENABLE_PEAK_ANNOTATIONS', True)
+        return bool(peak_enabled)
+
+    def get_peak_annotation_color(self) -> str:
+        """
+        Get the background color for peak annotation boxes.
+
+        Returns:
+            Hex color string for peak annotation background
+        """
+        peak_color = self.get_config_value('PEAK_ANNOTATION_COLOR', "#ffcc00")
+        return str(peak_color)
+
+    def get_peak_annotation_text_color(self) -> str:
+        """
+        Get the text color for peak annotations.
+
+        Returns:
+            Hex color string for peak annotation text
+        """
+        text_color = self.get_config_value('PEAK_ANNOTATION_TEXT_COLOR', "#000000")
+        return str(text_color)
+
     def should_censor_usernames(self) -> bool:
         """
         Get whether usernames should be censored in this graph.
@@ -297,7 +327,77 @@ class BaseGraph(ABC):
             The graph title
         """
         pass
+
+    def add_bar_value_annotation(
+        self,
+        ax: object,  # matplotlib.axes.Axes
+        x: float,
+        y: float,
+        value: float | int,
+        ha: str = 'center',
+        va: str = 'bottom',
+        offset_x: float = 0,
+        offset_y: float = 0,
+        fontsize: int = 10,
+        fontweight: str = 'normal'
+    ) -> None:
+        """
+        Add a value annotation to a bar or point with optional outline styling.
+
+        Args:
+            ax: The matplotlib axes to add annotation to
+            x: X-coordinate for the annotation
+            y: Y-coordinate for the annotation
+            value: The value to display
+            ha: Horizontal alignment ('left', 'center', 'right')
+            va: Vertical alignment ('top', 'center', 'bottom')
+            offset_x: Additional x offset from the position
+            offset_y: Additional y offset from the position
+            fontsize: Font size for the annotation
+            fontweight: Font weight for the annotation
+        """
+        from matplotlib.axes import Axes
         
+        if not isinstance(ax, Axes):
+            return
+            
+        # Format the value
+        if isinstance(value, float):
+            text = f'{value:.1f}' if value % 1 else f'{int(value)}'
+        else:
+            text = str(value)
+        
+        # Calculate actual position with offsets
+        actual_x = x + offset_x
+        actual_y = y + offset_y
+        
+        if self.is_annotation_outline_enabled():
+            # Add text with white fill and black outline for better readability
+            from matplotlib import patheffects
+            _ = ax.text(  # pyright: ignore[reportUnknownMemberType]
+                actual_x, actual_y, text,
+                ha=ha, va=va,
+                fontsize=fontsize,
+                fontweight=fontweight,
+                color='white',  # White text
+                path_effects=[
+                    patheffects.Stroke(
+                        linewidth=3, 
+                        foreground=self.get_annotation_outline_color()
+                    ),
+                    patheffects.Normal()
+                ]
+            )
+        else:
+            # Add text without outline
+            _ = ax.text(  # pyright: ignore[reportUnknownMemberType]
+                actual_x, actual_y, text,
+                ha=ha, va=va,
+                fontsize=fontsize,
+                fontweight=fontweight,
+                color=self.get_annotation_color()
+            )
+
     def save_figure(self, output_path: str | None = None, graph_type: str | None = None, user_id: str | None = None) -> str:
         """
         Save the current figure to a file.

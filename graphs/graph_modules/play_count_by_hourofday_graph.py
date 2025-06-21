@@ -147,6 +147,26 @@ class PlayCountByHourOfDayGraph(BaseGraph):
                 _ = ax.set_xticks(range(0, 24, 2))  # pyright: ignore[reportUnknownMemberType]
                 _ = ax.set_xticklabels([f"{h:02d}:00" for h in range(0, 24, 2)])  # pyright: ignore[reportUnknownMemberType]
 
+                # Add bar value annotations if enabled
+                annotate_enabled = self.get_config_value('ANNOTATE_PLAY_COUNT_BY_HOUROFDAY', False)
+                if annotate_enabled:
+                    # Get all bar patches and annotate them
+                    for patch in ax.patches:
+                        height = patch.get_height()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
+                        if height and height > 0:  # Only annotate non-zero values
+                            x_val = patch.get_x() + patch.get_width() / 2  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
+                            self.add_bar_value_annotation(
+                                ax,
+                                x=float(x_val),  # pyright: ignore[reportUnknownArgumentType]
+                                y=float(height),  # pyright: ignore[reportUnknownArgumentType]
+                                value=int(height),  # pyright: ignore[reportUnknownArgumentType]
+                                ha='center',
+                                va='bottom',
+                                offset_y=1,
+                                fontsize=9,
+                                fontweight='bold'
+                            )
+
                 logger.info(f"Created hour of day graph with data for 24 hours")
 
             else:

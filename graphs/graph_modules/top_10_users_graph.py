@@ -145,13 +145,15 @@ class Top10UsersGraph(BaseGraph):
                     max_count = float(max(df['play_count']))  # pyright: ignore[reportUnknownArgumentType]
                     for i, (_, row) in enumerate(df.iterrows()):  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType,reportUnknownVariableType]
                         play_count = float(row['play_count'])  # pyright: ignore[reportUnknownArgumentType]
-                        _ = ax.text(  # pyright: ignore[reportUnknownMemberType]
-                            play_count + max_count * 0.01,
-                            i,
-                            str(int(play_count)),
+                        self.add_bar_value_annotation(
+                            ax,
+                            x=play_count,
+                            y=i,
+                            value=int(play_count),
+                            ha='left',
                             va='center',
-                            fontsize=10,
-                            color=self.get_annotation_color()
+                            offset_x=max_count * 0.01,
+                            fontsize=10
                         )
 
                 logger.info(f"Created top 10 users graph with {len(top_users)} users")
