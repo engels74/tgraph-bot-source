@@ -432,14 +432,28 @@ class UserGraphManager:
             import discord
             from utils.discord_file_utils import upload_files_to_user_dm
 
-            # Get the Discord user - bot should be a discord.Client or discord.Bot
+            # Get the Discord user - try fetch_user first for uncached users, fallback to get_user
+            fetch_user_func = getattr(bot, 'fetch_user', None)
             get_user_func = getattr(bot, 'get_user', None)
-            if get_user_func is None:
-                logger.error("Bot does not have get_user method")
-                return False
-            user = get_user_func(user_id)  # pyright: ignore[reportAny]
+            
+            user = None
+            
+            # Try fetch_user first (makes API request, works for any valid user)
+            if fetch_user_func is not None:
+                try:
+                    user = await fetch_user_func(user_id)  # pyright: ignore[reportAny]
+                    logger.debug(f"Found Discord user {user_id} via fetch_user")
+                except Exception as e:
+                    logger.warning(f"fetch_user failed for {user_id}: {e}")
+            
+            # Fallback to get_user (cached users only)
+            if user is None and get_user_func is not None:
+                user = get_user_func(user_id)  # pyright: ignore[reportAny]
+                if user is not None:
+                    logger.debug(f"Found Discord user {user_id} via get_user (cached)")
+            
             if user is None:
-                logger.error(f"Could not find Discord user with ID {user_id}")
+                logger.error(f"Could not find Discord user with ID {user_id} (tried both fetch_user and get_user)")
                 return False
 
             # Create embed for the personal statistics
