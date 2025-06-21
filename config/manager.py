@@ -476,6 +476,19 @@ ANNOTATE_TOP_10_USERS: true
 ANNOTATE_PLAY_COUNT_BY_MONTH: true
 
 # ============================================================================
+# Peak Annotation Options (separate from bar value annotations)
+# ============================================================================
+
+# Whether to enable peak value annotations on graphs
+ENABLE_PEAK_ANNOTATIONS: true
+
+# Background color for peak annotation boxes
+PEAK_ANNOTATION_COLOR: '#ffcc00'
+
+# Text color for peak annotations
+PEAK_ANNOTATION_TEXT_COLOR: '#000000'
+
+# ============================================================================
 # Command Cooldown Options (in minutes/seconds)
 # ============================================================================
 
