@@ -322,8 +322,8 @@ class BaseGraph(ABC):
             if graph_type is None:
                 raise ValueError("Either output_path or graph_type must be provided")
 
-            # Use utility function to ensure graph directory exists
-            graph_dir = ensure_graph_directory()
+            # Use the new date-based directory structure
+            graph_dir = get_current_graph_storage_path(user_email=user_id)
             filename = generate_graph_filename(graph_type, user_id=user_id)
             output_path = str(graph_dir / filename)
         else:
