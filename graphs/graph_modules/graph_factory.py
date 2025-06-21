@@ -235,7 +235,55 @@ class GraphFactory:
         Raises:
             Exception: If any graph generation fails
         """
+        return self.generate_graphs_with_exclusions(data, exclude_types=[])
+
+    def generate_graphs_with_exclusions(self, data: dict[str, object], exclude_types: list[str]) -> list[str]:
+        """
+        Generate enabled graphs with exclusions for specific graph types.
+
+        This method creates enabled graphs while excluding specified types,
+        useful for context-specific graph generation (e.g., personal stats).
+
+        Args:
+            data: Dictionary containing the data needed for graph generation
+                 Expected structure: {"play_history": {...}, "time_range_days": int}
+            exclude_types: List of graph type names to exclude (e.g., ["top_10_users"])
+
+        Returns:
+            List of paths to generated graph files
+
+        Raises:
+            Exception: If any graph generation fails
+        """
         graphs = self.create_enabled_graphs()
+        
+        # Filter out excluded graph types
+        if exclude_types:
+            excluded_classes = []
+            for exclude_type in exclude_types:
+                if exclude_type == "top_10_users":
+                    excluded_classes.append(Top10UsersGraph)
+                elif exclude_type == "top_10_platforms":
+                    excluded_classes.append(Top10PlatformsGraph)
+                elif exclude_type == "daily_play_count":
+                    excluded_classes.append(DailyPlayCountGraph)
+                elif exclude_type == "play_count_by_dayofweek":
+                    excluded_classes.append(PlayCountByDayOfWeekGraph)
+                elif exclude_type == "play_count_by_hourofday":
+                    excluded_classes.append(PlayCountByHourOfDayGraph)
+                elif exclude_type == "play_count_by_month":
+                    excluded_classes.append(PlayCountByMonthGraph)
+                elif exclude_type == "sample_graph":
+                    excluded_classes.append(SampleGraph)
+            
+            # Filter graphs list
+            original_count = len(graphs)
+            graphs = [graph for graph in graphs if not any(isinstance(graph, cls) for cls in excluded_classes)]
+            filtered_count = len(graphs)
+            
+            if original_count > filtered_count:
+                logger.info(f"Excluded {original_count - filtered_count} graph(s) from generation: {exclude_types}")
+
         generated_paths: list[str] = []
 
         logger.info(f"Starting generation of {len(graphs)} enabled graphs")

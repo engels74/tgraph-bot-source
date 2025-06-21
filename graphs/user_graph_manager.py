@@ -371,9 +371,12 @@ class UserGraphManager:
             # GraphFactory should be initialized in __aenter__
             assert self._graph_factory is not None, "GraphFactory not initialized"
 
-            # Use GraphFactory to generate all enabled graphs with user-specific data
-            # This will create graphs filtered to the specific user's activity
-            generated_paths = self._graph_factory.generate_all_graphs(data)
+            # Use GraphFactory to generate user-appropriate graphs with user-specific data
+            # Exclude "Top 10 Users" graph as it's irrelevant for personal statistics
+            generated_paths = self._graph_factory.generate_graphs_with_exclusions(
+                data, 
+                exclude_types=["top_10_users"]
+            )
 
             # Move generated graphs to user-specific directory
             user_specific_paths: list[str] = []

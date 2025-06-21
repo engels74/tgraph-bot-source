@@ -220,10 +220,26 @@ class DailyPlayCountGraph(BaseGraph):
         _ = ax.set_xlabel('Date', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
         _ = ax.set_ylabel('Play Count', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
 
-        # Format dates on x-axis
+        # Format dates on x-axis with better readability
         import matplotlib.dates as mdates
-        _ = ax.xaxis.set_major_formatter(mdates.DateFormatter('%m/%d'))
-        _ = ax.xaxis.set_major_locator(mdates.DayLocator(interval=max(1, len(sorted_dates) // 10)))
+        
+        # Calculate appropriate interval based on data span
+        num_dates = len(sorted_dates)
+        if num_dates <= 7:
+            interval = 1  # Show every day for a week or less
+            date_format = '%m/%d'
+        elif num_dates <= 30:
+            interval = max(1, num_dates // 6)  # Show ~6 labels for up to a month
+            date_format = '%m/%d'
+        elif num_dates <= 90:
+            interval = max(1, num_dates // 8)  # Show ~8 labels for up to 3 months
+            date_format = '%m/%d'
+        else:
+            interval = max(1, num_dates // 10)  # Show ~10 labels for longer periods
+            date_format = '%Y-%m'  # Use year-month for very long periods
+        
+        _ = ax.xaxis.set_major_formatter(mdates.DateFormatter(date_format))
+        _ = ax.xaxis.set_major_locator(mdates.DayLocator(interval=interval))
         _ = ax.tick_params(axis='x', rotation=45)  # pyright: ignore[reportUnknownMemberType]
 
         # Add legend
