@@ -361,8 +361,7 @@ class DailyPlayCountGraph(BaseGraph):
                             value=count_value,
                             ha='center',
                             va='bottom',
-                            offset_y=2,
-                            fontsize=8
+                            offset_y=2
                         )
         
         # Add peak annotations if enabled (separate feature)
@@ -440,8 +439,7 @@ class DailyPlayCountGraph(BaseGraph):
                             value=int(count),  # pyright: ignore[reportAny]
                             ha='center',
                             va='bottom',
-                            offset_y=2,
-                            fontsize=8
+                            offset_y=2
                         )
             
             # Add peak annotations if enabled (separate feature)

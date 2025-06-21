@@ -156,7 +156,6 @@ class Top10PlatformsGraph(BaseGraph):
                                 ha='left',
                                 va='center',
                                 offset_x=max_play_count * 0.01,
-                                fontsize=10,
                                 fontweight='bold'
                             )
             else:

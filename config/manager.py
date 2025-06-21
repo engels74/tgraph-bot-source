@@ -463,6 +463,9 @@ ANNOTATION_OUTLINE_COLOR: '#000000'
 # Whether to enable annotation outlines
 ENABLE_ANNOTATION_OUTLINE: true
 
+# Font size for bar value annotations (6-24)
+ANNOTATION_FONT_SIZE: 10
+
 # ============================================================================
 # Annotation Options
 # ============================================================================

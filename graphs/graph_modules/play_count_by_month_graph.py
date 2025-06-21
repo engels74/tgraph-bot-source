@@ -157,7 +157,6 @@ class PlayCountByMonthGraph(BaseGraph):
                                 ha='center',
                                 va='bottom',
                                 offset_y=max_count * 0.01,
-                                fontsize=10,
                                 fontweight='bold'
                             )
             else:

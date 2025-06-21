@@ -247,7 +247,6 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
                         ha='center',
                         va='bottom',
                         offset_y=1,
-                        fontsize=9,
                         fontweight='bold'
                     )
 
@@ -314,7 +313,6 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
                             ha='center',
                             va='bottom',
                             offset_y=1,
-                            fontsize=10,
                             fontweight='bold'
                         )
 

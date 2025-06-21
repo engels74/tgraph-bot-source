@@ -305,6 +305,19 @@ class BaseGraph(ABC):
         censor_usernames = self.get_config_value('CENSOR_USERNAMES', True)
         return bool(censor_usernames)
 
+    def get_annotation_font_size(self) -> int:
+        """
+        Get the font size to use for bar value annotations.
+
+        Returns:
+            Font size for annotations
+        """
+        font_size = self.get_config_value('ANNOTATION_FONT_SIZE', 10)
+        if isinstance(font_size, (int, float)):
+            return int(font_size)
+        else:
+            return 10  # Default fallback
+
     @abstractmethod
     def generate(self, data: Mapping[str, object]) -> str:
         """
@@ -338,7 +351,7 @@ class BaseGraph(ABC):
         va: str = 'bottom',
         offset_x: float = 0,
         offset_y: float = 0,
-        fontsize: int = 10,
+        fontsize: int | None = None,
         fontweight: str = 'normal'
     ) -> None:
         """
@@ -353,13 +366,17 @@ class BaseGraph(ABC):
             va: Vertical alignment ('top', 'center', 'bottom')
             offset_x: Additional x offset from the position
             offset_y: Additional y offset from the position
-            fontsize: Font size for the annotation
+            fontsize: Font size for the annotation (uses config default if None)
             fontweight: Font weight for the annotation
         """
         from matplotlib.axes import Axes
         
         if not isinstance(ax, Axes):
             return
+            
+        # Use config-based font size if not specified
+        if fontsize is None:
+            fontsize = self.get_annotation_font_size()
             
         # Format the value
         if isinstance(value, float):

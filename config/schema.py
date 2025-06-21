@@ -124,6 +124,10 @@ class TGraphBotConfig(BaseModel):
         default=True,
         description="Whether to enable annotation outlines",
     )
+    ANNOTATION_FONT_SIZE: Annotated[int, Field(ge=6, le=24)] = Field(
+        default=10,
+        description="Font size for bar value annotations",
+    )
     
     # Annotation Options
     ANNOTATE_DAILY_PLAY_COUNT: bool = Field(

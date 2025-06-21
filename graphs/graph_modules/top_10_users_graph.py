@@ -152,8 +152,7 @@ class Top10UsersGraph(BaseGraph):
                             value=int(play_count),
                             ha='left',
                             va='center',
-                            offset_x=max_count * 0.01,
-                            fontsize=10
+                            offset_x=max_count * 0.01
                         )
 
                 logger.info(f"Created top 10 users graph with {len(top_users)} users")
