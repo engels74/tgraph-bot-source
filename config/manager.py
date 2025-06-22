@@ -436,6 +436,9 @@ CENSOR_USERNAMES: true
 # Whether to enable grid lines in graphs
 ENABLE_GRAPH_GRID: false
 
+# Whether to separate Movies and TV Series in graphs
+ENABLE_MEDIA_TYPE_SEPARATION: true
+
 # Enable/disable specific graph types
 ENABLE_DAILY_PLAY_COUNT: true
 ENABLE_PLAY_COUNT_BY_DAYOFWEEK: true
