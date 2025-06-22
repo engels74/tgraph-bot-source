@@ -6,6 +6,7 @@ including file size limits, format validation, and error handling for graph imag
 """
 
 import logging
+from datetime import datetime, time, timedelta
 from pathlib import Path
 from typing import NamedTuple
 
@@ -21,12 +22,73 @@ DISCORD_FILE_SIZE_LIMIT_NITRO = 25 * 1024 * 1024   # 25MB for Nitro users
 SUPPORTED_IMAGE_FORMATS = {'.png', '.jpg', '.jpeg', '.gif', '.webp'}
 
 
-def create_graph_specific_embed(graph_file_path: str) -> discord.Embed:
+def calculate_next_update_time(update_days: int, fixed_update_time: str | None = None) -> datetime | None:
+    """
+    Calculate the next scheduled update time based on configuration.
+    
+    Args:
+        update_days: Number of days between updates
+        fixed_update_time: Fixed time in HH:MM format or "XX:XX" for interval-based updates
+        
+    Returns:
+        Next update datetime or None if calculation fails
+    """
+    try:
+        current_time = datetime.now()
+        
+        # Handle interval-based updates
+        if not fixed_update_time or fixed_update_time == "XX:XX":
+            # Simply add update_days to current time
+            return current_time + timedelta(days=update_days)
+        
+        # Handle fixed time updates
+        # Parse the fixed time
+        try:
+            hour, minute = map(int, fixed_update_time.split(":"))
+            target_time = time(hour, minute)
+        except (ValueError, IndexError):
+            logger.warning(f"Invalid fixed update time format: {fixed_update_time}")
+            return None
+        
+        # Calculate next occurrence
+        next_update = current_time.replace(
+            hour=target_time.hour,
+            minute=target_time.minute,
+            second=0,
+            microsecond=0
+        )
+        
+        # If the time has already passed today, move to the next scheduled day
+        if next_update <= current_time:
+            next_update += timedelta(days=1)
+        
+        # Now ensure it aligns with update_days interval
+        # Find the next valid day based on update_days interval
+        days_until_next = update_days - (next_update.date() - current_time.date()).days % update_days
+        if days_until_next == update_days and next_update > current_time:
+            # Already on a valid day and time hasn't passed
+            return next_update
+        else:
+            # Move to the next valid day
+            return next_update + timedelta(days=days_until_next)
+            
+    except Exception as e:
+        logger.error(f"Error calculating next update time: {e}")
+        return None
+
+
+def create_graph_specific_embed(
+    graph_file_path: str,
+    update_days: int | None = None,
+    fixed_update_time: str | None = None
+) -> discord.Embed:
     """
     Create a graph-specific embed based on the graph filename.
     
     Args:
         graph_file_path: Path to the graph file
+        update_days: Number of days between updates (for showing next update time)
+        fixed_update_time: Fixed time for updates or "XX:XX" for interval-based
         
     Returns:
         Discord embed with graph-specific title and description
@@ -80,10 +142,21 @@ def create_graph_specific_embed(graph_file_path: str) -> discord.Embed:
             "description": "Generated server statistics graph"
         }
     
+    # Build the description
+    description_parts = [graph_data["description"]]
+    
+    # Add next update time if config values are provided
+    if update_days is not None and fixed_update_time is not None:
+        next_update = calculate_next_update_time(update_days, fixed_update_time)
+        if next_update:
+            # Convert to Discord timestamp format (R = relative time)
+            timestamp = int(next_update.timestamp())
+            description_parts.append(f"\nNext update: <t:{timestamp}:R>")
+    
     # Create embed with graph-specific information
     embed = discord.Embed(
         title=graph_data["title"],
-        description=graph_data["description"],
+        description="\n".join(description_parts),
         color=discord.Color.blue()
     )
     

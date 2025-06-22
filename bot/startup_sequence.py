@@ -211,6 +211,16 @@ class StartupSequence:
         
         success_count = 0
         
+        # Get config values for next update time calculation
+        try:
+            config = self.bot.config_manager.get_current_config()
+            update_days = config.UPDATE_DAYS
+            fixed_update_time = config.FIXED_UPDATE_TIME
+        except Exception:
+            # If we can't get config, just use None values
+            update_days = None
+            fixed_update_time = None
+        
         for graph_file in graph_files:
             try:
                 file_path = Path(graph_file)
@@ -230,8 +240,8 @@ class StartupSequence:
                     logger.error(f"Failed to create Discord file object for {graph_file}")
                     continue
                 
-                # Create graph-specific embed
-                embed = create_graph_specific_embed(graph_file)
+                # Create graph-specific embed with scheduling info
+                embed = create_graph_specific_embed(graph_file, update_days, fixed_update_time)
                 
                 # Post the graph
                 _ = await channel.send(file=discord_file, embed=embed)
