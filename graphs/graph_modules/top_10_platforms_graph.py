@@ -60,9 +60,9 @@ class Top10PlatformsGraph(BaseGraph):
         Get the title for this graph type.
 
         Returns:
-            The graph title
+            The graph title with timeframe information
         """
-        return "Top 10 Platforms"
+        return self.get_enhanced_title_with_timeframe("Top 10 Platforms")
 
     @override
     def generate(self, data: Mapping[str, object]) -> str:

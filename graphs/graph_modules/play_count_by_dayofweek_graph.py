@@ -65,9 +65,9 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
         Get the title for this graph type.
 
         Returns:
-            The graph title
+            The graph title with timeframe information
         """
-        return "Play Count by Day of Week"
+        return self.get_enhanced_title_with_timeframe("Play Count by Day of Week")
 
     @override
     def generate(self, data: Mapping[str, object]) -> str:

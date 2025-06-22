@@ -66,9 +66,9 @@ class DailyPlayCountGraph(BaseGraph):
         Get the title for this graph type.
 
         Returns:
-            The graph title
+            The graph title with timeframe information
         """
-        return "Daily Play Count"
+        return self.get_enhanced_title_with_timeframe("Daily Play Count")
 
     def _filter_records_by_time_range(self, records: ProcessedRecords, time_range_days: int) -> ProcessedRecords:
         """

@@ -39,8 +39,8 @@ class BaseGraph(ABC):
     def __init__(
         self,
         config: "TGraphBotConfig | dict[str, object] | None" = None,
-        width: int = 14,
-        height: int = 10,
+        width: int = 12,
+        height: int = 8,
         dpi: int = 100,
         background_color: str | None = None
     ) -> None:
@@ -340,6 +340,36 @@ class BaseGraph(ABC):
             The graph title
         """
         pass
+
+    def get_enhanced_title_with_timeframe(self, base_title: str, use_months: bool = False) -> str:
+        """
+        Enhance a graph title with timeframe information from configuration.
+        
+        Args:
+            base_title: The base title for the graph (e.g., "Daily Play Count")
+            use_months: If True, use TIME_RANGE_MONTHS instead of TIME_RANGE_DAYS
+            
+        Returns:
+            Enhanced title with timeframe information (e.g., "Daily Play Count (Last 30 days)")
+        """
+        if use_months:
+            # Use TIME_RANGE_MONTHS for monthly graphs
+            time_range = self.get_config_value('TIME_RANGE_MONTHS', 12)
+            if isinstance(time_range, (int, float)):
+                time_range_int = int(time_range)
+                unit = "month" if time_range_int == 1 else "months"
+                return f"{base_title} (Last {time_range_int} {unit})"
+            else:
+                return base_title
+        else:
+            # Use TIME_RANGE_DAYS for daily/weekly/hourly graphs
+            time_range = self.get_config_value('TIME_RANGE_DAYS', 30)
+            if isinstance(time_range, (int, float)):
+                time_range_int = int(time_range)
+                unit = "day" if time_range_int == 1 else "days"
+                return f"{base_title} (Last {time_range_int} {unit})"
+            else:
+                return base_title
 
     def add_bar_value_annotation(
         self,

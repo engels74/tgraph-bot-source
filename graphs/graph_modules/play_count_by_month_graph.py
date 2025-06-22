@@ -63,9 +63,9 @@ class PlayCountByMonthGraph(BaseGraph):
         Get the title for this graph type.
 
         Returns:
-            The graph title
+            The graph title with timeframe information
         """
-        return "Play Count by Month"
+        return self.get_enhanced_title_with_timeframe("Play Count by Month", use_months=True)
 
     @override
     def generate(self, data: Mapping[str, object]) -> str:
