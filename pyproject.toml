@@ -109,12 +109,14 @@ exclude = ["htmlcov", ".venv"]
 [dependency-groups]
 dev = [
     "basedpyright>=1.29.4",
+    "httpx>=0.28.1",
     "pandas-stubs>=2.2.3.250527",
     "polib>=1.2.0",
     "psutil>=7.0.0",
     "pytest>=8.4.0",
     "pytest-asyncio>=1.0.0",
     "pytest-cov>=6.1.1",
+    "rich>=14.0.0",
     "types-polib>=1.2.0.20250401",
     "types-psutil>=7.0.0.20250601",
     "types-pyyaml>=6.0.12.20250516",
