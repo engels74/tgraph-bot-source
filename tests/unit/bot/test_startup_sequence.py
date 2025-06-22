@@ -11,11 +11,12 @@ import asyncio
 from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 from collections.abc import AsyncGenerator
+from typing import cast
 
 import discord
 import pytest
 
-from bot.startup_sequence import StartupSequence
+from bot.startup_sequence import StartupSequence, TGraphBotProtocol
 from config.manager import ConfigManager
 from config.schema import TGraphBotConfig
 
@@ -23,11 +24,21 @@ from config.schema import TGraphBotConfig
 @pytest.fixture
 def mock_bot() -> MagicMock:
     """Create a mock bot instance for testing."""
-    bot = MagicMock()
-    bot.user = MagicMock()
-    bot.user.id = 123456789
-    bot.config_manager = MagicMock(spec=ConfigManager)
-    bot.update_tracker = MagicMock()
+    bot = MagicMock(spec=TGraphBotProtocol)
+    
+    # Properly type the user mock
+    user_mock = MagicMock(spec=discord.ClientUser)
+    user_mock.id = 123456789
+    bot.user = user_mock
+    
+    # Properly type the config manager mock
+    config_manager_mock = MagicMock(spec=ConfigManager)
+    bot.config_manager = config_manager_mock
+    
+    # Properly type the update tracker mock
+    update_tracker_mock = MagicMock()
+    bot.update_tracker = update_tracker_mock
+    
     bot._shutdown_event = asyncio.Event()
     bot.get_channel = MagicMock()
     return bot
@@ -44,7 +55,7 @@ def mock_config() -> TGraphBotConfig:
 @pytest.fixture
 def startup_sequence(mock_bot: MagicMock) -> StartupSequence:
     """Create a StartupSequence instance for testing."""
-    return StartupSequence(mock_bot)
+    return StartupSequence(cast(TGraphBotProtocol, mock_bot))
 
 
 class TestStartupSequence:
@@ -60,27 +71,32 @@ class TestStartupSequence:
     @pytest.mark.asyncio
     async def test_cleanup_previous_messages_success(self, startup_sequence: StartupSequence, mock_bot: MagicMock, mock_config: TGraphBotConfig) -> None:
         """Test successful message cleanup."""
-        # Setup mocks
-        mock_bot.config_manager.get_current_config.return_value = mock_config
+        # Setup mocks with proper types
+        config_manager_mock = cast(MagicMock, mock_bot.config_manager)
+        config_manager_mock.get_current_config.return_value = mock_config  # pyright: ignore[reportAny]
         
-        # Create mock channel
+        # Create mock channel with proper spec
         mock_channel = MagicMock(spec=discord.TextChannel)
-        mock_guild = MagicMock()
-        mock_member = MagicMock()
-        mock_permissions = MagicMock()
+        mock_guild = MagicMock(spec=discord.Guild)
+        mock_member = MagicMock(spec=discord.Member)
+        mock_permissions = MagicMock(spec=discord.Permissions)
         mock_permissions.manage_messages = True
         
         mock_channel.guild = mock_guild
         mock_guild.me = mock_member
-        mock_channel.permissions_for.return_value = mock_permissions
+        mock_channel.permissions_for.return_value = mock_permissions  # pyright: ignore[reportAny]
         
-        # Create mock messages
-        bot_message = MagicMock()
-        bot_message.author.id = mock_bot.user.id
+        # Create mock messages with proper specs
+        bot_message = MagicMock(spec=discord.Message)
+        bot_message_author = MagicMock(spec=discord.User)
+        bot_message_author.id = mock_bot.user.id  # pyright: ignore[reportAny]
+        bot_message.author = bot_message_author
         bot_message.delete = AsyncMock()
         
-        other_message = MagicMock()
-        other_message.author.id = 999999999  # Different user
+        other_message = MagicMock(spec=discord.Message)
+        other_message_author = MagicMock(spec=discord.User)
+        other_message_author.id = 999999999  # Different user
+        other_message.author = other_message_author
         
         # Mock history method with proper typing
         async def mock_history(limit: int | None = None) -> AsyncGenerator[MagicMock, None]:  # pyright: ignore[reportUnusedParameter]
@@ -88,21 +104,25 @@ class TestStartupSequence:
                 yield msg
         
         mock_channel.history = mock_history
-        mock_bot.get_channel.return_value = mock_channel
+        get_channel_mock = cast(MagicMock, mock_bot.get_channel)
+        get_channel_mock.return_value = mock_channel
         
         # Run cleanup
         await startup_sequence.cleanup_previous_messages()
         
         # Verify
         assert startup_sequence.cleanup_completed is True
-        bot_message.delete.assert_called_once()
-        mock_bot.get_channel.assert_called_once_with(mock_config.CHANNEL_ID)
+        bot_message.delete.assert_called_once()  # pyright: ignore[reportAny]
+        get_channel_mock.assert_called_once_with(mock_config.CHANNEL_ID)
     
     @pytest.mark.asyncio
     async def test_cleanup_previous_messages_no_channel(self, startup_sequence: StartupSequence, mock_bot: MagicMock, mock_config: TGraphBotConfig) -> None:
         """Test cleanup when channel is not found."""
-        mock_bot.config_manager.get_current_config.return_value = mock_config
-        mock_bot.get_channel.return_value = None
+        config_manager_mock = cast(MagicMock, mock_bot.config_manager)
+        config_manager_mock.get_current_config.return_value = mock_config  # pyright: ignore[reportAny]
+        
+        get_channel_mock = cast(MagicMock, mock_bot.get_channel)
+        get_channel_mock.return_value = None
         
         await startup_sequence.cleanup_previous_messages()
         
@@ -112,23 +132,26 @@ class TestStartupSequence:
     @pytest.mark.asyncio
     async def test_cleanup_handles_rate_limits(self, startup_sequence: StartupSequence, mock_bot: MagicMock, mock_config: TGraphBotConfig) -> None:
         """Test that cleanup handles Discord rate limits properly."""
-        # Setup mocks
-        mock_bot.config_manager.get_current_config.return_value = mock_config
+        # Setup mocks with proper types
+        config_manager_mock = cast(MagicMock, mock_bot.config_manager)
+        config_manager_mock.get_current_config.return_value = mock_config  # pyright: ignore[reportAny]
         
-        # Create mock channel
+        # Create mock channel with proper spec
         mock_channel = MagicMock(spec=discord.TextChannel)
-        mock_guild = MagicMock()
-        mock_member = MagicMock()
-        mock_permissions = MagicMock()
+        mock_guild = MagicMock(spec=discord.Guild)
+        mock_member = MagicMock(spec=discord.Member)
+        mock_permissions = MagicMock(spec=discord.Permissions)
         mock_permissions.manage_messages = True
         
         mock_channel.guild = mock_guild
         mock_guild.me = mock_member
-        mock_channel.permissions_for.return_value = mock_permissions
+        mock_channel.permissions_for.return_value = mock_permissions  # pyright: ignore[reportAny]
         
         # Create mock message with rate limit error
-        bot_message = MagicMock()
-        bot_message.author.id = mock_bot.user.id
+        bot_message = MagicMock(spec=discord.Message)
+        bot_message_author = MagicMock(spec=discord.User)
+        bot_message_author.id = mock_bot.user.id  # pyright: ignore[reportAny]
+        bot_message.author = bot_message_author
         
         # Simulate rate limit error
         mock_response = MagicMock()
@@ -143,30 +166,34 @@ class TestStartupSequence:
             yield bot_message
         
         mock_channel.history = mock_history
-        mock_bot.get_channel.return_value = mock_channel
+        get_channel_mock = cast(MagicMock, mock_bot.get_channel)
+        get_channel_mock.return_value = mock_channel
         
         # Run cleanup
         await startup_sequence.cleanup_previous_messages()
         
         # Should handle the rate limit gracefully
-        bot_message.delete.assert_called()
+        bot_message.delete.assert_called()  # pyright: ignore[reportAny]
     
     @pytest.mark.asyncio
     async def test_post_initial_graphs_success(self, startup_sequence: StartupSequence, mock_bot: MagicMock, mock_config: TGraphBotConfig) -> None:
         """Test successful initial graph posting."""
-        # Setup mocks
-        mock_bot.config_manager.get_current_config.return_value = mock_config
+        # Setup mocks with proper types
+        config_manager_mock = cast(MagicMock, mock_bot.config_manager)
+        config_manager_mock.get_current_config.return_value = mock_config  # pyright: ignore[reportAny]
         
-        # Create mock channel
+        # Create mock channel with proper spec
         mock_channel = MagicMock(spec=discord.TextChannel)
         mock_channel.send = AsyncMock()
-        mock_bot.get_channel.return_value = mock_channel
+        
+        get_channel_mock = cast(MagicMock, mock_bot.get_channel)
+        get_channel_mock.return_value = mock_channel
         
         # Mock GraphManager
         with patch('bot.startup_sequence.GraphManager') as mock_graph_manager_class:
             mock_graph_manager = AsyncMock()
-            mock_graph_manager.__aenter__.return_value = mock_graph_manager
-            mock_graph_manager.generate_all_graphs.return_value = [
+            mock_graph_manager.__aenter__.return_value = mock_graph_manager  # pyright: ignore[reportAny]
+            mock_graph_manager.generate_all_graphs.return_value = [  # pyright: ignore[reportAny]
                 '/tmp/graph1.png',
                 '/tmp/graph2.png'
             ]
@@ -193,7 +220,8 @@ class TestStartupSequence:
         
         # Verify
         assert startup_sequence.initial_post_completed is True
-        assert mock_channel.send.call_count == 2  # Two graphs posted
+        send_mock = cast(AsyncMock, mock_channel.send)
+        assert send_mock.call_count == 2  # Two graphs posted
     
     @pytest.mark.asyncio
     async def test_update_scheduler_state(self, startup_sequence: StartupSequence, mock_bot: MagicMock) -> None:
@@ -201,19 +229,21 @@ class TestStartupSequence:
         # Mark initial post as completed
         startup_sequence.initial_post_completed = True
         
-        # Setup update tracker mocks
+        # Setup update tracker mocks with proper types
         mock_state = MagicMock()
         mock_state_manager = MagicMock()
-        mock_bot.update_tracker._state = mock_state
-        mock_bot.update_tracker._state_manager = mock_state_manager
-        mock_bot.update_tracker.get_next_update_time.return_value = datetime.now()
+        
+        update_tracker_mock = cast(MagicMock, mock_bot.update_tracker)
+        update_tracker_mock._state = mock_state
+        update_tracker_mock._state_manager = mock_state_manager
+        update_tracker_mock.get_next_update_time.return_value = datetime.now()  # pyright: ignore[reportAny]
         
         # Run scheduler update
         await startup_sequence.update_scheduler_state()
         
         # Verify state was updated
-        assert mock_state.last_update is not None
-        mock_state_manager.save_state.assert_called_once()
+        assert mock_state.last_update is not None  # pyright: ignore[reportAny]
+        mock_state_manager.save_state.assert_called_once()  # pyright: ignore[reportAny]
     
     @pytest.mark.asyncio
     async def test_update_scheduler_state_skips_if_no_graphs(self, startup_sequence: StartupSequence) -> None:
@@ -235,9 +265,13 @@ class TestStartupSequence:
         await startup_sequence.run()
         
         # Verify all steps were called
-        startup_sequence.cleanup_previous_messages.assert_called_once()
-        startup_sequence.post_initial_graphs.assert_called_once()
-        startup_sequence.update_scheduler_state.assert_called_once()
+        cleanup_mock = startup_sequence.cleanup_previous_messages
+        post_graphs_mock = startup_sequence.post_initial_graphs
+        update_state_mock = startup_sequence.update_scheduler_state
+        
+        cleanup_mock.assert_called_once()
+        post_graphs_mock.assert_called_once()
+        update_state_mock.assert_called_once()
     
     @pytest.mark.asyncio
     async def test_startup_sequence_continues_on_error(self, startup_sequence: StartupSequence) -> None:
@@ -253,8 +287,11 @@ class TestStartupSequence:
         await startup_sequence.run()
         
         # Other steps should still be attempted
-        startup_sequence.post_initial_graphs.assert_called_once()
-        startup_sequence.update_scheduler_state.assert_called_once()
+        post_graphs_mock = startup_sequence.post_initial_graphs
+        update_state_mock = startup_sequence.update_scheduler_state
+        
+        post_graphs_mock.assert_called_once()
+        update_state_mock.assert_called_once()
     
     def test_is_completed(self, startup_sequence: StartupSequence) -> None:
         """Test the is_completed method."""

@@ -10,11 +10,28 @@ This module handles the bot's startup sequence which includes:
 import asyncio
 import logging
 from datetime import datetime
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
 import discord
-from discord.ext import commands
 
 from graphs.graph_manager import GraphManager
 from utils.discord_file_utils import validate_file_for_discord, create_discord_file_safe, create_graph_specific_embed
+
+if TYPE_CHECKING:
+    from config.manager import ConfigManager
+    from bot.update_tracker import UpdateTracker
+
+
+@runtime_checkable
+class TGraphBotProtocol(Protocol):
+    """Protocol for TGraph bot with custom attributes."""
+    config_manager: "ConfigManager"
+    update_tracker: "UpdateTracker"
+    
+    @property
+    def user(self) -> discord.ClientUser | None: ...
+    
+    def get_channel(self, id: int, /) -> discord.abc.GuildChannel | discord.abc.PrivateChannel | discord.Thread | None: ...
+
 
 logger = logging.getLogger(__name__)
 
@@ -27,14 +44,14 @@ class StartupSequence:
     and ensuring the scheduler state is properly initialized.
     """
     
-    def __init__(self, bot: commands.Bot) -> None:
+    def __init__(self, bot: TGraphBotProtocol) -> None:
         """
         Initialize the startup sequence.
         
         Args:
             bot: The TGraph bot instance
         """
-        self.bot: commands.Bot = bot  # The bot instance has config_manager and update_tracker attributes
+        self.bot: TGraphBotProtocol = bot
         self.cleanup_completed: bool = False
         self.initial_post_completed: bool = False
         
@@ -78,12 +95,7 @@ class StartupSequence:
         logger.info("Starting message cleanup...")
         
         try:
-            config_manager = getattr(self.bot, 'config_manager', None)
-            if config_manager is None:
-                logger.error("Config manager not found on bot instance")
-                return
-                
-            config = config_manager.get_current_config()
+            config = self.bot.config_manager.get_current_config()
             channel = self.bot.get_channel(config.CHANNEL_ID)
             
             if not isinstance(channel, discord.TextChannel):
@@ -149,12 +161,7 @@ class StartupSequence:
         logger.info("Posting initial graphs...")
         
         try:
-            config_manager = getattr(self.bot, 'config_manager', None)
-            if config_manager is None:
-                logger.error("Config manager not found on bot instance")
-                return
-                
-            config = config_manager.get_current_config()
+            config = self.bot.config_manager.get_current_config()
             channel = self.bot.get_channel(config.CHANNEL_ID)
             
             if not isinstance(channel, discord.TextChannel):
@@ -162,7 +169,7 @@ class StartupSequence:
                 return
             
             # Generate all graphs
-            async with GraphManager(config_manager) as graph_manager:
+            async with GraphManager(self.bot.config_manager) as graph_manager:
                 graph_files = await graph_manager.generate_all_graphs(
                     max_retries=3,
                     timeout_seconds=300.0
@@ -256,32 +263,29 @@ class StartupSequence:
             # Get current time as the baseline for scheduling
             current_time = datetime.now()
             
-            # Update the last update time in the scheduler
-            update_tracker = getattr(self.bot, 'update_tracker', None)
-            if update_tracker is not None:
-                # Access the scheduler's state
-                if hasattr(update_tracker, '_state'):
-                    update_tracker._state.last_update = current_time
-                    logger.info(f"Set scheduler last update time to: {current_time}")
-                    
-                    # Save the state
-                    if hasattr(update_tracker, '_state_manager'):
-                        state_manager = update_tracker._state_manager
-                        state_manager.save_state(
-                            update_tracker._state,
-                            update_tracker._config
-                        )
-                        logger.info("Scheduler state saved to disk")
-                    
-                    # Log next update time
-                    if hasattr(update_tracker, 'get_next_update_time'):
-                        next_update = update_tracker.get_next_update_time()
-                        if next_update:
-                            logger.info(f"Next scheduled update: {next_update}")
-                else:
-                    logger.warning("Update tracker state not accessible")
+            update_tracker = self.bot.update_tracker
+            
+            # Access the scheduler's state
+            if hasattr(update_tracker, '_state'):
+                update_tracker._state.last_update = current_time  # pyright: ignore[reportPrivateUsage]
+                logger.info(f"Set scheduler last update time to: {current_time}")
+                
+                # Save the state
+                if hasattr(update_tracker, '_state_manager') and hasattr(update_tracker, '_config'):
+                    state_manager = update_tracker._state_manager  # pyright: ignore[reportPrivateUsage]
+                    state_manager.save_state(
+                        update_tracker._state,  # pyright: ignore[reportPrivateUsage]
+                        update_tracker._config  # pyright: ignore[reportPrivateUsage]
+                    )
+                    logger.info("Scheduler state saved to disk")
+                
+                # Log next update time
+                if hasattr(update_tracker, 'get_next_update_time'):
+                    next_update = update_tracker.get_next_update_time()
+                    if next_update:
+                        logger.info(f"Next scheduled update: {next_update}")
             else:
-                logger.warning("Update tracker not available")
+                logger.warning("Update tracker state not accessible")
                 
         except Exception as e:
             logger.error(f"Error updating scheduler state: {e}", exc_info=True)
