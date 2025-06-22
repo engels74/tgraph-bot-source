@@ -137,9 +137,11 @@ class Top10UsersGraph(BaseGraph):
                     data=df,
                     x='play_count',
                     y='username',
+                    hue='username',
                     ax=ax,
                     orient='h',
-                    palette='viridis'
+                    palette='viridis',
+                    legend=False
                 )
 
                 # Customize the plot

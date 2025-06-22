@@ -142,8 +142,10 @@ class PlayCountByHourOfDayGraph(BaseGraph):
                     data=df,
                     x='hour',
                     y='play_count',
+                    hue='hour',
                     ax=ax,
-                    palette='viridis'
+                    palette='viridis',
+                    legend=False
                 )
 
                 # Customize the plot
