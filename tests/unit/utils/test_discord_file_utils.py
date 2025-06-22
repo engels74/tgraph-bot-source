@@ -5,9 +5,10 @@ This module tests file validation, Discord file creation, and upload functionali
 for both channel and DM uploads with comprehensive error handling scenarios.
 """
 
+import json
 from datetime import datetime, timedelta
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch, mock_open
 
 import discord
 import pytest
@@ -350,43 +351,184 @@ class TestCalculateNextUpdateTime:
         expected_max = now + timedelta(days=7, hours=1)
         assert expected_min <= result <= expected_max
         
-    def test_fixed_time_update_future_today(self) -> None:
-        """Test fixed time update when time hasn't passed today."""
-        # Use a time that should be in the future today
-        now = datetime.now()
-        future_time = now + timedelta(hours=2)
-        time_str = future_time.strftime("%H:%M")
+    def test_fixed_time_update_future_today_no_state(self) -> None:
+        """Test fixed time update when time hasn't passed today and no scheduler state."""
+        # Mock no state file exists
+        with patch('pathlib.Path.exists', return_value=False):
+            # Use a time that should be in the future today
+            now = datetime.now()
+            future_time = now + timedelta(hours=2)
+            time_str = future_time.strftime("%H:%M")
+            
+            result = calculate_next_update_time(1, time_str)
+            
+            assert result is not None
+            # Should be today at the specified time
+            expected = now.replace(
+                hour=future_time.hour,
+                minute=future_time.minute,
+                second=0,
+                microsecond=0
+            )
+            assert result == expected
         
-        result = calculate_next_update_time(1, time_str)
-        
-        assert result is not None
-        # Should be today at the specified time
-        expected = now.replace(
-            hour=future_time.hour,
-            minute=future_time.minute,
-            second=0,
-            microsecond=0
-        )
-        assert result == expected
-        
-    def test_fixed_time_update_past_today(self) -> None:
-        """Test fixed time update when time has already passed today."""
-        # Use a time that should be in the past today
+    def test_fixed_time_update_past_today_no_state(self) -> None:
+        """Test fixed time update when time has already passed today and no scheduler state."""
+        # Mock no state file exists
+        with patch('pathlib.Path.exists', return_value=False):
+            # Use a time that should be in the past today
+            now = datetime.now()
+            past_time = now - timedelta(hours=2)
+            time_str = past_time.strftime("%H:%M")
+            
+            result = calculate_next_update_time(1, time_str)
+            
+            assert result is not None
+            # Should be tomorrow at the specified time
+            expected = now.replace(
+                hour=past_time.hour,
+                minute=past_time.minute,
+                second=0,
+                microsecond=0
+            ) + timedelta(days=1)
+            assert result == expected
+
+    def test_fixed_time_with_scheduler_state_respects_interval(self) -> None:
+        """Test fixed time calculation respects scheduler state last_update and update_days."""
+        # Create a scenario where fixed time has passed today, but we need to respect update_days interval
         now = datetime.now()
         past_time = now - timedelta(hours=2)
         time_str = past_time.strftime("%H:%M")
         
-        result = calculate_next_update_time(1, time_str)
+        # Last update was yesterday at 16:14
+        last_update = now - timedelta(days=1, hours=1)  # 23 hours ago
         
-        assert result is not None
-        # Should be tomorrow at the specified time
-        expected = now.replace(
-            hour=past_time.hour,
-            minute=past_time.minute,
-            second=0,
-            microsecond=0
-        ) + timedelta(days=1)
-        assert result == expected
+        scheduler_state = {
+            "last_update": last_update.isoformat(),
+            "next_update": (now + timedelta(days=1)).isoformat()
+        }
+        
+        mock_state_content = json.dumps(scheduler_state)
+        
+        with patch('pathlib.Path.exists', return_value=True), \
+             patch('builtins.open', mock_open(read_data=mock_state_content)):
+            
+            result = calculate_next_update_time(1, time_str)  # 1 day interval
+            
+            assert result is not None
+            # Should be tomorrow (respecting 1-day interval from last update)
+            expected = now.replace(
+                hour=past_time.hour,
+                minute=past_time.minute,
+                second=0,
+                microsecond=0
+            ) + timedelta(days=1)
+            assert result == expected
+
+    def test_fixed_time_with_scheduler_state_longer_interval(self) -> None:
+        """Test fixed time calculation with longer update interval from scheduler state."""
+        now = datetime.now()
+        past_time = now - timedelta(hours=2)
+        time_str = past_time.strftime("%H:%M")
+        
+        # Last update was 2 days ago
+        last_update = now - timedelta(days=2)
+        
+        scheduler_state = {
+            "last_update": last_update.isoformat(),
+            "next_update": (now + timedelta(days=5)).isoformat()
+        }
+        
+        mock_state_content = json.dumps(scheduler_state)
+        
+        with patch('pathlib.Path.exists', return_value=True), \
+             patch('builtins.open', mock_open(read_data=mock_state_content)):
+            
+            result = calculate_next_update_time(7, time_str)  # 7 day interval
+            
+            assert result is not None
+            # The result should respect the minimum interval from last update
+            min_next_update = last_update + timedelta(days=7)
+            
+            # The result should be at or after the minimum next update time
+            assert result >= min_next_update
+            
+            # The result should be at the correct fixed time (same hour/minute)
+            assert result.hour == past_time.hour
+            assert result.minute == past_time.minute
+            assert result.second == 0
+            assert result.microsecond == 0
+
+    def test_fixed_time_with_malformed_scheduler_state(self) -> None:
+        """Test fixed time calculation with malformed scheduler state file."""
+        # Mock malformed JSON in state file
+        with patch('pathlib.Path.exists', return_value=True), \
+             patch('builtins.open', mock_open(read_data="invalid json")):
+            
+            now = datetime.now()
+            past_time = now - timedelta(hours=2)
+            time_str = past_time.strftime("%H:%M")
+            
+            result = calculate_next_update_time(1, time_str)
+            
+            assert result is not None
+            # Should fall back to simple logic: tomorrow at the specified time
+            expected = now.replace(
+                hour=past_time.hour,
+                minute=past_time.minute,
+                second=0,
+                microsecond=0
+            ) + timedelta(days=1)
+            assert result == expected
+
+    def test_fixed_time_with_missing_last_update_in_state(self) -> None:
+        """Test fixed time calculation when scheduler state lacks last_update."""
+        scheduler_state = {
+            "next_update": (datetime.now() + timedelta(days=1)).isoformat()
+            # Missing last_update field
+        }
+        
+        mock_state_content = json.dumps(scheduler_state)
+        
+        with patch('pathlib.Path.exists', return_value=True), \
+             patch('builtins.open', mock_open(read_data=mock_state_content)):
+            
+            now = datetime.now()
+            past_time = now - timedelta(hours=2)
+            time_str = past_time.strftime("%H:%M")
+            
+            result = calculate_next_update_time(1, time_str)
+            
+            assert result is not None
+            # Should fall back to simple logic: tomorrow at the specified time
+            expected = now.replace(
+                hour=past_time.hour,
+                minute=past_time.minute,
+                second=0,
+                microsecond=0
+            ) + timedelta(days=1)
+            assert result == expected
+
+    def test_fixed_time_with_file_read_error(self) -> None:
+        """Test fixed time calculation when scheduler state file cannot be read."""
+        with patch('pathlib.Path.exists', return_value=True), \
+             patch('builtins.open', side_effect=IOError("Permission denied")):
+            
+            now = datetime.now()
+            past_time = now - timedelta(hours=2)
+            time_str = past_time.strftime("%H:%M")
+            
+            result = calculate_next_update_time(1, time_str)
+            
+            assert result is not None
+            # Should fall back to simple logic: tomorrow at the specified time
+            expected = now.replace(
+                hour=past_time.hour,
+                minute=past_time.minute,
+                second=0,
+                microsecond=0
+            ) + timedelta(days=1)
+            assert result == expected
         
     def test_invalid_time_format(self) -> None:
         """Test handling of invalid time formats."""
