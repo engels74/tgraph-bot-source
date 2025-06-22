@@ -22,58 +22,46 @@ DISCORD_FILE_SIZE_LIMIT_NITRO = 25 * 1024 * 1024   # 25MB for Nitro users
 SUPPORTED_IMAGE_FORMATS = {'.png', '.jpg', '.jpeg', '.gif', '.webp'}
 
 
-def calculate_next_update_time(update_days: int, fixed_update_time: str | None = None) -> datetime | None:
+def calculate_next_update_time(update_days: int, fixed_update_time: str) -> datetime | None:
     """
     Calculate the next scheduled update time based on configuration.
     
     Args:
         update_days: Number of days between updates
-        fixed_update_time: Fixed time in HH:MM format or "XX:XX" for interval-based updates
+        fixed_update_time: Fixed time for updates or "XX:XX" for interval-based
         
     Returns:
-        Next update datetime or None if calculation fails
+        Next update datetime, or None if calculation fails
     """
     try:
         current_time = datetime.now()
         
         # Handle interval-based updates
-        if not fixed_update_time or fixed_update_time == "XX:XX":
-            # Simply add update_days to current time
+        if fixed_update_time == "XX:XX":
             return current_time + timedelta(days=update_days)
         
         # Handle fixed time updates
-        # Parse the fixed time
         try:
-            hour, minute = map(int, fixed_update_time.split(":"))
-            target_time = time(hour, minute)
-        except (ValueError, IndexError):
-            logger.warning(f"Invalid fixed update time format: {fixed_update_time}")
+            hour, minute = map(int, fixed_update_time.split(':'))
+            update_time = time(hour, minute)
+        except (ValueError, AttributeError):
             return None
         
         # Calculate next occurrence
         next_update = current_time.replace(
-            hour=target_time.hour,
-            minute=target_time.minute,
-            second=0,
+            hour=update_time.hour, 
+            minute=update_time.minute, 
+            second=0, 
             microsecond=0
         )
         
-        # If the time has already passed today, move to the next scheduled day
+        # If the time has already passed today, schedule for the next occurrence
         if next_update <= current_time:
-            next_update += timedelta(days=1)
-        
-        # Now ensure it aligns with update_days interval
-        # Find the next valid day based on update_days interval
-        days_until_next = update_days - (next_update.date() - current_time.date()).days % update_days
-        if days_until_next == update_days and next_update > current_time:
-            # Already on a valid day and time hasn't passed
-            return next_update
-        else:
-            # Move to the next valid day
-            return next_update + timedelta(days=days_until_next)
+            next_update += timedelta(days=update_days)
             
-    except Exception as e:
-        logger.error(f"Error calculating next update time: {e}")
+        return next_update
+        
+    except Exception:
         return None
 
 
@@ -100,69 +88,59 @@ def create_graph_specific_embed(
     graph_info = {
         "daily_play_count": {
             "title": "📈 Daily Play Count",
-            "description": "Shows the number of plays per day over the selected time period"
+            "description": "Shows the number of plays per day over the selected time period."
         },
         "play_count_by_dayofweek": {
             "title": "📊 Play Count by Day of Week", 
-            "description": "Displays how play activity varies across different days of the week"
+            "description": "Displays play activity patterns across different days of the week."
         },
         "play_count_by_hourofday": {
             "title": "🕐 Play Count by Hour of Day",
-            "description": "Shows when users are most active throughout the day"
+            "description": "Shows when users are most active throughout the day."
         },
         "play_count_by_month": {
             "title": "📅 Play Count by Month",
-            "description": "Monthly breakdown of viewing activity over time"
+            "description": "Monthly play count trends over time."
+        },
+        "top_10_platforms": {
+            "title": "💻 Top 10 Platforms", 
+            "description": "Most popular platforms used for media consumption."
         },
         "top_10_users": {
             "title": "👥 Top 10 Users",
-            "description": "Most active users ranked by total play count"
-        },
-        "top_10_platforms": {
-            "title": "📱 Top 10 Platforms", 
-            "description": "Most popular devices and platforms used for streaming"
-        },
-        "sample_graph": {
-            "title": "🧪 Sample Data Visualization",
-            "description": "Example graph for testing and demonstration purposes"
+            "description": "Most active users in the selected time period."
         }
     }
     
-    # Find matching graph info
-    graph_data = None
-    for graph_type, info in graph_info.items():
-        if graph_type in filename:
-            graph_data = info
+    # Find the best match for the filename
+    info = None
+    for key, value in graph_info.items():
+        if key in filename:
+            info = value
             break
     
-    # Default fallback if no match found
-    if graph_data is None:
-        graph_data = {
-            "title": "📊 Server Statistics",
-            "description": "Generated server statistics graph"
+    # Fallback for unknown graph types
+    if not info:
+        info = {
+            "title": "📊 Media Statistics",
+            "description": "Statistical analysis of media consumption data."
         }
     
-    # Build the description
-    description_parts = [graph_data["description"]]
-    
-    # Add next update time if config values are provided
-    if update_days is not None and fixed_update_time is not None:
-        next_update = calculate_next_update_time(update_days, fixed_update_time)
-        if next_update:
-            # Convert to Discord timestamp format (R = relative time)
-            timestamp = int(next_update.timestamp())
-            description_parts.append(f"\nNext update: <t:{timestamp}:R>")
-    
-    # Create embed with graph-specific information
+    # Create the embed
     embed = discord.Embed(
-        title=graph_data["title"],
-        description="\n".join(description_parts),
+        title=info["title"],
+        description=info["description"],
         color=discord.Color.blue()
     )
     
-    # Set the graph image as the main embed image
-    _ = embed.set_image(url=f"attachment://{file_path.name}")
-    _ = embed.set_footer(text="Generated by TGraph Bot")
+    # Add next update time if configuration is provided
+    if update_days is not None and fixed_update_time is not None:
+        next_update = calculate_next_update_time(update_days, fixed_update_time)
+        if next_update:
+            # Use discord.py's built-in timestamp formatting with relative time style
+            timestamp_str = discord.utils.format_dt(next_update, style='R')
+            current_description = embed.description or ""
+            embed.description = current_description + f"\n\nNext update: {timestamp_str}"
     
     return embed
 
