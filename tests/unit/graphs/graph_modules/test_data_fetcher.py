@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-
 from unittest.mock import AsyncMock, Mock, patch
 
 import httpx
@@ -112,10 +111,12 @@ class TestDataFetcher:
             # Verify request was made with correct parameters
             mock_client.get.assert_called_once()  # pyright: ignore[reportAny]
             call_args = mock_client.get.call_args  # pyright: ignore[reportAny]
+            assert call_args is not None
             assert call_args[0][0] == "http://localhost:8181/api/v2"
-            assert call_args[1]["params"]["apikey"] == "test_api_key"
-            assert call_args[1]["params"]["cmd"] == "get_history"
-            assert call_args[1]["params"]["user_id"] == 1
+            params: dict[str, object] = call_args[1]["params"]  # pyright: ignore[reportAny]
+            assert params["apikey"] == "test_api_key"
+            assert params["cmd"] == "get_history"
+            assert params["user_id"] == 1
             
             # Verify result
             response_obj = mock_successful_response["response"]
@@ -226,7 +227,7 @@ class TestDataFetcher:
             # Verify the first call has correct parameters
             first_call = mock_make_request.call_args_list[0]
             assert first_call[0][0] == "get_history"
-            params = first_call[0][1]
+            params: dict[str, object] = first_call[0][1]  # pyright: ignore[reportAny]
             assert params["length"] == 1000
             assert params["start"] == 0
             assert params["time_range"] == 30
@@ -236,9 +237,10 @@ class TestDataFetcher:
             assert "data" in result
             response_obj = mock_successful_response["response"]
             assert isinstance(response_obj, dict)
-            expected_data = response_obj["data"]
+            expected_data = response_obj["data"]  # pyright: ignore[reportUnknownVariableType] # mock data structure
             assert isinstance(expected_data, dict)
-            assert result["data"] == expected_data["data"]
+            expected_data_inner = expected_data["data"]  # pyright: ignore[reportUnknownVariableType] # mock data structure
+            assert result["data"] == expected_data_inner
 
     @pytest.mark.asyncio
     async def test_get_play_history_no_user_id(
@@ -261,11 +263,11 @@ class TestDataFetcher:
             # Verify the first call has correct parameters (no user_id)
             first_call = mock_make_request.call_args_list[0]
             assert first_call[0][0] == "get_history"
-            params = first_call[0][1]  # pyright: ignore[reportAny]
-            assert params["length"] == 1000  # pyright: ignore[reportAny]
-            assert params["start"] == 0  # pyright: ignore[reportAny]
-            assert params["time_range"] == 30  # pyright: ignore[reportAny]
-            assert "user_id" not in params  # pyright: ignore[reportAny]
+            params: dict[str, object] = first_call[0][1]  # pyright: ignore[reportAny]
+            assert params["length"] == 1000
+            assert params["start"] == 0
+            assert params["time_range"] == 30
+            assert "user_id" not in params
 
             # Result should include the data
             assert "data" in result
@@ -332,19 +334,24 @@ class TestDataFetcher:
             calls = mock_make_request.call_args_list
 
             # First call: start=0
-            assert calls[0][0][1]["start"] == 0  # pyright: ignore[reportAny]
-            assert calls[0][0][1]["length"] == 1000  # pyright: ignore[reportAny]
+            first_call_params: dict[str, object] = calls[0][0][1]  # pyright: ignore[reportAny]
+            assert first_call_params["start"] == 0
+            assert first_call_params["length"] == 1000
 
             # Second call: start=1000
-            assert calls[1][0][1]["start"] == 1000  # pyright: ignore[reportAny]
-            assert calls[1][0][1]["length"] == 1000  # pyright: ignore[reportAny]
+            second_call_params: dict[str, object] = calls[1][0][1]  # pyright: ignore[reportAny]
+            assert second_call_params["start"] == 1000
+            assert second_call_params["length"] == 1000
 
             # Third call: start=2000
-            assert calls[2][0][1]["start"] == 2000  # pyright: ignore[reportAny]
-            assert calls[2][0][1]["length"] == 1000  # pyright: ignore[reportAny]
+            third_call_params: dict[str, object] = calls[2][0][1]  # pyright: ignore[reportAny]
+            assert third_call_params["start"] == 2000
+            assert third_call_params["length"] == 1000
 
             # Result should contain all 2500 records
-            assert len(result["data"]) == 2500
+            result_data = result["data"]
+            assert isinstance(result_data, list)
+            assert len(result_data) == 2500  # pyright: ignore[reportUnknownArgumentType] # list length is known
             assert result["recordsFiltered"] == 2500
             assert result["recordsTotal"] == 2500
 
@@ -368,7 +375,9 @@ class TestDataFetcher:
             assert mock_make_request.call_count == 1
 
             # Result should contain all 500 records
-            assert len(result["data"]) == 500
+            result_data = result["data"]
+            assert isinstance(result_data, list)
+            assert len(result_data) == 500  # pyright: ignore[reportUnknownArgumentType] # list length is known
             assert result["recordsFiltered"] == 500
             assert result["recordsTotal"] == 500
 
@@ -394,7 +403,9 @@ class TestDataFetcher:
             assert mock_make_request.call_count <= 2
 
             # Result should contain data
-            assert len(result["data"]) >= 500  # Should have at least some data
+            result_data = result["data"]
+            assert isinstance(result_data, list)
+            assert len(result_data) >= 500  # pyright: ignore[reportUnknownArgumentType] # list length is known
 
     @pytest.mark.asyncio
     async def test_get_user_stats(
