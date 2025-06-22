@@ -644,6 +644,8 @@ async def main() -> None:
         try:
             config = config_manager.load_config(config_path)
             config_manager.set_current_config(config)
+            # Set the config file path so the manager knows where to save changes
+            config_manager.config_file_path = config_path
             logger.info("Configuration loaded and validated successfully")
         except Exception as e:
             logger.exception(f"Failed to load configuration: {e}")
