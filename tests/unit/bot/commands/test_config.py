@@ -109,8 +109,8 @@ class TestConfigCog:
             username="TestUser"
         )
         
-        # Call the method directly using the callback
-        _ = await config_cog.config_view.callback(config_cog, mock_interaction)  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
+        # Call the method directly using the callback (no key parameter)
+        _ = await config_cog.config_view.callback(config_cog, mock_interaction, None)  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
 
         # Verify interaction response was called
         mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
@@ -139,7 +139,7 @@ class TestConfigCog:
         # Mock the config manager to raise an exception
         with patch.object(config_cog.tgraph_bot.config_manager, 'get_current_config', side_effect=RuntimeError("Test error")), \
              patch('utils.command_utils.safe_interaction_response') as mock_safe_response:
-            _ = await config_cog.config_view.callback(config_cog, mock_interaction)  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
+            _ = await config_cog.config_view.callback(config_cog, mock_interaction, None)  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
 
         # Verify error response was sent through the new error handling system
         mock_safe_response.assert_called_once()
@@ -254,7 +254,7 @@ class TestConfigCog:
 
     @pytest.mark.asyncio
     async def test_config_edit_save_error(
-        self, 
+        self,
         config_cog: ConfigCog
     ) -> None:
         """Test configuration editing when save operation fails."""
@@ -264,7 +264,7 @@ class TestConfigCog:
             user_id=123456,
             username="TestUser"
         )
-        
+
         # Create a temporary config file using centralized utility
         with create_temp_config_file() as config_path:
             # Mock the config manager's config_file_path and save to raise an exception
@@ -276,3 +276,84 @@ class TestConfigCog:
 
                 # Verify error response was sent through the new error handling system
                 mock_safe_response.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_config_view_with_specific_key(
+        self,
+        config_cog: ConfigCog
+    ) -> None:
+        """Test configuration viewing with specific key."""
+        # Create mock interaction using standardized utility
+        mock_interaction = create_mock_interaction(
+            command_name="config_view",
+            user_id=123456,
+            username="TestUser"
+        )
+
+        # Test viewing a specific key
+        _ = await config_cog.config_view.callback(config_cog, mock_interaction, "UPDATE_DAYS")  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
+
+        # Verify response was sent
+        mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+
+        # Get the embed that was sent
+        call_args = mock_interaction.response.send_message.call_args  # pyright: ignore[reportAttributeAccessIssue,reportUnknownVariableType,reportUnknownMemberType]
+        embed = call_args[1]['embed']  # pyright: ignore[reportUnknownVariableType]
+
+        # Verify the embed contains the specific key information
+        assert "UPDATE_DAYS" in embed.title  # pyright: ignore[reportUnknownMemberType]
+        assert embed.fields[0].name == "Current Value"  # pyright: ignore[reportUnknownMemberType]
+
+    @pytest.mark.asyncio
+    async def test_config_view_with_invalid_key(
+        self,
+        config_cog: ConfigCog
+    ) -> None:
+        """Test configuration viewing with invalid key."""
+        # Create mock interaction using standardized utility
+        mock_interaction = create_mock_interaction(
+            command_name="config_view",
+            user_id=123456,
+            username="TestUser"
+        )
+
+        # Test viewing an invalid key
+        _ = await config_cog.config_view.callback(config_cog, mock_interaction, "INVALID_KEY")  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
+
+        # Verify response was sent
+        mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+
+        # Get the embed that was sent
+        call_args = mock_interaction.response.send_message.call_args  # pyright: ignore[reportAttributeAccessIssue,reportUnknownVariableType,reportUnknownMemberType]
+        embed = call_args[1]['embed']  # pyright: ignore[reportUnknownVariableType]
+
+        # Verify the embed shows an error
+        assert "Configuration Key Not Found" in embed.title  # pyright: ignore[reportUnknownMemberType]
+        assert "INVALID_KEY" in embed.description  # pyright: ignore[reportUnknownMemberType]
+
+    @pytest.mark.asyncio
+    async def test_config_key_autocomplete(
+        self,
+        config_cog: ConfigCog
+    ) -> None:
+        """Test configuration key autocomplete functionality."""
+        # Create mock interaction
+        mock_interaction = create_mock_interaction(
+            command_name="config_autocomplete",
+            user_id=123456,
+            username="TestUser"
+        )
+
+        # Test autocomplete with no input
+        choices = await config_cog._config_key_autocomplete(mock_interaction, "")  # pyright: ignore[reportPrivateUsage]
+
+        # Should return all available keys (limited to 25)
+        assert len(choices) <= 25
+        assert all(choice.name in config_cog._get_config_keys() for choice in choices)  # pyright: ignore[reportPrivateUsage]
+
+        # Test autocomplete with partial input
+        choices = await config_cog._config_key_autocomplete(mock_interaction, "UPDATE")  # pyright: ignore[reportPrivateUsage]
+
+        # Should return filtered keys
+        assert all("UPDATE" in choice.name for choice in choices)
+        assert len(choices) > 0

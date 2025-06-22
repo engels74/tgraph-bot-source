@@ -44,6 +44,46 @@ class ConfigCog(BaseCommandCog):
         # Create configuration helper
         self.config_helper: ConfigurationHelper = ConfigurationHelper(self.tgraph_bot.config_manager)
 
+    def _get_config_keys(self) -> list[str]:
+        """
+        Get all available configuration keys from the schema.
+
+        Returns:
+            List of configuration key names
+        """
+        return list(TGraphBotConfig.model_fields.keys())
+
+    async def _config_key_autocomplete(
+        self,
+        interaction: discord.Interaction,  # pyright: ignore[reportUnusedParameter]
+        current: str,
+    ) -> list[app_commands.Choice[str]]:
+        """
+        Autocomplete function for configuration keys.
+
+        Args:
+            interaction: The Discord interaction
+            current: Current input from user
+
+        Returns:
+            List of autocomplete choices
+        """
+        config_keys = self._get_config_keys()
+
+        # Filter keys based on current input
+        if current:
+            filtered_keys = [key for key in config_keys if current.lower() in key.lower()]
+        else:
+            filtered_keys = config_keys
+
+        # Limit to 25 choices (Discord limit) and sort alphabetically
+        filtered_keys = sorted(filtered_keys)[:25]
+
+        return [
+            app_commands.Choice(name=key, value=key)
+            for key in filtered_keys
+        ]
+
     def _convert_config_value(self, value: str, target_type: type[object]) -> object:
         """
         Convert a string value to the appropriate configuration type.
@@ -94,19 +134,65 @@ class ConfigCog(BaseCommandCog):
         name="view",
         description="View current bot configuration"
     )
+    @app_commands.describe(
+        key="Optional: View a specific configuration setting"
+    )
+    @app_commands.autocomplete(key=_config_key_autocomplete)
     @app_commands.default_permissions(manage_guild=True)
     @app_commands.checks.has_permissions(manage_guild=True)
-    async def config_view(self, interaction: discord.Interaction) -> None:
+    async def config_view(self, interaction: discord.Interaction, key: str | None = None) -> None:
         """
         Display current bot configuration.
 
         Args:
             interaction: The Discord interaction
+            key: Optional configuration key to view specifically
         """
         try:
             config = self.tgraph_bot.config_manager.get_current_config()
 
-            # Create formatted configuration display
+            # If a specific key is requested, show only that key
+            if key is not None:
+                if not hasattr(config, key):
+                    error_embed = discord.Embed(
+                        title="❌ Configuration Key Not Found",
+                        description=f"Configuration setting `{key}` does not exist.",
+                        color=discord.Color.red()
+                    )
+                    _ = error_embed.add_field(
+                        name="Available Keys",
+                        value="Use `/config view` without a key to see all available settings.",
+                        inline=False
+                    )
+                    _ = await interaction.response.send_message(embed=error_embed, ephemeral=True)
+                    return
+
+                # Get the value and its type
+                value: object = getattr(config, key)  # pyright: ignore[reportAny]
+                field_info = TGraphBotConfig.model_fields.get(key)
+                description = field_info.description if field_info else "No description available"
+
+                # Create embed for specific key
+                embed = discord.Embed(
+                    title=f"🔧 Configuration: {key}",
+                    description=description,
+                    color=discord.Color.blue()
+                )
+                _ = embed.add_field(
+                    name="Current Value",
+                    value=f"`{value}`",
+                    inline=True
+                )
+                _ = embed.add_field(
+                    name="Type",
+                    value=f"`{type(value).__name__}`",
+                    inline=True
+                )
+                _ = embed.set_footer(text=f"Use /config edit key:{key} value:<new_value> to modify")
+                _ = await interaction.response.send_message(embed=embed, ephemeral=True)
+                return
+
+            # Create formatted configuration display for all settings
             embed = discord.Embed(
                 title="🔧 Bot Configuration",
                 description="Current configuration settings",
@@ -131,7 +217,8 @@ class ConfigCog(BaseCommandCog):
                     f"**Update Days:** {config.UPDATE_DAYS}\n"
                     f"**Fixed Update Time:** {config.FIXED_UPDATE_TIME}\n"
                     f"**Keep Days:** {config.KEEP_DAYS}\n"
-                    f"**Time Range Days:** {config.TIME_RANGE_DAYS}"
+                    f"**Time Range Days:** {config.TIME_RANGE_DAYS}\n"
+                    f"**Time Range Months:** {config.TIME_RANGE_MONTHS}"
                 ),
                 inline=True
             )
@@ -157,13 +244,74 @@ class ConfigCog(BaseCommandCog):
                 inline=True
             )
 
-            # Additional Options
+            # Graph Options
             _ = embed.add_field(
-                name="⚙️ Options",
+                name="⚙️ Graph Options",
                 value=(
                     f"**Censor Usernames:** {'Yes' if config.CENSOR_USERNAMES else 'No'}\n"
                     f"**Graph Grid:** {'Enabled' if config.ENABLE_GRAPH_GRID else 'Disabled'}\n"
+                    f"**Media Type Separation:** {'Enabled' if config.ENABLE_MEDIA_TYPE_SEPARATION else 'Disabled'}\n"
                     f"**Annotation Outline:** {'Enabled' if config.ENABLE_ANNOTATION_OUTLINE else 'Disabled'}"
+                ),
+                inline=False
+            )
+
+            # Colors
+            _ = embed.add_field(
+                name="🎨 Colors",
+                value=(
+                    f"**TV Color:** {config.TV_COLOR}\n"
+                    f"**Movie Color:** {config.MOVIE_COLOR}\n"
+                    f"**Background:** {config.GRAPH_BACKGROUND_COLOR}\n"
+                    f"**Annotation:** {config.ANNOTATION_COLOR}\n"
+                    f"**Annotation Outline:** {config.ANNOTATION_OUTLINE_COLOR}"
+                ),
+                inline=True
+            )
+
+            # Annotation Settings
+            annotation_graphs: list[str] = []
+            if config.ANNOTATE_DAILY_PLAY_COUNT:
+                annotation_graphs.append("Daily Play Count")
+            if config.ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK:
+                annotation_graphs.append("By Day of Week")
+            if config.ANNOTATE_PLAY_COUNT_BY_HOUROFDAY:
+                annotation_graphs.append("By Hour of Day")
+            if config.ANNOTATE_TOP_10_PLATFORMS:
+                annotation_graphs.append("Top 10 Platforms")
+            if config.ANNOTATE_TOP_10_USERS:
+                annotation_graphs.append("Top 10 Users")
+            if config.ANNOTATE_PLAY_COUNT_BY_MONTH:
+                annotation_graphs.append("By Month")
+
+            _ = embed.add_field(
+                name="📝 Annotations Enabled",
+                value="\n".join(f"• {option}" for option in annotation_graphs) if annotation_graphs else "None enabled",
+                inline=True
+            )
+
+            # Peak Annotations
+            _ = embed.add_field(
+                name="📍 Peak Annotations",
+                value=(
+                    f"**Enabled:** {'Yes' if config.ENABLE_PEAK_ANNOTATIONS else 'No'}\n"
+                    f"**Color:** {config.PEAK_ANNOTATION_COLOR}\n"
+                    f"**Text Color:** {config.PEAK_ANNOTATION_TEXT_COLOR}\n"
+                    f"**Font Size:** {config.ANNOTATION_FONT_SIZE}"
+                ),
+                inline=False
+            )
+
+            # Cooldown Settings
+            _ = embed.add_field(
+                name="⏱️ Command Cooldowns",
+                value=(
+                    f"**Config (User):** {config.CONFIG_COOLDOWN_MINUTES}min\n"
+                    f"**Config (Global):** {config.CONFIG_GLOBAL_COOLDOWN_SECONDS}s\n"
+                    f"**Update Graphs (User):** {config.UPDATE_GRAPHS_COOLDOWN_MINUTES}min\n"
+                    f"**Update Graphs (Global):** {config.UPDATE_GRAPHS_GLOBAL_COOLDOWN_SECONDS}s\n"
+                    f"**My Stats (User):** {config.MY_STATS_COOLDOWN_MINUTES}min\n"
+                    f"**My Stats (Global):** {config.MY_STATS_GLOBAL_COOLDOWN_SECONDS}s"
                 ),
                 inline=False
             )
@@ -181,15 +329,16 @@ class ConfigCog(BaseCommandCog):
         description="Edit bot configuration"
     )
     @app_commands.describe(
-        setting="The configuration setting to modify",
+        key="The configuration setting to modify",
         value="The new value for the setting"
     )
+    @app_commands.autocomplete(key=_config_key_autocomplete)
     @app_commands.default_permissions(manage_guild=True)
     @app_commands.checks.has_permissions(manage_guild=True)
     async def config_edit(
         self,
         interaction: discord.Interaction,
-        setting: str,
+        key: str,
         value: str
     ) -> None:
         """
@@ -197,7 +346,7 @@ class ConfigCog(BaseCommandCog):
 
         Args:
             interaction: The Discord interaction
-            setting: The configuration setting to modify
+            key: The configuration setting to modify
             value: The new value for the setting
         """
         try:
@@ -205,27 +354,27 @@ class ConfigCog(BaseCommandCog):
             current_config = self.tgraph_bot.config_manager.get_current_config()
 
             # Validate that the setting exists
-            if not hasattr(current_config, setting):
+            if not hasattr(current_config, key):
                 raise TGraphValidationError(
-                    f"Configuration setting '{setting}' does not exist",
-                    user_message=f"Configuration setting `{setting}` does not exist. Use `/config view` to see all available settings."
+                    f"Configuration setting '{key}' does not exist",
+                    user_message=f"Configuration setting `{key}` does not exist. Use `/config view` to see all available settings."
                 )
 
             # Get the current value and type
-            current_value: object = getattr(current_config, setting)  # pyright: ignore[reportAny]
+            current_value: object = getattr(current_config, key)  # pyright: ignore[reportAny]
 
             # Convert the string value to the appropriate type
             try:
                 converted_value = self._convert_config_value(value, type(current_value))
             except ValueError as e:
                 raise TGraphValidationError(
-                    f"Invalid value for setting '{setting}': {e}",
-                    user_message=f"Invalid value for `{setting}`: {e}. Current value: {current_value!r} (type: {type(current_value).__name__})"
+                    f"Invalid value for setting '{key}': {e}",
+                    user_message=f"Invalid value for `{key}`: {e}. Current value: {current_value!r} (type: {type(current_value).__name__})"
                 )
 
             # Create updated configuration data
             config_data = current_config.model_dump()
-            config_data[setting] = converted_value
+            config_data[key] = converted_value
 
             # Validate the new configuration
             try:
@@ -252,7 +401,7 @@ class ConfigCog(BaseCommandCog):
             # Success message
             success_embed = discord.Embed(
                 title="✅ Configuration Updated",
-                description=f"Successfully updated `{setting}`",
+                description=f"Successfully updated `{key}`",
                 color=discord.Color.green()
             )
             _ = success_embed.add_field(
@@ -272,7 +421,7 @@ class ConfigCog(BaseCommandCog):
         except Exception as e:
             # Use base class error handling with additional context
             additional_context: dict[str, object] = {
-                "setting": setting,
+                "key": key,
                 "value": value
             }
             await self.handle_command_error(interaction, e, "config_edit", additional_context)

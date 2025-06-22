@@ -411,7 +411,7 @@ class TestCalculateNextUpdateTime:
         mock_state_content = json.dumps(scheduler_state)
         
         with patch('pathlib.Path.exists', return_value=True), \
-             patch('builtins.open', mock_open(read_data=mock_state_content)):
+             patch('builtins.open', mock_open(read_data=mock_state_content)):  # pyright: ignore[reportAny]
             
             result = calculate_next_update_time(1, time_str)  # 1 day interval
             
@@ -442,7 +442,7 @@ class TestCalculateNextUpdateTime:
         mock_state_content = json.dumps(scheduler_state)
         
         with patch('pathlib.Path.exists', return_value=True), \
-             patch('builtins.open', mock_open(read_data=mock_state_content)):
+             patch('builtins.open', mock_open(read_data=mock_state_content)):  # pyright: ignore[reportAny]
             
             result = calculate_next_update_time(7, time_str)  # 7 day interval
             
@@ -463,7 +463,7 @@ class TestCalculateNextUpdateTime:
         """Test fixed time calculation with malformed scheduler state file."""
         # Mock malformed JSON in state file
         with patch('pathlib.Path.exists', return_value=True), \
-             patch('builtins.open', mock_open(read_data="invalid json")):
+             patch('builtins.open', mock_open(read_data="invalid json")):  # pyright: ignore[reportAny]
             
             now = datetime.now()
             past_time = now - timedelta(hours=2)
@@ -491,7 +491,7 @@ class TestCalculateNextUpdateTime:
         mock_state_content = json.dumps(scheduler_state)
         
         with patch('pathlib.Path.exists', return_value=True), \
-             patch('builtins.open', mock_open(read_data=mock_state_content)):
+             patch('builtins.open', mock_open(read_data=mock_state_content)):  # pyright: ignore[reportAny]
             
             now = datetime.now()
             past_time = now - timedelta(hours=2)

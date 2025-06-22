@@ -5,7 +5,6 @@ This module provides utilities for validating and handling Discord file uploads,
 including file size limits, format validation, and error handling for graph images.
 """
 
-import json
 import logging
 from datetime import datetime, time, timedelta
 from pathlib import Path
@@ -61,18 +60,17 @@ def calculate_next_update_time(update_days: int, fixed_update_time: str) -> date
         # Try to load scheduler state to respect update_days interval from last update
         # This matches the scheduler logic in bot/update_tracker.py
         try:
-            from pathlib import Path
             import json
-            
+
             # Try to find the scheduler state file
             state_file = Path("data/scheduler_state.json")
             if state_file.exists():
                 with state_file.open('r') as f:
-                    state_data = json.load(f)
-                    
+                    state_data = json.load(f)  # pyright: ignore[reportAny]
+
                 if 'state' in state_data and 'last_update' in state_data['state']:
-                    last_update_str = state_data['state']['last_update']
-                    if last_update_str:
+                    last_update_str = state_data['state']['last_update']  # pyright: ignore[reportAny]
+                    if last_update_str and isinstance(last_update_str, str):
                         last_update = datetime.fromisoformat(last_update_str)
                         
                         # Respect the update_days interval if we have a last update
