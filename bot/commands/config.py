@@ -13,6 +13,7 @@ from discord import app_commands
 from discord.ext import commands
 from pydantic import ValidationError
 
+import i18n
 from config.manager import ConfigManager
 from config.schema import TGraphBotConfig
 from utils.base_command_cog import BaseCommandCog
@@ -127,15 +128,15 @@ class ConfigCog(BaseCommandCog):
 
     config_group: app_commands.Group = app_commands.Group(
         name="config",
-        description="View or edit bot configuration"
+        description=i18n.translate("View or edit bot configuration")
     )
-    
+
     @config_group.command(
         name="view",
-        description="View current bot configuration"
+        description=i18n.translate("View current bot configuration")
     )
     @app_commands.describe(
-        key="Optional: View a specific configuration setting"
+        key=i18n.translate("Optional: View a specific configuration setting")
     )
     @app_commands.autocomplete(key=_config_key_autocomplete)
     @app_commands.default_permissions(manage_guild=True)
@@ -326,11 +327,11 @@ class ConfigCog(BaseCommandCog):
         
     @config_group.command(
         name="edit",
-        description="Edit bot configuration"
+        description=i18n.translate("Edit bot configuration")
     )
     @app_commands.describe(
-        key="The configuration setting to modify",
-        value="The new value for the setting"
+        key=i18n.translate("The configuration setting to modify"),
+        value=i18n.translate("The new value for the setting")
     )
     @app_commands.autocomplete(key=_config_key_autocomplete)
     @app_commands.default_permissions(manage_guild=True)

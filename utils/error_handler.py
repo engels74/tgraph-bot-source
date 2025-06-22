@@ -21,6 +21,7 @@ from collections.abc import Awaitable, Callable
 
 import discord
 
+import i18n
 from utils.command_utils import send_error_response
 
 if TYPE_CHECKING:
@@ -294,9 +295,6 @@ def create_user_friendly_message(
     context: ErrorContext | None = None
 ) -> str:
     """Create a user-friendly error message based on error category."""
-    # Import i18n for translations
-    import i18n
-    
     base_messages = {
         ErrorCategory.NETWORK: i18n.translate("There was a network connectivity issue. Please try again in a moment."),
         ErrorCategory.API: i18n.translate("The external service is temporarily unavailable. Please try again later."),
@@ -312,7 +310,7 @@ def create_user_friendly_message(
     
     # Add context-specific information if available
     if context and context.command_name:
-        message = f"Error in `{context.command_name}` command: {message}"
+        message = i18n.translate("Error in `{command_name}` command: {error_message}", command_name=context.command_name, error_message=message)
     
     return message
 
@@ -348,7 +346,7 @@ async def handle_command_error(
     # Send error response to user
     _ = await send_error_response(
         interaction=interaction,
-        title="Command Error",
+        title=i18n.translate("Command Error"),
         description=user_message,
         ephemeral=True
     )

@@ -12,6 +12,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+import i18n
 from utils.error_handler import (
     ErrorContext,
     handle_command_error
@@ -37,7 +38,7 @@ class AboutCog(commands.Cog):
         
     @app_commands.command(
         name="about",
-        description="Display information about the bot"
+        description=i18n.translate("Display information about the bot")
     )
     async def about(self, interaction: discord.Interaction) -> None:
         """
@@ -47,9 +48,6 @@ class AboutCog(commands.Cog):
             interaction: The Discord interaction
         """
         try:
-            # Import i18n for translations
-            import i18n
-            
             embed = discord.Embed(
                 title=i18n.translate("TGraph Bot"),
                 description=i18n.translate("TGraph Bot - Tautulli Discord Graph Generator"),
@@ -57,42 +55,42 @@ class AboutCog(commands.Cog):
             )
 
             _ = embed.add_field(
-                name="Version",
+                name=i18n.translate("Version"),
                 value="1.0.0",
                 inline=True
             )
 
             _ = embed.add_field(
-                name="Author",
+                name=i18n.translate("Author"),
                 value="engels74",
                 inline=True
             )
 
             _ = embed.add_field(
-                name="GitHub",
+                name=i18n.translate("GitHub"),
                 value="[tgraph-bot-source](https://github.com/engels74/tgraph-bot-source)",
                 inline=True
             )
 
             _ = embed.add_field(
-                name="License",
+                name=i18n.translate("License"),
                 value="AGPL-3.0",
                 inline=True
             )
 
             _ = embed.add_field(
-                name="Python Version",
+                name=i18n.translate("Python Version"),
                 value="3.13+",
                 inline=True
             )
 
             _ = embed.add_field(
-                name="Discord.py Version",
+                name=i18n.translate("Discord.py Version"),
                 value=discord.__version__,
                 inline=True
             )
 
-            _ = embed.set_footer(text="TGraph Bot - Bringing Tautulli stats to Discord")
+            _ = embed.set_footer(text=i18n.translate("TGraph Bot - Bringing Tautulli stats to Discord"))
 
             _ = await interaction.response.send_message(embed=embed)
 

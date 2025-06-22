@@ -23,6 +23,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+import i18n
 from graphs.user_graph_manager import UserGraphManager
 from utils.base_command_cog import BaseCommandCog, BaseCooldownConfig
 from utils.command_utils import create_error_embed, create_success_embed, create_info_embed, create_cooldown_embed
@@ -69,10 +70,10 @@ class MyStatsCog(BaseCommandCog):
         
     @app_commands.command(
         name="my_stats",
-        description="Get your personal Plex statistics via DM"
+        description=i18n.translate("Get your personal Plex statistics via DM")
     )
     @app_commands.describe(
-        email="Your Plex account email address (used to identify your statistics)"
+        email=i18n.translate("Your Plex account email address (used to identify your statistics)")
     )
     async def my_stats(
         self,
@@ -97,7 +98,7 @@ class MyStatsCog(BaseCommandCog):
             # Check cooldowns first
             is_on_cooldown, retry_after = self.check_cooldowns(interaction)
             if is_on_cooldown:
-                cooldown_embed = create_cooldown_embed("personal statistics", retry_after)
+                cooldown_embed = create_cooldown_embed(i18n.translate("personal statistics"), retry_after)
                 _ = await interaction.response.send_message(embed=cooldown_embed, ephemeral=True)
                 return
 
@@ -105,27 +106,27 @@ class MyStatsCog(BaseCommandCog):
             if not email or "@" not in email or "." not in email or len(email) < 5:
                 raise ValidationError(
                     f"Invalid email format: {email}",
-                    user_message="Please provide a valid email address (e.g., user@example.com)."
+                    user_message=i18n.translate("Please provide a valid email address (e.g., user@example.com).")
                 )
 
             # Acknowledge the command with informative message
             embed = create_info_embed(
-                title="Personal Statistics Request",
-                description="Generating your personal Plex statistics... This may take a moment."
+                title=i18n.translate("Personal Statistics Request"),
+                description=i18n.translate("Generating your personal Plex statistics... This may take a moment.")
             )
             _ = embed.add_field(
-                name="Email",
+                name=i18n.translate("Email"),
                 value=email,
                 inline=True
             )
             _ = embed.add_field(
-                name="Delivery Method",
-                value="Direct Message (DM)",
+                name=i18n.translate("Delivery Method"),
+                value=i18n.translate("Direct Message (DM)"),
                 inline=True
             )
             _ = embed.add_field(
-                name="Estimated Time",
-                value="1-3 minutes",
+                name=i18n.translate("Estimated Time"),
+                value=i18n.translate("1-3 minutes"),
                 inline=True
             )
 
@@ -145,8 +146,8 @@ class MyStatsCog(BaseCommandCog):
                 if result_stats and result_stats.get("success", False):
                     # Success - graphs were generated and sent
                     success_embed = create_success_embed(
-                        title="Personal Statistics Complete",
-                        description="Your personal Plex statistics have been generated and sent via DM!"
+                        title=i18n.translate("Personal Statistics Complete"),
+                        description=i18n.translate("Your personal Plex statistics have been generated and sent via DM!")
                     )
 
                     # Add statistics from the result
@@ -154,18 +155,18 @@ class MyStatsCog(BaseCommandCog):
                     processing_time = result_stats.get("processing_time", 0)
 
                     _ = success_embed.add_field(
-                        name="Graphs Generated",
-                        value=f"{graphs_generated} personal graphs",
+                        name=i18n.translate("Graphs Generated"),
+                        value=i18n.translate("{count} personal graphs", count=graphs_generated),
                         inline=True
                     )
                     _ = success_embed.add_field(
-                        name="Processing Time",
-                        value=f"{processing_time:.1f} seconds",
+                        name=i18n.translate("Processing Time"),
+                        value=i18n.translate("{time:.1f} seconds", time=processing_time),
                         inline=True
                     )
                     _ = success_embed.add_field(
-                        name="Check Your DMs",
-                        value="Your graphs have been sent privately",
+                        name=i18n.translate("Check Your DMs"),
+                        value=i18n.translate("Your graphs have been sent privately"),
                         inline=False
                     )
 
@@ -173,17 +174,17 @@ class MyStatsCog(BaseCommandCog):
                 else:
                     # Error occurred during processing
                     error_embed = create_error_embed(
-                        title="Statistics Generation Failed",
-                        description="Unable to generate your personal statistics."
+                        title=i18n.translate("Statistics Generation Failed"),
+                        description=i18n.translate("Unable to generate your personal statistics.")
                     )
                     _ = error_embed.add_field(
-                        name="Possible Causes",
-                        value="• Email not found in Plex server\n• Insufficient data for graphs\n• Temporary server issue",
+                        name=i18n.translate("Possible Causes"),
+                        value=i18n.translate("• Email not found in Plex server\n• Insufficient data for graphs\n• Temporary server issue"),
                         inline=False
                     )
                     _ = error_embed.add_field(
-                        name="Next Steps",
-                        value="• Verify your email is correct\n• Ensure you have Plex activity\n• Try again in a few minutes",
+                        name=i18n.translate("Next Steps"),
+                        value=i18n.translate("• Verify your email is correct\n• Ensure you have Plex activity\n• Try again in a few minutes"),
                         inline=False
                     )
 

@@ -13,6 +13,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+import i18n
 from utils.error_handler import (
     ErrorContext,
     handle_command_error
@@ -38,7 +39,7 @@ class UptimeCog(commands.Cog):
         
     @app_commands.command(
         name="uptime",
-        description="Show bot uptime"
+        description=i18n.translate("Show bot uptime")
     )
     async def uptime(self, interaction: discord.Interaction) -> None:
         """
@@ -59,37 +60,37 @@ class UptimeCog(commands.Cog):
             minutes = (uptime_seconds % 3600) // 60
             seconds = uptime_seconds % 60
 
-            # Format uptime string
+            # Format uptime string with internationalization
             uptime_parts: list[str] = []
             if days > 0:
-                uptime_parts.append(f"{days} day{'s' if days != 1 else ''}")
+                uptime_parts.append(i18n.ngettext("{n} day", "{n} days", days))
             if hours > 0:
-                uptime_parts.append(f"{hours} hour{'s' if hours != 1 else ''}")
+                uptime_parts.append(i18n.ngettext("{n} hour", "{n} hours", hours))
             if minutes > 0:
-                uptime_parts.append(f"{minutes} minute{'s' if minutes != 1 else ''}")
+                uptime_parts.append(i18n.ngettext("{n} minute", "{n} minutes", minutes))
             if seconds > 0 or not uptime_parts:
-                uptime_parts.append(f"{seconds} second{'s' if seconds != 1 else ''}")
+                uptime_parts.append(i18n.ngettext("{n} second", "{n} seconds", seconds))
 
             uptime_string = ", ".join(uptime_parts)
 
             embed = discord.Embed(
-                title="Bot Uptime",
+                title=i18n.translate("Bot Uptime"),
                 color=discord.Color.green()
             )
 
             _ = embed.add_field(
-                name="Uptime",
+                name=i18n.translate("Uptime"),
                 value=uptime_string,
                 inline=False
             )
 
             _ = embed.add_field(
-                name="Started",
+                name=i18n.translate("Started"),
                 value=f"<t:{int(start_time)}:F>",
                 inline=False
             )
 
-            _ = embed.set_footer(text="TGraph Bot is running smoothly!")
+            _ = embed.set_footer(text=i18n.translate("TGraph Bot is running smoothly!"))
 
             _ = await interaction.response.send_message(embed=embed)
 

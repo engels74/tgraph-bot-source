@@ -24,6 +24,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+import i18n
 from graphs.graph_manager import GraphManager
 from utils.base_command_cog import BaseCommandCog, BaseCooldownConfig
 from utils.command_utils import create_error_embed, create_success_embed, create_info_embed, create_cooldown_embed
@@ -76,7 +77,7 @@ class UpdateGraphsCog(BaseCommandCog):
 
     @app_commands.command(
         name="update_graphs",
-        description="Manually trigger server-wide graph generation and posting"
+        description=i18n.translate("Manually trigger server-wide graph generation and posting")
     )
     @app_commands.default_permissions(manage_guild=True)
     @app_commands.checks.has_permissions(manage_guild=True)
@@ -98,23 +99,23 @@ class UpdateGraphsCog(BaseCommandCog):
         # Check cooldowns first
         is_on_cooldown, retry_after = self.check_cooldowns(interaction)
         if is_on_cooldown:
-            cooldown_embed = create_cooldown_embed("update graphs", retry_after)
+            cooldown_embed = create_cooldown_embed(i18n.translate("update graphs"), retry_after)
             _ = await interaction.response.send_message(embed=cooldown_embed, ephemeral=True)
             return
 
         # Acknowledge the command immediately
         embed = create_info_embed(
-            title="Graph Update Started",
-            description="Generating server graphs... This may take a few minutes."
+            title=i18n.translate("Graph Update Started"),
+            description=i18n.translate("Generating server graphs... This may take a few minutes.")
         )
         _ = embed.add_field(
-            name="Status",
-            value="🔄 Initializing graph generation",
+            name=i18n.translate("Status"),
+            value=i18n.translate("🔄 Initializing graph generation"),
             inline=False
         )
         _ = embed.add_field(
-            name="Estimated Time",
-            value="2-5 minutes depending on data size",
+            name=i18n.translate("Estimated Time"),
+            value=i18n.translate("2-5 minutes depending on data size"),
             inline=False
         )
 
@@ -125,7 +126,7 @@ class UpdateGraphsCog(BaseCommandCog):
             target_channel = self.config_helper.validate_discord_channel(self.bot)
 
             # Create progress callback manager for real-time updates
-            progress_manager = ProgressCallbackManager(interaction, "Graph Generation")
+            progress_manager = ProgressCallbackManager(interaction, i18n.translate("Graph Generation"))
             progress_callback = progress_manager.create_progress_callback()
 
             # Generate graphs using GraphManager
@@ -138,8 +139,8 @@ class UpdateGraphsCog(BaseCommandCog):
 
                 if not graph_files:
                     warning_embed = create_error_embed(
-                        title="No Graphs Generated",
-                        description="No graph files were created. This may be due to insufficient data or configuration issues."
+                        title=i18n.translate("No Graphs Generated"),
+                        description=i18n.translate("No graph files were created. This may be due to insufficient data or configuration issues.")
                     )
                     _ = await interaction.followup.send(embed=warning_embed, ephemeral=True)
                     return
@@ -150,27 +151,29 @@ class UpdateGraphsCog(BaseCommandCog):
                 # Send completion message
                 if success_count == len(graph_files):
                     success_embed = create_success_embed(
-                        title="Graph Update Complete",
-                        description=f"Successfully generated and posted {success_count} graphs to {target_channel.mention}"
+                        title=i18n.translate("Graph Update Complete"),
+                        description=i18n.translate("Successfully generated and posted {count} graphs to {channel}",
+                                                  count=success_count, channel=target_channel.mention)
                     )
                     _ = success_embed.add_field(
-                        name="Generated Graphs",
-                        value=f"{len(graph_files)} files",
+                        name=i18n.translate("Generated Graphs"),
+                        value=i18n.translate("{count} files", count=len(graph_files)),
                         inline=True
                     )
                     _ = success_embed.add_field(
-                        name="Posted Successfully",
-                        value=f"{success_count} individual messages",
+                        name=i18n.translate("Posted Successfully"),
+                        value=i18n.translate("{count} individual messages", count=success_count),
                         inline=True
                     )
                 else:
                     warning_embed = create_error_embed(
-                        title="Partial Success",
-                        description=f"Generated {len(graph_files)} graphs but only posted {success_count} successfully"
+                        title=i18n.translate("Partial Success"),
+                        description=i18n.translate("Generated {total} graphs but only posted {success} successfully",
+                                                  total=len(graph_files), success=success_count)
                     )
                     _ = warning_embed.add_field(
-                        name="Check Logs",
-                        value="Some files may have failed to upload",
+                        name=i18n.translate("Check Logs"),
+                        value=i18n.translate("Some files may have failed to upload"),
                         inline=False
                     )
                     _ = await interaction.followup.send(embed=warning_embed, ephemeral=True)
@@ -259,15 +262,15 @@ class UpdateGraphsCog(BaseCommandCog):
                 except discord.Forbidden as e:
                     error_msg = f"Permission denied while posting graph {graph_file}: {e}"
                     logger.error(error_msg)
-                    raise APIError(error_msg, user_message="Bot lacks permission to post in the configured channel.") from e
-                    
+                    raise APIError(error_msg, user_message=i18n.translate("Bot lacks permission to post in the configured channel.")) from e
+
                 except discord.HTTPException as e:
                     error_msg = f"Discord API error while posting graph {graph_file}: {e}"
                     logger.error(error_msg)
                     if "rate limit" in str(e).lower():
-                        raise APIError(error_msg, user_message="Discord rate limit reached. Please try again later.") from e
+                        raise APIError(error_msg, user_message=i18n.translate("Discord rate limit reached. Please try again later.")) from e
                     else:
-                        raise APIError(error_msg, user_message="Discord API error occurred while posting graphs.") from e
+                        raise APIError(error_msg, user_message=i18n.translate("Discord API error occurred while posting graphs.")) from e
                         
                 except Exception as e:
                     logger.error(f"Unexpected error posting graph {graph_file}: {e}")
@@ -281,7 +284,7 @@ class UpdateGraphsCog(BaseCommandCog):
             # Re-raise our custom exceptions
             raise
         except Exception as e:
-            raise NetworkError(f"Unexpected error while posting graphs: {e}", user_message="Network error occurred while posting graphs.") from e
+            raise NetworkError(f"Unexpected error while posting graphs: {e}", user_message=i18n.translate("Network error occurred while posting graphs.")) from e
 
 
 async def setup(bot: commands.Bot) -> None:

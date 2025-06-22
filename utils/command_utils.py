@@ -13,6 +13,7 @@ import re
 from typing import TypeVar
 
 import discord
+import i18n
 
 logger = logging.getLogger(__name__)
 
@@ -21,8 +22,8 @@ T = TypeVar('T')
 
 
 def create_error_embed(
-    title: str = "Error",
-    description: str = "An error occurred",
+    title: str | None = None,
+    description: str | None = None,
     color: discord.Color | None = None
 ) -> discord.Embed:
     """
@@ -39,6 +40,11 @@ def create_error_embed(
     if color is None:
         color = discord.Color.red()
 
+    if title is None:
+        title = i18n.translate("Error")
+    if description is None:
+        description = i18n.translate("An error occurred")
+
     embed = discord.Embed(
         title=title,
         description=description,
@@ -49,8 +55,8 @@ def create_error_embed(
 
 
 def create_success_embed(
-    title: str = "Success",
-    description: str = "Operation completed successfully",
+    title: str | None = None,
+    description: str | None = None,
     color: discord.Color | None = None
 ) -> discord.Embed:
     """
@@ -67,6 +73,11 @@ def create_success_embed(
     if color is None:
         color = discord.Color.green()
 
+    if title is None:
+        title = i18n.translate("Success")
+    if description is None:
+        description = i18n.translate("Operation completed successfully")
+
     embed = discord.Embed(
         title=title,
         description=description,
@@ -77,7 +88,7 @@ def create_success_embed(
 
 
 def create_info_embed(
-    title: str = "Information",
+    title: str | None = None,
     description: str = "",
     color: discord.Color | None = None
 ) -> discord.Embed:
@@ -94,6 +105,9 @@ def create_info_embed(
     """
     if color is None:
         color = discord.Color.blue()
+
+    if title is None:
+        title = i18n.translate("Information")
 
     embed = discord.Embed(
         title=title,
@@ -118,20 +132,20 @@ def format_config_value(key: str, value: str | int | float | bool | None) -> str
     # Hide sensitive values
     sensitive_keys = {"DISCORD_TOKEN", "TAUTULLI_API_KEY"}
     if key.upper() in sensitive_keys:
-        return "***HIDDEN***"
-        
+        return i18n.translate("***HIDDEN***")
+
     # Format boolean values
     if isinstance(value, bool):
-        return "✅ Enabled" if value else "❌ Disabled"
-        
+        return i18n.translate("✅ Enabled") if value else i18n.translate("❌ Disabled")
+
     # Format None values
     if value is None:
-        return "Not set"
-        
+        return i18n.translate("Not set")
+
     # Format string values
     if isinstance(value, str):
         if not value.strip():
-            return "Empty"
+            return i18n.translate("Empty")
         return str(value)
         
     # Default formatting for any other type
@@ -326,7 +340,7 @@ def create_progress_embed(
     )
 
     _ = embed.add_field(
-        name="Progress",
+        name=i18n.translate("Progress"),
         value=f"{progress_bar} {percentage:.1f}%\n{current}/{total}",
         inline=False
     )
@@ -351,23 +365,23 @@ def create_cooldown_embed(
     """
     # Format retry time
     if retry_after_seconds >= 60:
-        retry_time = f"{retry_after_seconds / 60:.1f} minutes"
+        retry_time = i18n.translate("{time:.1f} minutes", time=retry_after_seconds / 60)
     else:
-        retry_time = f"{retry_after_seconds:.0f} seconds"
+        retry_time = i18n.translate("{time:.0f} seconds", time=retry_after_seconds)
 
     embed = create_error_embed(
-        title="Command on Cooldown",
-        description=f"The {command_name} command is currently on cooldown."
+        title=i18n.translate("Command on Cooldown"),
+        description=i18n.translate("The {command_name} command is currently on cooldown.", command_name=command_name)
     )
 
     _ = embed.add_field(
-        name="Retry After",
+        name=i18n.translate("Retry After"),
         value=retry_time,
         inline=True
     )
     _ = embed.add_field(
-        name="Reason",
-        value="This prevents server overload during graph generation",
+        name=i18n.translate("Reason"),
+        value=i18n.translate("This prevents server overload during graph generation"),
         inline=False
     )
 
@@ -404,7 +418,7 @@ async def safe_interaction_response(
             elif embed is not None:
                 _ = await interaction.followup.send(embed=embed, ephemeral=ephemeral)
             else:
-                _ = await interaction.followup.send(content="No content provided", ephemeral=ephemeral)
+                _ = await interaction.followup.send(content=i18n.translate("No content provided"), ephemeral=ephemeral)
         else:
             # Use initial response
             if content is not None and embed is not None:
@@ -414,7 +428,7 @@ async def safe_interaction_response(
             elif embed is not None:
                 _ = await interaction.response.send_message(embed=embed, ephemeral=ephemeral)
             else:
-                _ = await interaction.response.send_message(content="No content provided", ephemeral=ephemeral)
+                _ = await interaction.response.send_message(content=i18n.translate("No content provided"), ephemeral=ephemeral)
         return True
     except discord.HTTPException as e:
         logger.error(f"Failed to respond to interaction: {e}")
@@ -456,8 +470,8 @@ async def safe_interaction_edit(
 
 async def send_error_response(
     interaction: discord.Interaction,
-    title: str = "Error",
-    description: str = "An error occurred",
+    title: str | None = None,
+    description: str | None = None,
     ephemeral: bool = True
 ) -> bool:
     """
@@ -472,6 +486,11 @@ async def send_error_response(
     Returns:
         True if response was sent successfully, False otherwise
     """
+    if title is None:
+        title = i18n.translate("Error")
+    if description is None:
+        description = i18n.translate("An error occurred")
+
     error_embed = create_error_embed(title=title, description=description)
     return await safe_interaction_response(
         interaction=interaction,
@@ -482,8 +501,8 @@ async def send_error_response(
 
 async def send_success_response(
     interaction: discord.Interaction,
-    title: str = "Success",
-    description: str = "Operation completed successfully",
+    title: str | None = None,
+    description: str | None = None,
     ephemeral: bool = False
 ) -> bool:
     """
@@ -498,6 +517,11 @@ async def send_success_response(
     Returns:
         True if response was sent successfully, False otherwise
     """
+    if title is None:
+        title = i18n.translate("Success")
+    if description is None:
+        description = i18n.translate("Operation completed successfully")
+
     success_embed = create_success_embed(title=title, description=description)
     return await safe_interaction_response(
         interaction=interaction,
