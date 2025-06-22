@@ -99,9 +99,8 @@ class WeblateAPI:
         """Make GET request to Weblate API."""
         url = f"{self.api_url}/{endpoint.lstrip('/')}"
         try:
-            # Follow the exact pattern basedpyright suggests
-            _ = response = self.client.get(url)  # pyright: ignore[reportUnusedCallResult]
-            response.raise_for_status()
+            response = self.client.get(url)
+            _ = response.raise_for_status()
             return response.json()  # pyright: ignore[reportAny]
         except httpx.HTTPError as e:
             console.print(f"[red]API Error: {e}[/red]")
@@ -111,9 +110,8 @@ class WeblateAPI:
         """Make POST request to Weblate API."""
         url = f"{self.api_url}/{endpoint.lstrip('/')}"
         try:
-            # Follow the exact pattern basedpyright suggests
-            _ = response = self.client.post(url, json=data)  # pyright: ignore[reportUnusedCallResult]
-            response.raise_for_status()
+            response = self.client.post(url, json=data)
+            _ = response.raise_for_status()
             return response.json()  # pyright: ignore[reportAny]
         except httpx.HTTPError as e:
             console.print(f"[red]API Error: {e}[/red]")
