@@ -39,8 +39,8 @@ class BaseGraph(ABC):
     def __init__(
         self,
         config: "TGraphBotConfig | dict[str, object] | None" = None,
-        width: int = 12,
-        height: int = 8,
+        width: int = 14,
+        height: int = 10,
         dpi: int = 100,
         background_color: str | None = None
     ) -> None:
