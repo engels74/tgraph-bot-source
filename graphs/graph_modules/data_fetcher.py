@@ -205,41 +205,203 @@ class DataFetcher:
         user_id: int | None = None
     ) -> TautulliData:
         """
-        Fetch play history data from Tautulli.
-        
+        Fetch play history data from Tautulli with automatic pagination.
+
+        This method automatically fetches additional records beyond the initial 1000
+        if the TIME_RANGE_DAYS configuration suggests more data might be available.
+        It continues fetching until all records within the time range are retrieved
+        or reasonable limits are reached.
+
         Args:
             time_range: Number of days to fetch data for
             user_id: Specific user ID to filter by (None for all users)
-            
+
         Returns:
-            Play history data as a dictionary
+            Play history data as a dictionary with all paginated records combined
         """
         cache_key = f"play_history_{time_range}_{user_id}"
-        
+
         if cache_key in self._cache:
             logger.debug(f"Using cached data for {cache_key}")
             cached_data = self._cache[cache_key]
             return cached_data
-            
-        params: dict[str, str | int | float | bool] = {
-            "length": 1000,  # Maximum number of records
-            "start": 0,
-        }
-        
-        # Add time_range parameter to limit data to the specified number of days
-        if time_range > 0:
-            params["time_range"] = time_range
 
-        if user_id is not None:
-            params["user_id"] = user_id
-            
-        data = await self._make_request("get_history", params)
-        
-        # Cache the result
+        # Fetch data with automatic pagination
+        data = await self._fetch_paginated_history(time_range, user_id)
+
+        # Cache the combined result
         self._cache[cache_key] = data
-        
+
         return data
-        
+
+    async def _fetch_paginated_history(
+        self,
+        time_range: int,
+        user_id: int | None = None
+    ) -> TautulliData:
+        """
+        Fetch play history data with automatic pagination.
+
+        This method implements intelligent pagination that continues fetching
+        records until all data within the time range is retrieved or reasonable
+        limits are reached to prevent excessive API calls.
+
+        Args:
+            time_range: Number of days to fetch data for
+            user_id: Specific user ID to filter by (None for all users)
+
+        Returns:
+            Combined play history data from all pages
+        """
+        all_records: list[dict[str, object]] = []
+        start_offset = 0
+        page_size = 1000
+        max_records = 5000  # Safety limit to prevent excessive memory usage
+        max_api_calls = 5   # Limit API calls to prevent rate limiting
+        api_call_count = 0
+        first_page_metadata: dict[str, object] = {}
+
+        logger.info(f"Starting paginated fetch for time_range={time_range} days, user_id={user_id}")
+
+        while api_call_count < max_api_calls and len(all_records) < max_records:
+            # Prepare parameters for this page
+            params: dict[str, str | int | float | bool] = {
+                "length": page_size,
+                "start": start_offset,
+            }
+
+            # Add time_range parameter to limit data to the specified number of days
+            if time_range > 0:
+                params["time_range"] = time_range
+
+            if user_id is not None:
+                params["user_id"] = user_id
+
+            try:
+                # Fetch this page of data
+                page_data = await self._make_request("get_history", params)
+                api_call_count += 1
+
+                # Store metadata from the first page for the final response
+                if api_call_count == 1:
+                    first_page_metadata = {k: v for k, v in page_data.items() if k != 'data'}
+
+                # Extract records from this page
+                page_records_raw = page_data.get("data", [])
+                if not isinstance(page_records_raw, list):
+                    logger.warning(f"Page {api_call_count}: Expected list of records, got {type(page_records_raw)}")
+                    break
+
+                # Validate that all items in the list are dictionaries
+                page_records: list[dict[str, object]] = []
+                for item in page_records_raw:  # pyright: ignore[reportUnknownVariableType]
+                    if isinstance(item, dict):
+                        page_records.append(item)  # pyright: ignore[reportUnknownArgumentType]
+                    else:
+                        logger.warning(f"Skipping non-dict record: {type(item)}")  # pyright: ignore[reportUnknownArgumentType]
+
+                records_count = len(page_records)
+                logger.info(f"Page {api_call_count}: Fetched {records_count} records (offset {start_offset})")
+
+                # If no records returned, we've reached the end
+                if records_count == 0:
+                    logger.info("No more records available, pagination complete")
+                    break
+
+                # Add records to our collection
+                all_records.extend(page_records)
+
+                # If we got fewer records than requested, we've reached the end
+                if records_count < page_size:
+                    logger.info(f"Received {records_count} < {page_size} records, reached end of data")
+                    break
+
+                # Check if we should continue based on time range intelligence
+                if self._should_stop_pagination(all_records, time_range, api_call_count):
+                    logger.info("Stopping pagination based on intelligent analysis")
+                    break
+
+                # Prepare for next page
+                start_offset += page_size
+
+            except Exception as e:
+                logger.error(f"Error fetching page {api_call_count + 1}: {e}")
+                # If we have some data, return what we have; otherwise re-raise
+                if all_records:
+                    logger.warning("Returning partial data due to pagination error")
+                    break
+                else:
+                    raise
+
+        total_records = len(all_records)
+
+        # Log comprehensive pagination summary
+        if api_call_count == 1:
+            logger.info(f"Single page sufficient: fetched {total_records} records")
+        else:
+            logger.info(f"Pagination complete: fetched {total_records} total records in {api_call_count} API calls")
+
+        # Log performance metrics for monitoring
+        if total_records > 2000:
+            logger.info(f"Large dataset retrieved: {total_records} records for {time_range} day time range")
+        elif total_records < 100 and time_range > 7:
+            logger.info(f"Small dataset: only {total_records} records for {time_range} day time range")
+
+        # Return data in the same format as the original method
+        # Include metadata from the first page if available
+        result_data: TautulliData = {"data": all_records}
+
+        # If we have metadata from the first page, include it
+        if first_page_metadata:
+            result_data.update(first_page_metadata)
+            # Update the record counts to reflect the total fetched
+            result_data['recordsFiltered'] = total_records
+            result_data['recordsTotal'] = total_records
+
+        return result_data
+
+    def _should_stop_pagination(
+        self,
+        all_records: list[dict[str, object]],
+        time_range: int,
+        api_call_count: int
+    ) -> bool:
+        """
+        Determine if pagination should stop based on intelligent analysis.
+
+        This method analyzes the fetched records to determine if we likely
+        have all the data we need for the specified time range, helping to
+        avoid unnecessary API calls.
+
+        Args:
+            all_records: All records fetched so far
+            time_range: Number of days we're fetching data for
+            api_call_count: Number of API calls made so far
+
+        Returns:
+            True if pagination should stop, False to continue
+        """
+        if not all_records:
+            return False
+
+        # For small time ranges, we likely don't need many records
+        if time_range <= 7 and len(all_records) >= 500:
+            logger.debug(f"Small time range ({time_range} days) with {len(all_records)} records, likely sufficient")
+            return True
+
+        # For medium time ranges, moderate number of records should be sufficient
+        if time_range <= 30 and len(all_records) >= 2000:
+            logger.debug(f"Medium time range ({time_range} days) with {len(all_records)} records, likely sufficient")
+            return True
+
+        # If we've made several API calls, consider stopping to avoid excessive requests
+        if api_call_count >= 3 and len(all_records) >= 1500:
+            logger.debug(f"Made {api_call_count} API calls with {len(all_records)} records, stopping to avoid excessive requests")
+            return True
+
+        # Continue pagination
+        return False
+
     async def get_plays_per_month(
         self,
         time_range_months: int = 12,
