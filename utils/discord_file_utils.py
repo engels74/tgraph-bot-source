@@ -5,6 +5,7 @@ This module provides utilities for validating and handling Discord file uploads,
 including file size limits, format validation, and error handling for graph images.
 """
 
+import json
 import logging
 from datetime import datetime, time, timedelta
 from pathlib import Path
@@ -25,6 +26,9 @@ SUPPORTED_IMAGE_FORMATS = {'.png', '.jpg', '.jpeg', '.gif', '.webp'}
 def calculate_next_update_time(update_days: int, fixed_update_time: str) -> datetime | None:
     """
     Calculate the next scheduled update time based on configuration.
+    
+    This function now matches the scheduler logic exactly, including respecting
+    the update_days interval from the last update when available.
     
     Args:
         update_days: Number of days between updates
@@ -47,17 +51,43 @@ def calculate_next_update_time(update_days: int, fixed_update_time: str) -> date
         except (ValueError, AttributeError):
             return None
         
-        # Calculate next occurrence
-        next_update = current_time.replace(
-            hour=update_time.hour, 
-            minute=update_time.minute, 
-            second=0, 
-            microsecond=0
-        )
+        # Calculate next occurrence of the fixed time
+        next_update = datetime.combine(current_time.date(), update_time)
         
-        # If the time has already passed today, schedule for the next occurrence
+        # If time has passed today, schedule for tomorrow
         if next_update <= current_time:
-            next_update += timedelta(days=update_days)
+            next_update += timedelta(days=1)
+        
+        # Try to load scheduler state to respect update_days interval from last update
+        # This matches the scheduler logic in bot/update_tracker.py
+        try:
+            from pathlib import Path
+            import json
+            
+            # Try to find the scheduler state file
+            state_file = Path("data/scheduler_state.json")
+            if state_file.exists():
+                with state_file.open('r') as f:
+                    state_data = json.load(f)
+                    
+                if 'state' in state_data and 'last_update' in state_data['state']:
+                    last_update_str = state_data['state']['last_update']
+                    if last_update_str:
+                        last_update = datetime.fromisoformat(last_update_str)
+                        
+                        # Respect the update_days interval if we have a last update
+                        min_next_update = last_update + timedelta(days=update_days)
+                        if next_update < min_next_update:
+                            # Find next occurrence that respects the interval
+                            days_to_add = (min_next_update.date() - next_update.date()).days
+                            next_update += timedelta(days=days_to_add)
+                            
+                            # Ensure we still have the correct time after adding days
+                            next_update = datetime.combine(next_update.date(), update_time)
+                            
+        except Exception as e:
+            # If we can't load the state, continue with the basic logic
+            logger.debug(f"Could not load scheduler state for next update calculation: {e}")
             
         return next_update
         
