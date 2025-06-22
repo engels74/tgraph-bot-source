@@ -1,0 +1,199 @@
+name: Sync Translations from Weblate
+
+on:
+  schedule:
+    # Run every Monday at 2 AM UTC
+    - cron: '0 2 * * 1'
+  workflow_dispatch:
+    inputs:
+      force_sync:
+        description: 'Force sync even without changes'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  sync-translations:
+    name: Sync Translation Updates
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+          ref: main
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      
+      - name: Install dependencies
+        run: |
+          uv venv
+          uv pip install httpx polib pyyaml
+      
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      
+      - name: Fetch translations from Weblate
+        id: fetch_translations
+        env:
+          WEBLATE_API_TOKEN: ${{ secrets.WEBLATE_API_TOKEN }}
+          WEBLATE_API_URL: ${{ secrets.WEBLATE_API_URL }}
+        run: |
+          # Create a Python script to fetch translations
+          cat > fetch_translations.py << 'EOF'
+import httpx
+import json
+import os
+import sys
+import polib
+from pathlib import Path
+
+api_token = os.environ['WEBLATE_API_TOKEN']
+api_url = os.environ['WEBLATE_API_URL'].rstrip('/')
+headers = {'Authorization': f'Token {api_token}'}
+
+# Get component info
+component_url = f"{api_url}/components/tgraph-bot/main/"
+try:
+    resp = httpx.get(component_url, headers=headers)
+    resp.raise_for_status()
+    component = resp.json()
+except Exception as e:
+    print(f"Error fetching component: {e}")
+    sys.exit(1)
+
+# Get translations
+translations_url = component['translations_url']
+resp = httpx.get(translations_url, headers=headers)
+translations = resp.json()
+
+changes_made = False
+new_languages = []
+completed_languages = []
+
+for translation in translations:
+    lang_code = translation['language_code']
+    file_url = translation['file_url']
+    translated_percent = translation['translated_percent']
+    
+    print(f"Processing {lang_code}: {translated_percent}% translated")
+    
+    # Download translation file
+    resp = httpx.get(file_url, headers=headers)
+    po_content = resp.text
+    
+    # Save translation file
+    lang_dir = Path(f"locale/{lang_code}/LC_MESSAGES")
+    lang_dir.mkdir(parents=True, exist_ok=True)
+    po_file = lang_dir / "messages.po"
+    
+    # Check if this is a new language
+    if not po_file.exists():
+        new_languages.append(lang_code)
+        changes_made = True
+    else:
+        # Check if content changed
+        existing_content = po_file.read_text()
+        if existing_content != po_content:
+            changes_made = True
+    
+    po_file.write_text(po_content)
+    
+    # Track completed translations
+    if translated_percent == 100.0:
+        completed_languages.append(lang_code)
+
+# Output results
+with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+    f.write(f"changes_made={'true' if changes_made else 'false'}\n")
+    f.write(f"new_languages={','.join(new_languages)}\n")
+    f.write(f"completed_languages={','.join(completed_languages)}\n")
+
+if changes_made:
+    print(f"✅ Changes detected!")
+    if new_languages:
+        print(f"  New languages: {', '.join(new_languages)}")
+    if completed_languages:
+        print(f"  Completed languages: {', '.join(completed_languages)}")
+else:
+    print("ℹ️  No translation changes detected")
+EOF
+          
+          uv run python fetch_translations.py
+      
+      - name: Compile translations
+        if: steps.fetch_translations.outputs.changes_made == 'true'
+        run: |
+          uv run python scripts/compile_translations.py
+      
+      - name: Check for changes
+        id: check_changes
+        run: |
+          if [[ -n $(git status --porcelain locale/) ]]; then
+            echo "changes_found=true" >> $GITHUB_OUTPUT
+          else
+            echo "changes_found=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Create Pull Request
+        if: steps.check_changes.outputs.changes_found == 'true'
+        id: create_pr
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore(i18n): update translations from Weblate"
+          title: "🌐 Translation Updates from Weblate"
+          body: |
+            ## Translation Updates
+            
+            This PR contains the latest translation updates from Weblate.
+            
+            ### Changes
+            - **New languages**: ${{ steps.fetch_translations.outputs.new_languages || 'None' }}
+            - **Completed languages (100%)**: ${{ steps.fetch_translations.outputs.completed_languages || 'None' }}
+            
+            ### Actions
+            - If a language is 100% complete, this PR will trigger an automatic patch release when merged
+            - Review the changes and merge when ready
+            
+            ---
+            *This PR was automatically generated by the translation sync workflow.*
+          branch: translations/weekly-update
+          delete-branch: true
+          labels: |
+            translations
+            automated
+          assignees: engels74
+      
+      - name: Add completion status comment
+        if: steps.create_pr.outputs.pull-request-number
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const completed = '${{ steps.fetch_translations.outputs.completed_languages }}'.split(',').filter(Boolean);
+            if (completed.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: ${{ steps.create_pr.outputs.pull-request-number }},
+                body: `🎉 **Completed Translations**\n\nThe following languages are now 100% translated:\n${completed.map(lang => `- ${lang}`).join('\n')}\n\nMerging this PR will trigger an automatic patch release.`
+              });
+            } 

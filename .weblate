@@ -7,18 +7,18 @@
 # https://docs.weblate.org/en/latest/admin/projects.html#project-configuration
 
 [weblate]
-# Weblate instance URL - using hosted.weblate.org for this project
-url = https://hosted.weblate.org/
+# Self-hosted Weblate instance
+url = https://weblate.cccp.ps/
 
-[component "tgraph-bot"]
+[component "tgraph-bot/main"]
 # Main component for bot interface translations
-name = TGraph Bot
-slug = tgraph-bot
+name = TGraph Bot Messages
+slug = main
 repo = https://github.com/engels74/tgraph-bot-source.git
 push = git@github.com:engels74/tgraph-bot-source.git
 
-# Branch configuration - using main for stable translations
-# Note: Development happens on feat-rewrite_v2, but translations should target main
+# Branch configuration
+# We'll track main branch for stable translations
 branch = main
 
 # File patterns for translation files
@@ -46,26 +46,24 @@ enforced_checks =
     python-format,
     python-brace-format
 
-[component "tgraph-bot.readme"]
-# Component for README documentation translations
-name = TGraph Bot README
-slug = tgraph-bot-readme
-repo = https://github.com/engels74/tgraph-bot-source.git
-push = git@github.com:engels74/tgraph-bot-source.git
-branch = main
+# Translation settings
+translation_flags = 
+    python-format,
+    python-brace-format
 
-# File patterns for README translations
-filemask = docs/README.*.md
-template = README.md
+# Version control settings
+vcs = git
+repoweb = https://github.com/engels74/tgraph-bot-source/blob/%(branch)s/%(file)s#L%(line)s
+weblate_push = Weblate <weblate@cccp.ps>
 
-# Markdown file format
-file_format = md
+# Translation workflow
+enable_review = true
+auto_lock_error = true
+source_review = false
 
-# Language handling
-new_lang = add
-language_regex = ^[a-z]{2}(_[A-Z]{2})?$
+# Notifications
+notification_autowatch = true
 
-# Workflow settings for documentation
-allow_translation_propagation = true
-enable_suggestions = true
-suggestion_voting = true
+# File format specifics
+po_msgid_bugs_address = 141435164+engels74@users.noreply.github.com
+po_report_address = 141435164+engels74@users.noreply.github.com

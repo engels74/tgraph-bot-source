@@ -1,0 +1,407 @@
+name: Manual Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.1.0, 2.0.0)'
+        required: true
+        type: string
+      release_notes:
+        description: 'Additional release notes (optional)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  validate-and-release:
+    name: Validate and Create Release
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.RELEASE_TOKEN }}
+          fetch-depth: 0
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      
+      - name: Validate version
+        id: validate
+        run: |
+          pip install semver toml
+          
+          cat > validate_version.py << 'EOF'
+import sys
+import semver
+import toml
+import re
+
+def get_current_version():
+    with open('pyproject.toml', 'r') as f:
+        data = toml.load(f)
+        return data['project']['version']
+
+def validate_version(new_version, current_version):
+    try:
+        new_ver = semver.Version.parse(new_version)
+        curr_ver = semver.Version.parse(current_version)
+        
+        # Check if it's a valid bump
+        if new_ver <= curr_ver:
+            return False, f"New version ({new_version}) must be greater than current version ({current_version})"
+        
+        # Determine bump type
+        if new_ver.major > curr_ver.major:
+            bump_type = "major"
+        elif new_ver.minor > curr_ver.minor:
+            bump_type = "minor"
+        elif new_ver.patch > curr_ver.patch:
+            bump_type = "patch"
+        else:
+            return False, "Invalid version bump"
+        
+        # Warn if it's a patch bump (should use automatic release)
+        if bump_type == "patch":
+            print("⚠️  Warning: Patch releases should typically be automatic via translation updates")
+        
+        return True, bump_type
+        
+    except ValueError as e:
+        return False, f"Invalid version format: {str(e)}"
+
+# Validate
+new_version = '${{ github.event.inputs.version }}'
+current_version = get_current_version()
+
+valid, result = validate_version(new_version, current_version)
+
+if not valid:
+    print(f"❌ Version validation failed: {result}")
+    sys.exit(1)
+
+print(f"✅ Version validation passed")
+print(f"Current version: {current_version}")
+print(f"New version: {new_version}")
+print(f"Bump type: {result}")
+
+# Output for next steps
+with open('version_info.txt', 'w') as f:
+    f.write(f"current={current_version}\n")
+    f.write(f"new={new_version}\n")
+    f.write(f"bump_type={result}\n")
+EOF
+          
+          python validate_version.py
+          
+          # Read outputs
+          source version_info.txt
+          echo "current_version=$current" >> $GITHUB_OUTPUT
+          echo "new_version=$new" >> $GITHUB_OUTPUT
+          echo "bump_type=$bump_type" >> $GITHUB_OUTPUT
+      
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      
+      - name: Update version
+        run: |
+          sed -i 's/^version = ".*"/version = "${{ steps.validate.outputs.new_version }}"/' pyproject.toml
+          git add pyproject.toml
+          git commit -m "chore: bump version to ${{ steps.validate.outputs.new_version }}"
+          git push
+      
+      - name: Generate comprehensive release notes
+        id: notes
+        run: |
+          cat > generate_release_notes.py << 'EOF'
+import subprocess
+import re
+from datetime import datetime
+import json
+
+def get_last_tag():
+    try:
+        result = subprocess.run(['git', 'describe', '--tags', '--abbrev=0'], 
+                              capture_output=True, text=True, check=True)
+        return result.stdout.strip()
+    except:
+        return None
+
+def get_pr_numbers(since_tag):
+    """Extract PR numbers from commit messages"""
+    if since_tag:
+        cmd = ['git', 'log', f'{since_tag}..HEAD', '--pretty=format:%s']
+    else:
+        cmd = ['git', 'log', '--pretty=format:%s']
+    
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    messages = result.stdout.strip().split('\n') if result.stdout else []
+    
+    pr_numbers = []
+    for msg in messages:
+        # Match patterns like (#123), #123, PR #123
+        matches = re.findall(r'(?:#|PR\s*#)(\d+)', msg)
+        pr_numbers.extend(matches)
+    
+    return list(set(pr_numbers))  # Remove duplicates
+
+def get_contributors(since_tag):
+    """Get unique contributors since last tag"""
+    if since_tag:
+        cmd = ['git', 'log', f'{since_tag}..HEAD', '--pretty=format:%an <%ae>']
+    else:
+        cmd = ['git', 'log', '--pretty=format:%an <%ae>']
+    
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    contributors = set(result.stdout.strip().split('\n')) if result.stdout else set()
+    
+    # Remove bot accounts
+    contributors = {c for c in contributors if 'bot' not in c.lower() and c}
+    
+    return sorted(contributors)
+
+def categorize_changes(since_tag):
+    """Categorize commits by type"""
+    if since_tag:
+        cmd = ['git', 'log', f'{since_tag}..HEAD', '--pretty=format:%H|%s|%b']
+    else:
+        cmd = ['git', 'log', '--pretty=format:%H|%s|%b']
+    
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    commits = result.stdout.strip().split('\n') if result.stdout else []
+    
+    categories = {
+        '✨ Features': [],
+        '🐛 Bug Fixes': [],
+        '🌐 Translations': [],
+        '📚 Documentation': [],
+        '🔧 Maintenance': [],
+        '⚡ Performance': [],
+        '🔒 Security': [],
+        '🎨 UI/UX': []
+    }
+    
+    breaking_changes = []
+    
+    for commit in commits:
+        if not commit:
+            continue
+            
+        parts = commit.split('|', 2)
+        if len(parts) < 2:
+            continue
+            
+        hash = parts[0][:7]
+        message = parts[1]
+        body = parts[2] if len(parts) > 2 else ''
+        
+        # Check for breaking changes
+        if 'BREAKING' in message.upper() or 'BREAKING' in body.upper():
+            breaking_changes.append(f"{message} ({hash})")
+        
+        # Categorize
+        if message.startswith(('feat:', 'feat(', 'feature:', 'feature(')):
+            categories['✨ Features'].append(f"{message} ({hash})")
+        elif message.startswith(('fix:', 'fix(', 'bugfix:', 'bugfix(')):
+            categories['🐛 Bug Fixes'].append(f"{message} ({hash})")
+        elif any(word in message.lower() for word in ['i18n', 'translation', 'locale']):
+            categories['🌐 Translations'].append(f"{message} ({hash})")
+        elif message.startswith(('docs:', 'doc:', 'documentation:')):
+            categories['📚 Documentation'].append(f"{message} ({hash})")
+        elif message.startswith(('perf:', 'performance:')):
+            categories['⚡ Performance'].append(f"{message} ({hash})")
+        elif message.startswith(('security:', 'sec:')):
+            categories['🔒 Security'].append(f"{message} ({hash})")
+        elif any(word in message.lower() for word in ['ui', 'ux', 'style', 'design']):
+            categories['🎨 UI/UX'].append(f"{message} ({hash})")
+        else:
+            categories['🔧 Maintenance'].append(f"{message} ({hash})")
+    
+    return categories, breaking_changes
+
+# Build release notes
+last_tag = get_last_tag()
+version = '${{ steps.validate.outputs.new_version }}'
+bump_type = '${{ steps.validate.outputs.bump_type }}'
+custom_notes = '''${{ github.event.inputs.release_notes }}'''
+
+notes = []
+notes.append(f"# TGraph Bot v{version}")
+notes.append("")
+
+# Add bump type badge
+if bump_type == 'major':
+    notes.append("![Major Release](https://img.shields.io/badge/release-major-red)")
+elif bump_type == 'minor':
+    notes.append("![Minor Release](https://img.shields.io/badge/release-minor-yellow)")
+else:
+    notes.append("![Patch Release](https://img.shields.io/badge/release-patch-green)")
+
+notes.append("")
+
+# Add custom notes if provided
+if custom_notes.strip():
+    notes.append("## Release Highlights")
+    notes.append("")
+    notes.append(custom_notes.strip())
+    notes.append("")
+
+# Get categorized changes
+categories, breaking = categorize_changes(last_tag)
+
+# Add breaking changes if any
+if breaking:
+    notes.append("## ⚠️ BREAKING CHANGES")
+    notes.append("")
+    for change in breaking:
+        notes.append(f"- {change}")
+    notes.append("")
+
+# Add categorized commits
+for category, items in categories.items():
+    if items:
+        notes.append(f"## {category}")
+        notes.append("")
+        for item in items[:10]:  # Limit to 10 items per category
+            notes.append(f"- {item}")
+        if len(items) > 10:
+            notes.append(f"- ...and {len(items) - 10} more")
+        notes.append("")
+
+# Add PR references
+pr_numbers = get_pr_numbers(last_tag)
+if pr_numbers:
+    notes.append("## 🔗 Related Pull Requests")
+    notes.append("")
+    for pr in pr_numbers[:10]:
+        notes.append(f"- #{pr}")
+    notes.append("")
+
+# Add contributors
+contributors = get_contributors(last_tag)
+if contributors:
+    notes.append("## 👥 Contributors")
+    notes.append("")
+    notes.append("Thanks to everyone who contributed to this release:")
+    notes.append("")
+    for contributor in contributors:
+        notes.append(f"- {contributor}")
+    notes.append("")
+
+# Add footer
+notes.append("---")
+notes.append("")
+notes.append("## 📦 Installation")
+notes.append("")
+notes.append("### Docker")
+notes.append("```bash")
+notes.append(f"docker pull ghcr.io/engels74/tgraph-bot:{version}")
+notes.append("```")
+notes.append("")
+notes.append("### From Source")
+notes.append("```bash")
+notes.append("git clone https://github.com/engels74/tgraph-bot-source.git")
+notes.append(f"git checkout v{version}")
+notes.append("```")
+notes.append("")
+notes.append("## 📖 Documentation")
+notes.append("")
+notes.append("- [Setup Guide](https://github.com/engels74/tgraph-bot-source/blob/main/README.md)")
+notes.append("- [Configuration](https://github.com/engels74/tgraph-bot-source/blob/main/docs/configuration.md)")
+notes.append("- [Translations](https://github.com/engels74/tgraph-bot-source/blob/main/docs/WEBLATE_SETUP.md)")
+
+# Write to file
+with open('release_notes.md', 'w') as f:
+    f.write('\n'.join(notes))
+
+print("Release notes generated!")
+EOF
+          
+          python generate_release_notes.py
+          
+          # Output for GitHub
+          {
+            echo 'release_notes<<EOF'
+            cat release_notes.md
+            echo
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+      
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.validate.outputs.new_version }}
+          name: v${{ steps.validate.outputs.new_version }}
+          body: ${{ steps.notes.outputs.release_notes }}
+          draft: false
+          prerelease: ${{ steps.validate.outputs.bump_type == 'major' && 'true' || 'false' }}
+          token: ${{ secrets.RELEASE_TOKEN }}
+      
+      - name: Post-release notifications
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        run: |
+          echo "✅ Release v${{ steps.validate.outputs.new_version }} created successfully!"
+          echo ""
+          echo "Next steps:"
+          echo "1. Docker image will be built automatically"
+          echo "2. Update documentation if needed"
+          echo "3. Announce the release to users"
+          
+          # Create an issue for post-release tasks
+          cat > create_issue.py << 'EOF'
+import json
+import subprocess
+
+version = '${{ steps.validate.outputs.new_version }}'
+bump_type = '${{ steps.validate.outputs.bump_type }}'
+
+tasks = [
+    "- [ ] Verify Docker image is built and published",
+    "- [ ] Update documentation for any new features",
+    "- [ ] Test the new release in a staging environment",
+    "- [ ] Announce release on Discord/social media",
+    "- [ ] Update any dependent projects"
+]
+
+if bump_type == 'major':
+    tasks.extend([
+        "- [ ] Update migration guide for breaking changes",
+        "- [ ] Review and update API documentation"
+    ])
+
+body = f"""## Post-Release Tasks for v{version}
+
+Please complete the following tasks after the release:
+
+{chr(10).join(tasks)}
+
+---
+*This issue was automatically created by the release workflow.*
+"""
+
+issue_data = {
+    "title": f"Post-release tasks for v{version}",
+    "body": body,
+    "labels": ["release", "maintenance"],
+    "assignees": ["engels74"]
+}
+
+# Save for GitHub CLI
+with open('issue.json', 'w') as f:
+    json.dump(issue_data, f)
+EOF
+          
+          python create_issue.py
+          
+          # Create issue using GitHub CLI
+          gh issue create --json-file issue.json || echo "Failed to create issue" 
