@@ -411,6 +411,8 @@ class TestCreateGraphSpecificEmbed:
         assert embed.description is not None
         assert "number of plays per day" in embed.description
         assert embed.color == discord.Color.blue()
+        # Verify the image is set to reference the attachment
+        assert embed.image.url == "attachment://daily_play_count_20240115.png"
         
     def test_play_count_by_dayofweek_embed(self) -> None:
         """Test embed creation for play count by day of week graph."""
@@ -420,6 +422,8 @@ class TestCreateGraphSpecificEmbed:
         assert embed.description is not None
         assert "play activity patterns" in embed.description
         assert embed.color == discord.Color.blue()
+        # Verify the image is set to reference the attachment
+        assert embed.image.url == "attachment://play_count_by_dayofweek.png"
         
     def test_unknown_graph_type_embed(self) -> None:
         """Test embed creation for unknown graph types."""
@@ -429,6 +433,8 @@ class TestCreateGraphSpecificEmbed:
         assert embed.description is not None
         assert "Statistical analysis" in embed.description
         assert embed.color == discord.Color.blue()
+        # Verify the image is set to reference the attachment
+        assert embed.image.url == "attachment://unknown_graph.png"
         
     def test_embed_with_next_update_time(self) -> None:
         """Test embed creation with next update time included."""

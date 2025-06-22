@@ -133,6 +133,9 @@ def create_graph_specific_embed(
         color=discord.Color.blue()
     )
     
+    # Set the image to reference the attachment - this integrates the image within the embed
+    _ = embed.set_image(url=f"attachment://{file_path.name}")
+    
     # Add next update time if configuration is provided
     if update_days is not None and fixed_update_time is not None:
         next_update = calculate_next_update_time(update_days, fixed_update_time)
