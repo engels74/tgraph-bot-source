@@ -179,11 +179,12 @@ node_modules/
 *.sw?
 # OS specific
 .DS_Store
-# Task files
-tasks.json
-tasks/ 
 .cursor/mcp.json
 
 # TGraph Bot Specific
 config.yml
 data/
+
+# Task files
+# tasks.json
+# tasks/ 
