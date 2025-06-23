@@ -1,0 +1,74 @@
+# Weblate Configuration for TGraph Bot
+#
+# This file configures Weblate integration for collaborative translation management.
+# Weblate is a web-based translation tool that helps manage localization workflows.
+#
+# For more information about Weblate configuration, see:
+# https://docs.weblate.org/en/latest/admin/projects.html#project-configuration
+
+[weblate]
+# Self-hosted Weblate instance
+url = https://weblate.engels74.net/
+
+[component "tgraph-bot/main"]
+# Main component for bot interface translations
+name = TGraph Bot Messages
+slug = main
+repo = https://github.com/engels74/tgraph-bot-source.git
+push = git@github.com:engels74/tgraph-bot-source.git
+
+# Branch configuration
+# We'll track main branch for stable translations
+branch = main
+
+# File patterns for translation files
+filemask = locale/*/LC_MESSAGES/messages.po
+template = locale/messages.pot
+
+# Translation file format
+file_format = po-mono
+
+# Monolingual setup with English as base
+base_language = en
+source_language = en
+intermediate_language = en
+
+# Language handling
+new_lang = add
+language_regex = ^[a-z]{2}(_[A-Z]{2})?$
+
+# Workflow settings
+allow_translation_propagation = true
+enable_suggestions = true
+suggestion_voting = true
+check_flags = safe-html,python-format,python-brace-format
+
+# Quality checks
+enforced_checks =
+    inconsistent,
+    same,
+    translated,
+    python-format,
+    python-brace-format
+
+# Translation settings
+translation_flags = 
+    python-format,
+    python-brace-format
+
+# Version control settings
+vcs = git
+repoweb = https://github.com/engels74/tgraph-bot-source/blob/%(branch)s/%(file)s#L%(line)s
+weblate_push = Weblate <weblate@engels74.net>
+
+# Translation workflow
+enable_review = true
+auto_lock_error = true
+source_review = false
+
+# Notifications
+notification_autowatch = true
+
+# File format specifics
+po_msgid_bugs_address = 141435164+engels74@users.noreply.github.com
+po_report_address = 141435164+engels74@users.noreply.github.com

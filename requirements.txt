@@ -1,7 +1,0 @@
-aiofiles
-aiohttp
-cachetools
-discord.py
-matplotlib
-requests
-ruamel.yaml
