@@ -53,7 +53,7 @@ cover/
 
 # Translations
 *.mo
-*.pot
+# *.pot  # Commented out - we need .pot files for Weblate
 
 # Django stuff:
 *.log
