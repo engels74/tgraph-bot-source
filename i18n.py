@@ -1,329 +1,257 @@
-# i18n.py
-
 """
-Internationalization support for TGraph Bot.
-Handles loading and management of translations with proper error handling.
+Internationalization (i18n) support for TGraph Bot.
+
+This module handles loading gettext translation files from the locale directory
+and provides functions to retrieve translated strings based on the configured language.
+
+Usage Examples:
+    Basic setup:
+        >>> import i18n
+        >>> i18n.setup_i18n("en")  # Setup English translations
+        >>> message = i18n._("Hello, world!")  # Translate a string
+
+    With formatting:
+        >>> message = i18n.translate("Hello, {name}!", name="Alice")
+        >>> # or using the alias:
+        >>> message = i18n.t("Hello, {name}!", name="Alice")
+
+    Language switching:
+        >>> i18n.setup_i18n("da")  # Switch to Danish
+        >>> i18n.setup_i18n("en")  # Switch back to English
+
+    Getting current translation function:
+        >>> translate_func = i18n.get_translation()
+        >>> message = translate_func("Hello, world!")
 """
 
-from config.modules.sanitizer import sanitize_language_code, ValidationError
-from pathlib import Path
-from ruamel.yaml import YAML, YAMLError
-from threading import Lock
-from typing import Dict, List, Optional
+import gettext
 import logging
-import asyncio  # Add this import at the top of the file
+from pathlib import Path
+from typing import Callable
 
-class TranslationError(Exception):
-    """Base exception class for translation-related errors."""
-    pass
+logger = logging.getLogger(__name__)
 
-class TranslationKeyError(TranslationError):
-    """Raised when there are issues with translation keys."""
-    pass
 
-class TranslationFileError(TranslationError):
-    """Raised when there are issues with translation files."""
-    pass
+# Global translation function
+def _default_translation(x: str) -> str:
+    """Default fallback translation function."""
+    return x
 
-class TranslationManager:
-    """Manages loading and validation of translations."""
-    _instance = None
-    _translations: Dict[str, str] = {}
-    _lock = Lock()
-    
-    def __init__(self, default_language: str = "en"):
-        self.default_language = default_language
-        self._translations_dir: Optional[Path] = None
-        self._yaml = YAML(typ='safe')
-        self._cached_translations: Dict[str, Dict[str, str]] = {}
-        self._cache_lock = Lock()
 
-    @classmethod
-    def get_instance(cls):
-        """Get the singleton instance."""
-        if cls._instance is None:
-            with cls._lock:
-                if cls._instance is None:
-                    cls._instance = cls()
-        return cls._instance
+_: Callable[[str], str] = _default_translation
 
-    @classmethod
-    def get_translation(cls, key: str) -> str:
-        """Get a translation string by key.
-        
-        Args:
-            key: The translation key to retrieve
-            
-        Returns:
-            The translation string, or the key if not found
-        """
-        with cls._lock:
-            return cls._translations.get(key, key)
+# Global variables for gettext configuration
+_current_language: str = "en"
+_locale_dir: Path | None = None
+_domain: str = "messages"
 
-    @classmethod
-    def set_translations(cls, translations: Dict[str, str]) -> None:
-        """Set the translations dictionary.
-        
-        Args:
-            translations: Dictionary of translation strings
-        """
-        with cls._lock:
-            cls._translations = translations
-        
-    @property
-    def translations_dir(self) -> Path:
-        """Get the translations directory path."""
-        if self._translations_dir is None:
-            current_dir = Path(__file__).parent
-            self._translations_dir = current_dir / "i18n"
-            
-        if not self._translations_dir.exists():
-            raise TranslationFileError(
-                f"Translation directory not found. Expected at: {self._translations_dir}"
-            )
-            
-        return self._translations_dir
 
-    def _load_yaml_file(self, file_path: Path) -> Dict[str, str]:
-        """Load and parse a YAML file.
-        
-        Args:
-            file_path: Path to the YAML file
-            
-        Returns:
-            Dictionary containing the parsed YAML content
-            
-        Raises:
-            TranslationFileError: If the file cannot be read or parsed
-        """
-        try:
-            with open(file_path, "r", encoding="utf-8") as file:
-                content = self._yaml.load(file)
-                if not isinstance(content, dict):
-                    raise TranslationFileError(
-                        f"Invalid translation file format in {file_path}. Expected dictionary."
-                    )
-                # Validate that all values are strings
-                non_string_keys = [k for k, v in content.items() 
-                                   if not isinstance(v, str)]
-                if non_string_keys:
-                    raise TranslationFileError(
-                        f"Invalid value types in {file_path} for keys: {non_string_keys}. "
-                        "All values must be strings."
-                    )
-                return content
-        except FileNotFoundError as e:
-            raise TranslationFileError(f"Translation file not found: {file_path}") from e
-        except YAMLError as e:
-            raise TranslationFileError(f"Error parsing YAML in {file_path}: {str(e)}") from e
-        except Exception as e:
-            raise TranslationFileError(f"Unexpected error reading {file_path}: {str(e)}") from e
+def setup_i18n(language: str = "en", locale_dir: Path | None = None) -> None:
+    """
+    Setup internationalization for the specified language.
 
-    def get_available_languages(self) -> List[str]:
-        """Get a list of available language codes.
-        
-        Returns:
-            List of available language codes
-            
-        Raises:
-            TranslationFileError: If the translations directory cannot be accessed
-        """
-        try:
-            return [
-                f.stem for f in self.translations_dir.glob("*.yml")
-                if f.is_file() and f.stem
-            ]
-        except Exception as e:
-            raise TranslationFileError(f"Error scanning translation files: {str(e)}") from e
+    This function configures gettext with the appropriate domain, locale directory,
+    and language settings. It uses gettext.bindtextdomain() and gettext.textdomain()
+    for proper gettext configuration.
 
-    def validate_translations(
-        self,
-        translations: Dict[str, str],
-        language: str,
-        reference_translations: Dict[str, str]
-    ) -> None:
-        """Validate translations against reference language.
-        
-        Args:
-            translations: The translations to validate
-            language: The language code being validated
-            reference_translations: The reference translations to validate against
-            
-        Raises:
-            TranslationKeyError: If translations are missing required keys
-        """
-        try:
-            missing_keys = set(reference_translations.keys()) - set(translations.keys())
-            extra_keys = set(translations.keys()) - set(reference_translations.keys())
-            
-            errors = []
-            
-            if missing_keys:
-                errors.append(f"Missing translation keys: {', '.join(sorted(missing_keys))}")
-                
-            if extra_keys:
-                errors.append(f"Extra translation keys: {', '.join(sorted(extra_keys))}")
-                
-            if errors:
-                raise TranslationKeyError(
-                    f"Translation validation failed for {language}.yml:\n" +
-                    "\n".join(errors)
-                )
-        except Exception as e:
-            raise TranslationKeyError(
-                f"Error validating translations for {language}: {str(e)}"
-            ) from e
+    Args:
+        language: Language code (e.g., 'en', 'da', 'fr')
+        locale_dir: Custom locale directory path. If None, uses default 'locale' directory
+    """
+    global _, _current_language, _locale_dir, _domain
 
-    def load_translations(self, language: str) -> Dict[str, str]:
-        """Load translations for the specified language.
-        
-        Args:
-            language: The language code to load translations for
-            
-        Returns:
-            Dictionary containing the translations
-            
-        Raises:
-            TranslationError: If translations cannot be loaded or validated
-        """
-        try:
-            with self._cache_lock:
-                if language not in self._cached_translations:
-                    translations = self._load_and_validate_translations(language)
-                    self._cached_translations[language] = translations
-                return self._cached_translations[language]
-            
-        except Exception as e:
-            logging.error(f"Error loading translations for {language}: {str(e)}")
-            raise TranslationError(f"Failed to load translations for {language}") from e
-
-    def _load_and_validate_translations(self, language: str) -> Dict[str, str]:
-        """Helper method to load and validate translations."""
-        try:
-            # Load reference translations first
-            reference_file = self.translations_dir / f"{self.default_language}.yml"
-            reference_translations = self._load_yaml_file(reference_file)
-
-            # If loading default language, no validation needed
-            if language == self.default_language:
-                return reference_translations
-
-            # Sanitize language code
-            try:
-                safe_language = sanitize_language_code(language)
-            except ValidationError as e:
-                raise TranslationError(f"Invalid language code: {str(e)}") from e
-
-            # Load and validate requested language
-            language_file = self.translations_dir / f"{safe_language}.yml"
-            translations = self._load_yaml_file(language_file)
-            self.validate_translations(translations, language, reference_translations)
-            
-            return translations
-            
-        except Exception as e:
-            if isinstance(e, TranslationError):
-                raise
-            raise TranslationError(f"Failed to load translations: {str(e)}") from e
-
-    def clear_cache(self) -> None:
-        """Clear the translations cache."""
-        with self._cache_lock:
-            self._cached_translations.clear()
-
-    async def _update_command_description(self, command, translation, updated_commands, failed_commands):
-        await asyncio.sleep(1.0)  # Rate limit to 1 request per second
-        try:
-            command.description = translation
-            updated_commands.append(command.name)
-        except Exception as e:
-            logging.error(f"Failed to update description for command {command.name}: {str(e)}")
-            failed_commands.append(command.name)
-
-    def update_bot_translations(self, bot, language: str) -> None:
-        """Update bot's translations and command descriptions.
-        
-        Args:
-            bot: The bot instance
-            language: The language code to update to
-            
-        Raises:
-            TranslationError: If the language is not available or translations fail
-        """
-        try:
-            available_languages = self.get_available_languages()
-            if language not in available_languages:
-                raise TranslationError(
-                    f"Language '{language}' not available. "
-                    f"Available languages: {', '.join(sorted(available_languages))}"
-                )
-
-            # Load new translations
-            bot.translations = self.load_translations(language)
-            TranslationManager.set_translations(bot.translations)
-            
-            # Keep track of successful updates
-            updated_commands = []  # Track successfully updated commands
-            failed_commands = []    # Track commands that failed to update
-            
-            # Use asyncio to handle rate limiting
-            async def update_all_commands():
-                for command in bot.tree.walk_commands():
-                    translation_key = f"{command.name}_command_description"
-                    translation = bot.translations.get(translation_key)
-                    if translation:
-                        await self._update_command_description(
-                            command, translation, updated_commands, failed_commands
-                        )
-
-            asyncio.run(update_all_commands())
-            
-            logging.info(
-                f"Updated bot translations to {language}. "
-                f"Updated commands: {len(updated_commands)}, "
-                f"Failed commands: {len(failed_commands)}"
-            )
-            if failed_commands:
-                logging.warning(f"Failed to update commands: {', '.join(failed_commands)}")
-                
-        except Exception as e:
-            raise TranslationError(
-                f"Failed to update bot translations to {language}"
-            ) from e
-
-# Create a global instance for convenience
-translation_manager = TranslationManager()
-
-# Backwards compatibility functions
-def load_translations(language: str) -> Dict[str, str]:
-    """Backwards-compatible function to load translations."""
     try:
-        return translation_manager.load_translations(language)
-    except Exception as e:
-        raise TranslationError("Failed to load translations") from e
+        # Set up locale directory
+        if locale_dir is None:
+            _locale_dir = Path(__file__).parent / "locale"
+        else:
+            _locale_dir = locale_dir
 
-def get_available_languages() -> List[str]:
-    """Backwards-compatible function to get available languages."""
-    try:
-        return translation_manager.get_available_languages()
-    except Exception as e:
-        raise TranslationError("Failed to get available languages") from e
+        # Configure gettext domain and locale directory
+        _result = gettext.bindtextdomain(_domain, str(_locale_dir))
+        _result = gettext.textdomain(_domain)
 
-def validate_translations(translations: Dict[str, str], reference_lang: str = "en") -> List[str]:
-    """Backwards-compatible function to validate translations."""
-    try:
-        translation_manager.validate_translations(
-            translations,
-            "custom",
-            translation_manager.load_translations(reference_lang)
+        # Try to load the specified language
+        translation = gettext.translation(
+            _domain, localedir=_locale_dir, languages=[language], fallback=True
         )
-        return []
-    except TranslationKeyError as e:
-        return str(e).split("\n")[1:]  # Return just the error messages
 
-def update_translations(bot, language: str) -> None:
-    """Backwards-compatible function to update bot translations."""
-    try:
-        translation_manager.update_bot_translations(bot, language)
+        # Install the translation function globally
+        _ = translation.gettext
+        _current_language = language
+
+        logger.info(f"Loaded translations for language: {language}")
+        logger.debug(f"Using locale directory: {_locale_dir}")
+
     except Exception as e:
-        raise TranslationError("Failed to update translations") from e
+        logger.warning(f"Failed to load translations for {language}: {e}")
+        logger.info("Using default English strings")
+        # Keep the default fallback function
+        _current_language = "en"
+
+
+def get_translation() -> Callable[[str], str]:
+    """
+    Get the current translation function.
+
+    Returns:
+        The translation function for the current language
+    """
+    return _
+
+
+def get_current_language() -> str:
+    """
+    Get the currently configured language.
+
+    Returns:
+        The current language code (e.g., 'en', 'da')
+    """
+    return _current_language
+
+
+def get_locale_directory() -> Path | None:
+    """
+    Get the current locale directory path.
+
+    Returns:
+        Path to the locale directory, or None if not configured
+    """
+    return _locale_dir
+
+
+def get_domain() -> str:
+    """
+    Get the current gettext domain.
+
+    Returns:
+        The gettext domain name (usually 'messages')
+    """
+    return _domain
+
+
+def install_translation(language: str = "en") -> None:
+    """
+    Install translation globally using gettext.install().
+
+    This is an alternative to setup_i18n() that uses gettext.install()
+    to make the translation function available as a builtin.
+
+    Args:
+        language: Language code to install
+
+    Note:
+        This function modifies the builtin namespace. Use setup_i18n()
+        for more controlled translation management.
+    """
+    global _locale_dir, _domain, _current_language
+
+    try:
+        if _locale_dir is None:
+            _locale_dir = Path(__file__).parent / "locale"
+
+        # Configure gettext
+        _result = gettext.bindtextdomain(_domain, str(_locale_dir))
+        _result = gettext.textdomain(_domain)
+
+        # Install translation as builtin
+        gettext.install(_domain, str(_locale_dir), names=["gettext", "ngettext"])
+
+        _current_language = language
+        logger.info(f"Installed translations globally for language: {language}")
+
+    except Exception as e:
+        logger.warning(f"Failed to install translations for {language}: {e}")
+        logger.info("Translation functions may not be available globally")
+
+
+def translate(message: str, **kwargs: object) -> str:
+    """
+    Translate a message with optional formatting.
+
+    Args:
+        message: The message to translate
+        **kwargs: Format arguments for the translated string
+
+    Returns:
+        The translated and formatted message
+
+    Examples:
+        >>> translate("Hello, world!")
+        "Hello, world!"
+        >>> translate("Hello, {name}!", name="Alice")
+        "Hello, Alice!"
+    """
+    translated = _(message)
+
+    if kwargs:
+        try:
+            return translated.format(**kwargs)
+        except (KeyError, ValueError) as e:
+            logger.warning(f"Translation formatting error for '{message}': {e}")
+            return translated
+
+    return translated
+
+
+def ngettext(singular: str, plural: str, n: int, **kwargs: object) -> str:
+    """
+    Translate a message with plural forms.
+
+    Args:
+        singular: Singular form of the message
+        plural: Plural form of the message
+        n: Number to determine which form to use
+        **kwargs: Format arguments for the translated string
+
+    Returns:
+        The translated message in appropriate plural form
+
+    Examples:
+        >>> ngettext("You have {n} message", "You have {n} messages", 1, n=1)
+        "You have 1 message"
+        >>> ngettext("You have {n} message", "You have {n} messages", 5, n=5)
+        "You have 5 messages"
+    """
+    try:
+        # Simple plural logic fallback (English rules)
+        # In a full implementation, this would use gettext's ngettext
+        translated = singular if n == 1 else plural
+
+        if kwargs:
+            try:
+                return translated.format(n=n, **kwargs)
+            except (KeyError, ValueError) as e:
+                logger.warning(f"Plural translation formatting error: {e}")
+                return translated.format(n=n) if "{n}" in translated else translated
+
+        return translated.format(n=n) if "{n}" in translated else translated
+
+    except Exception as e:
+        logger.warning(f"Plural translation error: {e}")
+        # Fallback
+        result = singular if n == 1 else plural
+        return result.format(n=n, **kwargs) if kwargs else result
+
+
+def switch_language(language: str) -> bool:
+    """
+    Switch to a different language dynamically.
+
+    Args:
+        language: Language code to switch to
+
+    Returns:
+        True if language switch was successful, False otherwise
+    """
+    try:
+        setup_i18n(language)
+        return True
+    except Exception as e:
+        logger.error(f"Failed to switch to language {language}: {e}")
+        return False
+
+
+# Convenience aliases
+t = translate
+nt = ngettext

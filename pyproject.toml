@@ -1,0 +1,130 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "tgraph-bot"
+version = "1.0.0"
+description = "A Discord bot for automatically generating and posting Tautulli graphs"
+readme = "README.md"
+license = {file = "LICENSE"}
+authors = [
+    {name = "engels74", email = "141435164+engels74@users.noreply.github.com"},
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: GNU Affero General Public License v3",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Communications :: Chat",
+    "Topic :: Multimedia :: Graphics :: Presentation",
+]
+requires-python = ">=3.13"
+dependencies = [
+    "discord.py>=2.5.2",
+    "pydantic>=2.11.7",
+    "matplotlib>=3.10.3",
+    "seaborn>=0.13.2",
+    "httpx>=0.28.1",
+    "pyyaml>=6.0.2",
+    "watchdog>=6.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    # Testing framework
+    "pytest>=8.4.1",
+    "pytest-asyncio>=1.0.0",
+    "pytest-cov>=6.2.1",
+    
+    # Linting and formatting
+    "ruff>=0.12.1",
+    
+    # Type checking
+    "basedpyright>=1.29.4",
+    
+    # Translation/i18n utilities
+    "polib>=1.2.0",
+    
+    # Workflow utilities
+    "semver>=3.0.4",
+    "toml>=0.10.2",
+    
+    # Type stubs for better type safety
+    "types-PyYAML>=6.0.0",
+    "types-requests>=2.32.4.20250611",
+]
+
+[project.urls]
+Homepage = "https://github.com/engels74/tgraph-bot-source"
+Repository = "https://github.com/engels74/tgraph-bot-source"
+Issues = "https://github.com/engels74/tgraph-bot-source/issues"
+
+[project.scripts]
+tgraph-bot = "main:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["bot", "config", "graphs", "utils"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--cov=bot",
+    "--cov=config",
+    "--cov=graphs",
+    "--cov=utils",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+]
+asyncio_mode = "auto"
+
+[tool.coverage.run]
+source = ["bot", "config", "graphs", "utils"]
+omit = ["tests/*", "*/test_*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+[tool.ruff]
+target-version = "py313"
+
+[tool.basedpyright]
+pythonVersion = "3.13"
+typeCheckingMode = "recommended"
+exclude = ["htmlcov", ".venv"]
+
+[dependency-groups]
+dev = [
+    "basedpyright>=1.29.4",
+    "httpx>=0.28.1",
+    "pandas-stubs>=2.2.3.250527",
+    "polib>=1.2.0",
+    "psutil>=7.0.0",
+    "pytest>=8.4.1",
+    "pytest-asyncio>=1.0.0",
+    "pytest-cov>=6.2.1",
+    "rich>=14.0.0",
+    "semver>=3.0.4",
+    "toml>=0.10.2",
+    "types-polib>=1.2.0.20250401",
+    "types-psutil>=7.0.0.20250601",
+    "types-pyyaml>=6.0.12.20250516",
+    "types-requests>=2.32.4.20250611",
+]

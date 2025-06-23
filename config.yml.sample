@@ -1,0 +1,138 @@
+# TGraph Bot Configuration File
+# This file contains all configuration options for the TGraph Discord bot.
+# Copy this file to config.yml and modify the values as needed.
+
+# ============================================================================
+# Required Configuration (Set These First)
+# ============================================================================
+
+# Tautulli API key - Get this from Tautulli Settings > Web Interface > API
+TAUTULLI_API_KEY: "your_tautulli_api_key_here"
+
+# Tautulli base URL - Include the full URL with protocol and port
+TAUTULLI_URL: "http://localhost:8181/api/v2"
+
+# Discord bot token - Get this from Discord Developer Portal
+DISCORD_TOKEN: "your_discord_bot_token_here"
+
+# Discord channel ID where graphs will be posted
+CHANNEL_ID: 123456789012345678
+
+# ============================================================================
+# Basic Bot Settings
+# ============================================================================
+
+# Number of days between automatic updates (1-365)
+UPDATE_DAYS: 7
+
+# Fixed time for updates in HH:MM format, or 'XX:XX' to disable
+FIXED_UPDATE_TIME: 'XX:XX'
+
+# Language code for internationalization (2-letter code)
+LANGUAGE: en
+
+# Number of days to keep generated graphs (1-365)
+KEEP_DAYS: 7
+
+# ============================================================================
+# Data Collection Settings
+# ============================================================================
+
+# Time range in days for graph data (1-365)
+TIME_RANGE_DAYS: 30
+
+# Time range in months for monthly graph data (1-60)
+TIME_RANGE_MONTHS: 12
+
+# Whether to censor usernames in graphs
+CENSOR_USERNAMES: true
+
+# ============================================================================
+# Graph Selection & Behavior
+# ============================================================================
+
+# Whether to separate Movies and TV Series in graphs
+ENABLE_MEDIA_TYPE_SEPARATION: true
+
+# Whether to use stacked bars when media type separation is enabled (applies to bar charts only)
+ENABLE_STACKED_BAR_CHARTS: true
+
+# Enable/disable specific graph types
+ENABLE_DAILY_PLAY_COUNT: true
+ENABLE_PLAY_COUNT_BY_DAYOFWEEK: true
+ENABLE_PLAY_COUNT_BY_HOUROFDAY: true
+ENABLE_TOP_10_PLATFORMS: true
+ENABLE_TOP_10_USERS: true
+ENABLE_PLAY_COUNT_BY_MONTH: true
+
+# ============================================================================
+# Visual Customization
+# ============================================================================
+
+# Base Graph Colors (Hex format: #RRGGBB)
+# ----------------------------------------
+
+# Color for TV shows in graphs
+TV_COLOR: '#1f77b4'
+
+# Color for movies in graphs
+MOVIE_COLOR: '#ff7f0e'
+
+# Background color for graphs
+GRAPH_BACKGROUND_COLOR: '#ffffff'
+
+# Whether to enable grid lines in graphs
+ENABLE_GRAPH_GRID: false
+
+# Annotation Settings (All Types)
+# --------------------------------
+
+# Basic annotation styling
+ANNOTATION_COLOR: '#ff0000'
+ANNOTATION_OUTLINE_COLOR: '#000000'
+ENABLE_ANNOTATION_OUTLINE: true
+ANNOTATION_FONT_SIZE: 10
+
+# Enable/disable annotations on specific graph types
+ANNOTATE_DAILY_PLAY_COUNT: true
+ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK: true
+ANNOTATE_PLAY_COUNT_BY_HOUROFDAY: true
+ANNOTATE_TOP_10_PLATFORMS: true
+ANNOTATE_TOP_10_USERS: true
+ANNOTATE_PLAY_COUNT_BY_MONTH: true
+
+# Peak annotation settings (separate from bar value annotations)
+ENABLE_PEAK_ANNOTATIONS: true
+PEAK_ANNOTATION_COLOR: '#ffcc00'
+PEAK_ANNOTATION_TEXT_COLOR: '#000000'
+
+# ============================================================================
+# Performance & Rate Limiting
+# ============================================================================
+
+# Config Command Cooldowns
+# -------------------------
+
+# Per-user cooldown for config commands (0-1440 minutes)
+CONFIG_COOLDOWN_MINUTES: 0
+
+# Global cooldown for config commands (0-86400 seconds)
+CONFIG_GLOBAL_COOLDOWN_SECONDS: 0
+
+# Update Graphs Command Cooldowns
+# --------------------------------
+
+# Per-user cooldown for update graphs commands (0-1440 minutes)
+UPDATE_GRAPHS_COOLDOWN_MINUTES: 0
+
+# Global cooldown for update graphs commands (0-86400 seconds)
+UPDATE_GRAPHS_GLOBAL_COOLDOWN_SECONDS: 0
+
+# My Stats Command Cooldowns
+# ---------------------------
+
+# Per-user cooldown for my stats commands (0-1440 minutes)
+MY_STATS_COOLDOWN_MINUTES: 5
+
+# Global cooldown for my stats commands (0-86400 seconds)
+MY_STATS_GLOBAL_COOLDOWN_SECONDS: 60

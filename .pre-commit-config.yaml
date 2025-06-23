@@ -1,0 +1,17 @@
+repos:
+  - repo: local
+    hooks:
+      - id: extract-strings
+        name: Extract translatable strings
+        entry: sh -c 'if git diff --cached --name-only | grep -E "\.(py)$" | grep -v __pycache__ | grep -v tests/; then uv run python scripts/i18n/extract_strings.py && git add locale/messages.pot; fi'
+        language: system
+        always_run: false
+        files: '\.py$'
+        exclude: '^(tests/|__pycache__/)'
+      
+      - id: update-translations
+        name: Update translation files
+        entry: sh -c 'if git diff --cached --name-only | grep -q "locale/messages.pot"; then uv run python scripts/i18n/update_translations.py && uv run python scripts/i18n/compile_translations.py && git add locale/; fi'
+        language: system
+        always_run: false
+        files: 'locale/messages\.pot$' 

@@ -1,325 +1,237 @@
-# bot/commands/my_stats.py
-
 """
-My Stats command for TGraph Bot.
-Generates and sends personalized Plex statistics to users with improved 
-file cleanup and validation.
+Personal statistics command for TGraph Bot.
+
+This module defines the /my_stats slash command, allowing users to request
+their personal Plex statistics (graphs) via DM by providing their Plex email.
+
+Command Design Specifications:
+- Name: /my_stats
+- Description: Get your personal Plex statistics
+- Parameters: email (required) - User's Plex account email address
+- Permissions: Available to all users (no restrictions)
+- Cooldowns: 5 minutes per-user, 60 seconds global
+- Response: Ephemeral acknowledgment, then private DM with graphs
+- Error Handling: Comprehensive with user-friendly messages
+- Privacy: Email-based user identification for Plex statistics
+- File Upload: Automatic DM delivery of personal graph images
 """
 
-import re
+import logging
+from typing import TYPE_CHECKING
+
+import discord
 from discord import app_commands
 from discord.ext import commands
-from typing import Optional, List
-from utils.command_utils import CommandMixin, ErrorHandlerMixin
-import discord
-import logging
-import os
 
-class UserStatsError(Exception):
-    """Base exception for user statistics related errors."""
+import i18n
+from graphs.user_graph_manager import UserGraphManager
+from utils.discord.base_command_cog import BaseCommandCog, BaseCooldownConfig
+from utils.discord.command_utils import (
+    create_error_embed,
+    create_success_embed,
+    create_info_embed,
+    create_cooldown_embed,
+)
+from utils.core.config_utils import ConfigurationHelper
+from utils.core.error_handler import ValidationError
+
+if TYPE_CHECKING:
     pass
 
-class GraphGenerationError(UserStatsError):
-    """Raised when graph generation fails."""
-    pass
+logger = logging.getLogger(__name__)
 
-class DMError(UserStatsError):
-    """Raised when there are issues with DM operations."""
-    pass
 
-class DataFetchError(UserStatsError):
-    """Raised when there are issues fetching user data."""
-    pass
+class MyStatsCog(BaseCommandCog):
+    """
+    Cog for personal statistics commands.
 
-class InvalidUserIdError(UserStatsError):
-    """Raised when user ID is invalid."""
-    pass
+    This cog implements the /my_stats slash command with:
+    - Email-based user identification for Plex statistics
+    - Personal graph generation via UserGraphManager
+    - Private DM delivery of generated graphs
+    - Configurable cooldowns for rate limiting
+    - Comprehensive error handling and user feedback
+    - Non-blocking graph generation using async threading
+    """
 
-class InvalidEmailError(UserStatsError):
-    """Raised when email format is invalid."""
-    pass
-
-class MyStatsCog(commands.Cog, CommandMixin, ErrorHandlerMixin):
-    """Cog for handling user-specific Plex statistics."""
-    
-    def __init__(self, bot: commands.Bot, config: dict, translations: dict):
-        """Initialize the MyStats cog.
-        
-        Parameters
-        ----------
-        bot : commands.Bot
-            The bot instance
-        config : dict
-            The configuration dictionary
-        translations : dict
-            The translations dictionary
+    def __init__(self, bot: commands.Bot) -> None:
         """
-        # Initialize parent classes explicitly
-        super().__init__()
-        CommandMixin.__init__(self)
-        ErrorHandlerMixin.__init__(self)
-        
-        self.bot = bot
-        self.config = config
-        self.translations = translations
-        self.email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        Initialize the MyStats cog.
 
-    def validate_email(self, email: str) -> bool:
+        Args:
+            bot: The Discord bot instance
         """
-        Validate email format using regex pattern.
-        
-        Parameters
-        ----------
-        email : str
-            The email to validate
-            
-        Returns
-        -------
-        bool
-            True if email is valid, False otherwise
-        """
-        return bool(re.match(self.email_pattern, email))
+        # Configure cooldown settings for this command
+        cooldown_config = BaseCooldownConfig(
+            user_cooldown_config_key="MY_STATS_COOLDOWN_MINUTES",
+            global_cooldown_config_key="MY_STATS_GLOBAL_COOLDOWN_SECONDS",
+        )
 
-    async def cleanup_graph_files(self, graph_files: List[str]) -> None:
-        """
-        Clean up temporary graph files.
-        
-        Parameters
-        ----------
-        graph_files : List[str]
-            List of graph file paths to clean up
-        """
-        for file_path in graph_files:
-            try:
-                if os.path.exists(file_path):
-                    os.remove(file_path)
-                    logging.debug(f"Cleaned up temporary file: {file_path}")
-            except OSError as e:
-                logging.warning(f"Failed to clean up {file_path}: {str(e)}")
+        # Initialize base class with cooldown configuration
+        super().__init__(bot, cooldown_config)
 
-    async def generate_user_graphs(self, user_id: str) -> Optional[List[str]]:
-        """Generate graphs for a specific user with proper error handling.
-        
-        Parameters
-        ----------
-        user_id : str
-            The user ID to generate graphs for
-            
-        Returns
-        -------
-        Optional[List[str]]
-            List of generated graph files or None if generation fails
-            
-        Raises
-        ------
-        GraphGenerationError
-            If graph generation fails
-        DataFetchError
-            If data fetching fails
-        InvalidUserIdError
-            If user ID is invalid
-        """
-        try:
-            graph_files = await self.bot.user_graph_manager.generate_user_graphs(user_id)
-            
-            if not graph_files:
-                raise GraphGenerationError("No graphs were generated")
-                
-            return graph_files
-            
-        except Exception as e:
-            logging.error(f"Failed to generate graphs: {str(e)}")
-            if isinstance(e, (ValueError, InvalidUserIdError)):
-                raise InvalidUserIdError("Invalid user ID format") from e
-            elif isinstance(e, DataFetchError):
-                raise DataFetchError("Failed to fetch user statistics") from e
-            else:
-                raise GraphGenerationError("Failed to generate graphs") from e
-
-    async def send_graphs_via_dm(
-        self,
-        user: discord.User,
-        graph_files: List[str]
-    ) -> None:
-        """Send graphs to user via DM with proper error handling and cleanup.
-        
-        Parameters
-        ----------
-        user : discord.User
-            The user to send graphs to
-        graph_files : List[str]
-            List of graph file paths
-            
-        Raises
-        ------
-        DMError
-            If sending DMs fails
-        """
-        try:
-            dm_channel = await user.create_dm()
-            
-            for graph_file in graph_files:
-                try:
-                    filename = os.path.basename(graph_file)
-                    
-                    if not os.path.exists(graph_file):
-                        logging.error(f"Graph file not found: {filename}")
-                        continue
-
-                    await dm_channel.send(file=discord.File(graph_file))
-                    logging.info(
-                        self.translations["log_sending_graph_file"].format(
-                            file=filename
-                        )
-                    )
-
-                except discord.HTTPException as e:
-                    logging.error(f"Failed to send graph {filename}: {str(e)}")
-                    raise DMError(f"Failed to send graph: {filename}") from e
-                except IOError as e:
-                    logging.error(f"Failed to read graph file {filename}: {str(e)}")
-                    raise IOError(f"Failed to read graph file: {filename}") from e
-
-        except discord.Forbidden as e:
-            logging.warning(f"Cannot send DM to user: {str(e)}")
-            raise DMError("DMs are disabled") from e
-        except discord.HTTPException as e:
-            logging.error(f"Discord API error while sending DMs: {str(e)}")
-            raise DMError("Failed to establish DM channel") from e
-        finally:
-            # Always attempt to clean up files, even if sending failed
-            await self.cleanup_graph_files(graph_files)
+        # Create configuration helper
+        self.config_helper: ConfigurationHelper = ConfigurationHelper(
+            self.tgraph_bot.config_manager
+        )
 
     @app_commands.command(
         name="my_stats",
-        description="Get your personal Plex statistics"
+        description=i18n.translate("Get your personal Plex statistics via DM"),
     )
-    @app_commands.describe(email="Your Plex email address")
+    @app_commands.describe(
+        email=i18n.translate(
+            "Your Plex account email address (used to identify your statistics)"
+        )
+    )
     async def my_stats(self, interaction: discord.Interaction, email: str) -> None:
-        """Get your personal Plex statistics.
-
-        Parameters
-        ----------
-        interaction : discord.Interaction
-            The interaction instance
-        email : str
-            The user's Plex email address
         """
-        if not await self.check_cooldowns(
-            interaction,
-            self.config["MY_STATS_COOLDOWN_MINUTES"],
-            self.config["MY_STATS_GLOBAL_COOLDOWN_SECONDS"]
-        ):
-            return
+        Generate and send personal Plex statistics to the user via DM.
 
-        await interaction.response.defer(ephemeral=True)
+        This command:
+        1. Validates the provided email format
+        2. Uses UserGraphManager for non-blocking graph generation
+        3. Sends generated graphs privately via Discord DM
+        4. Provides progress feedback and error handling
+        5. Respects configured cooldowns for rate limiting
 
+        Args:
+            interaction: The Discord interaction
+            email: The user's Plex email address for identification
+        """
         try:
-            # Validate email format
-            if not self.validate_email(email):
-                await interaction.followup.send(
-                    "Please provide a valid email address.",
-                    ephemeral=True
+            # Check cooldowns first
+            is_on_cooldown, retry_after = self.check_cooldowns(interaction)
+            if is_on_cooldown:
+                cooldown_embed = create_cooldown_embed(
+                    i18n.translate("personal statistics"), retry_after
+                )
+                _ = await interaction.response.send_message(
+                    embed=cooldown_embed, ephemeral=True
                 )
                 return
 
-            # Get user ID from email
-            try:
-                user_id = self.bot.data_fetcher.get_user_id_from_email(email)
-            except DataFetchError:
-                logging.error("Failed to fetch user ID from email")
-                await interaction.followup.send(
-                    self.translations["my_stats_no_user_found"],
-                    ephemeral=True
+            # Enhanced email validation
+            if not email or "@" not in email or "." not in email or len(email) < 5:
+                raise ValidationError(
+                    f"Invalid email format: {email}",
+                    user_message=i18n.translate(
+                        "Please provide a valid email address (e.g., user@example.com)."
+                    ),
                 )
-                return
 
-            if not user_id:
-                await interaction.followup.send(
-                    self.translations["my_stats_no_user_found"],
-                    ephemeral=True
-                )
-                return
-
-            logging.info(
-                self.translations["log_generating_user_graphs"].format(
-                    user_id=user_id
-                )
+            # Acknowledge the command with informative message
+            embed = create_info_embed(
+                title=i18n.translate("Personal Statistics Request"),
+                description=i18n.translate(
+                    "Generating your personal Plex statistics... This may take a moment."
+                ),
+            )
+            _ = embed.add_field(name=i18n.translate("Email"), value=email, inline=True)
+            _ = embed.add_field(
+                name=i18n.translate("Delivery Method"),
+                value=i18n.translate("Direct Message (DM)"),
+                inline=True,
+            )
+            _ = embed.add_field(
+                name=i18n.translate("Estimated Time"),
+                value=i18n.translate("1-3 minutes"),
+                inline=True,
             )
 
-            # Generate graphs
-            try:
-                graph_files = await self.generate_user_graphs(user_id)
-            except (GraphGenerationError, DataFetchError) as e:
-                await interaction.followup.send(
-                    self.translations["my_stats_generate_failed"],
-                    ephemeral=True
+            _ = await interaction.response.send_message(embed=embed, ephemeral=True)
+
+            # Update cooldowns after successful acknowledgment
+            self.update_cooldowns(interaction)
+
+            # Generate personal graphs using user_graph_manager
+            async with UserGraphManager(
+                self.tgraph_bot.config_manager
+            ) as user_graph_manager:
+                result_stats = await user_graph_manager.process_user_stats_request(
+                    user_id=interaction.user.id, user_email=email, bot=self.bot
                 )
-                logging.error(
-                    self.translations["log_graph_generation_failed"].format(
-                        error_type=e.__class__.__name__
+
+                if result_stats and result_stats.get("success", False):
+                    # Success - graphs were generated and sent
+                    success_embed = create_success_embed(
+                        title=i18n.translate("Personal Statistics Complete"),
+                        description=i18n.translate(
+                            "Your personal Plex statistics have been generated and sent via DM!"
+                        ),
                     )
-                )
-                return
-            except InvalidUserIdError:
-                await interaction.followup.send(
-                    self.translations["my_stats_no_user_found"],
-                    ephemeral=True
-                )
-                return
 
-            # Send graphs via DM and handle cleanup
-            try:
-                await self.send_graphs_via_dm(interaction.user, graph_files)
-            except DMError as e:
-                error_msg = (
-                    self.translations["error_dm_disabled"] 
-                    if "disabled" in str(e)
-                    else self.translations["error_dm_send"]
-                )
-                await interaction.followup.send(error_msg, ephemeral=True)
-                return
+                    # Add statistics from the result
+                    graphs_generated = result_stats.get("graphs_generated", 0)
+                    processing_time = result_stats.get("processing_time", 0)
 
-            # Update cooldowns and log success
-            self.update_cooldowns(
-                str(interaction.user.id),
-                self.config["MY_STATS_COOLDOWN_MINUTES"],
-                self.config["MY_STATS_GLOBAL_COOLDOWN_SECONDS"]
-            )
+                    _ = success_embed.add_field(
+                        name=i18n.translate("Graphs Generated"),
+                        value=i18n.translate(
+                            "{count} personal graphs", count=graphs_generated
+                        ),
+                        inline=True,
+                    )
+                    _ = success_embed.add_field(
+                        name=i18n.translate("Processing Time"),
+                        value=i18n.translate(
+                            "{time:.1f} seconds", time=processing_time
+                        ),
+                        inline=True,
+                    )
+                    _ = success_embed.add_field(
+                        name=i18n.translate("Check Your DMs"),
+                        value=i18n.translate("Your graphs have been sent privately"),
+                        inline=False,
+                    )
 
-            await self.log_command(interaction, "my_stats")
-            await interaction.followup.send(
-                self.translations["my_stats_success"],
-                ephemeral=True
-            )
+                    _ = await interaction.followup.send(
+                        embed=success_embed, ephemeral=True
+                    )
+                else:
+                    # Error occurred during processing
+                    error_embed = create_error_embed(
+                        title=i18n.translate("Statistics Generation Failed"),
+                        description=i18n.translate(
+                            "Unable to generate your personal statistics."
+                        ),
+                    )
+                    _ = error_embed.add_field(
+                        name=i18n.translate("Possible Causes"),
+                        value=i18n.translate(
+                            "• Email not found in Plex server\n• Insufficient data for graphs\n• Temporary server issue"
+                        ),
+                        inline=False,
+                    )
+                    _ = error_embed.add_field(
+                        name=i18n.translate("Next Steps"),
+                        value=i18n.translate(
+                            "• Verify your email is correct\n• Ensure you have Plex activity\n• Try again in a few minutes"
+                        ),
+                        inline=False,
+                    )
+
+                    _ = await interaction.followup.send(
+                        embed=error_embed, ephemeral=True
+                    )
 
         except Exception as e:
-            # Specific error handling with proper messages
-            if isinstance(e, discord.Forbidden):
-                logging.error("Discord permission error in my_stats command")
-                await interaction.followup.send(
-                    self.translations["error_dm_disabled"],
-                    ephemeral=True
-                )
-            elif isinstance(e, discord.HTTPException):
-                logging.error("Discord API error in my_stats command")
-                await interaction.followup.send(
-                    self.translations["my_stats_error"],
-                    ephemeral=True
-                )
-            else:
-                logging.error(f"Unexpected error in my_stats command: {str(e)}")
-                await interaction.followup.send(
-                    self.translations["my_stats_error"],
-                    ephemeral=True
-                )
+            # Use base class error handling with additional context
+            additional_context: dict[str, object] = {
+                "email": email,
+                "email_domain": email.split("@")[-1] if "@" in email else None,
+            }
+
+            await self.handle_command_error(
+                interaction, e, "my_stats", additional_context
+            )
+
 
 async def setup(bot: commands.Bot) -> None:
-    """Setup function for the my_stats cog.
-    
-    Parameters
-    ----------
-    bot : commands.Bot
-        The bot instance
     """
-    await bot.add_cog(MyStatsCog(bot, bot.config, bot.translations))
+    Setup function to add the cog to the bot.
+
+    Args:
+        bot: The Discord bot instance
+    """
+    await bot.add_cog(MyStatsCog(bot))

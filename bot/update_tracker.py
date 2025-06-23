@@ -1,804 +1,2233 @@
-# bot/update_tracker.py
-
 """
-Improved update tracker for TGraph Bot with standardized error handling.
-Handles scheduling and tracking of update times with robust error handling and validation.
+Update tracking and scheduling for TGraph Bot.
+
+This module manages the scheduling and tracking of when server-wide graphs
+should be automatically updated, based on configuration (UPDATE_DAYS, FIXED_UPDATE_TIME).
 """
 
-from config.modules.constants import ConfigKeyError
-from datetime import datetime, timedelta, time
-from typing import Dict, Any, Optional, Tuple
-import contextlib
+import asyncio
 import json
 import logging
-import os
+import re
+import tempfile
 
-class UpdateTrackerError(Exception):
-    """Base exception for update tracker related errors."""
-    pass
+from datetime import datetime, time, timedelta
+from pathlib import Path
+from typing import TYPE_CHECKING
+from collections.abc import Callable, Awaitable
+from dataclasses import dataclass, field, asdict
+from enum import Enum
 
-class TimeValidationError(UpdateTrackerError):
-    """Raised when time validation fails."""
-    pass
+if TYPE_CHECKING:
+    from discord.ext import commands
 
-class ConfigError(UpdateTrackerError):
-    """Raised when configuration validation fails."""
-    pass
+logger = logging.getLogger(__name__)
 
-class FileOperationError(UpdateTrackerError):
-    """Raised when file operations fail."""
-    pass
 
-class StateError(UpdateTrackerError):
-    """Raised when tracker state is invalid."""
-    pass
+class TaskStatus(Enum):
+    """Status of background tasks."""
 
-class UpdateTracker:
-    """Handles tracking and scheduling of updates with enhanced error handling."""
+    IDLE = "idle"
+    RUNNING = "running"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
 
-    def __init__(self, data_folder: str, config: Dict[str, Any], translations: Dict[str, str]):
+
+class ErrorType(Enum):
+    """Classification of error types for retry logic."""
+
+    TRANSIENT = "transient"  # Temporary errors that may resolve (network, timeout)
+    PERMANENT = "permanent"  # Errors that won't resolve with retry (config, auth)
+    RATE_LIMITED = "rate_limited"  # Rate limiting errors
+    UNKNOWN = "unknown"  # Unclassified errors
+
+
+class CircuitState(Enum):
+    """Circuit breaker states."""
+
+    CLOSED = "closed"  # Normal operation
+    OPEN = "open"  # Failing, rejecting requests
+    HALF_OPEN = "half_open"  # Testing if service recovered
+
+
+@dataclass
+class RetryConfig:
+    """Configuration for retry policies."""
+
+    max_attempts: int = 3
+    base_delay: float = 1.0  # Base delay in seconds
+    max_delay: float = 300.0  # Maximum delay in seconds (5 minutes)
+    exponential_base: float = 2.0  # Base for exponential backoff
+    jitter: bool = True  # Add random jitter to delays
+
+    # Circuit breaker settings
+    failure_threshold: int = 5  # Failures before opening circuit
+    recovery_timeout: float = 60.0  # Seconds before trying half-open
+    success_threshold: int = 2  # Successes needed to close circuit
+
+    def __post_init__(self) -> None:
+        """Validate retry configuration."""
+        if self.max_attempts < 1:
+            raise ValueError("max_attempts must be at least 1")
+        if self.base_delay < 0:
+            raise ValueError("base_delay must be non-negative")
+        if self.max_delay < self.base_delay:
+            raise ValueError("max_delay must be >= base_delay")
+        if self.exponential_base < 1:
+            raise ValueError("exponential_base must be >= 1")
+        if self.failure_threshold < 1:
+            raise ValueError("failure_threshold must be at least 1")
+        if self.recovery_timeout < 0:
+            raise ValueError("recovery_timeout must be non-negative")
+        if self.success_threshold < 1:
+            raise ValueError("success_threshold must be at least 1")
+
+
+@dataclass
+class ErrorMetrics:
+    """Metrics for error tracking and monitoring."""
+
+    total_attempts: int = 0
+    total_successes: int = 0
+    total_failures: int = 0
+    consecutive_failures: int = 0
+    consecutive_successes: int = 0
+
+    # Error type counters
+    transient_errors: int = 0
+    permanent_errors: int = 0
+    rate_limit_errors: int = 0
+    unknown_errors: int = 0
+
+    # Timing metrics
+    last_success: datetime | None = None
+    last_failure: datetime | None = None
+    last_attempt: datetime | None = None
+
+    # Circuit breaker state
+    circuit_state: CircuitState = CircuitState.CLOSED
+    circuit_opened_at: datetime | None = None
+    circuit_last_test: datetime | None = None
+
+    def record_attempt(self) -> None:
+        """Record an attempt."""
+        self.total_attempts += 1
+        self.last_attempt = datetime.now()
+
+    def record_success(self) -> None:
+        """Record a successful operation."""
+        self.total_successes += 1
+        self.consecutive_successes += 1
+        self.consecutive_failures = 0
+        self.last_success = datetime.now()
+
+    def record_failure(self, error_type: ErrorType) -> None:
+        """Record a failed operation."""
+        self.total_failures += 1
+        self.consecutive_failures += 1
+        self.consecutive_successes = 0
+        self.last_failure = datetime.now()
+
+        # Update error type counters
+        if error_type == ErrorType.TRANSIENT:
+            self.transient_errors += 1
+        elif error_type == ErrorType.PERMANENT:
+            self.permanent_errors += 1
+        elif error_type == ErrorType.RATE_LIMITED:
+            self.rate_limit_errors += 1
+        else:
+            self.unknown_errors += 1
+
+    def get_success_rate(self) -> float:
+        """Calculate success rate."""
+        if self.total_attempts == 0:
+            return 0.0
+        return self.total_successes / self.total_attempts
+
+    def get_failure_rate(self) -> float:
+        """Calculate failure rate."""
+        if self.total_attempts == 0:
+            return 0.0
+        return self.total_failures / self.total_attempts
+
+    def to_dict(self) -> dict[str, str | int | float | dict[str, int] | None]:
+        """Convert metrics to dictionary for logging."""
+        return {
+            "total_attempts": self.total_attempts,
+            "total_successes": self.total_successes,
+            "total_failures": self.total_failures,
+            "consecutive_failures": self.consecutive_failures,
+            "consecutive_successes": self.consecutive_successes,
+            "success_rate": self.get_success_rate(),
+            "failure_rate": self.get_failure_rate(),
+            "error_breakdown": {
+                "transient": self.transient_errors,
+                "permanent": self.permanent_errors,
+                "rate_limited": self.rate_limit_errors,
+                "unknown": self.unknown_errors,
+            },
+            "circuit_state": self.circuit_state.value,
+            "last_success": self.last_success.isoformat()
+            if self.last_success
+            else None,
+            "last_failure": self.last_failure.isoformat()
+            if self.last_failure
+            else None,
+            "last_attempt": self.last_attempt.isoformat()
+            if self.last_attempt
+            else None,
+        }
+
+
+class ErrorClassifier:
+    """Classifies errors for appropriate retry handling."""
+
+    @staticmethod
+    def classify_error(error: Exception) -> ErrorType:
         """
-        Initialize the update tracker with validation.
-        
+        Classify an error to determine retry strategy.
+
         Args:
-            data_folder: Path to data storage folder
-            config: Configuration dictionary
-            translations: Translation strings dictionary
-            
-        Raises:
-            ConfigError: If configuration is invalid
-            FileOperationError: If data folder is invalid
-        """
-        try:
-            if not isinstance(data_folder, str) or not data_folder.strip():
-                raise ConfigError("Data folder path cannot be empty")
-                
-            if not isinstance(config, dict):
-                raise ConfigError("Configuration must be a dictionary")
-                
-            if not isinstance(translations, dict):
-                raise ConfigError("Translations must be a dictionary")
+            error: The exception to classify
 
-            self.data_folder = data_folder
-            self.config = config
-            self.translations = translations
-            self.tracker_file = os.path.join(self.data_folder, "update_tracker.json")
-            
-            # Ensure data folder exists
-            os.makedirs(self.data_folder, exist_ok=True)
-            
-            self.last_update: Optional[datetime] = None
-            self.next_update: Optional[datetime] = None
-            self.last_check: Optional[datetime] = None
-            self.last_log_time: Optional[datetime] = None
-            self.log_threshold = timedelta(hours=1)
-            
-            # Load tracker data or initialize new state
-            self._load_tracker()
-            
-            logging.info(
-                self.translations.get(
-                    "update_tracker_initialized",
-                    "UpdateTracker initialized with UPDATE_DAYS: {update_days}, FIXED_UPDATE_TIME: {fixed_time}"
-                ).format(
-                    update_days=self.get_update_days(),
-                    fixed_time=self.get_fixed_update_time_str()
+        Returns:
+            ErrorType indicating how to handle the error
+        """
+        error_str = str(error).lower()
+        error_type = type(error).__name__.lower()
+
+        # Network and timeout errors are usually transient
+        if any(
+            keyword in error_str
+            for keyword in [
+                "timeout",
+                "connection",
+                "network",
+                "dns",
+                "socket",
+                "temporary",
+                "unavailable",
+                "service",
+                "gateway",
+            ]
+        ):
+            return ErrorType.TRANSIENT
+
+        if any(
+            keyword in error_type
+            for keyword in ["timeout", "connection", "network", "http"]
+        ):
+            return ErrorType.TRANSIENT
+
+        # Rate limiting errors
+        if any(
+            keyword in error_str
+            for keyword in ["rate limit", "too many requests", "quota", "throttle"]
+        ):
+            return ErrorType.RATE_LIMITED
+
+        # Authentication and configuration errors are permanent
+        if any(
+            keyword in error_str
+            for keyword in [
+                "unauthorized",
+                "forbidden",
+                "authentication",
+                "permission",
+                "invalid api",
+                "bad request",
+                "not found",
+                "configuration",
+            ]
+        ):
+            return ErrorType.PERMANENT
+
+        # Default to unknown for unclassified errors
+        return ErrorType.UNKNOWN
+
+
+class CircuitBreaker:
+    """Circuit breaker implementation for preventing cascading failures."""
+
+    def __init__(self, config: RetryConfig) -> None:
+        """Initialize circuit breaker with configuration."""
+        self.config: RetryConfig = config
+        self.metrics: ErrorMetrics = ErrorMetrics()
+
+    def should_allow_request(self) -> bool:
+        """Check if a request should be allowed through the circuit."""
+        current_time = datetime.now()
+
+        if self.metrics.circuit_state == CircuitState.CLOSED:
+            return True
+        elif self.metrics.circuit_state == CircuitState.OPEN:
+            # Check if we should transition to half-open
+            if (
+                self.metrics.circuit_opened_at
+                and current_time - self.metrics.circuit_opened_at
+                >= timedelta(seconds=self.config.recovery_timeout)
+            ):
+                self._transition_to_half_open()
+                return True
+            return False
+        else:  # HALF_OPEN
+            return True
+
+    def record_success(self) -> None:
+        """Record a successful operation."""
+        self.metrics.record_success()
+
+        if self.metrics.circuit_state == CircuitState.HALF_OPEN:
+            if self.metrics.consecutive_successes >= self.config.success_threshold:
+                self._transition_to_closed()
+
+    def record_failure(self, error: Exception) -> None:
+        """Record a failed operation."""
+        error_type = ErrorClassifier.classify_error(error)
+        self.metrics.record_failure(error_type)
+
+        if self.metrics.circuit_state == CircuitState.CLOSED:
+            if self.metrics.consecutive_failures >= self.config.failure_threshold:
+                self._transition_to_open()
+        elif self.metrics.circuit_state == CircuitState.HALF_OPEN:
+            self._transition_to_open()
+
+    def _transition_to_open(self) -> None:
+        """Transition circuit to open state."""
+        self.metrics.circuit_state = CircuitState.OPEN
+        self.metrics.circuit_opened_at = datetime.now()
+        logger.warning(
+            f"Circuit breaker opened after {self.metrics.consecutive_failures} failures"
+        )
+
+    def _transition_to_half_open(self) -> None:
+        """Transition circuit to half-open state."""
+        self.metrics.circuit_state = CircuitState.HALF_OPEN
+        self.metrics.circuit_last_test = datetime.now()
+        logger.info("Circuit breaker transitioning to half-open for testing")
+
+    def _transition_to_closed(self) -> None:
+        """Transition circuit to closed state."""
+        self.metrics.circuit_state = CircuitState.CLOSED
+        self.metrics.circuit_opened_at = None
+        logger.info(
+            f"Circuit breaker closed after {self.metrics.consecutive_successes} successes"
+        )
+
+    def get_state(self) -> CircuitState:
+        """Get current circuit state."""
+        return self.metrics.circuit_state
+
+    def get_metrics(self) -> ErrorMetrics:
+        """Get current metrics."""
+        return self.metrics
+
+
+class BackgroundTaskManager:
+    """
+    Enhanced background task manager for handling multiple concurrent tasks.
+
+    Provides task lifecycle management, health monitoring, graceful shutdown,
+    and comprehensive error handling with retry logic and circuit breakers.
+    """
+
+    def __init__(
+        self, restart_delay: float = 30.0, retry_config: RetryConfig | None = None
+    ) -> None:
+        """Initialize the background task manager."""
+        self._tasks: dict[str, asyncio.Task[None]] = {}
+        self._task_status: dict[str, TaskStatus] = {}
+        self._task_health: dict[str, datetime] = {}
+        self._shutdown_event: asyncio.Event = asyncio.Event()
+        self._health_check_task: asyncio.Task[None] | None = None
+        self._health_check_interval: float = 60.0  # 1 minute
+        self._restart_delay: float = restart_delay
+
+        # Enhanced error handling and retry components
+        self._retry_config: RetryConfig = retry_config or RetryConfig()
+        self._circuit_breakers: dict[str, CircuitBreaker] = {}
+        self._task_metrics: dict[str, ErrorMetrics] = {}
+        self._audit_log: list[dict[str, str | datetime | None]] = []
+
+    async def start(self) -> None:
+        """Start the background task manager."""
+        logger.info("Starting background task manager")
+        self._shutdown_event.clear()
+
+        # Start health check task
+        self._health_check_task = asyncio.create_task(self._health_check_loop())
+
+    async def stop(self) -> None:
+        """Stop the background task manager and all managed tasks."""
+        logger.info("Stopping background task manager")
+        self._shutdown_event.set()
+
+        # Cancel health check task
+        if self._health_check_task:
+            _ = self._health_check_task.cancel()
+            try:
+                await self._health_check_task
+            except asyncio.CancelledError:
+                pass
+            self._health_check_task = None
+
+        # Cancel all managed tasks
+        for task_name, task in self._tasks.items():
+            logger.debug(f"Cancelling task: {task_name}")
+            _ = task.cancel()
+
+        # Wait for all tasks to complete
+        if self._tasks:
+            _ = await asyncio.gather(*self._tasks.values(), return_exceptions=True)
+
+        self._tasks.clear()
+        self._task_status.clear()
+        self._task_health.clear()
+
+    def add_task(
+        self,
+        name: str,
+        coro: Callable[[], Awaitable[None]],
+        restart_on_failure: bool = True,
+    ) -> None:
+        """
+        Add a new background task.
+
+        Args:
+            name: Unique name for the task
+            coro: Coroutine function to run as background task
+            restart_on_failure: Whether to restart the task if it fails
+        """
+        if name in self._tasks:
+            logger.warning(f"Task {name} already exists, replacing it")
+            self.remove_task(name)
+
+        logger.info(f"Adding background task: {name}")
+        task = asyncio.create_task(self._task_wrapper(name, coro, restart_on_failure))
+        self._tasks[name] = task
+        self._task_status[name] = TaskStatus.RUNNING
+        self._task_health[name] = datetime.now()
+
+    def remove_task(self, name: str) -> None:
+        """
+        Remove and cancel a background task.
+
+        Args:
+            name: Name of the task to remove
+        """
+        if name not in self._tasks:
+            logger.warning(f"Task {name} not found")
+            return
+
+        logger.info(f"Removing background task: {name}")
+        task = self._tasks[name]
+        _ = task.cancel()
+
+        del self._tasks[name]
+        _ = self._task_status.pop(name, None)
+        _ = self._task_health.pop(name, None)
+
+    async def _task_wrapper(
+        self, name: str, coro: Callable[[], Awaitable[None]], restart_on_failure: bool
+    ) -> None:
+        """
+        Enhanced wrapper for background tasks with comprehensive error handling,
+        retry logic, circuit breaker protection, and audit logging.
+
+        Args:
+            name: Task name
+            coro: Coroutine function to run
+            restart_on_failure: Whether to restart on failure
+        """
+        # Initialize circuit breaker and metrics for this task
+        if name not in self._circuit_breakers:
+            self._circuit_breakers[name] = CircuitBreaker(self._retry_config)
+            self._task_metrics[name] = ErrorMetrics()
+
+        circuit_breaker = self._circuit_breakers[name]
+        metrics = self._task_metrics[name]
+
+        while not self._shutdown_event.is_set():
+            try:
+                # Check circuit breaker before attempting operation
+                if not circuit_breaker.should_allow_request():
+                    self._log_audit_event(
+                        name,
+                        "circuit_breaker_blocked",
+                        "Circuit breaker is open, blocking task execution",
+                    )
+                    self._task_status[name] = TaskStatus.FAILED
+
+                    # Wait for circuit breaker recovery timeout
+                    await asyncio.sleep(min(self._retry_config.recovery_timeout, 60.0))
+                    continue
+
+                self._task_status[name] = TaskStatus.RUNNING
+                self._task_health[name] = datetime.now()
+                metrics.record_attempt()
+
+                self._log_audit_event(name, "task_started", "Task execution started")
+
+                # Execute the task with timeout protection
+                # Special handling for scheduler loop - it needs to run indefinitely
+                if name == "update_scheduler":
+                    await coro()  # No timeout for scheduler loop
+                else:
+                    await asyncio.wait_for(
+                        coro(), timeout=300.0
+                    )  # 5 minute timeout for other tasks
+
+                # Record successful execution
+                self._task_status[name] = TaskStatus.IDLE
+                circuit_breaker.record_success()
+                metrics.record_success()
+
+                self._log_audit_event(
+                    name, "task_completed", "Task execution completed successfully"
                 )
-            )
-            
-        except (ConfigError, FileOperationError):
+                logger.info(
+                    f"Task {name} completed successfully (success rate: {metrics.get_success_rate():.2%})"
+                )
+                break
+
+            except asyncio.CancelledError:
+                logger.debug(f"Task {name} was cancelled")
+                self._task_status[name] = TaskStatus.CANCELLED
+                self._log_audit_event(name, "task_cancelled", "Task was cancelled")
+                raise
+
+            except asyncio.TimeoutError as e:
+                error_type = ErrorClassifier.classify_error(e)
+                self._handle_task_error(
+                    name, e, error_type, circuit_breaker, metrics, restart_on_failure
+                )
+
+                if not restart_on_failure:
+                    break
+
+                # Apply exponential backoff for timeout errors
+                delay = await self._calculate_retry_delay(metrics.consecutive_failures)
+                await self._wait_with_shutdown_check(delay)
+
+            except Exception as e:
+                error_type = ErrorClassifier.classify_error(e)
+                self._handle_task_error(
+                    name, e, error_type, circuit_breaker, metrics, restart_on_failure
+                )
+
+                if not restart_on_failure or error_type == ErrorType.PERMANENT:
+                    logger.error(
+                        f"Task {name} failed with {error_type.value} error, not restarting"
+                    )
+                    break
+
+                # Apply retry logic based on error type and configuration
+                delay = await self._calculate_retry_delay(metrics.consecutive_failures)
+                await self._wait_with_shutdown_check(delay)
+
+    def _handle_task_error(
+        self,
+        name: str,
+        error: Exception,
+        error_type: ErrorType,
+        circuit_breaker: CircuitBreaker,
+        metrics: ErrorMetrics,
+        restart_on_failure: bool,  # pyright: ignore[reportUnusedParameter]
+    ) -> None:
+        """Handle task errors with comprehensive logging and metrics."""
+        self._task_status[name] = TaskStatus.FAILED
+        circuit_breaker.record_failure(error)
+        metrics.record_failure(error_type)
+
+        # Log error with context
+        error_msg = (
+            f"Task {name} failed with {error_type.value} error "
+            f"(attempt {metrics.total_attempts}, "
+            f"consecutive failures: {metrics.consecutive_failures}): {error}"
+        )
+        logger.exception(error_msg)
+
+        # Log audit event
+        self._log_audit_event(
+            name, "task_failed", f"{error_type.value} error: {str(error)[:200]}"
+        )
+
+        # Log circuit breaker state changes
+        if circuit_breaker.get_state() == CircuitState.OPEN:
+            logger.warning(f"Circuit breaker opened for task {name}")
+
+    async def _calculate_retry_delay(self, consecutive_failures: int) -> float:
+        """Calculate retry delay with exponential backoff and jitter."""
+        if consecutive_failures == 0:
+            return 0.0
+
+        # Exponential backoff: base_delay * (exponential_base ^ failures)
+        delay = self._retry_config.base_delay * (
+            self._retry_config.exponential_base ** (consecutive_failures - 1)
+        )
+
+        # Cap at maximum delay
+        delay = min(delay, self._retry_config.max_delay)
+
+        # Add jitter if enabled (±25% random variation)
+        if self._retry_config.jitter:
+            import random
+
+            jitter_factor = 0.75 + (random.random() * 0.5)  # 0.75 to 1.25
+            delay *= jitter_factor
+
+        return delay
+
+    async def _wait_with_shutdown_check(self, delay: float) -> None:
+        """Wait for specified delay while checking for shutdown."""
+        if delay <= 0:
+            return
+
+        try:
+            _ = await asyncio.wait_for(self._shutdown_event.wait(), timeout=delay)
+            # If we reach here, shutdown was requested
+        except asyncio.TimeoutError:
+            # Timeout is expected, continue
+            pass
+
+    def _log_audit_event(self, task_name: str, event_type: str, message: str) -> None:
+        """Log audit events for task operations."""
+        audit_entry: dict[str, str | datetime | None] = {
+            "timestamp": datetime.now().isoformat(),
+            "task_name": task_name,
+            "event_type": event_type,
+            "message": message,
+        }
+
+        # Add to audit log (keep last 1000 entries)
+        self._audit_log.append(audit_entry)
+        if len(self._audit_log) > 1000:
+            _ = self._audit_log.pop(0)
+
+        # Log to standard logger as well
+        logger.info(f"[AUDIT] {task_name}: {event_type} - {message}")
+
+    def get_task_metrics(self, name: str) -> ErrorMetrics | None:
+        """Get metrics for a specific task."""
+        return self._task_metrics.get(name)
+
+    def get_all_task_metrics(
+        self,
+    ) -> dict[str, dict[str, str | int | float | dict[str, int] | None]]:
+        """Get metrics for all tasks."""
+        return {name: metrics.to_dict() for name, metrics in self._task_metrics.items()}
+
+    def get_circuit_breaker_status(self, name: str) -> CircuitState | None:
+        """Get circuit breaker status for a specific task."""
+        circuit_breaker = self._circuit_breakers.get(name)
+        return circuit_breaker.get_state() if circuit_breaker else None
+
+    def get_all_circuit_breaker_status(self) -> dict[str, str]:
+        """Get circuit breaker status for all tasks."""
+        return {
+            name: breaker.get_state().value
+            for name, breaker in self._circuit_breakers.items()
+        }
+
+    def get_audit_log(self, limit: int = 100) -> list[dict[str, str | datetime | None]]:
+        """Get recent audit log entries."""
+        return self._audit_log[-limit:] if self._audit_log else []
+
+    def get_health_summary(self) -> dict[str, str | int | float | bool]:
+        """Get comprehensive health summary of all tasks."""
+        total_tasks = len(self._tasks)
+        running_tasks = sum(
+            1 for status in self._task_status.values() if status == TaskStatus.RUNNING
+        )
+        failed_tasks = sum(
+            1 for status in self._task_status.values() if status == TaskStatus.FAILED
+        )
+
+        # Calculate overall success rate
+        total_attempts = sum(
+            metrics.total_attempts for metrics in self._task_metrics.values()
+        )
+        total_successes = sum(
+            metrics.total_successes for metrics in self._task_metrics.values()
+        )
+        overall_success_rate = (
+            total_successes / total_attempts if total_attempts > 0 else 0.0
+        )
+
+        # Count circuit breaker states
+        open_circuits = sum(
+            1
+            for breaker in self._circuit_breakers.values()
+            if breaker.get_state() == CircuitState.OPEN
+        )
+
+        return {
+            "total_tasks": total_tasks,
+            "running_tasks": running_tasks,
+            "failed_tasks": failed_tasks,
+            "healthy_tasks": total_tasks - failed_tasks,
+            "overall_success_rate": overall_success_rate,
+            "total_attempts": total_attempts,
+            "total_successes": total_successes,
+            "open_circuits": open_circuits,
+            "is_healthy": self.is_healthy() and open_circuits == 0,
+            "audit_log_entries": len(self._audit_log),
+        }
+
+    async def _health_check_loop(self) -> None:
+        """Periodic health check for all managed tasks."""
+        try:
+            while not self._shutdown_event.is_set():
+                await self._perform_health_check()
+
+                try:
+                    _ = await asyncio.wait_for(
+                        self._shutdown_event.wait(), timeout=self._health_check_interval
+                    )
+                    break  # Shutdown requested
+                except asyncio.TimeoutError:
+                    continue  # Continue health checks
+
+        except asyncio.CancelledError:
+            logger.debug("Health check loop cancelled")
             raise
         except Exception as e:
-            error_msg = "Failed to initialize update tracker"
-            logging.error(f"{error_msg}: {str(e)}")
-            raise UpdateTrackerError(error_msg) from e
+            logger.exception(f"Error in health check loop: {e}")
+
+    async def _perform_health_check(self) -> None:
+        """Perform health check on all tasks."""
+        current_time = datetime.now()
+        stale_threshold = timedelta(minutes=5)  # 5 minutes
+
+        for task_name, last_health in self._task_health.items():
+            if current_time - last_health > stale_threshold:
+                status = self._task_status.get(task_name, TaskStatus.FAILED)
+                logger.warning(
+                    f"Task {task_name} appears stale (last health: {last_health}, "
+                    + f"status: {status.value})"
+                )
+
+    def get_task_status(self, name: str) -> TaskStatus | None:
+        """Get the status of a specific task."""
+        return self._task_status.get(name)
+
+    def get_all_task_status(self) -> dict[str, dict[str, str | datetime | bool | None]]:
+        """Get status of all managed tasks."""
+        result: dict[str, dict[str, str | datetime | bool | None]] = {}
+        for name in self._tasks:
+            status = self._task_status.get(name, TaskStatus.FAILED)
+            health = self._task_health.get(name)
+            result[name] = {
+                "status": status.value,
+                "last_health": health,
+                "is_done": self._tasks[name].done(),
+                "is_cancelled": self._tasks[name].cancelled(),
+            }
+        return result
+
+    def is_healthy(self) -> bool:
+        """Check if all tasks are healthy."""
+        current_time = datetime.now()
+        stale_threshold = timedelta(minutes=5)
+
+        for _, last_health in self._task_health.items():
+            if current_time - last_health > stale_threshold:
+                return False
+
+        return True
+
+
+@dataclass
+class SchedulingConfig:
+    """Configuration for scheduling automatic updates."""
+
+    update_days: int
+    fixed_update_time: str
+
+    def __post_init__(self) -> None:
+        """Validate configuration after initialization."""
+        self._validate_update_days()
+        self._validate_fixed_update_time()
+
+    def _validate_update_days(self) -> None:
+        """Validate update_days is within acceptable range."""
+        if not (1 <= self.update_days <= 365):
+            raise ValueError("UPDATE_DAYS must be between 1 and 365")
+
+    def _validate_fixed_update_time(self) -> None:
+        """Validate fixed_update_time format."""
+        if self.fixed_update_time == "XX:XX":
+            return  # Disabled fixed time is valid
+
+        # Validate HH:MM format
+        if not re.match(r"^([01]?[0-9]|2[0-3]):[0-5][0-9]$", self.fixed_update_time):
+            raise ValueError(f"Invalid time format: {self.fixed_update_time}")
+
+        # Additional validation by parsing
+        try:
+            hour, minute = map(int, self.fixed_update_time.split(":"))
+            if not (0 <= hour <= 23 and 0 <= minute <= 59):
+                raise ValueError(f"Invalid time format: {self.fixed_update_time}")
+        except (ValueError, IndexError) as e:
+            raise ValueError(f"Invalid time format: {self.fixed_update_time}") from e
+
+    def is_interval_based(self) -> bool:
+        """Check if scheduling is interval-based (not fixed time)."""
+        return self.fixed_update_time == "XX:XX"
+
+    def is_fixed_time_based(self) -> bool:
+        """Check if scheduling is fixed time-based."""
+        return not self.is_interval_based()
+
+    def get_fixed_time(self) -> time | None:
+        """Get the fixed time as a time object, or None if disabled."""
+        if self.is_interval_based():
+            return None
+
+        hour, minute = map(int, self.fixed_update_time.split(":"))
+        return time(hour, minute)
+
+
+@dataclass
+class ScheduleState:
+    """State tracking for the update scheduler."""
+
+    last_update: datetime | None = None
+    next_update: datetime | None = None
+    is_running: bool = False
+    consecutive_failures: int = 0
+    last_failure: datetime | None = None
+    last_error: Exception | None = field(default=None, repr=False)
+
+    def record_successful_update(self, update_time: datetime) -> None:
+        """Record a successful update."""
+        self.last_update = update_time
+        self.consecutive_failures = 0
+        # Keep last_failure for historical tracking
+
+    def record_failure(self, failure_time: datetime, error: Exception) -> None:
+        """Record a failed update attempt."""
+        self.consecutive_failures += 1
+        self.last_failure = failure_time
+        self.last_error = error
+
+    def set_next_update(self, next_time: datetime) -> None:
+        """Set the next scheduled update time."""
+        self.next_update = next_time
+
+    def start_scheduler(self) -> None:
+        """Mark scheduler as running."""
+        self.is_running = True
+
+    def stop_scheduler(self) -> None:
+        """Mark scheduler as stopped."""
+        self.is_running = False
+
+    def to_dict(self) -> dict[str, str | int | bool | None]:
+        """Convert state to dictionary for persistence."""
+        return {
+            "last_update": self.last_update.isoformat() if self.last_update else None,
+            "next_update": self.next_update.isoformat() if self.next_update else None,
+            "is_running": self.is_running,
+            "consecutive_failures": self.consecutive_failures,
+            "last_failure": self.last_failure.isoformat()
+            if self.last_failure
+            else None,
+            "last_error": str(self.last_error) if self.last_error else None,
+        }
 
     @classmethod
-    def from_state(
-        cls,
-        state: Dict[str, Any],
-        data_folder: str,
-        config: Dict[str, Any],
-        translations: Dict[str, str]
-    ) -> 'UpdateTracker':
-        """
-        Create a new UpdateTracker instance from a state dictionary.
-        
-        Args:
-            state: State dictionary from get_state()
-            data_folder: Path to data storage folder
-            config: Configuration dictionary
-            translations: Translation strings dictionary
-            
-        Returns:
-            New UpdateTracker instance with the given state
-            
-        Raises:
-            StateError: If state is invalid or cannot be applied
-        """
-        try:
-            tracker = cls(data_folder, config, translations)
-            tracker.restore_state(state)
-            return tracker
-        except Exception as e:
-            error_msg = f"Failed to create tracker from state: {str(e)}"
-            logging.error(error_msg)
-            raise StateError(error_msg) from e
+    def from_dict(cls, data: dict[str, str | int | bool | None]) -> "ScheduleState":
+        """Create state from dictionary for persistence."""
+        state = cls()
 
-    def get_state(self) -> Dict[str, Any]:
+        if data.get("last_update"):
+            state.last_update = datetime.fromisoformat(str(data["last_update"]))
+        if data.get("next_update"):
+            state.next_update = datetime.fromisoformat(str(data["next_update"]))
+
+        state.is_running = bool(data.get("is_running", False))
+        consecutive_failures_value = data.get("consecutive_failures", 0)
+        state.consecutive_failures = (
+            int(consecutive_failures_value)
+            if consecutive_failures_value is not None
+            else 0
+        )
+
+        if data.get("last_failure"):
+            state.last_failure = datetime.fromisoformat(str(data["last_failure"]))
+        if data.get("last_error"):
+            state.last_error = Exception(str(data["last_error"]))
+
+        return state
+
+
+@dataclass
+class PersistentScheduleData:
+    """Persistent data structure for schedule state and configuration."""
+
+    state: dict[str, str | int | bool | None]
+    config: dict[str, str | int] | None = None
+    version: str = "1.0"
+    saved_at: str = field(default_factory=lambda: datetime.now().isoformat())
+
+    def to_dict(self) -> dict[str, object]:
+        """Convert to dictionary for JSON serialization."""
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, object]) -> "PersistentScheduleData":
+        """Create from dictionary for JSON deserialization."""
+        return cls(
+            state=data.get("state", {}),  # pyright: ignore[reportArgumentType]
+            config=data.get("config"),  # pyright: ignore[reportArgumentType]
+            version=str(data.get("version", "1.0")),
+            saved_at=str(data.get("saved_at", datetime.now().isoformat())),
+        )
+
+
+class StateManager:
+    """Manages persistent state storage and recovery for the scheduler."""
+
+    def __init__(self, state_file_path: Path | None = None) -> None:
         """
-        Get current tracker state for backup/restore purposes.
-        
-        Returns:
-            Dict containing current tracker state
-            
-        Raises:
-            StateError: If tracker state cannot be retrieved
+        Initialize state manager.
+
+        Args:
+            state_file_path: Path to state file, defaults to data/scheduler_state.json
+        """
+        if state_file_path is None:
+            # Default to data directory in current working directory
+            data_dir = Path.cwd() / "data"
+            data_dir.mkdir(exist_ok=True)
+            self.state_file_path: Path = data_dir / "scheduler_state.json"
+        else:
+            self.state_file_path = state_file_path
+
+        # Ensure parent directory exists
+        self.state_file_path.parent.mkdir(parents=True, exist_ok=True)
+
+        logger.debug(
+            f"StateManager initialized with state file: {self.state_file_path}"
+        )
+
+    def save_state(
+        self, state: ScheduleState, config: SchedulingConfig | None = None
+    ) -> None:
+        """
+        Save scheduler state to persistent storage with atomic operation.
+
+        Args:
+            state: Current scheduler state
+            config: Current scheduling configuration
         """
         try:
-            # Validate required state components
-            if self.last_update is None:
-                raise StateError("Cannot get state: last_update is None")
-            if self.next_update is None:
-                raise StateError("Cannot get state: next_update is None")
-                
-            # Ensure timezone awareness for all datetime objects
-            def ensure_timezone(dt: Optional[datetime]) -> Optional[datetime]:
-                if dt is not None and dt.tzinfo is None:
-                    return dt.astimezone()
-                return dt
-                
-            # Create state dictionary with validated components
-            state = {
-                'last_update': ensure_timezone(self.last_update),
-                'next_update': ensure_timezone(self.next_update),
-                'last_check': ensure_timezone(self.last_check),
-                'last_log_time': ensure_timezone(self.last_log_time)
-            }
-            
-            # Log state for debugging
-            logging.debug(
-                "Got tracker state - Last update: %s, Next update: %s",
-                state['last_update'].isoformat() if state['last_update'] else "None",
-                state['next_update'].isoformat() if state['next_update'] else "None"  
+            # Prepare data for persistence
+            config_dict = None
+            if config:
+                config_dict = {
+                    "update_days": config.update_days,
+                    "fixed_update_time": config.fixed_update_time,
+                }
+
+            persistent_data = PersistentScheduleData(
+                state=state.to_dict(), config=config_dict
             )
-            
-            return state
-                
-        except Exception as e:
-            error_msg = f"Failed to get tracker state: {str(e)}"
-            logging.error(error_msg)
-            raise StateError(error_msg) from e
 
-    def create_temporary_tracker(self) -> 'UpdateTracker':
+            # Atomic save using temporary file
+            temp_file = None
+            try:
+                with tempfile.NamedTemporaryFile(
+                    mode="w",
+                    encoding="utf-8",
+                    dir=self.state_file_path.parent,
+                    prefix=f".{self.state_file_path.name}.",
+                    suffix=".tmp",
+                    delete=False,
+                ) as temp_file:
+                    json.dump(
+                        persistent_data.to_dict(),
+                        temp_file,
+                        indent=2,
+                        ensure_ascii=False,
+                    )
+                    temp_file.flush()
+                    temp_path = Path(temp_file.name)
+
+                # Atomic move
+                _ = temp_path.replace(self.state_file_path)
+                logger.debug(f"State saved successfully to {self.state_file_path}")
+
+            except Exception as e:
+                # Clean up temporary file if it exists
+                if temp_file and Path(temp_file.name).exists():
+                    Path(temp_file.name).unlink(missing_ok=True)
+                raise OSError(
+                    f"Failed to save state to {self.state_file_path}: {e}"
+                ) from e
+
+        except Exception as e:
+            logger.error(f"Failed to save scheduler state: {e}")
+            raise
+
+    def load_state(self) -> tuple[ScheduleState, SchedulingConfig | None]:
         """
-        Create a temporary tracker instance with current state.
-        
+        Load scheduler state from persistent storage.
+
         Returns:
-            New UpdateTracker instance with copy of current state
-            
-        Raises:
-            StateError: If temporary tracker cannot be created
+            Tuple of (state, config) or (default_state, None) if no valid state found
         """
         try:
-            current_state = self.get_state()
-            return self.from_state(current_state, self.data_folder, self.config, self.translations)
+            if not self.state_file_path.exists():
+                logger.debug("No state file found, returning default state")
+                return ScheduleState(), None
+
+            with self.state_file_path.open("r", encoding="utf-8") as f:
+                data: dict[str, object] = json.load(f)  # pyright: ignore[reportAny]
+
+            persistent_data = PersistentScheduleData.from_dict(data)
+
+            # Validate version compatibility
+            if persistent_data.version != "1.0":
+                logger.warning(
+                    f"State file version {persistent_data.version} may not be compatible"
+                )
+
+            # Restore state
+            state = ScheduleState.from_dict(persistent_data.state)
+
+            # Restore configuration if available
+            config = None
+            if persistent_data.config:
+                config = SchedulingConfig(
+                    update_days=int(persistent_data.config["update_days"]),
+                    fixed_update_time=str(persistent_data.config["fixed_update_time"]),
+                )
+
+            logger.info(f"State loaded successfully from {self.state_file_path}")
+            logger.debug(
+                f"Loaded state: last_update={state.last_update}, next_update={state.next_update}"
+            )
+
+            return state, config
+
+        except (json.JSONDecodeError, KeyError, ValueError, TypeError) as e:
+            logger.error(f"Failed to load state file (corrupted): {e}")
+            logger.info(
+                "Creating backup of corrupted state file and returning default state"
+            )
+            self._backup_corrupted_state()
+            return ScheduleState(), None
+
         except Exception as e:
-            error_msg = f"Failed to create temporary tracker: {str(e)}"
-            logging.error(error_msg)
-            raise StateError(error_msg) from e
+            logger.error(f"Unexpected error loading state: {e}")
+            return ScheduleState(), None
 
-    def restore_state(self, state: Dict[str, Any]) -> None:
-        """
-        Restore tracker to a previous state with enhanced validation.
-        
-        Args:
-            state: Previously saved state from get_state()
-            
-        Raises:
-            StateError: If state restoration fails
-        """
+    def _backup_corrupted_state(self) -> None:
+        """Create a backup of corrupted state file for debugging."""
         try:
-            if not isinstance(state, dict):
-                raise StateError(f"Invalid state type: expected dict, got {type(state)}")
-                
-            # Basic validation of required fields
-            required_fields = {'last_update', 'next_update'}
-            missing_fields = required_fields - set(state.keys())
-            if missing_fields:
-                raise StateError(f"Missing required fields: {missing_fields}")
+            if self.state_file_path.exists():
+                backup_path = self.state_file_path.with_suffix(
+                    f".corrupted.{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+                )
+                _ = self.state_file_path.rename(backup_path)
+                logger.info(f"Corrupted state file backed up to: {backup_path}")
+        except Exception as e:
+            logger.error(f"Failed to backup corrupted state file: {e}")
 
-            # Get current time in system timezone for validation
-            now = datetime.now().astimezone()
-            max_future = now + timedelta(days=self.config.get("TIME_RANGE_DAYS", 365))
-            min_past = now - timedelta(days=365 * 2)  # 2 years back as reasonable limit
+    def delete_state(self) -> None:
+        """Delete the persistent state file."""
+        try:
+            if self.state_file_path.exists():
+                self.state_file_path.unlink()
+                logger.info(f"State file deleted: {self.state_file_path}")
+        except Exception as e:
+            logger.error(f"Failed to delete state file: {e}")
 
-            # Validate required datetime fields
-            for key in required_fields:
-                value = state[key]
-                if value is not None:
-                    if not isinstance(value, datetime):
-                        raise StateError(
-                            f"Invalid type for {key}: expected datetime, got {type(value)}"
+    def state_exists(self) -> bool:
+        """Check if a state file exists."""
+        return self.state_file_path.exists()
+
+
+@dataclass
+class MissedUpdate:
+    """Represents a missed update that needs to be processed."""
+
+    scheduled_time: datetime
+    detected_at: datetime
+    reason: str = "system_downtime"
+
+    def to_dict(self) -> dict[str, str]:
+        """Convert to dictionary for logging."""
+        return {
+            "scheduled_time": self.scheduled_time.isoformat(),
+            "detected_at": self.detected_at.isoformat(),
+            "reason": self.reason,
+        }
+
+
+class RecoveryManager:
+    """Manages recovery operations for the scheduler."""
+
+    def __init__(self, state_manager: StateManager) -> None:
+        """
+        Initialize recovery manager.
+
+        Args:
+            state_manager: State manager for persistence operations
+        """
+        self.state_manager: StateManager = state_manager
+
+    def detect_missed_updates(
+        self,
+        current_time: datetime,
+        last_update: datetime | None,
+        next_update: datetime | None,
+        config: SchedulingConfig,
+    ) -> list[MissedUpdate]:
+        """
+        Detect missed updates based on current time and last known state.
+
+        Args:
+            current_time: Current datetime
+            last_update: Last successful update time
+            next_update: Last scheduled next update time
+            config: Current scheduling configuration
+
+        Returns:
+            List of missed updates that should be processed
+        """
+        missed_updates: list[MissedUpdate] = []
+
+        # If we have no update history, no missed updates to detect
+        if last_update is None:
+            logger.debug("No previous update history, no missed updates to detect")
+            return missed_updates
+
+        # Calculate what the next update should have been
+        schedule = UpdateSchedule(config, ScheduleState())
+        schedule.state.last_update = last_update
+
+        # Check if we missed the scheduled next update
+        if next_update and next_update < current_time:
+            # We missed the scheduled update
+            missed_updates.append(
+                MissedUpdate(
+                    scheduled_time=next_update,
+                    detected_at=current_time,
+                    reason="missed_scheduled_update",
+                )
+            )
+            logger.warning(f"Detected missed scheduled update: {next_update}")
+
+        # Check for additional missed updates based on interval
+        if config.is_interval_based():
+            # For interval-based scheduling, check how many intervals we missed
+            time_since_last = current_time - last_update
+            interval_days = config.update_days
+            missed_intervals = int(time_since_last.days // interval_days)
+
+            if missed_intervals > 1:  # More than one interval missed
+                for i in range(1, missed_intervals):
+                    missed_time = last_update + timedelta(days=interval_days * i)
+                    if missed_time < current_time:
+                        missed_updates.append(
+                            MissedUpdate(
+                                scheduled_time=missed_time,
+                                detected_at=current_time,
+                                reason="interval_based_missed_update",
+                            )
                         )
-                    
-                    # Ensure timezone awareness
-                    if value.tzinfo is None:
-                        value = value.astimezone()  # Use system timezone if none specified
-                    
-                    # Validate time bounds
-                    if value > max_future:
-                        raise StateError(f"{key} is too far in the future (max: {max_future})")
-                    if value < min_past:
-                        raise StateError(f"{key} is too far in the past (min: {min_past})")
-            
-            # Apply the state after all validation passes
-            self.last_update = state['last_update']
-            self.next_update = state['next_update']
-            self.last_check = state.get('last_check')
-            self.last_log_time = state.get('last_log_time')
-            
-            logging.debug(
-                "Restored tracker state - Last update: %s, Next update: %s",
-                self.last_update.isoformat() if self.last_update else "None",
-                self.next_update.isoformat() if self.next_update else "None"
-            )
-            
-        except Exception as e:
-            if isinstance(e, StateError):
-                raise
-            error_msg = f"Failed to restore tracker state: {str(e)}"
-            logging.error(error_msg)
-            raise StateError(error_msg) from e
+                        logger.warning(
+                            f"Detected missed interval update: {missed_time}"
+                        )
 
-    def save_state(self) -> None:
-        """
-        Save current state to disk.
-        
-        Raises:
-            FileOperationError: If save fails
-        """
-        try:
-            self.save_tracker()
-            logging.debug(
-                "Saved tracker state - Last update: %s, Next update: %s",
-                self.last_update.isoformat() if self.last_update else "None",
-                self.next_update.isoformat() if self.next_update else "None"
-            )
-        except Exception as e:
-            error_msg = f"Failed to save tracker state: {str(e)}"
-            logging.error(error_msg)
-            raise FileOperationError(error_msg) from e
+        logger.info(f"Detected {len(missed_updates)} missed updates")
+        return missed_updates
 
-    def validate_update_days(self) -> int:
+    def validate_schedule_integrity(
+        self, current_time: datetime, state: ScheduleState, config: SchedulingConfig
+    ) -> tuple[bool, list[str]]:
         """
-        Validate and return update days configuration.
-        
-        Returns:
-            int: Validated update days value
-            
-        Raises:
-            ConfigError: If UPDATE_DAYS is invalid
-        """
-        try:
-            update_days = self.config.get("UPDATE_DAYS")
-            if update_days is None:
-                raise ConfigError("UPDATE_DAYS not found in configuration")
-                
-            if isinstance(update_days, str):
-                update_days = int(float(update_days))
-            elif not isinstance(update_days, (int, float)):
-                raise ConfigError(f"Invalid UPDATE_DAYS type: {type(update_days)}")
-                
-            update_days = int(update_days)
-            if update_days <= 0:
-                raise ConfigError("UPDATE_DAYS must be positive")
-                
-            return update_days
-            
-        except ValueError as e:
-            raise ConfigError(f"Invalid UPDATE_DAYS value: {str(e)}") from e
+        Validate schedule integrity and detect inconsistencies.
 
-    def get_update_days(self) -> int:
-        """
-        Get validated update days value with error handling.
-        
-        Returns:
-            int: Validated update days
-            
-        Raises:
-            ConfigError: If validation fails
-        """
-        try:
-            return self.validate_update_days()
-        except Exception as e:
-            if isinstance(e, ConfigError):
-                raise
-            error_msg = "Failed to get update days"
-            logging.error(f"{error_msg}: {str(e)}")
-            raise ConfigError(error_msg) from e
-
-    def validate_fixed_time(self, time_str: str) -> Optional[time]:
-        """
-        Validate fixed time string format.
-        
         Args:
-            time_str: Time string to validate
-            
-        Returns:
-            Optional[time]: Parsed time object or None if disabled
-            
-        Raises:
-            TimeValidationError: If time format is invalid
-        """
-        if not isinstance(time_str, str):
-            raise TimeValidationError("Fixed time must be a string")
-            
-        time_str = time_str.strip().strip("'\"").upper()
-        if time_str == "XX:XX":
-            return None
-            
-        try:
-            return datetime.strptime(time_str, "%H:%M").time()
-        except ValueError as e:
-            raise TimeValidationError(f"Invalid time format: {str(e)}") from e
+            current_time: Current datetime
+            state: Current schedule state
+            config: Current scheduling configuration
 
-    def get_fixed_update_time(self) -> Optional[time]:
-        """
-        Get validated fixed update time.
-        
         Returns:
-            Optional[time]: Validated time object or None if disabled
-            
-        Raises:
-            TimeValidationError: If time validation fails
+            Tuple of (is_valid, list_of_issues)
         """
+        issues: list[str] = []
+
+        # Check if next_update is reasonable
+        if state.next_update:
+            if state.next_update <= current_time:
+                issues.append(f"Next update time {state.next_update} is in the past")
+
+            # Check if next_update is too far in the future
+            max_future = current_time + timedelta(days=config.update_days * 2)
+            if state.next_update > max_future:
+                issues.append(
+                    f"Next update time {state.next_update} is too far in the future"
+                )
+
+        # Check if last_update and next_update are consistent
+        if state.last_update and state.next_update:
+            expected_interval = timedelta(days=config.update_days)
+            actual_interval = state.next_update - state.last_update
+
+            # Allow some tolerance (±1 day)
+            if abs((actual_interval - expected_interval).days) > 1:
+                issues.append(
+                    f"Inconsistent interval: expected {expected_interval.days} days, "
+                    + f"got {actual_interval.days} days"
+                )
+
+        # Check for excessive consecutive failures
+        if state.consecutive_failures > 10:
+            issues.append(
+                f"Excessive consecutive failures: {state.consecutive_failures}"
+            )
+
+        # Check if last_failure is too old compared to consecutive_failures
+        if state.consecutive_failures > 0 and state.last_failure:
+            time_since_failure = current_time - state.last_failure
+            if time_since_failure.days > 7:  # More than a week old
+                issues.append(
+                    f"Last failure is {time_since_failure.days} days old but "
+                    + f"consecutive_failures is {state.consecutive_failures}"
+                )
+
+        is_valid = len(issues) == 0
+        if not is_valid:
+            logger.warning(f"Schedule integrity validation failed: {issues}")
+        else:
+            logger.debug("Schedule integrity validation passed")
+
+        return is_valid, issues
+
+    def repair_schedule_state(
+        self, current_time: datetime, state: ScheduleState, config: SchedulingConfig
+    ) -> ScheduleState:
+        """
+        Attempt to repair inconsistent schedule state.
+
+        Args:
+            current_time: Current datetime
+            state: Current schedule state (may be modified)
+            config: Current scheduling configuration
+
+        Returns:
+            Repaired schedule state
+        """
+        logger.info("Attempting to repair schedule state")
+
+        # Create a new schedule calculator for repairs
+        schedule = UpdateSchedule(config, state)
+
+        # Fix next_update if it's in the past or invalid
+        if not state.next_update or state.next_update <= current_time:
+            new_next_update = schedule.calculate_next_update(current_time)
+            logger.info(
+                f"Repairing next_update: {state.next_update} -> {new_next_update}"
+            )
+            state.set_next_update(new_next_update)
+
+        # Reset excessive consecutive failures if last failure is old
+        if state.consecutive_failures > 5 and state.last_failure:
+            time_since_failure = current_time - state.last_failure
+            if time_since_failure.days > 3:  # More than 3 days old
+                logger.info(
+                    f"Resetting consecutive failures from {state.consecutive_failures} to 0 (last failure was {time_since_failure.days} days ago)"
+                )
+                state.consecutive_failures = 0
+
+        # Clear running state if we're not actually running
+        if state.is_running:
+            logger.info("Clearing running state during repair")
+            state.stop_scheduler()
+
+        logger.info("Schedule state repair completed")
+        return state
+
+    async def perform_recovery(
+        self,
+        current_time: datetime,
+        state: ScheduleState,
+        config: SchedulingConfig,
+        update_callback: Callable[[], Awaitable[None]] | None = None,
+    ) -> tuple[ScheduleState, list[MissedUpdate]]:
+        """
+        Perform comprehensive recovery operations.
+
+        Args:
+            current_time: Current datetime
+            state: Current schedule state
+            config: Current scheduling configuration
+            update_callback: Optional callback to process missed updates
+
+        Returns:
+            Tuple of (recovered_state, processed_missed_updates)
+        """
+        logger.info("Starting comprehensive recovery process")
+
+        # Detect missed updates
+        missed_updates = self.detect_missed_updates(
+            current_time, state.last_update, state.next_update, config
+        )
+
+        # Validate and repair schedule integrity
+        is_valid, issues = self.validate_schedule_integrity(current_time, state, config)
+        if not is_valid:
+            logger.warning(f"Schedule integrity issues detected: {issues}")
+            state = self.repair_schedule_state(current_time, state, config)
+
+        # Process missed updates if callback is provided
+        processed_updates: list[MissedUpdate] = []
+        if update_callback and missed_updates:
+            logger.info(f"Processing {len(missed_updates)} missed updates")
+
+            for missed_update in missed_updates:
+                try:
+                    logger.info(
+                        f"Processing missed update from {missed_update.scheduled_time}"
+                    )
+                    await update_callback()
+                    processed_updates.append(missed_update)
+
+                    # Update state to reflect processed update
+                    state.record_successful_update(current_time)
+
+                except Exception as e:
+                    logger.error(
+                        f"Failed to process missed update from {missed_update.scheduled_time}: {e}"
+                    )
+                    state.record_failure(current_time, e)
+                    # Continue with other missed updates
+
+        # Save recovered state
         try:
-            fixed_time = self.config.get("FIXED_UPDATE_TIME")
-            if fixed_time is None:
-                return None
-                
-            if isinstance(fixed_time, time):
-                return fixed_time
-                
-            return self.validate_fixed_time(str(fixed_time))
-            
+            self.state_manager.save_state(state, config)
+            logger.info("Recovered state saved successfully")
         except Exception as e:
-            if isinstance(e, TimeValidationError):
-                raise
-            error_msg = "Failed to get fixed update time"
-            logging.error(f"{error_msg}: {str(e)}")
-            raise TimeValidationError(error_msg) from e
+            logger.error(f"Failed to save recovered state: {e}")
 
-    def get_fixed_update_time_str(self) -> str:
-        """Get string representation of fixed update time."""
-        try:
-            fixed_time = self.get_fixed_update_time()
-            return fixed_time.strftime("%H:%M") if fixed_time else "XX:XX"
-        except TimeValidationError:
-            return "XX:XX"
+        logger.info(
+            f"Recovery process completed. Processed {len(processed_updates)} missed updates"
+        )
+        return state, processed_updates
 
-    def _load_tracker(self) -> None:
+
+class UpdateSchedule:
+    """Handles calculation of update schedules based on configuration and state."""
+
+    def __init__(self, config: SchedulingConfig, state: ScheduleState) -> None:
         """
-        Load tracker data from file with error handling.
-        Recalculates next_update based on current configuration.
-        
-        Raises:
-            FileOperationError: If file operations fail
+        Initialize update schedule calculator.
+
+        Args:
+            config: Scheduling configuration
+            state: Current schedule state
+        """
+        self.config: SchedulingConfig = config
+        self.state: ScheduleState = state
+
+    def calculate_next_update(self, current_time: datetime) -> datetime:
+        """
+        Calculate the next update time based on configuration and state.
+
+        Args:
+            current_time: Current datetime for calculation reference
+
+        Returns:
+            Next scheduled update datetime
+        """
+        if self.config.is_fixed_time_based():
+            return self._calculate_fixed_time_update(current_time)
+        else:
+            return self._calculate_interval_update(current_time)
+
+    def _calculate_interval_update(self, current_time: datetime) -> datetime:
+        """Calculate next update for interval-based scheduling."""
+        if self.state.last_update:
+            return self.state.last_update + timedelta(days=self.config.update_days)
+        else:
+            # First run - schedule for next interval
+            return current_time + timedelta(days=self.config.update_days)
+
+    def _calculate_fixed_time_update(self, current_time: datetime) -> datetime:
+        """Calculate next update for fixed time scheduling."""
+        fixed_time = self.config.get_fixed_time()
+        if fixed_time is None:
+            # Fallback to interval if fixed time is invalid
+            return self._calculate_interval_update(current_time)
+
+        # Calculate next occurrence of the fixed time
+        next_update = datetime.combine(current_time.date(), fixed_time)
+
+        # If time has passed today, schedule for tomorrow
+        if next_update <= current_time:
+            next_update += timedelta(days=1)
+
+        # Respect the update_days interval if we have a last update
+        if self.state.last_update:
+            min_next_update = self.state.last_update + timedelta(
+                days=self.config.update_days
+            )
+            if next_update < min_next_update:
+                # Find next occurrence that respects the interval
+                days_to_add = (min_next_update.date() - next_update.date()).days
+                next_update += timedelta(days=days_to_add)
+
+                # Ensure we still have the correct time after adding days
+                next_update = datetime.combine(next_update.date(), fixed_time)
+
+        return next_update
+
+    def is_valid_schedule_time(
+        self, schedule_time: datetime, current_time: datetime
+    ) -> bool:
+        """
+        Validate that a scheduled time is reasonable.
+
+        Args:
+            schedule_time: The proposed schedule time
+            current_time: Current time for reference
+
+        Returns:
+            True if the schedule time is valid
+        """
+        # Must be in the future
+        if schedule_time <= current_time:
+            return False
+
+        # Must not be too far in the future (max 1 year)
+        max_future = current_time + timedelta(days=365)
+        if schedule_time > max_future:
+            return False
+
+        return True
+
+    def calculate_time_until_next_update(self, current_time: datetime) -> timedelta:
+        """
+        Calculate the time remaining until the next update.
+
+        Args:
+            current_time: Current datetime for calculation reference
+
+        Returns:
+            Time remaining until next update
+        """
+        next_update = self.calculate_next_update(current_time)
+        return next_update - current_time
+
+    def should_skip_update(self, current_time: datetime) -> bool:
+        """
+        Determine if an update should be skipped due to recent failures.
+
+        Args:
+            current_time: Current datetime for calculation reference
+
+        Returns:
+            True if update should be skipped
+        """
+        # Skip if too many consecutive failures (exponential backoff)
+        if self.state.consecutive_failures >= 3:
+            if self.state.last_failure:
+                # Exponential backoff: 2^failures hours
+                failure_count = min(
+                    self.state.consecutive_failures, 6
+                )  # Cap at 64 hours
+                backoff_hours = 1 << failure_count  # Bit shift for 2^failure_count
+                backoff_until = self.state.last_failure + timedelta(hours=backoff_hours)
+                return current_time < backoff_until
+
+        return False
+
+
+class UpdateTracker:
+    """
+    Enhanced update tracker with background task management.
+
+    Manages scheduling and tracking of automatic graph updates using
+    the BackgroundTaskManager for robust task lifecycle management.
+    """
+
+    def __init__(
+        self,
+        bot: "commands.Bot",
+        retry_config: RetryConfig | None = None,
+        state_file_path: Path | None = None,
+    ) -> None:
+        """
+        Initialize the update tracker with enhanced error handling and recovery.
+
+        Args:
+            bot: The Discord bot instance
+            retry_config: Configuration for retry policies and circuit breakers
+            state_file_path: Optional custom path for state persistence
+        """
+        self.bot: "commands.Bot" = bot
+        self.update_callback: Callable[[], Awaitable[None]] | None = None
+
+        # Initialize enhanced task manager with retry configuration
+        self._retry_config: RetryConfig = retry_config or RetryConfig()
+        self._task_manager: BackgroundTaskManager = BackgroundTaskManager(
+            restart_delay=30.0, retry_config=self._retry_config
+        )
+
+        # Initialize scheduling components
+        self._config: SchedulingConfig | None = None
+        self._state: ScheduleState = ScheduleState()
+        self._schedule: UpdateSchedule | None = None
+        self._is_started: bool = False
+
+        # Enhanced error tracking
+        self._update_metrics: ErrorMetrics = ErrorMetrics()
+        self._circuit_breaker: CircuitBreaker = CircuitBreaker(self._retry_config)
+
+        # Recovery and persistence components
+        self._state_manager: StateManager = StateManager(state_file_path)
+        self._recovery_manager: RecoveryManager = RecoveryManager(self._state_manager)
+        self._recovery_enabled: bool = True
+
+    def set_update_callback(self, callback: Callable[[], Awaitable[None]]) -> None:
+        """
+        Set the callback function to call when updates are triggered.
+
+        Args:
+            callback: Async function to call for graph updates
+        """
+        self.update_callback = callback
+
+    async def start_scheduler(
+        self, update_days: int = 7, fixed_update_time: str | None = None
+    ) -> None:
+        """
+        Start the automatic update scheduler with recovery and persistence.
+
+        Args:
+            update_days: Interval in days between updates
+            fixed_update_time: Fixed time for updates (HH:MM format) or None
+        """
+        if self._is_started:
+            logger.warning("Update scheduler already running")
+            return
+
+        # Initialize scheduling configuration
+        fixed_time_str = fixed_update_time if fixed_update_time else "XX:XX"
+        new_config = SchedulingConfig(
+            update_days=update_days, fixed_update_time=fixed_time_str
+        )
+
+        # Attempt to load previous state and perform recovery
+        if self._recovery_enabled:
+            await self._perform_startup_recovery(new_config)
+        else:
+            self._config = new_config
+            self._schedule = UpdateSchedule(self._config, self._state)
+
+        logger.info(f"Starting update scheduler (every {update_days} days)")
+        if fixed_update_time and fixed_update_time != "XX:XX":
+            logger.info(f"Fixed update time: {fixed_update_time}")
+
+        # Start the background task manager
+        await self._task_manager.start()
+
+        # Add the scheduler task
+        self._task_manager.add_task(
+            "update_scheduler", self._scheduler_loop, restart_on_failure=True
+        )
+
+        self._state.start_scheduler()
+        self._is_started = True
+
+        # Save initial state
+        if self._recovery_enabled:
+            try:
+                self._state_manager.save_state(self._state, self._config)
+                logger.debug("Initial state saved after scheduler start")
+            except Exception as e:
+                logger.error(f"Failed to save initial state: {e}")
+
+    async def _perform_startup_recovery(self, new_config: SchedulingConfig) -> None:
+        """
+        Perform startup recovery by loading previous state and handling missed updates.
+
+        Args:
+            new_config: New configuration to apply
+        """
+        logger.info("Performing startup recovery")
+
+        try:
+            # Load previous state
+            loaded_state, loaded_config = self._state_manager.load_state()
+
+            # Use loaded state if available
+            if loaded_state:
+                self._state = loaded_state
+                logger.info("Previous state loaded successfully")
+
+                # Check if configuration changed
+                config_changed = False
+                if loaded_config:
+                    if (
+                        loaded_config.update_days != new_config.update_days
+                        or loaded_config.fixed_update_time
+                        != new_config.fixed_update_time
+                    ):
+                        config_changed = True
+                        logger.info("Configuration changed since last run")
+
+                # Use new configuration (may have changed)
+                self._config = new_config
+
+                # Perform recovery operations
+                current_time = datetime.now()
+                (
+                    recovered_state,
+                    missed_updates,
+                ) = await self._recovery_manager.perform_recovery(
+                    current_time=current_time,
+                    state=self._state,
+                    config=self._config,
+                    update_callback=self.update_callback if config_changed else None,
+                )
+
+                self._state = recovered_state
+
+                if missed_updates:
+                    logger.info(
+                        f"Recovery completed: processed {len(missed_updates)} missed updates"
+                    )
+                    for missed in missed_updates:
+                        logger.info(
+                            f"  - Processed missed update from {missed.scheduled_time} ({missed.reason})"
+                        )
+
+            else:
+                # No previous state, use new configuration
+                self._config = new_config
+                logger.info("No previous state found, starting fresh")
+
+            # Create schedule with current state and config
+            self._schedule = UpdateSchedule(self._config, self._state)
+
+        except Exception as e:
+            logger.error(f"Recovery failed, starting with fresh state: {e}")
+            # Fallback to fresh state
+            self._config = new_config
+            self._state = ScheduleState()
+            self._schedule = UpdateSchedule(self._config, self._state)
+
+    async def stop_scheduler(self) -> None:
+        """Stop the automatic update scheduler and save state."""
+        if not self._is_started:
+            logger.debug("Update scheduler not running")
+            return
+
+        logger.info("Stopping update scheduler")
+
+        # Save current state before stopping
+        if self._recovery_enabled and self._config:
+            try:
+                self._state_manager.save_state(self._state, self._config)
+                logger.debug("State saved before scheduler stop")
+            except Exception as e:
+                logger.error(f"Failed to save state during shutdown: {e}")
+
+        # Stop the background task manager (this will cancel all tasks)
+        await self._task_manager.stop()
+
+        self._state.stop_scheduler()
+        self._is_started = False
+        logger.info("Update scheduler stopped")
+
+    async def _wait_with_health_updates(
+        self, total_wait_seconds: float, task_name: str = "update_scheduler"
+    ) -> bool:
+        """
+        Wait for specified duration while periodically updating health status.
+
+        This method breaks long waits into smaller chunks to prevent health check
+        false positives during extended sleep periods.
+
+        Args:
+            total_wait_seconds: Total time to wait in seconds
+            task_name: Name of the task for health updates
+
+        Returns:
+            True if wait completed normally, False if shutdown was requested
+        """
+        if total_wait_seconds <= 0:
+            return True
+
+        # Health update interval - keep it well below the 5-minute stale threshold
+        health_update_interval = 120.0  # 2 minutes
+
+        elapsed = 0.0
+
+        while (
+            elapsed < total_wait_seconds
+            and not self._task_manager._shutdown_event.is_set()  # pyright: ignore[reportPrivateUsage]
+        ):
+            # Calculate how long to sleep this iteration
+            remaining = total_wait_seconds - elapsed
+            chunk_duration = min(health_update_interval, remaining)
+
+            try:
+                # Wait for this chunk duration or until shutdown requested
+                _ = await asyncio.wait_for(
+                    self._task_manager._shutdown_event.wait(),  # pyright: ignore[reportPrivateUsage]
+                    timeout=chunk_duration,
+                )
+                # Shutdown was requested
+                logger.debug(
+                    f"Shutdown requested during scheduler wait (elapsed: {elapsed:.1f}s)"
+                )
+                return False
+
+            except asyncio.TimeoutError:
+                # Timeout is expected - this chunk completed normally
+                elapsed += chunk_duration
+
+                # Update health status to prevent stale detection
+                if task_name in self._task_manager._task_health:  # pyright: ignore[reportPrivateUsage]
+                    self._task_manager._task_health[task_name] = datetime.now()  # pyright: ignore[reportPrivateUsage]
+                    logger.debug(
+                        f"Updated health for {task_name} during long wait (elapsed: {elapsed:.1f}s/{total_wait_seconds:.1f}s)"
+                    )
+
+        return True
+
+    async def _scheduler_loop(self) -> None:
+        """
+        Main scheduler loop for automatic updates.
+
+        Uses the configured scheduling logic to determine when updates should occur.
         """
         try:
-            if not os.path.exists(self.tracker_file):
-                self._reset_state()
-                logging.info(self.translations.get(
-                    "no_tracker_file_found",
-                    "No tracker file found. Reset to current time."
-                ))
+            while True:
+                if self._schedule is None:
+                    logger.error("Scheduler loop started without proper configuration")
+                    break
+
+                current_time = datetime.now()
+
+                # Check if we should skip this update due to recent failures
+                if self._schedule.should_skip_update(current_time):
+                    logger.info(
+                        "Skipping update due to recent failures (exponential backoff)"
+                    )
+                    # Wait a bit before checking again
+                    wait_completed = await self._wait_with_health_updates(
+                        300.0
+                    )  # 5 minutes
+                    if not wait_completed:
+                        logger.info(
+                            "Scheduler loop terminated due to shutdown request during backoff"
+                        )
+                        break
+                    continue
+
+                next_update = self._schedule.calculate_next_update(current_time)
+
+                # Validate the calculated schedule time
+                if not self._schedule.is_valid_schedule_time(next_update, current_time):
+                    logger.error(f"Invalid schedule time calculated: {next_update}")
+                    # Fallback to a simple interval
+                    next_update = current_time + timedelta(hours=1)
+
+                self._state.set_next_update(next_update)
+                wait_seconds = (next_update - current_time).total_seconds()
+
+                if wait_seconds > 0:
+                    logger.info(
+                        f"Next update scheduled for: {next_update} (wait time: {wait_seconds:.1f}s)"
+                    )
+                    wait_completed = await self._wait_with_health_updates(wait_seconds)
+                    if not wait_completed:
+                        # Shutdown was requested during wait
+                        logger.info("Scheduler loop terminated due to shutdown request")
+                        break
+
+                # Trigger update
+                await self._trigger_update()
+
+        except asyncio.CancelledError:
+            logger.info("Scheduler loop cancelled")
+            raise
+        except Exception as e:
+            logger.exception(f"Error in scheduler loop: {e}")
+            # Record the failure
+            if self._state:
+                self._state.record_failure(datetime.now(), e)
+            # Wait before retrying to avoid tight error loops
+            wait_completed = await self._wait_with_health_updates(60.0)  # 1 minute
+            if not wait_completed:
+                logger.info(
+                    "Scheduler loop terminated due to shutdown request during error recovery"
+                )
                 return
 
-            with open(self.tracker_file, "r", encoding='utf-8') as f:
-                try:
-                    data = json.load(f)
-                    self.last_update = datetime.fromisoformat(data["last_update"])
-                    saved_next_update = datetime.fromisoformat(data["next_update"])
-                    
-                    # Log the loaded values
-                    logging.info(self.translations.get(
-                        "tracker_file_loaded",
-                        "Loaded tracker file. Last update: {last_update}, Saved next update: {next_update}"
-                    ).format(
-                        last_update=self.last_update,
-                        next_update=saved_next_update
-                    ))
-
-                    # Recalculate next_update based on current config
-                    self.next_update = self.calculate_next_update(self.last_update)
-                    
-                    # If the calculated time differs from saved time, log it and save
-                    if self.next_update != saved_next_update:
-                        logging.info(
-                            "Recalculated next update time based on current configuration. "
-                            f"Changed from {saved_next_update} to {self.next_update}"
-                        )
-                        self.save_tracker()
-                    
-                except (json.JSONDecodeError, KeyError, ValueError) as e:
-                    error_msg = f"Invalid tracker file format: {str(e)}"
-                    logging.error(error_msg)
-                    self._reset_state()
-                    
-        except OSError as e:
-            error_msg = f"Failed to read tracker file: {str(e)}"
-            logging.error(error_msg)
-            raise FileOperationError(error_msg) from e
-
-    def _reset_state(self) -> None:
+    async def _trigger_update(self) -> None:
         """
-        Reset tracker state to default values.
-        
-        Raises:
-            StateError: If state reset fails
-        """
-        try:
-            self.last_update = datetime.now().replace(microsecond=0)
-            self.next_update = self.calculate_next_update(self.last_update)
-            self.save_tracker()
-            
-            logging.info(self.translations.get(
-                "tracker_reset",
-                "Reset tracker. Last update: {last_update}, Next update: {next_update}"
-            ).format(
-                last_update=self.last_update,
-                next_update=self.next_update
-            ))
-            
-        except Exception as e:
-            error_msg = "Failed to reset tracker state"
-            logging.error(f"{error_msg}: {str(e)}")
-            raise StateError(error_msg) from e
+        Trigger a graph update with comprehensive error handling and retry logic.
 
-    def calculate_next_update(self, from_date: datetime) -> datetime:
+        This method implements circuit breaker pattern, retry logic with exponential
+        backoff, detailed error classification, and comprehensive audit logging.
         """
-        Calculate next update time based on configuration.
-        
-        Args:
-            from_date: Base date for calculation
-            
-        Returns:
-            datetime: Calculated next update time
-            
-        Raises:
-            TimeValidationError: If time calculation fails
-        """
-        try:
-            if not isinstance(from_date, datetime):
-                raise TimeValidationError("Base date must be a datetime object")
-                
-            update_days = self.get_update_days()
-            fixed_time = self.get_fixed_update_time()
-            now = datetime.now().replace(microsecond=0)
+        # Check circuit breaker before attempting update
+        if not self._circuit_breaker.should_allow_request():
+            error_msg = "Update blocked by circuit breaker (too many recent failures)"
+            logger.warning(error_msg)
+            self._log_update_audit("update_blocked", error_msg)
+            raise RuntimeError(error_msg)
 
-            # Calculate base date
-            next_update = from_date + timedelta(days=update_days)
-            next_update = next_update.replace(
-                hour=0, minute=0, second=0, microsecond=0
-            )
+        self._update_metrics.record_attempt()
+        start_time = datetime.now()
 
-            # Apply fixed time if set
-            if fixed_time:
-                next_update = next_update.replace(
-                    hour=fixed_time.hour,
-                    minute=fixed_time.minute
-                )
+        logger.info(
+            f"Triggering scheduled graph update (attempt {self._update_metrics.total_attempts})"
+        )
+        self._log_update_audit(
+            "update_started",
+            f"Starting update attempt {self._update_metrics.total_attempts}",
+        )
 
-            if next_update <= now:
-                days_difference = (now - next_update).days + 1
-                next_update += timedelta(days=days_difference)
+        # Retry logic with exponential backoff
+        last_exception: Exception | None = None
 
-            logging.debug(
-                f"Next update calculation: Input {from_date}, "
-                f"Days {update_days}, Fixed time {fixed_time}, "
-                f"Result {next_update}"
-            )
-            
-            return next_update
-            
-        except Exception as e:
-            if isinstance(e, (TimeValidationError, ConfigError)):
-                raise TimeValidationError(str(e)) from e
-            error_msg = "Failed to calculate next update time"
-            logging.error(f"{error_msg}: {str(e)}")
-            raise TimeValidationError(error_msg) from e
-
-    def update(self) -> None:
-        """
-        Update tracker state with current time.
-        
-        Raises:
-            StateError: If update fails
-        """
-        try:
-            self.last_update = datetime.now().replace(microsecond=0)
-            self.next_update = self.calculate_next_update(self.last_update)
-            self.save_tracker()
-        except Exception as e:
-            error_msg = "Failed to update tracker state"
-            logging.error(f"{error_msg}: {str(e)}")
-            raise StateError(error_msg) from e
-
-    def update_config(self, new_config: Dict[str, Any]) -> None:
-        """
-        Update tracker configuration with validation.
-        
-        Args:
-            new_config: New configuration dictionary
-            
-        Raises:
-            ConfigError: If new configuration is invalid
-        """
-        try:
-            if not isinstance(new_config, dict):
-                raise ConfigError("New configuration must be a dictionary")
-
-            # Store old values for logging
-            old_update_days = self.get_update_days()
-            old_fixed_time = self.get_fixed_update_time_str()
-            
-            # Update config and recalculate
-            self.config = new_config
-            new_update_days = self.get_update_days()
-            new_fixed_time = self.get_fixed_update_time_str()
-            
-            logging.info(self.translations.get(
-                "config_updated_days_and_time",
-                "Configuration updated. UPDATE_DAYS changed from {update_days_old} to "
-                "{update_days_new}, FIXED_UPDATE_TIME changed from {fixed_time_old} "
-                "to {fixed_time_new}"
-            ).format(
-                update_days_old=old_update_days,
-                update_days_new=new_update_days,
-                fixed_time_old=old_fixed_time,
-                fixed_time_new=new_fixed_time,
-            ))
-            
-            self.next_update = self.calculate_next_update(self.last_update)
-            self.save_tracker()
-            
-        except Exception as e:
-            if isinstance(e, (ConfigError, TimeValidationError, ConfigKeyError)):
-                raise ConfigError(str(e)) from e
-            error_msg = "Failed to update configuration"
-            logging.error(f"{error_msg}: {str(e)}")
-            raise ConfigError(error_msg) from e
-
-    def get_next_update_readable(self) -> str:
-        """Get human-readable next update time."""
-        if self.next_update is None:
-            return self.translations.get(
-                "fixed_time_not_set",
-                "Update time not set"
-            )
-        return self.next_update.strftime("%Y-%m-%d %H:%M:%S")
-
-    def get_next_update_discord(self) -> str:
-        """
-        Get Discord-formatted timestamp for next update.
-        
-        Returns:
-            str: Discord timestamp format string
-            
-        Raises:
-            StateError: If next update time is invalid
-        """
-        try:
-            if self.next_update is None:
-                error_msg = "Next update time not set"
-                logging.error(error_msg)
-                return self.translations.get(
-                    "fixed_time_not_set",
-                    "Update time not set"
-                )
-                
-            timestamp = int(self.next_update.timestamp())
-            test_time = datetime.fromtimestamp(timestamp)
-            
-            # Debug timestamp conversion
-            logging.debug("Discord timestamp debug:")
-            logging.debug(f" - Next update datetime: {self.next_update}")
-            logging.debug(f" - Calculated timestamp: {timestamp}")
-            logging.debug(f" - Test conversion back: {test_time}")
-            
-            return f"<t:{timestamp}:R>"
-            
-        except Exception as e:
-            error_msg = "Failed to generate Discord timestamp"
-            logging.error(f"{error_msg}: {str(e)}")
-            raise StateError(error_msg) from e
-
-    def _validate_logging_state(self, now: datetime) -> Tuple[bool, str]:
-        """
-        Validate logging state and determine if logging is needed.
-        
-        Args:
-            now: Current time for validation
-            
-        Returns:
-            Tuple of (should_log, reason)
-            
-        Raises:
-            StateError: If validation fails
-        """
-        try:
-            if self.next_update is None:
-                return False, "Next update time not set"
-                
-            if self.last_log_time is None:
-                return True, "First log entry"
-                
-            time_until_update = self.next_update - now
-            
-            # Determine logging frequency based on time until update
-            if time_until_update <= self.log_threshold:
-                if (now - self.last_log_time) >= timedelta(minutes=15):
-                    return True, "Within threshold, 15-minute interval"
-                    
-            elif time_until_update > timedelta(days=1):
-                if (now - self.last_log_time) >= timedelta(days=1):
-                    return True, "Daily log for distant updates"
-                    
-            else:
-                if (now - self.last_log_time) >= timedelta(hours=1):
-                    return True, "Hourly log for upcoming updates"
-                    
-            return False, "Within logging interval"
-            
-        except Exception as e:
-            error_msg = "Failed to validate logging state"
-            logging.error(f"{error_msg}: {str(e)}")
-            raise StateError(error_msg) from e
-
-    def should_log_check(self, now: datetime) -> bool:
-        """
-        Check if update status should be logged.
-        
-        Args:
-            now: Current time
-            
-        Returns:
-            bool: True if should log, False otherwise
-            
-        Raises:
-            StateError: If check fails
-        """
-        try:
-            should_log, reason = self._validate_logging_state(now)
-            if should_log:
-                logging.debug(f"Logging check passed: {reason}")
-            return should_log
-            
-        except Exception as e:
-            if isinstance(e, StateError):
-                raise
-            error_msg = "Failed to check logging state"
-            logging.error(f"{error_msg}: {str(e)}")
-            raise StateError(error_msg) from e
-
-    def is_update_due(self) -> bool:
-        """
-        Check if an update is due.
-        
-        Returns:
-            bool: True if update is due, False otherwise
-            
-        Raises:
-            StateError: If check fails
-        """
-        try:
-            now = datetime.now().replace(microsecond=0)
-            
-            if self.next_update is None:
-                error_msg = "Next update time not set"
-                logging.error(error_msg)
-                return False
-                
-            is_due = now >= self.next_update
-
-            if self.should_log_check(now):
-                time_until_update = self.next_update - now
-                log_msg = self.translations.get(
-                    "update_due_check",
-                    "Checking if update is due. Now: {now}, Next update: {next_update}, Is due: {is_due}"
-                ).format(
-                    now=now,
-                    next_update=self.next_update,
-                    is_due=is_due
-                )
-                
-                # Use appropriate log level based on proximity
-                if time_until_update > timedelta(days=1):
-                    logging.debug(log_msg)
-                else:
-                    logging.info(log_msg)
-                    
-                self.last_log_time = now
-
-            return is_due
-            
-        except Exception as e:
-            if isinstance(e, StateError):
-                raise
-            error_msg = "Failed to check if update is due"
-            logging.error(f"{error_msg}: {str(e)}")
-            raise StateError(error_msg) from e
-
-    def save_tracker(self) -> None:
-        """
-        Save tracker state to file.
-        
-        Raises:
-            FileOperationError: If save operation fails
-            StateError: If tracker state is invalid
-        """
-        try:
-            if self.last_update is None or self.next_update is None:
-                raise StateError("Cannot save invalid tracker state")
-
-            data = {
-                "last_update": self.last_update.isoformat(),
-                "next_update": self.next_update.isoformat(),
-            }
-            
-            # Use atomic write operation
-            temp_file = f"{self.tracker_file}.tmp"
+        for attempt in range(self._retry_config.max_attempts):
             try:
-                with open(temp_file, "w", encoding='utf-8') as f:
-                    json.dump(data, f)
-                os.replace(temp_file, self.tracker_file)
-                    
-            except OSError as e:
-                if os.path.exists(temp_file):
-                    with contextlib.suppress(OSError):
-                        os.remove(temp_file)
-                raise FileOperationError(f"Failed to save tracker file: {str(e)}") from e
-                
-            logging.info(self.translations.get(
-                "tracker_file_saved",
-                "Saved tracker file. Last update: {last_update}, Next update: {next_update}"
-            ).format(
-                last_update=self.last_update,
-                next_update=self.next_update
-            ))
-            
-        except Exception as e:
-            if isinstance(e, (FileOperationError, StateError)):
-                raise
-            error_msg = "Failed to save tracker state"
-            logging.error(f"{error_msg}: {str(e)}")
-            raise FileOperationError(error_msg) from e
+                if attempt > 0:
+                    # Calculate delay for retry
+                    delay = self._retry_config.base_delay * (
+                        self._retry_config.exponential_base ** (attempt - 1)
+                    )
+                    delay = min(delay, self._retry_config.max_delay)
 
-def create_update_tracker(
-    data_folder: str,
-    config: Dict[str, Any],
-    translations: Dict[str, str]
-) -> UpdateTracker:
-    """
-    Create an UpdateTracker instance with error handling.
-    
-    Args:
-        data_folder: Path to data storage folder
-        config: Configuration dictionary
-        translations: Translation strings dictionary
-        
-    Returns:
-        UpdateTracker: Initialized tracker instance
-        
-    Raises:
-        UpdateTrackerError: If creation fails
-    """
-    try:
-        return UpdateTracker(data_folder, config, translations)
-    except Exception as e:
-        if isinstance(e, UpdateTrackerError):
+                    # Add jitter if enabled
+                    if self._retry_config.jitter:
+                        import random
+
+                        jitter_factor = 0.75 + (random.random() * 0.5)  # 0.75 to 1.25
+                        delay *= jitter_factor
+
+                    logger.info(
+                        f"Retrying update after {delay:.1f}s delay (attempt {attempt + 1}/{self._retry_config.max_attempts})"
+                    )
+                    self._log_update_audit(
+                        "update_retry",
+                        f"Retrying after {delay:.1f}s (attempt {attempt + 1})",
+                    )
+                    await asyncio.sleep(delay)
+
+                # Execute the update callback
+                if self.update_callback:
+                    # Add timeout protection
+                    await asyncio.wait_for(
+                        self.update_callback(), timeout=600.0
+                    )  # 10 minute timeout
+                else:
+                    error_msg = "No update callback set"
+                    logger.error(error_msg)
+                    self._log_update_audit("update_error", error_msg)
+                    raise RuntimeError(error_msg)
+
+                # Record successful update
+                update_time = datetime.now()
+                duration = (update_time - start_time).total_seconds()
+
+                self._state.record_successful_update(update_time)
+                self._update_metrics.record_success()
+                self._circuit_breaker.record_success()
+
+                success_msg = f"Scheduled update completed successfully in {duration:.1f}s (success rate: {self._update_metrics.get_success_rate():.2%})"
+                logger.info(success_msg)
+                self._log_update_audit("update_completed", success_msg)
+
+                # Save state after successful update
+                if self._recovery_enabled and self._config:
+                    try:
+                        self._state_manager.save_state(self._state, self._config)
+                        logger.debug("State saved after successful update")
+                    except Exception as e:
+                        logger.error(f"Failed to save state after update: {e}")
+
+                return
+
+            except asyncio.TimeoutError as e:
+                last_exception = e
+                error_type = ErrorClassifier.classify_error(e)
+                error_msg = f"Update attempt {attempt + 1} timed out after 10 minutes"
+                logger.warning(error_msg)
+                self._log_update_audit("update_timeout", error_msg)
+
+                if attempt == self._retry_config.max_attempts - 1:
+                    break  # Don't retry on last attempt
+
+            except Exception as e:
+                last_exception = e
+                error_type = ErrorClassifier.classify_error(e)
+                error_msg = f"Update attempt {attempt + 1} failed with {error_type.value} error: {str(e)[:200]}"
+                logger.warning(error_msg)
+                self._log_update_audit("update_attempt_failed", error_msg)
+
+                # Don't retry permanent errors
+                if error_type == ErrorType.PERMANENT:
+                    logger.error(f"Permanent error detected, not retrying: {e}")
+                    break
+
+                if attempt == self._retry_config.max_attempts - 1:
+                    break  # Don't retry on last attempt
+
+        # All attempts failed
+        failure_time = datetime.now()
+        duration = (failure_time - start_time).total_seconds()
+
+        if last_exception:
+            error_type = ErrorClassifier.classify_error(last_exception)
+            self._state.record_failure(failure_time, last_exception)
+            self._update_metrics.record_failure(error_type)
+            self._circuit_breaker.record_failure(last_exception)
+
+            failure_msg = (
+                f"All {self._retry_config.max_attempts} update attempts failed after {duration:.1f}s. "
+                f"Last error ({error_type.value}): {last_exception}"
+            )
+            logger.exception(failure_msg)
+            self._log_update_audit("update_failed", failure_msg)
+
+            # Log circuit breaker state if it opened
+            if self._circuit_breaker.get_state() == CircuitState.OPEN:
+                logger.error("Circuit breaker opened due to repeated failures")
+                self._log_update_audit(
+                    "circuit_breaker_opened",
+                    "Circuit breaker opened due to repeated failures",
+                )
+
+            raise last_exception
+        else:
+            # This shouldn't happen, but handle it gracefully
+            error_msg = f"Update failed after {self._retry_config.max_attempts} attempts with no recorded exception"
+            logger.error(error_msg)
+            self._log_update_audit("update_failed", error_msg)
+            raise RuntimeError(error_msg)
+
+    def _log_update_audit(self, event_type: str, message: str) -> None:
+        """Log audit events for update operations."""
+        timestamp = datetime.now().isoformat()
+        audit_msg = f"[UPDATE_AUDIT] {timestamp} - {event_type}: {message}"
+        logger.info(audit_msg)
+
+    async def force_update(self) -> None:
+        """Force an immediate update outside of the schedule."""
+        logger.info("Forcing immediate graph update")
+        await self._trigger_update()
+
+    def get_next_update_time(self) -> datetime | None:
+        """
+        Get the next scheduled update time.
+
+        Returns:
+            The next update datetime or None if scheduler not running
+        """
+        if not self._is_started or self._schedule is None:
+            return None
+
+        return self._state.next_update
+
+    def get_last_update_time(self) -> datetime | None:
+        """
+        Get the last update time.
+
+        Returns:
+            The last update datetime or None if no updates have occurred
+        """
+        return self._state.last_update
+
+    def get_scheduler_status(self) -> dict[str, str | int | datetime | None | bool]:
+        """
+        Get comprehensive scheduler status information including task manager status.
+
+        Returns:
+            Dictionary containing scheduler status details
+        """
+        task_status = self._task_manager.get_all_task_status()
+        scheduler_task_status = task_status.get("update_scheduler", {})
+
+        return {
+            "is_running": self._state.is_running,
+            "is_started": self._is_started,
+            "last_update": self._state.last_update,
+            "next_update": self._state.next_update,
+            "consecutive_failures": self._state.consecutive_failures,
+            "last_failure": self._state.last_failure,
+            "config_update_days": self._config.update_days if self._config else None,
+            "config_fixed_time": self._config.fixed_update_time
+            if self._config
+            else None,
+            "task_manager_healthy": self._task_manager.is_healthy(),
+            "scheduler_task_status": scheduler_task_status.get("status"),
+            "scheduler_task_health": scheduler_task_status.get("last_health"),
+        }
+
+    def is_scheduler_healthy(self) -> bool:
+        """
+        Check if the scheduler and its background tasks are healthy.
+
+        Returns:
+            True if scheduler is running and healthy, False otherwise
+        """
+        if not self._is_started:
+            return False
+
+        # Check if task manager is healthy
+        if not self._task_manager.is_healthy():
+            return False
+
+        # Check if scheduler task is running
+        task_status = self._task_manager.get_task_status("update_scheduler")
+        if task_status != TaskStatus.RUNNING:
+            return False
+
+        return True
+
+    async def restart_scheduler(self) -> None:
+        """
+        Restart the scheduler with current configuration.
+
+        Useful for recovering from failures or applying configuration changes.
+        """
+        if not self._config:
+            logger.error("Cannot restart scheduler: no configuration available")
+            return
+
+        logger.info("Restarting update scheduler")
+
+        # Stop current scheduler
+        await self.stop_scheduler()
+
+        # Start with current configuration
+        fixed_time = (
+            None
+            if self._config.fixed_update_time == "XX:XX"
+            else self._config.fixed_update_time
+        )
+        await self.start_scheduler(
+            update_days=self._config.update_days, fixed_update_time=fixed_time
+        )
+
+    def get_update_metrics(
+        self,
+    ) -> dict[str, str | int | float | dict[str, int] | None]:
+        """Get comprehensive update metrics."""
+        return self._update_metrics.to_dict()
+
+    def get_circuit_breaker_status(self) -> dict[str, str | int | datetime | None]:
+        """Get circuit breaker status for updates."""
+        metrics = self._circuit_breaker.get_metrics()
+        return {
+            "state": self._circuit_breaker.get_state().value,
+            "consecutive_failures": metrics.consecutive_failures,
+            "consecutive_successes": metrics.consecutive_successes,
+            "last_failure": metrics.last_failure,
+            "last_success": metrics.last_success,
+            "circuit_opened_at": metrics.circuit_opened_at,
+        }
+
+    def get_comprehensive_status(self) -> dict[str, object]:
+        """Get comprehensive status including all metrics and health information."""
+        base_status = self.get_scheduler_status()
+
+        # Create comprehensive status dictionary
+        comprehensive_status: dict[str, object] = dict(base_status)
+        comprehensive_status.update(
+            {
+                "update_metrics": self.get_update_metrics(),
+                "circuit_breaker": self.get_circuit_breaker_status(),
+                "task_manager_metrics": self._task_manager.get_all_task_metrics(),
+                "task_manager_health": self._task_manager.get_health_summary(),
+                "circuit_breaker_states": self._task_manager.get_all_circuit_breaker_status(),
+            }
+        )
+
+        return comprehensive_status
+
+    def get_audit_log(self, limit: int = 50) -> list[dict[str, str | datetime | None]]:
+        """Get recent audit log entries from task manager."""
+        return self._task_manager.get_audit_log(limit)
+
+    def reset_error_state(self) -> None:
+        """Reset error state and circuit breakers (for recovery purposes)."""
+        logger.info("Resetting error state and circuit breakers")
+
+        # Reset update metrics
+        self._update_metrics = ErrorMetrics()
+        self._circuit_breaker = CircuitBreaker(self._retry_config)
+
+        # Reset state consecutive failures
+        self._state.consecutive_failures = 0
+        self._state.last_error = None
+
+        logger.info("Error state reset completed")
+
+    # Test helper methods (for testing purposes only)
+    def _get_state_for_testing(self) -> ScheduleState:
+        """Get the internal state for testing purposes."""
+        return self._state
+
+    async def _trigger_update_for_testing(self) -> None:
+        """Trigger update for testing purposes."""
+        await self._trigger_update()
+
+    # Recovery and persistence methods
+
+    def enable_recovery(self) -> None:
+        """Enable recovery and persistence features."""
+        self._recovery_enabled = True
+        logger.info("Recovery and persistence enabled")
+
+    def disable_recovery(self) -> None:
+        """Disable recovery and persistence features."""
+        self._recovery_enabled = False
+        logger.info("Recovery and persistence disabled")
+
+    def is_recovery_enabled(self) -> bool:
+        """Check if recovery is enabled."""
+        return self._recovery_enabled
+
+    async def force_recovery(self) -> dict[str, object]:
+        """
+        Force a recovery operation and return results.
+
+        Returns:
+            Dictionary with recovery results and statistics
+        """
+        if not self._config:
+            raise RuntimeError("Cannot perform recovery: no configuration available")
+
+        logger.info("Forcing recovery operation")
+        current_time = datetime.now()
+
+        # Perform recovery
+        recovered_state, missed_updates = await self._recovery_manager.perform_recovery(
+            current_time=current_time,
+            state=self._state,
+            config=self._config,
+            update_callback=self.update_callback,
+        )
+
+        self._state = recovered_state
+
+        # Save recovered state
+        if self._recovery_enabled:
+            try:
+                self._state_manager.save_state(self._state, self._config)
+            except Exception as e:
+                logger.error(f"Failed to save recovered state: {e}")
+
+        return {
+            "recovery_time": current_time.isoformat(),
+            "missed_updates_detected": len(missed_updates),
+            "missed_updates": [update.to_dict() for update in missed_updates],
+            "state_after_recovery": self._state.to_dict(),
+        }
+
+    def get_recovery_status(self) -> dict[str, object]:
+        """
+        Get comprehensive recovery and persistence status.
+
+        Returns:
+            Dictionary with recovery status information
+        """
+        status: dict[str, object] = {
+            "recovery_enabled": self._recovery_enabled,
+            "state_file_exists": self._state_manager.state_exists(),
+            "state_file_path": str(self._state_manager.state_file_path),
+        }
+
+        # Add schedule integrity check if we have configuration
+        if self._config:
+            current_time = datetime.now()
+            is_valid, issues = self._recovery_manager.validate_schedule_integrity(
+                current_time, self._state, self._config
+            )
+            status["schedule_integrity_valid"] = is_valid
+            status["schedule_integrity_issues"] = issues
+
+        return status
+
+    def clear_persistent_state(self) -> None:
+        """Clear persistent state file (for testing or reset purposes)."""
+        try:
+            self._state_manager.delete_state()
+            logger.info("Persistent state cleared")
+        except Exception as e:
+            logger.error(f"Failed to clear persistent state: {e}")
             raise
-        error_msg = "Failed to create update tracker"
-        logging.error(f"{error_msg}: {str(e)}")
-        raise UpdateTrackerError(error_msg) from e
+
+    async def validate_and_repair_schedule(self) -> dict[str, object]:
+        """
+        Validate schedule integrity and repair if necessary.
+
+        Returns:
+            Dictionary with validation and repair results
+        """
+        if not self._config:
+            raise RuntimeError("Cannot validate schedule: no configuration available")
+
+        current_time = datetime.now()
+
+        # Validate current state
+        is_valid, issues = self._recovery_manager.validate_schedule_integrity(
+            current_time, self._state, self._config
+        )
+
+        result: dict[str, object] = {
+            "validation_time": current_time.isoformat(),
+            "was_valid": is_valid,
+            "issues_found": issues,
+            "repairs_performed": [],
+        }
+
+        # Repair if necessary
+        if not is_valid:
+            logger.info("Schedule integrity issues detected, performing repairs")
+            original_state = self._state.to_dict()
+
+            self._state = self._recovery_manager.repair_schedule_state(
+                current_time, self._state, self._config
+            )
+
+            # Save repaired state
+            if self._recovery_enabled:
+                try:
+                    self._state_manager.save_state(self._state, self._config)
+                    result["state_saved"] = True
+                except Exception as e:
+                    logger.error(f"Failed to save repaired state: {e}")
+                    result["state_saved"] = False
+                    result["save_error"] = str(e)
+
+            # Document what was repaired
+            repaired_state = self._state.to_dict()
+            repairs: list[dict[str, object]] = []
+            for key, original_value in original_state.items():
+                new_value = repaired_state.get(key)
+                if original_value != new_value:
+                    repairs.append(
+                        {
+                            "field": key,
+                            "old_value": original_value,
+                            "new_value": new_value,
+                        }
+                    )
+
+            result["repairs_performed"] = repairs
+            logger.info(f"Schedule repairs completed: {len(repairs)} fields modified")
+
+        return result

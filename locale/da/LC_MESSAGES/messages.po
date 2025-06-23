@@ -1,0 +1,611 @@
+# Danish translations for TGraph Bot
+# Copyright (C) 2025 engels74
+# This file is distributed under the same license as the TGraph Bot package.
+# engels74 <141435164+engels74@users.noreply.github.com>, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: TGraph Bot 1.0.0\n"
+"Report-Msgid-Bugs-To: https://github.com/engels74/tgraph-bot-source/issues\n"
+"POT-Creation-Date: 2025-06-29 02:10\n"
+"PO-Revision-Date: 2025-06-29 02:10\n"
+"Last-Translator: engels74 <141435164+engels74@users.noreply.github.com>\n"
+"Language-Team: Danish <https://hosted.weblate.org/projects/tgraph-bot/tgraph-bot/da/\n"
+"Language: da\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 5.0\n"
+
+#: utils/discord/command_utils.py:135
+msgid "***HIDDEN***"
+msgstr "***SKJULT***"
+
+#: bot/commands/my_stats.py:129
+msgid "1-3 minutes"
+msgstr "1-3 minutter"
+
+#: bot/commands/update_graphs.py:120
+msgid "2-5 minutes depending on data size"
+msgstr "2-5 minutter afhængig af datastørrelse"
+
+#: utils/discord/command_utils.py:46
+#: utils/discord/command_utils.py:492
+msgid "An error occurred"
+msgstr "Der opstod en fejl"
+
+#: utils/core/error_handler.py:306
+msgid "An error occurred while processing your request"
+msgstr "Der opstod en fejl under behandling af din anmodning"
+
+#: bot/commands/about.py:65
+msgid "Author"
+msgstr "Forfatter"
+
+#: bot/commands/uptime.py:77
+msgid "Bot Uptime"
+msgstr "Bot Oppetid"
+
+#: tests/unit/test_i18n.py:113
+#: tests/integration/test_locale_structure.py:140
+#: tests/integration/test_locale_structure.py:151
+#: tests/integration/test_locale_structure.py:162
+#: scripts/i18n/dev-helpers.py:127
+msgid "Bot is online and ready!"
+msgstr "Bot er online og klar!"
+
+#: bot/commands/update_graphs.py:330
+msgid "Bot lacks permission to post in the configured channel."
+msgstr "Bot mangler tilladelse til at poste i den konfigurerede kanal."
+
+#: bot/commands/update_graphs.py:181
+msgid "Check Logs"
+msgstr "Tjek Logs"
+
+#: bot/commands/my_stats.py:168
+msgid "Check Your DMs"
+msgstr "Tjek Dine DM'er"
+
+#: bot/commands/test_scheduler.py:208
+msgid "Check the bot logs for detailed error information and verify your configuration settings."
+msgstr "Tjek bot loggene for detaljerede fejlinformationer og verificer dine konfigurationsindstillinger."
+
+#: utils/core/error_handler.py:349
+msgid "Command Error"
+msgstr "Kommando Fejl"
+
+#: utils/discord/command_utils.py:373
+msgid "Command on Cooldown"
+msgstr "Kommando på Cooldown"
+
+#: bot/commands/test_scheduler.py:128
+msgid "Configuration"
+msgstr "Konfiguration"
+
+#: bot/commands/test_scheduler.py:125
+msgid "Current scheduler configuration and state"
+msgstr "Nuværende scheduler konfiguration og tilstand"
+
+#: bot/commands/my_stats.py:123
+msgid "Delivery Method"
+msgstr "Leveringsmetode"
+
+#: bot/commands/my_stats.py:124
+msgid "Direct Message (DM)"
+msgstr "Direkte Besked (DM)"
+
+#: bot/commands/update_graphs.py:338
+msgid "Discord API error occurred while posting graphs."
+msgstr "Discord API fejl opstod under posting af grafer."
+
+#: bot/commands/update_graphs.py:336
+msgid "Discord rate limit reached. Please try again later."
+msgstr "Discord rate limit nået. Prøv venligst igen senere."
+
+#: bot/commands/about.py:42
+msgid "Display information about the bot"
+msgstr "Vis information om botten"
+
+#: bot/commands/config.py:330
+msgid "Edit bot configuration"
+msgstr "Rediger bot konfiguration"
+
+#: bot/commands/my_stats.py:118
+msgid "Email"
+msgstr "Email"
+
+#: utils/discord/command_utils.py:148
+msgid "Empty"
+msgstr "Tom"
+
+#: utils/discord/command_utils.py:44
+#: utils/discord/command_utils.py:490
+msgid "Error"
+msgstr "Fejl"
+
+#: bot/commands/test_scheduler.py:197
+msgid "Error Details"
+msgstr "Fejldetaljer"
+
+#: utils/core/error_handler.py:313
+msgid "Error in `{command_name}` command: {error_message}"
+msgstr "Fejl i `{command_name}` kommando: {error_message}"
+
+#: bot/commands/my_stats.py:128
+#: bot/commands/update_graphs.py:119
+msgid "Estimated Time"
+msgstr "Estimeret Tid"
+
+#: bot/commands/update_graphs.py:165
+msgid "Generated Graphs"
+msgstr "Genererede Grafer"
+
+#: bot/commands/update_graphs.py:177
+msgid "Generated {total} graphs but only posted {success} successfully"
+msgstr "Genererede {total} grafer men postede kun {success} succesfuldt"
+
+#: bot/commands/update_graphs.py:111
+msgid "Generating server graphs... This may take a few minutes."
+msgstr "Genererer server grafer... Dette kan tage et par minutter."
+
+#: bot/commands/my_stats.py:115
+msgid "Generating your personal Plex statistics... This may take a moment."
+msgstr "Genererer dine personlige Plex statistikker... Dette kan tage et øjeblik."
+
+#: bot/commands/my_stats.py:73
+msgid "Get your personal Plex statistics via DM"
+msgstr "Få dine personlige Plex statistikker via DM"
+
+#: bot/commands/about.py:71
+msgid "GitHub"
+msgstr "GitHub"
+
+#: bot/commands/update_graphs.py:135
+msgid "Graph Generation"
+msgstr "Graf Generering"
+
+#: bot/commands/update_graphs.py:160
+msgid "Graph Update Complete"
+msgstr "Graf Opdatering Fuldført"
+
+#: bot/commands/update_graphs.py:110
+msgid "Graph Update Started"
+msgstr "Graf Opdatering Startet"
+
+#: bot/commands/my_stats.py:158
+msgid "Graphs Generated"
+msgstr "Grafer Genereret"
+
+#: tests/unit/test_i18n.py:45
+msgid "Hello, world!"
+msgstr "Hej, verden!"
+
+#: tests/unit/test_i18n.py:86
+msgid "Hello, {invalid_key}"
+msgstr "Hej, {invalid_key}"
+
+#: tests/unit/test_i18n.py:52
+#: tests/unit/test_i18n.py:58
+msgid "Hello, {name}!"
+msgstr "Hej, {name}!"
+
+#: utils/discord/command_utils.py:110
+msgid "Information"
+msgstr "Information"
+
+#: bot/commands/about.py:77
+msgid "License"
+msgstr "Licens"
+
+#: bot/commands/update_graphs.py:81
+msgid "Manually trigger server-wide graph generation and posting"
+msgstr "Manuel udløsning af server-bred graf generering og posting"
+
+#: bot/commands/update_graphs.py:352
+msgid "Network error occurred while posting graphs."
+msgstr "Netværksfejl opstod under posting af grafer."
+
+#: bot/commands/test_scheduler.py:207
+#: bot/commands/my_stats.py:186
+msgid "Next Steps"
+msgstr "Næste Trin"
+
+#: bot/commands/update_graphs.py:148
+msgid "No Graphs Generated"
+msgstr "Ingen Grafer Genereret"
+
+#: utils/discord/command_utils.py:421
+#: utils/discord/command_utils.py:431
+msgid "No content provided"
+msgstr "Intet indhold angivet"
+
+#: bot/commands/update_graphs.py:149
+msgid "No graph files were created. This may be due to insufficient data or configuration issues."
+msgstr "Ingen graffiler blev oprettet. Dette kan skyldes utilstrækkelige data eller konfigurationsproblemer."
+
+#: utils/discord/command_utils.py:143
+msgid "Not set"
+msgstr "Ikke indstillet"
+
+#: utils/discord/command_utils.py:79
+#: utils/discord/command_utils.py:523
+msgid "Operation completed successfully"
+msgstr "Operation gennemført succesfuldt"
+
+#: bot/commands/config.py:139
+msgid "Optional: View a specific configuration setting"
+msgstr "Valgfrit: Se en specifik konfigurationsindstilling"
+
+#: bot/commands/update_graphs.py:176
+msgid "Partial Success"
+msgstr "Delvis Succes"
+
+#: bot/commands/my_stats.py:149
+msgid "Personal Statistics Complete"
+msgstr "Personlige Statistikker Fuldført"
+
+#: bot/commands/my_stats.py:114
+msgid "Personal Statistics Request"
+msgstr "Anmodning om Personlige Statistikker"
+
+#: bot/commands/my_stats.py:109
+msgid "Please provide a valid email address (e.g., user@example.com)."
+msgstr "Angiv venligst en gyldig email adresse (f.eks. bruger@eksempel.com)."
+
+#: bot/commands/my_stats.py:181
+msgid "Possible Causes"
+msgstr "Mulige Årsager"
+
+#: bot/commands/update_graphs.py:170
+msgid "Posted Successfully"
+msgstr "Postet Succesfuldt"
+
+#: bot/commands/test_scheduler.py:124
+msgid "Pre-Test Status"
+msgstr "Pre-Test Status"
+
+#: bot/commands/my_stats.py:163
+msgid "Processing Time"
+msgstr "Behandlingstid"
+
+#: utils/discord/command_utils.py:343
+msgid "Progress"
+msgstr "Fremskridt"
+
+#: utils/discord/command_utils.py:383
+msgid "Reason"
+msgstr "Årsag"
+
+#: utils/discord/command_utils.py:378
+msgid "Retry After"
+msgstr "Prøv Igen Efter"
+
+#: bot/commands/test_scheduler.py:137
+msgid "Scheduled Times"
+msgstr "Planlagte Tider"
+
+#: bot/commands/test_scheduler.py:157
+msgid "Scheduler Test Completed Successfully"
+msgstr "Scheduler Test Gennemført Succesfuldt"
+
+#: bot/commands/test_scheduler.py:193
+msgid "Scheduler Test Failed"
+msgstr "Scheduler Test Fejlede"
+
+#: bot/commands/test_scheduler.py:95
+msgid "Scheduler Test Started"
+msgstr "Scheduler Test Startet"
+
+#: bot/commands/uptime.py:42
+msgid "Show bot uptime"
+msgstr "Vis bot oppetid"
+
+#: bot/commands/update_graphs.py:182
+msgid "Some files may have failed to upload"
+msgstr "Nogle filer kan have fejlet i upload"
+
+#: bot/commands/uptime.py:88
+msgid "Started"
+msgstr "Startet"
+
+#: bot/commands/test_scheduler.py:169
+msgid "State Updates"
+msgstr "Tilstandsopdateringer"
+
+#: bot/commands/my_stats.py:177
+msgid "Statistics Generation Failed"
+msgstr "Statistik Generering Fejlede"
+
+#: bot/commands/update_graphs.py:114
+msgid "Status"
+msgstr "Status"
+
+#: utils/discord/command_utils.py:77
+#: utils/discord/command_utils.py:521
+msgid "Success"
+msgstr "Succes"
+
+#: bot/commands/update_graphs.py:161
+msgid "Successfully generated and posted {count} graphs to {channel}"
+msgstr "Succesfuldt genereret og postet {count} grafer til {channel}"
+
+#: bot/commands/about.py:53
+msgid "TGraph Bot"
+msgstr "TGraph Bot"
+
+#: bot/commands/about.py:88
+msgid "TGraph Bot - Bringing Tautulli stats to Discord"
+msgstr "TGraph Bot - Bringer Tautulli statistikker til Discord"
+
+#: bot/commands/about.py:54
+msgid "TGraph Bot - Tautulli Discord Graph Generator"
+msgstr "TGraph Bot - Tautulli Discord Graf Generator"
+
+#: bot/commands/uptime.py:93
+msgid "TGraph Bot is running smoothly!"
+msgstr "TGraph Bot kører problemfrit!"
+
+#: bot/commands/test_scheduler.py:99
+msgid "Test Method"
+msgstr "Test Metode"
+
+#: bot/commands/test_scheduler.py:162
+msgid "Test Results"
+msgstr "Test Resultater"
+
+#: tests/unit/test_i18n.py:63
+#: tests/unit/test_i18n.py:124
+msgid "Test message"
+msgstr "Test besked"
+
+#: tests/unit/test_i18n.py:150
+msgid "Test string"
+msgstr "Test tekst"
+
+#: bot/commands/test_scheduler.py:64
+msgid "Test the scheduled update functionality immediately"
+msgstr "Test den planlagte opdateringsfunktionalitet øjeblikkeligt"
+
+#: bot/commands/test_scheduler.py:96
+msgid "Testing the scheduled update functionality..."
+msgstr "Tester den planlagte opdateringsfunktionalitet..."
+
+#: bot/commands/config.py:333
+msgid "The configuration setting to modify"
+msgstr "Konfigurationsindstillingen der skal ændres"
+
+#: utils/core/error_handler.py:300
+msgid "The external service is temporarily unavailable. Please try again later."
+msgstr "Den eksterne tjeneste er midlertidigt utilgængelig. Prøv igen senere."
+
+#: bot/commands/config.py:334
+msgid "The new value for the setting"
+msgstr "Den nye værdi for indstillingen"
+
+#: utils/core/error_handler.py:302
+msgid "The provided input is invalid. Please check your parameters and try again."
+msgstr "Det angivne input er ugyldigt. Tjek dine parametre og prøv igen."
+
+#: bot/commands/test_scheduler.py:158
+msgid "The scheduled update routine executed successfully!"
+msgstr "Den planlagte opdateringsrutine blev udført succesfuldt!"
+
+#: bot/commands/test_scheduler.py:194
+msgid "The scheduled update test encountered an error"
+msgstr "Den planlagte opdateringstest stødte på en fejl"
+
+#: bot/commands/test_scheduler.py:177
+msgid "The scheduler will work correctly at the configured time. All timing calculations and update workflows are functioning properly."
+msgstr "Scheduleren vil fungere korrekt på det konfigurerede tidspunkt. Alle tidsberegninger og opdateringsworkflows fungerer korrekt."
+
+#: utils/core/error_handler.py:304
+msgid "The server is experiencing resource constraints. Please try again later."
+msgstr "Serveren oplever ressourcebegrænsninger. Prøv igen senere."
+
+#: utils/discord/command_utils.py:374
+msgid "The {command_name} command is currently on cooldown."
+msgstr "{command_name} kommandoen er i øjeblikket på cooldown."
+
+#: bot/commands/test_scheduler.py:203
+msgid "There may be an issue with:\n• Tautulli API connectivity\n• Discord channel permissions\n• Graph generation process\n• Bot configuration"
+msgstr "Der kan være et problem med:\n• Tautulli API forbindelse\n• Discord kanal tilladelser\n• Graf genereringsproces\n• Bot konfiguration"
+
+#: utils/core/error_handler.py:299
+msgid "There was a network connectivity issue. Please try again in a moment."
+msgstr "Der var et netværksforbindelsesproblem. Prøv igen om et øjeblik."
+
+#: utils/core/error_handler.py:305
+msgid "There was an issue communicating with Discord. Please try again."
+msgstr "Der var et problem med at kommunikere med Discord. Prøv igen."
+
+#: utils/core/error_handler.py:303
+msgid "There's a configuration issue. Please contact the server administrators."
+msgstr "Der er et konfigurationsproblem. Kontakt serveradministratorerne."
+
+#: utils/discord/command_utils.py:384
+msgid "This prevents server overload during graph generation"
+msgstr "Dette forhindrer server overbelastning under graf generering"
+
+#: bot/commands/my_stats.py:178
+msgid "Unable to generate your personal statistics."
+msgstr "Kunne ikke generere dine personlige statistikker."
+
+#: bot/commands/uptime.py:82
+msgid "Uptime"
+msgstr "Oppetid"
+
+#: tests/unit/test_i18n.py:69
+msgid "User {user} has {count} items"
+msgstr "Bruger {user} har {count} elementer"
+
+#: tests/unit/test_i18n.py:220
+msgid "User {user} has {n} message"
+msgstr "Bruger {user} har {n} besked"
+
+#: tests/unit/test_i18n.py:220
+msgid "User {user} has {n} messages"
+msgstr "Bruger {user} har {n} beskeder"
+
+#: bot/commands/test_scheduler.py:100
+msgid "Using UpdateTracker.force_update() - same as scheduler"
+msgstr "Bruger UpdateTracker.force_update() - samme som scheduler"
+
+#: bot/commands/about.py:59
+msgid "Version"
+msgstr "Version"
+
+#: bot/commands/config.py:136
+msgid "View current bot configuration"
+msgstr "Se nuværende bot konfiguration"
+
+#: bot/commands/config.py:131
+msgid "View or edit bot configuration"
+msgstr "Se eller rediger bot konfiguration"
+
+#: bot/commands/test_scheduler.py:176
+msgid "What This Confirms"
+msgstr "Hvad Dette Bekræfter"
+
+#: bot/commands/test_scheduler.py:202
+msgid "What This Means"
+msgstr "Hvad Dette Betyder"
+
+#: bot/commands/test_scheduler.py:104
+msgid "What This Tests"
+msgstr "Hvad Dette Tester"
+
+#: bot/commands/about.py:83
+msgid "Wiki"
+msgstr "Wiki"
+
+#: utils/core/error_handler.py:301
+msgid "You don't have permission to perform this action."
+msgstr "Du har ikke tilladelse til at udføre denne handling."
+
+#: tests/unit/test_i18n.py:230
+msgid "You have {n} item"
+msgstr "Du har {n} element"
+
+#: tests/unit/test_i18n.py:230
+msgid "You have {n} items"
+msgstr "Du har {n} elementer"
+
+#: tests/unit/test_i18n.py:210
+#: tests/unit/test_i18n.py:215
+msgid "You have {n} message"
+msgstr "Du har {n} besked"
+
+#: tests/unit/test_i18n.py:210
+#: tests/unit/test_i18n.py:215
+msgid "You have {n} messages"
+msgstr "Du har {n} beskeder"
+
+#: bot/commands/my_stats.py:76
+msgid "Your Plex account email address (used to identify your statistics)"
+msgstr "Din Plex konto email adresse (brugt til at identificere dine statistikker)"
+
+#: bot/commands/my_stats.py:169
+msgid "Your graphs have been sent privately"
+msgstr "Dine grafer er blevet sendt privat"
+
+#: bot/commands/my_stats.py:150
+msgid "Your personal Plex statistics have been generated and sent via DM!"
+msgstr "Dine personlige Plex statistikker er blevet genereret og sendt via DM!"
+
+#: bot/commands/my_stats.py:101
+msgid "personal statistics"
+msgstr "personlige statistikker"
+
+#: bot/commands/test_scheduler.py:85
+msgid "test scheduler"
+msgstr "test scheduler"
+
+#: bot/commands/update_graphs.py:104
+msgid "update graphs"
+msgstr "opdater grafer"
+
+#: bot/commands/update_graphs.py:166
+msgid "{count} files"
+msgstr "{count} filer"
+
+#: bot/commands/update_graphs.py:171
+msgid "{count} individual messages"
+msgstr "{count} individuelle beskeder"
+
+#: bot/commands/my_stats.py:159
+msgid "{count} personal graphs"
+msgstr "{count} personlige grafer"
+
+#: bot/commands/uptime.py:66
+msgid "{n} day"
+msgstr "{n} dag"
+
+#: bot/commands/uptime.py:66
+msgid "{n} days"
+msgstr "{n} dage"
+
+#: bot/commands/uptime.py:68
+msgid "{n} hour"
+msgstr "{n} time"
+
+#: bot/commands/uptime.py:68
+msgid "{n} hours"
+msgstr "{n} timer"
+
+#: bot/commands/uptime.py:70
+msgid "{n} minute"
+msgstr "{n} minut"
+
+#: bot/commands/uptime.py:70
+msgid "{n} minutes"
+msgstr "{n} minutter"
+
+#: bot/commands/uptime.py:72
+msgid "{n} second"
+msgstr "{n} sekund"
+
+#: bot/commands/uptime.py:72
+msgid "{n} seconds"
+msgstr "{n} sekunder"
+
+#: utils/discord/command_utils.py:370
+msgid "{time:.0f} seconds"
+msgstr "{time:.0f} sekunder"
+
+#: utils/discord/command_utils.py:368
+msgid "{time:.1f} minutes"
+msgstr "{time:.1f} minutter"
+
+#: bot/commands/my_stats.py:164
+msgid "{time:.1f} seconds"
+msgstr "{time:.1f} sekunder"
+
+#: bot/commands/my_stats.py:182
+msgid "• Email not found in Plex server\n• Insufficient data for graphs\n• Temporary server issue"
+msgstr "• Email ikke fundet på Plex server\n• Utilstrækkelige data til grafer\n• Midlertidigt server problem"
+
+#: bot/commands/test_scheduler.py:105
+msgid "• UPDATE_DAYS configuration\n• FIXED_UPDATE_TIME configuration\n• Complete graph generation workflow\n• Error handling and retry logic\n• Scheduler state updates"
+msgstr "• UPDATE_DAYS konfiguration\n• FIXED_UPDATE_TIME konfiguration\n• Komplet graf genereringsworkflow\n• Fejlhåndtering og retry logik\n• Scheduler tilstandsopdateringer"
+
+#: bot/commands/my_stats.py:187
+msgid "• Verify your email is correct\n• Ensure you have Plex activity\n• Try again in a few minutes"
+msgstr "• Verificer at din email er korrekt\n• Sørg for at du har Plex aktivitet\n• Prøv igen om et par minutter"
+
+#: utils/discord/command_utils.py:139
+msgid "✅ Enabled"
+msgstr "✅ Aktiveret"
+
+#: bot/commands/test_scheduler.py:163
+msgid "✅ UPDATE_DAYS interval calculation working\n✅ FIXED_UPDATE_TIME scheduling working\n✅ Graph generation and posting successful\n✅ Scheduler state updated correctly"
+msgstr "✅ UPDATE_DAYS interval beregning virker\n✅ FIXED_UPDATE_TIME planlægning virker\n✅ Graf generering og posting succesfuld\n✅ Scheduler tilstand opdateret korrekt"
+
+#: utils/discord/command_utils.py:139
+msgid "❌ Disabled"
+msgstr "❌ Deaktiveret"
+
+#: bot/commands/update_graphs.py:115
+msgid "🔄 Initializing graph generation"
+msgstr "🔄 Initialiserer graf generering"
+

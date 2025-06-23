@@ -13,35 +13,120 @@
   <a href="https://endsoftwarepatents.org/innovating-without-patents"><img style="height: 20px;" src="https://static.fsf.org/nosvn/esp/logos/patent-free.svg"></a>
 </p>
 
-TGraph Bot is a Discord bot that automatically generates and posts Tautulli graphs to a specified Discord channel. It provides insights into your Plex Media Server's activity and performance.
+> **🚧 Complete Rewrite in Progress**
+> TGraph Bot has undergone a complete ground-up rewrite with modern Python 3.13, enhanced architecture, and comprehensive testing. Work on v1.0.0 is actively ongoing. The new version features async operations, slash commands, live configuration reloading, and much more.
+
+TGraph Bot is a modern Discord bot that automatically generates and posts beautiful Tautulli graphs to your Discord channels. It provides insights into your Plex Media Server's activity and performance with customizable visualizations and user-specific statistics.
 
 ## ✨ Key Features
 
-- 🤖 Automated Tautulli graph generation and posting
-- 🎛️ Customizable graph options and update intervals
-- 💬 Interactive Discord slash commands
-- 👤 User-specific graph generation
-- 🌐 Multi-language support (English and Danish)
+- 🤖 **Modern Discord Integration** - Slash commands with permission-based access control
+- 📈 **Beautiful Graphs** - Professional Seaborn-styled visualizations with customizable themes
+- ⚡ **Async Architecture** - Non-blocking operations that won't freeze your bot
+- 🔄 **Live Configuration** - Update settings without restarting the bot
+- 🌍 **Multi-language Support** - Built-in internationalization (English & Danish)
+- 👤 **Personal Statistics** - Users can generate their own viewing statistics
+- 🎨 **Highly Customizable** - Extensive configuration options for colors, annotations, and graph types
+- 🧪 **Production Ready** - Comprehensive testing and type safety with Python 3.13
 
-## 👀 Preview
+## 📊 Graph Types
 
-<img src="https://i.imgur.com/UmzyUgW.png" width="50%" alt="An example of how it looks">
+- **Daily Play Count** - Track daily viewing activity with optional media type separation
+- **Day of Week Analysis** - Discover viewing patterns by weekday
+- **Hourly Activity** - 24-hour activity heatmaps
+- **Monthly Trends** - Long-term usage patterns and trends
+- **Top Users** - Leaderboards of most active users (with privacy options)
+- **Top Platforms** - Most popular client platforms and devices
 
 ## 🚀 Quick Start
 
-For detailed information on setting up and using TGraph Bot, please refer to our [Wiki](https://github.com/engels74/tgraph-bot-source/wiki). Here's what you'll find:
+### Prerequisites
 
-- [🛠️ Installation](https://github.com/engels74/tgraph-bot/wiki/01.-Installation)
-- [⚙️ Configuration](https://github.com/engels74/tgraph-bot/wiki/02.-Configuration)
-- [🔧 Slash Commands](https://github.com/engels74/tgraph-bot/wiki/03.-Slash-Commands)
-- [🔐 Managing Bot Permissions](https://github.com/engels74/tgraph-bot/wiki/04.-Managing-Bot-Permissions)
-- [🌐 Language Support](https://github.com/engels74/tgraph-bot/wiki/05.-Language-Support)
-- [🤖 Creating a Discord Bot](https://github.com/engels74/tgraph-bot/wiki/06.-Creating-a-Discord-Bot)
-- [🔧Troubleshooting](https://github.com/engels74/tgraph-bot/wiki/07.-Troubleshooting)
+- Python 3.13+
+- Discord Bot Token
+- Tautulli API Access
+- UV package manager (recommended)
 
-## ❓ Need Help?
+### Installation
 
-If you encounter any issues, have questions, or need further assistance, please feel free to [create an issue](https://github.com/engels74/tgraph-bot/issues) on our GitHub repository. We're here to help!
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/engels74/tgraph-bot-source.git
+   cd tgraph-bot-source
+   ```
+
+2. **Install dependencies**
+   ```bash
+   # Install uv if not already installed
+   pip install uv
+
+   # Install project dependencies
+   uv sync
+   ```
+
+3. **Configure the bot**
+   ```bash
+   # Copy the sample configuration
+   cp config.yml.sample config.yml
+
+   # Edit config.yml with your settings
+   nano config.yml
+   ```
+
+4. **Run the bot**
+   ```bash
+   uv run python main.py
+   ```
+
+## ⚙️ Configuration
+
+The bot uses a comprehensive YAML configuration file with validation. Key settings include:
+
+- **Essential Settings**: Tautulli API key, Discord token, channel ID
+- **Graph Options**: Enable/disable specific graph types, colors, annotations
+- **Timing**: Update intervals, data retention, time ranges
+- **Permissions**: Command cooldowns and access control
+- **Localization**: Language selection and formatting
+
+See `config.yml.sample` for a complete configuration template with detailed comments.
+
+## 🔧 Development
+
+### Running Tests
+
+```bash
+# Run all tests
+uv run pytest
+
+# Run with coverage
+uv run pytest --cov
+
+# Type checking
+uvx basedpyright
+```
+
+### Code Quality
+
+- **Type Safety**: 100% type coverage with basedpyright
+- **Testing**: Comprehensive unit and integration tests
+- **Code Style**: Consistent formatting with ruff
+- **Documentation**: Complete docstring coverage
+
+## 📚 Documentation
+
+WIP 
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit issues, feature requests, or pull requests. For major changes, please open an issue first to discuss what you would like to change.
+
+## 💬 Support
+
+If you encounter any issues or need help:
+
+- 📋 [Create an issue](https://github.com/engels74/tgraph-bot-source/issues) on GitHub
+- 💬 Check existing issues for solutions
+- 📖 Refer to the upcoming Wiki documentation
 
 ## ⚖️ License
 
@@ -52,4 +137,3 @@ The Docker image is licensed under the GPLv3 License. See the [LICENSE](https://
 [![GNU AGPLv3 Image](https://www.gnu.org/graphics/agplv3-155x51.png)](https://www.gnu.org/licenses/agpl-3.0.en.html)
 
 The source code for the TGraph Bot scripts are licensed under the AGPLv3 License. See the [LICENSE](https://github.com/engels74/tgraph-bot-source/blob/main/LICENSE) file for details.
-

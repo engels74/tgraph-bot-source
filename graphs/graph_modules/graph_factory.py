@@ -1,300 +1,338 @@
-# graphs/graph_modules/graph_factory.py
+"""
+Graph factory for TGraph Bot.
 
+This module provides a factory class that creates instances of specific
+graph classes based on the enabled settings in the configuration.
 """
-GraphFactory implementation with enhanced error handling and type safety.
-Provides centralized creation and management of graph instances with standardized
-error handling and resource management.
-"""
+
+import logging
+from pathlib import Path
+from typing import TYPE_CHECKING, cast
+from collections.abc import Mapping
 
 from .base_graph import BaseGraph
-from .daily_play_count_graph import DailyPlayCountGraph
-from .play_count_by_dayofweek_graph import PlayCountByDayOfWeekGraph
-from .play_count_by_hourofday_graph import PlayCountByHourOfDayGraph
-from .play_count_by_month_graph import PlayCountByMonthGraph
-from .top_10_platforms_graph import Top10PlatformsGraph
-from .top_10_users_graph import Top10UsersGraph
-from typing import Dict, Any, Tuple, Optional, Type
-import asyncio
-import logging
+from .utils import cleanup_old_files, ensure_graph_directory
+from .tautulli_graphs.daily_play_count_graph import DailyPlayCountGraph
+from .tautulli_graphs.play_count_by_dayofweek_graph import PlayCountByDayOfWeekGraph
+from .tautulli_graphs.play_count_by_hourofday_graph import PlayCountByHourOfDayGraph
+from .tautulli_graphs.play_count_by_month_graph import PlayCountByMonthGraph
+from .tautulli_graphs.top_10_platforms_graph import Top10PlatformsGraph
+from .tautulli_graphs.top_10_users_graph import Top10UsersGraph
+from .sample_graph import SampleGraph
 
-class GraphFactoryError(Exception):
-    """Base exception for graph factory related errors."""
-    pass
+if TYPE_CHECKING:
+    from config.schema import TGraphBotConfig
 
-class GraphCreationError(GraphFactoryError):
-    """Raised when there is an error creating a graph instance."""
-    pass
+logger = logging.getLogger(__name__)
 
-class GraphTypeError(GraphFactoryError):
-    """Raised when an invalid graph type is specified."""
-    pass
-
-class DataProcessingError(GraphFactoryError):
-    """Raised when there is an error processing graph data."""
-    pass
-
-class GraphGenerationError(GraphFactoryError):
-    """Raised when there is an error generating graphs."""
-    pass
-
-class ResourceManagementError(GraphFactoryError):
-    """Raised when there is an error managing graph resources."""
-    pass
 
 class GraphFactory:
-    """Factory class for creating and managing graph instances."""
+    """Factory class for creating graph instances based on configuration."""
 
-    def __init__(self, config: Dict[str, Any], translations: Dict[str, str], img_folder: str):
+    def __init__(self, config: "TGraphBotConfig | dict[str, object]") -> None:
         """
-        Initialize the GraphFactory.
-        
+        Initialize the graph factory.
+
         Args:
-            config: Configuration dictionary containing graph settings
-            translations: Dictionary of translation strings
-            img_folder: Path to the image output folder
-        
-        Raises:
-            GraphCreationError: If initialization fails due to missing configuration
-            ValueError: If required configuration keys are missing
+            config: Configuration object containing graph settings
         """
-        try:
-            # Validate required configuration keys
-            required_keys = {f"ENABLE_{graph_type.upper()}" for graph_type in [
-                "daily_play_count", "play_count_by_dayofweek", "play_count_by_hourofday",
-                "top_10_platforms", "top_10_users", "play_count_by_month"
-            ]}
-            missing_keys = required_keys - set(config.keys())
-            if missing_keys:
-                raise ValueError(f"Missing required configuration keys: {missing_keys}")
+        self.config: "TGraphBotConfig | dict[str, object]" = config
 
-            self.config = config
-            self.translations = translations
-            self.img_folder = img_folder
-            
-            # Map graph types to their respective classes with proper type hints
-            self.graph_classes: Dict[str, Type[BaseGraph]] = {
-                "daily_play_count": DailyPlayCountGraph,
-                "play_count_by_dayofweek": PlayCountByDayOfWeekGraph,
-                "play_count_by_hourofday": PlayCountByHourOfDayGraph,
-                "top_10_platforms": Top10PlatformsGraph,
-                "top_10_users": Top10UsersGraph,
-                "play_count_by_month": PlayCountByMonthGraph
-            }
-        except ValueError as e:
-            error_msg = self.translations.get(
-                'error_graph_factory_init',
-                'Failed to initialize graph factory: {error}'
-            ).format(error=str(e))
-            logging.error(error_msg)
-            raise GraphCreationError(error_msg) from e
-        except Exception as e:
-            error_msg = self.translations.get(
-                'error_unexpected_init',
-                'Unexpected error initializing graph factory: {error}'
-            ).format(error=str(e))
-            logging.error(error_msg)
-            raise GraphCreationError(error_msg) from e
-
-    def create_graph(self, graph_type: str) -> BaseGraph:
+    def create_enabled_graphs(self) -> list[BaseGraph]:
         """
-        Create and return a graph object of the specified type.
-        
+        Create instances of all enabled graph types.
+
+        Returns:
+            List of graph instances for enabled graph types
+        """
+        graphs: list[BaseGraph] = []
+
+        # Check each graph type and create if enabled
+        def get_config_value(key: str, default: bool = True) -> bool:
+            # Handle both dict and TGraphBotConfig objects
+            if isinstance(self.config, dict):
+                return bool(self.config.get(key, default))
+            else:
+                # Use direct attribute access for TGraphBotConfig objects
+                if key == "ENABLE_DAILY_PLAY_COUNT":
+                    return self.config.ENABLE_DAILY_PLAY_COUNT
+                elif key == "ENABLE_PLAY_COUNT_BY_DAYOFWEEK":
+                    return self.config.ENABLE_PLAY_COUNT_BY_DAYOFWEEK
+                elif key == "ENABLE_PLAY_COUNT_BY_HOUROFDAY":
+                    return self.config.ENABLE_PLAY_COUNT_BY_HOUROFDAY
+                elif key == "ENABLE_PLAY_COUNT_BY_MONTH":
+                    return self.config.ENABLE_PLAY_COUNT_BY_MONTH
+                elif key == "ENABLE_TOP_10_PLATFORMS":
+                    return self.config.ENABLE_TOP_10_PLATFORMS
+                elif key == "ENABLE_TOP_10_USERS":
+                    return self.config.ENABLE_TOP_10_USERS
+                elif key == "ENABLE_SAMPLE_GRAPH":
+                    # Sample graph is not in the main config schema, default to False
+                    return False
+                return default
+
+        if get_config_value("ENABLE_DAILY_PLAY_COUNT"):
+            logger.debug("Creating daily play count graph")
+            graphs.append(DailyPlayCountGraph(config=self.config))
+
+        if get_config_value("ENABLE_PLAY_COUNT_BY_DAYOFWEEK"):
+            logger.debug("Creating play count by day of week graph")
+            graphs.append(PlayCountByDayOfWeekGraph(config=self.config))
+
+        if get_config_value("ENABLE_PLAY_COUNT_BY_HOUROFDAY"):
+            logger.debug("Creating play count by hour of day graph")
+            graphs.append(PlayCountByHourOfDayGraph(config=self.config))
+
+        if get_config_value("ENABLE_PLAY_COUNT_BY_MONTH"):
+            logger.debug("Creating play count by month graph")
+            graphs.append(PlayCountByMonthGraph(config=self.config))
+
+        if get_config_value("ENABLE_TOP_10_PLATFORMS"):
+            logger.debug("Creating top 10 platforms graph")
+            graphs.append(Top10PlatformsGraph(config=self.config))
+
+        if get_config_value("ENABLE_TOP_10_USERS"):
+            logger.debug("Creating top 10 users graph")
+            graphs.append(Top10UsersGraph(config=self.config))
+
+        # Sample graph for demonstration (disabled by default)
+        if get_config_value("ENABLE_SAMPLE_GRAPH", default=False):
+            logger.debug("Creating sample graph")
+            graphs.append(SampleGraph(config=self.config))
+
+        logger.info(f"Created {len(graphs)} enabled graph instances")
+        return graphs
+
+    def create_graph_by_type(self, graph_type: str) -> BaseGraph:
+        """
+        Create a specific graph instance by type name.
+
         Args:
             graph_type: The type of graph to create
-            
-        Returns:
-            An instance of the requested graph type
-            
-        Raises:
-            GraphTypeError: If an invalid graph type is provided
-            GraphCreationError: If graph instance creation fails
-        """
-        try:
-            graph_class = self.graph_classes.get(graph_type)
-            if graph_class is None:
-                error_msg = self.translations.get(
-                    'error_invalid_graph_type',
-                    'Invalid graph type: {type}'
-                ).format(type=graph_type)
-                raise GraphTypeError(error_msg)
-            
-            return graph_class(self.config, self.translations, self.img_folder)
-            
-        except GraphTypeError:
-            raise
-        except Exception as e:
-            error_msg = self.translations.get(
-                'error_graph_creation',
-                'Failed to create graph of type {type}: {error}'
-            ).format(type=graph_type, error=str(e))
-            logging.error(error_msg)
-            raise GraphCreationError(error_msg) from e
 
-    def create_all_graphs(self) -> Dict[str, BaseGraph]:
-        """
-        Create and return instances of all enabled graph types.
-        
         Returns:
-            A dictionary mapping graph types to their respective graph instances
-            
-        Raises:
-            GraphCreationError: If creation of any graph instance fails
-        """
-        try:
-            enabled_graphs = {}
-            for graph_type, graph_class in self.graph_classes.items():
-                config_key = f"ENABLE_{graph_type.upper()}"
-                if self.config.get(config_key, False):
-                    try:
-                        enabled_graphs[graph_type] = graph_class(
-                            self.config, self.translations, self.img_folder
-                        )
-                        logging.debug(f"Created graph instance for {graph_type}")
-                    except Exception as e:
-                        error_msg = self.translations.get(
-                            'error_graph_instance_creation',
-                            'Failed to create instance of {type}: {error}'
-                        ).format(type=graph_type, error=str(e))
-                        logging.error(error_msg)
-                        raise GraphCreationError(error_msg) from e
-                else:
-                    logging.debug(f"Skipping disabled graph type: {graph_type}")
-                    
-            return enabled_graphs
-            
-        except Exception as e:
-            error_msg = self.translations.get(
-                'error_creating_graphs',
-                'Failed to create graph instances: {error}'
-            ).format(error=str(e))
-            logging.error(error_msg)
-            raise GraphCreationError(error_msg) from e
+            Graph instance of the specified type
 
-    async def _generate_single_graph(
-        self,
-        graph_type: str,
-        graph_instance: BaseGraph,
-        data_fetcher: Any,
-        user_id: Optional[str],
-        sem: asyncio.Semaphore
-    ) -> Optional[Tuple[str, str]]:
+        Raises:
+            ValueError: If graph type is not recognized
         """
-        Helper method to generate a single graph with proper error handling and resource management.
-        
+        graph_type_map = {
+            "daily_play_count": DailyPlayCountGraph,
+            "play_count_by_dayofweek": PlayCountByDayOfWeekGraph,
+            "play_count_by_hourofday": PlayCountByHourOfDayGraph,
+            "play_count_by_month": PlayCountByMonthGraph,
+            "top_10_platforms": Top10PlatformsGraph,
+            "top_10_users": Top10UsersGraph,
+            "sample_graph": SampleGraph,
+        }
+
+        graph_class = graph_type_map.get(graph_type)
+        if graph_class is None:
+            raise ValueError(f"Unknown graph type: {graph_type}")
+
+        logger.debug(f"Creating graph of type: {graph_type}")
+        return graph_class(config=self.config)
+
+    def get_enabled_graph_types(self) -> list[str]:
+        """
+        Get a list of enabled graph type names.
+
+        Returns:
+            List of enabled graph type names
+        """
+        enabled_types: list[str] = []
+
+        def get_config_value(key: str, default: bool = True) -> bool:
+            # Handle both dict and TGraphBotConfig objects
+            if isinstance(self.config, dict):
+                return bool(self.config.get(key, default))
+            else:
+                # Use direct attribute access for TGraphBotConfig objects
+                if key == "ENABLE_DAILY_PLAY_COUNT":
+                    return self.config.ENABLE_DAILY_PLAY_COUNT
+                elif key == "ENABLE_PLAY_COUNT_BY_DAYOFWEEK":
+                    return self.config.ENABLE_PLAY_COUNT_BY_DAYOFWEEK
+                elif key == "ENABLE_PLAY_COUNT_BY_HOUROFDAY":
+                    return self.config.ENABLE_PLAY_COUNT_BY_HOUROFDAY
+                elif key == "ENABLE_PLAY_COUNT_BY_MONTH":
+                    return self.config.ENABLE_PLAY_COUNT_BY_MONTH
+                elif key == "ENABLE_TOP_10_PLATFORMS":
+                    return self.config.ENABLE_TOP_10_PLATFORMS
+                elif key == "ENABLE_TOP_10_USERS":
+                    return self.config.ENABLE_TOP_10_USERS
+                elif key == "ENABLE_SAMPLE_GRAPH":
+                    # Sample graph is not in the main config schema, default to False
+                    return False
+                return default
+
+        # Check each graph type directly from config attributes
+        if get_config_value("ENABLE_DAILY_PLAY_COUNT"):
+            enabled_types.append("daily_play_count")
+
+        if get_config_value("ENABLE_PLAY_COUNT_BY_DAYOFWEEK"):
+            enabled_types.append("play_count_by_dayofweek")
+
+        if get_config_value("ENABLE_PLAY_COUNT_BY_HOUROFDAY"):
+            enabled_types.append("play_count_by_hourofday")
+
+        if get_config_value("ENABLE_PLAY_COUNT_BY_MONTH"):
+            enabled_types.append("play_count_by_month")
+
+        if get_config_value("ENABLE_TOP_10_PLATFORMS"):
+            enabled_types.append("top_10_platforms")
+
+        if get_config_value("ENABLE_TOP_10_USERS"):
+            enabled_types.append("top_10_users")
+
+        # Sample graph (disabled by default)
+        if get_config_value("ENABLE_SAMPLE_GRAPH", default=False):
+            enabled_types.append("sample_graph")
+
+        return enabled_types
+
+    def setup_graph_environment(self, base_path: str = "graphs") -> Path:
+        """
+        Setup the graph environment by ensuring directories exist.
+
         Args:
-            graph_type: The type of graph to generate
-            graph_instance: The graph instance to use
-            data_fetcher: The data fetcher instance
-            user_id: Optional user ID for user-specific graphs
-            sem: Semaphore for controlling concurrent operations
-            
-        Returns:
-            A tuple of (graph_type, file_path) if successful, None if generation fails
-            
-        Raises:
-            GraphGenerationError: If there is an error generating the graph
-        """
-        async with sem:  # Control concurrent graph generations
-            try:
-                file_path = await graph_instance.generate(data_fetcher, user_id)
-                if file_path:
-                    logging.info(self.translations.get(
-                        "log_graph_generated",
-                        "Generated {graph_type} graph"
-                    ).format(graph_type=graph_type))
-                    return graph_type, file_path
-                return None
-                
-            except Exception as e:
-                error_msg = self.translations.get(
-                    "error_generating_graph",
-                    "Error generating {graph_type} graph: {error}"
-                ).format(graph_type=graph_type, error=str(e))
-                raise GraphGenerationError(error_msg) from e
-            finally:
-                # Ensure proper resource cleanup
-                if hasattr(graph_instance, 'cleanup_figure'):
-                    graph_instance.cleanup_figure()
+            base_path: Base path for graph storage
 
-    async def generate_graphs(
-        self, 
-        data_fetcher: Any, 
-        user_id: Optional[str] = None
-    ) -> Dict[str, str]:
-        """
-        Generate all enabled graphs concurrently and return their file paths.
-        
-        Args:
-            data_fetcher: The DataFetcher instance to use for data retrieval
-            user_id: Optional user ID for user-specific graphs
-        
         Returns:
-            A dictionary of graph type to generated graph file paths
-        
-        Raises:
-            DataProcessingError: If graph data cannot be fetched
-            GraphGenerationError: If graph generation fails
-            ResourceManagementError: If resource management fails
+            Path object for the graph directory
         """
-        generated_graphs = {}
-        
-        try:
-            # Add timeout for data fetching
-            async with asyncio.timeout(30):
-                graph_data = await data_fetcher.fetch_all_graph_data(user_id)
-                
-            if not graph_data:
-                error_msg = self.translations.get(
-                    "error_fetch_graph_data",
-                    "Failed to fetch graph data"
+        return ensure_graph_directory(base_path)
+
+    def cleanup_old_graphs(
+        self, directory: Path | None = None, keep_days: int = 7
+    ) -> int:
+        """
+        Clean up old graph files from the output directory.
+
+        Args:
+            directory: Directory to clean up (defaults to graph directory)
+            keep_days: Number of days to keep files
+
+        Returns:
+            Number of files deleted
+        """
+        if directory is None:
+            directory = ensure_graph_directory()
+
+        return cleanup_old_files(directory, keep_days)
+
+    def generate_all_graphs(self, data: dict[str, object]) -> list[str]:
+        """
+        Generate all enabled graphs with proper resource management.
+
+        This method creates all enabled graphs in sequence while ensuring
+        proper cleanup of matplotlib resources to prevent memory leaks.
+
+        Args:
+            data: Dictionary containing the data needed for graph generation
+                 Expected structure: {"play_history": {...}, "time_range_days": int}
+
+        Returns:
+            List of paths to generated graph files
+
+        Raises:
+            Exception: If any graph generation fails
+        """
+        return self.generate_graphs_with_exclusions(data, exclude_types=[])
+
+    def generate_graphs_with_exclusions(
+        self, data: dict[str, object], exclude_types: list[str]
+    ) -> list[str]:
+        """
+        Generate enabled graphs with exclusions for specific graph types.
+
+        This method creates enabled graphs while excluding specified types,
+        useful for context-specific graph generation (e.g., personal stats).
+
+        Args:
+            data: Dictionary containing the data needed for graph generation
+                 Expected structure: {"play_history": {...}, "time_range_days": int}
+            exclude_types: List of graph type names to exclude (e.g., ["top_10_users"])
+
+        Returns:
+            List of paths to generated graph files
+
+        Raises:
+            Exception: If any graph generation fails
+        """
+        graphs = self.create_enabled_graphs()
+
+        # Filter out excluded graph types
+        if exclude_types:
+            excluded_classes: list[type[BaseGraph]] = []
+            for exclude_type in exclude_types:
+                if exclude_type == "top_10_users":
+                    excluded_classes.append(Top10UsersGraph)
+                elif exclude_type == "top_10_platforms":
+                    excluded_classes.append(Top10PlatformsGraph)
+                elif exclude_type == "daily_play_count":
+                    excluded_classes.append(DailyPlayCountGraph)
+                elif exclude_type == "play_count_by_dayofweek":
+                    excluded_classes.append(PlayCountByDayOfWeekGraph)
+                elif exclude_type == "play_count_by_hourofday":
+                    excluded_classes.append(PlayCountByHourOfDayGraph)
+                elif exclude_type == "play_count_by_month":
+                    excluded_classes.append(PlayCountByMonthGraph)
+                elif exclude_type == "sample_graph":
+                    excluded_classes.append(SampleGraph)
+
+            # Filter graphs list
+            original_count = len(graphs)
+            graphs = [
+                graph
+                for graph in graphs
+                if not any(isinstance(graph, cls) for cls in excluded_classes)
+            ]
+            filtered_count = len(graphs)
+
+            if original_count > filtered_count:
+                logger.info(
+                    f"Excluded {original_count - filtered_count} graph(s) from generation: {exclude_types}"
                 )
-                raise DataProcessingError(error_msg)
-                
-            # Generate graphs concurrently with semaphore to limit concurrent operations
-            sem = asyncio.Semaphore(3)  # Limit to 3 concurrent graph generations
-            tasks = []
-            
-            for graph_type, graph_instance in self.create_all_graphs().items():
-                if graph_type in graph_data:
-                    graph_instance.data = graph_data[graph_type]
-                    tasks.append(
-                        self._generate_single_graph(
-                            graph_type, graph_instance, data_fetcher, user_id, sem
-                        )
-                    )
-                    
+
+        generated_paths: list[str] = []
+
+        logger.info(f"Starting generation of {len(graphs)} enabled graphs")
+
+        # Pass the full data structure to all graphs - let each graph extract what it needs
+        # GraphManager provides: {"play_history": {...}, "monthly_plays": {...}, "time_range_days": int, "time_range_months": int}
+        # Different graphs can extract different parts of this data structure
+
+        # Type cast to the expected mapping type for type checker
+        full_data = cast(Mapping[str, object], data)
+
+        logger.debug(f"Passing full data structure with keys: {list(full_data.keys())}")
+
+        for graph in graphs:
             try:
-                results = await asyncio.gather(*tasks, return_exceptions=True)
-                
-                for result in results:
-                    if isinstance(result, Exception):
-                        logging.error(f"Graph generation error: {str(result)}")
-                    elif result:
-                        graph_type, file_path = result
-                        generated_graphs[graph_type] = file_path
-                        
+                # Use context manager for automatic cleanup
+                with graph:
+                    # Pass the full data structure - each graph will extract what it needs
+                    output_path = graph.generate(full_data)
+                    generated_paths.append(output_path)
+                    logger.debug(f"Generated {graph.__class__.__name__}: {output_path}")
+
             except Exception as e:
-                error_msg = self.translations.get(
-                    'error_concurrent_generation',
-                    'Error during concurrent graph generation: {error}'
-                ).format(error=str(e))
-                raise GraphGenerationError(error_msg) from e
-                    
-        except asyncio.TimeoutError as e:
-            error_msg = self.translations.get(
-                "error_timeout",
-                "Timeout during graph generation"
-            )
-            logging.error(error_msg)
-            raise GraphGenerationError(error_msg) from e
-        except DataProcessingError:
-            raise
-        except Exception as e:
-            error_msg = self.translations.get(
-                "error_graph_generation",
-                "Error during graph generation: {error}"
-            ).format(error=str(e))
-            logging.error(error_msg)
-            raise GraphGenerationError(error_msg) from e
-                
-        return generated_graphs
+                logger.error(f"Failed to generate {graph.__class__.__name__}: {e}")
+                # Continue with other graphs even if one fails
+                continue
+
+        # Additional cleanup to ensure no matplotlib state remains
+        BaseGraph.cleanup_all_figures()
+
+        logger.info(f"Successfully generated {len(generated_paths)} graphs")
+        return generated_paths
+
+    def cleanup_all_graph_resources(self) -> None:
+        """
+        Perform comprehensive cleanup of all graph-related resources.
+
+        This method ensures all matplotlib figures are closed and
+        any remaining graph resources are properly released.
+        """
+        BaseGraph.cleanup_all_figures()
+        logger.debug("Performed comprehensive graph resource cleanup")
