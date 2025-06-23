@@ -1,388 +1,610 @@
-﻿# graphs/graph_modules/play_count_by_month_graph.py
+"""
+Play count by month graph for TGraph Bot.
 
+This module inherits from BaseGraph and uses Seaborn to plot play counts
+by month, supporting both combined and separated media type visualization.
 """
-Play Count by Month graph generator with enhanced error handling and resource management.
-Handles generation of monthly play count graphs with proper validation and cleanup.
-"""
+
+import logging
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, override, cast
+
+import pandas as pd
+import seaborn as sns
+from matplotlib.axes import Axes
 
 from .base_graph import BaseGraph
-from .utils import validate_series_data
-from config.modules.constants import ConfigKeyError
-from config.modules.sanitizer import sanitize_user_id, InvalidUserIdError
-from datetime import datetime
-from matplotlib.ticker import MaxNLocator
-from typing import Dict, Any, Optional, List
-import logging
-import os
+from .utils import (
+    validate_graph_data,
+    aggregate_by_month,
+    aggregate_by_month_separated,
+    get_media_type_display_info,
+    ProcessedRecords,
+)
 
+if TYPE_CHECKING:
+    from config.schema import TGraphBotConfig
 
-class MonthlyGraphError(Exception):
-    """Base exception for monthly graph-related errors."""
-    pass
+logger = logging.getLogger(__name__)
 
-class DataFetchError(MonthlyGraphError):
-    """Raised when there's an error fetching graph data."""
-    pass
-
-class DataValidationError(MonthlyGraphError):
-    """Raised when data validation fails."""
-    pass
-
-class GraphGenerationError(MonthlyGraphError):
-    """Raised when graph generation fails."""
-    pass
-
-class ResourceError(MonthlyGraphError):
-    """Raised when there's an error managing graph resources."""
-    pass
 
 class PlayCountByMonthGraph(BaseGraph):
-    """Handles generation of monthly play count graphs."""
-    
-    def __init__(self, config: Dict[str, Any], translations: Dict[str, str], img_folder: str):
-        """
-        Initialize the monthly graph handler.
-        
-        Args:
-            config: Configuration dictionary
-            translations: Translation strings dictionary
-            img_folder: Path to image output folder
-            
-        Raises:
-            ValueError: If required configuration is missing
-        """
-        super().__init__(config, translations, img_folder)
-        self.graph_type = "play_count_by_month"
-        self._verify_config()
-        
-    def _verify_config(self) -> None:
-        """Verify required configuration exists."""
-        required_keys = [
-            'ANNOTATE_PLAY_COUNT_BY_MONTH',
-            'TV_COLOR',
-            'MOVIE_COLOR',
-            'GRAPH_BACKGROUND_COLOR',
-            'ANNOTATION_COLOR',
-            'ANNOTATION_OUTLINE_COLOR'
-        ]
-        missing = [key for key in required_keys if key not in self.config]
-        if missing:
-            raise ValueError(f"Missing required configuration keys: {missing}")
+    """Graph showing play counts by month."""
 
-    def _process_filename(self, user_id: Optional[str]) -> Optional[str]:
+    def __init__(
+        self,
+        config: "TGraphBotConfig | dict[str, object] | None" = None,
+        width: int = 12,
+        height: int = 8,
+        dpi: int = 100,
+        background_color: str | None = None
+    ) -> None:
         """
-        Process user ID for safe filename creation.
-        
+        Initialize the play count by month graph.
+
         Args:
-            user_id: The user ID to process
-            
+            config: Configuration object containing graph settings
+            width: Figure width in inches
+            height: Figure height in inches
+            dpi: Dots per inch for the figure
+            background_color: Background color for the graph (overrides config if provided)
+        """
+        super().__init__(
+            config=config,
+            width=width,
+            height=height,
+            dpi=dpi,
+            background_color=background_color
+        )
+
+    @override
+    def get_title(self) -> str:
+        """
+        Get the title for this graph type.
+
         Returns:
-            Optional[str]: A sanitized version of the user ID safe for filenames
-            
-        Raises:
-            InvalidUserIdError: If user_id is invalid
+            The graph title with timeframe information
         """
-        if user_id is None:
-            return None
-            
-        try:
-            return sanitize_user_id(user_id)
-        except InvalidUserIdError as e:
-            logging.warning(f"Invalid user ID for filename: {e}")
-            raise InvalidUserIdError(f"Invalid user ID format: {e}") from e
+        return self.get_enhanced_title_with_timeframe("Play Count by Month", use_months=True)
 
-    def _validate_time_range(self, months: List[str]) -> None:
+    @override
+    def generate(self, data: Mapping[str, object]) -> str:
         """
-        Validate the time range of the monthly data.
-        
-        Args:
-            months: List of month strings
-            
-        Raises:
-            DataValidationError: If validation fails
-        """
-        if not months:
-            raise DataValidationError("Empty months list")
-        
-        try:
-            parsed_dates = []
-            for month in months:
-                try:
-                    # Try YYYY-MM format first
-                    parsed = datetime.strptime(month, "%Y-%m")
-                except ValueError:
-                    try:
-                        # Try MMM YYYY format (e.g. "Dec 2023")
-                        parsed = datetime.strptime(month, "%b %Y")
-                    except ValueError:
-                        # Try MMMM YYYY format (e.g. "December 2023")
-                        try:
-                            parsed = datetime.strptime(month, "%B %Y")
-                        except ValueError as e:
-                            raise DataValidationError(f"Invalid month format: {month}") from e
-                parsed_dates.append(parsed)
-                
-            # Check time range is reasonable
-            first_month = min(parsed_dates)
-            last_month = max(parsed_dates)
-            month_diff = (last_month.year - first_month.year) * 12 + (last_month.month - first_month.month)
-            
-            if month_diff > 24:  # Maximum 2 years range
-                raise DataValidationError("Time range exceeds maximum allowed (24 months)")
-                
-        except ValueError as e:
-            raise DataValidationError(f"Invalid month format: {str(e)}") from e
+        Generate the play count by month graph using the provided data.
 
-    async def fetch_data(self, data_fetcher, user_id: Optional[str] = None) -> Dict[str, Any]:
-        """
-        Fetch monthly play count data.
-        
         Args:
-            data_fetcher: Data fetcher instance
-            user_id: Optional user ID for user-specific data
-            
+            data: Dictionary containing monthly plays data from Tautulli API
+                 Expected structure: {'monthly_plays': {'categories': [...], 'series': [...]}}
+
         Returns:
-            The fetched data
-            
+            Path to the generated graph image file
+
         Raises:
-            DataFetchError: If data fetching fails
+            ValueError: If data is invalid or missing required fields
         """
+        logger.info("Generating play count by month graph")
+
         try:
-            if self.data is not None:
-                logging.debug("Using stored data for monthly play count")
-                return self.data
-
-            params = {"time_range": 12, "y_axis": "plays"}
-            if user_id:
-                params["user_id"] = sanitize_user_id(user_id)
+            # Step 1: Extract monthly plays data from the full data structure
+            monthly_plays_data_raw = data.get('monthly_plays', {})
+            if not isinstance(monthly_plays_data_raw, dict):
+                raise ValueError("Missing or invalid 'monthly_plays' data in input")
             
-            logging.debug("Fetching monthly play count data with params: %s", params)
-            
-            data = await data_fetcher.fetch_tautulli_data_async("get_plays_per_month", params)
-            if not data or 'response' not in data or 'data' not in data['response']:
-                error_msg = self.translations.get(
-                    'error_fetch_play_count_month_user' if user_id else 'error_fetch_play_count_month',
-                    'Failed to fetch monthly play count data{}: {}'
-                ).format(f" for user {user_id}" if user_id else "", "No data returned")
-                logging.error(error_msg)
-                raise DataFetchError(error_msg)
+            # Cast to the proper type for type checker
+            monthly_plays_data = cast(Mapping[str, object], monthly_plays_data_raw)
 
-            # Additional data validation
-            response_data = data['response']['data']
-            if not isinstance(response_data, dict) or 'series' not in response_data:
-                raise DataValidationError("Invalid API response format")
+            # Step 2: Validate the monthly plays data structure
+            # Monthly plays data should have 'categories' and 'series' keys directly (no 'data' wrapper)
+            is_valid, error_msg = validate_graph_data(monthly_plays_data, ['categories', 'series'])
+            if not is_valid:
+                raise ValueError(f"Invalid monthly plays data for monthly graph: {error_msg}")
 
-            return response_data
+            # Step 3: Use the monthly plays data directly (no 'data' key extraction needed)
+            response_data = monthly_plays_data
+            if not isinstance(response_data, dict):
+                raise ValueError("Invalid response data structure in monthly_plays")
 
-        except InvalidUserIdError as e:
-            raise DataFetchError(f"Invalid user ID: {str(e)}") from e
-        except Exception as e:
-            error_msg = self.translations.get(
-                'error_fetch_play_count_month',
-                'Failed to fetch monthly play count data: {error}'
-            ).format(error=str(e))
-            logging.error(error_msg)
-            raise DataFetchError(error_msg) from e
+            # Step 4: Setup figure and axes
+            _, ax = self.setup_figure()
 
-    def _process_series_data(self, series: List[Dict[str, Any]], months: List[str]) -> Dict[str, Any]:
-        """
-        Process series data and filter out months with zero plays.
-        
-        Args:
-            series: List of series data dictionaries
-            months: List of month labels
-            
-        Returns:
-            Dictionary containing processed series data
-            
-        Raises:
-            DataValidationError: If processing fails
-        """
-        try:
-            tv_data = next((s["data"] for s in series if s["name"] == "TV"), [0] * len(months))
-            movie_data = next((s["data"] for s in series if s["name"] == "Movies"), [0] * len(months))
+            # Step 5: Apply modern Seaborn styling
+            self.apply_seaborn_style()
 
-            if len(tv_data) != len(months) or len(movie_data) != len(months):
-                raise DataValidationError("Series data length mismatch with months")
+            # Step 6: Check if media type separation is enabled
+            use_separation = self.get_media_type_separation_enabled()
 
-            processed_data = {
-                "months": [],
-                "tv_data": [],
-                "movie_data": []
-            }
+            if use_separation:
+                # Generate separated visualization using monthly API data
+                self._generate_separated_visualization_from_api(ax, response_data)
+            else:
+                # Generate traditional combined visualization using monthly API data
+                self._generate_combined_visualization_from_api(ax, response_data)
 
-            # Filter out months with zero plays for both TV and movies
-            for i, month in enumerate(months):
-                if tv_data[i] > 0 or movie_data[i] > 0:
-                    processed_data["months"].append(month)
-                    processed_data["tv_data"].append(tv_data[i])
-                    processed_data["movie_data"].append(movie_data[i])
+            # Step 7: Improve layout and save
+            if self.figure is not None:
+                self.figure.tight_layout()
 
-            if not processed_data["months"]:
-                raise DataValidationError("No non-zero data points found")
-
-            return processed_data
-
-        except Exception as e:
-            raise DataValidationError(f"Failed to process series data: {str(e)}") from e
-
-    def process_data(self, raw_data: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Process the raw data for plotting.
-        
-        Args:
-            raw_data: Raw data from the API
-            
-        Returns:
-            Processed data ready for plotting
-            
-        Raises:
-            DataValidationError: If processing fails
-        """
-        try:
-            if not isinstance(raw_data, dict) or 'categories' not in raw_data or 'series' not in raw_data:
-                raise DataValidationError(self.translations["error_missing_data_play_count_by_month"])
-
-            months = raw_data['categories']
-            series = raw_data['series']
-
-            if not months or not series:
-                raise DataValidationError(self.translations["warning_empty_data_play_count_by_month"])
-
-            # Validate time range
-            self._validate_time_range(months)
-
-            # Validate series data
-            validation_errors = validate_series_data(series, len(months), "monthly series")
-            if validation_errors:
-                raise DataValidationError("\n".join(validation_errors))
-
-            processed_data = self._process_series_data(series, months)
-            if not processed_data["months"]:
-                raise DataValidationError(self.translations["warning_no_play_data_play_count_by_month"])
-
-            return processed_data
-
-        except (ConfigKeyError, ValueError) as e:  # Updated from KeyError
-            raise DataValidationError(f"Data validation failed: {str(e)}") from e
-        except Exception as e:
-            error_msg = f"Error processing monthly data: {str(e)}"
-            logging.error(error_msg)
-            raise DataValidationError(error_msg) from e
-
-    def plot(self, processed_data: Dict[str, Any]) -> None:
-        """
-        Plot the processed data.
-        
-        Args:
-            processed_data: Processed data ready for plotting
-            
-        Raises:
-            GraphGenerationError: If plotting fails
-        """
-        try:
-            self.setup_plot()
-
-            index = range(len(processed_data["months"]))
-            bar_width = 0.75
-
-            # Plot stacked bars
-            self.ax.bar(
-                index, 
-                processed_data["movie_data"],
-                bar_width,
-                label="Movies",
-                color=self.get_color("Movies")
+            # Save the figure using base class utility method
+            output_path = self.save_figure(
+                graph_type="play_count_by_month",
+                user_id=None
             )
 
-            self.ax.bar(
-                index,
-                processed_data["tv_data"],
-                bar_width,
-                bottom=processed_data["movie_data"],
-                label="TV",
-                color=self.get_color("TV")
-            )
-
-            if self.config.get("ANNOTATE_PLAY_COUNT_BY_MONTH", False):
-                self._add_annotations(index, processed_data)
-
-            self.add_title(self.translations["play_count_by_month_title"])
-            self.add_labels(
-                self.translations["play_count_by_month_xlabel"],
-                self.translations["play_count_by_month_ylabel"]
-            )
-
-            self.ax.set_xticks(index)
-            self.ax.set_xticklabels(processed_data["months"], rotation=45, ha="right")
-            self.ax.yaxis.set_major_locator(MaxNLocator(integer=True))
-
-            self.add_legend()
-            self.apply_tight_layout()
+            logger.info(f"Play count by month graph saved to: {output_path}")
+            return output_path
 
         except Exception as e:
-            error_msg = f"Error plotting monthly play count graph: {str(e)}"
-            logging.error(error_msg)
-            raise GraphGenerationError(error_msg) from e
-
-    def _add_annotations(self, index: range, data: Dict[str, Any]) -> None:
-        """Add value annotations to the graph bars."""
-        for i in range(len(index)):
-            movie_value = data["movie_data"][i]
-            tv_value = data["tv_data"][i]
-            total = movie_value + tv_value
-
-            if movie_value > 0:
-                self.annotate(i, movie_value/2, str(int(movie_value)))
-
-            if tv_value > 0:
-                self.annotate(i, movie_value + tv_value/2, str(int(tv_value)))
-
-            if total > 0:
-                self.annotate(i, total, str(int(total)))
-
-    async def generate(self, data_fetcher, user_id: Optional[str] = None) -> Optional[str]:
-        """
-        Generate the graph and return its file path.
-        
-        Args:
-            data_fetcher: Data fetcher instance
-            user_id: Optional user ID for user-specific graphs
-            
-        Returns:
-            The file path of the generated graph, or None if generation fails
-            
-        Raises:
-            MonthlyGraphError: If graph generation fails
-        """
-        try:
-            data = await self.fetch_data(data_fetcher, user_id)
-            processed_data = self.process_data(data)
-            self.plot(processed_data)
-
-            # Create directories and save graph
-            today = datetime.today().strftime("%Y-%m-%d")
-            base_dir = os.path.join(self.img_folder, today)
-            
-            safe_user_id = self._process_filename(user_id) if user_id else None
-            if safe_user_id:
-                base_dir = os.path.join(base_dir, f"user_{safe_user_id}")
-                
-            file_name = f"play_count_by_month{'_' + safe_user_id if safe_user_id else ''}.png"
-            file_path = os.path.join(base_dir, file_name)
-            
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
-            self.save(file_path)
-            
-            logging.debug("Saved monthly play count graph: %s", file_path)
-            return file_path
-
-        except (DataFetchError, DataValidationError, GraphGenerationError) as e:
-            logging.error(str(e))
-            return None
-        except Exception as e:
-            error_msg = f"Unexpected error generating monthly play count graph: {str(e)}"
-            logging.error(error_msg)
-            raise MonthlyGraphError(error_msg) from e
+            logger.exception(f"Error generating play count by month graph: {e}")
+            raise
         finally:
-            self.cleanup_figure()
+            self.cleanup()
+
+    def _generate_separated_visualization_from_api(self, ax: Axes, response_data: Mapping[str, object]) -> None:
+        """
+        Generate separated visualization using data from Tautulli's get_plays_per_month API.
+
+        Args:
+            ax: The matplotlib axes to plot on
+            response_data: The data section from the API response
+        """
+        # Extract categories (months) and series (media types with data)
+        categories = response_data.get('categories', [])
+        series = response_data.get('series', [])
+        
+        if not isinstance(categories, list) or not isinstance(series, list):
+            self._handle_empty_data_case(ax)
+            return
+            
+        if not categories or not series:
+            self._handle_empty_data_case(ax)
+            return
+
+        # Prepare data for plotting
+        plot_data: list[dict[str, str | int]] = []
+        display_info = get_media_type_display_info()
+        
+        # series comes from external Tautulli API - runtime type checking required
+        for series_item in series:  # pyright: ignore[reportUnknownVariableType] # external API data
+            # Runtime type validation for external API data
+            if not isinstance(series_item, dict):
+                continue
+                
+            series_name = str(series_item.get('name', ''))  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType] # external API data
+            series_data_raw = series_item.get('data', [])  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType] # external API data
+            
+            if not isinstance(series_data_raw, list) or len(series_data_raw) != len(categories):  # pyright: ignore[reportUnknownArgumentType] # external API data
+                continue
+            
+            # Map series name to media type
+            media_type = 'tv' if series_name.lower() in ['tv', 'tv series'] else 'movie'
+            
+            # Get display info
+            if media_type in display_info:
+                label = display_info[media_type]['display_name']
+                color = display_info[media_type]['color']
+                
+                # Override with config colors if available
+                if media_type == 'tv':
+                    color = self.get_tv_color()
+                elif media_type == 'movie':
+                    color = self.get_movie_color()
+            else:
+                label = series_name
+                color = '#666666'
+            
+            # Add data points for each month
+            # External API data requires runtime validation
+            for month, count in zip(categories, series_data_raw):  # pyright: ignore[reportUnknownArgumentType,reportUnknownVariableType] # external API data
+                month_str = str(month)  # pyright: ignore[reportUnknownArgumentType] # external API data
+                if isinstance(count, (int, float)) and count > 0:  # Only include non-zero values
+                    plot_data.append({
+                        'month': month_str,
+                        'count': int(count),  # external API data conversion
+                        'media_type': label,
+                        'color': color
+                    })
+
+        if not plot_data:
+            self._handle_empty_data_case(ax)
+            return
+
+        # Create DataFrame for Seaborn
+        df = pd.DataFrame(plot_data)
+
+        # Build color mapping and unique media types
+        color_mapping: dict[str, str] = {}
+        unique_media_types_set: set[str] = set()
+        
+        for item in plot_data:
+            media_type_key = str(item['media_type'])
+            color_key = str(item['color'])
+            unique_media_types_set.add(media_type_key)
+            if media_type_key not in color_mapping:
+                color_mapping[media_type_key] = color_key
+        
+        # Create ordered list for consistent plotting - use consistent order instead of alphabetical
+        # to ensure TV Series always gets blue and Movies get orange
+        preferred_order = ['TV Series', 'Movies', 'Music', 'Other']
+        unique_media_types_list: list[str] = []
+        
+        # Add media types in preferred order if they exist
+        for media_type in preferred_order:
+            if media_type in unique_media_types_set:
+                unique_media_types_list.append(media_type)
+        
+        # Add any remaining media types not in preferred order (shouldn't happen normally)
+        for media_type in sorted(unique_media_types_set):
+            if media_type not in unique_media_types_list:
+                unique_media_types_list.append(media_type)
+        
+        colors: list[str] = [color_mapping[mt] for mt in unique_media_types_list]
+
+        # Create grouped bar plot with proper spacing
+        _ = sns.barplot(
+            data=df,
+            x='month',
+            y='count',
+            hue='media_type',
+            ax=ax,
+            palette=colors,
+            alpha=0.8,
+            edgecolor='white',
+            linewidth=0.7
+        )
+
+        # Customize the plot - matplotlib methods lack complete type stubs
+        _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+        _ = ax.set_xlabel('Month', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+        _ = ax.set_ylabel('Play Count', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+
+        # Enhance legend
+        _ = ax.legend(  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+            title='Media Type',
+            loc='best',
+            frameon=True,
+            fancybox=True,
+            shadow=True,
+            framealpha=0.9,
+            fontsize=12
+        )
+
+        # Rotate x-axis labels for better readability
+        ax.tick_params(axis='x', rotation=45, labelsize=12)  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+        ax.tick_params(axis='y', labelsize=12)  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+
+        # Add bar value annotations if enabled
+        annotate_enabled = self.get_config_value('ANNOTATE_PLAY_COUNT_BY_MONTH', False)
+        if annotate_enabled:
+            # Get all bar patches and annotate them
+            for patch in ax.patches:
+                height = patch.get_height()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType] # matplotlib patch attributes
+                if height and height > 0:  # Only annotate non-zero values
+                    x_val = patch.get_x() + patch.get_width() / 2  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType] # matplotlib patch attributes
+                    self.add_bar_value_annotation(
+                        ax,
+                        x=float(x_val),  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch result
+                        y=float(height),  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch result
+                        value=int(height),  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch result
+                        ha='center',
+                        va='bottom',
+                        offset_y=2,
+                        fontweight='bold'
+                    )
+
+        logger.info(f"Created separated monthly play count graph with {len(unique_media_types_list)} media types and {len(categories)} months")  # pyright: ignore[reportUnknownArgumentType] # external API data
+
+    def _generate_combined_visualization_from_api(self, ax: Axes, response_data: Mapping[str, object]) -> None:
+        """
+        Generate combined visualization using data from Tautulli's get_plays_per_month API.
+
+        Args:
+            ax: The matplotlib axes to plot on
+            response_data: The data section from the API response
+        """
+        # Extract categories (months) and series (media types with data)
+        categories = response_data.get('categories', [])
+        series = response_data.get('series', [])
+        
+        if not isinstance(categories, list) or not isinstance(series, list):
+            self._handle_empty_data_case(ax)
+            return
+            
+        if not categories or not series:
+            self._handle_empty_data_case(ax)
+            return
+
+        # Combine all series data into totals for each month
+        month_totals: dict[str, int] = {}
+        
+        # series comes from external Tautulli API - runtime type checking required
+        for series_item in series:  # pyright: ignore[reportUnknownVariableType] # external API data
+            # Runtime type validation for external API data
+            if not isinstance(series_item, dict):
+                continue
+                
+            series_data_raw = series_item.get('data', [])  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType] # external API data
+            
+            if not isinstance(series_data_raw, list) or len(series_data_raw) != len(categories):  # pyright: ignore[reportUnknownArgumentType] # external API data
+                continue
+            
+            # Add data for each month
+            # External API data requires runtime validation
+            for month, count in zip(categories, series_data_raw):  # pyright: ignore[reportUnknownArgumentType,reportUnknownVariableType] # external API data
+                month_str = str(month)  # pyright: ignore[reportUnknownArgumentType] # external API data
+                if month_str not in month_totals:
+                    month_totals[month_str] = 0
+                    
+                if isinstance(count, (int, float)):
+                    month_totals[month_str] += int(count)  # external API data conversion
+
+        if not month_totals or all(count == 0 for count in month_totals.values()):
+            self._handle_empty_data_case(ax)
+            return
+
+        # Convert to DataFrame for plotting
+        df = pd.DataFrame([
+            {'month': month, 'count': count}
+            for month, count in month_totals.items()
+            if count > 0  # Only include months with data
+        ])
+
+        # Create bar plot with modern styling
+        _ = sns.barplot(
+            data=df,
+            x='month',
+            y='count',
+            ax=ax,
+            color=self.get_tv_color(),  # Use TV color as default
+            alpha=0.8,
+            edgecolor='white',
+            linewidth=0.7
+        )
+
+        # Customize the plot - matplotlib methods lack complete type stubs
+        _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+        _ = ax.set_xlabel('Month', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+        _ = ax.set_ylabel('Play Count', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+
+        # Rotate x-axis labels for better readability
+        ax.tick_params(axis='x', rotation=45, labelsize=12)  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+        ax.tick_params(axis='y', labelsize=12)  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+
+        # Add bar value annotations if enabled
+        annotate_enabled = self.get_config_value('ANNOTATE_PLAY_COUNT_BY_MONTH', False)
+        if annotate_enabled:
+            # Get all bar patches and annotate them
+            for patch in ax.patches:
+                height = patch.get_height()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType] # matplotlib patch attributes
+                if height and height > 0:  # Only annotate non-zero values
+                    x_val = patch.get_x() + patch.get_width() / 2  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType] # matplotlib patch attributes
+                    self.add_bar_value_annotation(
+                        ax,
+                        x=float(x_val),  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch result
+                        y=float(height),  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch result
+                        value=int(height),  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch result
+                        ha='center',
+                        va='bottom',
+                        offset_y=2,
+                        fontweight='bold'
+                    )
+
+        logger.info(f"Created combined monthly play count graph with {len(month_totals)} months")
+
+    def _handle_empty_data_case(self, ax: Axes) -> None:
+        """
+        Handle the case where no data is available.
+
+        Args:
+            ax: The matplotlib axes to display the message on
+        """
+        _ = ax.text(0.5, 0.5, "No play data available\nfor the selected time period",  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+                    ha='center', va='center', transform=ax.transAxes, fontsize=16,
+                    bbox=dict(boxstyle='round,pad=0.5', facecolor='lightgray', alpha=0.7))
+        _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold')  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+        logger.warning("Generated empty monthly play count graph due to no data")
+
+    # Keep the old methods for backward compatibility
+    def _generate_separated_visualization(self, ax: Axes, processed_records: ProcessedRecords) -> None:
+        """
+        Generate separated visualization showing Movies and TV Series separately using processed play history records.
+        
+        NOTE: This method is kept for backward compatibility. The new implementation uses 
+        _generate_separated_visualization_from_api() which works with Tautulli's get_plays_per_month API data.
+
+        Args:
+            ax: The matplotlib axes to plot on
+            processed_records: List of processed play history records
+        """
+        # Aggregate data by month with media type separation
+        separated_data = aggregate_by_month_separated(processed_records)
+        display_info = get_media_type_display_info()
+
+        if not separated_data:
+            self._handle_empty_data_case(ax)
+            return
+
+        # Prepare data for plotting
+        plot_data: list[dict[str, str | int]] = []
+        for media_type, media_data in separated_data.items():
+            if not media_data or all(count == 0 for count in media_data.values()):
+                continue
+                
+            for month, count in media_data.items():
+                if media_type in display_info:
+                    label = display_info[media_type]['display_name']
+                    color = display_info[media_type]['color']
+                    
+                    # Override with config colors if available
+                    if media_type == 'tv':
+                        color = self.get_tv_color()
+                    elif media_type == 'movie':
+                        color = self.get_movie_color()
+                else:
+                    label = media_type.title()
+                    color = '#666666'
+                
+                plot_data.append({
+                    'month': month,
+                    'count': count,
+                    'media_type': label,
+                    'color': color
+                })
+
+        if not plot_data:
+            self._handle_empty_data_case(ax)
+            return
+
+        # Create DataFrame for Seaborn
+        df = pd.DataFrame(plot_data)
+
+        # Build color mapping and unique media types from the original plot_data
+        color_mapping: dict[str, str] = {}
+        unique_media_types_set: set[str] = set()
+        
+        for item in plot_data:
+            media_type_key = str(item['media_type'])
+            color_key = str(item['color'])
+            unique_media_types_set.add(media_type_key)
+            if media_type_key not in color_mapping:
+                color_mapping[media_type_key] = color_key
+        
+        # Create ordered list for consistent plotting - use consistent order instead of alphabetical
+        # to ensure TV Series always gets blue and Movies get orange
+        preferred_order = ['TV Series', 'Movies', 'Music', 'Other']
+        unique_media_types_list: list[str] = []
+        
+        # Add media types in preferred order if they exist
+        for media_type in preferred_order:
+            if media_type in unique_media_types_set:
+                unique_media_types_list.append(media_type)
+        
+        # Add any remaining media types not in preferred order (shouldn't happen normally)
+        for media_type in sorted(unique_media_types_set):
+            if media_type not in unique_media_types_list:
+                unique_media_types_list.append(media_type)
+        
+        colors: list[str] = [color_mapping[mt] for mt in unique_media_types_list]
+
+        # Sort months chronologically for proper x-axis ordering
+        df['month_sort'] = pd.to_datetime(df['month'], format='%Y-%m')  # pyright: ignore[reportUnknownMemberType] # pandas stubs incomplete
+        df = df.sort_values('month_sort')  # pyright: ignore[reportUnknownMemberType] # pandas stubs incomplete
+        
+        # Create grouped bar plot
+        _ = sns.barplot(
+            data=df,
+            x='month',
+            y='count',
+            hue='media_type',
+            ax=ax,
+            palette=colors,
+            alpha=0.8
+        )
+
+        # Customize the plot
+        _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+        _ = ax.set_xlabel('Month', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+        _ = ax.set_ylabel('Play Count', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+
+        # Enhance legend
+        _ = ax.legend(  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+            title='Media Type',
+            loc='best',
+            frameon=True,
+            fancybox=True,
+            shadow=True,
+            framealpha=0.9,
+            fontsize=12
+        )
+
+        # Rotate x-axis labels for better readability
+        ax.tick_params(axis='x', rotation=45, labelsize=12)  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+        ax.tick_params(axis='y', labelsize=12)  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+
+        # Add bar value annotations if enabled
+        annotate_enabled = self.get_config_value('ANNOTATE_PLAY_COUNT_BY_MONTH', False)
+        if annotate_enabled:
+            # Get all bar patches and annotate them
+            for patch in ax.patches:
+                height = patch.get_height()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType] # matplotlib patch attributes
+                if height and height > 0:  # Only annotate non-zero values
+                    x_val = patch.get_x() + patch.get_width() / 2  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType] # matplotlib patch attributes
+                    self.add_bar_value_annotation(
+                        ax,
+                        x=float(x_val),  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch result
+                        y=float(height),  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch result
+                        value=int(height),  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch result
+                        ha='center',
+                        va='bottom',
+                        offset_y=2,
+                        fontweight='bold'
+                    )
+
+        logger.info(f"Created separated monthly play count graph with {len(unique_media_types_list)} media types")
+
+    def _generate_combined_visualization(self, ax: Axes, processed_records: ProcessedRecords) -> None:
+        """
+        Generate traditional combined visualization using processed play history records.
+        
+        NOTE: This method is kept for backward compatibility. The new implementation uses 
+        _generate_combined_visualization_from_api() which works with Tautulli's get_plays_per_month API data.
+
+        Args:
+            ax: The matplotlib axes to plot on
+            processed_records: List of processed play history records
+        """
+        # Use traditional aggregation method
+        if processed_records:
+            month_counts = aggregate_by_month(processed_records)
+            logger.info(f"Aggregated data for {len(month_counts)} months")
+        else:
+            logger.warning("No valid records found, using empty data")
+            month_counts = {}
+
+        if month_counts:
+            # Sort months chronologically
+            sorted_months = sorted(month_counts.items())
+
+            # Convert to pandas DataFrame for consistent handling
+            df = pd.DataFrame(sorted_months, columns=['month', 'count'])
+
+            # Create bar plot with modern styling
+            _ = sns.barplot(
+                data=df,
+                x='month',
+                y='count',
+                ax=ax,
+                color=self.get_tv_color(),  # Use TV color as default
+                alpha=0.8
+            )
+
+            # Customize the plot - matplotlib methods lack complete type stubs
+            _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+            _ = ax.set_xlabel('Month', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+            _ = ax.set_ylabel('Play Count', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+
+            # Rotate x-axis labels for better readability
+            ax.tick_params(axis='x', rotation=45, labelsize=12)  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+            ax.tick_params(axis='y', labelsize=12)  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+
+            # Add bar value annotations if enabled
+            annotate_enabled = self.get_config_value('ANNOTATE_PLAY_COUNT_BY_MONTH', False)
+            if annotate_enabled:
+                # Get all bar patches and annotate them
+                for patch in ax.patches:
+                    height = patch.get_height()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType] # matplotlib patch attributes
+                    if height and height > 0:  # Only annotate non-zero values
+                        x_val = patch.get_x() + patch.get_width() / 2  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType] # matplotlib patch attributes
+                        self.add_bar_value_annotation(
+                            ax,
+                            x=float(x_val),  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch result
+                            y=float(height),  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch result
+                            value=int(height),  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch result
+                            ha='center',
+                            va='bottom',
+                            offset_y=2,
+                            fontweight='bold'
+                        )
+
+            logger.info(f"Created combined monthly play count graph with {len(sorted_months)} months")
+        else:
+            self._handle_empty_data_case(ax)

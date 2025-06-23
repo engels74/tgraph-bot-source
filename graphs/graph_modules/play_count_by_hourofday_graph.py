@@ -1,309 +1,205 @@
-﻿# graphs/graph_modules/play_count_by_hourofday_graph.py
+"""
+Play count by hour of day graph for TGraph Bot.
 
+This module inherits from BaseGraph and uses Seaborn to plot play counts
+by hour of the day, resulting in a cleaner implementation and superior visual output.
 """
-Improved hour of day graph generator with standardized error handling and resource management.
-Handles generation of play count graphs by hour with proper validation, cleanup, and error handling.
-"""
+
+import logging
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, override, cast
+
+import pandas as pd
+import seaborn as sns
 
 from .base_graph import BaseGraph
-from .utils import get_color, validate_series_data
-from config.modules.constants import ConfigKeyError
-from config.modules.sanitizer import sanitize_user_id, InvalidUserIdError
-from datetime import datetime
-from matplotlib.ticker import MaxNLocator
-from typing import Dict, Any, Optional, List, Union
-import logging
-import os
+from .utils import (
+    validate_graph_data,
+    process_play_history_data,
+    aggregate_by_hour_of_day,
+    handle_empty_data,
+)
 
+if TYPE_CHECKING:
+    from config.schema import TGraphBotConfig
 
-class HourOfDayError(Exception):
-    """Base exception for hour of day graph-related errors."""
-    pass
+logger = logging.getLogger(__name__)
 
-class DataFetchError(HourOfDayError):
-    """Raised when there's an error fetching graph data."""
-    pass
-
-class DataValidationError(HourOfDayError):
-    """Raised when data validation fails."""
-    pass
-
-class GraphGenerationError(HourOfDayError):
-    """Raised when graph generation fails."""
-    pass
-
-class ResourceError(HourOfDayError):
-    """Raised when there's an error managing graph resources."""
-    pass
 
 class PlayCountByHourOfDayGraph(BaseGraph):
-    """Handles generation of play count graphs by hour."""
-    
-    def __init__(self, config: Dict[str, Any], translations: Dict[str, str], img_folder: str):
-        """
-        Initialize the hour of day graph handler.
-        
-        Args:
-            config: Configuration dictionary
-            translations: Translation strings dictionary
-            img_folder: Path to image output folder
-            
-        Raises:
-            ValueError: If required configuration is missing
-        """
-        super().__init__(config, translations, img_folder)
-        self.graph_type = "play_count_by_hourofday"
-        self._verify_config()
-        
-    def _verify_config(self) -> None:
-        """Verify required configuration exists."""
-        required_keys = [
-            'TIME_RANGE_DAYS',
-            'ANNOTATE_PLAY_COUNT_BY_HOUROFDAY',
-            'TV_COLOR',
-            'MOVIE_COLOR',
-            'GRAPH_BACKGROUND_COLOR'
-        ]
-        missing = [key for key in required_keys if key not in self.config]
-        if missing:
-            raise ValueError(f"Missing required configuration keys: {missing}")
+    """Graph showing play counts by hour of the day."""
 
-    def _process_filename(self, user_id: Optional[str]) -> Optional[str]:
+    def __init__(
+        self,
+        config: "TGraphBotConfig | dict[str, object] | None" = None,
+        width: int = 12,
+        height: int = 8,
+        dpi: int = 100,
+        background_color: str | None = None
+    ) -> None:
         """
-        Process user ID for safe filename creation.
-        
+        Initialize the play count by hour of day graph.
+
         Args:
-            user_id: The user ID to process
-            
+            config: Configuration object containing graph settings
+            width: Figure width in inches
+            height: Figure height in inches
+            dpi: Dots per inch for the figure
+            background_color: Background color for the graph (overrides config if provided)
+        """
+        super().__init__(
+            config=config,
+            width=width,
+            height=height,
+            dpi=dpi,
+            background_color=background_color
+        )
+
+    @override
+    def get_title(self) -> str:
+        """
+        Get the title for this graph type.
+
         Returns:
-            Optional[str]: A sanitized version of the user ID safe for filenames
-            
-        Raises:
-            InvalidUserIdError: If user_id is invalid
+            The graph title with timeframe information
         """
-        if user_id is None:
-            return None
-            
-        try:
-            return sanitize_user_id(user_id)
-        except InvalidUserIdError as e:
-            logging.warning(f"Invalid user ID for filename: {e}")
-            raise InvalidUserIdError(f"Invalid user ID format: {e}") from e
+        return self.get_enhanced_title_with_timeframe("Play Count by Hour of Day")
 
-    def _validate_hours(self, data: List[int]) -> None:
+    @override
+    def generate(self, data: Mapping[str, object]) -> str:
         """
-        Validate hour data points.
-        
-        Args:
-            data: List of hour values
-            
-        Raises:
-            DataValidationError: If validation fails
-        """
-        if len(data) != 24:
-            raise DataValidationError(f"Expected 24 hours, got {len(data)}")
-            
-        for hour in data:
-            if not isinstance(hour, (int, float)):
-                raise DataValidationError(f"Invalid hour value type: {type(hour)}")
-            if hour < 0:
-                raise DataValidationError(f"Negative hour value: {hour}")
+        Generate the play count by hour of day graph using the provided data.
 
-    async def fetch_data(self, data_fetcher, user_id: Optional[str] = None) -> Dict[str, Any]:
-        """
-        Fetch play count data by hour of day.
-        
         Args:
-            data_fetcher: Data fetcher instance
-            user_id: Optional user ID for user-specific data
-            
+            data: Dictionary containing play history data from Tautulli API
+                 Expected structure: {'data': [list of play records]}
+
         Returns:
-            The fetched data
-            
+            Path to the generated graph image file
+
         Raises:
-            DataFetchError: If data fetching fails
+            ValueError: If data is invalid or missing required fields
         """
+        logger.info("Generating play count by hour of day graph")
+
         try:
-            if self.data is not None:
-                logging.debug("Using stored data for play count by hour of day")
-                return self.data
-
-            params = {"time_range": self.config["TIME_RANGE_DAYS"]}
-            if user_id:
-                params["user_id"] = sanitize_user_id(user_id)
+            # Step 1: Extract play history data from the full data structure
+            play_history_data_raw = data.get('play_history', {})
+            if not isinstance(play_history_data_raw, dict):
+                raise ValueError("Missing or invalid 'play_history' data in input")
             
-            logging.debug("Fetching play count by hour of day data with params: %s", params)
-            
-            data = await data_fetcher.fetch_tautulli_data_async("get_plays_by_hourofday", params)
-            if not data or 'response' not in data or 'data' not in data['response']:
-                error_msg = self.translations.get(
-                    'error_fetch_play_count_hourofday_user' if user_id else 'error_fetch_play_count_hourofday',
-                    'Failed to fetch play count by hour data{}: {}'
-                ).format(f" for user {user_id}" if user_id else "", "No data returned")
-                logging.error(error_msg)
-                raise DataFetchError(error_msg)
+            # Cast to the proper type for type checker
+            play_history_data = cast(Mapping[str, object], play_history_data_raw)
 
-            # Store the fetched data in self.data for caching
-            self.data = data['response']['data']
-            return self.data
+            # Step 2: Validate the play history data
+            is_valid, error_msg = validate_graph_data(play_history_data, ['data'])
+            if not is_valid:
+                raise ValueError(f"Invalid play history data for hour of day graph: {error_msg}")
 
-        except InvalidUserIdError as e:
-            raise DataFetchError(f"Invalid user ID: {str(e)}") from e
-        except Exception as e:
-            error_msg = self.translations.get(
-                'error_fetch_play_count_hourofday',
-                'Failed to fetch hour of day data: {error}'
-            ).format(error=str(e))
-            logging.error(error_msg)
-            raise DataFetchError(error_msg) from e
+            # Step 3: Process raw play history data
+            try:
+                processed_records = process_play_history_data(play_history_data)
+                logger.info(f"Processed {len(processed_records)} play history records")
+            except Exception as e:
+                logger.error(f"Error processing play history data: {e}")
+                processed_records = []
 
-    def process_data(self, raw_data: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Process the raw data for plotting.
-        
-        Args:
-            raw_data: Raw data from the API
-            
-        Returns:
-            Processed data ready for plotting
-            
-        Raises:
-            DataValidationError: If processing fails
-        """
-        try:
-            if not isinstance(raw_data, dict) or 'series' not in raw_data:
-                raise DataValidationError(self.translations["error_missing_series_play_count_by_hourofday"])
+            # Step 4: Aggregate data by hour of day
+            if processed_records:
+                hourly_counts = aggregate_by_hour_of_day(processed_records)
+                logger.info(f"Aggregated data for {len(hourly_counts)} hours")
+            else:
+                logger.warning("No valid records found, using empty data")
+                hourly_data = handle_empty_data('hour_of_day')
+                if isinstance(hourly_data, dict):
+                    # Convert string keys back to int for consistency
+                    hourly_counts = {int(k): v for k, v in hourly_data.items()}
+                else:
+                    hourly_counts = {hour: 0 for hour in range(24)}
 
-            series = raw_data['series']
-            if not series:
-                raise DataValidationError(self.translations["warning_empty_series_play_count_by_hourofday"])
+            # Step 5: Setup figure and axes
+            _, ax = self.setup_figure()
 
-            hours = list(range(24))
-            
-            # Validate series data
-            validation_errors = validate_series_data(series, 24, "hour of day series")
-            if validation_errors:
-                raise DataValidationError("\n".join(validation_errors))
+            # Step 6: Configure Seaborn styling
+            if self.get_grid_enabled():
+                sns.set_style("whitegrid")
+            else:
+                sns.set_style("white")
 
-            processed_data = {
-                "hours": hours,
-                "series": []
-            }
+            # Step 7: Create visualization
+            if any(count > 0 for count in hourly_counts.values()):
+                # Convert to pandas DataFrame for easier plotting
+                hours = list(range(24))
+                counts = [hourly_counts.get(hour, 0) for hour in hours]
 
-            for serie in series:
-                # Validate each series' hour data
-                self._validate_hours(serie["data"])
-                
-                processed_data["series"].append({
-                    "name": serie["name"],
-                    "data": serie["data"],
-                    "color": get_color(serie["name"], self.config)
+                df = pd.DataFrame({
+                    'hour': hours,
+                    'play_count': counts
                 })
 
-            return processed_data
-
-        except (ConfigKeyError, ValueError) as e:
-            raise DataValidationError(f"Data validation failed: {str(e)}") from e
-        except Exception as e:
-            error_msg = f"Error processing hour of day data: {str(e)}"
-            logging.error(error_msg)
-            raise DataValidationError(error_msg) from e
-
-    def plot(self, processed_data: Dict[str, Any]) -> None:
-        """
-        Plot the processed data.
-        
-        Args:
-            processed_data: Processed data ready for plotting
-            
-        Raises:
-            GraphGenerationError: If plotting fails
-        """
-        try:
-            self.setup_plot()
-
-            for serie in processed_data["series"]:
-                self.ax.plot(
-                    processed_data["hours"],
-                    serie["data"],
-                    label=serie["name"],
-                    marker="o",
-                    color=serie["color"]
+                # Create bar plot
+                _ = sns.barplot(
+                    data=df,
+                    x='hour',
+                    y='play_count',
+                    hue='hour',
+                    ax=ax,
+                    palette='viridis',
+                    legend=False
                 )
 
-                if self.config.get("ANNOTATE_PLAY_COUNT_BY_HOUROFDAY", False):
-                    self._add_annotations(processed_data["hours"], serie["data"])
+                # Customize the plot
+                _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)  # pyright: ignore[reportUnknownMemberType]
+                _ = ax.set_xlabel('Hour of Day', fontsize=12)  # pyright: ignore[reportUnknownMemberType]
+                _ = ax.set_ylabel('Play Count', fontsize=12)  # pyright: ignore[reportUnknownMemberType]
 
-            self.add_title(self.translations["play_count_by_hourofday_title"].format(
-                days=self.config["TIME_RANGE_DAYS"]
-            ))
-            self.add_labels(
-                self.translations["play_count_by_hourofday_xlabel"],
-                self.translations["play_count_by_hourofday_ylabel"]
+                # Set x-axis ticks to show all hours
+                _ = ax.set_xticks(range(0, 24, 2))  # pyright: ignore[reportUnknownMemberType]
+                _ = ax.set_xticklabels([f"{h:02d}:00" for h in range(0, 24, 2)])  # pyright: ignore[reportUnknownMemberType]
+
+                # Add bar value annotations if enabled
+                annotate_enabled = self.get_config_value('ANNOTATE_PLAY_COUNT_BY_HOUROFDAY', False)
+                if annotate_enabled:
+                    # Get all bar patches and annotate them
+                    for patch in ax.patches:
+                        height = patch.get_height()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
+                        if height and height > 0:  # Only annotate non-zero values
+                            x_val = patch.get_x() + patch.get_width() / 2  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
+                            self.add_bar_value_annotation(
+                                ax,
+                                x=float(x_val),  # pyright: ignore[reportUnknownArgumentType]
+                                y=float(height),  # pyright: ignore[reportUnknownArgumentType]
+                                value=int(height),  # pyright: ignore[reportUnknownArgumentType]
+                                ha='center',
+                                va='bottom',
+                                offset_y=1,
+                                fontweight='bold'
+                            )
+
+                logger.info(f"Created hour of day graph with data for 24 hours")
+
+            else:
+                # Handle empty data case
+                _ = ax.text(0.5, 0.5, "No play data available\nfor the selected time period",  # pyright: ignore[reportUnknownMemberType]
+                           ha='center', va='center', transform=ax.transAxes, fontsize=16)
+                _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
+                logger.warning("Generated empty hour of day graph due to no data")
+
+            # Step 8: Improve layout and save
+            if self.figure is not None:
+                self.figure.tight_layout()
+
+            # Save the figure using base class utility method
+            output_path = self.save_figure(
+                graph_type="play_count_by_hourofday",
+                user_id=None
             )
 
-            self.ax.set_xticks(processed_data["hours"])
-            self.ax.set_xticklabels([f"{h:02d}" for h in processed_data["hours"]])
-            for tick in self.ax.get_xticklabels():
-                tick.set_ha("center")
-            self.ax.yaxis.set_major_locator(MaxNLocator(integer=True))
-
-            self.add_legend()
-            self.apply_tight_layout()
+            logger.info(f"Hour of day graph saved to: {output_path}")
+            return output_path
 
         except Exception as e:
-            error_msg = f"Error plotting hour of day graph: {str(e)}"
-            logging.error(error_msg)
-            raise GraphGenerationError(error_msg) from e
-
-    def _add_annotations(self, hours: List[int], values: List[Union[int, float]]) -> None:
-        """Add value annotations to the graph points."""
-        for hour, value in zip(hours, values):
-            if value > 0:
-                self.annotate(hour, value, f"{int(value)}")
-
-    async def generate(self, data_fetcher, user_id: Optional[str] = None) -> Optional[str]:
-        """
-        Generate the graph and return its file path.
-        
-        Args:
-            data_fetcher: Data fetcher instance
-            user_id: Optional user ID for user-specific graphs
-            
-        Returns:
-            The file path of the generated graph, or None if generation fails
-            
-        Raises:
-            HourOfDayError: If graph generation fails
-        """
-        try:
-            data = await self.fetch_data(data_fetcher, user_id)
-            processed_data = self.process_data(data)
-            self.plot(processed_data)
-
-            # Create directories and save graph
-            today = datetime.today().strftime("%Y-%m-%d")
-            base_dir = os.path.join(self.img_folder, today)
-            
-            safe_user_id = self._process_filename(user_id) if user_id else None
-            if safe_user_id:
-                base_dir = os.path.join(base_dir, f"user_{safe_user_id}")
-                
-            file_name = f"play_count_by_hourofday{'_' + safe_user_id if safe_user_id else ''}.png"
-            file_path = os.path.join(base_dir, file_name)
-            
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
-            self.save(file_path)
-            
-            logging.debug("Saved hour of day graph: %s", file_path)
-            return file_path
-
-        except (DataFetchError, DataValidationError, GraphGenerationError) as e:
-            logging.error(str(e))
-            return None
-        except Exception as e:
-            error_msg = f"Unexpected error generating hour of day graph: {str(e)}"
-            logging.error(error_msg)
-            raise HourOfDayError(error_msg) from e
+            logger.exception(f"Error generating play count by hour of day graph: {e}")
+            raise
         finally:
-            self.cleanup_figure()
+            self.cleanup()

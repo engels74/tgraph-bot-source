@@ -1,293 +1,355 @@
-﻿# graphs/graph_modules/play_count_by_dayofweek_graph.py
+"""
+Play count by day of week graph for TGraph Bot.
 
+This module inherits from BaseGraph and uses Seaborn to plot play counts
+by day of the week, resulting in a cleaner implementation and superior visual output.
+Supports both combined and separated media type visualization.
 """
-Improved version of play_count_by_dayofweek_graph.py with standardized error handling
-and resource management. Handles generation of play count graphs by day of week.
-"""
+
+import logging
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, override, cast
+
+import pandas as pd
+import seaborn as sns
+from matplotlib.axes import Axes
 
 from .base_graph import BaseGraph
-from .utils import get_color, validate_series_data
-from config.modules.constants import ConfigKeyError
-from config.modules.sanitizer import sanitize_user_id, InvalidUserIdError
-from datetime import datetime
-from matplotlib.ticker import MaxNLocator
-from typing import Dict, Any, Optional
-import logging
-import os
+from .utils import (
+    validate_graph_data,
+    process_play_history_data,
+    aggregate_by_day_of_week,
+    aggregate_by_day_of_week_separated,
+    get_media_type_display_info,
+    ProcessedRecords,
+)
 
-class DayOfWeekGraphError(Exception):
-    """Base exception for day of week graph-related errors."""
-    pass
+if TYPE_CHECKING:
+    from config.schema import TGraphBotConfig
 
-class DataFetchError(DayOfWeekGraphError):
-    """Raised when there's an error fetching graph data."""
-    pass
+logger = logging.getLogger(__name__)
 
-class DataValidationError(DayOfWeekGraphError):
-    """Raised when data validation fails."""
-    pass
-
-class GraphGenerationError(DayOfWeekGraphError):
-    """Raised when graph generation fails."""
-    pass
-
-class ResourceError(DayOfWeekGraphError):
-    """Raised when there's an error managing graph resources."""
-    pass
 
 class PlayCountByDayOfWeekGraph(BaseGraph):
-    """Handles generation of play count graphs by day of week."""
-    
-    def __init__(self, config: Dict[str, Any], translations: Dict[str, str], img_folder: str):
-        """
-        Initialize the day of week graph handler.
-        
-        Args:
-            config: Configuration dictionary
-            translations: Translation strings dictionary
-            img_folder: Path to image output folder
-            
-        Raises:
-            ValueError: If required configuration is missing
-        """
-        super().__init__(config, translations, img_folder)
-        self.graph_type = "play_count_by_dayofweek"
-        self._verify_config()
-        
-    def _verify_config(self) -> None:
-        """Verify required configuration exists."""
-        required_keys = [
-            'TIME_RANGE_DAYS',
-            'ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK',
-            'TV_COLOR',
-            'MOVIE_COLOR'
-        ]
-        missing = [key for key in required_keys if key not in self.config]
-        if missing:
-            raise ValueError(f"Missing required configuration keys: {missing}")
+    """Graph showing play counts by day of the week."""
 
-    def _process_filename(self, user_id: Optional[str]) -> Optional[str]:
+    def __init__(
+        self,
+        config: "TGraphBotConfig | dict[str, object] | None" = None,
+        width: int = 12,
+        height: int = 8,
+        dpi: int = 100,
+        background_color: str | None = None
+    ) -> None:
         """
-        Process user ID for safe filename creation.
-        
+        Initialize the play count by day of week graph.
+
         Args:
-            user_id: The user ID to process
-            
+            config: Configuration object containing graph settings
+            width: Figure width in inches
+            height: Figure height in inches
+            dpi: Dots per inch for the figure
+            background_color: Background color for the graph (overrides config if provided)
+        """
+        super().__init__(
+            config=config,
+            width=width,
+            height=height,
+            dpi=dpi,
+            background_color=background_color
+        )
+
+    @override
+    def get_title(self) -> str:
+        """
+        Get the title for this graph type.
+
         Returns:
-            Optional[str]: A sanitized version of the user ID safe for filenames
-            
-        Raises:
-            InvalidUserIdError: If user_id is invalid
+            The graph title with timeframe information
         """
-        if user_id is None:
-            return None
-            
-        try:
-            return sanitize_user_id(user_id)
-        except InvalidUserIdError as e:
-            logging.warning(f"Invalid user ID for filename: {e}")
-            raise InvalidUserIdError(f"Invalid user ID format: {e}") from e
+        return self.get_enhanced_title_with_timeframe("Play Count by Day of Week")
 
-    async def fetch_data(self, data_fetcher, user_id: Optional[str] = None) -> Dict[str, Any]:
+    @override
+    def generate(self, data: Mapping[str, object]) -> str:
         """
-        Fetch play count data by day of week.
-        
+        Generate the play count by day of week graph using the provided data.
+
         Args:
-            data_fetcher: Data fetcher instance
-            user_id: Optional user ID for user-specific data
-            
+            data: Dictionary containing play history data from Tautulli API
+                 Expected structure: {'data': [list of play records]}
+
         Returns:
-            The fetched data
-            
+            Path to the generated graph image file
+
         Raises:
-            DataFetchError: If data fetching fails
+            ValueError: If data is invalid or missing required fields
         """
+        logger.info("Generating play count by day of week graph")
+
         try:
-            if self.data is not None:
-                logging.debug("Using stored data for play count by day of week")
-                return self.data
-
-            params = {"time_range": self.config["TIME_RANGE_DAYS"]}
-            if user_id:
-                params["user_id"] = sanitize_user_id(user_id)
+            # Step 1: Extract play history data from the full data structure
+            play_history_data_raw = data.get('play_history', {})
+            if not isinstance(play_history_data_raw, dict):
+                raise ValueError("Missing or invalid 'play_history' data in input")
             
-            logging.debug("Fetching play count by day of week data with params: %s", params)
-            
-            data = await data_fetcher.fetch_tautulli_data_async("get_plays_by_dayofweek", params)
-            if not data or 'response' not in data or 'data' not in data['response']:
-                error_msg = self.translations.get(
-                    'error_fetch_play_count_dayofweek_user' if user_id else 'error_fetch_play_count_dayofweek',
-                    'Failed to fetch play count by day of week data for user {user_id}: {error}'
-                ).format(
-                    user_id=user_id if user_id else "",
-                    error="No data returned"
-                )
-                logging.error(error_msg)
-                raise DataFetchError(error_msg)
+            # Cast to the proper type for type checker
+            play_history_data = cast(Mapping[str, object], play_history_data_raw)
 
-            return data['response']['data']
+            # Step 2: Validate the play history data
+            is_valid, error_msg = validate_graph_data(play_history_data, ['data'])
+            if not is_valid:
+                raise ValueError(f"Invalid play history data for play count by day of week graph: {error_msg}")
 
-        except InvalidUserIdError as e:
-            raise DataFetchError(f"Invalid user ID: {str(e)}") from e
-        except Exception as e:
-            error_msg = self.translations.get(
-                'error_fetch_play_count_dayofweek',
-                'Failed to fetch day of week data: {error}'
-            ).format(error=str(e))
-            logging.error(error_msg)
-            raise DataFetchError(error_msg) from e
+            # Step 3: Process raw play history data
+            try:
+                processed_records = process_play_history_data(play_history_data)
+                logger.info(f"Processed {len(processed_records)} play history records")
+            except Exception as e:
+                logger.error(f"Error processing play history data: {e}")
+                processed_records = []
 
-    def process_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Process the raw data into a format suitable for plotting.
-        
-        Args:
-            data: Raw data from the API
-            
-        Returns:
-            Processed data ready for plotting
-            
-        Raises:
-            DataValidationError: If data validation fails
-        """
-        try:
-            if 'series' not in data:
-                error_msg = self.translations["error_missing_series_play_count_by_dayofweek"]
-                logging.error(error_msg)
-                raise DataValidationError(error_msg)
+            # Step 4: Setup figure and axes
+            _, ax = self.setup_figure()
 
-            series = data['series']
-            if not series:
-                error_msg = self.translations["warning_empty_series_play_count_by_dayofweek"]
-                logging.warning(error_msg)
-                raise DataValidationError(error_msg)
+            # Step 5: Apply modern Seaborn styling
+            self.apply_seaborn_style()
 
-            days = list(range(7))
-            day_labels = [self.translations.get(f"day_{i}", f"Day {i}") for i in range(7)]
+            # Step 6: Check if media type separation is enabled
+            use_separation = self.get_media_type_separation_enabled()
 
-            validation_errors = validate_series_data(series, len(days), "day of week series")
-            if validation_errors:
-                error_msg = "\n".join(validation_errors)
-                logging.error(error_msg)
-                raise DataValidationError(error_msg)
+            if use_separation and processed_records:
+                # Generate separated visualization
+                self._generate_separated_visualization(ax, processed_records)
+            else:
+                # Generate traditional combined visualization
+                self._generate_combined_visualization(ax, processed_records)
 
-            processed_data = {
-                "days": days,
-                "day_labels": day_labels,
-                "series": []
-            }
+            # Step 7: Improve layout and save
+            if self.figure is not None:
+                self.figure.tight_layout()
 
-            for serie in series:
-                try:
-                    processed_data["series"].append({
-                        "name": serie["name"],
-                        "data": serie["data"],
-                        "color": get_color(serie["name"], self.config)
-                    })
-                except ConfigKeyError as e:
-                    raise DataValidationError(f"Missing required field in series data: {e}") from e
-                except ValueError as e:
-                    raise DataValidationError(f"Invalid value in series data: {e}") from e
-
-            return processed_data
-
-        except (ConfigKeyError, ValueError) as e:
-            raise DataValidationError(f"Data validation failed: {str(e)}") from e
-        except Exception as e:
-            error_msg = f"Failed to process day of week data: {str(e)}"
-            logging.error(error_msg)
-            raise DataValidationError(error_msg) from e
-
-    def plot(self, processed_data: Dict[str, Any]) -> None:
-        """
-        Plot the processed data.
-        
-        Args:
-            processed_data: Processed data ready for plotting
-            
-        Raises:
-            GraphGenerationError: If plotting fails
-        """
-        try:
-            self.setup_plot()
-
-            for serie in processed_data["series"]:
-                self.ax.plot(
-                    processed_data["days"],
-                    serie["data"],
-                    label=serie["name"],
-                    marker="o",
-                    color=serie["color"]
-                )
-
-                if self.config.get("ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK", False):
-                    for i, value in enumerate(serie["data"]):
-                        if value > 0:
-                            self.annotate(processed_data["days"][i], value, f"{value}")
-
-            self.add_title(self.translations["play_count_by_dayofweek_title"].format(
-                days=self.config["TIME_RANGE_DAYS"]
-            ))
-            self.add_labels(
-                self.translations["play_count_by_dayofweek_xlabel"],
-                self.translations["play_count_by_dayofweek_ylabel"]
+            # Save the figure using base class utility method
+            output_path = self.save_figure(
+                graph_type="play_count_by_dayofweek",
+                user_id=None
             )
 
-            self.ax.set_xticks(processed_data["days"])
-            self.ax.set_xticklabels(processed_data["day_labels"])
-            self.ax.yaxis.set_major_locator(MaxNLocator(integer=True))
-
-            self.add_legend()
-            self.apply_tight_layout()
+            logger.info(f"Play count by day of week graph saved to: {output_path}")
+            return output_path
 
         except Exception as e:
-            error_msg = f"Error plotting graph: {str(e)}"
-            logging.error(error_msg)
-            self.cleanup_figure()  # Clean up resources on error
-            raise GraphGenerationError(error_msg) from e
-
-    async def generate(self, data_fetcher, user_id: Optional[str] = None) -> Optional[str]:
-        """
-        Generate the graph and return its file path.
-        
-        Args:
-            data_fetcher: Data fetcher instance
-            user_id: Optional user ID for user-specific graphs
-            
-        Returns:
-            The file path of the generated graph, or None if generation fails
-            
-        Raises:
-            DayOfWeekGraphError: If graph generation fails
-        """
-        try:
-            data = await self.fetch_data(data_fetcher, user_id)
-            processed_data = self.process_data(data)
-            self.plot(processed_data)
-
-            # Save the graph with proper path handling
-            today = datetime.today().strftime("%Y-%m-%d")
-            base_dir = os.path.join(self.img_folder, today)
-            
-            safe_user_id = self._process_filename(user_id) if user_id else None
-            if safe_user_id:
-                base_dir = os.path.join(base_dir, f"user_{safe_user_id}")
-                
-            file_name = f"play_count_by_dayofweek{'_' + safe_user_id if safe_user_id else ''}.png"
-            file_path = os.path.join(base_dir, file_name)
-            
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
-            self.save(file_path)
-            
-            logging.debug("Saved play count by day of week graph: %s", file_path)
-            return file_path
-
-        except (DataFetchError, DataValidationError, InvalidUserIdError) as e:
-            logging.error(f"Failed to generate day of week graph: {str(e)}")
-            return None
-        except Exception as e:
-            error_msg = f"Unexpected error generating day of week graph: {str(e)}"
-            logging.error(error_msg)
-            raise DayOfWeekGraphError(error_msg) from e
+            logger.exception(f"Error generating play count by day of week graph: {e}")
+            raise
         finally:
-            self.cleanup_figure()
+            self.cleanup()
+
+    def _generate_separated_visualization(self, ax: Axes, processed_records: ProcessedRecords) -> None:
+        """
+        Generate separated visualization showing Movies and TV Series separately.
+
+        Args:
+            ax: The matplotlib axes to plot on
+            processed_records: List of processed play history records
+        """
+        # Aggregate data by day of week with media type separation
+        separated_data = aggregate_by_day_of_week_separated(processed_records)
+        display_info = get_media_type_display_info()
+
+        if not separated_data:
+            self._handle_empty_data_case(ax)
+            return
+
+        # Define day order for consistent display
+        day_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+        # Prepare data for plotting
+        plot_data: list[dict[str, str | int]] = []
+        for media_type, media_data in separated_data.items():
+            if not media_data or all(count == 0 for count in media_data.values()):
+                continue
+                
+            for day in day_order:
+                count = media_data.get(day, 0)
+                if media_type in display_info:
+                    label = display_info[media_type]['display_name']
+                    color = display_info[media_type]['color']
+                    
+                    # Override with config colors if available
+                    if media_type == 'tv':
+                        color = self.get_tv_color()
+                    elif media_type == 'movie':
+                        color = self.get_movie_color()
+                else:
+                    label = media_type.title()
+                    color = '#666666'
+                
+                plot_data.append({
+                    'day': day,
+                    'count': count,
+                    'media_type': label,
+                    'color': color
+                })
+
+        if not plot_data:
+            self._handle_empty_data_case(ax)
+            return
+
+        # Create DataFrame for Seaborn
+        df = pd.DataFrame(plot_data)
+
+        # Create grouped bar plot - build color mapping from original data to avoid pandas type issues        
+        # Build color mapping and unique media types from the original plot_data
+        color_mapping: dict[str, str] = {}
+        unique_media_types_set: set[str] = set()
+        
+        for item in plot_data:
+            media_type_key = str(item['media_type'])
+            color_key = str(item['color'])
+            unique_media_types_set.add(media_type_key)
+            if media_type_key not in color_mapping:
+                color_mapping[media_type_key] = color_key
+        
+        # Create ordered list for consistent plotting - use consistent order instead of alphabetical
+        # to ensure TV Series always gets blue and Movies get orange
+        preferred_order = ['TV Series', 'Movies', 'Music', 'Other']
+        unique_media_types_list: list[str] = []
+        
+        # Add media types in preferred order if they exist
+        for media_type in preferred_order:
+            if media_type in unique_media_types_set:
+                unique_media_types_list.append(media_type)
+        
+        # Add any remaining media types not in preferred order (shouldn't happen normally)
+        for media_type in sorted(unique_media_types_set):
+            if media_type not in unique_media_types_list:
+                unique_media_types_list.append(media_type)
+        
+        colors: list[str] = [color_mapping[mt] for mt in unique_media_types_list]
+        
+        _ = sns.barplot(
+            data=df,
+            x='day',
+            y='count',
+            hue='media_type',
+            ax=ax,
+            palette=colors,
+            alpha=0.8
+        )
+
+        # Customize the plot
+        _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)  # pyright: ignore[reportUnknownMemberType]
+        _ = ax.set_xlabel('Day of Week', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
+        _ = ax.set_ylabel('Play Count', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
+
+        # Enhance legend
+        _ = ax.legend(  # pyright: ignore[reportUnknownMemberType]
+            title='Media Type',
+            loc='best',
+            frameon=True,
+            fancybox=True,
+            shadow=True,
+            framealpha=0.9,
+            fontsize=12
+        )
+
+        # Add bar value annotations if enabled
+        annotate_enabled = self.get_config_value('ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK', False)
+        if annotate_enabled:
+            # Get all bar patches and annotate them
+            for patch in ax.patches:
+                height = patch.get_height()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
+                if height and height > 0:  # Only annotate non-zero values
+                    x_val = patch.get_x() + patch.get_width() / 2  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
+                    self.add_bar_value_annotation(
+                        ax,
+                        x=float(x_val),  # pyright: ignore[reportUnknownArgumentType]
+                        y=float(height),  # pyright: ignore[reportUnknownArgumentType]
+                        value=int(height),  # pyright: ignore[reportUnknownArgumentType]
+                        ha='center',
+                        va='bottom',
+                        offset_y=1,
+                        fontweight='bold'
+                    )
+
+        logger.info(f"Created separated day of week graph with {len(unique_media_types_list)} media types")
+
+    def _generate_combined_visualization(self, ax: Axes, processed_records: ProcessedRecords) -> None:
+        """
+        Generate traditional combined visualization (backward compatibility).
+
+        Args:
+            ax: The matplotlib axes to plot on
+            processed_records: List of processed play history records
+        """
+        # Use traditional aggregation method
+        if processed_records:
+            day_counts = aggregate_by_day_of_week(processed_records)
+            logger.info(f"Aggregated data for {len(day_counts)} days")
+        else:
+            logger.warning("No valid records found, using empty data")
+            day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+            day_counts = {day: 0 for day in day_names}
+
+        # Define day order for consistent display
+        day_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        
+        # Convert to pandas DataFrame
+        days = [day for day in day_order if day in day_counts]
+        counts = [day_counts[day] for day in days]
+
+        if days and any(count > 0 for count in counts):
+            df = pd.DataFrame({
+                'day': days,
+                'count': counts
+            })
+
+            # Create bar plot with modern styling
+            _ = sns.barplot(
+                data=df,
+                x='day',
+                y='count',
+                ax=ax,
+                color=self.get_tv_color(),  # Use TV color as default
+                alpha=0.8
+            )
+
+            # Customize the plot
+            _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)  # pyright: ignore[reportUnknownMemberType]
+            _ = ax.set_xlabel('Day of Week', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
+            _ = ax.set_ylabel('Play Count', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
+
+            # Add bar value annotations if enabled
+            annotate_enabled = self.get_config_value('ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK', False)
+            if annotate_enabled:
+                # Get all bar patches and annotate them
+                for patch in ax.patches:
+                    height = patch.get_height()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
+                    if height and height > 0:  # Only annotate non-zero values
+                        x_val = patch.get_x() + patch.get_width() / 2  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
+                        self.add_bar_value_annotation(
+                            ax,
+                            x=float(x_val),  # pyright: ignore[reportUnknownArgumentType]
+                            y=float(height),  # pyright: ignore[reportUnknownArgumentType]
+                            value=int(height),  # pyright: ignore[reportUnknownArgumentType]
+                            ha='center',
+                            va='bottom',
+                            offset_y=1,
+                            fontweight='bold'
+                        )
+
+            logger.info(f"Created combined day of week graph with {len(days)} days")
+        else:
+            self._handle_empty_data_case(ax)
+
+    def _handle_empty_data_case(self, ax: Axes) -> None:
+        """
+        Handle the case where no data is available.
+
+        Args:
+            ax: The matplotlib axes to display the message on
+        """
+        _ = ax.text(0.5, 0.5, "No play data available\nfor the selected time period",  # pyright: ignore[reportUnknownMemberType]
+                   ha='center', va='center', transform=ax.transAxes, fontsize=16,
+                   bbox=dict(boxstyle='round,pad=0.5', facecolor='lightgray', alpha=0.7))
+        _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
+        logger.warning("Generated empty day of week graph due to no data")

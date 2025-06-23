@@ -1,0 +1,355 @@
+name: Release Automation
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'locale/**/*.po'
+      - 'pyproject.toml'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (leave empty for auto-patch)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  packages: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  check-release-needed:
+    name: Check if Release Needed
+    runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.check.outputs.should_release }}
+      version_type: ${{ steps.check.outputs.version_type }}
+      new_version: ${{ steps.check.outputs.new_version }}
+      completed_languages: ${{ steps.check.outputs.completed_languages }}
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      
+      - name: Install dependencies
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          uv venv
+          uv pip install polib semver httpx toml
+      
+      - name: Check release conditions
+        id: check
+        env:
+          MANUAL_VERSION: ${{ github.event.inputs.version }}
+        run: |
+          cat > check_release.py << 'EOF'
+import os
+import re
+import subprocess
+import polib
+import semver
+import toml
+from pathlib import Path
+
+def get_current_version():
+    """Get current version from pyproject.toml"""
+    with open('pyproject.toml', 'r') as f:
+        data = toml.load(f)
+        return data['project']['version']
+
+def get_last_release_tag():
+    """Get the last release tag"""
+    try:
+        result = subprocess.run(
+            ['git', 'describe', '--tags', '--abbrev=0'],
+            capture_output=True, text=True, check=True
+        )
+        return result.stdout.strip()
+    except subprocess.CalledProcessError:
+        return None
+
+def check_translation_changes():
+    """Check if there are translation changes since last release"""
+    last_tag = get_last_release_tag()
+    if not last_tag:
+        return True, []
+    
+    # Get changed files since last tag
+    result = subprocess.run(
+        ['git', 'diff', '--name-only', f'{last_tag}..HEAD', 'locale/'],
+        capture_output=True, text=True
+    )
+    
+    changed_files = result.stdout.strip().split('\n') if result.stdout.strip() else []
+    return bool(changed_files), changed_files
+
+def get_completed_languages():
+    """Get list of 100% completed languages"""
+    completed = []
+    locale_dir = Path('locale')
+    
+    for po_file in locale_dir.glob('*/LC_MESSAGES/messages.po'):
+        lang = po_file.parent.parent.name
+        try:
+            po = polib.pofile(str(po_file))
+            total = len([e for e in po if not e.obsolete])
+            translated = len([e for e in po if e.translated() and not e.obsolete])
+            
+            if total > 0 and translated == total:
+                completed.append(lang)
+        except Exception:
+            pass
+    
+    return completed
+
+def determine_version_bump(current_version, manual_version=None):
+    """Determine the new version"""
+    if manual_version:
+        # Validate manual version
+        try:
+            semver.Version.parse(manual_version)
+            return manual_version, 'manual'
+        except ValueError:
+            raise ValueError(f"Invalid version format: {manual_version}")
+    
+    # Auto-patch for translation updates
+    ver = semver.Version.parse(current_version)
+    new_ver = ver.bump_patch()
+    return str(new_ver), 'patch'
+
+# Main logic
+current_version = get_current_version()
+manual_version = os.environ.get('MANUAL_VERSION', '').strip()
+
+# Check if this is the initial v1.0.0 release
+is_initial_release = current_version == '1.0.0' and not get_last_release_tag()
+
+if manual_version or is_initial_release:
+    # Manual release or initial release
+    new_version, version_type = determine_version_bump(current_version, manual_version or '1.0.0')
+    should_release = True
+    completed_langs = get_completed_languages()
+else:
+    # Check for translation changes
+    has_changes, changed_files = check_translation_changes()
+    
+    if not has_changes:
+        print("No translation changes detected since last release")
+        should_release = False
+        new_version = current_version
+        version_type = 'none'
+        completed_langs = []
+    else:
+        # Check if we have completed languages
+        completed_langs = get_completed_languages()
+        
+        # Only release if we have completed languages or significant changes
+        if completed_langs or len(changed_files) > 5:
+            new_version, version_type = determine_version_bump(current_version)
+            should_release = True
+        else:
+            print("Translation changes detected but no completed languages")
+            should_release = False
+            new_version = current_version
+            version_type = 'none'
+
+# Output results
+print(f"Current version: {current_version}")
+print(f"New version: {new_version}")
+print(f"Version type: {version_type}")
+print(f"Should release: {should_release}")
+print(f"Completed languages: {', '.join(completed_langs)}")
+
+# Set outputs
+with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+    f.write(f"should_release={'true' if should_release else 'false'}\n")
+    f.write(f"version_type={version_type}\n")
+    f.write(f"new_version={new_version}\n")
+    f.write(f"completed_languages={','.join(completed_langs)}\n")
+EOF
+          
+          uv run python check_release.py
+
+  create-release:
+    name: Create Release
+    needs: check-release-needed
+    if: needs.check-release-needed.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.RELEASE_TOKEN }}
+          fetch-depth: 0
+      
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      
+      - name: Update version in pyproject.toml
+        if: needs.check-release-needed.outputs.new_version != '1.0.0' || github.event.inputs.version
+        run: |
+          sed -i 's/^version = ".*"/version = "${{ needs.check-release-needed.outputs.new_version }}"/' pyproject.toml
+          git add pyproject.toml
+          git commit -m "chore: bump version to ${{ needs.check-release-needed.outputs.new_version }}"
+          git push
+      
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          cat > generate_notes.py << 'EOF'
+import subprocess
+import re
+from datetime import datetime
+
+def get_last_tag():
+    try:
+        result = subprocess.run(['git', 'describe', '--tags', '--abbrev=0'], 
+                              capture_output=True, text=True, check=True)
+        return result.stdout.strip()
+    except:
+        return None
+
+def get_commits_since_tag(tag):
+    if tag:
+        cmd = ['git', 'log', f'{tag}..HEAD', '--pretty=format:%H|%s|%an']
+    else:
+        cmd = ['git', 'log', '--pretty=format:%H|%s|%an']
+    
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    return result.stdout.strip().split('\n') if result.stdout.strip() else []
+
+def categorize_commits(commits):
+    categories = {
+        'Features': [],
+        'Bug Fixes': [],
+        'Translations': [],
+        'Documentation': [],
+        'Other': []
+    }
+    
+    for commit_line in commits:
+        if not commit_line:
+            continue
+            
+        parts = commit_line.split('|', 2)
+        if len(parts) != 3:
+            continue
+            
+        hash, message, author = parts
+        
+        # Categorize based on conventional commits
+        if message.startswith('feat:') or message.startswith('feat('):
+            categories['Features'].append((hash[:7], message, author))
+        elif message.startswith('fix:') or message.startswith('fix('):
+            categories['Bug Fixes'].append((hash[:7], message, author))
+        elif 'i18n' in message or 'translation' in message.lower() or 'locale' in message:
+            categories['Translations'].append((hash[:7], message, author))
+        elif message.startswith('docs:') or message.startswith('doc:'):
+            categories['Documentation'].append((hash[:7], message, author))
+        else:
+            categories['Other'].append((hash[:7], message, author))
+    
+    return categories
+
+# Generate notes
+last_tag = get_last_tag()
+commits = get_commits_since_tag(last_tag)
+categories = categorize_commits(commits)
+
+# Build release notes
+notes = []
+
+# Header
+version = '${{ needs.check-release-needed.outputs.new_version }}'
+version_type = '${{ needs.check-release-needed.outputs.version_type }}'
+completed_langs = '${{ needs.check-release-needed.outputs.completed_languages }}'.split(',')
+
+notes.append(f"# TGraph Bot v{version}")
+notes.append("")
+
+if version_type == 'patch' and completed_langs[0]:
+    notes.append("## 🌍 Translation Update")
+    notes.append("")
+    notes.append("This release includes translation updates with the following completed languages:")
+    for lang in completed_langs:
+        if lang:
+            notes.append(f"- ✅ {lang}")
+    notes.append("")
+
+# Add categorized commits
+for category, items in categories.items():
+    if items:
+        notes.append(f"## {category}")
+        notes.append("")
+        for hash, message, author in items:
+            notes.append(f"- {message} ({hash})")
+        notes.append("")
+
+# Footer
+notes.append("---")
+notes.append("")
+notes.append("### Docker Image")
+notes.append("")
+notes.append("The Docker image for this release will be automatically built and published to:")
+notes.append("- `ghcr.io/engels74/tgraph-bot:${{ needs.check-release-needed.outputs.new_version }}`")
+notes.append("- `ghcr.io/engels74/tgraph-bot:latest`")
+notes.append("")
+notes.append("### Installation")
+notes.append("")
+notes.append("```bash")
+notes.append("docker pull ghcr.io/engels74/tgraph-bot:${{ needs.check-release-needed.outputs.new_version }}")
+notes.append("```")
+
+# Save to file
+with open('release_notes.md', 'w') as f:
+    f.write('\n'.join(notes))
+
+print("Release notes generated successfully!")
+EOF
+          
+          python generate_notes.py
+          
+          # Output release notes for the next step
+          {
+            echo 'release_notes<<EOF'
+            cat release_notes.md
+            echo
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.check-release-needed.outputs.new_version }}
+          name: v${{ needs.check-release-needed.outputs.new_version }}
+          body: ${{ steps.release_notes.outputs.release_notes }}
+          draft: false
+          prerelease: false
+          token: ${{ secrets.RELEASE_TOKEN }}
+      
+      - name: Trigger Docker build
+        if: success()
+        run: |
+          # The Docker repository will automatically detect the new tag and build
+          echo "Docker build will be triggered automatically by the new tag"
+          
+          # Optionally, you can trigger it manually via webhook
+          # curl -X POST \
+          #   -H "Accept: application/vnd.github.v3+json" \
+          #   -H "Authorization: token ${{ secrets.RELEASE_TOKEN }}" \
+          #   https://api.github.com/repos/engels74/tgraph-bot/dispatches \
+          #   -d '{"event_type":"release-published","client_payload":{"version":"${{ needs.check-release-needed.outputs.new_version }}"}}' 
