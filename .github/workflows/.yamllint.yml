@@ -10,4 +10,4 @@ rules:
   comments:
     min-spaces-from-content: 1
   document-start:
-    present: true 
+    present: true
