@@ -511,3 +511,7 @@ msgstr ""
 msgid "🔄 Initializing graph generation"
 msgstr ""
 
+# Test string for webhook verification - will be removed after testing
+msgid "webhook_test_string_2025"
+msgstr ""
+
