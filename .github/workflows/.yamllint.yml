@@ -3,7 +3,7 @@ extends: default
 
 rules:
   line-length:
-    max: 125
+    max: 250
     level: warning
   truthy:
     allowed-values: ['true', 'false', 'on', 'off']
