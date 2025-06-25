@@ -34,10 +34,16 @@ jobs:
         with:
           python-version: '3.13'
 
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
       - name: Validate version
         id: validate
         run: |
-          pip install semver toml
+          uv pip install semver toml
 
           cat > validate_version.py << 'EOF'
           import sys
@@ -100,7 +106,7 @@ jobs:
               f.write(f"bump_type={result}\n")
           EOF
 
-          python validate_version.py
+          uv run python validate_version.py
 
           # Read outputs
           source version_info.txt
@@ -122,210 +128,13 @@ jobs:
 
       - name: Generate comprehensive release notes
         id: notes
+        env:
+          RELEASE_TYPE: manual
+          NEW_VERSION: ${{ steps.validate.outputs.new_version }}
+          BUMP_TYPE: ${{ steps.validate.outputs.bump_type }}
+          CUSTOM_NOTES: ${{ github.event.inputs.release_notes }}
         run: |
-          cat > generate_release_notes.py << 'EOF'
-          import subprocess
-          import re
-          from datetime import datetime
-          import json
-
-          def get_last_tag():
-              try:
-                  result = subprocess.run(['git', 'describe', '--tags', '--abbrev=0'],
-                                        capture_output=True, text=True, check=True)
-                  return result.stdout.strip()
-              except:
-                  return None
-
-          def get_pr_numbers(since_tag):
-              """Extract PR numbers from commit messages"""
-              if since_tag:
-                  cmd = ['git', 'log', f'{since_tag}..HEAD', '--pretty=format:%s']
-              else:
-                  cmd = ['git', 'log', '--pretty=format:%s']
-
-              result = subprocess.run(cmd, capture_output=True, text=True)
-              messages = result.stdout.strip().split('\n') if result.stdout else []
-
-              pr_numbers = []
-              for msg in messages:
-                  # Match patterns like (#123), #123, PR #123
-                  matches = re.findall(r'(?:#|PR\s*#)(\d+)', msg)
-                  pr_numbers.extend(matches)
-
-              return list(set(pr_numbers))  # Remove duplicates
-
-          def get_contributors(since_tag):
-              """Get unique contributors since last tag"""
-              if since_tag:
-                  cmd = ['git', 'log', f'{since_tag}..HEAD', '--pretty=format:%an <%ae>']
-              else:
-                  cmd = ['git', 'log', '--pretty=format:%an <%ae>']
-
-              result = subprocess.run(cmd, capture_output=True, text=True)
-              contributors = set(result.stdout.strip().split('\n')) if result.stdout else set()
-
-              # Remove bot accounts
-              contributors = {c for c in contributors if 'bot' not in c.lower() and c}
-
-              return sorted(contributors)
-
-          def categorize_changes(since_tag):
-              """Categorize commits by type"""
-              if since_tag:
-                  cmd = ['git', 'log', f'{since_tag}..HEAD', '--pretty=format:%H|%s|%b']
-              else:
-                  cmd = ['git', 'log', '--pretty=format:%H|%s|%b']
-
-              result = subprocess.run(cmd, capture_output=True, text=True)
-              commits = result.stdout.strip().split('\n') if result.stdout else []
-
-              categories = {
-                  '✨ Features': [],
-                  '🐛 Bug Fixes': [],
-                  '🌐 Translations': [],
-                  '📚 Documentation': [],
-                  '🔧 Maintenance': [],
-                  '⚡ Performance': [],
-                  '🔒 Security': [],
-                  '🎨 UI/UX': []
-              }
-
-              breaking_changes = []
-
-              for commit in commits:
-                  if not commit:
-                      continue
-
-                  parts = commit.split('|', 2)
-                  if len(parts) < 2:
-                      continue
-
-                  hash = parts[0][:7]
-                  message = parts[1]
-                  body = parts[2] if len(parts) > 2 else ''
-
-                  # Check for breaking changes
-                  if 'BREAKING' in message.upper() or 'BREAKING' in body.upper():
-                      breaking_changes.append(f"{message} ({hash})")
-
-                  # Categorize
-                  if message.startswith(('feat:', 'feat(', 'feature:', 'feature(')):
-                      categories['✨ Features'].append(f"{message} ({hash})")
-                  elif message.startswith(('fix:', 'fix(', 'bugfix:', 'bugfix(')):
-                      categories['🐛 Bug Fixes'].append(f"{message} ({hash})")
-                  elif any(word in message.lower() for word in ['i18n', 'translation', 'locale']):
-                      categories['🌐 Translations'].append(f"{message} ({hash})")
-                  elif message.startswith(('docs:', 'doc:', 'documentation:')):
-                      categories['📚 Documentation'].append(f"{message} ({hash})")
-                  elif message.startswith(('perf:', 'performance:')):
-                      categories['⚡ Performance'].append(f"{message} ({hash})")
-                  elif message.startswith(('security:', 'sec:')):
-                      categories['🔒 Security'].append(f"{message} ({hash})")
-                  elif any(word in message.lower() for word in ['ui', 'ux', 'style', 'design']):
-                      categories['🎨 UI/UX'].append(f"{message} ({hash})")
-                  else:
-                      categories['🔧 Maintenance'].append(f"{message} ({hash})")
-
-              return categories, breaking_changes
-
-          # Build release notes
-          last_tag = get_last_tag()
-          version = '${{ steps.validate.outputs.new_version }}'
-          bump_type = '${{ steps.validate.outputs.bump_type }}'
-          custom_notes = '''${{ github.event.inputs.release_notes }}'''
-
-          notes = []
-          notes.append(f"# TGraph Bot v{version}")
-          notes.append("")
-
-          # Add bump type badge
-          if bump_type == 'major':
-              notes.append("![Major Release](https://img.shields.io/badge/release-major-red)")
-          elif bump_type == 'minor':
-              notes.append("![Minor Release](https://img.shields.io/badge/release-minor-yellow)")
-          else:
-              notes.append("![Patch Release](https://img.shields.io/badge/release-patch-green)")
-
-          notes.append("")
-
-          # Add custom notes if provided
-          if custom_notes.strip():
-              notes.append("## Release Highlights")
-              notes.append("")
-              notes.append(custom_notes.strip())
-              notes.append("")
-
-          # Get categorized changes
-          categories, breaking = categorize_changes(last_tag)
-
-          # Add breaking changes if any
-          if breaking:
-              notes.append("## ⚠️ BREAKING CHANGES")
-              notes.append("")
-              for change in breaking:
-                  notes.append(f"- {change}")
-              notes.append("")
-
-          # Add categorized commits
-          for category, items in categories.items():
-              if items:
-                  notes.append(f"## {category}")
-                  notes.append("")
-                  for item in items[:10]:  # Limit to 10 items per category
-                      notes.append(f"- {item}")
-                  if len(items) > 10:
-                      notes.append(f"- ...and {len(items) - 10} more")
-                  notes.append("")
-
-          # Add PR references
-          pr_numbers = get_pr_numbers(last_tag)
-          if pr_numbers:
-              notes.append("## 🔗 Related Pull Requests")
-              notes.append("")
-              for pr in pr_numbers[:10]:
-                  notes.append(f"- #{pr}")
-              notes.append("")
-
-          # Add contributors
-          contributors = get_contributors(last_tag)
-          if contributors:
-              notes.append("## 👥 Contributors")
-              notes.append("")
-              notes.append("Thanks to everyone who contributed to this release:")
-              notes.append("")
-              for contributor in contributors:
-                  notes.append(f"- {contributor}")
-              notes.append("")
-
-          # Add footer
-          notes.append("---")
-          notes.append("")
-          notes.append("## 📦 Installation")
-          notes.append("")
-          notes.append("### Docker")
-          notes.append("```bash")
-          notes.append(f"docker pull ghcr.io/engels74/tgraph-bot:{version}")
-          notes.append("```")
-          notes.append("")
-          notes.append("### From Source")
-          notes.append("```bash")
-          notes.append("git clone https://github.com/engels74/tgraph-bot-source.git")
-          notes.append(f"git checkout v{version}")
-          notes.append("```")
-          notes.append("")
-          notes.append("## 📖 Documentation")
-          notes.append("")
-          notes.append("- [README](https://github.com/engels74/tgraph-bot-source/blob/main/README.md)")
-
-          # Write to file
-          with open('release_notes.md', 'w') as f:
-              f.write('\n'.join(notes))
-
-          print("Release notes generated!")
-          EOF
-
-          python generate_release_notes.py
+          uv run python scripts/workflows/generate_release_notes.py
 
           # Output for GitHub
           {
@@ -401,7 +210,7 @@ jobs:
               json.dump(issue_data, f)
           EOF
 
-          python create_issue.py
+          uv run python create_issue.py
 
           # Create issue using GitHub CLI
           gh issue create --json-file issue.json || echo "Failed to create issue"

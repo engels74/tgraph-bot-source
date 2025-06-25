@@ -29,10 +29,11 @@ jobs:
         with:
           python-version: '3.13'
 
-      - name: Install uv
-        run: |
-          curl -LsSf https://astral.sh/uv/install.sh | sh
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
       - name: Install dependencies
         run: |
@@ -66,43 +67,8 @@ jobs:
           echo "| Language | Completion | Status |" >> validation_report.md
           echo "|----------|------------|--------|" >> validation_report.md
 
-          # Create a script to check translation status
-          cat > check_status.py << 'EOF'
-          import polib
-          from pathlib import Path
-          import json
-
-          locale_dir = Path('locale')
-          completed_langs = []
-          all_langs = []
-
-          for po_file in locale_dir.glob('*/LC_MESSAGES/messages.po'):
-              lang = po_file.parent.parent.name
-              all_langs.append(lang)
-
-              try:
-                  po = polib.pofile(str(po_file))
-                  total = len([e for e in po if not e.obsolete])
-                  translated = len([e for e in po if e.translated() and not e.obsolete])
-                  percentage = (translated / total * 100) if total > 0 else 0
-
-                  status_icon = "🟢" if percentage == 100 else "🟡" if percentage >= 80 else "🔴"
-                  print(f"| {lang} | {percentage:.1f}% | {status_icon} |")
-
-                  if percentage == 100:
-                      completed_langs.append(lang)
-              except Exception as e:
-                  print(f"| {lang} | Error | ❌ |")
-
-          # Output for GitHub Actions
-          with open('translation_status.json', 'w') as f:
-              json.dump({
-                  'completed_languages': completed_langs,
-                  'all_languages': all_langs
-              }, f)
-          EOF
-
-          uv run python check_status.py >> validation_report.md
+          # Check translation status using extracted script
+          uv run python scripts/workflows/check_translation_status.py >> validation_report.md
 
           # Read status for outputs
           if [[ -f translation_status.json ]]; then
@@ -187,10 +153,11 @@ jobs:
         with:
           python-version: '3.13'
 
-      - name: Install uv
-        run: |
-          curl -LsSf https://astral.sh/uv/install.sh | sh
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
       - name: Install dependencies
         run: |
