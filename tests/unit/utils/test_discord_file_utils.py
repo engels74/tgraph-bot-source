@@ -355,21 +355,30 @@ class TestCalculateNextUpdateTime:
         """Test fixed time update when time hasn't passed today and no scheduler state."""
         # Mock no state file exists
         with patch('pathlib.Path.exists', return_value=False):
-            # Use a time that should be in the future today
+            # Use a time that's guaranteed to be in the future today (but not past midnight)
             now = datetime.now()
-            future_time = now + timedelta(hours=2)
-            time_str = future_time.strftime("%H:%M")
+            # Use a time that's 30 minutes in the future, but cap it to ensure we don't go past 23:30
+            if now.hour >= 23:
+                # If it's already late, use tomorrow morning at 08:00
+                future_time = (now + timedelta(days=1)).replace(hour=8, minute=0)
+                time_str = "08:00"
+                expected_day_offset = 1
+            else:
+                # Safe to add 30 minutes within the same day
+                future_time = now + timedelta(minutes=30)
+                time_str = future_time.strftime("%H:%M")
+                expected_day_offset = 0
             
             result = calculate_next_update_time(1, time_str)
             
             assert result is not None
-            # Should be today at the specified time
+            # Should be today (or tomorrow if we're late in the day) at the specified time
             expected = now.replace(
                 hour=future_time.hour,
                 minute=future_time.minute,
                 second=0,
                 microsecond=0
-            )
+            ) + timedelta(days=expected_day_offset)
             assert result == expected
         
     def test_fixed_time_update_past_today_no_state(self) -> None:
@@ -427,6 +436,10 @@ class TestCalculateNextUpdateTime:
 
     def test_fixed_time_with_scheduler_state_longer_interval(self) -> None:
         """Test fixed time calculation with longer update interval from scheduler state."""
+        from pathlib import Path
+        import tempfile
+        import os
+        
         now = datetime.now()
         past_time = now - timedelta(hours=2)
         time_str = past_time.strftime("%H:%M")
@@ -434,16 +447,26 @@ class TestCalculateNextUpdateTime:
         # Last update was 2 days ago
         last_update = now - timedelta(days=2)
         
+        # Use the correct scheduler state format that matches the actual implementation
         scheduler_state = {
-            "last_update": last_update.isoformat(),
-            "next_update": (now + timedelta(days=5)).isoformat()
+            "state": {
+                "last_update": last_update.isoformat(),
+                "next_update": (now + timedelta(days=5)).isoformat()
+            }
         }
         
-        mock_state_content = json.dumps(scheduler_state)
+        # Create a temporary scheduler state file for this test
+        state_dir = Path("data")
+        state_file = state_dir / "scheduler_state.json"
         
-        with patch('pathlib.Path.exists', return_value=True), \
-             patch('builtins.open', mock_open(read_data=mock_state_content)):  # pyright: ignore[reportAny]
-            
+        # Ensure directory exists
+        state_dir.mkdir(exist_ok=True)
+        
+        # Create temporary state file
+        with state_file.open('w') as f:
+            json.dump(scheduler_state, f)
+        
+        try:
             result = calculate_next_update_time(7, time_str)  # 7 day interval
             
             assert result is not None
@@ -458,6 +481,10 @@ class TestCalculateNextUpdateTime:
             assert result.minute == past_time.minute
             assert result.second == 0
             assert result.microsecond == 0
+        finally:
+            # Clean up the temporary file
+            if state_file.exists():
+                state_file.unlink()
 
     def test_fixed_time_with_malformed_scheduler_state(self) -> None:
         """Test fixed time calculation with malformed scheduler state file."""

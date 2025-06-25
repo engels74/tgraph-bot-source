@@ -46,6 +46,7 @@ class TestAsyncThreading:
             
             # Mock the data fetching
             mock_data_fetcher.get_play_history.return_value = {"data": []}  # pyright: ignore[reportAny]
+            mock_data_fetcher.get_plays_per_month.return_value = {"monthly_data": "test"}  # pyright: ignore[reportAny]
 
             # Mock the synchronous graph generation method
             def mock_sync_generation(_data: dict[str, object], _progress_tracker: object | None = None) -> list[str]:
@@ -169,6 +170,7 @@ class TestAsyncThreading:
             graph_manager._graph_factory = mock_graph_factory  # pyright: ignore[reportPrivateUsage]
             
             mock_data_fetcher.get_play_history.return_value = {"data": []}  # pyright: ignore[reportAny]
+            mock_data_fetcher.get_plays_per_month.return_value = {"monthly_data": "test"}  # pyright: ignore[reportAny]
             
             # Create a counter to verify the event loop is responsive
             counter = 0

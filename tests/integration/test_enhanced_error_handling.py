@@ -104,6 +104,7 @@ class TestGraphManagerErrorHandling:
             # Mock successful data fetch
             test_data = {"play_history": {"data": []}}  # pyright: ignore[reportUnknownVariableType]
             mock_data_fetcher.get_play_history.return_value = test_data["play_history"]  # pyright: ignore[reportAny]
+            mock_data_fetcher.get_plays_per_month.return_value = {"monthly_data": "test"}  # pyright: ignore[reportAny]
 
             # Mock successful graph generation
             test_files = ["test1.png", "test2.png"]
@@ -147,6 +148,7 @@ class TestGraphManagerErrorHandling:
             # Mock data fetch
             test_data = {"play_history": {"data": []}}  # pyright: ignore[reportUnknownVariableType]
             mock_data_fetcher.get_play_history.return_value = test_data["play_history"]  # pyright: ignore[reportAny]
+            mock_data_fetcher.get_plays_per_month.return_value = {"monthly_data": "test"}  # pyright: ignore[reportAny]
 
             # Mock slow graph generation
             def slow_generation(data: dict[str, object], tracker: object = None) -> list[str]:  # pyright: ignore[reportUnusedParameter]

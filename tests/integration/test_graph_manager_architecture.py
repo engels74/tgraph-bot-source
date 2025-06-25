@@ -105,6 +105,7 @@ class TestGraphManagerArchitecture:
                     mock_data_fetcher.__aenter__ = AsyncMock(return_value=mock_data_fetcher)
                     mock_data_fetcher.__aexit__ = AsyncMock(return_value=None)
                     mock_data_fetcher.get_play_history = AsyncMock(return_value={"test": "data"})
+                    mock_data_fetcher.get_plays_per_month = AsyncMock(return_value={"monthly_data": "test"})
                     mock_data_fetcher_class.return_value = mock_data_fetcher
                     
                     mock_graph_factory = MagicMock()

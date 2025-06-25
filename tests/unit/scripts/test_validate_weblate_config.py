@@ -90,7 +90,7 @@ file_format = po
         # Check main weblate section
         assert 'weblate' in config
         assert 'url' in config['weblate']
-        assert config['weblate']['url'] == 'https://hosted.weblate.org/'
+        assert config['weblate']['url'] == 'https://weblate.cccp.ps/'
         
         # Check for expected components
         all_sections: list[str] = list(config.sections())
