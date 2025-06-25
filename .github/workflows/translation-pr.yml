@@ -24,11 +24,6 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-
       - name: Setup uv
         uses: astral-sh/setup-uv@v6
         with:
@@ -37,8 +32,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv venv
-          uv pip install -e ".[dev]"
+          uv sync --locked --all-extras --dev
 
       - name: Validate PO files
         id: validate
@@ -132,6 +126,11 @@ jobs:
               }
             });
 
+      # Minimize cache before saving
+      - name: Minimize uv cache
+        if: always()
+        run: uv cache prune --ci
+
     outputs:
       validation_passed: ${{ steps.validate.outputs.validation_passed }}
       completed_languages: ${{ steps.validate.outputs.completed_languages }}
@@ -148,11 +147,6 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-
       - name: Setup uv
         uses: astral-sh/setup-uv@v6
         with:
@@ -161,8 +155,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv venv
-          uv pip install -e ".[dev]"
+          uv sync --locked --all-extras --dev
 
       - name: Compile translations
         run: |
@@ -208,6 +201,11 @@ jobs:
           EOF
 
           uv run python test_translations.py
+
+      # Minimize cache before saving
+      - name: Minimize uv cache
+        if: always()
+        run: uv cache prune --ci
 
   auto-merge:
     name: Auto-merge if Complete

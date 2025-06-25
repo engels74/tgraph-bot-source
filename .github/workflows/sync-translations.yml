@@ -31,11 +31,6 @@ jobs:
           fetch-depth: 0
           ref: main
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-
       - name: Setup uv
         uses: astral-sh/setup-uv@v6
         with:
@@ -44,8 +39,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv venv
-          uv pip install -e ".[dev]"
+          uv sync --locked --all-extras --dev
 
       - name: Configure Git
         run: |
@@ -119,3 +113,8 @@ jobs:
                 body: `🎉 **Completed Translations**\n\nThe following languages are now 100% translated:\n${completed.map(lang => `- ${lang}`).join('\n')}\n\nMerging this PR will trigger an automatic patch release.`
               });
             }
+
+      # Minimize cache before saving
+      - name: Minimize uv cache
+        if: always()
+        run: uv cache prune --ci
