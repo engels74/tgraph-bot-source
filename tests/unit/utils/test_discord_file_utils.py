@@ -437,8 +437,6 @@ class TestCalculateNextUpdateTime:
     def test_fixed_time_with_scheduler_state_longer_interval(self) -> None:
         """Test fixed time calculation with longer update interval from scheduler state."""
         from pathlib import Path
-        import tempfile
-        import os
         
         now = datetime.now()
         past_time = now - timedelta(hours=2)
