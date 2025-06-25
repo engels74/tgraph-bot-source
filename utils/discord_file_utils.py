@@ -76,12 +76,13 @@ def calculate_next_update_time(update_days: int, fixed_update_time: str) -> date
                         # Respect the update_days interval if we have a last update
                         min_next_update = last_update + timedelta(days=update_days)
                         if next_update < min_next_update:
-                            # Find next occurrence that respects the interval
-                            days_to_add = (min_next_update.date() - next_update.date()).days
-                            next_update += timedelta(days=days_to_add)
+                            # Find the next occurrence of the fixed time that is at or after min_next_update
+                            target_date = min_next_update.date()
+                            next_update = datetime.combine(target_date, update_time)
                             
-                            # Ensure we still have the correct time after adding days
-                            next_update = datetime.combine(next_update.date(), update_time)
+                            # If the time on that date has already passed, move to the next day
+                            if next_update < min_next_update:
+                                next_update = datetime.combine(target_date + timedelta(days=1), update_time)
                             
         except Exception as e:
             # If we can't load the state, continue with the basic logic
