@@ -517,6 +517,9 @@ class TestSignalHandling:
         """Test signal handler function behavior."""
         config_manager = ConfigManager()
         bot = TGraphBot(config_manager)
+        
+        # Mock bot.close as an async function
+        bot.close = AsyncMock()
 
         # Create a mock event loop
         mock_loop = MagicMock()
@@ -545,11 +548,24 @@ class TestMainFunctionEnhancements:
         """Test that main() sets up logging."""
         with patch("main.setup_logging") as mock_setup_logging, \
              patch("pathlib.Path.exists", return_value=False), \
-             patch("sys.exit"), \
-             patch("main.TGraphBot"):
+             patch("sys.exit"):
 
-            await main()
-            mock_setup_logging.assert_called_once()
+            # Mock UpdateTracker to prevent background task issues
+            mock_update_tracker = MagicMock()
+            mock_update_tracker.stop_scheduler = AsyncMock()
+            
+            with patch("bot.update_tracker.UpdateTracker", return_value=mock_update_tracker):
+                # Create a proper mock for TGraphBot with async close method
+                mock_bot_class = MagicMock()
+                mock_bot_instance = MagicMock()
+                mock_bot_instance.close = AsyncMock()
+                mock_bot_instance.is_shutting_down.return_value = False
+                mock_bot_instance.update_tracker = mock_update_tracker
+                mock_bot_class.return_value = mock_bot_instance
+                
+                with patch("main.TGraphBot", mock_bot_class):
+                    await main()
+                    mock_setup_logging.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_main_with_signal_handlers(self) -> None:
@@ -564,11 +580,20 @@ class TestMainFunctionEnhancements:
         with patch("main.setup_logging"), \
              patch("pathlib.Path.exists", return_value=True), \
              patch.object(ConfigManager, "load_config", return_value=mock_config), \
-             patch("main.setup_signal_handlers") as mock_setup_signals, \
-             patch.object(TGraphBot, "start", new_callable=AsyncMock):
+             patch("main.setup_signal_handlers") as mock_setup_signals:
 
-            await main()
-            mock_setup_signals.assert_called_once()
+            # Create a proper mock for TGraphBot with async methods
+            mock_bot_class = MagicMock()
+            mock_bot_instance = MagicMock()
+            mock_bot_instance.start = AsyncMock()
+            mock_bot_instance.close = AsyncMock()
+            mock_bot_instance.is_shutting_down.return_value = False
+            mock_bot_class.return_value = mock_bot_instance
+            
+            with patch("main.TGraphBot", mock_bot_class):
+                await main()
+                mock_setup_signals.assert_called_once()
+                mock_bot_instance.start.assert_called_once_with("test_token")
 
     @pytest.mark.asyncio
     async def test_main_discord_login_failure(self) -> None:

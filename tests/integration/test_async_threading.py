@@ -90,6 +90,8 @@ class TestAsyncThreading:
             
             # Mock the internal components
             mock_data_fetcher = AsyncMock()
+            # Fix: clear_cache is a synchronous method, so we need to mock it properly
+            mock_data_fetcher.clear_cache = MagicMock()
             mock_graph_factory = MagicMock()
             
             user_graph_manager._data_fetcher = mock_data_fetcher  # pyright: ignore[reportPrivateUsage]
@@ -100,7 +102,7 @@ class TestAsyncThreading:
             mock_data_fetcher.find_user_by_email.return_value = {"user_id": 123}  # pyright: ignore[reportAny]
 
             # Mock the synchronous graph generation method
-            def mock_sync_user_generation(_user_data: dict[str, object], _progress_tracker: object | None = None) -> list[str]:
+            def mock_sync_user_generation(_user_email: str, _user_data: dict[str, object], _progress_tracker: object | None = None) -> list[str]:
                 return []
 
             # Test that asyncio.to_thread is used

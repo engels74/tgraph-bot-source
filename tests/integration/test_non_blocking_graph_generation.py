@@ -233,6 +233,7 @@ class TestNonBlockingGraphGeneration(AsyncTestBase):
              patch.object(user_graph_manager, '_cleanup_components'):
             
             mock_data_fetcher = AsyncMock()
+            mock_data_fetcher.clear_cache = MagicMock()
             mock_graph_factory = MagicMock()
             
             user_graph_manager._data_fetcher = mock_data_fetcher  # pyright: ignore[reportPrivateUsage]
@@ -296,6 +297,7 @@ class TestNonBlockingGraphGeneration(AsyncTestBase):
              patch.object(user_graph_manager, '_cleanup_components'):
             
             mock_data_fetcher = AsyncMock()
+            mock_data_fetcher.clear_cache = MagicMock()
             mock_graph_factory = MagicMock()
             
             user_graph_manager._data_fetcher = mock_data_fetcher  # pyright: ignore[reportPrivateUsage]
