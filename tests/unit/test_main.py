@@ -559,7 +559,9 @@ class TestMainFunctionEnhancements:
                 mock_bot_class = MagicMock()
                 mock_bot_instance = MagicMock()
                 mock_bot_instance.close = AsyncMock()
-                mock_bot_instance.is_shutting_down.return_value = False
+                # Properly type the is_shutting_down method
+                mock_is_shutting_down = MagicMock(return_value=False)
+                mock_bot_instance.is_shutting_down = mock_is_shutting_down
                 mock_bot_instance.update_tracker = mock_update_tracker
                 mock_bot_class.return_value = mock_bot_instance
                 
@@ -587,13 +589,16 @@ class TestMainFunctionEnhancements:
             mock_bot_instance = MagicMock()
             mock_bot_instance.start = AsyncMock()
             mock_bot_instance.close = AsyncMock()
-            mock_bot_instance.is_shutting_down.return_value = False
+            # Properly type the is_shutting_down method
+            mock_is_shutting_down = MagicMock(return_value=False)
+            mock_bot_instance.is_shutting_down = mock_is_shutting_down
             mock_bot_class.return_value = mock_bot_instance
             
             with patch("main.TGraphBot", mock_bot_class):
                 await main()
                 mock_setup_signals.assert_called_once()
-                mock_bot_instance.start.assert_called_once_with("test_token")
+                # Mock's assert methods aren't properly typed in unittest.mock
+                mock_bot_instance.start.assert_called_once_with("test_token")  # pyright: ignore[reportAny]
 
     @pytest.mark.asyncio
     async def test_main_discord_login_failure(self) -> None:
