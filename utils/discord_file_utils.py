@@ -80,10 +80,9 @@ def calculate_next_update_time(update_days: int, fixed_update_time: str) -> date
                             target_date = min_next_update.date()
                             next_update = datetime.combine(target_date, update_time)
                             
-                            # If the time on that date has already passed, move to the next day
+                            # If the fixed time on the target date is before min_next_update, move to next day
                             if next_update < min_next_update:
-                                next_update = datetime.combine(target_date + timedelta(days=1), update_time)
-                            
+                                next_update += timedelta(days=1)
         except Exception as e:
             # If we can't load the state, continue with the basic logic
             logger.debug(f"Could not load scheduler state for next update calculation: {e}")
