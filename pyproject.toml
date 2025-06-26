@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tgraph-bot"
-version = "1.0.1"
+version = "1.0.0"
 description = "A Discord bot for automatically generating and posting Tautulli graphs"
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -46,6 +46,10 @@ dev = [
     
     # Translation/i18n utilities
     "polib>=1.2.0",
+    
+    # Workflow utilities
+    "semver>=3.0.4",
+    "toml>=0.10.2",
     
     # Type stubs for better type safety
     "types-PyYAML>=6.0.0",
