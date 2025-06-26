@@ -65,7 +65,9 @@ class TestTranslationFiles:
         # Check metadata
         assert po.metadata['Project-Id-Version'] == 'TGraph Bot 1.0.0'
         assert po.metadata['Content-Type'] == 'text/plain; charset=UTF-8'
-        assert 'engels74' in po.metadata['Last-Translator']
+        # Check that Last-Translator field exists and is not empty
+        assert 'Last-Translator' in po.metadata
+        assert po.metadata['Last-Translator'].strip(), "Last-Translator field should not be empty"
         
         # Check that there are translatable strings
         assert len(po) > 0, "POT file should contain translatable strings"
@@ -91,7 +93,9 @@ class TestTranslationFiles:
         # Check metadata
         assert po.metadata['Language'] == 'en'
         assert po.metadata['Content-Type'] == 'text/plain; charset=UTF-8'
-        assert 'engels74' in po.metadata['Last-Translator']
+        # Check that Last-Translator field exists and is not empty
+        assert 'Last-Translator' in po.metadata
+        assert po.metadata['Last-Translator'].strip(), "Last-Translator field should not be empty"
         
         # Check that translations exist
         assert len(po) > 0, "English PO file should contain translations"
@@ -111,7 +115,10 @@ class TestTranslationFiles:
         # Check metadata
         assert po.metadata['Language'] == 'da'
         assert po.metadata['Content-Type'] == 'text/plain; charset=UTF-8'
-        assert 'engels74' in po.metadata['Last-Translator']
+        # Check that Last-Translator field exists and is not empty
+        # This field can change when using Weblate or other translation tools
+        assert 'Last-Translator' in po.metadata
+        assert po.metadata['Last-Translator'].strip(), "Last-Translator field should not be empty"
         
         # Check that translations exist
         assert len(po) > 0, "Danish PO file should contain translations"
