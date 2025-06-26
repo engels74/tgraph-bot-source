@@ -25,6 +25,12 @@ jobs:
   check-release-needed:
     name: Check if Release Needed
     runs-on: ubuntu-latest
+    if: |
+      !contains(github.event.head_commit.message, '[skip ci]') &&
+      !contains(github.event.head_commit.message, '[ci skip]') &&
+      !contains(github.event.head_commit.message, '[no ci]') &&
+      !contains(github.event.head_commit.message, '[skip actions]') &&
+      !contains(github.event.head_commit.message, '[actions skip]')
     outputs:
       should_release: ${{ steps.check.outputs.should_release }}
       version_type: ${{ steps.check.outputs.version_type }}
@@ -45,8 +51,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv sync --locked --no-install-project
-          uv pip install polib semver httpx toml
+          uv sync --locked --all-extras --dev
 
       - name: Check release conditions
         id: check
@@ -98,7 +103,7 @@ jobs:
           VERSION_TYPE: ${{ needs.check-release-needed.outputs.version_type }}
           COMPLETED_LANGUAGES: ${{ needs.check-release-needed.outputs.completed_languages }}
         run: |
-          uv sync --locked --no-install-project
+          uv sync --locked --all-extras --dev
           uv run python scripts/workflows/generate_release_notes.py
 
           # Output release notes for the next step

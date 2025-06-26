@@ -17,6 +17,12 @@ jobs:
   validate-translations:
     name: Validate Translation Files
     runs-on: ubuntu-latest
+    if: |
+      !contains(github.event.pull_request.title, '[skip ci]') &&
+      !contains(github.event.pull_request.title, '[ci skip]') &&
+      !contains(github.event.pull_request.title, '[no ci]') &&
+      !contains(github.event.pull_request.title, '[skip actions]') &&
+      !contains(github.event.pull_request.title, '[actions skip]')
 
     steps:
       - name: Checkout PR

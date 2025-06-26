@@ -5,9 +5,14 @@ name: Manual Release
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to release (e.g., 1.1.0, 2.0.0)'
+        description: 'Version to release (e.g., 1.2.3)'
         required: true
         type: string
+      is_prerelease:
+        description: 'Is this a pre-release?'
+        required: false
+        type: boolean
+        default: false
       release_notes:
         description: 'Additional release notes (optional)'
         required: false
@@ -21,6 +26,12 @@ jobs:
   validate-and-release:
     name: Validate and Create Release
     runs-on: ubuntu-latest
+    if: |
+      !contains(github.event.head_commit.message, '[skip ci]') &&
+      !contains(github.event.head_commit.message, '[ci skip]') &&
+      !contains(github.event.head_commit.message, '[no ci]') &&
+      !contains(github.event.head_commit.message, '[skip actions]') &&
+      !contains(github.event.head_commit.message, '[actions skip]')
 
     steps:
       - name: Checkout repository
@@ -37,8 +48,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv sync --locked --no-install-project
-          uv pip install semver toml
+          uv sync --locked --all-extras --dev
 
       - name: Validate version
         id: validate
