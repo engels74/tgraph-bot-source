@@ -908,7 +908,7 @@ wheels = [
 
 [[package]]
 name = "tgraph-bot"
-version = "1.0.1"
+version = "1.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "discord-py" },
@@ -928,6 +928,8 @@ dev = [
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
     { name = "ruff" },
+    { name = "semver" },
+    { name = "toml" },
     { name = "types-pyyaml" },
     { name = "types-requests" },
 ]
@@ -965,6 +967,8 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=6.0.2" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.11.13" },
     { name = "seaborn", specifier = ">=0.13.2" },
+    { name = "semver", marker = "extra == 'dev'", specifier = ">=3.0.4" },
+    { name = "toml", marker = "extra == 'dev'", specifier = ">=0.10.2" },
     { name = "types-pyyaml", marker = "extra == 'dev'", specifier = ">=6.0.0" },
     { name = "types-requests", marker = "extra == 'dev'", specifier = ">=2.31.0" },
     { name = "watchdog", specifier = ">=6.0.0" },
