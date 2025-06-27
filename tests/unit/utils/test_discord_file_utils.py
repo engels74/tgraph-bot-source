@@ -424,7 +424,7 @@ class TestCalculateNextUpdateTime:
         mock_state_content = json.dumps(scheduler_state)
         
         with patch('utils.discord_file_utils.Path') as mock_path_class, \
-             patch('builtins.open', mock_open(read_data=mock_state_content)), \  # pyright: ignore[reportAny]
+             patch('builtins.open', mock_open(read_data=mock_state_content)), \
              patch('utils.discord_file_utils.datetime') as mock_datetime:
             # Create a mock Path instance that returns True for exists()
             mock_path_instance = MagicMock()
@@ -500,7 +500,7 @@ class TestCalculateNextUpdateTime:
         """Test fixed time calculation with malformed scheduler state file."""
         # Mock malformed JSON in state file
         with patch('utils.discord_file_utils.Path') as mock_path_class, \
-             patch('builtins.open', mock_open(read_data="invalid json")), \  # pyright: ignore[reportAny]
+             patch('builtins.open', mock_open(read_data="invalid json")), \
              patch('utils.discord_file_utils.datetime') as mock_datetime:
             # Create a mock Path instance that returns True for exists()
             mock_path_instance = MagicMock()
@@ -536,7 +536,7 @@ class TestCalculateNextUpdateTime:
         mock_state_content = json.dumps(scheduler_state)
         
         with patch('utils.discord_file_utils.Path') as mock_path_class, \
-             patch('builtins.open', mock_open(read_data=mock_state_content)), \  # pyright: ignore[reportAny]
+             patch('builtins.open', mock_open(read_data=mock_state_content)), \
              patch('utils.discord_file_utils.datetime') as mock_datetime:
             # Create a mock Path instance that returns True for exists()
             mock_path_instance = MagicMock()
