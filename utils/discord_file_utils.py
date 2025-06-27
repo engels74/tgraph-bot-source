@@ -64,27 +64,32 @@ def calculate_next_update_time(update_days: int, fixed_update_time: str) -> date
 
             # Try to find the scheduler state file
             state_file = Path("data/scheduler_state.json")
+            # Only try to read the file if it actually exists
             if state_file.exists():
-                with state_file.open('r') as f:
-                    state_data = json.load(f)  # pyright: ignore[reportAny]
+                try:
+                    with state_file.open('r') as f:
+                        state_data = json.load(f)  # pyright: ignore[reportAny]
 
-                if 'state' in state_data and 'last_update' in state_data['state']:
-                    last_update_str = state_data['state']['last_update']  # pyright: ignore[reportAny]
-                    if last_update_str and isinstance(last_update_str, str):
-                        last_update = datetime.fromisoformat(last_update_str)
-                        
-                        # Respect the update_days interval if we have a last update
-                        min_next_update = last_update + timedelta(days=update_days)
-                        if next_update < min_next_update:
-                            # Find the next occurrence of the fixed time that is at or after min_next_update
-                            target_date = min_next_update.date()
-                            next_update = datetime.combine(target_date, update_time)
+                    if 'state' in state_data and 'last_update' in state_data['state']:
+                        last_update_str = state_data['state']['last_update']  # pyright: ignore[reportAny]
+                        if last_update_str and isinstance(last_update_str, str):
+                            last_update = datetime.fromisoformat(last_update_str)
                             
-                            # If the fixed time on the target date is before min_next_update, move to next day
+                            # Respect the update_days interval if we have a last update
+                            min_next_update = last_update + timedelta(days=update_days)
                             if next_update < min_next_update:
-                                next_update += timedelta(days=1)
+                                # Find the next occurrence of the fixed time that is at or after min_next_update
+                                target_date = min_next_update.date()
+                                next_update = datetime.combine(target_date, update_time)
+                                
+                                # If the fixed time on the target date is before min_next_update, move to next day
+                                if next_update < min_next_update:
+                                    next_update += timedelta(days=1)
+                except (OSError, json.JSONDecodeError, KeyError, ValueError) as file_error:
+                    # If we can't read or parse the state file, continue with the basic logic
+                    logger.debug(f"Could not load scheduler state for next update calculation: {file_error}")
         except Exception as e:
-            # If we can't load the state, continue with the basic logic
+            # If any other error occurs, continue with the basic logic
             logger.debug(f"Could not load scheduler state for next update calculation: {e}")
             
         return next_update

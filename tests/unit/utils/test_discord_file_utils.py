@@ -384,54 +384,66 @@ class TestCalculateNextUpdateTime:
     def test_fixed_time_update_past_today_no_state(self) -> None:
         """Test fixed time update when time has already passed today and no scheduler state."""
         # Mock no state file exists
-        with patch('pathlib.Path.exists', return_value=False):
-            # Use a time that should be in the past today
-            now = datetime.now()
-            past_time = now - timedelta(hours=2)
-            time_str = past_time.strftime("%H:%M")
+        with patch('utils.discord_file_utils.Path') as mock_path_class:
+            # Create a mock Path instance that returns False for exists()
+            mock_path_instance = MagicMock()
+            mock_path_instance.exists.return_value = False
+            mock_path_class.return_value = mock_path_instance
             
-            result = calculate_next_update_time(1, time_str)
-            
-            assert result is not None
-            # Should be tomorrow at the specified time
-            expected = now.replace(
-                hour=past_time.hour,
-                minute=past_time.minute,
-                second=0,
-                microsecond=0
-            ) + timedelta(days=1)
-            assert result == expected
+            # Mock the current time to be 15:30 (3:30 PM)
+            mock_now = datetime(2025, 6, 28, 15, 30, 0)
+            with patch('utils.discord_file_utils.datetime') as mock_datetime:
+                mock_datetime.now.return_value = mock_now
+                mock_datetime.combine = datetime.combine  # Keep the original combine method
+                
+                # Use a time that has definitely passed today (10:00 AM)
+                time_str = "10:00"
+                
+                result = calculate_next_update_time(1, time_str)
+                
+                assert result is not None
+                # Should be tomorrow at 10:00
+                expected = datetime(2025, 6, 29, 10, 0, 0)
+                assert result == expected
 
     def test_fixed_time_with_scheduler_state_respects_interval(self) -> None:
         """Test fixed time calculation respects scheduler state last_update and update_days."""
         # Create a scenario where fixed time has passed today, but we need to respect update_days interval
-        now = datetime.now()
-        past_time = now - timedelta(hours=2)
-        time_str = past_time.strftime("%H:%M")
+        mock_now = datetime(2025, 6, 28, 15, 30, 0)  # 3:30 PM
         
-        # Last update was yesterday at 16:14
-        last_update = now - timedelta(days=1, hours=1)  # 23 hours ago
+        # Last update was yesterday at 14:30 (1 day and 1 hour ago)
+        last_update = mock_now - timedelta(days=1, hours=1)
         
         scheduler_state = {
-            "last_update": last_update.isoformat(),
-            "next_update": (now + timedelta(days=1)).isoformat()
+            "state": {
+                "last_update": last_update.isoformat(),
+                "next_update": (mock_now + timedelta(days=1)).isoformat()
+            }
         }
         
         mock_state_content = json.dumps(scheduler_state)
         
-        with patch('pathlib.Path.exists', return_value=True), \
-             patch('builtins.open', mock_open(read_data=mock_state_content)):  # pyright: ignore[reportAny]
+        with patch('utils.discord_file_utils.Path') as mock_path_class, \
+             patch('builtins.open', mock_open(read_data=mock_state_content)), \
+             patch('utils.discord_file_utils.datetime') as mock_datetime:  # pyright: ignore[reportAny]
+            # Create a mock Path instance that returns True for exists()
+            mock_path_instance = MagicMock()
+            mock_path_instance.exists.return_value = True
+            mock_path_class.return_value = mock_path_instance
+            
+            # Mock datetime
+            mock_datetime.now.return_value = mock_now
+            mock_datetime.combine = datetime.combine
+            mock_datetime.fromisoformat = datetime.fromisoformat
+            
+            # Use a time that has passed today (10:00 AM)
+            time_str = "10:00"
             
             result = calculate_next_update_time(1, time_str)  # 1 day interval
             
             assert result is not None
-            # Should be tomorrow (respecting 1-day interval from last update)
-            expected = now.replace(
-                hour=past_time.hour,
-                minute=past_time.minute,
-                second=0,
-                microsecond=0
-            ) + timedelta(days=1)
+            # Should be tomorrow at 10:00 (respecting 1-day interval from last update)
+            expected = datetime(2025, 6, 29, 10, 0, 0)
             assert result == expected
 
     def test_fixed_time_with_scheduler_state_longer_interval(self) -> None:
@@ -487,74 +499,89 @@ class TestCalculateNextUpdateTime:
     def test_fixed_time_with_malformed_scheduler_state(self) -> None:
         """Test fixed time calculation with malformed scheduler state file."""
         # Mock malformed JSON in state file
-        with patch('pathlib.Path.exists', return_value=True), \
-             patch('builtins.open', mock_open(read_data="invalid json")):  # pyright: ignore[reportAny]
+        with patch('utils.discord_file_utils.Path') as mock_path_class, \
+             patch('builtins.open', mock_open(read_data="invalid json")), \
+             patch('utils.discord_file_utils.datetime') as mock_datetime:  # pyright: ignore[reportAny]
+            # Create a mock Path instance that returns True for exists()
+            mock_path_instance = MagicMock()
+            mock_path_instance.exists.return_value = True
+            mock_path_class.return_value = mock_path_instance
             
-            now = datetime.now()
-            past_time = now - timedelta(hours=2)
-            time_str = past_time.strftime("%H:%M")
+            # Mock the current time to be 15:30 (3:30 PM)
+            mock_now = datetime(2025, 6, 28, 15, 30, 0)
+            mock_datetime.now.return_value = mock_now
+            mock_datetime.combine = datetime.combine
+            
+            # Use a time that has definitely passed today (10:00 AM)
+            time_str = "10:00"
             
             result = calculate_next_update_time(1, time_str)
             
             assert result is not None
-            # Should fall back to simple logic: tomorrow at the specified time
-            expected = now.replace(
-                hour=past_time.hour,
-                minute=past_time.minute,
-                second=0,
-                microsecond=0
-            ) + timedelta(days=1)
+            # Should fall back to simple logic: tomorrow at 10:00
+            expected = datetime(2025, 6, 29, 10, 0, 0)
             assert result == expected
 
     def test_fixed_time_with_missing_last_update_in_state(self) -> None:
         """Test fixed time calculation when scheduler state lacks last_update."""
+        mock_now = datetime(2025, 6, 28, 15, 30, 0)  # 3:30 PM
+        
         scheduler_state = {
-            "next_update": (datetime.now() + timedelta(days=1)).isoformat()
-            # Missing last_update field
+            "state": {
+                "next_update": (mock_now + timedelta(days=1)).isoformat()
+                # Missing last_update field
+            }
         }
         
         mock_state_content = json.dumps(scheduler_state)
         
-        with patch('pathlib.Path.exists', return_value=True), \
-             patch('builtins.open', mock_open(read_data=mock_state_content)):  # pyright: ignore[reportAny]
+        with patch('utils.discord_file_utils.Path') as mock_path_class, \
+             patch('builtins.open', mock_open(read_data=mock_state_content)), \
+             patch('utils.discord_file_utils.datetime') as mock_datetime:  # pyright: ignore[reportAny]
+            # Create a mock Path instance that returns True for exists()
+            mock_path_instance = MagicMock()
+            mock_path_instance.exists.return_value = True
+            mock_path_class.return_value = mock_path_instance
             
-            now = datetime.now()
-            past_time = now - timedelta(hours=2)
-            time_str = past_time.strftime("%H:%M")
+            # Mock datetime
+            mock_datetime.now.return_value = mock_now
+            mock_datetime.combine = datetime.combine
+            
+            # Use a time that has definitely passed today (10:00 AM)
+            time_str = "10:00"
             
             result = calculate_next_update_time(1, time_str)
             
             assert result is not None
-            # Should fall back to simple logic: tomorrow at the specified time
-            expected = now.replace(
-                hour=past_time.hour,
-                minute=past_time.minute,
-                second=0,
-                microsecond=0
-            ) + timedelta(days=1)
+            # Should fall back to simple logic: tomorrow at 10:00
+            expected = datetime(2025, 6, 29, 10, 0, 0)
             assert result == expected
 
     def test_fixed_time_with_file_read_error(self) -> None:
         """Test fixed time calculation when scheduler state file cannot be read."""
-        with patch('pathlib.Path.exists', return_value=True), \
-             patch('builtins.open', side_effect=IOError("Permission denied")):
+        with patch('utils.discord_file_utils.Path') as mock_path_class, \
+             patch('builtins.open', side_effect=IOError("Permission denied")), \
+             patch('utils.discord_file_utils.datetime') as mock_datetime:
+            # Create a mock Path instance that returns True for exists()
+            mock_path_instance = MagicMock()
+            mock_path_instance.exists.return_value = True
+            mock_path_class.return_value = mock_path_instance
             
-            now = datetime.now()
-            past_time = now - timedelta(hours=2)
-            time_str = past_time.strftime("%H:%M")
+            # Mock the current time to be 15:30 (3:30 PM)
+            mock_now = datetime(2025, 6, 28, 15, 30, 0)
+            mock_datetime.now.return_value = mock_now
+            mock_datetime.combine = datetime.combine
+            
+            # Use a time that has definitely passed today (10:00 AM)
+            time_str = "10:00"
             
             result = calculate_next_update_time(1, time_str)
             
             assert result is not None
-            # Should fall back to simple logic: tomorrow at the specified time
-            expected = now.replace(
-                hour=past_time.hour,
-                minute=past_time.minute,
-                second=0,
-                microsecond=0
-            ) + timedelta(days=1)
+            # Should fall back to simple logic: tomorrow at 10:00
+            expected = datetime(2025, 6, 29, 10, 0, 0)
             assert result == expected
-        
+
     def test_invalid_time_format(self) -> None:
         """Test handling of invalid time formats."""
         result = calculate_next_update_time(7, "invalid")
