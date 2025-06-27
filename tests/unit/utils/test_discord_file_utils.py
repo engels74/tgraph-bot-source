@@ -387,13 +387,13 @@ class TestCalculateNextUpdateTime:
         with patch('utils.discord_file_utils.Path') as mock_path_class:
             # Create a mock Path instance that returns False for exists()
             mock_path_instance = MagicMock()
-            mock_path_instance.exists.return_value = False
+            mock_path_instance.exists.return_value = False  # pyright: ignore[reportAny]
             mock_path_class.return_value = mock_path_instance
             
             # Mock the current time to be 15:30 (3:30 PM)
             mock_now = datetime(2025, 6, 28, 15, 30, 0)
             with patch('utils.discord_file_utils.datetime') as mock_datetime:
-                mock_datetime.now.return_value = mock_now
+                mock_datetime.now.return_value = mock_now  # pyright: ignore[reportAny]
                 mock_datetime.combine = datetime.combine  # Keep the original combine method
                 
                 # Use a time that has definitely passed today (10:00 AM)
@@ -424,15 +424,15 @@ class TestCalculateNextUpdateTime:
         mock_state_content = json.dumps(scheduler_state)
         
         with patch('utils.discord_file_utils.Path') as mock_path_class, \
-             patch('builtins.open', mock_open(read_data=mock_state_content)), \
-             patch('utils.discord_file_utils.datetime') as mock_datetime:  # pyright: ignore[reportAny]
+             patch('builtins.open', mock_open(read_data=mock_state_content)), \  # pyright: ignore[reportAny]
+             patch('utils.discord_file_utils.datetime') as mock_datetime:
             # Create a mock Path instance that returns True for exists()
             mock_path_instance = MagicMock()
-            mock_path_instance.exists.return_value = True
+            mock_path_instance.exists.return_value = True  # pyright: ignore[reportAny]
             mock_path_class.return_value = mock_path_instance
             
-            # Mock datetime
-            mock_datetime.now.return_value = mock_now
+            # Mock datetime with proper typing
+            mock_datetime.now.return_value = mock_now  # pyright: ignore[reportAny]
             mock_datetime.combine = datetime.combine
             mock_datetime.fromisoformat = datetime.fromisoformat
             
@@ -500,16 +500,16 @@ class TestCalculateNextUpdateTime:
         """Test fixed time calculation with malformed scheduler state file."""
         # Mock malformed JSON in state file
         with patch('utils.discord_file_utils.Path') as mock_path_class, \
-             patch('builtins.open', mock_open(read_data="invalid json")), \
-             patch('utils.discord_file_utils.datetime') as mock_datetime:  # pyright: ignore[reportAny]
+             patch('builtins.open', mock_open(read_data="invalid json")), \  # pyright: ignore[reportAny]
+             patch('utils.discord_file_utils.datetime') as mock_datetime:
             # Create a mock Path instance that returns True for exists()
             mock_path_instance = MagicMock()
-            mock_path_instance.exists.return_value = True
+            mock_path_instance.exists.return_value = True  # pyright: ignore[reportAny]
             mock_path_class.return_value = mock_path_instance
             
             # Mock the current time to be 15:30 (3:30 PM)
             mock_now = datetime(2025, 6, 28, 15, 30, 0)
-            mock_datetime.now.return_value = mock_now
+            mock_datetime.now.return_value = mock_now  # pyright: ignore[reportAny]
             mock_datetime.combine = datetime.combine
             
             # Use a time that has definitely passed today (10:00 AM)
@@ -536,15 +536,15 @@ class TestCalculateNextUpdateTime:
         mock_state_content = json.dumps(scheduler_state)
         
         with patch('utils.discord_file_utils.Path') as mock_path_class, \
-             patch('builtins.open', mock_open(read_data=mock_state_content)), \
-             patch('utils.discord_file_utils.datetime') as mock_datetime:  # pyright: ignore[reportAny]
+             patch('builtins.open', mock_open(read_data=mock_state_content)), \  # pyright: ignore[reportAny]
+             patch('utils.discord_file_utils.datetime') as mock_datetime:
             # Create a mock Path instance that returns True for exists()
             mock_path_instance = MagicMock()
-            mock_path_instance.exists.return_value = True
+            mock_path_instance.exists.return_value = True  # pyright: ignore[reportAny]
             mock_path_class.return_value = mock_path_instance
             
             # Mock datetime
-            mock_datetime.now.return_value = mock_now
+            mock_datetime.now.return_value = mock_now  # pyright: ignore[reportAny]
             mock_datetime.combine = datetime.combine
             
             # Use a time that has definitely passed today (10:00 AM)
@@ -564,12 +564,12 @@ class TestCalculateNextUpdateTime:
              patch('utils.discord_file_utils.datetime') as mock_datetime:
             # Create a mock Path instance that returns True for exists()
             mock_path_instance = MagicMock()
-            mock_path_instance.exists.return_value = True
+            mock_path_instance.exists.return_value = True  # pyright: ignore[reportAny]
             mock_path_class.return_value = mock_path_instance
             
             # Mock the current time to be 15:30 (3:30 PM)
             mock_now = datetime(2025, 6, 28, 15, 30, 0)
-            mock_datetime.now.return_value = mock_now
+            mock_datetime.now.return_value = mock_now  # pyright: ignore[reportAny]
             mock_datetime.combine = datetime.combine
             
             # Use a time that has definitely passed today (10:00 AM)
