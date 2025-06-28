@@ -78,11 +78,16 @@ class TestSchedulerCog(BaseCommandCog):
         Args:
             interaction: The Discord interaction
         """
-        # Check cooldowns first
-        is_on_cooldown, retry_after = self.check_cooldowns(interaction)
-        if is_on_cooldown:
-            cooldown_embed = create_cooldown_embed(i18n.translate("test scheduler"), retry_after)
-            _ = await interaction.response.send_message(embed=cooldown_embed, ephemeral=True)
+        try:
+            # Check cooldowns first
+            is_on_cooldown, retry_after = self.check_cooldowns(interaction)
+            if is_on_cooldown:
+                cooldown_embed = create_cooldown_embed(i18n.translate("test scheduler"), retry_after)
+                _ = await interaction.response.send_message(embed=cooldown_embed, ephemeral=True)
+                return
+        except Exception as e:
+            # Handle configuration errors that occur during cooldown checks
+            await self.handle_command_error(interaction, e, "test_scheduler")
             return
 
         # Acknowledge the command immediately

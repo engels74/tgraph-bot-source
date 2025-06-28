@@ -89,11 +89,15 @@ class BaseCommandCog(commands.Cog):
         # Import here to avoid circular imports
         from main import TGraphBot
         
-        # Check if the bot is the expected TGraphBot type
-        # Use class name check to handle potential circular import issues during extension loading
-        if (isinstance(self.bot, TGraphBot) or 
-            (hasattr(self.bot, '__class__') and self.bot.__class__.__name__ == 'TGraphBot')):
-            return cast("TGraphBot", self.bot)
+        # Strict type checking - only allow actual TGraphBot instances
+        if isinstance(self.bot, TGraphBot):
+            return self.bot
+        
+        # Additional check for class name (for edge cases during extension loading)
+        if hasattr(self.bot, '__class__') and self.bot.__class__.__name__ == 'TGraphBot':
+            # Verify it has the required TGraphBot attributes
+            if hasattr(self.bot, 'config_manager') and hasattr(self.bot, 'update_tracker'):
+                return cast("TGraphBot", self.bot)
         
         raise TypeError(f"Expected TGraphBot instance, got {type(self.bot)}")
 

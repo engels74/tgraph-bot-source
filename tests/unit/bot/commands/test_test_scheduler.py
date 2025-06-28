@@ -43,9 +43,12 @@ class TestTestSchedulerCog:
         """Test tgraph_bot property with wrong bot type."""
         regular_bot = commands.Bot(command_prefix="!", intents=discord.Intents.default())
 
-        # The TestSchedulerCog constructor will fail when trying to access tgraph_bot
+        # Create the cog (this should succeed)
+        cog = TestSchedulerCog(regular_bot)
+        
+        # Accessing tgraph_bot property should raise TypeError
         with pytest.raises(TypeError, match="Expected TGraphBot instance"):
-            _ = TestSchedulerCog(regular_bot)
+            _ = cog.tgraph_bot
 
     @pytest.mark.asyncio
     async def test_test_scheduler_success(
