@@ -47,12 +47,22 @@ def validate_config_file_path(config_file_str: str) -> Path:
     Raises:
         PathValidationError: If the configuration file path is invalid
     """
-    config_file = Path(config_file_str).resolve()
+    try:
+        # Expand tilde if present, then resolve
+        config_file = Path(config_file_str).expanduser().resolve()
+    except (OSError, ValueError) as e:
+        raise PathValidationError(f"Invalid config file path: {e}") from e
+    
+    # Check if the path is a directory
+    if config_file.exists() and config_file.is_dir():
+        raise PathValidationError(
+            f"Config file path exists but is not a file: {config_file}"
+        )
     
     # Check if parent directory exists
     if not config_file.parent.exists():
         raise PathValidationError(
-            f"Configuration file parent directory does not exist: {config_file.parent}"
+            f"Parent directory for config file does not exist: {config_file.parent}"
         )
     
     return config_file
