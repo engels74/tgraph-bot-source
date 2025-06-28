@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib.axes import Axes
+from matplotlib.container import BarContainer
 
 from .base_graph import BaseGraph
 from .utils import (
@@ -309,16 +310,20 @@ class PlayCountByMonthGraph(BaseGraph):
             response_data: The data section from the API response
         """
         # Extract categories (months) and series (media types with data)
-        categories = response_data.get('categories', [])
-        series = response_data.get('series', [])
-        
-        if not isinstance(categories, list) or not isinstance(series, list):
+        categories_raw = response_data.get('categories', [])
+        series_raw = response_data.get('series', [])
+
+        if not isinstance(categories_raw, list) or not isinstance(series_raw, list):
             self._handle_empty_data_case(ax)
             return
-            
-        if not categories or not series:
+
+        if not categories_raw or not series_raw:
             self._handle_empty_data_case(ax)
             return
+
+        # Type-safe assignments after validation
+        categories: list[str] = [str(cat) for cat in categories_raw]  # pyright: ignore[reportUnknownArgumentType,reportUnknownVariableType] # external API data
+        series: list[object] = series_raw  # pyright: ignore[reportUnknownVariableType] # external API data
 
         # Prepare data for stacked bars
         media_type_data: dict[str, list[int]] = {}
@@ -326,13 +331,13 @@ class PlayCountByMonthGraph(BaseGraph):
         display_info = get_media_type_display_info()
         
         # Process series data from API
-        for series_item in series:  # pyright: ignore[reportUnknownVariableType] # external API data
+        for series_item in series:
             if not isinstance(series_item, dict):
                 continue
-                
+
             series_name = str(series_item.get('name', ''))  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType] # external API data
             series_data_raw = series_item.get('data', [])  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType] # external API data
-            
+
             if not isinstance(series_data_raw, list) or len(series_data_raw) != len(categories):  # pyright: ignore[reportUnknownArgumentType] # external API data
                 continue
             
@@ -340,14 +345,14 @@ class PlayCountByMonthGraph(BaseGraph):
             media_type = 'tv' if series_name.lower() in ['tv', 'tv series'] else 'movie'
             
             # Convert data to integers
-            values = []
+            values_list: list[int] = []
             for count in series_data_raw:  # pyright: ignore[reportUnknownVariableType] # external API data
                 if isinstance(count, (int, float)):
-                    values.append(int(count))
+                    values_list.append(int(count))
                 else:
-                    values.append(0)
-            
-            media_type_data[media_type] = values
+                    values_list.append(0)
+
+            media_type_data[media_type] = values_list
             
             # Get colors for media types
             if media_type == 'tv':
@@ -383,8 +388,8 @@ class PlayCountByMonthGraph(BaseGraph):
 
         # Create stacked bars
         bottom = np.zeros(len(categories))
-        bar_containers = []
-        
+        bar_containers: list[tuple[BarContainer, str, np.ndarray]] = []
+
         for media_type in ordered_media_types:
             values = np.array(media_type_data[media_type])
             color = media_type_colors[media_type]
@@ -395,11 +400,11 @@ class PlayCountByMonthGraph(BaseGraph):
             else:
                 label = media_type.title()
                 
-            bars = ax.bar(  # pyright: ignore[reportUnknownMemberType]
-                x, values, width, 
+            bars = ax.bar(  # pyright: ignore[reportUnknownMemberType] # matplotlib complex type signature
+                x, values, width,
                 label=label,
-                bottom=bottom, 
-                color=color, 
+                bottom=bottom,
+                color=color,
                 alpha=0.8,
                 edgecolor='white',
                 linewidth=1.5
@@ -412,7 +417,7 @@ class PlayCountByMonthGraph(BaseGraph):
         _ = ax.set_ylabel('Play Count', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
         _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)  # pyright: ignore[reportUnknownMemberType]
         _ = ax.set_xticks(x)  # pyright: ignore[reportUnknownMemberType]
-        _ = ax.set_xticklabels(categories, rotation=45, ha='right')  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType] # external API data
+        _ = ax.set_xticklabels(categories, rotation=45, ha='right')  # pyright: ignore[reportUnknownMemberType] # matplotlib complex type signature
 
         # Adjust tick parameters
         ax.tick_params(axis='x', labelsize=12)  # pyright: ignore[reportUnknownMemberType]
@@ -437,7 +442,7 @@ class PlayCountByMonthGraph(BaseGraph):
                 
                 # Annotate each segment
                 for bars, media_type, values in bar_containers:
-                    value = values[i]
+                    value = float(values[i])  # pyright: ignore[reportAny] # numpy array indexing returns Any
                     if value > 0:
                         # Position annotation in the middle of this segment
                         self.add_bar_value_annotation(

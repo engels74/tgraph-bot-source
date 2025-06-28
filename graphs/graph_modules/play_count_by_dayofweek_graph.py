@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib.axes import Axes
+from matplotlib.container import BarContainer
 
 from .base_graph import BaseGraph
 from .utils import (
@@ -343,14 +344,14 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
         # Prepare data for each media type
         bottom = np.zeros(len(day_order))
         bars_data: list[tuple[str, np.ndarray, str]] = []  # (media_type, values, color)
-        
+
         for media_type in ordered_media_types:
             values = np.array([separated_data[media_type].get(day, 0) for day in day_order])
             color = media_type_colors[media_type]
             bars_data.append((media_type, values, color))
 
         # Create stacked bars
-        bar_containers = []
+        bar_containers: list[tuple[BarContainer, str, np.ndarray]] = []
         for media_type, values, color in bars_data:
             # Get display name for legend
             if media_type in display_info:
@@ -358,11 +359,11 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
             else:
                 label = media_type.title()
                 
-            bars = ax.bar(  # pyright: ignore[reportUnknownMemberType]
-                x, values, width, 
+            bars = ax.bar(  # pyright: ignore[reportUnknownMemberType] # matplotlib complex type signature
+                x, values, width,
                 label=label,
-                bottom=bottom, 
-                color=color, 
+                bottom=bottom,
+                color=color,
                 alpha=0.8,
                 edgecolor='white',
                 linewidth=1.5
@@ -391,12 +392,12 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
         annotate_enabled = self.get_config_value('ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK', False)
         if annotate_enabled:
             # Annotate individual segments and totals
-            for i, day in enumerate(day_order):
+            for i, _ in enumerate(day_order):
                 cumulative_height = 0.0
-                
+
                 # Annotate each segment
                 for bars, media_type, values in bar_containers:
-                    value = values[i]
+                    value = float(values[i])  # pyright: ignore[reportAny] # numpy array indexing returns Any
                     if value > 0:
                         # Position annotation in the middle of this segment
                         self.add_bar_value_annotation(
