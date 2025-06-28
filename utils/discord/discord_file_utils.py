@@ -78,13 +78,12 @@ def calculate_next_update_time(update_days: int, fixed_update_time: str) -> date
                             # Respect the update_days interval if we have a last update
                             min_next_update = last_update + timedelta(days=update_days)
                             if next_update < min_next_update:
-                                # Find the next occurrence of the fixed time that is at or after min_next_update
-                                target_date = min_next_update.date()
-                                next_update = datetime.combine(target_date, update_time)
+                                # Find next occurrence that respects the interval (matches main scheduler logic)
+                                days_to_add = (min_next_update.date() - next_update.date()).days
+                                next_update += timedelta(days=days_to_add)
                                 
-                                # If the fixed time on the target date is before min_next_update, move to next day
-                                if next_update < min_next_update:
-                                    next_update += timedelta(days=1)
+                                # Ensure we still have the correct time after adding days
+                                next_update = datetime.combine(next_update.date(), update_time)
                 except (OSError, json.JSONDecodeError, KeyError, ValueError) as file_error:
                     # If we can't read or parse the state file, continue with the basic logic
                     logger.debug(f"Could not load scheduler state for next update calculation: {file_error}")
