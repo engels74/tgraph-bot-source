@@ -11,14 +11,14 @@ import discord
 import pytest
 from discord.ext import commands
 
-from bot.commands.test_scheduler import TestSchedulerCog
+from bot.commands.test_scheduler import SchedulerTestCog
 from config.schema import TGraphBotConfig
 from main import TGraphBot
 from tests.utils.test_helpers import create_config_manager_with_config, create_mock_interaction
 
 
 class TestTestSchedulerCog:
-    """Test cases for the TestSchedulerCog class."""
+    """Test cases for the SchedulerTestCog class."""
 
     @pytest.fixture
     def mock_bot(self, base_config: TGraphBotConfig) -> TGraphBot:
@@ -28,13 +28,13 @@ class TestTestSchedulerCog:
         return bot
 
     @pytest.fixture
-    def test_scheduler_cog(self, mock_bot: TGraphBot) -> TestSchedulerCog:
-        """Create a TestSchedulerCog instance for testing."""
-        return TestSchedulerCog(mock_bot)
+    def test_scheduler_cog(self, mock_bot: TGraphBot) -> SchedulerTestCog:
+        """Create a SchedulerTestCog instance for testing."""
+        return SchedulerTestCog(mock_bot)
 
     def test_init(self, mock_bot: TGraphBot) -> None:
-        """Test TestSchedulerCog initialization."""
-        cog = TestSchedulerCog(mock_bot)
+        """Test SchedulerTestCog initialization."""
+        cog = SchedulerTestCog(mock_bot)
         assert cog.bot is mock_bot
         assert isinstance(cog.tgraph_bot, TGraphBot)
         assert cog.cooldown_config is not None
@@ -44,7 +44,7 @@ class TestTestSchedulerCog:
         regular_bot = commands.Bot(command_prefix="!", intents=discord.Intents.default())
 
         # Create the cog (this should succeed)
-        cog = TestSchedulerCog(regular_bot)
+        cog = SchedulerTestCog(regular_bot)
         
         # Accessing tgraph_bot property should raise TypeError
         with pytest.raises(TypeError, match="Expected TGraphBot instance"):
@@ -53,7 +53,7 @@ class TestTestSchedulerCog:
     @pytest.mark.asyncio
     async def test_test_scheduler_success(
         self,
-        test_scheduler_cog: TestSchedulerCog
+        test_scheduler_cog: SchedulerTestCog
     ) -> None:
         """Test successful scheduler test execution."""
         # Create mock interaction
@@ -90,7 +90,7 @@ class TestTestSchedulerCog:
     @pytest.mark.asyncio
     async def test_test_scheduler_force_update_failure(
         self,
-        test_scheduler_cog: TestSchedulerCog
+        test_scheduler_cog: SchedulerTestCog
     ) -> None:
         """Test scheduler test when force_update fails."""
         # Create mock interaction
@@ -129,7 +129,7 @@ class TestTestSchedulerCog:
     @pytest.mark.asyncio
     async def test_test_scheduler_cooldown_active(
         self,
-        test_scheduler_cog: TestSchedulerCog
+        test_scheduler_cog: SchedulerTestCog
     ) -> None:
         """Test scheduler test when command is on cooldown."""
         # Create mock interaction
@@ -157,7 +157,7 @@ class TestTestSchedulerCog:
     @pytest.mark.asyncio
     async def test_test_scheduler_config_error(
         self,
-        test_scheduler_cog: TestSchedulerCog
+        test_scheduler_cog: SchedulerTestCog
     ) -> None:
         """Test scheduler test when config cannot be loaded."""
         # Create mock interaction
@@ -180,7 +180,7 @@ class TestTestSchedulerCog:
     @pytest.mark.asyncio
     async def test_test_scheduler_embed_content(
         self,
-        test_scheduler_cog: TestSchedulerCog
+        test_scheduler_cog: SchedulerTestCog
     ) -> None:
         """Test that the scheduler test produces correctly formatted embeds."""
         # Create mock interaction
@@ -222,7 +222,7 @@ class TestTestSchedulerCog:
     @pytest.mark.asyncio 
     async def test_test_scheduler_permissions_check(
         self,
-        test_scheduler_cog: TestSchedulerCog
+        test_scheduler_cog: SchedulerTestCog
     ) -> None:
         """Test that the command has proper permission checks."""
         # Verify the command has the correct permissions set

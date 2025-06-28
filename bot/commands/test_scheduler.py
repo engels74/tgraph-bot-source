@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class TestSchedulerCog(BaseCommandCog):
+class SchedulerTestCog(BaseCommandCog):
     """
     Cog for testing the scheduled update functionality.
 
@@ -227,4 +227,4 @@ async def setup(bot: commands.Bot) -> None:
     Args:
         bot: The Discord bot instance
     """
-    await bot.add_cog(TestSchedulerCog(bot)) 
+    await bot.add_cog(SchedulerTestCog(bot)) 
