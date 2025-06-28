@@ -724,3 +724,439 @@ class TestMainFunctionEnhancements:
             await main()
             # Bot should be closed in finally block
             mock_close.assert_called()
+
+
+class TestAutomatedGraphUpdate(AsyncTestBase):
+    """Test cases for the automated graph update functionality."""
+
+    @override
+    def setup_method(self) -> None:
+        """Set up test method with async utilities."""
+        super().setup_method()
+
+    @override
+    def teardown_method(self) -> None:
+        """Clean up after test method."""
+        super().teardown_method()
+
+    @pytest.mark.asyncio
+    async def test_automated_graph_update_success(self, base_config: TGraphBotConfig) -> None:
+        """Test successful automated graph update with new 3-step process."""
+        config_manager = create_config_manager_with_config(base_config)
+        bot = TGraphBot(config_manager)
+        
+        # Create mock TextChannel - proper Discord mock
+        mock_channel = MagicMock(spec=discord.TextChannel)
+        mock_channel.name = "test-channel"
+        
+        # Mock bot user
+        mock_user = MagicMock()
+        mock_user.id = 123456789
+        
+        with patch.object(bot, 'get_channel', return_value=mock_channel), \
+             patch.object(type(bot), 'user', new_callable=lambda: mock_user), \
+             patch.object(bot, '_cleanup_bot_messages', new_callable=AsyncMock) as mock_cleanup, \
+             patch('graphs.graph_manager.GraphManager') as mock_graph_manager_class, \
+             patch.object(bot, '_post_graphs_to_channel', new_callable=AsyncMock, return_value=3) as mock_post:
+            
+            # Setup GraphManager mock
+            mock_graph_manager = AsyncMock()
+            mock_graph_manager.generate_all_graphs = AsyncMock(return_value=['graph1.png', 'graph2.png', 'graph3.png'])
+            mock_graph_manager_class.return_value.__aenter__ = AsyncMock(return_value=mock_graph_manager)
+            mock_graph_manager_class.return_value.__aexit__ = AsyncMock(return_value=None)
+            
+            await bot._automated_graph_update()
+            
+            # Verify the 3-step process: Cleanup → Generate → Post
+            mock_cleanup.assert_called_once_with(mock_channel)
+            mock_graph_manager.generate_all_graphs.assert_called_once_with(
+                max_retries=3,
+                timeout_seconds=300.0
+            )
+            mock_post.assert_called_once_with(mock_channel, ['graph1.png', 'graph2.png', 'graph3.png'])
+
+    @pytest.mark.asyncio
+    async def test_automated_graph_update_channel_not_found(self, base_config: TGraphBotConfig) -> None:
+        """Test automated graph update when channel is not found."""
+        config_manager = create_config_manager_with_config(base_config)
+        bot = TGraphBot(config_manager)
+        
+        with patch.object(bot, 'get_channel', return_value=None), \
+             patch.object(bot, '_cleanup_bot_messages', new_callable=AsyncMock) as mock_cleanup, \
+             patch('graphs.graph_manager.GraphManager') as mock_graph_manager_class:
+            
+            await bot._automated_graph_update()
+            
+            # Should not proceed with cleanup or graph generation
+            mock_cleanup.assert_not_called()
+            mock_graph_manager_class.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_automated_graph_update_wrong_channel_type(self, base_config: TGraphBotConfig) -> None:
+        """Test automated graph update when channel is not a text channel."""
+        config_manager = create_config_manager_with_config(base_config)
+        bot = TGraphBot(config_manager)
+        
+        # Create a voice channel mock (not a TextChannel)
+        mock_channel = MagicMock(spec=discord.VoiceChannel)
+        mock_channel.name = "voice-channel"
+        
+        with patch.object(bot, 'get_channel', return_value=mock_channel), \
+             patch.object(bot, '_cleanup_bot_messages', new_callable=AsyncMock) as mock_cleanup:
+            
+            await bot._automated_graph_update()
+            
+            # Should not proceed with cleanup or graph generation
+            mock_cleanup.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_automated_graph_update_cleanup_error(self, base_config: TGraphBotConfig) -> None:
+        """Test automated graph update when cleanup fails."""
+        config_manager = create_config_manager_with_config(base_config)
+        bot = TGraphBot(config_manager)
+        
+        mock_channel = MagicMock(spec=discord.TextChannel)
+        mock_channel.name = "test-channel"
+        mock_user = MagicMock()
+        mock_user.id = 123456789
+        
+        with patch.object(bot, 'get_channel', return_value=mock_channel), \
+             patch.object(type(bot), 'user', new_callable=lambda: mock_user), \
+             patch.object(bot, '_cleanup_bot_messages', new_callable=AsyncMock, side_effect=Exception("Cleanup failed")) as mock_cleanup:
+            
+            # Should raise the cleanup error
+            with pytest.raises(Exception, match="Cleanup failed"):
+                await bot._automated_graph_update()
+            
+            mock_cleanup.assert_called_once_with(mock_channel)
+
+    @pytest.mark.asyncio
+    async def test_automated_graph_update_no_graphs_generated(self, base_config: TGraphBotConfig) -> None:
+        """Test automated graph update when no graphs are generated."""
+        config_manager = create_config_manager_with_config(base_config)
+        bot = TGraphBot(config_manager)
+        
+        mock_channel = MagicMock(spec=discord.TextChannel)
+        mock_channel.name = "test-channel"
+        mock_user = MagicMock()
+        mock_user.id = 123456789
+        
+        with patch.object(bot, 'get_channel', return_value=mock_channel), \
+             patch.object(type(bot), 'user', new_callable=lambda: mock_user), \
+             patch.object(bot, '_cleanup_bot_messages', new_callable=AsyncMock) as mock_cleanup, \
+             patch('graphs.graph_manager.GraphManager') as mock_graph_manager_class, \
+             patch.object(bot, '_post_graphs_to_channel', new_callable=AsyncMock) as mock_post:
+            
+            # Setup GraphManager mock to return empty list
+            mock_graph_manager = AsyncMock()
+            mock_graph_manager.generate_all_graphs = AsyncMock(return_value=[])
+            mock_graph_manager_class.return_value.__aenter__ = AsyncMock(return_value=mock_graph_manager)
+            mock_graph_manager_class.return_value.__aexit__ = AsyncMock(return_value=None)
+            
+            await bot._automated_graph_update()
+            
+            # Should cleanup and attempt generation, but not post
+            mock_cleanup.assert_called_once_with(mock_channel)
+            mock_graph_manager.generate_all_graphs.assert_called_once()
+            mock_post.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_automated_graph_update_graph_generation_error(self, base_config: TGraphBotConfig) -> None:
+        """Test automated graph update when graph generation fails."""
+        config_manager = create_config_manager_with_config(base_config)
+        bot = TGraphBot(config_manager)
+        
+        mock_channel = MagicMock(spec=discord.TextChannel)
+        mock_channel.name = "test-channel"
+        mock_user = MagicMock()
+        mock_user.id = 123456789
+        
+        with patch.object(bot, 'get_channel', return_value=mock_channel), \
+             patch.object(type(bot), 'user', new_callable=lambda: mock_user), \
+             patch.object(bot, '_cleanup_bot_messages', new_callable=AsyncMock) as mock_cleanup, \
+             patch('graphs.graph_manager.GraphManager') as mock_graph_manager_class:
+            
+            # Setup GraphManager mock to raise exception
+            mock_graph_manager = AsyncMock()
+            mock_graph_manager.generate_all_graphs = AsyncMock(side_effect=Exception("Graph generation failed"))
+            mock_graph_manager_class.return_value.__aenter__ = AsyncMock(return_value=mock_graph_manager)
+            mock_graph_manager_class.return_value.__aexit__ = AsyncMock(return_value=None)
+            
+            # Should raise the graph generation error
+            with pytest.raises(Exception, match="Graph generation failed"):
+                await bot._automated_graph_update()
+            
+            # Should have cleaned up first
+            mock_cleanup.assert_called_once_with(mock_channel)
+
+
+class TestCleanupBotMessages(AsyncTestBase):
+    """Test cases for the cleanup bot messages functionality."""
+
+    @override
+    def setup_method(self) -> None:
+        """Set up test method with async utilities."""
+        super().setup_method()
+
+    @override
+    def teardown_method(self) -> None:
+        """Clean up after test method."""
+        super().teardown_method()
+
+    @pytest.mark.asyncio
+    async def test_cleanup_bot_messages_success(self) -> None:
+        """Test successful cleanup of bot messages."""
+        config_manager = ConfigManager()
+        bot = TGraphBot(config_manager)
+        
+        # Create mock channel and messages
+        mock_channel = MagicMock()
+        mock_channel.name = "test-channel"
+        
+        # Create mock bot user
+        mock_bot_user = MagicMock()
+        mock_bot_user.id = 123456789
+        
+        # Create mock guild and permissions
+        mock_guild_member = MagicMock()
+        mock_guild_member.permissions_for.return_value.manage_messages = True
+        mock_channel.guild.me = mock_guild_member
+        
+        # Create mock messages - some from bot, some from users
+        mock_bot_message1 = MagicMock()
+        mock_bot_message1.author.id = 123456789  # Bot's message
+        mock_bot_message1.id = "msg1"
+        mock_bot_message1.delete = AsyncMock()
+        
+        mock_bot_message2 = MagicMock()
+        mock_bot_message2.author.id = 123456789  # Bot's message
+        mock_bot_message2.id = "msg2"
+        mock_bot_message2.delete = AsyncMock()
+        
+        mock_user_message = MagicMock()
+        mock_user_message.author.id = 987654321  # User's message
+        mock_user_message.id = "user_msg"
+        mock_user_message.delete = AsyncMock()
+        
+        # Mock the async iterator for channel history
+        async def mock_history(*args, **kwargs):
+            for message in [mock_bot_message1, mock_user_message, mock_bot_message2]:
+                yield message
+        
+        mock_channel.history = mock_history
+        
+        with patch.object(type(bot), 'user', new_callable=lambda: mock_bot_user):
+            await bot._cleanup_bot_messages(mock_channel)
+            
+            # Should only delete bot's messages
+            mock_bot_message1.delete.assert_called_once()
+            mock_bot_message2.delete.assert_called_once()
+            mock_user_message.delete.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_cleanup_bot_messages_no_manage_permissions(self) -> None:
+        """Test cleanup when bot lacks manage messages permission."""
+        config_manager = ConfigManager()
+        bot = TGraphBot(config_manager)
+        
+        mock_channel = MagicMock()
+        mock_channel.name = "test-channel"
+        
+        mock_bot_user = MagicMock()
+        mock_bot_user.id = 123456789
+        
+        # Mock guild member without manage_messages permission
+        mock_guild_member = MagicMock()
+        mock_guild_member.permissions_for.return_value.manage_messages = False
+        mock_channel.guild.me = mock_guild_member
+        
+        # Create mock bot message
+        mock_bot_message = MagicMock()
+        mock_bot_message.author.id = 123456789
+        mock_bot_message.id = "msg1"
+        mock_bot_message.delete = AsyncMock()
+        
+        async def mock_history(*args, **kwargs):
+            for message in [mock_bot_message]:
+                yield message
+        
+        mock_channel.history = mock_history
+        
+        with patch.object(type(bot), 'user', new_callable=lambda: mock_bot_user):
+            await bot._cleanup_bot_messages(mock_channel)
+            
+            # Should still attempt to delete bot's own messages
+            mock_bot_message.delete.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_cleanup_bot_messages_forbidden_error(self) -> None:
+        """Test cleanup when delete operation is forbidden."""
+        config_manager = ConfigManager()
+        bot = TGraphBot(config_manager)
+        
+        mock_channel = MagicMock()
+        mock_channel.name = "test-channel"
+        
+        mock_bot_user = MagicMock()
+        mock_bot_user.id = 123456789
+        
+        mock_guild_member = MagicMock()
+        mock_guild_member.permissions_for.return_value.manage_messages = True
+        mock_channel.guild.me = mock_guild_member
+        
+        # Create mock bot message that raises Forbidden when deleted
+        mock_bot_message = MagicMock()
+        mock_bot_message.author.id = 123456789
+        mock_bot_message.id = "msg1"
+        mock_bot_message.delete = AsyncMock(side_effect=discord.Forbidden(response=MagicMock(), message="Forbidden"))
+        
+        async def mock_history(*args, **kwargs):
+            for message in [mock_bot_message]:
+                yield message
+        
+        mock_channel.history = mock_history
+        
+        with patch.object(type(bot), 'user', new_callable=lambda: mock_bot_user):
+            # Should not raise exception, just log warning
+            await bot._cleanup_bot_messages(mock_channel)
+            
+            mock_bot_message.delete.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_cleanup_bot_messages_rate_limiting(self) -> None:
+        """Test cleanup with rate limiting (429 error)."""
+        config_manager = ConfigManager()
+        bot = TGraphBot(config_manager)
+        
+        mock_channel = MagicMock()
+        mock_channel.name = "test-channel"
+        
+        mock_bot_user = MagicMock()
+        mock_bot_user.id = 123456789
+        
+        mock_guild_member = MagicMock()
+        mock_guild_member.permissions_for.return_value.manage_messages = True
+        mock_channel.guild.me = mock_guild_member
+        
+        # Create mock bot message that raises rate limit error
+        mock_rate_limit_error = discord.HTTPException(response=MagicMock(), message="Rate limited")
+        mock_rate_limit_error.status = 429
+        # Add retry_after attribute to the mock
+        setattr(mock_rate_limit_error, 'retry_after', 2.0)
+        
+        mock_bot_message = MagicMock()
+        mock_bot_message.author.id = 123456789
+        mock_bot_message.id = "msg1"
+        mock_bot_message.delete = AsyncMock(side_effect=mock_rate_limit_error)
+        
+        async def mock_history(*args, **kwargs):
+            for message in [mock_bot_message]:
+                yield message
+        
+        mock_channel.history = mock_history
+        
+        with patch.object(type(bot), 'user', new_callable=lambda: mock_bot_user), \
+             patch('asyncio.sleep', new_callable=AsyncMock) as mock_sleep:
+            
+            await bot._cleanup_bot_messages(mock_channel)
+            
+            mock_bot_message.delete.assert_called_once()
+            # Should sleep for retry_after duration
+            mock_sleep.assert_called_with(2.0)
+
+    @pytest.mark.asyncio
+    async def test_cleanup_bot_messages_not_found_error(self) -> None:
+        """Test cleanup when message is already deleted (NotFound error)."""
+        config_manager = ConfigManager()
+        bot = TGraphBot(config_manager)
+        
+        mock_channel = MagicMock()
+        mock_channel.name = "test-channel"
+        
+        mock_bot_user = MagicMock()
+        mock_bot_user.id = 123456789
+        
+        mock_guild_member = MagicMock()
+        mock_guild_member.permissions_for.return_value.manage_messages = True
+        mock_channel.guild.me = mock_guild_member
+        
+        # Create mock bot message that raises NotFound when deleted
+        mock_bot_message = MagicMock()
+        mock_bot_message.author.id = 123456789
+        mock_bot_message.id = "msg1"
+        mock_bot_message.delete = AsyncMock(side_effect=discord.NotFound(response=MagicMock(), message="Not found"))
+        
+        async def mock_history(*args, **kwargs):
+            for message in [mock_bot_message]:
+                yield message
+        
+        mock_channel.history = mock_history
+        
+        with patch.object(type(bot), 'user', new_callable=lambda: mock_bot_user):
+            # Should not raise exception for NotFound
+            await bot._cleanup_bot_messages(mock_channel)
+            
+            mock_bot_message.delete.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_cleanup_bot_messages_rate_limit_protection(self) -> None:
+        """Test cleanup with automatic rate limit protection."""
+        config_manager = ConfigManager()
+        bot = TGraphBot(config_manager)
+        
+        mock_channel = MagicMock()
+        mock_channel.name = "test-channel"
+        
+        mock_bot_user = MagicMock()
+        mock_bot_user.id = 123456789
+        
+        mock_guild_member = MagicMock()
+        mock_guild_member.permissions_for.return_value.manage_messages = True
+        mock_channel.guild.me = mock_guild_member
+        
+        # Create multiple bot messages to test rate limiting
+        mock_messages = []
+        for i in range(7):  # More than 5 to trigger rate limit protection
+            mock_message = MagicMock()
+            mock_message.author.id = 123456789
+            mock_message.id = f"msg{i}"
+            mock_message.delete = AsyncMock()
+            mock_messages.append(mock_message)
+        
+        async def mock_history(*args, **kwargs):
+            for message in mock_messages:
+                yield message
+        
+        mock_channel.history = mock_history
+        
+        with patch.object(type(bot), 'user', new_callable=lambda: mock_bot_user), \
+             patch('asyncio.sleep', new_callable=AsyncMock) as mock_sleep:
+            
+            await bot._cleanup_bot_messages(mock_channel)
+            
+            # All messages should be deleted
+            for mock_message in mock_messages:
+                mock_message.delete.assert_called_once()
+            
+            # Should sleep after every 5 deletions (rate limit protection)
+            mock_sleep.assert_called_with(1.0)
+
+    @pytest.mark.asyncio
+    async def test_cleanup_bot_messages_general_exception(self) -> None:
+        """Test cleanup when a general exception occurs."""
+        config_manager = ConfigManager()
+        bot = TGraphBot(config_manager)
+        
+        mock_channel = MagicMock()
+        mock_channel.name = "test-channel"
+        
+        mock_bot_user = MagicMock()
+        mock_bot_user.id = 123456789
+        
+        # Mock history to raise an exception
+        mock_channel.history = MagicMock(side_effect=Exception("Database error"))
+        
+        with patch.object(type(bot), 'user', new_callable=lambda: mock_bot_user):
+            # Should raise the general exception
+            with pytest.raises(Exception, match="Database error"):
+                await bot._cleanup_bot_messages(mock_channel)
