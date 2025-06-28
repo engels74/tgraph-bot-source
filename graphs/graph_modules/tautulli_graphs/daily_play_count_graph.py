@@ -222,6 +222,14 @@ class DailyPlayCountGraph(BaseGraph):
 
             # Step 6: Apply modern Seaborn styling
             self.apply_seaborn_style()
+            
+            # Step 6.5: Configure Seaborn grid styling (explicit for line plots)
+            if self.get_grid_enabled():
+                import seaborn as sns
+                sns.set_style("whitegrid")
+            else:
+                import seaborn as sns
+                sns.set_style("white")
 
             # Step 7: Check if media type separation is enabled
             use_separation = self.get_media_type_separation_enabled()
