@@ -6,12 +6,13 @@ This script provides convenient shortcuts for common i18n operations
 during development.
 
 Usage:
-    python scripts/i18n/dev-helpers.py extract    # Extract strings
-    python scripts/i18n/dev-helpers.py update     # Update all translations  
-    python scripts/i18n/dev-helpers.py compile    # Compile to .mo files
-    python scripts/i18n/dev-helpers.py status     # Show translation status
-    python scripts/i18n/dev-helpers.py test       # Test translation loading
-    python scripts/i18n/dev-helpers.py full       # Full workflow (extract + update + compile)
+    python scripts/i18n/dev-helpers.py extract      # Extract strings
+    python scripts/i18n/dev-helpers.py update       # Update all translations  
+    python scripts/i18n/dev-helpers.py compile      # Compile to .mo files
+    python scripts/i18n/dev-helpers.py status       # Show translation status
+    python scripts/i18n/dev-helpers.py test         # Test translation loading
+    python scripts/i18n/dev-helpers.py fix-english  # Fix English base file for Weblate
+    python scripts/i18n/dev-helpers.py full         # Full workflow (extract + update + compile)
 """
 
 import argparse
@@ -20,7 +21,7 @@ import sys
 from pathlib import Path
 from typing import Callable, Literal, cast
 
-CommandChoice = Literal["extract", "update", "compile", "status", "test", "full"]
+CommandChoice = Literal["extract", "update", "compile", "status", "test", "full", "fix-english"]
 
 def run_command(cmd: list[str], description: str) -> bool:
     """Run a command and report success/failure."""
@@ -140,6 +141,16 @@ def test_translations() -> bool:
         print("❌ Cannot import i18n module")
         return False
 
+def fix_english_base() -> bool:
+    """Fix English base language file for monolingual Weblate setup."""
+    return run_command(
+        ["uv", "run", "python", "-c", 
+         "from utils.i18n.i18n_utils import fix_english_base_file; "
+         "from pathlib import Path; "
+         "fix_english_base_file(Path('locale/en/LC_MESSAGES/messages.po'))"],
+        "Fixing English base language file"
+    )
+
 def full_workflow() -> bool:
     """Run the complete i18n workflow."""
     print("🚀 Running full i18n workflow...")
@@ -165,7 +176,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="i18n development helpers")
     _ = parser.add_argument(
         "command",
-        choices=["extract", "update", "compile", "status", "test", "full"],
+        choices=["extract", "update", "compile", "status", "test", "full", "fix-english"],
         help="Command to run"
     )
     
@@ -178,6 +189,7 @@ def main() -> int:
         "status": show_status,
         "test": test_translations,
         "full": full_workflow,
+        "fix-english": fix_english_base,
     }
     
     # Type cast is safe because argparse validates the choice

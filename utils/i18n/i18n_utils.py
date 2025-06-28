@@ -400,6 +400,11 @@ def update_po_file(pot_file: Path, po_file: Path, preserve_translations: bool = 
     with open(po_file, 'w', encoding='utf-8') as file:
         _ = file.write(po_content)
 
+    # Auto-fix English base language file for monolingual setup
+    if language == "en":
+        logger.debug("Detected English language file, applying base language fixes...")
+        fix_english_base_file(po_file)
+
     logger.info(f"Updated .po file: {po_file}")
 
 
@@ -478,3 +483,74 @@ def compile_po_to_mo(po_file: Path, mo_file: Path | None = None) -> None:
     except FileNotFoundError:
         logger.warning("msgfmt command not found. Install gettext tools to compile .po files.")
         raise
+
+
+def fix_english_base_file(po_file: Path) -> None:
+    """
+    Fix English base language file by ensuring msgstr matches msgid.
+    
+    In monolingual gettext setup, the base language (English) should have
+    msgstr values that match the msgid values for proper Weblate integration.
+    
+    Args:
+        po_file: Path to the English .po file to fix
+    """
+    if not po_file.exists():
+        logger.warning(f"English PO file does not exist: {po_file}")
+        return
+        
+    try:
+        with open(po_file, 'r', encoding='utf-8') as file:
+            content = file.read()
+        
+        # Track changes
+        changes_made = 0
+        lines = content.split('\n')
+        current_msgid = ""
+        in_msgid = False
+        
+        # Process line by line
+        i = 0
+        while i < len(lines):
+            line = lines[i]
+            
+            # Check for msgid start
+            if line.startswith('msgid "'):
+                # Extract msgid content
+                msgid_match = re.match(r'msgid "(.*)"', line)
+                if msgid_match:
+                    current_msgid = msgid_match.group(1)
+                    in_msgid = True
+                else:
+                    current_msgid = ""
+                    in_msgid = False
+            
+            # Handle multiline msgid
+            elif in_msgid and line.startswith('"') and line.endswith('"'):
+                # Append to current msgid (remove quotes)
+                current_msgid += line[1:-1]
+            
+            # Check for msgstr start
+            elif line.startswith('msgstr "'):
+                in_msgid = False
+                
+                # Check if msgstr is empty
+                msgstr_match = re.match(r'msgstr "(.*)"', line)
+                if msgstr_match and msgstr_match.group(1) == "":
+                    # Skip empty msgid (header entry)
+                    if current_msgid != "":
+                        # Replace empty msgstr with msgid content
+                        lines[i] = f'msgstr "{current_msgid}"'
+                        changes_made += 1
+                        logger.debug(f"Fixed English translation: '{current_msgid}'")
+            
+            i += 1
+        
+        if changes_made > 0:
+            # Write back the fixed content
+            with open(po_file, 'w', encoding='utf-8') as file:
+                file.write('\n'.join(lines))
+            logger.info(f"Fixed {changes_made} empty English translations in {po_file}")
+        
+    except Exception as e:
+        logger.error(f"Error fixing English base file {po_file}: {e}")
