@@ -126,6 +126,7 @@ class TestCommandsStructure:
         "about.py",
         "config.py", 
         "my_stats.py",
+        "test_scheduler.py",
         "update_graphs.py",
         "uptime.py",
     ])
