@@ -110,9 +110,9 @@ class TestGraphFactory:
 
     def test_create_graph_by_type_returns_correct_types(self) -> None:
         """Test that create_graph_by_type returns the correct graph class instances."""
-        from graphs.graph_modules.daily_play_count_graph import DailyPlayCountGraph
-        from graphs.graph_modules.play_count_by_dayofweek_graph import PlayCountByDayOfWeekGraph
-        from graphs.graph_modules.top_10_users_graph import Top10UsersGraph
+        from graphs.graph_modules.tautulli_graphs.daily_play_count_graph import DailyPlayCountGraph
+        from graphs.graph_modules.tautulli_graphs.play_count_by_dayofweek_graph import PlayCountByDayOfWeekGraph
+        from graphs.graph_modules.tautulli_graphs.top_10_users_graph import Top10UsersGraph
 
         factory = GraphFactory({})
 

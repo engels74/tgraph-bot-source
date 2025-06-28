@@ -11,8 +11,8 @@ from typing import TYPE_CHECKING, override, cast
 import pandas as pd
 import seaborn as sns
 
-from .base_graph import BaseGraph
-from .utils import (
+from ..base_graph import BaseGraph
+from ..utils import (
     validate_graph_data,
     process_play_history_data,
     aggregate_top_platforms,

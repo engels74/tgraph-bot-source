@@ -12,12 +12,12 @@ from collections.abc import Mapping
 
 from .base_graph import BaseGraph
 from .utils import cleanup_old_files, ensure_graph_directory
-from .daily_play_count_graph import DailyPlayCountGraph
-from .play_count_by_dayofweek_graph import PlayCountByDayOfWeekGraph
-from .play_count_by_hourofday_graph import PlayCountByHourOfDayGraph
-from .play_count_by_month_graph import PlayCountByMonthGraph
-from .top_10_platforms_graph import Top10PlatformsGraph
-from .top_10_users_graph import Top10UsersGraph
+from .tautulli_graphs.daily_play_count_graph import DailyPlayCountGraph
+from .tautulli_graphs.play_count_by_dayofweek_graph import PlayCountByDayOfWeekGraph
+from .tautulli_graphs.play_count_by_hourofday_graph import PlayCountByHourOfDayGraph
+from .tautulli_graphs.play_count_by_month_graph import PlayCountByMonthGraph
+from .tautulli_graphs.top_10_platforms_graph import Top10PlatformsGraph
+from .tautulli_graphs.top_10_users_graph import Top10UsersGraph
 from .sample_graph import SampleGraph
 
 if TYPE_CHECKING:

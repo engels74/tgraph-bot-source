@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 
 from config.schema import TGraphBotConfig
-from graphs.graph_modules.play_count_by_month_graph import PlayCountByMonthGraph
+from graphs.graph_modules.tautulli_graphs.play_count_by_month_graph import PlayCountByMonthGraph
 from tests.utils.graph_helpers import (
     create_test_config_minimal,
     matplotlib_cleanup,
