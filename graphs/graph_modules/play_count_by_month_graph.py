@@ -370,7 +370,7 @@ class PlayCountByMonthGraph(BaseGraph):
 
         # Create data arrays for stacking
         x = np.arange(len(categories))  # the label locations
-        width = 0.6  # width of the bars
+        width = 0.8  # width of the bars
 
         # Use preferred order for consistent coloring
         preferred_order = ['tv', 'movie', 'music', 'other']
