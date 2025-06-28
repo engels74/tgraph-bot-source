@@ -80,7 +80,7 @@ class AboutCog(commands.Cog):
 
             _ = embed.add_field(
                 name=i18n.translate("Wiki"),
-                value="https://github.com/engels74/tgraph-bot/wiki",
+                value="[tgraph-bot wiki](https://github.com/engels74/tgraph-bot/wiki)",
                 inline=True
             )
 
