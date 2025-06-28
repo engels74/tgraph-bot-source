@@ -263,18 +263,19 @@ class TestCompileAllTranslations:
     def test_compile_with_failures(self, tmp_path: Path) -> None:
         """Test compilation with some failures."""
         files = self.create_test_structure(tmp_path)
-        
+
         def mock_compile_side_effect(po_file: Path, **_kwargs: object) -> bool:
-            if 'en' in str(po_file):
+            # Check if this is the English language directory specifically
+            if '/en/LC_MESSAGES/' in str(po_file):
                 return True
             else:
                 raise Exception("Compilation failed")
-        
+
         with patch('utils.translation_compiler.compile_translation_file') as mock_compile:
             mock_compile.side_effect = mock_compile_side_effect
-            
+
             result = compile_all_translations(files['locale_dir'])
-            
+
             assert result.success_count == 1
             assert result.failure_count == 1
 
