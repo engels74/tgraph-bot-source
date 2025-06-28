@@ -245,6 +245,16 @@ class TGraphBot(commands.Bot):
                 logger.error(f"Critical error loading extensions: {e}")
                 raise RuntimeError("Bot setup failed: Extension loading failed") from e
 
+            # Sync slash commands with Discord
+            try:
+                logger.info("Syncing slash commands with Discord...")
+                synced = await self.tree.sync()
+                logger.info(f"Successfully synced {len(synced)} slash commands")
+            except Exception as e:
+                logger.error(f"Failed to sync slash commands: {e}")
+                # Continue without syncing - commands may still work if previously synced
+                logger.warning("Continuing without command sync - some commands may not appear")
+
             # Setup background tasks
             await self.setup_background_tasks()
 

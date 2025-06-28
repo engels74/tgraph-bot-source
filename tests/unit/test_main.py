@@ -54,17 +54,30 @@ class TestTGraphBot:
         
         bot = TGraphBot(config_manager)
         
-        # Mock the setup_i18n (synchronous) and load_extensions (async) functions
+        # Mock the setup_i18n (synchronous), load_extensions (async), and tree.sync functions
         async with async_mock_context("main.setup_i18n", new_callable=MagicMock) as mock_setup_i18n, \
                    async_mock_context("main.load_extensions") as mock_load_extensions:
             
-            await bot.setup_hook()
-            
-            # Verify i18n setup was called with correct language
-            mock_setup_i18n.assert_called_once_with(base_config.LANGUAGE)
-            
-            # Verify extensions loading was called with bot instance
-            mock_load_extensions.assert_called_once_with(bot)
+            # Mock the command tree sync
+            with patch.object(bot.tree, 'sync', new_callable=AsyncMock) as mock_sync, \
+                 patch.object(bot, 'setup_background_tasks', new_callable=AsyncMock) as mock_setup_tasks:
+                
+                # Mock sync to return some synced commands
+                mock_sync.return_value = [MagicMock(), MagicMock(), MagicMock()]  # 3 synced commands
+                
+                await bot.setup_hook()
+                
+                # Verify i18n setup was called with correct language
+                mock_setup_i18n.assert_called_once_with(base_config.LANGUAGE)
+                
+                # Verify extensions loading was called with bot instance
+                mock_load_extensions.assert_called_once_with(bot)
+                
+                # Verify command sync was called
+                mock_sync.assert_called_once()
+                
+                # Verify background tasks setup was called
+                mock_setup_tasks.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_setup_hook_no_config(self) -> None:
@@ -72,17 +85,87 @@ class TestTGraphBot:
         config_manager = ConfigManager()
         bot = TGraphBot(config_manager)
 
+        # Mock the setup_i18n (synchronous), load_extensions (async), and tree.sync functions
+        async with async_mock_context("main.setup_i18n", new_callable=MagicMock) as mock_setup_i18n, \
+                   async_mock_context("main.load_extensions") as mock_load_extensions:
+            
+            # Mock the command tree sync (shouldn't be called due to early failure)
+            with patch.object(bot.tree, 'sync', new_callable=AsyncMock) as mock_sync:
+
+                # Should raise RuntimeError when no config is available
+                with pytest.raises(RuntimeError, match="Bot setup failed: No configuration available"):
+                    await bot.setup_hook()
+
+                # Verify i18n setup and extensions loading were not called
+                mock_setup_i18n.assert_not_called()
+                mock_load_extensions.assert_not_called()
+                
+                # Verify command sync was not called due to early failure
+                mock_sync.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_setup_hook_command_sync_failure(self, base_config: TGraphBotConfig) -> None:
+        """Test setup_hook when command sync fails but continues gracefully."""
+        config_manager = create_config_manager_with_config(base_config)
+        
+        bot = TGraphBot(config_manager)
+        
         # Mock the setup_i18n (synchronous) and load_extensions (async) functions
         async with async_mock_context("main.setup_i18n", new_callable=MagicMock) as mock_setup_i18n, \
                    async_mock_context("main.load_extensions") as mock_load_extensions:
-
-            # Should raise RuntimeError when no config is available
-            with pytest.raises(RuntimeError, match="Bot setup failed: No configuration available"):
+            
+            # Mock the command tree sync to fail
+            with patch.object(bot.tree, 'sync', new_callable=AsyncMock) as mock_sync, \
+                 patch.object(bot, 'setup_background_tasks', new_callable=AsyncMock) as mock_setup_tasks:
+                
+                # Make sync raise an exception
+                mock_sync.side_effect = discord.HTTPException(response=MagicMock(), message="Sync failed")
+                
+                # Should complete successfully despite sync failure
                 await bot.setup_hook()
+                
+                # Verify other steps still completed
+                mock_setup_i18n.assert_called_once_with(base_config.LANGUAGE)
+                mock_load_extensions.assert_called_once_with(bot)
+                mock_sync.assert_called_once()
+                mock_setup_tasks.assert_called_once()
 
-            # Verify i18n setup and extensions loading were not called
-            mock_setup_i18n.assert_not_called()
-            mock_load_extensions.assert_not_called()
+    @pytest.mark.asyncio
+    async def test_setup_hook_extension_loading_errors(self) -> None:
+        """Test setup_hook handling extension loading errors gracefully."""
+        config_manager = ConfigManager()
+        mock_config = TGraphBotConfig(
+            TAUTULLI_API_KEY="test_key",
+            TAUTULLI_URL="http://localhost:8181/api/v2",
+            DISCORD_TOKEN="test_token",
+            CHANNEL_ID=123456789,
+            LANGUAGE="en",
+        )
+        config_manager.set_current_config(mock_config)
+        bot = TGraphBot(config_manager)
+
+        # Mock extension loading to return some failed extensions
+        from bot.extensions import ExtensionStatus
+        mock_results = [
+            ExtensionStatus("bot.commands.about", True),
+            ExtensionStatus("bot.commands.broken", False, "Import error"),
+        ]
+
+        with patch("main.setup_i18n"), \
+             patch("main.load_extensions", return_value=mock_results):
+            
+            # Mock the command tree sync and background tasks
+            with patch.object(bot.tree, 'sync', new_callable=AsyncMock) as mock_sync, \
+                 patch.object(bot, 'setup_background_tasks', new_callable=AsyncMock):
+                
+                # Mock sync to return successful commands
+                mock_sync.return_value = [MagicMock()]  # 1 synced command
+                
+                await bot.setup_hook()
+                
+                # Should complete successfully even with some failed extensions
+                # Verify command sync was still called
+                mock_sync.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_on_ready_with_user(self) -> None:
@@ -287,34 +370,6 @@ class TestEnhancedErrorHandling(AsyncTestBase):
         # Test with no configuration
         with pytest.raises(RuntimeError, match="Bot setup failed: No configuration available"):
             await bot.setup_hook()
-
-    @pytest.mark.asyncio
-    async def test_setup_hook_extension_loading_errors(self) -> None:
-        """Test setup_hook handling extension loading errors gracefully."""
-        config_manager = ConfigManager()
-        mock_config = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_token",
-            CHANNEL_ID=123456789,
-            LANGUAGE="en",
-        )
-        config_manager.set_current_config(mock_config)
-        bot = TGraphBot(config_manager)
-
-        # Mock extension loading to return some failed extensions
-        from bot.extensions import ExtensionStatus
-        mock_results = [
-            ExtensionStatus("bot.commands.about", True),
-            ExtensionStatus("bot.commands.broken", False, "Import error"),
-        ]
-
-        with patch("main.setup_i18n"), \
-             patch("main.load_extensions", return_value=mock_results), \
-             patch.object(bot, "setup_background_tasks", new_callable=AsyncMock):
-
-            await bot.setup_hook()
-            # Should complete successfully even with some failed extensions
 
     @pytest.mark.asyncio
     async def test_background_task_management(self) -> None:
