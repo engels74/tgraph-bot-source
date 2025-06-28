@@ -372,7 +372,7 @@ def update_po_file(pot_file: Path, po_file: Path, preserve_translations: bool = 
     # Generate updated .po content
     po_content = generate_po_header(language)
 
-    # Process each msgid from the pot file
+    # Process each msgid from the pot file, but skip the header's empty msgid
     msgid_pattern = re.compile(r'(#:.*?\n)?(msgid\s+"[^"]*"\nmsgstr\s+"")', re.MULTILINE | re.DOTALL)
 
     for match in msgid_pattern.finditer(pot_content):
@@ -383,6 +383,10 @@ def update_po_file(pot_file: Path, po_file: Path, preserve_translations: bool = 
         msgid_match = re.search(r'msgid\s+"([^"]*)"', msgid_block)
         if msgid_match:
             msgid = msgid_match.group(1)
+
+            # Skip the header's empty msgid (it's already included in generate_po_header)
+            if msgid == "" and not location_comment.strip():
+                continue
 
             # Use existing translation if available, otherwise empty
             msgstr = existing_translations.get(msgid, "")
