@@ -328,7 +328,8 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
         width = 0.6  # width of the bars
 
         # Use preferred order for consistent coloring
-        preferred_order = ['tv', 'movie', 'music', 'other']
+        # Movies at bottom, TV series on top for stacked bars
+        preferred_order = ['movie', 'tv', 'music', 'other']
         ordered_media_types: list[str] = []
         
         # Add media types in preferred order if they exist
