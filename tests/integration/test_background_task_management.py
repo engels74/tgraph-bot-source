@@ -327,8 +327,6 @@ async def test_scheduler_health_updates_during_long_waits() -> None:
         wait_time = 6.0  # 6 seconds instead of 6 minutes for testing
         
         # Mock the health update interval to be much smaller for testing
-        original_method = tracker._wait_with_health_updates
-        
         async def mock_wait_with_health_updates(total_wait_seconds: float, task_name: str = "update_scheduler") -> bool:
             """Mock version with faster health updates for testing."""
             if total_wait_seconds <= 0:
@@ -359,11 +357,11 @@ async def test_scheduler_health_updates_during_long_waits() -> None:
             return True
         
         # Replace the method temporarily
-        tracker._wait_with_health_updates = mock_wait_with_health_updates
+        tracker._wait_with_health_updates = mock_wait_with_health_updates  # pyright: ignore[reportPrivateUsage] # testing internal behavior
         
         # Call the wait method
         start_time = datetime.now()
-        result = await tracker._wait_with_health_updates(wait_time, task_name)
+        result = await tracker._wait_with_health_updates(wait_time, task_name)  # pyright: ignore[reportPrivateUsage] # testing internal behavior
         end_time = datetime.now()
         
         # Verify the wait completed successfully
@@ -399,7 +397,7 @@ async def test_scheduler_health_updates_with_shutdown() -> None:
     
     try:
         # Start a wait and then request shutdown
-        wait_task = asyncio.create_task(tracker._wait_with_health_updates(10.0))
+        wait_task = asyncio.create_task(tracker._wait_with_health_updates(10.0))  # pyright: ignore[reportPrivateUsage] # testing internal behavior
         
         # Wait a short time then signal shutdown
         await asyncio.sleep(0.1)
