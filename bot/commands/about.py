@@ -79,14 +79,8 @@ class AboutCog(commands.Cog):
             )
 
             _ = embed.add_field(
-                name=i18n.translate("Python Version"),
-                value="3.13+",
-                inline=True
-            )
-
-            _ = embed.add_field(
-                name=i18n.translate("Discord.py Version"),
-                value=discord.__version__,
+                name=i18n.translate("Wiki"),
+                value="https://github.com/engels74/tgraph-bot/wiki",
                 inline=True
             )
 
