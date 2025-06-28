@@ -9,8 +9,6 @@ This module tests the PlayCountByMonthGraph class including:
 """
 
 from pathlib import Path
-from typing import Any
-from unittest.mock import patch
 
 import pytest
 
@@ -26,7 +24,7 @@ class TestPlayCountByMonthGraph:
     """Test cases for the PlayCountByMonthGraph class."""
 
     @pytest.fixture
-    def sample_month_data(self) -> dict[str, Any]:
+    def sample_month_data(self) -> dict[str, object]:
         """Create sample data for monthly graph testing."""
         return {
             "monthly_plays": {
@@ -86,7 +84,7 @@ class TestPlayCountByMonthGraph:
         assert graph_disabled.get_stacked_bar_charts_enabled() is False
         assert graph_disabled.get_media_type_separation_enabled() is True
 
-    def test_generate_with_stacked_bars_enabled(self, sample_month_data: dict[str, Any]) -> None:
+    def test_generate_with_stacked_bars_enabled(self, sample_month_data: dict[str, object]) -> None:
         """Test graph generation with stacked bar charts enabled."""
         with matplotlib_cleanup():
             config = create_test_config_minimal()
@@ -105,7 +103,7 @@ class TestPlayCountByMonthGraph:
             # Clean up
             Path(output_path).unlink(missing_ok=True)
 
-    def test_generate_with_stacked_bars_disabled(self, sample_month_data: dict[str, Any]) -> None:
+    def test_generate_with_stacked_bars_disabled(self, sample_month_data: dict[str, object]) -> None:
         """Test graph generation with stacked bar charts disabled."""
         with matplotlib_cleanup():
             config = create_test_config_minimal()
@@ -124,7 +122,7 @@ class TestPlayCountByMonthGraph:
             # Clean up
             Path(output_path).unlink(missing_ok=True)
 
-    def test_generate_with_media_separation_disabled(self, sample_month_data: dict[str, Any]) -> None:
+    def test_generate_with_media_separation_disabled(self, sample_month_data: dict[str, object]) -> None:
         """Test graph generation with media type separation disabled."""
         with matplotlib_cleanup():
             config = create_test_config_minimal()
@@ -147,7 +145,7 @@ class TestPlayCountByMonthGraph:
         """Test graph generation with empty data."""
         with matplotlib_cleanup():
             graph = PlayCountByMonthGraph()
-            empty_data = {"monthly_plays": {"categories": [], "series": []}}
+            empty_data: dict[str, object] = {"monthly_plays": {"categories": [], "series": []}}
             
             output_path = graph.generate(empty_data)
             

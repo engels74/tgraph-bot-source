@@ -8,10 +8,7 @@ This module tests the PlayCountByDayOfWeekGraph class including:
 - Data validation
 """
 
-from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
-from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -27,7 +24,7 @@ class TestPlayCountByDayOfWeekGraph:
     """Test cases for the PlayCountByDayOfWeekGraph class."""
 
     @pytest.fixture
-    def sample_dayofweek_data(self) -> dict[str, Any]:
+    def sample_dayofweek_data(self) -> dict[str, object]:
         """Create sample data for day of week graph testing."""
         return {
             "play_history": {
@@ -92,7 +89,7 @@ class TestPlayCountByDayOfWeekGraph:
         assert graph_disabled.get_stacked_bar_charts_enabled() is False
         assert graph_disabled.get_media_type_separation_enabled() is True
 
-    def test_generate_with_stacked_bars_enabled(self, sample_dayofweek_data: dict[str, Any]) -> None:
+    def test_generate_with_stacked_bars_enabled(self, sample_dayofweek_data: dict[str, object]) -> None:
         """Test graph generation with stacked bar charts enabled."""
         with matplotlib_cleanup():
             config = create_test_config_minimal()
@@ -111,7 +108,7 @@ class TestPlayCountByDayOfWeekGraph:
             # Clean up
             Path(output_path).unlink(missing_ok=True)
 
-    def test_generate_with_stacked_bars_disabled(self, sample_dayofweek_data: dict[str, Any]) -> None:
+    def test_generate_with_stacked_bars_disabled(self, sample_dayofweek_data: dict[str, object]) -> None:
         """Test graph generation with stacked bar charts disabled."""
         with matplotlib_cleanup():
             config = create_test_config_minimal()
@@ -130,7 +127,7 @@ class TestPlayCountByDayOfWeekGraph:
             # Clean up
             Path(output_path).unlink(missing_ok=True)
 
-    def test_generate_with_media_separation_disabled(self, sample_dayofweek_data: dict[str, Any]) -> None:
+    def test_generate_with_media_separation_disabled(self, sample_dayofweek_data: dict[str, object]) -> None:
         """Test graph generation with media type separation disabled."""
         with matplotlib_cleanup():
             config = create_test_config_minimal()
@@ -153,7 +150,7 @@ class TestPlayCountByDayOfWeekGraph:
         """Test graph generation with empty data."""
         with matplotlib_cleanup():
             graph = PlayCountByDayOfWeekGraph()
-            empty_data = {"play_history": {"data": []}}
+            empty_data: dict[str, object] = {"play_history": {"data": []}}
             
             output_path = graph.generate(empty_data)
             
