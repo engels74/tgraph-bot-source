@@ -69,7 +69,7 @@ msgstr "Check Your DMs"
 
 #: bot/commands/test_scheduler.py:208
 msgid "Check the bot logs for detailed error information and verify your configuration settings."
-msgstr ""
+msgstr "Check the bot logs for detailed error information and verify your configuration settings."
 
 #: utils/core/error_handler.py:349
 msgid "Command Error"
@@ -81,11 +81,11 @@ msgstr "Command on Cooldown"
 
 #: bot/commands/test_scheduler.py:128
 msgid "Configuration"
-msgstr ""
+msgstr "Configuration"
 
 #: bot/commands/test_scheduler.py:125
 msgid "Current scheduler configuration and state"
-msgstr ""
+msgstr "Current scheduler configuration and state"
 
 #: bot/commands/my_stats.py:123
 msgid "Delivery Method"
@@ -126,7 +126,7 @@ msgstr "Error"
 
 #: bot/commands/test_scheduler.py:197
 msgid "Error Details"
-msgstr ""
+msgstr "Error Details"
 
 #: utils/core/error_handler.py:313
 msgid "Error in `{command_name}` command: {error_message}"
@@ -263,7 +263,7 @@ msgstr "Posted Successfully"
 
 #: bot/commands/test_scheduler.py:124
 msgid "Pre-Test Status"
-msgstr ""
+msgstr "Pre-Test Status"
 
 #: bot/commands/my_stats.py:163
 msgid "Processing Time"
@@ -283,19 +283,19 @@ msgstr "Retry After"
 
 #: bot/commands/test_scheduler.py:137
 msgid "Scheduled Times"
-msgstr ""
+msgstr "Scheduled Times"
 
 #: bot/commands/test_scheduler.py:157
 msgid "Scheduler Test Completed Successfully"
-msgstr ""
+msgstr "Scheduler Test Completed Successfully"
 
 #: bot/commands/test_scheduler.py:193
 msgid "Scheduler Test Failed"
-msgstr ""
+msgstr "Scheduler Test Failed"
 
 #: bot/commands/test_scheduler.py:95
 msgid "Scheduler Test Started"
-msgstr ""
+msgstr "Scheduler Test Started"
 
 #: bot/commands/uptime.py:42
 msgid "Show bot uptime"
@@ -311,7 +311,7 @@ msgstr "Started"
 
 #: bot/commands/test_scheduler.py:169
 msgid "State Updates"
-msgstr ""
+msgstr "State Updates"
 
 #: bot/commands/my_stats.py:177
 msgid "Statistics Generation Failed"
@@ -348,11 +348,11 @@ msgstr "TGraph Bot is running smoothly!"
 
 #: bot/commands/test_scheduler.py:99
 msgid "Test Method"
-msgstr ""
+msgstr "Test Method"
 
 #: bot/commands/test_scheduler.py:162
 msgid "Test Results"
-msgstr ""
+msgstr "Test Results"
 
 #: tests/unit/test_i18n.py:63
 #: tests/unit/test_i18n.py:124
@@ -365,11 +365,11 @@ msgstr "Test string"
 
 #: bot/commands/test_scheduler.py:64
 msgid "Test the scheduled update functionality immediately"
-msgstr ""
+msgstr "Test the scheduled update functionality immediately"
 
 #: bot/commands/test_scheduler.py:96
 msgid "Testing the scheduled update functionality..."
-msgstr ""
+msgstr "Testing the scheduled update functionality..."
 
 #: bot/commands/config.py:333
 msgid "The configuration setting to modify"
@@ -389,15 +389,15 @@ msgstr "The provided input is invalid. Please check your parameters and try agai
 
 #: bot/commands/test_scheduler.py:158
 msgid "The scheduled update routine executed successfully!"
-msgstr ""
+msgstr "The scheduled update routine executed successfully!"
 
 #: bot/commands/test_scheduler.py:194
 msgid "The scheduled update test encountered an error"
-msgstr ""
+msgstr "The scheduled update test encountered an error"
 
 #: bot/commands/test_scheduler.py:177
 msgid "The scheduler will work correctly at the configured time. All timing calculations and update workflows are functioning properly."
-msgstr ""
+msgstr "The scheduler will work correctly at the configured time. All timing calculations and update workflows are functioning properly."
 
 #: utils/core/error_handler.py:304
 msgid "The server is experiencing resource constraints. Please try again later."
@@ -409,7 +409,7 @@ msgstr "The {command_name} command is currently on cooldown."
 
 #: bot/commands/test_scheduler.py:203
 msgid "There may be an issue with:\n• Tautulli API connectivity\n• Discord channel permissions\n• Graph generation process\n• Bot configuration"
-msgstr ""
+msgstr "There may be an issue with:\n• Tautulli API connectivity\n• Discord channel permissions\n• Graph generation process\n• Bot configuration"
 
 #: utils/core/error_handler.py:299
 msgid "There was a network connectivity issue. Please try again in a moment."
@@ -449,7 +449,7 @@ msgstr "User {user} has {n} messages"
 
 #: bot/commands/test_scheduler.py:100
 msgid "Using UpdateTracker.force_update() - same as scheduler"
-msgstr ""
+msgstr "Using UpdateTracker.force_update() - same as scheduler"
 
 #: bot/commands/about.py:59
 msgid "Version"
@@ -465,15 +465,15 @@ msgstr "View or edit bot configuration"
 
 #: bot/commands/test_scheduler.py:176
 msgid "What This Confirms"
-msgstr ""
+msgstr "What This Confirms"
 
 #: bot/commands/test_scheduler.py:202
 msgid "What This Means"
-msgstr ""
+msgstr "What This Means"
 
 #: bot/commands/test_scheduler.py:104
 msgid "What This Tests"
-msgstr ""
+msgstr "What This Tests"
 
 #: bot/commands/about.py:83
 msgid "Wiki"
@@ -519,7 +519,7 @@ msgstr "personal statistics"
 
 #: bot/commands/test_scheduler.py:85
 msgid "test scheduler"
-msgstr ""
+msgstr "test scheduler"
 
 #: bot/commands/update_graphs.py:104
 msgid "update graphs"
@@ -587,7 +587,7 @@ msgstr "• Email not found in Plex server\n• Insufficient data for graphs\n�
 
 #: bot/commands/test_scheduler.py:105
 msgid "• UPDATE_DAYS configuration\n• FIXED_UPDATE_TIME configuration\n• Complete graph generation workflow\n• Error handling and retry logic\n• Scheduler state updates"
-msgstr ""
+msgstr "• UPDATE_DAYS configuration\n• FIXED_UPDATE_TIME configuration\n• Complete graph generation workflow\n• Error handling and retry logic\n• Scheduler state updates"
 
 #: bot/commands/my_stats.py:187
 msgid "• Verify your email is correct\n• Ensure you have Plex activity\n• Try again in a few minutes"
@@ -599,7 +599,7 @@ msgstr "✅ Enabled"
 
 #: bot/commands/test_scheduler.py:163
 msgid "✅ UPDATE_DAYS interval calculation working\n✅ FIXED_UPDATE_TIME scheduling working\n✅ Graph generation and posting successful\n✅ Scheduler state updated correctly"
-msgstr ""
+msgstr "✅ UPDATE_DAYS interval calculation working\n✅ FIXED_UPDATE_TIME scheduling working\n✅ Graph generation and posting successful\n✅ Scheduler state updated correctly"
 
 #: utils/discord/command_utils.py:139
 msgid "❌ Disabled"

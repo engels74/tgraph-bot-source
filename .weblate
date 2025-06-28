@@ -26,7 +26,12 @@ filemask = locale/*/LC_MESSAGES/messages.po
 template = locale/messages.pot
 
 # Translation file format
-file_format = po
+file_format = po-mono
+
+# Monolingual setup with English as base
+base_language = en
+source_language = en
+intermediate_language = en
 
 # Language handling
 new_lang = add
