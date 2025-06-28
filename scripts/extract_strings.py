@@ -31,7 +31,7 @@ from typing import NamedTuple
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from utils.i18n_utils import generate_pot_file, EXCLUDED_DIRS
+from utils.i18n.i18n_utils import generate_pot_file, EXCLUDED_DIRS
 
 
 class ExtractArgs(NamedTuple):

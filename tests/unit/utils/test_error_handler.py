@@ -8,7 +8,7 @@ from unittest.mock import Mock, patch
 
 import discord
 
-from utils.error_handler import (
+from utils.core.error_handler import (
     ErrorSeverity,
     ErrorCategory,
     ErrorContext,

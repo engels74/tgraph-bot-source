@@ -11,7 +11,7 @@ import time
 from pathlib import Path
 from unittest.mock import patch
 
-from utils.translation_compiler import (
+from utils.i18n.translation_compiler import (
     CompilationResult,
     find_po_files,
     needs_compilation,

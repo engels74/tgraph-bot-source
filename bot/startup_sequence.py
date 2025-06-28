@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Protocol, runtime_checkable
 import discord
 
 from graphs.graph_manager import GraphManager
-from utils.discord_file_utils import validate_file_for_discord, create_discord_file_safe, create_graph_specific_embed
+from utils.discord.discord_file_utils import validate_file_for_discord, create_discord_file_safe, create_graph_specific_embed
 
 if TYPE_CHECKING:
     from config.manager import ConfigManager

@@ -14,7 +14,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from utils.i18n_utils import compile_po_to_mo
+from utils.i18n.i18n_utils import compile_po_to_mo
 
 
 class TestCompilePoToMo:

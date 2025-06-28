@@ -16,9 +16,9 @@ from pydantic import ValidationError
 import i18n
 from config.manager import ConfigManager
 from config.schema import TGraphBotConfig
-from utils.base_command_cog import BaseCommandCog
-from utils.config_utils import ConfigurationHelper
-from utils.error_handler import (
+from utils.discord.base_command_cog import BaseCommandCog
+from utils.core.config_utils import ConfigurationHelper
+from utils.core.error_handler import (
     ValidationError as TGraphValidationError,
     ConfigurationError
 )

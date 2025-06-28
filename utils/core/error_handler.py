@@ -22,7 +22,7 @@ from collections.abc import Awaitable, Callable
 import discord
 
 import i18n
-from utils.command_utils import send_error_response
+from utils.discord.command_utils import send_error_response
 
 if TYPE_CHECKING:
     pass

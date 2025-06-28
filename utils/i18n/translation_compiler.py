@@ -12,7 +12,7 @@ import logging
 from pathlib import Path
 from typing import TypedDict, override
 
-from .i18n_utils import compile_po_to_mo
+from utils.i18n.i18n_utils import compile_po_to_mo
 
 logger = logging.getLogger(__name__)
 

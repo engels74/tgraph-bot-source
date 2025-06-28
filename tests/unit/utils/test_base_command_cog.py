@@ -13,8 +13,8 @@ import discord
 import pytest
 from discord.ext import commands
 
-from utils.base_command_cog import BaseCommandCog, BaseCooldownConfig
-from utils.error_handler import ErrorContext
+from utils.discord.base_command_cog import BaseCommandCog, BaseCooldownConfig
+from utils.core.error_handler import ErrorContext
 
 
 class TestBaseCooldownConfig:

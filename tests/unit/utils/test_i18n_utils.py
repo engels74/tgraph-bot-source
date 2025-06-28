@@ -11,7 +11,7 @@ import tempfile
 from pathlib import Path
 import pytest
 
-from utils.i18n_utils import (
+from utils.i18n.i18n_utils import (
     extract_strings_from_file,
     scan_directory_for_strings,
     generate_pot_file,

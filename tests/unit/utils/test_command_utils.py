@@ -11,7 +11,7 @@ from unittest.mock import AsyncMock, MagicMock
 import discord
 import pytest
 
-from utils.command_utils import (
+from utils.discord.command_utils import (
     check_manage_guild_permission,
     create_cooldown_embed,
     create_error_embed,

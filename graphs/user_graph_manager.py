@@ -437,7 +437,7 @@ class UserGraphManager:
 
         try:
             import discord
-            from utils.discord_file_utils import upload_files_to_user_dm
+            from utils.discord.discord_file_utils import upload_files_to_user_dm
 
             # Get the Discord user - try fetch_user first for uncached users, fallback to get_user
             fetch_user_func = getattr(bot, 'fetch_user', None)

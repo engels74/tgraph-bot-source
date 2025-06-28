@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Callable, final
 
 import discord
 
-from utils.command_utils import create_info_embed
+from utils.discord.command_utils import create_info_embed
 
 if TYPE_CHECKING:
     pass

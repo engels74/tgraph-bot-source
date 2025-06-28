@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, TypeVar, final
 
 import discord
 
-from utils.error_handler import ConfigurationError
+from utils.core.error_handler import ConfigurationError
 
 if TYPE_CHECKING:
     from config.manager import ConfigManager

@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, cast, final
 import discord
 from discord.ext import commands
 
-from utils.error_handler import ErrorContext, handle_command_error
+from utils.core.error_handler import ErrorContext, handle_command_error
 
 if TYPE_CHECKING:
     from main import TGraphBot

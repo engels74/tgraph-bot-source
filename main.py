@@ -391,7 +391,7 @@ class TGraphBot(commands.Bot):
             Number of successfully posted graphs
         """
         from pathlib import Path
-        from utils.discord_file_utils import validate_file_for_discord, create_discord_file_safe, create_graph_specific_embed
+        from utils.discord.discord_file_utils import validate_file_for_discord, create_discord_file_safe, create_graph_specific_embed
 
         success_count = 0
         

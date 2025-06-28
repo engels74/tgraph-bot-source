@@ -13,7 +13,7 @@ from discord import app_commands
 from discord.ext import commands
 
 import i18n
-from utils.error_handler import (
+from utils.core.error_handler import (
     ErrorContext,
     handle_command_error
 )

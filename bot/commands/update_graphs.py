@@ -26,16 +26,16 @@ from discord.ext import commands
 
 import i18n
 from graphs.graph_manager import GraphManager
-from utils.base_command_cog import BaseCommandCog, BaseCooldownConfig
-from utils.command_utils import create_error_embed, create_success_embed, create_info_embed, create_cooldown_embed
-from utils.config_utils import ConfigurationHelper
-from utils.discord_file_utils import validate_file_for_discord, create_discord_file_safe, create_graph_specific_embed
-from utils.error_handler import (
+from utils.discord.base_command_cog import BaseCommandCog, BaseCooldownConfig
+from utils.discord.command_utils import create_error_embed, create_success_embed, create_info_embed, create_cooldown_embed
+from utils.core.config_utils import ConfigurationHelper
+from utils.discord.discord_file_utils import validate_file_for_discord, create_discord_file_safe, create_graph_specific_embed
+from utils.core.error_handler import (
     APIError,
     NetworkError,
     error_handler
 )
-from utils.progress_utils import ProgressCallbackManager
+from utils.discord.progress_utils import ProgressCallbackManager
 
 if TYPE_CHECKING:
     pass

@@ -13,7 +13,7 @@ from unittest.mock import AsyncMock, MagicMock, patch, mock_open, Mock
 import discord
 import pytest
 
-from utils.discord_file_utils import (
+from utils.discord.discord_file_utils import (
     DISCORD_FILE_SIZE_LIMIT_NITRO,
     DISCORD_FILE_SIZE_LIMIT_REGULAR,
     SUPPORTED_IMAGE_FORMATS,
