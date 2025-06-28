@@ -215,6 +215,16 @@ class BaseGraph(ABC):
         separation_enabled = self.get_config_value('ENABLE_MEDIA_TYPE_SEPARATION', True)
         return bool(separation_enabled)
 
+    def get_stacked_bar_charts_enabled(self) -> bool:
+        """
+        Get whether stacked bar charts should be enabled when media type separation is active.
+
+        Returns:
+            True if stacked bar charts should be enabled, False otherwise
+        """
+        stacked_enabled = self.get_config_value('ENABLE_STACKED_BAR_CHARTS', False)
+        return bool(stacked_enabled)
+
     def get_tv_color(self) -> str:
         """
         Get the color to use for TV shows in graphs.

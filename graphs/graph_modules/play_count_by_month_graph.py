@@ -9,6 +9,7 @@ import logging
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, override, cast
 
+import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib.axes import Axes
@@ -114,8 +115,14 @@ class PlayCountByMonthGraph(BaseGraph):
             use_separation = self.get_media_type_separation_enabled()
 
             if use_separation:
-                # Generate separated visualization using monthly API data
-                self._generate_separated_visualization_from_api(ax, response_data)
+                # Check if stacked bars are enabled
+                use_stacked = self.get_stacked_bar_charts_enabled()
+                if use_stacked:
+                    # Generate stacked visualization using monthly API data
+                    self._generate_stacked_visualization_from_api(ax, response_data)
+                else:
+                    # Generate separated visualization using monthly API data (grouped bars)
+                    self._generate_separated_visualization_from_api(ax, response_data)
             else:
                 # Generate traditional combined visualization using monthly API data
                 self._generate_combined_visualization_from_api(ax, response_data)
@@ -292,6 +299,174 @@ class PlayCountByMonthGraph(BaseGraph):
                     )
 
         logger.info(f"Created separated monthly play count graph with {len(unique_media_types_list)} media types and {len(categories)} months")  # pyright: ignore[reportUnknownArgumentType] # external API data
+
+    def _generate_stacked_visualization_from_api(self, ax: Axes, response_data: Mapping[str, object]) -> None:
+        """
+        Generate stacked bar visualization using data from Tautulli's get_plays_per_month API.
+
+        Args:
+            ax: The matplotlib axes to plot on
+            response_data: The data section from the API response
+        """
+        # Extract categories (months) and series (media types with data)
+        categories = response_data.get('categories', [])
+        series = response_data.get('series', [])
+        
+        if not isinstance(categories, list) or not isinstance(series, list):
+            self._handle_empty_data_case(ax)
+            return
+            
+        if not categories or not series:
+            self._handle_empty_data_case(ax)
+            return
+
+        # Prepare data for stacked bars
+        media_type_data: dict[str, list[int]] = {}
+        media_type_colors: dict[str, str] = {}
+        display_info = get_media_type_display_info()
+        
+        # Process series data from API
+        for series_item in series:  # pyright: ignore[reportUnknownVariableType] # external API data
+            if not isinstance(series_item, dict):
+                continue
+                
+            series_name = str(series_item.get('name', ''))  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType] # external API data
+            series_data_raw = series_item.get('data', [])  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType] # external API data
+            
+            if not isinstance(series_data_raw, list) or len(series_data_raw) != len(categories):  # pyright: ignore[reportUnknownArgumentType] # external API data
+                continue
+            
+            # Map series name to media type
+            media_type = 'tv' if series_name.lower() in ['tv', 'tv series'] else 'movie'
+            
+            # Convert data to integers
+            values = []
+            for count in series_data_raw:  # pyright: ignore[reportUnknownVariableType] # external API data
+                if isinstance(count, (int, float)):
+                    values.append(int(count))
+                else:
+                    values.append(0)
+            
+            media_type_data[media_type] = values
+            
+            # Get colors for media types
+            if media_type == 'tv':
+                media_type_colors[media_type] = self.get_tv_color()
+            elif media_type == 'movie':
+                media_type_colors[media_type] = self.get_movie_color()
+            elif media_type in display_info:
+                media_type_colors[media_type] = display_info[media_type]['color']
+            else:
+                media_type_colors[media_type] = '#666666'
+
+        if not media_type_data:
+            self._handle_empty_data_case(ax)
+            return
+
+        # Create data arrays for stacking
+        x = np.arange(len(categories))  # the label locations
+        width = 0.6  # width of the bars
+
+        # Use preferred order for consistent coloring
+        preferred_order = ['tv', 'movie', 'music', 'other']
+        ordered_media_types: list[str] = []
+        
+        # Add media types in preferred order if they exist
+        for media_type in preferred_order:
+            if media_type in media_type_data:
+                ordered_media_types.append(media_type)
+        
+        # Add any remaining media types
+        for media_type in media_type_data:
+            if media_type not in ordered_media_types:
+                ordered_media_types.append(media_type)
+
+        # Create stacked bars
+        bottom = np.zeros(len(categories))
+        bar_containers = []
+        
+        for media_type in ordered_media_types:
+            values = np.array(media_type_data[media_type])
+            color = media_type_colors[media_type]
+            
+            # Get display name for legend
+            if media_type in display_info:
+                label = display_info[media_type]['display_name']
+            else:
+                label = media_type.title()
+                
+            bars = ax.bar(  # pyright: ignore[reportUnknownMemberType]
+                x, values, width, 
+                label=label,
+                bottom=bottom, 
+                color=color, 
+                alpha=0.8,
+                edgecolor='white',
+                linewidth=1.5
+            )
+            bar_containers.append((bars, media_type, values))
+            bottom += values
+
+        # Set labels and title
+        _ = ax.set_xlabel('Month', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
+        _ = ax.set_ylabel('Play Count', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
+        _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)  # pyright: ignore[reportUnknownMemberType]
+        _ = ax.set_xticks(x)  # pyright: ignore[reportUnknownMemberType]
+        _ = ax.set_xticklabels(categories, rotation=45, ha='right')  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType] # external API data
+
+        # Adjust tick parameters
+        ax.tick_params(axis='x', labelsize=12)  # pyright: ignore[reportUnknownMemberType]
+        ax.tick_params(axis='y', labelsize=12)  # pyright: ignore[reportUnknownMemberType]
+
+        # Add legend
+        _ = ax.legend(  # pyright: ignore[reportUnknownMemberType]
+            loc='best',
+            frameon=True,
+            fancybox=True,
+            shadow=True,
+            framealpha=0.9,
+            fontsize=12
+        )
+
+        # Add annotations if enabled
+        annotate_enabled = self.get_config_value('ANNOTATE_PLAY_COUNT_BY_MONTH', False)
+        if annotate_enabled:
+            # Annotate individual segments and totals
+            for i in range(len(categories)):
+                cumulative_height = 0.0
+                
+                # Annotate each segment
+                for bars, media_type, values in bar_containers:
+                    value = values[i]
+                    if value > 0:
+                        # Position annotation in the middle of this segment
+                        self.add_bar_value_annotation(
+                            ax,
+                            x=float(i),
+                            y=cumulative_height + value / 2,
+                            value=int(value),
+                            ha='center',
+                            va='center',
+                            fontsize=9,
+                            fontweight='normal'
+                        )
+                    cumulative_height += value
+                
+                # Add total annotation at the top
+                if cumulative_height > 0:
+                    self.add_bar_value_annotation(
+                        ax,
+                        x=float(i),
+                        y=cumulative_height,
+                        value=int(cumulative_height),
+                        ha='center',
+                        va='bottom',
+                        offset_y=2,
+                        fontsize=11,
+                        fontweight='bold'
+                    )
+
+        logger.info(f"Created stacked monthly play count graph with {len(ordered_media_types)} media types and {len(categories)} months")
 
     def _generate_combined_visualization_from_api(self, ax: Axes, response_data: Mapping[str, object]) -> None:
         """

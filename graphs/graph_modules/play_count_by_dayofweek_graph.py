@@ -10,6 +10,7 @@ import logging
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, override, cast
 
+import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib.axes import Axes
@@ -118,8 +119,14 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
             use_separation = self.get_media_type_separation_enabled()
 
             if use_separation and processed_records:
-                # Generate separated visualization
-                self._generate_separated_visualization(ax, processed_records)
+                # Check if stacked bars are enabled
+                use_stacked = self.get_stacked_bar_charts_enabled()
+                if use_stacked:
+                    # Generate stacked visualization
+                    self._generate_stacked_visualization(ax, processed_records)
+                else:
+                    # Generate separated visualization (grouped bars)
+                    self._generate_separated_visualization(ax, processed_records)
             else:
                 # Generate traditional combined visualization
                 self._generate_combined_visualization(ax, processed_records)
@@ -272,6 +279,153 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
                     )
 
         logger.info(f"Created separated day of week graph with {len(unique_media_types_list)} media types")
+
+    def _generate_stacked_visualization(self, ax: Axes, processed_records: ProcessedRecords) -> None:
+        """
+        Generate stacked bar visualization showing Movies and TV Series in stacked bars.
+
+        Args:
+            ax: The matplotlib axes to plot on
+            processed_records: List of processed play history records
+        """
+        # Aggregate data by day of week with media type separation
+        separated_data = aggregate_by_day_of_week_separated(processed_records)
+        display_info = get_media_type_display_info()
+
+        if not separated_data:
+            self._handle_empty_data_case(ax)
+            return
+
+        # Define day order for consistent display
+        day_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+        # Prepare data for stacked bars
+        media_types_present: list[str] = []
+        media_type_colors: dict[str, str] = {}
+        
+        # Determine which media types are present
+        for media_type, media_data in separated_data.items():
+            if media_data and any(count > 0 for count in media_data.values()):
+                media_types_present.append(media_type)
+                
+                # Get colors for media types
+                if media_type == 'tv':
+                    media_type_colors[media_type] = self.get_tv_color()
+                elif media_type == 'movie':
+                    media_type_colors[media_type] = self.get_movie_color()
+                elif media_type in display_info:
+                    media_type_colors[media_type] = display_info[media_type]['color']
+                else:
+                    media_type_colors[media_type] = '#666666'
+
+        if not media_types_present:
+            self._handle_empty_data_case(ax)
+            return
+
+        # Create data arrays for stacking
+        x = np.arange(len(day_order))  # the label locations
+        width = 0.6  # width of the bars
+
+        # Use preferred order for consistent coloring
+        preferred_order = ['tv', 'movie', 'music', 'other']
+        ordered_media_types: list[str] = []
+        
+        # Add media types in preferred order if they exist
+        for media_type in preferred_order:
+            if media_type in media_types_present:
+                ordered_media_types.append(media_type)
+        
+        # Add any remaining media types
+        for media_type in media_types_present:
+            if media_type not in ordered_media_types:
+                ordered_media_types.append(media_type)
+
+        # Prepare data for each media type
+        bottom = np.zeros(len(day_order))
+        bars_data: list[tuple[str, np.ndarray, str]] = []  # (media_type, values, color)
+        
+        for media_type in ordered_media_types:
+            values = np.array([separated_data[media_type].get(day, 0) for day in day_order])
+            color = media_type_colors[media_type]
+            bars_data.append((media_type, values, color))
+
+        # Create stacked bars
+        bar_containers = []
+        for media_type, values, color in bars_data:
+            # Get display name for legend
+            if media_type in display_info:
+                label = display_info[media_type]['display_name']
+            else:
+                label = media_type.title()
+                
+            bars = ax.bar(  # pyright: ignore[reportUnknownMemberType]
+                x, values, width, 
+                label=label,
+                bottom=bottom, 
+                color=color, 
+                alpha=0.8,
+                edgecolor='white',
+                linewidth=1.5
+            )
+            bar_containers.append((bars, media_type, values))
+            bottom += values
+
+        # Set labels and title
+        _ = ax.set_xlabel('Day of Week', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
+        _ = ax.set_ylabel('Play Count', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
+        _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)  # pyright: ignore[reportUnknownMemberType]
+        _ = ax.set_xticks(x)  # pyright: ignore[reportUnknownMemberType]
+        _ = ax.set_xticklabels(day_order)  # pyright: ignore[reportUnknownMemberType]
+
+        # Add legend
+        _ = ax.legend(  # pyright: ignore[reportUnknownMemberType]
+            loc='best',
+            frameon=True,
+            fancybox=True,
+            shadow=True,
+            framealpha=0.9,
+            fontsize=12
+        )
+
+        # Add annotations if enabled
+        annotate_enabled = self.get_config_value('ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK', False)
+        if annotate_enabled:
+            # Annotate individual segments and totals
+            for i, day in enumerate(day_order):
+                cumulative_height = 0.0
+                
+                # Annotate each segment
+                for bars, media_type, values in bar_containers:
+                    value = values[i]
+                    if value > 0:
+                        # Position annotation in the middle of this segment
+                        self.add_bar_value_annotation(
+                            ax,
+                            x=float(i),
+                            y=cumulative_height + value / 2,
+                            value=int(value),
+                            ha='center',
+                            va='center',
+                            fontsize=9,
+                            fontweight='normal'
+                        )
+                    cumulative_height += value
+                
+                # Add total annotation at the top
+                if cumulative_height > 0:
+                    self.add_bar_value_annotation(
+                        ax,
+                        x=float(i),
+                        y=cumulative_height,
+                        value=int(cumulative_height),
+                        ha='center',
+                        va='bottom',
+                        offset_y=2,
+                        fontsize=11,
+                        fontweight='bold'
+                    )
+
+        logger.info(f"Created stacked day of week graph with {len(ordered_media_types)} media types")
 
     def _generate_combined_visualization(self, ax: Axes, processed_records: ProcessedRecords) -> None:
         """
