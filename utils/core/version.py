@@ -52,7 +52,7 @@ def get_project_version() -> str:
             return _read_version_with_toml(toml)
 
 
-def _read_version_with_tomllib(tomllib_module: Any) -> str:
+def _read_version_with_tomllib(tomllib_module: Any) -> str:  # pyright: ignore[reportExplicitAny,reportAny] # multiple TOML libraries with different signatures
     """Read version using tomllib/tomli."""
     pyproject_path = Path("pyproject.toml")
     
@@ -65,13 +65,23 @@ def _read_version_with_tomllib(tomllib_module: Any) -> str:
     
     try:
         with open(pyproject_path, "rb") as f:
-            data = tomllib_module.load(f)
-        return str(data["project"]["version"])
+            data: dict[str, Any] = tomllib_module.load(f)  # pyright: ignore[reportAny,reportExplicitAny] # TOML parsing returns nested dicts
+        
+        # Type-safe access to nested dict structure
+        project_data = data.get("project")
+        if not isinstance(project_data, dict):  
+            raise KeyError("project section not found or invalid")
+        
+        version = project_data.get("version")  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType] # dict from TOML data
+        if not isinstance(version, str):
+            raise KeyError("version field not found or not a string")
+        
+        return version
     except (KeyError, OSError) as e:
         raise RuntimeError(f"Failed to read version from pyproject.toml: {e}") from e
 
 
-def _read_version_with_toml(toml_module: Any) -> str:
+def _read_version_with_toml(toml_module: Any) -> str:  # pyright: ignore[reportExplicitAny,reportAny] # multiple TOML libraries with different signatures
     """Read version using toml library (fallback)."""
     pyproject_path = Path("pyproject.toml")
     
@@ -84,8 +94,18 @@ def _read_version_with_toml(toml_module: Any) -> str:
     
     try:
         with open(pyproject_path, "r", encoding="utf-8") as f:
-            data = toml_module.load(f)
-        return str(data["project"]["version"])
+            data: dict[str, Any] = toml_module.load(f)  # pyright: ignore[reportAny,reportExplicitAny] # TOML parsing returns nested dicts
+        
+        # Type-safe access to nested dict structure
+        project_data = data.get("project")
+        if not isinstance(project_data, dict):
+            raise KeyError("project section not found or invalid")
+        
+        version = project_data.get("version")  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType] # dict from TOML data
+        if not isinstance(version, str):
+            raise KeyError("version field not found or not a string")
+        
+        return version
     except (KeyError, OSError) as e:
         raise RuntimeError(f"Failed to read version from pyproject.toml: {e}") from e
 
