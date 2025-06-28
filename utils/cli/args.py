@@ -7,9 +7,10 @@ to configure custom paths for config files, data folders, and log folders.
 
 import argparse
 import sys
-from dataclasses import dataclass
 from pathlib import Path
 from typing import NamedTuple
+
+from utils.core.version import get_version
 
 
 class PathValidationError(Exception):
@@ -25,7 +26,6 @@ class ParsedArgs(NamedTuple):
     log_folder: Path
 
 
-@dataclass(frozen=True)
 class DefaultPaths:
     """Default paths for TGraph Bot."""
     
@@ -34,39 +34,28 @@ class DefaultPaths:
     LOG_FOLDER: Path = Path("logs")
 
 
-def validate_config_file_path(path_str: str) -> Path:
+def validate_config_file_path(config_file_str: str) -> Path:
     """
-    Validate and resolve the config file path.
+    Validate configuration file path.
     
     Args:
-        path_str: String representation of the config file path
+        config_file_str: String path to configuration file
         
     Returns:
-        Resolved absolute path to the config file
+        Resolved Path object for the configuration file
         
     Raises:
-        PathValidationError: If the path is invalid or file doesn't exist
+        PathValidationError: If the configuration file path is invalid
     """
-    try:
-        # Expand tilde if present
-        path = Path(path_str).expanduser().resolve()
-    except (OSError, ValueError) as e:
-        raise PathValidationError(f"Invalid config file path: {e}") from e
+    config_file = Path(config_file_str).resolve()
     
-    # For config files, the parent directory must exist
-    # The file itself might be created later
-    if not path.parent.exists():
+    # Check if parent directory exists
+    if not config_file.parent.exists():
         raise PathValidationError(
-            f"Parent directory for config file does not exist: {path.parent}"
+            f"Configuration file parent directory does not exist: {config_file.parent}"
         )
     
-    # If the path exists, it must be a file
-    if path.exists() and not path.is_file():
-        raise PathValidationError(
-            f"Config file path exists but is not a file: {path}"
-        )
-    
-    return path
+    return config_file
 
 
 def validate_folder_path(path_str: str, folder_name: str) -> Path:
@@ -163,7 +152,7 @@ Examples:
     _ = parser.add_argument(
         "--version",
         action="version",
-        version="%(prog)s 1.0.0"
+        version=f"%(prog)s {get_version()}"
     )
     
     return parser

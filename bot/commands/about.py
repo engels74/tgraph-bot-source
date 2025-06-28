@@ -17,6 +17,7 @@ from utils.core.error_handler import (
     ErrorContext,
     handle_command_error
 )
+from utils.core.version import get_version
 
 if TYPE_CHECKING:
     pass
@@ -56,7 +57,7 @@ class AboutCog(commands.Cog):
 
             _ = embed.add_field(
                 name=i18n.translate("Version"),
-                value="1.0.0",
+                value=get_version(),
                 inline=True
             )
 
@@ -80,7 +81,7 @@ class AboutCog(commands.Cog):
 
             _ = embed.add_field(
                 name=i18n.translate("Wiki"),
-                value="[tgraph-bot wiki](https://github.com/engels74/tgraph-bot/wiki)",
+                value="https://github.com/engels74/tgraph-bot/wiki",
                 inline=True
             )
 

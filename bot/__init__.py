@@ -5,5 +5,7 @@ This package contains the core Discord bot functionality including
 commands, extensions management, permission checking, and update tracking.
 """
 
-__version__ = "1.0.0"
+from utils.core.version import get_version
+
+__version__ = get_version()
 __author__ = "engels74"
