@@ -79,7 +79,7 @@ class TGraphBotConfig(BaseModel):
         description="Whether to separate Movies and TV Series in graphs",
     )
     ENABLE_STACKED_BAR_CHARTS: bool = Field(
-        default=False,
+        default=True,
         description="Whether to use stacked bars when media type separation is enabled (applies to bar charts only)",
     )
     ENABLE_DAILY_PLAY_COUNT: bool = Field(

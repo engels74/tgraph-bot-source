@@ -102,7 +102,7 @@ class TestConfigManager:
         """Test that saving config preserves comments."""
         # Create config file with comments
         with tempfile.NamedTemporaryFile(mode='w', suffix='.yml', delete=False) as f:
-            content = f"""# Essential Settings
+            content = f"""# Required Configuration (Set These First)
 TAUTULLI_API_KEY: {base_config.TAUTULLI_API_KEY}
 TAUTULLI_URL: {base_config.TAUTULLI_URL}  # Base URL for Tautulli
 DISCORD_TOKEN: {base_config.DISCORD_TOKEN}
@@ -127,7 +127,7 @@ TV_COLOR: '{base_config.TV_COLOR}'  # Color for TV shows
             
             # Read the file content and check comments are preserved
             content = config_with_comments.read_text()
-            assert '# Essential Settings' in content
+            assert '# Required Configuration (Set These First)' in content
             assert '# Base URL for Tautulli' in content
             assert '# Graph Options' in content
             assert 'UPDATE_DAYS: 21' in content
@@ -179,7 +179,7 @@ TV_COLOR: '{base_config.TV_COLOR}'  # Color for TV shows
             assert 'TAUTULLI_API_KEY:' in content
             assert 'DISCORD_TOKEN:' in content
             assert 'CHANNEL_ID:' in content
-            assert '# Essential Settings' in content
+            assert '# Required Configuration (Set These First)' in content
 
     def test_sample_config_validation(self) -> None:
         """Test that the generated sample configuration can be loaded and validated."""

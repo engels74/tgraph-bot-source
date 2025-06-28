@@ -94,7 +94,7 @@ class TestTGraphBotConfig:
         assert config.CENSOR_USERNAMES is True
         assert config.ENABLE_GRAPH_GRID is False
         assert config.ENABLE_MEDIA_TYPE_SEPARATION is True
-        assert config.ENABLE_STACKED_BAR_CHARTS is False
+        assert config.ENABLE_STACKED_BAR_CHARTS is True
         assert config.ENABLE_DAILY_PLAY_COUNT is True
 
     def test_missing_required_fields(self) -> None:
@@ -186,7 +186,7 @@ class TestTGraphBotConfig:
         config_disabled = TGraphBotConfig(**config_data_disabled)  # pyright: ignore[reportArgumentType]
         assert config_disabled.ENABLE_STACKED_BAR_CHARTS is False
         
-        # Test default value (should be False)
+        # Test default value (should be True)
         config_data_default = {
             "TAUTULLI_API_KEY": "test_api_key",
             "TAUTULLI_URL": "http://localhost:8181/api/v2",
@@ -194,4 +194,4 @@ class TestTGraphBotConfig:
             "CHANNEL_ID": 123456789012345678,
         }
         config_default = TGraphBotConfig(**config_data_default)  # pyright: ignore[reportArgumentType]
-        assert config_default.ENABLE_STACKED_BAR_CHARTS is False
+        assert config_default.ENABLE_STACKED_BAR_CHARTS is True
