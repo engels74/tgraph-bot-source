@@ -214,7 +214,7 @@ msgstr "Hej"
         po_file = tmp_path / "messages.po"
         _ = po_file.write_text("# Test po file", encoding='utf-8')
 
-        with patch('scripts.compile_translations.compile_po_to_mo') as mock_compile:
+        with patch('scripts.i18n.compile_translations.compile_po_to_mo') as mock_compile:
             result = compile_file(po_file)
 
             assert result is True
@@ -222,7 +222,7 @@ msgstr "Hej"
 
     def test_compile_file_up_to_date(self, tmp_path: Path) -> None:
         """Test skipping compilation when file is up to date."""
-        from scripts.compile_translations import compile_file
+        from scripts.i18n.compile_translations import compile_file
 
         # Create .po file first
         po_file = tmp_path / "messages.po"
@@ -233,7 +233,7 @@ msgstr "Hej"
         mo_file = tmp_path / "messages.mo"
         _ = mo_file.write_text("# New mo file", encoding='utf-8')
 
-        with patch('scripts.compile_translations.compile_po_to_mo') as mock_compile:
+        with patch('scripts.i18n.compile_translations.compile_po_to_mo') as mock_compile:
             result = compile_file(po_file)
 
             assert result is False
@@ -241,7 +241,7 @@ msgstr "Hej"
 
     def test_compile_file_force(self, tmp_path: Path) -> None:
         """Test forced compilation even when file is up to date."""
-        from scripts.compile_translations import compile_file
+        from scripts.i18n.compile_translations import compile_file
 
         # Create .po file first
         po_file = tmp_path / "messages.po"
@@ -252,7 +252,7 @@ msgstr "Hej"
         mo_file = tmp_path / "messages.mo"
         _ = mo_file.write_text("# New mo file", encoding='utf-8')
 
-        with patch('scripts.compile_translations.compile_po_to_mo') as mock_compile:
+        with patch('scripts.i18n.compile_translations.compile_po_to_mo') as mock_compile:
             result = compile_file(po_file, force=True)
 
             assert result is True
@@ -260,12 +260,12 @@ msgstr "Hej"
 
     def test_compile_file_dry_run(self, tmp_path: Path) -> None:
         """Test dry run mode doesn't actually compile."""
-        from scripts.compile_translations import compile_file
+        from scripts.i18n.compile_translations import compile_file
 
         po_file = tmp_path / "messages.po"
         _ = po_file.write_text("# Test po file", encoding='utf-8')
 
-        with patch('scripts.compile_translations.compile_po_to_mo') as mock_compile:
+        with patch('scripts.i18n.compile_translations.compile_po_to_mo') as mock_compile:
             result = compile_file(po_file, dry_run=True)
 
             assert result is True

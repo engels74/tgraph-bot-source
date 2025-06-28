@@ -129,7 +129,7 @@ class TestLocaleStructureValidation:
         result = check_locale_structure()
         assert result is True
 
-    @patch('scripts.validate_weblate_config.Path')
+    @patch('scripts.weblate.validate_config.Path')
     def test_check_missing_locale_directory(self, mock_path_class: MagicMock) -> None:
         """Test validation when locale directory is missing."""
         # Mock the Path class to return a mock object
