@@ -90,10 +90,6 @@ msgstr "Discord API error occurred while posting graphs."
 msgid "Discord rate limit reached. Please try again later."
 msgstr "Discord rate limit reached. Please try again later."
 
-#: bot/commands/about.py:88
-msgid "Discord.py Version"
-msgstr "Discord.py Version"
-
 #: bot/commands/about.py:41
 msgid "Display information about the bot"
 msgstr "Display information about the bot"
@@ -185,6 +181,10 @@ msgstr "Information"
 msgid "License"
 msgstr "License"
 
+#: bot/commands/about.py:78
+msgid "Wiki"
+msgstr "Wiki"
+
 #: bot/commands/update_graphs.py:80
 msgid "Manually trigger server-wide graph generation and posting"
 msgstr "Manually trigger server-wide graph generation and posting"
@@ -254,10 +254,6 @@ msgstr "Processing Time"
 #: utils/command_utils.py:343
 msgid "Progress"
 msgstr "Progress"
-
-#: bot/commands/about.py:82
-msgid "Python Version"
-msgstr "Python Version"
 
 #: utils/command_utils.py:383
 msgid "Reason"

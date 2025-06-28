@@ -90,10 +90,6 @@ msgstr ""
 msgid "Discord rate limit reached. Please try again later."
 msgstr ""
 
-#: bot/commands/about.py:88
-msgid "Discord.py Version"
-msgstr ""
-
 #: bot/commands/about.py:41
 msgid "Display information about the bot"
 msgstr ""
@@ -185,6 +181,10 @@ msgstr ""
 msgid "License"
 msgstr ""
 
+#: bot/commands/about.py:78
+msgid "Wiki"
+msgstr ""
+
 #: bot/commands/update_graphs.py:80
 msgid "Manually trigger server-wide graph generation and posting"
 msgstr ""
@@ -253,10 +253,6 @@ msgstr ""
 
 #: utils/command_utils.py:343
 msgid "Progress"
-msgstr ""
-
-#: bot/commands/about.py:82
-msgid "Python Version"
 msgstr ""
 
 #: utils/command_utils.py:383
