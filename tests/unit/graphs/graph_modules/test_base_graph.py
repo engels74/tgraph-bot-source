@@ -298,3 +298,67 @@ class TestBaseGraph:
 
         with pytest.raises(ValueError, match="Either output_path or graph_type must be provided"):
             _ = graph.save_figure()
+
+    def test_get_stacked_bar_charts_enabled_default(self) -> None:
+        """Test get_stacked_bar_charts_enabled returns default value."""
+        graph = ConcreteGraph()
+        # Should return False by default (no config provided)
+        assert graph.get_stacked_bar_charts_enabled() is False
+
+    def test_get_stacked_bar_charts_enabled_with_config(self) -> None:
+        """Test get_stacked_bar_charts_enabled with configuration object."""
+        from config.schema import TGraphBotConfig
+        
+        # Test with stacked charts enabled
+        config_enabled = TGraphBotConfig(
+            TAUTULLI_API_KEY="test_api_key",
+            TAUTULLI_URL="http://localhost:8181/api/v2",
+            DISCORD_TOKEN="test_discord_token",
+            CHANNEL_ID=123456789,
+            ENABLE_STACKED_BAR_CHARTS=True,
+        )
+        graph_enabled = ConcreteGraph(config=config_enabled)
+        assert graph_enabled.get_stacked_bar_charts_enabled() is True
+        
+        # Test with stacked charts disabled
+        config_disabled = TGraphBotConfig(
+            TAUTULLI_API_KEY="test_api_key",
+            TAUTULLI_URL="http://localhost:8181/api/v2",
+            DISCORD_TOKEN="test_discord_token",
+            CHANNEL_ID=123456789,
+            ENABLE_STACKED_BAR_CHARTS=False,
+        )
+        graph_disabled = ConcreteGraph(config=config_disabled)
+        assert graph_disabled.get_stacked_bar_charts_enabled() is False
+
+    def test_get_media_type_separation_enabled_default(self) -> None:
+        """Test get_media_type_separation_enabled returns default value."""
+        graph = ConcreteGraph()
+        # Should return True by default (no config provided)
+        assert graph.get_media_type_separation_enabled() is True
+
+    def test_get_media_type_separation_enabled_with_config(self) -> None:
+        """Test get_media_type_separation_enabled with configuration object."""
+        from config.schema import TGraphBotConfig
+        
+        # Test with media type separation enabled
+        config_enabled = TGraphBotConfig(
+            TAUTULLI_API_KEY="test_api_key",
+            TAUTULLI_URL="http://localhost:8181/api/v2",
+            DISCORD_TOKEN="test_discord_token",
+            CHANNEL_ID=123456789,
+            ENABLE_MEDIA_TYPE_SEPARATION=True,
+        )
+        graph_enabled = ConcreteGraph(config=config_enabled)
+        assert graph_enabled.get_media_type_separation_enabled() is True
+        
+        # Test with media type separation disabled
+        config_disabled = TGraphBotConfig(
+            TAUTULLI_API_KEY="test_api_key",
+            TAUTULLI_URL="http://localhost:8181/api/v2",
+            DISCORD_TOKEN="test_discord_token",
+            CHANNEL_ID=123456789,
+            ENABLE_MEDIA_TYPE_SEPARATION=False,
+        )
+        graph_disabled = ConcreteGraph(config=config_disabled)
+        assert graph_disabled.get_media_type_separation_enabled() is False

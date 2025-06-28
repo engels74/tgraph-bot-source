@@ -76,6 +76,8 @@ def create_test_config_comprehensive() -> TGraphBotConfig:
         ENABLE_GRAPH_GRID=True,
         CENSOR_USERNAMES=True,
         ENABLE_ANNOTATION_OUTLINE=True,
+        ENABLE_MEDIA_TYPE_SEPARATION=True,
+        ENABLE_STACKED_BAR_CHARTS=True,
         
         # Annotation controls
         ANNOTATE_DAILY_PLAY_COUNT=True,

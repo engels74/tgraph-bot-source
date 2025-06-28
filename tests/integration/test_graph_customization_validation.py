@@ -377,6 +377,58 @@ class TestGraphCustomizationValidation:
                 # Cleanup
                 graph.cleanup()
 
+    def test_stacked_bar_charts_configuration_validation(self) -> None:
+        """Test that stacked bar charts configuration works correctly."""
+        with matplotlib_cleanup():
+            # Test with stacked bar charts enabled
+            config_enabled = create_test_config_minimal()
+            config_enabled.ENABLE_MEDIA_TYPE_SEPARATION = True
+            config_enabled.ENABLE_STACKED_BAR_CHARTS = True
+            
+            factory_enabled = create_graph_factory_with_config(config_enabled)
+            
+            # Test graphs that support stacked bar charts
+            stacked_graph_types = ["play_count_by_dayofweek", "play_count_by_month"]
+            
+            for graph_type in stacked_graph_types:
+                graph = factory_enabled.create_graph_by_type(graph_type)
+                
+                # Verify stacked bar charts are enabled
+                assert graph.config is not None
+                # Type guard to ensure we're working with TGraphBotConfig
+                assert not isinstance(graph.config, dict), "Config should be TGraphBotConfig, not dict"
+                config_obj: TGraphBotConfig = graph.config
+                
+                assert config_obj.ENABLE_STACKED_BAR_CHARTS is True
+                assert graph.get_stacked_bar_charts_enabled() is True
+                assert graph.get_media_type_separation_enabled() is True
+                
+                # Cleanup
+                graph.cleanup()
+
+            # Test with stacked bar charts disabled
+            config_disabled = create_test_config_minimal()
+            config_disabled.ENABLE_MEDIA_TYPE_SEPARATION = True
+            config_disabled.ENABLE_STACKED_BAR_CHARTS = False
+            
+            factory_disabled = create_graph_factory_with_config(config_disabled)
+            
+            for graph_type in stacked_graph_types:
+                graph = factory_disabled.create_graph_by_type(graph_type)
+                
+                # Verify stacked bar charts are disabled
+                assert graph.config is not None
+                # Type guard to ensure we're working with TGraphBotConfig
+                assert not isinstance(graph.config, dict), "Config should be TGraphBotConfig, not dict"
+                config_obj_disabled: TGraphBotConfig = graph.config
+                
+                assert config_obj_disabled.ENABLE_STACKED_BAR_CHARTS is False
+                assert graph.get_stacked_bar_charts_enabled() is False
+                assert graph.get_media_type_separation_enabled() is True  # Media separation can still be enabled
+                
+                # Cleanup
+                graph.cleanup()
+
     def test_privacy_settings_validation(self) -> None:
         """Test that privacy settings are properly validated and applied."""
         with matplotlib_cleanup():

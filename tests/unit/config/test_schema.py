@@ -40,6 +40,8 @@ class TestTGraphBotConfig:
             "LANGUAGE": "en",
             "CENSOR_USERNAMES": False,
             "ENABLE_GRAPH_GRID": True,
+            "ENABLE_MEDIA_TYPE_SEPARATION": True,
+            "ENABLE_STACKED_BAR_CHARTS": True,
             "ENABLE_DAILY_PLAY_COUNT": True,
             "ENABLE_PLAY_COUNT_BY_DAYOFWEEK": True,
             "ENABLE_PLAY_COUNT_BY_HOUROFDAY": True,
@@ -71,6 +73,7 @@ class TestTGraphBotConfig:
         assert config.FIXED_UPDATE_TIME == "12:30"
         assert config.CENSOR_USERNAMES is False
         assert config.TV_COLOR == "#1f77b4"
+        assert config.ENABLE_STACKED_BAR_CHARTS is True
 
     def test_default_values(self) -> None:
         """Test that default values are applied correctly."""
@@ -90,6 +93,8 @@ class TestTGraphBotConfig:
         assert config.LANGUAGE == "en"
         assert config.CENSOR_USERNAMES is True
         assert config.ENABLE_GRAPH_GRID is False
+        assert config.ENABLE_MEDIA_TYPE_SEPARATION is True
+        assert config.ENABLE_STACKED_BAR_CHARTS is False
         assert config.ENABLE_DAILY_PLAY_COUNT is True
 
     def test_missing_required_fields(self) -> None:
@@ -156,3 +161,37 @@ class TestTGraphBotConfig:
         
         with pytest.raises(ValidationError):
             _ = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
+
+    def test_stacked_bar_charts_configuration(self) -> None:
+        """Test ENABLE_STACKED_BAR_CHARTS boolean configuration field."""
+        # Test with stacked bar charts enabled
+        config_data_enabled = {
+            "TAUTULLI_API_KEY": "test_api_key",
+            "TAUTULLI_URL": "http://localhost:8181/api/v2",
+            "DISCORD_TOKEN": "test_discord_token",
+            "CHANNEL_ID": 123456789012345678,
+            "ENABLE_STACKED_BAR_CHARTS": True,
+        }
+        config_enabled = TGraphBotConfig(**config_data_enabled)  # pyright: ignore[reportArgumentType]
+        assert config_enabled.ENABLE_STACKED_BAR_CHARTS is True
+        
+        # Test with stacked bar charts disabled
+        config_data_disabled = {
+            "TAUTULLI_API_KEY": "test_api_key",
+            "TAUTULLI_URL": "http://localhost:8181/api/v2",
+            "DISCORD_TOKEN": "test_discord_token",
+            "CHANNEL_ID": 123456789012345678,
+            "ENABLE_STACKED_BAR_CHARTS": False,
+        }
+        config_disabled = TGraphBotConfig(**config_data_disabled)  # pyright: ignore[reportArgumentType]
+        assert config_disabled.ENABLE_STACKED_BAR_CHARTS is False
+        
+        # Test default value (should be False)
+        config_data_default = {
+            "TAUTULLI_API_KEY": "test_api_key",
+            "TAUTULLI_URL": "http://localhost:8181/api/v2",
+            "DISCORD_TOKEN": "test_discord_token",
+            "CHANNEL_ID": 123456789012345678,
+        }
+        config_default = TGraphBotConfig(**config_data_default)  # pyright: ignore[reportArgumentType]
+        assert config_default.ENABLE_STACKED_BAR_CHARTS is False
