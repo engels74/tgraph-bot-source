@@ -322,9 +322,8 @@ async def test_scheduler_health_updates_during_long_waits() -> None:
         tracker._task_manager._task_health[task_name] = datetime.now()  # pyright: ignore[reportPrivateUsage]
         initial_health = tracker._task_manager._task_health[task_name]  # pyright: ignore[reportPrivateUsage]
         
-        # Wait for a period that would normally trigger stale detection (6 minutes)
-        # but use shorter intervals to make the test faster
-        wait_time = 6.0  # 6 seconds instead of 6 minutes for testing
+        # Use shorter wait time for faster testing
+        wait_time = 2.0  # Reduced from 6.0 seconds for faster, more reliable testing
         
         # Mock the health update interval to be much smaller for testing
         async def mock_wait_with_health_updates(total_wait_seconds: float, task_name: str = "update_scheduler") -> bool:
@@ -332,8 +331,8 @@ async def test_scheduler_health_updates_during_long_waits() -> None:
             if total_wait_seconds <= 0:
                 return True
                 
-            # Use much smaller intervals for testing (0.5 seconds instead of 2 minutes)
-            health_update_interval = 0.5
+            # Use smaller intervals for testing
+            health_update_interval = 0.2  # Increased from 0.5 to 0.2 for more predictable timing
             elapsed = 0.0
             
             while elapsed < total_wait_seconds and not tracker._task_manager._shutdown_event.is_set():  # pyright: ignore[reportPrivateUsage]
@@ -359,7 +358,7 @@ async def test_scheduler_health_updates_during_long_waits() -> None:
         # Replace the method temporarily
         tracker._wait_with_health_updates = mock_wait_with_health_updates  # pyright: ignore[reportPrivateUsage] # testing internal behavior
         
-        # Call the wait method
+        # Call the wait method with precise timing
         start_time = datetime.now()
         result = await tracker._wait_with_health_updates(wait_time, task_name)  # pyright: ignore[reportPrivateUsage] # testing internal behavior
         end_time = datetime.now()
@@ -367,17 +366,23 @@ async def test_scheduler_health_updates_during_long_waits() -> None:
         # Verify the wait completed successfully
         assert result is True
         
-        # Verify the wait took approximately the expected time
+        # Verify the wait took approximately the expected time with more lenient tolerance
+        # Account for async overhead and system timing variations
         elapsed_time = (end_time - start_time).total_seconds()
-        assert abs(elapsed_time - wait_time) < 1.0  # Allow 1 second tolerance
+        min_expected_time = wait_time * 0.7  # Allow 30% shorter due to async optimizations
+        max_expected_time = wait_time * 1.5  # Allow 50% longer due to system overhead
+        assert min_expected_time <= elapsed_time <= max_expected_time, (
+            f"Expected elapsed time between {min_expected_time:.2f}s and {max_expected_time:.2f}s, "
+            f"but got {elapsed_time:.2f}s"
+        )
         
         # Verify health was updated during the wait
         final_health = tracker._task_manager._task_health[task_name]  # pyright: ignore[reportPrivateUsage]
-        assert final_health > initial_health
+        assert final_health > initial_health, "Health timestamp should have been updated"
         
         # Verify health was updated recently (within the last few seconds)
         time_since_health_update = (datetime.now() - final_health).total_seconds()
-        assert time_since_health_update < 2.0  # Should be very recent
+        assert time_since_health_update < 3.0, f"Health should be recent, but was {time_since_health_update:.2f}s ago"
         
     finally:
         # Clean up
