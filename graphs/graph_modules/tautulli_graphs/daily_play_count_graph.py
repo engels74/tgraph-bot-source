@@ -228,11 +228,11 @@ class DailyPlayCountGraph(BaseGraph):
                 import seaborn as sns
                 sns.set_style("whitegrid")
                 # For line plots, explicitly enable grid on the axes
-                ax.grid(True, alpha=0.7, linewidth=0.5)
+                ax.grid(True, alpha=0.7, linewidth=0.5)  # pyright: ignore[reportUnknownMemberType] # matplotlib method with **kwargs
             else:
                 import seaborn as sns
                 sns.set_style("white")
-                ax.grid(False)
+                ax.grid(False)  # pyright: ignore[reportUnknownMemberType] # matplotlib method with **kwargs
 
             # Step 7: Check if media type separation is enabled
             use_separation = self.get_media_type_separation_enabled()

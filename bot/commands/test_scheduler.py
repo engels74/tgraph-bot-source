@@ -149,7 +149,6 @@ class TestSchedulerCog(BaseCommandCog):
             await update_tracker.force_update()
 
             # Get status after test
-            status_after = update_tracker.get_scheduler_status()
             last_update_after = update_tracker.get_last_update_time()
             next_update_after = update_tracker.get_next_update_time()
 

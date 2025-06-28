@@ -65,15 +65,15 @@ class TestTestSchedulerCog:
 
         # Mock UpdateTracker and its methods
         mock_update_tracker = MagicMock()
-        mock_update_tracker.get_scheduler_status.return_value = {
+        mock_update_tracker.get_scheduler_status.return_value = {  # pyright: ignore[reportAny] # mock object typing
             'is_running': True,
             'last_update': None,
             'next_update': None,
             'config_update_days': 1,
             'config_fixed_time': '00:05'
         }
-        mock_update_tracker.get_next_update_time.return_value = None
-        mock_update_tracker.get_last_update_time.return_value = None
+        mock_update_tracker.get_next_update_time.return_value = None  # pyright: ignore[reportAny] # mock object typing
+        mock_update_tracker.get_last_update_time.return_value = None  # pyright: ignore[reportAny] # mock object typing
         mock_update_tracker.force_update = AsyncMock()
 
         with patch.object(test_scheduler_cog.tgraph_bot, 'update_tracker', mock_update_tracker):
@@ -81,7 +81,7 @@ class TestTestSchedulerCog:
             _ = await test_scheduler_cog.test_scheduler.callback(test_scheduler_cog, mock_interaction)  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
 
             # Verify force_update was called
-            mock_update_tracker.force_update.assert_called_once()
+            mock_update_tracker.force_update.assert_called_once()  # pyright: ignore[reportAny] # mock object typing
 
             # Verify interaction responses were sent
             mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
@@ -102,15 +102,15 @@ class TestTestSchedulerCog:
 
         # Mock UpdateTracker to raise an exception on force_update
         mock_update_tracker = MagicMock()
-        mock_update_tracker.get_scheduler_status.return_value = {
+        mock_update_tracker.get_scheduler_status.return_value = {  # pyright: ignore[reportAny] # mock object typing
             'is_running': True,
             'last_update': None,
             'next_update': None,
             'config_update_days': 1,
             'config_fixed_time': '00:05'
         }
-        mock_update_tracker.get_next_update_time.return_value = None
-        mock_update_tracker.get_last_update_time.return_value = None
+        mock_update_tracker.get_next_update_time.return_value = None  # pyright: ignore[reportAny] # mock object typing
+        mock_update_tracker.get_last_update_time.return_value = None  # pyright: ignore[reportAny] # mock object typing
         mock_update_tracker.force_update = AsyncMock(side_effect=RuntimeError("Test scheduler error"))
 
         with patch.object(test_scheduler_cog.tgraph_bot, 'update_tracker', mock_update_tracker), \
@@ -121,7 +121,7 @@ class TestTestSchedulerCog:
 
             # Verify error handling was called
             mock_error_handler.assert_called_once()
-            args = mock_error_handler.call_args[0]
+            args = mock_error_handler.call_args[0]  # pyright: ignore[reportAny] # mock object call_args typing
             assert args[0] == mock_interaction
             assert isinstance(args[1], RuntimeError)
             assert args[2] == "test_scheduler"
@@ -180,8 +180,7 @@ class TestTestSchedulerCog:
     @pytest.mark.asyncio
     async def test_test_scheduler_embed_content(
         self,
-        test_scheduler_cog: TestSchedulerCog,
-        base_config: TGraphBotConfig
+        test_scheduler_cog: TestSchedulerCog
     ) -> None:
         """Test that the scheduler test produces correctly formatted embeds."""
         # Create mock interaction
@@ -193,15 +192,15 @@ class TestTestSchedulerCog:
 
         # Mock UpdateTracker
         mock_update_tracker = MagicMock()
-        mock_update_tracker.get_scheduler_status.return_value = {
+        mock_update_tracker.get_scheduler_status.return_value = {  # pyright: ignore[reportAny] # mock object typing
             'is_running': True,
             'last_update': None,
             'next_update': None,
             'config_update_days': 1,
             'config_fixed_time': '00:05'
         }
-        mock_update_tracker.get_next_update_time.return_value = None
-        mock_update_tracker.get_last_update_time.return_value = None
+        mock_update_tracker.get_next_update_time.return_value = None  # pyright: ignore[reportAny] # mock object typing
+        mock_update_tracker.get_last_update_time.return_value = None  # pyright: ignore[reportAny] # mock object typing
         mock_update_tracker.force_update = AsyncMock()
 
         with patch.object(test_scheduler_cog.tgraph_bot, 'update_tracker', mock_update_tracker):
@@ -230,8 +229,8 @@ class TestTestSchedulerCog:
         command = test_scheduler_cog.test_scheduler
         
         # Check that it requires manage_guild permission
-        assert command.default_permissions is not None  # pyright: ignore[reportUnknownMemberType]
-        assert command.default_permissions.manage_guild is True  # pyright: ignore[reportUnknownMemberType]
+        assert command.default_permissions is not None
+        assert command.default_permissions.manage_guild is True
 
         # Check that it has permission checks
         checks = getattr(command, 'checks', [])
