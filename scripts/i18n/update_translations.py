@@ -7,16 +7,16 @@ This script updates existing .po translation files with new strings from
 
 Usage Examples:
     Update all .po files from messages.pot:
-        python scripts/update_translations.py
+        python scripts/i18n/update_translations.py
 
     Update specific language:
-        python scripts/update_translations.py --language en
+        python scripts/i18n/update_translations.py --language en
 
     Use custom .pot file:
-        python scripts/update_translations.py --pot-file locale/new_messages.pot
+        python scripts/i18n/update_translations.py --pot-file locale/new_messages.pot
 
     Don't preserve existing translations:
-        python scripts/update_translations.py --no-preserve
+        python scripts/i18n/update_translations.py --no-preserve
 """
 
 from __future__ import annotations

@@ -7,7 +7,7 @@ configured for the project structure and validates that all referenced files
 and directories exist.
 
 Usage:
-    python scripts/validate_weblate_config.py
+    python scripts/weblate/validate_config.py
 """
 
 from __future__ import annotations
@@ -134,7 +134,7 @@ def check_locale_structure() -> bool:
     pot_file = locale_dir / 'messages.pot'
     if not pot_file.exists():
         logger.warning(f"Template file not found: {pot_file}")
-        logger.info("Run 'python scripts/extract_strings.py' to generate it")
+        logger.info("Run 'python scripts/i18n/extract_strings.py' to generate it")
     else:
         logger.info(f"Template file exists: {pot_file}")
     

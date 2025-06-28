@@ -143,7 +143,7 @@ msgstr "Hej"
 
     def test_find_po_files_all_languages(self, tmp_path: Path) -> None:
         """Test finding all .po files in locale directory."""
-        from scripts.compile_translations import find_po_files
+        from scripts.i18n.compile_translations import find_po_files
         
         files = self.create_test_locale_structure(tmp_path)
         locale_dir = files['locale_dir']
@@ -156,7 +156,7 @@ msgstr "Hej"
 
     def test_find_po_files_specific_language(self, tmp_path: Path) -> None:
         """Test finding .po files for specific language."""
-        from scripts.compile_translations import find_po_files
+        from scripts.i18n.compile_translations import find_po_files
         
         files = self.create_test_locale_structure(tmp_path)
         locale_dir = files['locale_dir']
@@ -169,7 +169,7 @@ msgstr "Hej"
 
     def test_needs_compilation_no_mo_file(self, tmp_path: Path) -> None:
         """Test that compilation is needed when .mo file doesn't exist."""
-        from scripts.compile_translations import needs_compilation
+        from scripts.i18n.compile_translations import needs_compilation
         
         po_file = tmp_path / "messages.po"
         _ = po_file.write_text("# Test", encoding='utf-8')
@@ -179,7 +179,7 @@ msgstr "Hej"
 
     def test_needs_compilation_mo_older(self, tmp_path: Path) -> None:
         """Test that compilation is needed when .mo file is older than .po."""
-        from scripts.compile_translations import needs_compilation
+        from scripts.i18n.compile_translations import needs_compilation
 
         # Create .mo file first
         mo_file = tmp_path / "messages.mo"
@@ -194,7 +194,7 @@ msgstr "Hej"
 
     def test_needs_compilation_mo_newer(self, tmp_path: Path) -> None:
         """Test that compilation is not needed when .mo file is newer than .po."""
-        from scripts.compile_translations import needs_compilation
+        from scripts.i18n.compile_translations import needs_compilation
         
         # Create .po file first
         po_file = tmp_path / "messages.po"
@@ -209,7 +209,7 @@ msgstr "Hej"
 
     def test_compile_file_success(self, tmp_path: Path) -> None:
         """Test successful compilation of a single file."""
-        from scripts.compile_translations import compile_file
+        from scripts.i18n.compile_translations import compile_file
 
         po_file = tmp_path / "messages.po"
         _ = po_file.write_text("# Test po file", encoding='utf-8')

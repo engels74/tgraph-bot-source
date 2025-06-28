@@ -47,7 +47,7 @@ jobs:
           echo "" >> validation_report.md
 
           # Run validation
-          uv run python scripts/compile_translations.py --check > validation_output.txt 2>&1 || true
+          uv run python scripts/i18n/compile_translations.py --check > validation_output.txt 2>&1 || true
 
           if [[ $? -eq 0 ]]; then
             echo "✅ All translation files are valid!" >> validation_report.md
@@ -165,7 +165,7 @@ jobs:
 
       - name: Compile translations
         run: |
-          uv run python scripts/compile_translations.py
+          uv run python scripts/i18n/compile_translations.py
 
       - name: Run i18n tests
         run: |

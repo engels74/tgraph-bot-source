@@ -6,7 +6,7 @@ This script provides utilities for interacting with the Weblate API
 to manage translations, check status, and perform administrative tasks.
 
 Usage:
-    python scripts/weblate_api.py [command] [options]
+    python scripts/weblate/api.py [command] [options]
 
 Commands:
     status      - Show component and translation status

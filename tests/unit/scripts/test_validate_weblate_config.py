@@ -15,7 +15,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from scripts.validate_weblate_config import (
+from scripts.weblate.validate_config import (
     check_locale_structure,
     validate_weblate_config,
 )

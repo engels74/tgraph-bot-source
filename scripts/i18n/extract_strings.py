@@ -7,16 +7,16 @@ This script scans Python source files for translatable strings and generates
 
 Usage Examples:
     Extract strings from current directory:
-        python scripts/extract_strings.py
+        python scripts/i18n/extract_strings.py
 
     Extract from specific directory:
-        python scripts/extract_strings.py --source-dir bot/
+        python scripts/i18n/extract_strings.py --source-dir bot/
 
     Specify output file:
-        python scripts/extract_strings.py --output locale/messages.pot
+        python scripts/i18n/extract_strings.py --output locale/messages.pot
 
     Exclude specific directories:
-        python scripts/extract_strings.py --exclude tests --exclude docs
+        python scripts/i18n/extract_strings.py --exclude tests --exclude docs
 """
 
 from __future__ import annotations
