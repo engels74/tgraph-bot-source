@@ -12,6 +12,7 @@ import signal
 import tempfile
 from pathlib import Path
 from typing import TYPE_CHECKING, override
+from collections.abc import AsyncIterator
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import discord
@@ -761,15 +762,16 @@ class TestAutomatedGraphUpdate(AsyncTestBase):
             
             # Setup GraphManager mock
             mock_graph_manager = AsyncMock()
-            mock_graph_manager.generate_all_graphs = AsyncMock(return_value=['graph1.png', 'graph2.png', 'graph3.png'])
-            mock_graph_manager_class.return_value.__aenter__ = AsyncMock(return_value=mock_graph_manager)
-            mock_graph_manager_class.return_value.__aexit__ = AsyncMock(return_value=None)
+            mock_graph_manager.generate_all_graphs.return_value = ['graph1.png', 'graph2.png', 'graph3.png']  # pyright: ignore[reportAny]
+            mock_graph_manager_class.return_value.__aenter__.return_value = mock_graph_manager  # pyright: ignore[reportAny]
+            mock_graph_manager_class.return_value.__aexit__.return_value = None  # pyright: ignore[reportAny]
             
-            await bot._automated_graph_update()
+            # Testing protected method _automated_graph_update is intentional - it's a key internal method
+            await bot._automated_graph_update()  # pyright: ignore[reportPrivateUsage]
             
             # Verify the 3-step process: Cleanup → Generate → Post
             mock_cleanup.assert_called_once_with(mock_channel)
-            mock_graph_manager.generate_all_graphs.assert_called_once_with(
+            mock_graph_manager.generate_all_graphs.assert_called_once_with(  # pyright: ignore[reportAny]
                 max_retries=3,
                 timeout_seconds=300.0
             )
@@ -785,7 +787,8 @@ class TestAutomatedGraphUpdate(AsyncTestBase):
              patch.object(bot, '_cleanup_bot_messages', new_callable=AsyncMock) as mock_cleanup, \
              patch('graphs.graph_manager.GraphManager') as mock_graph_manager_class:
             
-            await bot._automated_graph_update()
+            # Testing protected method _automated_graph_update is intentional - it's a key internal method
+            await bot._automated_graph_update()  # pyright: ignore[reportPrivateUsage]
             
             # Should not proceed with cleanup or graph generation
             mock_cleanup.assert_not_called()
@@ -804,7 +807,8 @@ class TestAutomatedGraphUpdate(AsyncTestBase):
         with patch.object(bot, 'get_channel', return_value=mock_channel), \
              patch.object(bot, '_cleanup_bot_messages', new_callable=AsyncMock) as mock_cleanup:
             
-            await bot._automated_graph_update()
+            # Testing protected method _automated_graph_update is intentional - it's a key internal method
+            await bot._automated_graph_update()  # pyright: ignore[reportPrivateUsage]
             
             # Should not proceed with cleanup or graph generation
             mock_cleanup.assert_not_called()
@@ -826,7 +830,8 @@ class TestAutomatedGraphUpdate(AsyncTestBase):
             
             # Should raise the cleanup error
             with pytest.raises(Exception, match="Cleanup failed"):
-                await bot._automated_graph_update()
+                # Testing protected method _automated_graph_update is intentional - it's a key internal method
+                await bot._automated_graph_update()  # pyright: ignore[reportPrivateUsage]
             
             mock_cleanup.assert_called_once_with(mock_channel)
 
@@ -850,14 +855,15 @@ class TestAutomatedGraphUpdate(AsyncTestBase):
             # Setup GraphManager mock to return empty list
             mock_graph_manager = AsyncMock()
             mock_graph_manager.generate_all_graphs = AsyncMock(return_value=[])
-            mock_graph_manager_class.return_value.__aenter__ = AsyncMock(return_value=mock_graph_manager)
-            mock_graph_manager_class.return_value.__aexit__ = AsyncMock(return_value=None)
+            mock_graph_manager_class.return_value.__aenter__ = AsyncMock(return_value=mock_graph_manager)  # pyright: ignore[reportAny]
+            mock_graph_manager_class.return_value.__aexit__ = AsyncMock(return_value=None)  # pyright: ignore[reportAny]
             
-            await bot._automated_graph_update()
+            # Testing protected method _automated_graph_update is intentional - it's a key internal method
+            await bot._automated_graph_update()  # pyright: ignore[reportPrivateUsage]
             
             # Should cleanup and attempt generation, but not post
             mock_cleanup.assert_called_once_with(mock_channel)
-            mock_graph_manager.generate_all_graphs.assert_called_once()
+            mock_graph_manager.generate_all_graphs.assert_called_once()  # pyright: ignore[reportAny]
             mock_post.assert_not_called()
 
     @pytest.mark.asyncio
@@ -879,12 +885,13 @@ class TestAutomatedGraphUpdate(AsyncTestBase):
             # Setup GraphManager mock to raise exception
             mock_graph_manager = AsyncMock()
             mock_graph_manager.generate_all_graphs = AsyncMock(side_effect=Exception("Graph generation failed"))
-            mock_graph_manager_class.return_value.__aenter__ = AsyncMock(return_value=mock_graph_manager)
-            mock_graph_manager_class.return_value.__aexit__ = AsyncMock(return_value=None)
+            mock_graph_manager_class.return_value.__aenter__ = AsyncMock(return_value=mock_graph_manager)  # pyright: ignore[reportAny]
+            mock_graph_manager_class.return_value.__aexit__ = AsyncMock(return_value=None)  # pyright: ignore[reportAny]
             
             # Should raise the graph generation error
             with pytest.raises(Exception, match="Graph generation failed"):
-                await bot._automated_graph_update()
+                # Testing protected method _automated_graph_update is intentional - it's a key internal method
+                await bot._automated_graph_update()  # pyright: ignore[reportPrivateUsage]
             
             # Should have cleaned up first
             mock_cleanup.assert_called_once_with(mock_channel)
@@ -919,39 +926,40 @@ class TestCleanupBotMessages(AsyncTestBase):
         
         # Create mock guild and permissions
         mock_guild_member = MagicMock()
-        mock_guild_member.permissions_for.return_value.manage_messages = True
-        mock_channel.guild.me = mock_guild_member
+        mock_guild_member.permissions_for.return_value.manage_messages = True  # pyright: ignore[reportAny]
+        mock_channel.guild.me = mock_guild_member  # pyright: ignore[reportAny]
         
         # Create mock messages - some from bot, some from users
         mock_bot_message1 = MagicMock()
-        mock_bot_message1.author.id = 123456789  # Bot's message
+        mock_bot_message1.author.id = 123456789  # Bot's message  # pyright: ignore[reportAny]
         mock_bot_message1.id = "msg1"
         mock_bot_message1.delete = AsyncMock()
         
         mock_bot_message2 = MagicMock()
-        mock_bot_message2.author.id = 123456789  # Bot's message
+        mock_bot_message2.author.id = 123456789  # Bot's message  # pyright: ignore[reportAny]
         mock_bot_message2.id = "msg2"
         mock_bot_message2.delete = AsyncMock()
         
         mock_user_message = MagicMock()
-        mock_user_message.author.id = 987654321  # User's message
+        mock_user_message.author.id = 987654321  # User's message  # pyright: ignore[reportAny]
         mock_user_message.id = "user_msg"
         mock_user_message.delete = AsyncMock()
         
         # Mock the async iterator for channel history
-        async def mock_history(*args, **kwargs):
+        async def mock_history(*args: object, **kwargs: object) -> AsyncIterator[MagicMock]:  # pyright: ignore[reportUnusedParameter]
             for message in [mock_bot_message1, mock_user_message, mock_bot_message2]:
                 yield message
         
         mock_channel.history = mock_history
         
         with patch.object(type(bot), 'user', new_callable=lambda: mock_bot_user):
-            await bot._cleanup_bot_messages(mock_channel)
+            # Testing protected method _cleanup_bot_messages is intentional - it's a key internal method
+            await bot._cleanup_bot_messages(mock_channel)  # pyright: ignore[reportPrivateUsage]
             
             # Should only delete bot's messages
-            mock_bot_message1.delete.assert_called_once()
-            mock_bot_message2.delete.assert_called_once()
-            mock_user_message.delete.assert_not_called()
+            mock_bot_message1.delete.assert_called_once()  # pyright: ignore[reportAny]
+            mock_bot_message2.delete.assert_called_once()  # pyright: ignore[reportAny]
+            mock_user_message.delete.assert_not_called()  # pyright: ignore[reportAny]
 
     @pytest.mark.asyncio
     async def test_cleanup_bot_messages_no_manage_permissions(self) -> None:
@@ -967,26 +975,27 @@ class TestCleanupBotMessages(AsyncTestBase):
         
         # Mock guild member without manage_messages permission
         mock_guild_member = MagicMock()
-        mock_guild_member.permissions_for.return_value.manage_messages = False
-        mock_channel.guild.me = mock_guild_member
+        mock_guild_member.permissions_for.return_value.manage_messages = False  # pyright: ignore[reportAny]
+        mock_channel.guild.me = mock_guild_member  # pyright: ignore[reportAny]
         
         # Create mock bot message
         mock_bot_message = MagicMock()
-        mock_bot_message.author.id = 123456789
+        mock_bot_message.author.id = 123456789  # pyright: ignore[reportAny]
         mock_bot_message.id = "msg1"
         mock_bot_message.delete = AsyncMock()
         
-        async def mock_history(*args, **kwargs):
+        async def mock_history(*args: object, **kwargs: object) -> AsyncIterator[MagicMock]:  # pyright: ignore[reportUnusedParameter]
             for message in [mock_bot_message]:
                 yield message
         
         mock_channel.history = mock_history
         
         with patch.object(type(bot), 'user', new_callable=lambda: mock_bot_user):
-            await bot._cleanup_bot_messages(mock_channel)
+            # Testing protected method _cleanup_bot_messages is intentional - it's a key internal method
+            await bot._cleanup_bot_messages(mock_channel)  # pyright: ignore[reportPrivateUsage]
             
             # Should still attempt to delete bot's own messages
-            mock_bot_message.delete.assert_called_once()
+            mock_bot_message.delete.assert_called_once()  # pyright: ignore[reportAny]
 
     @pytest.mark.asyncio
     async def test_cleanup_bot_messages_forbidden_error(self) -> None:
@@ -1001,16 +1010,16 @@ class TestCleanupBotMessages(AsyncTestBase):
         mock_bot_user.id = 123456789
         
         mock_guild_member = MagicMock()
-        mock_guild_member.permissions_for.return_value.manage_messages = True
-        mock_channel.guild.me = mock_guild_member
+        mock_guild_member.permissions_for.return_value.manage_messages = True  # pyright: ignore[reportAny]
+        mock_channel.guild.me = mock_guild_member  # pyright: ignore[reportAny]
         
         # Create mock bot message that raises Forbidden when deleted
         mock_bot_message = MagicMock()
-        mock_bot_message.author.id = 123456789
+        mock_bot_message.author.id = 123456789  # pyright: ignore[reportAny]
         mock_bot_message.id = "msg1"
         mock_bot_message.delete = AsyncMock(side_effect=discord.Forbidden(response=MagicMock(), message="Forbidden"))
         
-        async def mock_history(*args, **kwargs):
+        async def mock_history(*args: object, **kwargs: object) -> AsyncIterator[MagicMock]:  # pyright: ignore[reportUnusedParameter]
             for message in [mock_bot_message]:
                 yield message
         
@@ -1018,9 +1027,10 @@ class TestCleanupBotMessages(AsyncTestBase):
         
         with patch.object(type(bot), 'user', new_callable=lambda: mock_bot_user):
             # Should not raise exception, just log warning
-            await bot._cleanup_bot_messages(mock_channel)
+            # Testing protected method _cleanup_bot_messages is intentional - it's a key internal method
+            await bot._cleanup_bot_messages(mock_channel)  # pyright: ignore[reportPrivateUsage]
             
-            mock_bot_message.delete.assert_called_once()
+            mock_bot_message.delete.assert_called_once()  # pyright: ignore[reportAny]
 
     @pytest.mark.asyncio
     async def test_cleanup_bot_messages_rate_limiting(self) -> None:
@@ -1035,8 +1045,8 @@ class TestCleanupBotMessages(AsyncTestBase):
         mock_bot_user.id = 123456789
         
         mock_guild_member = MagicMock()
-        mock_guild_member.permissions_for.return_value.manage_messages = True
-        mock_channel.guild.me = mock_guild_member
+        mock_guild_member.permissions_for.return_value.manage_messages = True  # pyright: ignore[reportAny]
+        mock_channel.guild.me = mock_guild_member  # pyright: ignore[reportAny]
         
         # Create mock bot message that raises rate limit error
         mock_rate_limit_error = discord.HTTPException(response=MagicMock(), message="Rate limited")
@@ -1045,11 +1055,11 @@ class TestCleanupBotMessages(AsyncTestBase):
         setattr(mock_rate_limit_error, 'retry_after', 2.0)
         
         mock_bot_message = MagicMock()
-        mock_bot_message.author.id = 123456789
+        mock_bot_message.author.id = 123456789  # pyright: ignore[reportAny]
         mock_bot_message.id = "msg1"
         mock_bot_message.delete = AsyncMock(side_effect=mock_rate_limit_error)
         
-        async def mock_history(*args, **kwargs):
+        async def mock_history(*args: object, **kwargs: object) -> AsyncIterator[MagicMock]:  # pyright: ignore[reportUnusedParameter]
             for message in [mock_bot_message]:
                 yield message
         
@@ -1058,9 +1068,10 @@ class TestCleanupBotMessages(AsyncTestBase):
         with patch.object(type(bot), 'user', new_callable=lambda: mock_bot_user), \
              patch('asyncio.sleep', new_callable=AsyncMock) as mock_sleep:
             
-            await bot._cleanup_bot_messages(mock_channel)
+            # Testing protected method _cleanup_bot_messages is intentional - it's a key internal method
+            await bot._cleanup_bot_messages(mock_channel)  # pyright: ignore[reportPrivateUsage]
             
-            mock_bot_message.delete.assert_called_once()
+            mock_bot_message.delete.assert_called_once()  # pyright: ignore[reportAny]
             # Should sleep for retry_after duration
             mock_sleep.assert_called_with(2.0)
 
@@ -1077,16 +1088,16 @@ class TestCleanupBotMessages(AsyncTestBase):
         mock_bot_user.id = 123456789
         
         mock_guild_member = MagicMock()
-        mock_guild_member.permissions_for.return_value.manage_messages = True
-        mock_channel.guild.me = mock_guild_member
+        mock_guild_member.permissions_for.return_value.manage_messages = True  # pyright: ignore[reportAny]
+        mock_channel.guild.me = mock_guild_member  # pyright: ignore[reportAny]
         
         # Create mock bot message that raises NotFound when deleted
         mock_bot_message = MagicMock()
-        mock_bot_message.author.id = 123456789
+        mock_bot_message.author.id = 123456789  # pyright: ignore[reportAny]
         mock_bot_message.id = "msg1"
         mock_bot_message.delete = AsyncMock(side_effect=discord.NotFound(response=MagicMock(), message="Not found"))
         
-        async def mock_history(*args, **kwargs):
+        async def mock_history(*args: object, **kwargs: object) -> AsyncIterator[MagicMock]:  # pyright: ignore[reportUnusedParameter]
             for message in [mock_bot_message]:
                 yield message
         
@@ -1094,9 +1105,10 @@ class TestCleanupBotMessages(AsyncTestBase):
         
         with patch.object(type(bot), 'user', new_callable=lambda: mock_bot_user):
             # Should not raise exception for NotFound
-            await bot._cleanup_bot_messages(mock_channel)
+            # Testing protected method _cleanup_bot_messages is intentional - it's a key internal method
+            await bot._cleanup_bot_messages(mock_channel)  # pyright: ignore[reportPrivateUsage]
             
-            mock_bot_message.delete.assert_called_once()
+            mock_bot_message.delete.assert_called_once()  # pyright: ignore[reportAny]
 
     @pytest.mark.asyncio
     async def test_cleanup_bot_messages_rate_limit_protection(self) -> None:
@@ -1111,19 +1123,19 @@ class TestCleanupBotMessages(AsyncTestBase):
         mock_bot_user.id = 123456789
         
         mock_guild_member = MagicMock()
-        mock_guild_member.permissions_for.return_value.manage_messages = True
-        mock_channel.guild.me = mock_guild_member
+        mock_guild_member.permissions_for.return_value.manage_messages = True  # pyright: ignore[reportAny]
+        mock_channel.guild.me = mock_guild_member  # pyright: ignore[reportAny]
         
         # Create multiple bot messages to test rate limiting
-        mock_messages = []
+        mock_messages: list[MagicMock] = []
         for i in range(7):  # More than 5 to trigger rate limit protection
             mock_message = MagicMock()
-            mock_message.author.id = 123456789
+            mock_message.author.id = 123456789  # pyright: ignore[reportAny]
             mock_message.id = f"msg{i}"
             mock_message.delete = AsyncMock()
             mock_messages.append(mock_message)
         
-        async def mock_history(*args, **kwargs):
+        async def mock_history(*args: object, **kwargs: object) -> AsyncIterator[MagicMock]:  # pyright: ignore[reportUnusedParameter]
             for message in mock_messages:
                 yield message
         
@@ -1132,11 +1144,12 @@ class TestCleanupBotMessages(AsyncTestBase):
         with patch.object(type(bot), 'user', new_callable=lambda: mock_bot_user), \
              patch('asyncio.sleep', new_callable=AsyncMock) as mock_sleep:
             
-            await bot._cleanup_bot_messages(mock_channel)
+            # Testing protected method _cleanup_bot_messages is intentional - it's a key internal method
+            await bot._cleanup_bot_messages(mock_channel)  # pyright: ignore[reportPrivateUsage]
             
             # All messages should be deleted
             for mock_message in mock_messages:
-                mock_message.delete.assert_called_once()
+                mock_message.delete.assert_called_once()  # pyright: ignore[reportAny]
             
             # Should sleep after every 5 deletions (rate limit protection)
             mock_sleep.assert_called_with(1.0)
@@ -1159,4 +1172,5 @@ class TestCleanupBotMessages(AsyncTestBase):
         with patch.object(type(bot), 'user', new_callable=lambda: mock_bot_user):
             # Should raise the general exception
             with pytest.raises(Exception, match="Database error"):
-                await bot._cleanup_bot_messages(mock_channel)
+                # Testing protected method _cleanup_bot_messages is intentional - it's a key internal method
+                await bot._cleanup_bot_messages(mock_channel)  # pyright: ignore[reportPrivateUsage]
