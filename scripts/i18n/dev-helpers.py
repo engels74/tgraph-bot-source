@@ -18,6 +18,9 @@ import argparse
 import subprocess
 import sys
 from pathlib import Path
+from typing import Callable, Literal, cast
+
+CommandChoice = Literal["extract", "update", "compile", "status", "test", "full"]
 
 def run_command(cmd: list[str], description: str) -> bool:
     """Run a command and report success/failure."""
@@ -30,8 +33,9 @@ def run_command(cmd: list[str], description: str) -> bool:
         return True
     except subprocess.CalledProcessError as e:
         print(f"❌ {description} failed")
-        if e.stderr:
-            print(f"   Error: {e.stderr.strip()}")
+        stderr_msg: str | None = e.stderr  # pyright: ignore[reportAny] # subprocess type limitation
+        if stderr_msg:
+            print(f"   Error: {stderr_msg.strip()}")
         return False
 
 def extract_strings() -> bool:
@@ -118,8 +122,8 @@ def test_translations() -> bool:
                 lang = lang_dir.name
                 try:
                     i18n.setup_i18n(lang)
-                    # Test a known string
-                    test_msg = i18n._("Bot is online and ready!")
+                    # Test a known string and verify translation works
+                    _ = i18n._("Bot is online and ready!")
                     print(f"   ✅ {lang}: Loaded successfully")
                 except Exception as e:
                     print(f"   ❌ {lang}: Failed to load - {e}")
@@ -141,7 +145,7 @@ def full_workflow() -> bool:
     print("🚀 Running full i18n workflow...")
     print()
     
-    steps = [
+    steps: list[tuple[str, Callable[[], bool]]] = [
         ("extract", extract_strings),
         ("update", update_translations), 
         ("compile", compile_translations),
@@ -159,7 +163,7 @@ def full_workflow() -> bool:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="i18n development helpers")
-    parser.add_argument(
+    _ = parser.add_argument(
         "command",
         choices=["extract", "update", "compile", "status", "test", "full"],
         help="Command to run"
@@ -167,7 +171,7 @@ def main() -> int:
     
     args = parser.parse_args()
     
-    commands = {
+    commands: dict[CommandChoice, Callable[[], bool]] = {
         "extract": extract_strings,
         "update": update_translations,
         "compile": compile_translations,
@@ -176,7 +180,9 @@ def main() -> int:
         "full": full_workflow,
     }
     
-    success = commands[args.command]()
+    # Type cast is safe because argparse validates the choice
+    command = cast(CommandChoice, args.command)
+    success = commands[command]()
     return 0 if success else 1
 
 if __name__ == "__main__":
