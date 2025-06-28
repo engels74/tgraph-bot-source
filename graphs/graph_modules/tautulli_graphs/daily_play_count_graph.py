@@ -227,9 +227,12 @@ class DailyPlayCountGraph(BaseGraph):
             if self.get_grid_enabled():
                 import seaborn as sns
                 sns.set_style("whitegrid")
+                # For line plots, explicitly enable grid on the axes
+                ax.grid(True, alpha=0.7, linewidth=0.5)
             else:
                 import seaborn as sns
                 sns.set_style("white")
+                ax.grid(False)
 
             # Step 7: Check if media type separation is enabled
             use_separation = self.get_media_type_separation_enabled()
