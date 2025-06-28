@@ -4,6 +4,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+import os
 
 from utils.cli.args import (
     DefaultPaths,
@@ -153,20 +154,26 @@ class TestArgumentParser:
 class TestParseArguments:
     """Test argument parsing functionality."""
 
-    def test_parse_arguments_defaults(self) -> None:
+    def test_parse_arguments_defaults(self, tmp_path: Path) -> None:
         """Test parsing with default arguments."""
-        # Create temporary config file in current directory
-        config_file = Path("config.yml")
+        # Create temporary config file
+        config_file = tmp_path / "config.yml"
         _ = config_file.touch()
         
+        # Temporarily change to the temp directory to test default behavior
+        original_cwd = os.getcwd()
         try:
+            os.chdir(tmp_path)
+            
+            # Test with empty args (defaults)
             result = parse_arguments([])
             
             assert result.config_file == config_file.resolve()
-            assert result.data_folder == Path("data").resolve()
-            assert result.log_folder == Path("logs").resolve()
+            assert result.data_folder == (tmp_path / "data").resolve()
+            assert result.log_folder == (tmp_path / "logs").resolve()
         finally:
-            config_file.unlink(missing_ok=True)
+            # Always restore the original working directory
+            os.chdir(original_cwd)
 
     def test_parse_arguments_custom_paths(self, tmp_path: Path) -> None:
         """Test parsing with custom path arguments."""
