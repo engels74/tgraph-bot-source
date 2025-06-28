@@ -29,26 +29,25 @@ class TestPlayCountByMonthGraph:
     def sample_month_data(self) -> dict[str, Any]:
         """Create sample data for monthly graph testing."""
         return {
-            "plays_by_month": [
-                {"month": "2024-01", "count": 150, "media_type": "movie"},
-                {"month": "2024-01", "count": 250, "media_type": "tv"},
-                {"month": "2024-02", "count": 120, "media_type": "movie"},
-                {"month": "2024-02", "count": 280, "media_type": "tv"},
-                {"month": "2024-03", "count": 180, "media_type": "movie"},
-                {"month": "2024-03", "count": 320, "media_type": "tv"},
-                {"month": "2024-04", "count": 140, "media_type": "movie"},
-                {"month": "2024-04", "count": 300, "media_type": "tv"},
-                {"month": "2024-05", "count": 200, "media_type": "movie"},
-                {"month": "2024-05", "count": 380, "media_type": "tv"},
-                {"month": "2024-06", "count": 160, "media_type": "movie"},
-                {"month": "2024-06", "count": 290, "media_type": "tv"},
-            ]
+            "monthly_plays": {
+                "categories": ["2024-01", "2024-02", "2024-03", "2024-04", "2024-05", "2024-06"],
+                "series": [
+                    {
+                        "name": "TV",
+                        "data": [250, 280, 320, 300, 380, 290]
+                    },
+                    {
+                        "name": "Movies",
+                        "data": [150, 120, 180, 140, 200, 160]
+                    }
+                ]
+            }
         }
 
     def test_graph_initialization(self) -> None:
         """Test PlayCountByMonthGraph initialization."""
         graph = PlayCountByMonthGraph()
-        assert graph.get_title() == "Play Count by Month"
+        assert graph.get_title() == "Play Count by Month (Last 12 months)"
 
     def test_graph_initialization_with_config(self) -> None:
         """Test graph initialization with configuration."""
@@ -96,17 +95,15 @@ class TestPlayCountByMonthGraph:
             
             graph = PlayCountByMonthGraph(config=config)
             
-            # Mock the data fetching
-            with patch.object(graph, '_fetch_month_data', return_value=sample_month_data):
-                output_path = graph.generate(sample_month_data)
-                
-                # Verify file was created
-                assert Path(output_path).exists()
-                assert output_path.endswith('.png')
-                assert 'play_count_by_month' in output_path
-                
-                # Clean up
-                Path(output_path).unlink(missing_ok=True)
+            output_path = graph.generate(sample_month_data)
+            
+            # Verify file was created
+            assert Path(output_path).exists()
+            assert output_path.endswith('.png')
+            assert 'play_count_by_month' in output_path
+            
+            # Clean up
+            Path(output_path).unlink(missing_ok=True)
 
     def test_generate_with_stacked_bars_disabled(self, sample_month_data: dict[str, Any]) -> None:
         """Test graph generation with stacked bar charts disabled."""
@@ -117,17 +114,15 @@ class TestPlayCountByMonthGraph:
             
             graph = PlayCountByMonthGraph(config=config)
             
-            # Mock the data fetching
-            with patch.object(graph, '_fetch_month_data', return_value=sample_month_data):
-                output_path = graph.generate(sample_month_data)
-                
-                # Verify file was created
-                assert Path(output_path).exists()
-                assert output_path.endswith('.png')
-                assert 'play_count_by_month' in output_path
-                
-                # Clean up
-                Path(output_path).unlink(missing_ok=True)
+            output_path = graph.generate(sample_month_data)
+            
+            # Verify file was created
+            assert Path(output_path).exists()
+            assert output_path.endswith('.png')
+            assert 'play_count_by_month' in output_path
+            
+            # Clean up
+            Path(output_path).unlink(missing_ok=True)
 
     def test_generate_with_media_separation_disabled(self, sample_month_data: dict[str, Any]) -> None:
         """Test graph generation with media type separation disabled."""
@@ -138,23 +133,21 @@ class TestPlayCountByMonthGraph:
             
             graph = PlayCountByMonthGraph(config=config)
             
-            # Mock the data fetching
-            with patch.object(graph, '_fetch_month_data', return_value=sample_month_data):
-                output_path = graph.generate(sample_month_data)
-                
-                # Verify file was created
-                assert Path(output_path).exists()
-                assert output_path.endswith('.png')
-                assert 'play_count_by_month' in output_path
-                
-                # Clean up
-                Path(output_path).unlink(missing_ok=True)
+            output_path = graph.generate(sample_month_data)
+            
+            # Verify file was created
+            assert Path(output_path).exists()
+            assert output_path.endswith('.png')
+            assert 'play_count_by_month' in output_path
+            
+            # Clean up
+            Path(output_path).unlink(missing_ok=True)
 
     def test_generate_with_empty_data(self) -> None:
         """Test graph generation with empty data."""
         with matplotlib_cleanup():
             graph = PlayCountByMonthGraph()
-            empty_data = {"plays_by_month": []}
+            empty_data = {"monthly_plays": {"categories": [], "series": []}}
             
             output_path = graph.generate(empty_data)
             

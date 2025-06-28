@@ -30,28 +30,30 @@ class TestPlayCountByDayOfWeekGraph:
     def sample_dayofweek_data(self) -> dict[str, Any]:
         """Create sample data for day of week graph testing."""
         return {
-            "plays_by_dayofweek": [
-                {"day": "Monday", "count": 15, "media_type": "movie"},
-                {"day": "Monday", "count": 25, "media_type": "tv"},
-                {"day": "Tuesday", "count": 10, "media_type": "movie"},
-                {"day": "Tuesday", "count": 30, "media_type": "tv"},
-                {"day": "Wednesday", "count": 20, "media_type": "movie"},
-                {"day": "Wednesday", "count": 35, "media_type": "tv"},
-                {"day": "Thursday", "count": 12, "media_type": "movie"},
-                {"day": "Thursday", "count": 28, "media_type": "tv"},
-                {"day": "Friday", "count": 25, "media_type": "movie"},
-                {"day": "Friday", "count": 40, "media_type": "tv"},
-                {"day": "Saturday", "count": 30, "media_type": "movie"},
-                {"day": "Saturday", "count": 45, "media_type": "tv"},
-                {"day": "Sunday", "count": 18, "media_type": "movie"},
-                {"day": "Sunday", "count": 32, "media_type": "tv"},
-            ]
+            "play_history": {
+                "data": [
+                    {"date": "2024-01-01", "media_type": "movie"},
+                    {"date": "2024-01-01", "media_type": "tv"},
+                    {"date": "2024-01-02", "media_type": "movie"},
+                    {"date": "2024-01-02", "media_type": "tv"},
+                    {"date": "2024-01-03", "media_type": "movie"},
+                    {"date": "2024-01-03", "media_type": "tv"},
+                    {"date": "2024-01-04", "media_type": "movie"},
+                    {"date": "2024-01-04", "media_type": "tv"},
+                    {"date": "2024-01-05", "media_type": "movie"},
+                    {"date": "2024-01-05", "media_type": "tv"},
+                    {"date": "2024-01-06", "media_type": "movie"},
+                    {"date": "2024-01-06", "media_type": "tv"},
+                    {"date": "2024-01-07", "media_type": "movie"},
+                    {"date": "2024-01-07", "media_type": "tv"},
+                ]
+            }
         }
 
     def test_graph_initialization(self) -> None:
         """Test PlayCountByDayOfWeekGraph initialization."""
         graph = PlayCountByDayOfWeekGraph()
-        assert graph.get_title() == "Play Count by Day of Week"
+        assert graph.get_title() == "Play Count by Day of Week (Last 30 days)"
 
     def test_graph_initialization_with_config(self) -> None:
         """Test graph initialization with configuration."""
@@ -99,17 +101,15 @@ class TestPlayCountByDayOfWeekGraph:
             
             graph = PlayCountByDayOfWeekGraph(config=config)
             
-            # Mock the data fetching
-            with patch.object(graph, '_fetch_dayofweek_data', return_value=sample_dayofweek_data):
-                output_path = graph.generate(sample_dayofweek_data)
-                
-                # Verify file was created
-                assert Path(output_path).exists()
-                assert output_path.endswith('.png')
-                assert 'play_count_by_dayofweek' in output_path
-                
-                # Clean up
-                Path(output_path).unlink(missing_ok=True)
+            output_path = graph.generate(sample_dayofweek_data)
+            
+            # Verify file was created
+            assert Path(output_path).exists()
+            assert output_path.endswith('.png')
+            assert 'play_count_by_dayofweek' in output_path
+            
+            # Clean up
+            Path(output_path).unlink(missing_ok=True)
 
     def test_generate_with_stacked_bars_disabled(self, sample_dayofweek_data: dict[str, Any]) -> None:
         """Test graph generation with stacked bar charts disabled."""
@@ -120,17 +120,15 @@ class TestPlayCountByDayOfWeekGraph:
             
             graph = PlayCountByDayOfWeekGraph(config=config)
             
-            # Mock the data fetching
-            with patch.object(graph, '_fetch_dayofweek_data', return_value=sample_dayofweek_data):
-                output_path = graph.generate(sample_dayofweek_data)
-                
-                # Verify file was created
-                assert Path(output_path).exists()
-                assert output_path.endswith('.png')
-                assert 'play_count_by_dayofweek' in output_path
-                
-                # Clean up
-                Path(output_path).unlink(missing_ok=True)
+            output_path = graph.generate(sample_dayofweek_data)
+            
+            # Verify file was created
+            assert Path(output_path).exists()
+            assert output_path.endswith('.png')
+            assert 'play_count_by_dayofweek' in output_path
+            
+            # Clean up
+            Path(output_path).unlink(missing_ok=True)
 
     def test_generate_with_media_separation_disabled(self, sample_dayofweek_data: dict[str, Any]) -> None:
         """Test graph generation with media type separation disabled."""
@@ -141,23 +139,21 @@ class TestPlayCountByDayOfWeekGraph:
             
             graph = PlayCountByDayOfWeekGraph(config=config)
             
-            # Mock the data fetching
-            with patch.object(graph, '_fetch_dayofweek_data', return_value=sample_dayofweek_data):
-                output_path = graph.generate(sample_dayofweek_data)
-                
-                # Verify file was created
-                assert Path(output_path).exists()
-                assert output_path.endswith('.png')
-                assert 'play_count_by_dayofweek' in output_path
-                
-                # Clean up
-                Path(output_path).unlink(missing_ok=True)
+            output_path = graph.generate(sample_dayofweek_data)
+            
+            # Verify file was created
+            assert Path(output_path).exists()
+            assert output_path.endswith('.png')
+            assert 'play_count_by_dayofweek' in output_path
+            
+            # Clean up
+            Path(output_path).unlink(missing_ok=True)
 
     def test_generate_with_empty_data(self) -> None:
         """Test graph generation with empty data."""
         with matplotlib_cleanup():
             graph = PlayCountByDayOfWeekGraph()
-            empty_data = {"plays_by_dayofweek": []}
+            empty_data = {"play_history": {"data": []}}
             
             output_path = graph.generate(empty_data)
             
