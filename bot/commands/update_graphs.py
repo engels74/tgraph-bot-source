@@ -19,6 +19,7 @@ Command Design Specifications:
 import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
+import asyncio
 
 import discord
 from discord import app_commands
@@ -88,10 +89,11 @@ class UpdateGraphsCog(BaseCommandCog):
         This command:
         1. Checks cooldowns and rate limits
         2. Acknowledges the request with ephemeral message
-        3. Uses GraphManager for non-blocking graph generation
-        4. Posts generated graphs to configured Discord channel
-        5. Provides progress feedback and error handling
-        6. Updates cooldowns after successful execution
+        3. Cleans up previous bot messages from the target channel
+        4. Uses GraphManager for non-blocking graph generation
+        5. Posts generated graphs to configured Discord channel
+        6. Provides progress feedback and error handling
+        7. Updates cooldowns after successful execution
 
         Args:
             interaction: The Discord interaction
@@ -125,11 +127,15 @@ class UpdateGraphsCog(BaseCommandCog):
             # Validate Discord channel using helper
             target_channel = self.config_helper.validate_discord_channel(self.bot)
 
+            # Step 1: Clean up previous bot messages
+            logger.info("Cleaning up previous bot messages before posting new graphs...")
+            await self._cleanup_bot_messages(target_channel)
+
             # Create progress callback manager for real-time updates
             progress_manager = ProgressCallbackManager(interaction, i18n.translate("Graph Generation"))
             progress_callback = progress_manager.create_progress_callback()
 
-            # Generate graphs using GraphManager
+            # Step 2: Generate graphs using GraphManager
             async with GraphManager(self.tgraph_bot.config_manager) as graph_manager:
                 graph_files = await graph_manager.generate_all_graphs(
                     progress_callback=progress_callback,
@@ -145,7 +151,7 @@ class UpdateGraphsCog(BaseCommandCog):
                     _ = await interaction.followup.send(embed=warning_embed, ephemeral=True)
                     return
 
-                # Post graphs to configured channel (now posts individual messages)
+                # Step 3: Post graphs to configured channel (now posts individual messages)
                 success_count = await self._post_graphs_to_channel(target_channel, graph_files)
 
                 # Send completion message
@@ -198,6 +204,65 @@ class UpdateGraphsCog(BaseCommandCog):
                 "update_graphs",
                 additional_context
             )
+
+    async def _cleanup_bot_messages(self, channel: discord.TextChannel) -> None:
+        """
+        Clean up previous messages posted by the bot in the specified channel.
+        
+        This method removes all messages that were posted by this bot instance,
+        implementing the same cleanup logic used during bot startup and automated updates.
+        
+        Args:
+            channel: The Discord text channel to clean up
+        """
+        logger.info(f"Starting message cleanup in channel: {channel.name}")
+        
+        try:
+            # Check bot permissions
+            if not channel.permissions_for(channel.guild.me).manage_messages:
+                logger.warning(f"Bot lacks 'Manage Messages' permission in {channel.name}")
+                logger.info("Attempting to delete only bot's own messages...")
+            
+            deleted_count = 0
+            error_count = 0
+            
+            # Fetch messages in batches and delete bot's own messages
+            async for message in channel.history(limit=None):
+                # Only delete messages from this bot
+                if self.bot.user and message.author.id == self.bot.user.id:
+                    try:
+                        await message.delete()
+                        deleted_count += 1
+                        
+                        # Rate limit protection - Discord allows 5 deletes per second
+                        if deleted_count % 5 == 0:
+                            await asyncio.sleep(1.0)
+                            
+                    except discord.Forbidden:
+                        logger.warning(f"Cannot delete message {message.id} - insufficient permissions")
+                        error_count += 1
+                    except discord.NotFound:
+                        # Message already deleted, continue
+                        pass
+                    except discord.HTTPException as e:
+                        logger.error(f"HTTP error deleting message {message.id}: {e}")
+                        error_count += 1
+                        
+                        # If we hit rate limits, wait longer
+                        if e.status == 429:
+                            retry_after = getattr(e, 'retry_after', 5.0)
+                            logger.info(f"Rate limited, waiting {retry_after} seconds...")
+                            await asyncio.sleep(retry_after)
+            
+            logger.info(f"Message cleanup completed: {deleted_count} messages deleted, {error_count} errors")
+            
+            if error_count > 0:
+                logger.warning(f"Encountered {error_count} errors during cleanup")
+            
+        except Exception as e:
+            logger.error(f"Error during message cleanup in {channel.name}: {e}", exc_info=True)
+            # Continue with the update process even if cleanup fails
+            raise
 
     @error_handler(retry_attempts=2, retry_delay=1.0)
     async def _post_graphs_to_channel(
