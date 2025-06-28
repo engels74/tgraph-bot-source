@@ -330,6 +330,56 @@ msgstr "Gammel besked"
             assert "Eksisterende besked" in updated_content  # Preserved translation
             assert "Old message" not in updated_content  # Removed obsolete string
 
+    def test_update_po_file_no_duplicate_empty_msgid(self) -> None:
+        """Test that updating .po file doesn't create duplicate empty msgid entries."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            
+            # Create .pot template with header empty msgid (typical template format)
+            pot_content = '''# TGraph Bot POT file
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: TGraph Bot\\n"
+"POT-Creation-Date: 2024-01-01 12:00:00\\n"
+
+#: test.py:1
+msgid "Test message"
+msgstr ""
+
+#: test.py:2
+msgid "Existing message"
+msgstr ""
+'''
+            pot_file = temp_path / "messages.pot"
+            _ = pot_file.write_text(pot_content)
+            
+            # Create proper .po file with header and existing translation
+            po_content = '''# Existing .po file
+msgid ""
+msgstr ""
+"Project-Id-Version: Test\\n"
+
+msgid "Existing message"
+msgstr "Eksisterende besked"
+'''
+            po_file = temp_path / "da" / "LC_MESSAGES" / "messages.po"
+            po_file.parent.mkdir(parents=True)
+            _ = po_file.write_text(po_content)
+            
+            # Update .po file
+            update_po_file(pot_file, po_file, preserve_translations=True)
+            
+            # Check that there's only one empty msgid in the result
+            updated_content = po_file.read_text()
+            empty_msgid_count = updated_content.count('msgid ""')
+            assert empty_msgid_count == 1, f"Expected 1 empty msgid, found {empty_msgid_count}"
+            
+            # Verify the content includes expected elements
+            assert "Test message" in updated_content
+            assert "Eksisterende besked" in updated_content  # Preserved translation
+            assert "Danish translations" in updated_content  # Header from generate_po_header
+
 
 class TestErrorHandling:
     """Test error handling in various scenarios."""
