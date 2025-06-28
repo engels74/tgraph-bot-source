@@ -544,6 +544,8 @@ class BackgroundTaskManager:
             # Timeout is expected, continue
             pass
 
+
+
     def _log_audit_event(self, task_name: str, event_type: str, message: str) -> None:
         """Log audit events for task operations."""
         audit_entry: dict[str, str | datetime | None] = {
@@ -1534,6 +1536,54 @@ class UpdateTracker:
         self._is_started = False
         logger.info("Update scheduler stopped")
 
+    async def _wait_with_health_updates(self, total_wait_seconds: float, task_name: str = "update_scheduler") -> bool:
+        """
+        Wait for specified duration while periodically updating health status.
+        
+        This method breaks long waits into smaller chunks to prevent health check
+        false positives during extended sleep periods.
+        
+        Args:
+            total_wait_seconds: Total time to wait in seconds
+            task_name: Name of the task for health updates
+            
+        Returns:
+            True if wait completed normally, False if shutdown was requested
+        """
+        if total_wait_seconds <= 0:
+            return True
+            
+        # Health update interval - keep it well below the 5-minute stale threshold
+        health_update_interval = 120.0  # 2 minutes
+        
+        elapsed = 0.0
+        
+        while elapsed < total_wait_seconds and not self._task_manager._shutdown_event.is_set():  # pyright: ignore[reportPrivateUsage]
+            # Calculate how long to sleep this iteration
+            remaining = total_wait_seconds - elapsed
+            chunk_duration = min(health_update_interval, remaining)
+            
+            try:
+                # Wait for this chunk duration or until shutdown requested
+                _ = await asyncio.wait_for(
+                    self._task_manager._shutdown_event.wait(),  # pyright: ignore[reportPrivateUsage]
+                    timeout=chunk_duration
+                )
+                # Shutdown was requested
+                logger.debug(f"Shutdown requested during scheduler wait (elapsed: {elapsed:.1f}s)")
+                return False
+                
+            except asyncio.TimeoutError:
+                # Timeout is expected - this chunk completed normally
+                elapsed += chunk_duration
+                
+                # Update health status to prevent stale detection
+                if task_name in self._task_manager._task_health:  # pyright: ignore[reportPrivateUsage]
+                    self._task_manager._task_health[task_name] = datetime.now()  # pyright: ignore[reportPrivateUsage]
+                    logger.debug(f"Updated health for {task_name} during long wait (elapsed: {elapsed:.1f}s/{total_wait_seconds:.1f}s)")
+        
+        return True
+
     async def _scheduler_loop(self) -> None:
         """
         Main scheduler loop for automatic updates.
@@ -1552,7 +1602,10 @@ class UpdateTracker:
                 if self._schedule.should_skip_update(current_time):
                     logger.info("Skipping update due to recent failures (exponential backoff)")
                     # Wait a bit before checking again
-                    await asyncio.sleep(300)  # 5 minutes
+                    wait_completed = await self._wait_with_health_updates(300.0)  # 5 minutes
+                    if not wait_completed:
+                        logger.info("Scheduler loop terminated due to shutdown request during backoff")
+                        break
                     continue
 
                 next_update = self._schedule.calculate_next_update(current_time)
@@ -1567,8 +1620,12 @@ class UpdateTracker:
                 wait_seconds = (next_update - current_time).total_seconds()
 
                 if wait_seconds > 0:
-                    logger.info(f"Next update scheduled for: {next_update}")
-                    await asyncio.sleep(wait_seconds)
+                    logger.info(f"Next update scheduled for: {next_update} (wait time: {wait_seconds:.1f}s)")
+                    wait_completed = await self._wait_with_health_updates(wait_seconds)
+                    if not wait_completed:
+                        # Shutdown was requested during wait
+                        logger.info("Scheduler loop terminated due to shutdown request")
+                        break
 
                 # Trigger update
                 await self._trigger_update()
@@ -1582,7 +1639,10 @@ class UpdateTracker:
             if self._state:
                 self._state.record_failure(datetime.now(), e)
             # Wait before retrying to avoid tight error loops
-            await asyncio.sleep(60)  # 1 minute
+            wait_completed = await self._wait_with_health_updates(60.0)  # 1 minute
+            if not wait_completed:
+                logger.info("Scheduler loop terminated due to shutdown request during error recovery")
+                return
 
     async def _trigger_update(self) -> None:
         """

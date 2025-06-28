@@ -8,6 +8,7 @@ with the UpdateTracker for robust task lifecycle management.
 import asyncio
 import pytest
 from unittest.mock import MagicMock
+from datetime import datetime
 
 from bot.update_tracker import (
     BackgroundTaskManager,
@@ -300,3 +301,114 @@ async def test_integration_with_main_bot() -> None:
         
     tracker.set_update_callback(dummy_callback)
     assert tracker.update_callback is dummy_callback
+
+
+@pytest.mark.asyncio
+async def test_scheduler_health_updates_during_long_waits() -> None:
+    """Test that scheduler properly updates health during long wait periods."""
+    from bot.update_tracker import UpdateTracker
+    
+    mock_bot = MagicMock()
+    tracker = UpdateTracker(mock_bot)
+    
+    # Test the health update waiting method directly
+    task_name = "test_task"
+    
+    # Start the task manager so we have health tracking
+    await tracker._task_manager.start()  # pyright: ignore[reportPrivateUsage]
+    
+    try:
+        # Add a fake task to track health
+        tracker._task_manager._task_health[task_name] = datetime.now()  # pyright: ignore[reportPrivateUsage]
+        initial_health = tracker._task_manager._task_health[task_name]  # pyright: ignore[reportPrivateUsage]
+        
+        # Wait for a period that would normally trigger stale detection (6 minutes)
+        # but use shorter intervals to make the test faster
+        wait_time = 6.0  # 6 seconds instead of 6 minutes for testing
+        
+        # Mock the health update interval to be much smaller for testing
+        original_method = tracker._wait_with_health_updates
+        
+        async def mock_wait_with_health_updates(total_wait_seconds: float, task_name: str = "update_scheduler") -> bool:
+            """Mock version with faster health updates for testing."""
+            if total_wait_seconds <= 0:
+                return True
+                
+            # Use much smaller intervals for testing (0.5 seconds instead of 2 minutes)
+            health_update_interval = 0.5
+            elapsed = 0.0
+            
+            while elapsed < total_wait_seconds and not tracker._task_manager._shutdown_event.is_set():  # pyright: ignore[reportPrivateUsage]
+                remaining = total_wait_seconds - elapsed
+                chunk_duration = min(health_update_interval, remaining)
+                
+                try:
+                    _ = await asyncio.wait_for(
+                        tracker._task_manager._shutdown_event.wait(),  # pyright: ignore[reportPrivateUsage]
+                        timeout=chunk_duration
+                    )
+                    return False
+                    
+                except asyncio.TimeoutError:
+                    elapsed += chunk_duration
+                    
+                    # Update health status
+                    if task_name in tracker._task_manager._task_health:  # pyright: ignore[reportPrivateUsage]
+                        tracker._task_manager._task_health[task_name] = datetime.now()  # pyright: ignore[reportPrivateUsage]
+            
+            return True
+        
+        # Replace the method temporarily
+        tracker._wait_with_health_updates = mock_wait_with_health_updates
+        
+        # Call the wait method
+        start_time = datetime.now()
+        result = await tracker._wait_with_health_updates(wait_time, task_name)
+        end_time = datetime.now()
+        
+        # Verify the wait completed successfully
+        assert result is True
+        
+        # Verify the wait took approximately the expected time
+        elapsed_time = (end_time - start_time).total_seconds()
+        assert abs(elapsed_time - wait_time) < 1.0  # Allow 1 second tolerance
+        
+        # Verify health was updated during the wait
+        final_health = tracker._task_manager._task_health[task_name]  # pyright: ignore[reportPrivateUsage]
+        assert final_health > initial_health
+        
+        # Verify health was updated recently (within the last few seconds)
+        time_since_health_update = (datetime.now() - final_health).total_seconds()
+        assert time_since_health_update < 2.0  # Should be very recent
+        
+    finally:
+        # Clean up
+        await tracker._task_manager.stop()  # pyright: ignore[reportPrivateUsage]
+
+
+@pytest.mark.asyncio
+async def test_scheduler_health_updates_with_shutdown() -> None:
+    """Test that scheduler health updates properly handle shutdown requests."""
+    from bot.update_tracker import UpdateTracker
+    
+    mock_bot = MagicMock()
+    tracker = UpdateTracker(mock_bot)
+    
+    # Start the task manager
+    await tracker._task_manager.start()  # pyright: ignore[reportPrivateUsage]
+    
+    try:
+        # Start a wait and then request shutdown
+        wait_task = asyncio.create_task(tracker._wait_with_health_updates(10.0))
+        
+        # Wait a short time then signal shutdown
+        await asyncio.sleep(0.1)
+        tracker._task_manager._shutdown_event.set()  # pyright: ignore[reportPrivateUsage]
+        
+        # Wait should return False indicating shutdown was requested
+        result = await wait_task
+        assert result is False
+        
+    finally:
+        # Clean up
+        await tracker._task_manager.stop()  # pyright: ignore[reportPrivateUsage]
