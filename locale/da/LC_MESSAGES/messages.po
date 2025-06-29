@@ -69,7 +69,7 @@ msgstr "Tjek Dine DM'er"
 
 #: bot/commands/test_scheduler.py:208
 msgid "Check the bot logs for detailed error information and verify your configuration settings."
-msgstr ""
+msgstr "Tjek bot loggene for detaljerede fejlinformationer og verificer dine konfigurationsindstillinger."
 
 #: utils/core/error_handler.py:349
 msgid "Command Error"
@@ -81,11 +81,11 @@ msgstr "Kommando på Cooldown"
 
 #: bot/commands/test_scheduler.py:128
 msgid "Configuration"
-msgstr ""
+msgstr "Konfiguration"
 
 #: bot/commands/test_scheduler.py:125
 msgid "Current scheduler configuration and state"
-msgstr ""
+msgstr "Nuværende scheduler konfiguration og tilstand"
 
 #: bot/commands/my_stats.py:123
 msgid "Delivery Method"
@@ -126,7 +126,7 @@ msgstr "Fejl"
 
 #: bot/commands/test_scheduler.py:197
 msgid "Error Details"
-msgstr ""
+msgstr "Fejldetaljer"
 
 #: utils/core/error_handler.py:313
 msgid "Error in `{command_name}` command: {error_message}"
@@ -151,7 +151,7 @@ msgstr "Genererer server grafer... Dette kan tage et par minutter."
 
 #: bot/commands/my_stats.py:115
 msgid "Generating your personal Plex statistics... This may take a moment."
-msgstr ""
+msgstr "Genererer dine personlige Plex statistikker... Dette kan tage et øjeblik."
 
 #: bot/commands/my_stats.py:73
 msgid "Get your personal Plex statistics via DM"
@@ -222,7 +222,7 @@ msgstr "Intet indhold angivet"
 
 #: bot/commands/update_graphs.py:149
 msgid "No graph files were created. This may be due to insufficient data or configuration issues."
-msgstr ""
+msgstr "Ingen graffiler blev oprettet. Dette kan skyldes utilstrækkelige data eller konfigurationsproblemer."
 
 #: utils/discord/command_utils.py:143
 msgid "Not set"
@@ -263,7 +263,7 @@ msgstr "Postet Succesfuldt"
 
 #: bot/commands/test_scheduler.py:124
 msgid "Pre-Test Status"
-msgstr ""
+msgstr "Pre-Test Status"
 
 #: bot/commands/my_stats.py:163
 msgid "Processing Time"
@@ -283,19 +283,19 @@ msgstr "Prøv Igen Efter"
 
 #: bot/commands/test_scheduler.py:137
 msgid "Scheduled Times"
-msgstr ""
+msgstr "Planlagte Tider"
 
 #: bot/commands/test_scheduler.py:157
 msgid "Scheduler Test Completed Successfully"
-msgstr ""
+msgstr "Scheduler Test Gennemført Succesfuldt"
 
 #: bot/commands/test_scheduler.py:193
 msgid "Scheduler Test Failed"
-msgstr ""
+msgstr "Scheduler Test Fejlede"
 
 #: bot/commands/test_scheduler.py:95
 msgid "Scheduler Test Started"
-msgstr ""
+msgstr "Scheduler Test Startet"
 
 #: bot/commands/uptime.py:42
 msgid "Show bot uptime"
@@ -311,7 +311,7 @@ msgstr "Startet"
 
 #: bot/commands/test_scheduler.py:169
 msgid "State Updates"
-msgstr ""
+msgstr "Tilstandsopdateringer"
 
 #: bot/commands/my_stats.py:177
 msgid "Statistics Generation Failed"
@@ -348,11 +348,11 @@ msgstr "TGraph Bot kører problemfrit!"
 
 #: bot/commands/test_scheduler.py:99
 msgid "Test Method"
-msgstr ""
+msgstr "Test Metode"
 
 #: bot/commands/test_scheduler.py:162
 msgid "Test Results"
-msgstr ""
+msgstr "Test Resultater"
 
 #: tests/unit/test_i18n.py:63
 #: tests/unit/test_i18n.py:124
@@ -365,11 +365,11 @@ msgstr "Test tekst"
 
 #: bot/commands/test_scheduler.py:64
 msgid "Test the scheduled update functionality immediately"
-msgstr ""
+msgstr "Test den planlagte opdateringsfunktionalitet øjeblikkeligt"
 
 #: bot/commands/test_scheduler.py:96
 msgid "Testing the scheduled update functionality..."
-msgstr ""
+msgstr "Tester den planlagte opdateringsfunktionalitet..."
 
 #: bot/commands/config.py:333
 msgid "The configuration setting to modify"
@@ -389,15 +389,15 @@ msgstr "Det angivne input er ugyldigt. Tjek dine parametre og prøv igen."
 
 #: bot/commands/test_scheduler.py:158
 msgid "The scheduled update routine executed successfully!"
-msgstr ""
+msgstr "Den planlagte opdateringsrutine blev udført succesfuldt!"
 
 #: bot/commands/test_scheduler.py:194
 msgid "The scheduled update test encountered an error"
-msgstr ""
+msgstr "Den planlagte opdateringstest stødte på en fejl"
 
 #: bot/commands/test_scheduler.py:177
 msgid "The scheduler will work correctly at the configured time. All timing calculations and update workflows are functioning properly."
-msgstr ""
+msgstr "Scheduleren vil fungere korrekt på det konfigurerede tidspunkt. Alle tidsberegninger og opdateringsworkflows fungerer korrekt."
 
 #: utils/core/error_handler.py:304
 msgid "The server is experiencing resource constraints. Please try again later."
@@ -409,7 +409,7 @@ msgstr "{command_name} kommandoen er i øjeblikket på cooldown."
 
 #: bot/commands/test_scheduler.py:203
 msgid "There may be an issue with:\n• Tautulli API connectivity\n• Discord channel permissions\n• Graph generation process\n• Bot configuration"
-msgstr ""
+msgstr "Der kan være et problem med:\n• Tautulli API forbindelse\n• Discord kanal tilladelser\n• Graf genereringsproces\n• Bot konfiguration"
 
 #: utils/core/error_handler.py:299
 msgid "There was a network connectivity issue. Please try again in a moment."
@@ -449,7 +449,7 @@ msgstr "Bruger {user} har {n} beskeder"
 
 #: bot/commands/test_scheduler.py:100
 msgid "Using UpdateTracker.force_update() - same as scheduler"
-msgstr ""
+msgstr "Bruger UpdateTracker.force_update() - samme som scheduler"
 
 #: bot/commands/about.py:59
 msgid "Version"
@@ -465,15 +465,15 @@ msgstr "Se eller rediger bot konfiguration"
 
 #: bot/commands/test_scheduler.py:176
 msgid "What This Confirms"
-msgstr ""
+msgstr "Hvad Dette Bekræfter"
 
 #: bot/commands/test_scheduler.py:202
 msgid "What This Means"
-msgstr ""
+msgstr "Hvad Dette Betyder"
 
 #: bot/commands/test_scheduler.py:104
 msgid "What This Tests"
-msgstr ""
+msgstr "Hvad Dette Tester"
 
 #: bot/commands/about.py:83
 msgid "Wiki"
@@ -503,7 +503,7 @@ msgstr "Du har {n} beskeder"
 
 #: bot/commands/my_stats.py:76
 msgid "Your Plex account email address (used to identify your statistics)"
-msgstr ""
+msgstr "Din Plex konto email adresse (brugt til at identificere dine statistikker)"
 
 #: bot/commands/my_stats.py:169
 msgid "Your graphs have been sent privately"
@@ -519,7 +519,7 @@ msgstr "personlige statistikker"
 
 #: bot/commands/test_scheduler.py:85
 msgid "test scheduler"
-msgstr ""
+msgstr "test scheduler"
 
 #: bot/commands/update_graphs.py:104
 msgid "update graphs"
@@ -583,15 +583,15 @@ msgstr "{time:.1f} sekunder"
 
 #: bot/commands/my_stats.py:182
 msgid "• Email not found in Plex server\n• Insufficient data for graphs\n• Temporary server issue"
-msgstr ""
+msgstr "• Email ikke fundet på Plex server\n• Utilstrækkelige data til grafer\n• Midlertidigt server problem"
 
 #: bot/commands/test_scheduler.py:105
 msgid "• UPDATE_DAYS configuration\n• FIXED_UPDATE_TIME configuration\n• Complete graph generation workflow\n• Error handling and retry logic\n• Scheduler state updates"
-msgstr ""
+msgstr "• UPDATE_DAYS konfiguration\n• FIXED_UPDATE_TIME konfiguration\n• Komplet graf genereringsworkflow\n• Fejlhåndtering og retry logik\n• Scheduler tilstandsopdateringer"
 
 #: bot/commands/my_stats.py:187
 msgid "• Verify your email is correct\n• Ensure you have Plex activity\n• Try again in a few minutes"
-msgstr ""
+msgstr "• Verificer at din email er korrekt\n• Sørg for at du har Plex aktivitet\n• Prøv igen om et par minutter"
 
 #: utils/discord/command_utils.py:139
 msgid "✅ Enabled"
@@ -599,7 +599,7 @@ msgstr "✅ Aktiveret"
 
 #: bot/commands/test_scheduler.py:163
 msgid "✅ UPDATE_DAYS interval calculation working\n✅ FIXED_UPDATE_TIME scheduling working\n✅ Graph generation and posting successful\n✅ Scheduler state updated correctly"
-msgstr ""
+msgstr "✅ UPDATE_DAYS interval beregning virker\n✅ FIXED_UPDATE_TIME planlægning virker\n✅ Graf generering og posting succesfuld\n✅ Scheduler tilstand opdateret korrekt"
 
 #: utils/discord/command_utils.py:139
 msgid "❌ Disabled"

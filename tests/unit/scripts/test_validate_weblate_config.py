@@ -115,7 +115,7 @@ file_format = po
             assert field in bot_config, f"Missing required field: {field}"
         
         # Verify specific values
-        assert bot_config['file_format'] == 'po'
+        assert bot_config['file_format'] == 'po-mono'
         assert 'locale/' in bot_config['filemask']
         assert bot_config['template'] == 'locale/messages.pot'
 
