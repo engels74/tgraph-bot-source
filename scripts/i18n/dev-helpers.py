@@ -143,11 +143,13 @@ def test_translations() -> bool:
 
 def fix_english_base() -> bool:
     """Fix English base language file for monolingual Weblate setup."""
+    python_code = (
+        "from utils.i18n.i18n_utils import fix_english_base_file; " +
+        "from pathlib import Path; " +
+        "fix_english_base_file(Path('locale/en/LC_MESSAGES/messages.po'))"
+    )
     return run_command(
-        ["uv", "run", "python", "-c", 
-         "from utils.i18n.i18n_utils import fix_english_base_file; "
-         "from pathlib import Path; "
-         "fix_english_base_file(Path('locale/en/LC_MESSAGES/messages.po'))"],
+        ["uv", "run", "python", "-c", python_code],
         "Fixing English base language file"
     )
 
