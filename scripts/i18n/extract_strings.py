@@ -37,6 +37,7 @@ from utils.i18n.i18n_utils import generate_pot_file, EXCLUDED_DIRS  # noqa: E402
 
 class ExtractArgs(NamedTuple):
     """Type-safe container for command-line arguments."""
+
     source_dir: Path
     output: Path
     exclude: list[str]
@@ -54,8 +55,8 @@ def setup_logging(verbose: bool = False) -> None:
     level = logging.DEBUG if verbose else logging.INFO
     logging.basicConfig(
         level=level,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
     )
 
 
@@ -67,7 +68,7 @@ def parse_arguments() -> ExtractArgs:
         Parsed arguments in a type-safe container
     """
     parser = argparse.ArgumentParser(
-        description='Extract translatable strings from Python source code',
+        description="Extract translatable strings from Python source code",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -76,40 +77,38 @@ Examples:
   %(prog)s --output locale/new_messages.pot   # Custom output file
   %(prog)s --exclude tests --exclude docs     # Exclude directories
   %(prog)s --verbose                          # Enable verbose logging
-        """
+        """,
     )
 
     _ = parser.add_argument(
-        '--source-dir',
+        "--source-dir",
         type=Path,
-        default=Path('.'),
-        help='Source directory to scan for translatable strings (default: current directory)'
+        default=Path("."),
+        help="Source directory to scan for translatable strings (default: current directory)",
     )
 
     _ = parser.add_argument(
-        '--output',
+        "--output",
         type=Path,
-        default=Path('locale/messages.pot'),
-        help='Output .pot file path (default: locale/messages.pot)'
+        default=Path("locale/messages.pot"),
+        help="Output .pot file path (default: locale/messages.pot)",
     )
 
     _ = parser.add_argument(
-        '--exclude',
-        action='append',
+        "--exclude",
+        action="append",
         default=[],
-        help='Directory names to exclude from scanning (can be used multiple times)'
+        help="Directory names to exclude from scanning (can be used multiple times)",
     )
 
     _ = parser.add_argument(
-        '--verbose',
-        action='store_true',
-        help='Enable verbose logging'
+        "--verbose", action="store_true", help="Enable verbose logging"
     )
 
     _ = parser.add_argument(
-        '--dry-run',
-        action='store_true',
-        help='Show what would be done without actually creating files'
+        "--dry-run",
+        action="store_true",
+        help="Show what would be done without actually creating files",
     )
 
     args = parser.parse_args()
@@ -120,7 +119,7 @@ Examples:
         output=args.output,  # pyright: ignore[reportAny]
         exclude=args.exclude or [],  # pyright: ignore[reportAny]
         verbose=args.verbose,  # pyright: ignore[reportAny]
-        dry_run=args.dry_run  # pyright: ignore[reportAny]
+        dry_run=args.dry_run,  # pyright: ignore[reportAny]
     )
 
 
@@ -163,7 +162,7 @@ def main() -> int:
         generate_pot_file(
             source_directory=args.source_dir,
             output_file=args.output,
-            exclude_dirs=exclude_dirs
+            exclude_dirs=exclude_dirs,
         )
 
         logger.info("String extraction completed successfully!")
@@ -181,5 +180,5 @@ def main() -> int:
         return 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

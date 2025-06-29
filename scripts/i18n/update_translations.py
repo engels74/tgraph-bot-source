@@ -37,6 +37,7 @@ from utils.i18n.i18n_utils import update_po_file, compile_po_to_mo  # noqa: E402
 
 class UpdateArgs(NamedTuple):
     """Type-safe container for command-line arguments."""
+
     pot_file: Path
     locale_dir: Path
     language: str | None
@@ -56,8 +57,8 @@ def setup_logging(verbose: bool = False) -> None:
     level = logging.DEBUG if verbose else logging.INFO
     logging.basicConfig(
         level=level,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
     )
 
 
@@ -96,7 +97,7 @@ def parse_arguments() -> UpdateArgs:
         Parsed arguments in a type-safe container
     """
     parser = argparse.ArgumentParser(
-        description='Update translation files from .pot templates',
+        description="Update translation files from .pot templates",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -106,51 +107,49 @@ Examples:
   %(prog)s --no-preserve                      # Don't preserve translations
   %(prog)s --compile                          # Also compile to .mo files
   %(prog)s --verbose                          # Enable verbose logging
-        """
+        """,
     )
 
     _ = parser.add_argument(
-        '--pot-file',
+        "--pot-file",
         type=Path,
-        default=Path('locale/messages.pot'),
-        help='Path to the .pot template file (default: locale/messages.pot)'
+        default=Path("locale/messages.pot"),
+        help="Path to the .pot template file (default: locale/messages.pot)",
     )
 
     _ = parser.add_argument(
-        '--locale-dir',
+        "--locale-dir",
         type=Path,
-        default=Path('locale'),
-        help='Path to the locale directory (default: locale)'
+        default=Path("locale"),
+        help="Path to the locale directory (default: locale)",
     )
 
     _ = parser.add_argument(
-        '--language',
+        "--language",
         type=str,
-        help='Update only the specified language (e.g., "en", "da")'
+        help='Update only the specified language (e.g., "en", "da")',
     )
 
     _ = parser.add_argument(
-        '--no-preserve',
-        action='store_true',
-        help='Do not preserve existing translations (start fresh)'
+        "--no-preserve",
+        action="store_true",
+        help="Do not preserve existing translations (start fresh)",
     )
 
     _ = parser.add_argument(
-        '--compile',
-        action='store_true',
-        help='Also compile .po files to .mo binary format'
+        "--compile",
+        action="store_true",
+        help="Also compile .po files to .mo binary format",
     )
 
     _ = parser.add_argument(
-        '--verbose',
-        action='store_true',
-        help='Enable verbose logging'
+        "--verbose", action="store_true", help="Enable verbose logging"
     )
 
     _ = parser.add_argument(
-        '--dry-run',
-        action='store_true',
-        help='Show what would be done without actually updating files'
+        "--dry-run",
+        action="store_true",
+        help="Show what would be done without actually updating files",
     )
 
     args = parser.parse_args()
@@ -164,7 +163,7 @@ Examples:
     compile_flag: bool = args.compile  # pyright: ignore[reportAny]
     verbose: bool = args.verbose  # pyright: ignore[reportAny]
     dry_run: bool = args.dry_run  # pyright: ignore[reportAny]
-    
+
     return UpdateArgs(
         pot_file=pot_file,
         locale_dir=locale_dir,
@@ -172,7 +171,7 @@ Examples:
         no_preserve=no_preserve,
         compile=compile_flag,
         verbose=verbose,
-        dry_run=dry_run
+        dry_run=dry_run,
     )
 
 
@@ -229,7 +228,7 @@ def main() -> int:
                 update_po_file(
                     pot_file=args.pot_file,
                     po_file=po_file,
-                    preserve_translations=preserve_translations
+                    preserve_translations=preserve_translations,
                 )
                 updated_files.append(po_file)
                 logger.info(f"Successfully updated {po_file}")
@@ -249,7 +248,9 @@ def main() -> int:
                 except Exception as e:
                     logger.warning(f"Failed to compile {po_file}: {e}")
 
-        logger.info(f"Translation update completed! Updated {len(updated_files)} file(s)")
+        logger.info(
+            f"Translation update completed! Updated {len(updated_files)} file(s)"
+        )
 
         return 0
 
@@ -263,5 +264,5 @@ def main() -> int:
         return 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

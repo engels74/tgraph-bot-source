@@ -1,1 +1,1 @@
-"""CLI utilities for TGraph Bot.""" 
+"""CLI utilities for TGraph Bot."""

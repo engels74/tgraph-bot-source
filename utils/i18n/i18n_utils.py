@@ -35,11 +35,11 @@ logger = logging.getLogger(__name__)
 
 # Translation function patterns to search for
 TRANSLATION_FUNCTIONS = {
-    "_",           # Standard gettext function
-    "translate",   # Our custom translate function
-    "t",          # Alias for translate
-    "ngettext",   # Plural forms
-    "nt",         # Alias for ngettext
+    "_",  # Standard gettext function
+    "translate",  # Our custom translate function
+    "t",  # Alias for translate
+    "ngettext",  # Plural forms
+    "nt",  # Alias for ngettext
 }
 
 # File patterns to include in extraction
@@ -96,7 +96,9 @@ class StringExtractor(ast.NodeVisitor):
                         context = self._extract_context(node)
 
                         self.strings.append((string_value, line_number, context))
-                        logger.debug(f"Found translatable string: '{string_value}' at line {line_number}")
+                        logger.debug(
+                            f"Found translatable string: '{string_value}' at line {line_number}"
+                        )
 
         # Continue visiting child nodes
         self.generic_visit(node)
@@ -152,16 +154,16 @@ def extract_strings_from_file(filepath: Path) -> list[tuple[str, int, str | None
         SyntaxError: If the file contains invalid Python syntax
     """
     try:
-        with open(filepath, 'r', encoding='utf-8') as file:
+        with open(filepath, "r", encoding="utf-8") as file:
             content = file.read()
 
         # Parse the file into an AST
         tree = ast.parse(content, filename=str(filepath))
-        
+
         # Extract strings using our visitor
         extractor = StringExtractor(str(filepath))
         extractor.visit(tree)
-        
+
         logger.info(f"Extracted {len(extractor.strings)} strings from {filepath}")
         return extractor.strings
 
@@ -177,8 +179,7 @@ def extract_strings_from_file(filepath: Path) -> list[tuple[str, int, str | None
 
 
 def scan_directory_for_strings(
-    directory: Path,
-    exclude_dirs: set[str] | None = None
+    directory: Path, exclude_dirs: set[str] | None = None
 ) -> dict[str, list[tuple[str, int, str | None]]]:
     """
     Scan a directory recursively for translatable strings in Python files.
@@ -194,13 +195,13 @@ def scan_directory_for_strings(
         exclude_dirs = EXCLUDED_DIRS
 
     results: dict[str, list[tuple[str, int, str | None]]] = {}
-    
+
     for pattern in PYTHON_FILE_PATTERNS:
         for filepath in directory.rglob(pattern):
             # Skip files in excluded directories
             if any(part in exclude_dirs for part in filepath.parts):
                 continue
-                
+
             try:
                 strings = extract_strings_from_file(filepath)
                 if strings:
@@ -212,8 +213,10 @@ def scan_directory_for_strings(
                 continue
 
     total_strings = sum(len(strings) for strings in results.values())
-    logger.info(f"Scanned {len(results)} files, found {total_strings} translatable strings")
-    
+    logger.info(
+        f"Scanned {len(results)} files, found {total_strings} translatable strings"
+    )
+
     return results
 
 
@@ -226,8 +229,8 @@ def generate_pot_header() -> str:
     """
     now = datetime.now()
     timestamp = now.strftime("%Y-%m-%d %H:%M%z")
-    
-    return f'''# TGraph Bot - Tautulli Discord Graph Generator
+
+    return f"""# TGraph Bot - Tautulli Discord Graph Generator
 # Copyright (C) {now.year} engels74
 # This file is distributed under the same license as the TGraph Bot package.
 # engels74 <141435164+engels74@users.noreply.github.com>, {now.year}.
@@ -247,13 +250,11 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\\n"
 "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\\n"
 
-'''
+"""
 
 
 def generate_pot_file(
-    source_directory: Path,
-    output_file: Path,
-    exclude_dirs: set[str] | None = None
+    source_directory: Path, output_file: Path, exclude_dirs: set[str] | None = None
 ) -> None:
     """
     Generate a .pot template file from extracted strings.
@@ -265,37 +266,39 @@ def generate_pot_file(
     """
     # Extract all strings from the source directory
     all_strings = scan_directory_for_strings(source_directory, exclude_dirs)
-    
+
     # Collect unique strings with their locations
     string_locations: dict[str, list[tuple[str, int]]] = {}
-    
+
     for filepath, strings in all_strings.items():
         for string_value, line_number, _context in strings:
             if string_value not in string_locations:
                 string_locations[string_value] = []
             string_locations[string_value].append((filepath, line_number))
-    
+
     # Generate the .pot file content
     content = generate_pot_header()
-    
+
     for string_value in sorted(string_locations.keys()):
         locations = string_locations[string_value]
-        
+
         # Add location comments
         for filepath, line_number in locations:
             content += f"#: {filepath}:{line_number}\n"
-        
+
         # Add the msgid and empty msgstr
-        escaped_string = string_value.replace('"', '\\"').replace('\n', '\\n')
+        escaped_string = string_value.replace('"', '\\"').replace("\n", "\\n")
         content += f'msgid "{escaped_string}"\n'
         content += 'msgstr ""\n\n'
-    
+
     # Write the .pot file
     _ = output_file.parent.mkdir(parents=True, exist_ok=True)
-    with open(output_file, 'w', encoding='utf-8') as file:
+    with open(output_file, "w", encoding="utf-8") as file:
         _ = file.write(content)
-    
-    logger.info(f"Generated .pot file with {len(string_locations)} unique strings: {output_file}")
+
+    logger.info(
+        f"Generated .pot file with {len(string_locations)} unique strings: {output_file}"
+    )
 
 
 def parse_po_file(po_file: Path) -> dict[str, str]:
@@ -315,7 +318,7 @@ def parse_po_file(po_file: Path) -> dict[str, str]:
         return translations
 
     try:
-        with open(po_file, 'r', encoding='utf-8') as file:
+        with open(po_file, "r", encoding="utf-8") as file:
             content = file.read()
 
         # Simple regex-based parsing for msgid/msgstr pairs
@@ -339,7 +342,9 @@ def parse_po_file(po_file: Path) -> dict[str, str]:
         return translations
 
 
-def update_po_file(pot_file: Path, po_file: Path, preserve_translations: bool = True) -> None:
+def update_po_file(
+    pot_file: Path, po_file: Path, preserve_translations: bool = True
+) -> None:
     """
     Update a .po file with new strings from a .pot template while preserving existing translations.
 
@@ -351,13 +356,13 @@ def update_po_file(pot_file: Path, po_file: Path, preserve_translations: bool = 
     # Parse existing translations if preserving them
     existing_translations: dict[str, str] = {}
     existing_x_generator: str | None = None
-    
+
     if preserve_translations and po_file.exists():
         existing_translations = parse_po_file(po_file)
-        
+
         # Also preserve the existing X-Generator header
         try:
-            with open(po_file, 'r', encoding='utf-8') as file:
+            with open(po_file, "r", encoding="utf-8") as file:
                 existing_content = file.read()
             x_gen_match = re.search(r'"X-Generator: ([^"]+)\\n"', existing_content)
             if x_gen_match:
@@ -370,7 +375,7 @@ def update_po_file(pot_file: Path, po_file: Path, preserve_translations: bool = 
     if not pot_file.exists():
         raise FileNotFoundError(f"POT template file not found: {pot_file}")
 
-    with open(pot_file, 'r', encoding='utf-8') as file:
+    with open(pot_file, "r", encoding="utf-8") as file:
         pot_content = file.read()
 
     # Extract language from po file path for header
@@ -379,14 +384,16 @@ def update_po_file(pot_file: Path, po_file: Path, preserve_translations: bool = 
         parts = po_file.parts
         for i, part in enumerate(parts):
             if part == "LC_MESSAGES" and i > 0:
-                language = parts[i-1]
+                language = parts[i - 1]
                 break
 
     # Generate updated .po content
     po_content = generate_po_header(language, existing_x_generator)
 
     # Process each msgid from the pot file, but skip the header's empty msgid
-    msgid_pattern = re.compile(r'(#:.*?\n)?(msgid\s+"[^"]*"\nmsgstr\s+"")', re.MULTILINE | re.DOTALL)
+    msgid_pattern = re.compile(
+        r'(#:.*?\n)?(msgid\s+"[^"]*"\nmsgstr\s+"")', re.MULTILINE | re.DOTALL
+    )
 
     for match in msgid_pattern.finditer(pot_content):
         location_comment = match.group(1) or ""
@@ -410,7 +417,7 @@ def update_po_file(pot_file: Path, po_file: Path, preserve_translations: bool = 
 
     # Write the updated .po file
     _ = po_file.parent.mkdir(parents=True, exist_ok=True)
-    with open(po_file, 'w', encoding='utf-8') as file:
+    with open(po_file, "w", encoding="utf-8") as file:
         _ = file.write(po_content)
 
     # Auto-fix English base language file for monolingual setup
@@ -444,12 +451,14 @@ def generate_po_header(language: str, existing_x_generator: str | None = None) -
         "es": ("Spanish", "nplurals=2; plural=n != 1;"),
     }
 
-    language_name, plural_form = language_info.get(language, (language.title(), "nplurals=2; plural=n != 1;"))
+    language_name, plural_form = language_info.get(
+        language, (language.title(), "nplurals=2; plural=n != 1;")
+    )
 
     # Use existing X-Generator value if available, otherwise default to Weblate 5.0
     x_generator = existing_x_generator if existing_x_generator else "Weblate 5.0"
 
-    return f'''# {language_name} translations for TGraph Bot
+    return f"""# {language_name} translations for TGraph Bot
 # Copyright (C) {now.year} engels74
 # This file is distributed under the same license as the TGraph Bot package.
 # engels74 <141435164+engels74@users.noreply.github.com>, {now.year}.
@@ -469,7 +478,7 @@ msgstr ""
 "Plural-Forms: {plural_form}\\n"
 "X-Generator: {x_generator}\\n"
 
-'''
+"""
 
 
 def compile_po_to_mo(po_file: Path, mo_file: Path | None = None) -> None:
@@ -481,15 +490,15 @@ def compile_po_to_mo(po_file: Path, mo_file: Path | None = None) -> None:
         mo_file: Path for the output .mo file (defaults to same location as .po)
     """
     if mo_file is None:
-        mo_file = po_file.with_suffix('.mo')
+        mo_file = po_file.with_suffix(".mo")
 
     try:
         # Use msgfmt command to compile .po to .mo
         _ = subprocess.run(
-            ['msgfmt', '-o', str(mo_file), str(po_file)],
+            ["msgfmt", "-o", str(mo_file), str(po_file)],
             capture_output=True,
             text=True,
-            check=True
+            check=True,
         )
 
         logger.info(f"Compiled {po_file} to {mo_file}")
@@ -498,39 +507,41 @@ def compile_po_to_mo(po_file: Path, mo_file: Path | None = None) -> None:
         logger.error(f"Failed to compile {po_file}: {e.stderr}")  # pyright: ignore[reportAny] # subprocess.CalledProcessError.stderr can be None
         raise
     except FileNotFoundError:
-        logger.warning("msgfmt command not found. Install gettext tools to compile .po files.")
+        logger.warning(
+            "msgfmt command not found. Install gettext tools to compile .po files."
+        )
         raise
 
 
 def fix_english_base_file(po_file: Path) -> None:
     """
     Fix English base language file by ensuring msgstr matches msgid.
-    
+
     In monolingual gettext setup, the base language (English) should have
     msgstr values that match the msgid values for proper Weblate integration.
-    
+
     Args:
         po_file: Path to the English .po file to fix
     """
     if not po_file.exists():
         logger.warning(f"English PO file does not exist: {po_file}")
         return
-        
+
     try:
-        with open(po_file, 'r', encoding='utf-8') as file:
+        with open(po_file, "r", encoding="utf-8") as file:
             content = file.read()
-        
+
         # Track changes
         changes_made = 0
-        lines = content.split('\n')
+        lines = content.split("\n")
         current_msgid = ""
         in_msgid = False
-        
+
         # Process line by line
         i = 0
         while i < len(lines):
             line = lines[i]
-            
+
             # Check for msgid start
             if line.startswith('msgid "'):
                 # Extract msgid content
@@ -541,16 +552,16 @@ def fix_english_base_file(po_file: Path) -> None:
                 else:
                     current_msgid = ""
                     in_msgid = False
-            
+
             # Handle multiline msgid
             elif in_msgid and line.startswith('"') and line.endswith('"'):
                 # Append to current msgid (remove quotes)
                 current_msgid += line[1:-1]
-            
+
             # Check for msgstr start
             elif line.startswith('msgstr "'):
                 in_msgid = False
-                
+
                 # Check if msgstr is empty
                 msgstr_match = re.match(r'msgstr "(.*)"', line)
                 if msgstr_match and msgstr_match.group(1) == "":
@@ -560,14 +571,14 @@ def fix_english_base_file(po_file: Path) -> None:
                         lines[i] = f'msgstr "{current_msgid}"'
                         changes_made += 1
                         logger.debug(f"Fixed English translation: '{current_msgid}'")
-            
+
             i += 1
-        
+
         if changes_made > 0:
             # Write back the fixed content
-            with open(po_file, 'w', encoding='utf-8') as file:
-                _ = file.write('\n'.join(lines))
+            with open(po_file, "w", encoding="utf-8") as file:
+                _ = file.write("\n".join(lines))
             logger.info(f"Fixed {changes_made} empty English translations in {po_file}")
-        
+
     except Exception as e:
         logger.error(f"Error fixing English base file {po_file}: {e}")

@@ -35,7 +35,7 @@ class PlayCountByHourOfDayGraph(BaseGraph):
         width: int = 12,
         height: int = 8,
         dpi: int = 100,
-        background_color: str | None = None
+        background_color: str | None = None,
     ) -> None:
         """
         Initialize the play count by hour of day graph.
@@ -52,7 +52,7 @@ class PlayCountByHourOfDayGraph(BaseGraph):
             width=width,
             height=height,
             dpi=dpi,
-            background_color=background_color
+            background_color=background_color,
         )
 
     @override
@@ -84,17 +84,19 @@ class PlayCountByHourOfDayGraph(BaseGraph):
 
         try:
             # Step 1: Extract play history data from the full data structure
-            play_history_data_raw = data.get('play_history', {})
+            play_history_data_raw = data.get("play_history", {})
             if not isinstance(play_history_data_raw, dict):
                 raise ValueError("Missing or invalid 'play_history' data in input")
-            
+
             # Cast to the proper type for type checker
             play_history_data = cast(Mapping[str, object], play_history_data_raw)
 
             # Step 2: Validate the play history data
-            is_valid, error_msg = validate_graph_data(play_history_data, ['data'])
+            is_valid, error_msg = validate_graph_data(play_history_data, ["data"])
             if not is_valid:
-                raise ValueError(f"Invalid play history data for hour of day graph: {error_msg}")
+                raise ValueError(
+                    f"Invalid play history data for hour of day graph: {error_msg}"
+                )
 
             # Step 3: Process raw play history data
             try:
@@ -110,7 +112,7 @@ class PlayCountByHourOfDayGraph(BaseGraph):
                 logger.info(f"Aggregated data for {len(hourly_counts)} hours")
             else:
                 logger.warning("No valid records found, using empty data")
-                hourly_data = handle_empty_data('hour_of_day')
+                hourly_data = handle_empty_data("hour_of_day")
                 if isinstance(hourly_data, dict):
                     # Convert string keys back to int for consistency
                     hourly_counts = {int(k): v for k, v in hourly_data.items()}
@@ -132,33 +134,34 @@ class PlayCountByHourOfDayGraph(BaseGraph):
                 hours = list(range(24))
                 counts = [hourly_counts.get(hour, 0) for hour in hours]
 
-                df = pd.DataFrame({
-                    'hour': hours,
-                    'play_count': counts
-                })
+                df = pd.DataFrame({"hour": hours, "play_count": counts})
 
                 # Create bar plot
                 _ = sns.barplot(
                     data=df,
-                    x='hour',
-                    y='play_count',
-                    hue='hour',
+                    x="hour",
+                    y="play_count",
+                    hue="hour",
                     ax=ax,
-                    palette='viridis',
-                    legend=False
+                    palette="viridis",
+                    legend=False,
                 )
 
                 # Customize the plot
-                _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)  # pyright: ignore[reportUnknownMemberType]
-                _ = ax.set_xlabel('Hour of Day', fontsize=12)  # pyright: ignore[reportUnknownMemberType]
-                _ = ax.set_ylabel('Play Count', fontsize=12)  # pyright: ignore[reportUnknownMemberType]
+                _ = ax.set_title(  # pyright: ignore[reportUnknownMemberType]
+                    self.get_title(), fontsize=18, fontweight="bold", pad=20
+                )
+                _ = ax.set_xlabel("Hour of Day", fontsize=12)  # pyright: ignore[reportUnknownMemberType]
+                _ = ax.set_ylabel("Play Count", fontsize=12)  # pyright: ignore[reportUnknownMemberType]
 
                 # Set x-axis ticks to show all hours
                 _ = ax.set_xticks(range(0, 24, 2))  # pyright: ignore[reportUnknownMemberType]
                 _ = ax.set_xticklabels([f"{h:02d}:00" for h in range(0, 24, 2)])  # pyright: ignore[reportUnknownMemberType]
 
                 # Add bar value annotations if enabled
-                annotate_enabled = self.get_config_value('ANNOTATE_PLAY_COUNT_BY_HOUROFDAY', False)
+                annotate_enabled = self.get_config_value(
+                    "ANNOTATE_PLAY_COUNT_BY_HOUROFDAY", False
+                )
                 if annotate_enabled:
                     # Get all bar patches and annotate them
                     for patch in ax.patches:
@@ -170,19 +173,26 @@ class PlayCountByHourOfDayGraph(BaseGraph):
                                 x=float(x_val),  # pyright: ignore[reportUnknownArgumentType]
                                 y=float(height),  # pyright: ignore[reportUnknownArgumentType]
                                 value=int(height),  # pyright: ignore[reportUnknownArgumentType]
-                                ha='center',
-                                va='bottom',
+                                ha="center",
+                                va="bottom",
                                 offset_y=1,
-                                fontweight='bold'
+                                fontweight="bold",
                             )
 
                 logger.info("Created hour of day graph with data for 24 hours")
 
             else:
                 # Handle empty data case
-                _ = ax.text(0.5, 0.5, "No play data available\nfor the selected time period",  # pyright: ignore[reportUnknownMemberType]
-                           ha='center', va='center', transform=ax.transAxes, fontsize=16)
-                _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
+                _ = ax.text(  # pyright: ignore[reportUnknownMemberType]
+                    0.5,
+                    0.5,
+                    "No play data available\nfor the selected time period",
+                    ha="center",
+                    va="center",
+                    transform=ax.transAxes,
+                    fontsize=16,
+                )
+                _ = ax.set_title(self.get_title(), fontsize=18, fontweight="bold")  # pyright: ignore[reportUnknownMemberType]
                 logger.warning("Generated empty hour of day graph due to no data")
 
             # Step 8: Improve layout and save
@@ -191,8 +201,7 @@ class PlayCountByHourOfDayGraph(BaseGraph):
 
             # Save the figure using base class utility method
             output_path = self.save_figure(
-                graph_type="play_count_by_hourofday",
-                user_id=None
+                graph_type="play_count_by_hourofday", user_id=None
             )
 
             logger.info(f"Hour of day graph saved to: {output_path}")

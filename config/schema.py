@@ -10,11 +10,11 @@ from typing import ClassVar
 class TGraphBotConfig(BaseModel):
     """
     Configuration model for TGraph Bot.
-    
+
     This model defines all configuration options with validation,
     type hints, and default values as specified in the PRD.
     """
-    
+
     # Essential Settings
     TAUTULLI_API_KEY: str = Field(
         ...,
@@ -36,7 +36,7 @@ class TGraphBotConfig(BaseModel):
         description="Discord channel ID for posting graphs",
         gt=0,
     )
-    
+
     # Timing and Retention
     UPDATE_DAYS: Annotated[int, Field(ge=1, le=365)] = Field(
         default=7,
@@ -64,7 +64,7 @@ class TGraphBotConfig(BaseModel):
         description="Language code for internationalization",
         pattern=r"^[a-z]{2}$",
     )
-    
+
     # Graph Options
     CENSOR_USERNAMES: bool = Field(
         default=True,
@@ -106,7 +106,7 @@ class TGraphBotConfig(BaseModel):
         default=True,
         description="Enable play count by month graph generation",
     )
-    
+
     # Graph Colors
     TV_COLOR: str = Field(
         default="#1f77b4",
@@ -136,7 +136,7 @@ class TGraphBotConfig(BaseModel):
         default=10,
         description="Font size for bar value annotations",
     )
-    
+
     # Annotation Options
     ANNOTATE_DAILY_PLAY_COUNT: bool = Field(
         default=True,
@@ -162,7 +162,7 @@ class TGraphBotConfig(BaseModel):
         default=True,
         description="Enable annotations on monthly graphs",
     )
-    
+
     # Peak Annotation Options (separate from bar value annotations)
     ENABLE_PEAK_ANNOTATIONS: bool = Field(
         default=True,
@@ -176,7 +176,7 @@ class TGraphBotConfig(BaseModel):
         default="#000000",
         description="Text color for peak annotations",
     )
-    
+
     # Command Cooldown Options
     CONFIG_COOLDOWN_MINUTES: Annotated[int, Field(ge=0, le=1440)] = Field(
         default=0,
@@ -190,9 +190,11 @@ class TGraphBotConfig(BaseModel):
         default=0,
         description="Per-user cooldown for update graphs commands in minutes",
     )
-    UPDATE_GRAPHS_GLOBAL_COOLDOWN_SECONDS: Annotated[int, Field(ge=0, le=86400)] = Field(
-        default=0,
-        description="Global cooldown for update graphs commands in seconds",
+    UPDATE_GRAPHS_GLOBAL_COOLDOWN_SECONDS: Annotated[int, Field(ge=0, le=86400)] = (
+        Field(
+            default=0,
+            description="Global cooldown for update graphs commands in seconds",
+        )
     )
     MY_STATS_COOLDOWN_MINUTES: Annotated[int, Field(ge=0, le=1440)] = Field(
         default=5,
@@ -202,10 +204,10 @@ class TGraphBotConfig(BaseModel):
         default=60,
         description="Global cooldown for my stats commands in seconds",
     )
-    
+
     @field_validator(
         "TV_COLOR",
-        "MOVIE_COLOR", 
+        "MOVIE_COLOR",
         "GRAPH_BACKGROUND_COLOR",
         "ANNOTATION_COLOR",
         "ANNOTATION_OUTLINE_COLOR",
@@ -216,17 +218,17 @@ class TGraphBotConfig(BaseModel):
         if not re.match(r"^#[0-9a-fA-F]{6}$", v):
             raise ValueError(f"Color must be in hex format (e.g., #1f77b4), got: {v}")
         return v.lower()
-    
+
     @field_validator("TAUTULLI_URL")
     @classmethod
     def validate_tautulli_url(cls, v: str) -> str:
         """Validate and normalize Tautulli URL."""
         if not v.startswith(("http://", "https://")):
             raise ValueError("TAUTULLI_URL must start with http:// or https://")
-        
+
         # Remove trailing slash if present
         return v.rstrip("/")
-    
+
     @field_validator("DISCORD_TOKEN")
     @classmethod
     def validate_discord_token(cls, v: str) -> str:
@@ -235,7 +237,7 @@ class TGraphBotConfig(BaseModel):
         if len(v) < 10:  # Minimum reasonable length for testing
             raise ValueError("DISCORD_TOKEN appears to be too short")
         return v
-    
+
     model_config: ClassVar[ConfigDict] = ConfigDict(
         str_strip_whitespace=True,
         validate_assignment=True,

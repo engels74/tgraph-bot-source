@@ -7,4 +7,4 @@ This package contains scripts for managing the translation pipeline:
 - Translation workflow automation
 
 These scripts work together to maintain the i18n infrastructure for TGraph Bot.
-""" 
+"""

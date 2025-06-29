@@ -27,20 +27,17 @@ from bot.extensions import load_extensions
 def rotate_logs_on_startup(logs_dir: Path) -> None:
     """
     Rotate existing log files on startup with timestamp-based naming.
-    
+
     This function checks for existing log files and renames them with
     timestamps to create a clean start for the new session.
-    
+
     Args:
         logs_dir: Directory containing log files
     """
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    
-    log_files = [
-        "tgraph-bot.log",
-        "tgraph-bot-errors.log"
-    ]
-    
+
+    log_files = ["tgraph-bot.log", "tgraph-bot-errors.log"]
+
     for log_file in log_files:
         log_path = logs_dir / log_file
         if log_path.exists():
@@ -56,27 +53,27 @@ def rotate_logs_on_startup(logs_dir: Path) -> None:
 def cleanup_old_logs(logs_dir: Path, max_files: int = 10) -> None:
     """
     Clean up old timestamped log files, keeping only the most recent ones.
-    
+
     Args:
         logs_dir: Directory containing log files
         max_files: Maximum number of timestamped log files to keep per type
     """
     log_types = ["tgraph-bot.log", "tgraph-bot-errors.log"]
-    
+
     for log_type in log_types:
         # Find all timestamped files for this log type
         pattern = f"{log_type}.*"
         timestamped_files: list[Path] = []
-        
+
         for file_path in logs_dir.glob(pattern):
             # Skip the current active log file (no timestamp)
             if file_path.name == log_type:
                 continue
             timestamped_files.append(file_path)
-        
+
         # Sort by modification time (newest first)
         timestamped_files.sort(key=lambda x: x.stat().st_mtime, reverse=True)
-        
+
         # Remove excess files
         if len(timestamped_files) > max_files:
             files_to_remove = timestamped_files[max_files:]
@@ -93,13 +90,13 @@ def setup_logging() -> None:
     Configure comprehensive logging with rotation and multiple handlers.
 
     Sets up both file and console logging with appropriate formatters,
-    startup-based and size-based log rotation, and different log levels 
+    startup-based and size-based log rotation, and different log levels
     for different components.
     """
     # Create logs directory if it doesn't exist
     logs_dir = Path("logs")
     _ = logs_dir.mkdir(exist_ok=True)
-    
+
     # Rotate existing logs on startup and cleanup old logs
     rotate_logs_on_startup(logs_dir)
     cleanup_old_logs(logs_dir, max_files=10)
@@ -115,16 +112,14 @@ def setup_logging() -> None:
     detailed_formatter = logging.Formatter(
         "%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s"
     )
-    simple_formatter = logging.Formatter(
-        "%(asctime)s - %(levelname)s - %(message)s"
-    )
+    simple_formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 
     # File handler with rotation (5MB max, keep 5 backups)
     file_handler = logging.handlers.RotatingFileHandler(
         logs_dir / "tgraph-bot.log",
         maxBytes=5 * 1024 * 1024,  # 5MB
         backupCount=5,
-        encoding="utf-8"
+        encoding="utf-8",
     )
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(detailed_formatter)
@@ -139,7 +134,7 @@ def setup_logging() -> None:
         logs_dir / "tgraph-bot-errors.log",
         maxBytes=5 * 1024 * 1024,  # 5MB
         backupCount=3,
-        encoding="utf-8"
+        encoding="utf-8",
     )
     error_handler.setLevel(logging.ERROR)
     error_handler.setFormatter(detailed_formatter)
@@ -159,6 +154,7 @@ def setup_logging() -> None:
     logging.getLogger("bot").setLevel(logging.INFO)
     logging.getLogger("config").setLevel(logging.INFO)
     logging.getLogger("i18n").setLevel(logging.INFO)
+
 
 logger = logging.getLogger(__name__)
 
@@ -196,6 +192,7 @@ class TGraphBot(commands.Bot):
 
         # Initialize update tracker for automated scheduling
         from bot.update_tracker import UpdateTracker
+
         self.update_tracker: UpdateTracker = UpdateTracker(self)
 
     def is_shutting_down(self) -> bool:
@@ -218,12 +215,16 @@ class TGraphBot(commands.Bot):
                 config = self.config_manager.get_current_config()
             except RuntimeError as e:
                 logger.error(f"No configuration loaded: {e}")
-                raise RuntimeError("Bot setup failed: No configuration available") from e
+                raise RuntimeError(
+                    "Bot setup failed: No configuration available"
+                ) from e
 
             # Setup internationalization
             try:
                 setup_i18n(config.LANGUAGE)
-                logger.info(f"Internationalization setup for language: {config.LANGUAGE}")
+                logger.info(
+                    f"Internationalization setup for language: {config.LANGUAGE}"
+                )
             except Exception as e:
                 logger.error(f"Failed to setup internationalization: {e}")
                 # Continue with default language
@@ -235,9 +236,13 @@ class TGraphBot(commands.Bot):
                 successful_extensions = [r for r in extension_results if r.loaded]
                 failed_extensions = [r for r in extension_results if not r.loaded]
 
-                logger.info(f"Successfully loaded {len(successful_extensions)} extensions")
+                logger.info(
+                    f"Successfully loaded {len(successful_extensions)} extensions"
+                )
                 if failed_extensions:
-                    logger.warning(f"Failed to load {len(failed_extensions)} extensions")
+                    logger.warning(
+                        f"Failed to load {len(failed_extensions)} extensions"
+                    )
                     for failed in failed_extensions:
                         logger.warning(f"  - {failed.name}: {failed.error}")
 
@@ -253,7 +258,9 @@ class TGraphBot(commands.Bot):
             except Exception as e:
                 logger.error(f"Failed to sync slash commands: {e}")
                 # Continue without syncing - commands may still work if previously synced
-                logger.warning("Continuing without command sync - some commands may not appear")
+                logger.warning(
+                    "Continuing without command sync - some commands may not appear"
+                )
 
             # Setup background tasks
             await self.setup_background_tasks()
@@ -281,8 +288,7 @@ class TGraphBot(commands.Bot):
 
             # Add periodic health check task
             _ = self.create_background_task(
-                self._periodic_health_check(),
-                "health_check"
+                self._periodic_health_check(), "health_check"
             )
             logger.info("Health check task started")
 
@@ -301,10 +307,13 @@ class TGraphBot(commands.Bot):
             self.update_tracker.set_update_callback(self._automated_graph_update)
 
             # Start the scheduler with configuration
-            fixed_time = None if config.FIXED_UPDATE_TIME == "XX:XX" else config.FIXED_UPDATE_TIME
+            fixed_time = (
+                None
+                if config.FIXED_UPDATE_TIME == "XX:XX"
+                else config.FIXED_UPDATE_TIME
+            )
             await self.update_tracker.start_scheduler(
-                update_days=config.UPDATE_DAYS,
-                fixed_update_time=fixed_time
+                update_days=config.UPDATE_DAYS, fixed_update_time=fixed_time
             )
 
             logger.info(f"Update scheduler started (every {config.UPDATE_DAYS} days)")
@@ -335,7 +344,9 @@ class TGraphBot(commands.Bot):
             # Find the target channel for posting graphs
             target_channel = self.get_channel(config.CHANNEL_ID)
             if target_channel is None:
-                logger.error(f"Could not find Discord channel with ID: {config.CHANNEL_ID}")
+                logger.error(
+                    f"Could not find Discord channel with ID: {config.CHANNEL_ID}"
+                )
                 return
 
             # Verify channel is a text channel
@@ -344,14 +355,15 @@ class TGraphBot(commands.Bot):
                 return
 
             # Step 1: Clean up previous bot messages
-            logger.info("Cleaning up previous bot messages before posting new graphs...")
+            logger.info(
+                "Cleaning up previous bot messages before posting new graphs..."
+            )
             await self._cleanup_bot_messages(target_channel)
 
             # Step 2: Generate graphs
             async with GraphManager(self.config_manager) as graph_manager:
                 graph_files = await graph_manager.generate_all_graphs(
-                    max_retries=3,
-                    timeout_seconds=300.0
+                    max_retries=3, timeout_seconds=300.0
                 )
 
                 if not graph_files:
@@ -359,9 +371,13 @@ class TGraphBot(commands.Bot):
                     return
 
                 # Step 3: Post graphs to channel
-                success_count = await self._post_graphs_to_channel(target_channel, graph_files)
+                success_count = await self._post_graphs_to_channel(
+                    target_channel, graph_files
+                )
 
-                logger.info(f"Automated update complete: {success_count}/{len(graph_files)} graphs posted")
+                logger.info(
+                    f"Automated update complete: {success_count}/{len(graph_files)} graphs posted"
+                )
 
         except Exception as e:
             logger.exception(f"Error during automated graph update: {e}")
@@ -370,24 +386,26 @@ class TGraphBot(commands.Bot):
     async def _cleanup_bot_messages(self, channel: "discord.TextChannel") -> None:
         """
         Clean up previous messages posted by the bot in the specified channel.
-        
+
         This method removes all messages that were posted by this bot instance,
         implementing the same cleanup logic used during bot startup.
-        
+
         Args:
             channel: The Discord text channel to clean up
         """
         logger.info(f"Starting message cleanup in channel: {channel.name}")
-        
+
         try:
             # Check bot permissions
             if not channel.permissions_for(channel.guild.me).manage_messages:
-                logger.warning(f"Bot lacks 'Manage Messages' permission in {channel.name}")
+                logger.warning(
+                    f"Bot lacks 'Manage Messages' permission in {channel.name}"
+                )
                 logger.info("Attempting to delete only bot's own messages...")
-            
+
             deleted_count = 0
             error_count = 0
-            
+
             # Fetch messages in batches and delete bot's own messages
             async for message in channel.history(limit=None):
                 # Only delete messages from this bot
@@ -395,13 +413,15 @@ class TGraphBot(commands.Bot):
                     try:
                         await message.delete()
                         deleted_count += 1
-                        
+
                         # Rate limit protection - Discord allows 5 deletes per second
                         if deleted_count % 5 == 0:
                             await asyncio.sleep(1.0)
-                            
+
                     except discord.Forbidden:
-                        logger.warning(f"Cannot delete message {message.id} - insufficient permissions")
+                        logger.warning(
+                            f"Cannot delete message {message.id} - insufficient permissions"
+                        )
                         error_count += 1
                     except discord.NotFound:
                         # Message already deleted, continue
@@ -409,20 +429,26 @@ class TGraphBot(commands.Bot):
                     except discord.HTTPException as e:
                         logger.error(f"HTTP error deleting message {message.id}: {e}")
                         error_count += 1
-                        
+
                         # If we hit rate limits, wait longer
                         if e.status == 429:
-                            retry_after = getattr(e, 'retry_after', 5.0)
-                            logger.info(f"Rate limited, waiting {retry_after} seconds...")
+                            retry_after = getattr(e, "retry_after", 5.0)
+                            logger.info(
+                                f"Rate limited, waiting {retry_after} seconds..."
+                            )
                             await asyncio.sleep(retry_after)
-            
-            logger.info(f"Message cleanup completed: {deleted_count} messages deleted, {error_count} errors")
-            
+
+            logger.info(
+                f"Message cleanup completed: {deleted_count} messages deleted, {error_count} errors"
+            )
+
             if error_count > 0:
                 logger.warning(f"Encountered {error_count} errors during cleanup")
-            
+
         except Exception as e:
-            logger.error(f"Error during message cleanup in {channel.name}: {e}", exc_info=True)
+            logger.error(
+                f"Error during message cleanup in {channel.name}: {e}", exc_info=True
+            )
             # Continue with the update process even if cleanup fails
             raise
 
@@ -432,7 +458,9 @@ class TGraphBot(commands.Bot):
             try:
                 # Check update tracker health
                 if not self.update_tracker.is_scheduler_healthy():
-                    logger.warning("Update scheduler appears unhealthy, attempting restart")
+                    logger.warning(
+                        "Update scheduler appears unhealthy, attempting restart"
+                    )
                     try:
                         await self.update_tracker.restart_scheduler()
                         logger.info("Update scheduler restarted successfully")
@@ -450,9 +478,7 @@ class TGraphBot(commands.Bot):
                 await asyncio.sleep(60)  # Wait before retrying
 
     async def _post_graphs_to_channel(
-        self,
-        channel: "discord.TextChannel",
-        graph_files: list[str]
+        self, channel: "discord.TextChannel", graph_files: list[str]
     ) -> int:
         """
         Post generated graph files to a Discord channel as individual messages with specific embeds.
@@ -465,10 +491,14 @@ class TGraphBot(commands.Bot):
             Number of successfully posted graphs
         """
         from pathlib import Path
-        from utils.discord.discord_file_utils import validate_file_for_discord, create_discord_file_safe, create_graph_specific_embed
+        from utils.discord.discord_file_utils import (
+            validate_file_for_discord,
+            create_discord_file_safe,
+            create_graph_specific_embed,
+        )
 
         success_count = 0
-        
+
         # Get config values for next update time calculation
         try:
             config = self.config_manager.get_current_config()
@@ -487,19 +517,27 @@ class TGraphBot(commands.Bot):
                     continue
 
                 # Validate the file first
-                validation = validate_file_for_discord(graph_file, use_nitro_limits=False)
+                validation = validate_file_for_discord(
+                    graph_file, use_nitro_limits=False
+                )
                 if not validation.valid:
-                    logger.error(f"File validation failed for {graph_file}: {validation.error_message}")
+                    logger.error(
+                        f"File validation failed for {graph_file}: {validation.error_message}"
+                    )
                     continue
 
                 # Create Discord file object
                 discord_file = create_discord_file_safe(graph_file)
                 if not discord_file:
-                    logger.error(f"Failed to create Discord file object for {graph_file}")
+                    logger.error(
+                        f"Failed to create Discord file object for {graph_file}"
+                    )
                     continue
 
                 # Create graph-specific embed with scheduling info
-                embed = create_graph_specific_embed(graph_file, update_days, fixed_update_time)
+                embed = create_graph_specific_embed(
+                    graph_file, update_days, fixed_update_time
+                )
 
                 # Post individual message with graph and its specific embed
                 _ = await channel.send(file=discord_file, embed=embed)
@@ -511,7 +549,9 @@ class TGraphBot(commands.Bot):
 
         return success_count
 
-    def create_background_task(self, coro: Coroutine[object, object, None], name: str | None = None) -> asyncio.Task[None]:
+    def create_background_task(
+        self, coro: Coroutine[object, object, None], name: str | None = None
+    ) -> asyncio.Task[None]:
         """
         Create and track a background task.
 
@@ -554,7 +594,7 @@ class TGraphBot(commands.Bot):
             try:
                 _ = await asyncio.wait_for(
                     asyncio.gather(*self._background_tasks, return_exceptions=True),
-                    timeout=10.0
+                    timeout=10.0,
                 )
                 logger.info("All background tasks cleaned up successfully")
             except asyncio.TimeoutError:
@@ -570,11 +610,14 @@ class TGraphBot(commands.Bot):
             logger.error("Bot user is None after ready event")
             return
 
-        logger.info(f"TGraph Bot is ready! Logged in as {self.user} (ID: {self.user.id})")
+        logger.info(
+            f"TGraph Bot is ready! Logged in as {self.user} (ID: {self.user.id})"
+        )
         logger.info(f"Connected to {len(self.guilds)} guild(s)")
 
         # Record start time for uptime tracking
         import time
+
         self.start_time = time.time()
 
         # Log additional connection information
@@ -583,13 +626,16 @@ class TGraphBot(commands.Bot):
 
         # Check if shutdown was requested during startup
         if self._shutdown_event.is_set():
-            logger.warning("Shutdown requested during startup, initiating graceful shutdown")
+            logger.warning(
+                "Shutdown requested during startup, initiating graceful shutdown"
+            )
             await self.close()
             return
 
         # Run the startup sequence
         try:
             from bot.startup_sequence import StartupSequence
+
             startup = StartupSequence(self)
             await startup.run()
         except Exception as e:
@@ -660,7 +706,9 @@ class TGraphBot(commands.Bot):
             try:
                 await super().close()
             except Exception:
-                logger.exception("Failed to close Discord connection during error recovery")
+                logger.exception(
+                    "Failed to close Discord connection during error recovery"
+                )
 
 
 def setup_signal_handlers(bot: TGraphBot) -> None:
@@ -670,6 +718,7 @@ def setup_signal_handlers(bot: TGraphBot) -> None:
     Handles SIGTERM and SIGINT signals to ensure the bot shuts down gracefully
     when receiving termination signals from the operating system.
     """
+
     def signal_handler(signum: int, _frame: object) -> None:
         """Handle shutdown signals."""
         signal_name = signal.Signals(signum).name
@@ -710,7 +759,9 @@ async def main() -> None:
 
         if not config_path.exists():
             logger.error("Configuration file 'config.yml' not found")
-            logger.error("Please copy 'config.yml.sample' to 'config.yml' and configure it")
+            logger.error(
+                "Please copy 'config.yml.sample' to 'config.yml' and configure it"
+            )
             logger.error("Refer to the documentation for configuration instructions")
             sys.exit(1)
 
@@ -747,7 +798,9 @@ async def main() -> None:
             sys.exit(1)
         except discord.HTTPException as e:
             logger.error(f"HTTP error connecting to Discord: {e}")
-            logger.error("This may be a temporary Discord API issue, please try again later")
+            logger.error(
+                "This may be a temporary Discord API issue, please try again later"
+            )
             sys.exit(1)
         except Exception as e:
             logger.exception(f"Unexpected error starting bot: {e}")

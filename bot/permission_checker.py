@@ -69,8 +69,7 @@ class PermissionChecker:
             permissions = await self.check_bot_permissions(guild)
 
             missing_permissions = [
-                perm for perm, has_perm in permissions.items()
-                if not has_perm
+                perm for perm, has_perm in permissions.items() if not has_perm
             ]
 
             if missing_permissions:

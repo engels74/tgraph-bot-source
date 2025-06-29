@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 class ExtensionStatus(NamedTuple):
     """Status information for an extension."""
+
     name: str
     loaded: bool
     error: str | None = None
@@ -55,14 +56,18 @@ class ExtensionManager:
 
         # Walk through the commands directory
         for module_info in pkgutil.iter_modules([str(commands_path)]):
-            if not module_info.name.startswith("_"):  # Skip __init__.py and private modules
+            if not module_info.name.startswith(
+                "_"
+            ):  # Skip __init__.py and private modules
                 extension_name = f"bot.commands.{module_info.name}"
                 extensions.append(extension_name)
 
         logger.debug(f"Discovered {len(extensions)} extensions: {extensions}")
         return extensions
 
-    async def load_extension_safe(self, bot: commands.Bot, extension_name: str) -> ExtensionStatus:
+    async def load_extension_safe(
+        self, bot: commands.Bot, extension_name: str
+    ) -> ExtensionStatus:
         """
         Safely load a single extension with detailed error handling.
 
@@ -76,7 +81,9 @@ class ExtensionManager:
         try:
             await bot.load_extension(extension_name)
             self._loaded_extensions.add(extension_name)
-            _ = self._failed_extensions.pop(extension_name, None)  # Clear any previous errors
+            _ = self._failed_extensions.pop(
+                extension_name, None
+            )  # Clear any previous errors
             logger.info(f"Successfully loaded extension: {extension_name}")
             return ExtensionStatus(extension_name, True)
 
@@ -161,7 +168,9 @@ async def load_extensions(bot: commands.Bot) -> list[ExtensionStatus]:
     loaded_count = sum(1 for status in results if status.loaded)
     failed_count = len(results) - loaded_count
 
-    logger.info(f"Extension loading complete: {loaded_count} loaded, {failed_count} failed")
+    logger.info(
+        f"Extension loading complete: {loaded_count} loaded, {failed_count} failed"
+    )
 
     if failed_count > 0:
         failed_names = [status.name for status in results if not status.loaded]
@@ -192,12 +201,16 @@ async def unload_extensions(bot: commands.Bot) -> list[ExtensionStatus]:
     unloaded_count = sum(1 for status in results if status.loaded)
     failed_count = len(results) - unloaded_count
 
-    logger.info(f"Extension unloading complete: {unloaded_count} unloaded, {failed_count} failed")
+    logger.info(
+        f"Extension unloading complete: {unloaded_count} unloaded, {failed_count} failed"
+    )
 
     return results
 
 
-async def unload_extension_safe(bot: commands.Bot, extension_name: str) -> ExtensionStatus:
+async def unload_extension_safe(
+    bot: commands.Bot, extension_name: str
+) -> ExtensionStatus:
     """
     Safely unload a single extension with detailed error handling.
 
@@ -216,7 +229,9 @@ async def unload_extension_safe(bot: commands.Bot, extension_name: str) -> Exten
 
     except commands.ExtensionNotLoaded:
         logger.warning(f"Extension not loaded: {extension_name}")
-        return ExtensionStatus(extension_name, True)  # Consider it successful since it's not loaded
+        return ExtensionStatus(
+            extension_name, True
+        )  # Consider it successful since it's not loaded
 
     except commands.ExtensionNotFound as e:
         error_msg = f"Extension not found: {e}"
@@ -294,7 +309,9 @@ async def reload_all_extensions(bot: commands.Bot) -> list[ExtensionStatus]:
     reloaded_count = sum(1 for status in results if status.loaded)
     failed_count = len(results) - reloaded_count
 
-    logger.info(f"Extension reloading complete: {reloaded_count} reloaded, {failed_count} failed")
+    logger.info(
+        f"Extension reloading complete: {reloaded_count} reloaded, {failed_count} failed"
+    )
 
     return results
 
@@ -318,7 +335,7 @@ def get_extension_info() -> dict[str, dict[str, str | bool]]:
         info[extension] = {
             "loaded": is_loaded,
             "error": error or "",
-            "status": "loaded" if is_loaded else ("failed" if error else "not_loaded")
+            "status": "loaded" if is_loaded else ("failed" if error else "not_loaded"),
         }
 
     return info

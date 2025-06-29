@@ -12,8 +12,8 @@ from utils.i18n import translation_compiler
 
 # Make modules available at package level
 __all__ = [
-    'error_handler',
-    'command_utils',
-    'discord_file_utils', 
-    'translation_compiler'
+    "error_handler",
+    "command_utils",
+    "discord_file_utils",
+    "translation_compiler",
 ]

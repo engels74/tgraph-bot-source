@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 class CompilationStatus(TypedDict):
     """Type definition for compilation status dictionary."""
+
     total_files: int
     needs_compilation: list[str]
     up_to_date: list[str]
@@ -28,6 +29,7 @@ class CompilationStatus(TypedDict):
 
 class ValidationResult(TypedDict):
     """Type definition for validation result dictionary."""
+
     valid: bool
     errors: list[str]
     warnings: list[str]
@@ -38,7 +40,7 @@ class ValidationResult(TypedDict):
 
 class CompilationResult:
     """Result of a compilation operation."""
-    
+
     def __init__(self) -> None:
         self.compiled_files: list[Path] = []
         self.skipped_files: list[Path] = []
@@ -80,9 +82,7 @@ class CompilationResult:
 
 
 def find_po_files(
-    locale_dir: Path,
-    language: str | None = None,
-    recursive: bool = True
+    locale_dir: Path, language: str | None = None, recursive: bool = True
 ) -> list[Path]:
     """
     Find all .po files in the locale directory.
@@ -112,7 +112,7 @@ def find_po_files(
             po_files.extend(list(locale_dir.rglob("*.po")))
         else:
             for lang_dir in locale_dir.iterdir():
-                if lang_dir.is_dir() and not lang_dir.name.startswith('.'):
+                if lang_dir.is_dir() and not lang_dir.name.startswith("."):
                     lc_messages = lang_dir / "LC_MESSAGES"
                     if lc_messages.exists():
                         po_files.extend(list(lc_messages.glob("*.po")))
@@ -132,7 +132,7 @@ def needs_compilation(po_file: Path, mo_file: Path | None = None) -> bool:
         True if compilation is needed, False otherwise
     """
     if mo_file is None:
-        mo_file = po_file.with_suffix('.mo')
+        mo_file = po_file.with_suffix(".mo")
 
     if not mo_file.exists():
         return True
@@ -148,9 +148,7 @@ def needs_compilation(po_file: Path, mo_file: Path | None = None) -> bool:
 
 
 def compile_translation_file(
-    po_file: Path,
-    mo_file: Path | None = None,
-    force: bool = False
+    po_file: Path, mo_file: Path | None = None, force: bool = False
 ) -> bool:
     """
     Compile a single .po file to .mo format.
@@ -167,7 +165,7 @@ def compile_translation_file(
         Exception: If compilation fails
     """
     if mo_file is None:
-        mo_file = po_file.with_suffix('.mo')
+        mo_file = po_file.with_suffix(".mo")
 
     if not force and not needs_compilation(po_file, mo_file):
         logger.debug(f"Skipping {po_file} (up to date)")
@@ -186,7 +184,7 @@ def compile_all_translations(
     locale_dir: Path,
     language: str | None = None,
     force: bool = False,
-    fail_fast: bool = False
+    fail_fast: bool = False,
 ) -> CompilationResult:
     """
     Compile all .po files in the locale directory to .mo format.
@@ -201,7 +199,7 @@ def compile_all_translations(
         CompilationResult with details of the operation
     """
     result = CompilationResult()
-    
+
     # Find all .po files
     po_files = find_po_files(locale_dir, language)
     result.total_files = len(po_files)
@@ -230,7 +228,7 @@ def compile_all_translations(
 
     # Log summary
     logger.info(str(result))
-    
+
     if result.failed_files:
         logger.error("Failed files:")
         for po_file, error in result.failed_files:
@@ -239,7 +237,9 @@ def compile_all_translations(
     return result
 
 
-def get_compilation_status(locale_dir: Path, language: str | None = None) -> CompilationStatus:
+def get_compilation_status(
+    locale_dir: Path, language: str | None = None
+) -> CompilationStatus:
     """
     Get the compilation status of all .po files.
 
@@ -258,7 +258,7 @@ def get_compilation_status(locale_dir: Path, language: str | None = None) -> Com
     errors_list: list[dict[str, str]] = []
 
     for po_file in po_files:
-        mo_file = po_file.with_suffix('.mo')
+        mo_file = po_file.with_suffix(".mo")
 
         try:
             if not mo_file.exists():
@@ -268,14 +268,14 @@ def get_compilation_status(locale_dir: Path, language: str | None = None) -> Com
             else:
                 up_to_date_list.append(str(po_file))
         except Exception as e:
-            errors_list.append({'file': str(po_file), 'error': str(e)})
+            errors_list.append({"file": str(po_file), "error": str(e)})
 
     return CompilationStatus(
         total_files=len(po_files),
         needs_compilation=needs_compilation_list,
         up_to_date=up_to_date_list,
         missing_mo=missing_mo_list,
-        errors=errors_list
+        errors=errors_list,
     )
 
 
@@ -303,19 +303,17 @@ def validate_locale_structure(locale_dir: Path) -> ValidationResult:
             warnings=warnings,
             languages=languages,
             po_files=po_files_count,
-            mo_files=mo_files_count
+            mo_files=mo_files_count,
         )
 
     # Check for language directories
     for item in locale_dir.iterdir():
-        if item.is_dir() and not item.name.startswith('.'):
+        if item.is_dir() and not item.name.startswith("."):
             lang_code = item.name
             lc_messages = item / "LC_MESSAGES"
 
             if not lc_messages.exists():
-                warnings.append(
-                    f"Language {lang_code} missing LC_MESSAGES directory"
-                )
+                warnings.append(f"Language {lang_code} missing LC_MESSAGES directory")
                 continue
 
             languages.append(lang_code)
@@ -328,9 +326,7 @@ def validate_locale_structure(locale_dir: Path) -> ValidationResult:
             mo_files_count += len(mo_files)
 
             if not po_files:
-                warnings.append(
-                    f"Language {lang_code} has no .po files"
-                )
+                warnings.append(f"Language {lang_code} has no .po files")
 
     if not languages:
         errors.append("No valid language directories found")
@@ -341,5 +337,5 @@ def validate_locale_structure(locale_dir: Path) -> ValidationResult:
         warnings=warnings,
         languages=languages,
         po_files=po_files_count,
-        mo_files=mo_files_count
+        mo_files=mo_files_count,
     )

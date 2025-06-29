@@ -21,14 +21,14 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 @final
 class ConfigurationHelper:
     """
     Helper class for common configuration operations.
-    
+
     Provides centralized configuration access patterns and validation
     to eliminate code duplication across command cogs and other modules.
     """
@@ -45,7 +45,7 @@ class ConfigurationHelper:
     def get_config(self) -> "TGraphBotConfig":
         """
         Get the current configuration.
-        
+
         Returns:
             Current configuration object
         """
@@ -74,20 +74,22 @@ class ConfigurationHelper:
         else:
             raise ConfigurationError(
                 f"Configuration key '{key}' not found",
-                user_message=f"Configuration setting `{key}` is not available."
+                user_message=f"Configuration setting `{key}` is not available.",
             )
 
-    def validate_discord_channel(self, bot: discord.Client, channel_id: int | None = None) -> discord.TextChannel:
+    def validate_discord_channel(
+        self, bot: discord.Client, channel_id: int | None = None
+    ) -> discord.TextChannel:
         """
         Validate and retrieve a Discord text channel.
-        
+
         Args:
             bot: Discord bot instance
             channel_id: Optional channel ID (uses config CHANNEL_ID if not provided)
-            
+
         Returns:
             Discord TextChannel object
-            
+
         Raises:
             ConfigurationError: If channel is invalid or not found
         """
@@ -96,17 +98,17 @@ class ConfigurationHelper:
             channel_id = config.CHANNEL_ID
 
         channel = bot.get_channel(channel_id)
-        
+
         if channel is None:
             raise ConfigurationError(
                 f"Could not find Discord channel with ID: {channel_id}",
-                user_message=f"Could not find Discord channel with ID: {channel_id}. Please check the bot configuration."
+                user_message=f"Could not find Discord channel with ID: {channel_id}. Please check the bot configuration.",
             )
 
         if not isinstance(channel, discord.TextChannel):
             raise ConfigurationError(
                 f"Channel {channel_id} is not a text channel",
-                user_message=f"Channel {channel_id} is not a text channel. Please configure a valid text channel."
+                user_message=f"Channel {channel_id} is not a text channel. Please configure a valid text channel.",
             )
 
         return channel
@@ -114,47 +116,47 @@ class ConfigurationHelper:
     def get_cooldown_settings(self, command_prefix: str) -> tuple[int, int]:
         """
         Get cooldown settings for a specific command.
-        
+
         Args:
             command_prefix: Command prefix (e.g., "UPDATE_GRAPHS", "MY_STATS")
-            
+
         Returns:
             Tuple of (user_cooldown_seconds, global_cooldown_seconds)
         """
         config = self.get_config()
-        
+
         # Get user cooldown (usually in minutes)
         user_cooldown_key = f"{command_prefix}_COOLDOWN_MINUTES"
         user_cooldown_minutes = getattr(config, user_cooldown_key, 0)
         user_cooldown_seconds = user_cooldown_minutes * 60
-        
+
         # Get global cooldown (usually in seconds)
         global_cooldown_key = f"{command_prefix}_GLOBAL_COOLDOWN_SECONDS"
         global_cooldown_seconds = getattr(config, global_cooldown_key, 0)
-        
+
         return user_cooldown_seconds, global_cooldown_seconds
 
     def validate_setting_exists(self, setting: str) -> bool:
         """
         Validate that a configuration setting exists.
-        
+
         Args:
             setting: Setting name to validate
-            
+
         Returns:
             True if setting exists
-            
+
         Raises:
             ConfigurationError: If setting doesn't exist
         """
         config = self.get_config()
-        
+
         if not hasattr(config, setting):
             raise ConfigurationError(
                 f"Configuration setting '{setting}' does not exist",
-                user_message=f"Configuration setting `{setting}` does not exist. Use `/config view` to see all available settings."
+                user_message=f"Configuration setting `{setting}` does not exist. Use `/config view` to see all available settings.",
             )
-        
+
         return True
 
     def get_graph_settings(self) -> dict[str, object]:
@@ -176,7 +178,7 @@ class ConfigurationHelper:
             "annotation_outline_color": config.ANNOTATION_OUTLINE_COLOR,
             "grid_enabled": config.ENABLE_GRAPH_GRID,
             "enable_annotation_outline": config.ENABLE_ANNOTATION_OUTLINE,
-            "censor_usernames": config.CENSOR_USERNAMES
+            "censor_usernames": config.CENSOR_USERNAMES,
         }
 
     def get_api_settings(self) -> dict[str, object]:
@@ -192,22 +194,22 @@ class ConfigurationHelper:
             "tautulli_url": config.TAUTULLI_URL,
             "tautulli_api_key": config.TAUTULLI_API_KEY,
             "discord_token": config.DISCORD_TOKEN,
-            "channel_id": config.CHANNEL_ID
+            "channel_id": config.CHANNEL_ID,
         }
 
     def is_graph_enabled(self, graph_type: str) -> bool:
         """
         Check if a specific graph type is enabled.
-        
+
         Args:
             graph_type: Graph type to check (e.g., "DAILY_PLAY_COUNT")
-            
+
         Returns:
             True if graph type is enabled
         """
         config = self.get_config()
         enabled_key = f"{graph_type}_ENABLED"
-        
+
         return getattr(config, enabled_key, False)
 
     def get_enabled_graphs(self) -> list[str]:
@@ -226,7 +228,7 @@ class ConfigurationHelper:
             "PLAY_COUNT_BY_HOUROFDAY",
             "TOP_10_PLATFORMS",
             "TOP_10_USERS",
-            "PLAY_COUNT_BY_MONTH"
+            "PLAY_COUNT_BY_MONTH",
         ]
 
         for graph_type in graph_types:
@@ -239,10 +241,10 @@ class ConfigurationHelper:
 def create_config_helper(config_manager: "ConfigManager") -> ConfigurationHelper:
     """
     Factory function to create a configuration helper.
-    
+
     Args:
         config_manager: Configuration manager instance
-        
+
     Returns:
         ConfigurationHelper instance
     """

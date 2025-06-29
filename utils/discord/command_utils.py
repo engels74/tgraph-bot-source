@@ -18,13 +18,13 @@ import i18n
 logger = logging.getLogger(__name__)
 
 # Type variable for generic functions
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def create_error_embed(
     title: str | None = None,
     description: str | None = None,
-    color: discord.Color | None = None
+    color: discord.Color | None = None,
 ) -> discord.Embed:
     """
     Create a standardized error embed.
@@ -45,11 +45,7 @@ def create_error_embed(
     if description is None:
         description = i18n.translate("An error occurred")
 
-    embed = discord.Embed(
-        title=title,
-        description=description,
-        color=color
-    )
+    embed = discord.Embed(title=title, description=description, color=color)
     _ = embed.set_footer(text="TGraph Bot")
     return embed
 
@@ -57,7 +53,7 @@ def create_error_embed(
 def create_success_embed(
     title: str | None = None,
     description: str | None = None,
-    color: discord.Color | None = None
+    color: discord.Color | None = None,
 ) -> discord.Embed:
     """
     Create a standardized success embed.
@@ -78,19 +74,13 @@ def create_success_embed(
     if description is None:
         description = i18n.translate("Operation completed successfully")
 
-    embed = discord.Embed(
-        title=title,
-        description=description,
-        color=color
-    )
+    embed = discord.Embed(title=title, description=description, color=color)
     _ = embed.set_footer(text="TGraph Bot")
     return embed
 
 
 def create_info_embed(
-    title: str | None = None,
-    description: str = "",
-    color: discord.Color | None = None
+    title: str | None = None, description: str = "", color: discord.Color | None = None
 ) -> discord.Embed:
     """
     Create a standardized info embed.
@@ -109,11 +99,7 @@ def create_info_embed(
     if title is None:
         title = i18n.translate("Information")
 
-    embed = discord.Embed(
-        title=title,
-        description=description,
-        color=color
-    )
+    embed = discord.Embed(title=title, description=description, color=color)
     _ = embed.set_footer(text="TGraph Bot")
     return embed
 
@@ -121,11 +107,11 @@ def create_info_embed(
 def format_config_value(key: str, value: str | int | float | bool | None) -> str:
     """
     Format a configuration value for display.
-    
+
     Args:
         key: Configuration key name
         value: Configuration value
-        
+
     Returns:
         Formatted string representation
     """
@@ -147,7 +133,7 @@ def format_config_value(key: str, value: str | int | float | bool | None) -> str
         if not value.strip():
             return i18n.translate("Empty")
         return str(value)
-        
+
     # Default formatting for any other type
     return str(value)
 
@@ -155,46 +141,46 @@ def format_config_value(key: str, value: str | int | float | bool | None) -> str
 def truncate_text(text: str, max_length: int = 1024) -> str:
     """
     Truncate text to fit within Discord embed field limits.
-    
+
     Args:
         text: Text to truncate
         max_length: Maximum length allowed
-        
+
     Returns:
         Truncated text with ellipsis if needed
     """
     if len(text) <= max_length:
         return text
-        
-    return text[:max_length - 3] + "..."
+
+    return text[: max_length - 3] + "..."
 
 
 def parse_time_string(time_str: str) -> tuple[int, int] | None:
     """
     Parse a time string in HH:MM format.
-    
+
     Args:
         time_str: Time string to parse
-        
+
     Returns:
         Tuple of (hour, minute) or None if invalid
     """
     if time_str == "XX:XX":
         return None
-        
+
     try:
         parts = time_str.split(":")
         if len(parts) != 2:
             return None
-            
+
         hour = int(parts[0])
         minute = int(parts[1])
-        
+
         if not (0 <= hour <= 23) or not (0 <= minute <= 59):
             return None
-            
+
         return hour, minute
-        
+
     except ValueError:
         return None
 
@@ -202,10 +188,10 @@ def parse_time_string(time_str: str) -> tuple[int, int] | None:
 def format_uptime(seconds: int) -> str:
     """
     Format uptime seconds into a human-readable string.
-    
+
     Args:
         seconds: Uptime in seconds
-        
+
     Returns:
         Formatted uptime string
     """
@@ -213,7 +199,7 @@ def format_uptime(seconds: int) -> str:
     hours = (seconds % 86400) // 3600
     minutes = (seconds % 3600) // 60
     remaining_seconds = seconds % 60
-    
+
     parts: list[str] = []
     if days > 0:
         parts.append(f"{days} day{'s' if days != 1 else ''}")
@@ -222,8 +208,10 @@ def format_uptime(seconds: int) -> str:
     if minutes > 0:
         parts.append(f"{minutes} minute{'s' if minutes != 1 else ''}")
     if remaining_seconds > 0 or not parts:
-        parts.append(f"{remaining_seconds} second{'s' if remaining_seconds != 1 else ''}")
-        
+        parts.append(
+            f"{remaining_seconds} second{'s' if remaining_seconds != 1 else ''}"
+        )
+
     return ", ".join(parts)
 
 
@@ -237,7 +225,7 @@ def validate_email(email: str) -> bool:
     Returns:
         True if email appears valid, False otherwise
     """
-    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
     return bool(re.match(pattern, email))
 
 
@@ -262,7 +250,9 @@ def validate_channel_id(channel_id: str) -> int | None:
         return None
 
 
-def validate_positive_integer(value: str, min_value: int = 1, max_value: int | None = None) -> int | None:
+def validate_positive_integer(
+    value: str, min_value: int = 1, max_value: int | None = None
+) -> int | None:
     """
     Validate and convert a string to a positive integer within bounds.
 
@@ -296,7 +286,7 @@ def validate_color_hex(color: str) -> bool:
         True if valid hex color, False otherwise
     """
     # Remove # if present
-    color = color.lstrip('#')
+    color = color.lstrip("#")
 
     # Check if it's a valid 6-character hex string
     if len(color) != 6:
@@ -310,10 +300,7 @@ def validate_color_hex(color: str) -> bool:
 
 
 def create_progress_embed(
-    title: str,
-    current: int,
-    total: int,
-    description: str = ""
+    title: str, current: int, total: int, description: str = ""
 ) -> discord.Embed:
     """
     Create an embed showing progress.
@@ -334,15 +321,13 @@ def create_progress_embed(
     progress_bar = "█" * filled_length + "░" * (progress_bar_length - filled_length)
 
     embed = discord.Embed(
-        title=title,
-        description=description,
-        color=discord.Color.blue()
+        title=title, description=description, color=discord.Color.blue()
     )
 
     _ = embed.add_field(
         name=i18n.translate("Progress"),
         value=f"{progress_bar} {percentage:.1f}%\n{current}/{total}",
-        inline=False
+        inline=False,
     )
 
     _ = embed.set_footer(text="TGraph Bot")
@@ -350,8 +335,7 @@ def create_progress_embed(
 
 
 def create_cooldown_embed(
-    command_name: str,
-    retry_after_seconds: float
+    command_name: str, retry_after_seconds: float
 ) -> discord.Embed:
     """
     Create a standardized cooldown embed for commands.
@@ -371,18 +355,19 @@ def create_cooldown_embed(
 
     embed = create_error_embed(
         title=i18n.translate("Command on Cooldown"),
-        description=i18n.translate("The {command_name} command is currently on cooldown.", command_name=command_name)
+        description=i18n.translate(
+            "The {command_name} command is currently on cooldown.",
+            command_name=command_name,
+        ),
     )
 
     _ = embed.add_field(
-        name=i18n.translate("Retry After"),
-        value=retry_time,
-        inline=True
+        name=i18n.translate("Retry After"), value=retry_time, inline=True
     )
     _ = embed.add_field(
         name=i18n.translate("Reason"),
         value=i18n.translate("This prevents server overload during graph generation"),
-        inline=False
+        inline=False,
     )
 
     return embed
@@ -390,11 +375,12 @@ def create_cooldown_embed(
 
 # Interaction Response Utilities
 
+
 async def safe_interaction_response(
     interaction: discord.Interaction,
     embed: discord.Embed | None = None,
     content: str | None = None,
-    ephemeral: bool = False
+    ephemeral: bool = False,
 ) -> bool:
     """
     Safely respond to an interaction, handling already-responded cases.
@@ -412,23 +398,37 @@ async def safe_interaction_response(
         if interaction.response.is_done():
             # Use followup if already responded
             if content is not None and embed is not None:
-                _ = await interaction.followup.send(content=content, embed=embed, ephemeral=ephemeral)
+                _ = await interaction.followup.send(
+                    content=content, embed=embed, ephemeral=ephemeral
+                )
             elif content is not None:
-                _ = await interaction.followup.send(content=content, ephemeral=ephemeral)
+                _ = await interaction.followup.send(
+                    content=content, ephemeral=ephemeral
+                )
             elif embed is not None:
                 _ = await interaction.followup.send(embed=embed, ephemeral=ephemeral)
             else:
-                _ = await interaction.followup.send(content=i18n.translate("No content provided"), ephemeral=ephemeral)
+                _ = await interaction.followup.send(
+                    content=i18n.translate("No content provided"), ephemeral=ephemeral
+                )
         else:
             # Use initial response
             if content is not None and embed is not None:
-                _ = await interaction.response.send_message(content=content, embed=embed, ephemeral=ephemeral)
+                _ = await interaction.response.send_message(
+                    content=content, embed=embed, ephemeral=ephemeral
+                )
             elif content is not None:
-                _ = await interaction.response.send_message(content=content, ephemeral=ephemeral)
+                _ = await interaction.response.send_message(
+                    content=content, ephemeral=ephemeral
+                )
             elif embed is not None:
-                _ = await interaction.response.send_message(embed=embed, ephemeral=ephemeral)
+                _ = await interaction.response.send_message(
+                    embed=embed, ephemeral=ephemeral
+                )
             else:
-                _ = await interaction.response.send_message(content=i18n.translate("No content provided"), ephemeral=ephemeral)
+                _ = await interaction.response.send_message(
+                    content=i18n.translate("No content provided"), ephemeral=ephemeral
+                )
         return True
     except discord.HTTPException as e:
         logger.error(f"Failed to respond to interaction: {e}")
@@ -441,7 +441,7 @@ async def safe_interaction_response(
 async def safe_interaction_edit(
     interaction: discord.Interaction,
     embed: discord.Embed | None = None,
-    content: str | None = None
+    content: str | None = None,
 ) -> bool:
     """
     Safely edit an interaction response.
@@ -455,10 +455,7 @@ async def safe_interaction_edit(
         True if edit was successful, False otherwise
     """
     try:
-        _ = await interaction.edit_original_response(
-            content=content,
-            embed=embed
-        )
+        _ = await interaction.edit_original_response(content=content, embed=embed)
         return True
     except discord.HTTPException as e:
         logger.error(f"Failed to edit interaction response: {e}")
@@ -472,7 +469,7 @@ async def send_error_response(
     interaction: discord.Interaction,
     title: str | None = None,
     description: str | None = None,
-    ephemeral: bool = True
+    ephemeral: bool = True,
 ) -> bool:
     """
     Send a standardized error response to an interaction.
@@ -493,9 +490,7 @@ async def send_error_response(
 
     error_embed = create_error_embed(title=title, description=description)
     return await safe_interaction_response(
-        interaction=interaction,
-        embed=error_embed,
-        ephemeral=ephemeral
+        interaction=interaction, embed=error_embed, ephemeral=ephemeral
     )
 
 
@@ -503,7 +498,7 @@ async def send_success_response(
     interaction: discord.Interaction,
     title: str | None = None,
     description: str | None = None,
-    ephemeral: bool = False
+    ephemeral: bool = False,
 ) -> bool:
     """
     Send a standardized success response to an interaction.
@@ -524,13 +519,12 @@ async def send_success_response(
 
     success_embed = create_success_embed(title=title, description=description)
     return await safe_interaction_response(
-        interaction=interaction,
-        embed=success_embed,
-        ephemeral=ephemeral
+        interaction=interaction, embed=success_embed, ephemeral=ephemeral
     )
 
 
 # Permission and Command Utilities
+
 
 def check_manage_guild_permission(interaction: discord.Interaction) -> bool:
     """
@@ -552,11 +546,11 @@ def check_manage_guild_permission(interaction: discord.Interaction) -> bool:
     # Check if user has manage guild permission
     if isinstance(interaction.user, discord.Member):
         return interaction.user.guild_permissions.manage_guild
-    
+
     # For testing: check if user has guild_permissions attribute (mock support)
-    guild_permissions = getattr(interaction.user, 'guild_permissions', None)
+    guild_permissions = getattr(interaction.user, "guild_permissions", None)
     if guild_permissions is not None:
-        manage_guild = getattr(guild_permissions, 'manage_guild', None)  # pyright: ignore[reportAny]
+        manage_guild = getattr(guild_permissions, "manage_guild", None)  # pyright: ignore[reportAny]
         if manage_guild is not None:
             return bool(manage_guild)  # pyright: ignore[reportAny]
 
@@ -567,7 +561,7 @@ def format_command_help(
     command_name: str,
     description: str,
     usage: str | None = None,
-    examples: list[str] | None = None
+    examples: list[str] | None = None,
 ) -> discord.Embed:
     """
     Create a standardized help embed for a command.
@@ -582,23 +576,14 @@ def format_command_help(
         Discord embed with command help information
     """
     embed = create_info_embed(
-        title=f"Command: /{command_name}",
-        description=description
+        title=f"Command: /{command_name}", description=description
     )
 
     if usage:
-        _ = embed.add_field(
-            name="Usage",
-            value=f"`{usage}`",
-            inline=False
-        )
+        _ = embed.add_field(name="Usage", value=f"`{usage}`", inline=False)
 
     if examples:
         example_text = "\n".join(f"`{example}`" for example in examples)
-        _ = embed.add_field(
-            name="Examples",
-            value=example_text,
-            inline=False
-        )
+        _ = embed.add_field(name="Examples", value=example_text, inline=False)
 
     return embed

@@ -7,4 +7,4 @@ This package contains scripts for managing Weblate configuration and API interac
 - Translation platform integration
 
 These scripts facilitate collaborative translation management through Weblate.
-""" 
+"""

@@ -34,7 +34,7 @@ class Top10PlatformsGraph(BaseGraph):
         width: int = 12,
         height: int = 8,
         dpi: int = 100,
-        background_color: str | None = None
+        background_color: str | None = None,
     ) -> None:
         """
         Initialize the top 10 platforms graph.
@@ -51,7 +51,7 @@ class Top10PlatformsGraph(BaseGraph):
             width=width,
             height=height,
             dpi=dpi,
-            background_color=background_color
+            background_color=background_color,
         )
 
     @override
@@ -68,26 +68,26 @@ class Top10PlatformsGraph(BaseGraph):
     def generate(self, data: Mapping[str, object]) -> str:
         """
         Generate the top 10 platforms graph using the provided data.
-        
+
         Args:
             data: Dictionary containing platform usage data
-            
+
         Returns:
             Path to the generated graph image file
         """
         logger.info("Generating top 10 platforms graph")
-        
+
         try:
             # Step 1: Extract play history data from the full data structure
-            play_history_data_raw = data.get('play_history', {})
+            play_history_data_raw = data.get("play_history", {})
             if not isinstance(play_history_data_raw, dict):
                 raise ValueError("Missing or invalid 'play_history' data in input")
-            
+
             # Cast to the proper type for type checker
             play_history_data = cast(Mapping[str, object], play_history_data_raw)
 
             # Step 2: Validate the play history data
-            is_valid, error_msg = validate_graph_data(play_history_data, ['data'])
+            is_valid, error_msg = validate_graph_data(play_history_data, ["data"])
             if not is_valid:
                 raise ValueError(f"Invalid play history data: {error_msg}")
 
@@ -101,7 +101,7 @@ class Top10PlatformsGraph(BaseGraph):
                 logger.info(f"Found {len(top_platforms)} top platforms")
             else:
                 logger.warning("No valid records found, using empty data")
-                platform_data = handle_empty_data('platforms')
+                platform_data = handle_empty_data("platforms")
                 if isinstance(platform_data, list):
                     top_platforms = platform_data
                 else:
@@ -130,61 +130,69 @@ class Top10PlatformsGraph(BaseGraph):
                     ax=ax,
                     color=color,
                     alpha=0.8,
-                    orient="h"
+                    orient="h",
                 )
 
                 # Step 8: Customize the plot
-                _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)  # pyright: ignore[reportUnknownMemberType]
-                _ = ax.set_xlabel("Play Count", fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
-                _ = ax.set_ylabel("Platform", fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
+                _ = ax.set_title(  # pyright: ignore[reportUnknownMemberType]
+                    self.get_title(), fontsize=18, fontweight="bold", pad=20
+                )
+                _ = ax.set_xlabel("Play Count", fontsize=14, fontweight="bold")  # pyright: ignore[reportUnknownMemberType]
+                _ = ax.set_ylabel("Platform", fontsize=14, fontweight="bold")  # pyright: ignore[reportUnknownMemberType]
 
                 # Adjust tick parameters
-                ax.tick_params(axis='x', labelsize=12)  # pyright: ignore[reportUnknownMemberType]
-                ax.tick_params(axis='y', labelsize=12)  # pyright: ignore[reportUnknownMemberType]
+                ax.tick_params(axis="x", labelsize=12)  # pyright: ignore[reportUnknownMemberType]
+                ax.tick_params(axis="y", labelsize=12)  # pyright: ignore[reportUnknownMemberType]
 
                 # Add value annotations if enabled
-                annotate_enabled = self.get_config_value('ANNOTATE_TOP_10_PLATFORMS', False)
+                annotate_enabled = self.get_config_value(
+                    "ANNOTATE_TOP_10_PLATFORMS", False
+                )
                 if annotate_enabled:
                     # Get max play count for positioning annotations
                     play_counts: list[int | float] = []
                     for p in top_platforms:
-                        count = p.get('play_count', 0)
+                        count = p.get("play_count", 0)
                         if isinstance(count, (int, float)):
                             play_counts.append(count)
                     max_play_count = max(play_counts) if play_counts else 1
                     for bar in ax.patches:
                         width = bar.get_width()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
                         if width and width > 0:  # Only annotate non-zero values
-                            y_val = bar.get_y() + bar.get_height()/2.  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
+                            y_val = bar.get_y() + bar.get_height() / 2.0  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
                             self.add_bar_value_annotation(
                                 ax,
                                 x=float(width),  # pyright: ignore[reportUnknownArgumentType]
                                 y=float(y_val),  # pyright: ignore[reportUnknownArgumentType]
                                 value=int(width),  # pyright: ignore[reportUnknownArgumentType]
-                                ha='left',
-                                va='center',
+                                ha="left",
+                                va="center",
                                 offset_x=max_play_count * 0.01,
-                                fontweight='bold'
+                                fontweight="bold",
                             )
             else:
                 # Handle empty data case
-                _ = ax.text(0.5, 0.5, "No platform data available",  # pyright: ignore[reportUnknownMemberType]
-                           ha='center', va='center', transform=ax.transAxes, fontsize=16)
-                _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
+                _ = ax.text(  # pyright: ignore[reportUnknownMemberType]
+                    0.5,
+                    0.5,
+                    "No platform data available",
+                    ha="center",
+                    va="center",
+                    transform=ax.transAxes,
+                    fontsize=16,
+                )
+                _ = ax.set_title(self.get_title(), fontsize=18, fontweight="bold")  # pyright: ignore[reportUnknownMemberType]
 
             # Adjust layout to prevent label cutoff
             if self.figure is not None:
                 self.figure.tight_layout()
 
             # Save the figure using base class utility method
-            output_path = self.save_figure(
-                graph_type="top_10_platforms",
-                user_id=None
-            )
+            output_path = self.save_figure(graph_type="top_10_platforms", user_id=None)
 
             logger.info(f"Top 10 platforms graph saved to: {output_path}")
             return output_path
-            
+
         except Exception as e:
             logger.exception(f"Error generating top 10 platforms graph: {e}")
             raise

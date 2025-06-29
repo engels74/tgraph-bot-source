@@ -33,6 +33,7 @@ from utils.i18n.i18n_utils import compile_po_to_mo
 
 class CompileArgs(NamedTuple):
     """Type-safe container for command-line arguments."""
+
     locale_dir: Path
     language: str | None
     force: bool
@@ -51,8 +52,8 @@ def setup_logging(verbose: bool = False) -> None:
     level = logging.DEBUG if verbose else logging.INFO
     logging.basicConfig(
         level=level,
-        format='%(asctime)s - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
+        format="%(asctime)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
     )
 
 
@@ -77,7 +78,7 @@ def find_po_files(locale_dir: Path, language: str | None = None) -> list[Path]:
     else:
         # Find all .po files in all language directories
         for lang_dir in locale_dir.iterdir():
-            if lang_dir.is_dir() and not lang_dir.name.startswith('.'):
+            if lang_dir.is_dir() and not lang_dir.name.startswith("."):
                 lc_messages = lang_dir / "LC_MESSAGES"
                 if lc_messages.exists():
                     po_files.extend(list(lc_messages.glob("*.po")))
@@ -118,7 +119,7 @@ def compile_file(po_file: Path, force: bool = False, dry_run: bool = False) -> b
     Returns:
         True if compilation was performed or would be performed, False otherwise
     """
-    mo_file = po_file.with_suffix('.mo')
+    mo_file = po_file.with_suffix(".mo")
 
     if not force and not needs_compilation(po_file, mo_file):
         logging.debug(f"Skipping {po_file} (up to date)")
@@ -145,7 +146,7 @@ def parse_arguments() -> CompileArgs:
         Parsed arguments in a type-safe container
     """
     parser = argparse.ArgumentParser(
-        description='Compile translation files from .po to .mo format',
+        description="Compile translation files from .po to .mo format",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -154,44 +155,42 @@ Examples:
   %(prog)s --force                  # Force recompilation
   %(prog)s --check-only             # Check which files need compilation
   %(prog)s --verbose                # Enable verbose logging
-        """
+        """,
     )
 
     _ = parser.add_argument(
-        '--locale-dir',
+        "--locale-dir",
         type=Path,
-        default=Path('locale'),
-        help='Path to the locale directory (default: locale)'
+        default=Path("locale"),
+        help="Path to the locale directory (default: locale)",
     )
 
     _ = parser.add_argument(
-        '--language',
+        "--language",
         type=str,
-        help='Compile only the specified language (e.g., "en", "da")'
+        help='Compile only the specified language (e.g., "en", "da")',
     )
 
     _ = parser.add_argument(
-        '--force',
-        action='store_true',
-        help='Force compilation even if .mo files are newer than .po files'
+        "--force",
+        action="store_true",
+        help="Force compilation even if .mo files are newer than .po files",
     )
 
     _ = parser.add_argument(
-        '--check-only',
-        action='store_true',
-        help='Check which files need compilation without actually compiling'
+        "--check-only",
+        action="store_true",
+        help="Check which files need compilation without actually compiling",
     )
 
     _ = parser.add_argument(
-        '--verbose',
-        action='store_true',
-        help='Enable verbose logging'
+        "--verbose", action="store_true", help="Enable verbose logging"
     )
 
     _ = parser.add_argument(
-        '--dry-run',
-        action='store_true',
-        help='Show what would be done without actually compiling files'
+        "--dry-run",
+        action="store_true",
+        help="Show what would be done without actually compiling files",
     )
 
     args = parser.parse_args()
@@ -204,14 +203,14 @@ Examples:
     check_only: bool = args.check_only  # pyright: ignore[reportAny]
     verbose: bool = args.verbose  # pyright: ignore[reportAny]
     dry_run: bool = args.dry_run  # pyright: ignore[reportAny]
-    
+
     return CompileArgs(
         locale_dir=locale_dir,
         language=language,
         force=force,
         check_only=check_only,
         verbose=verbose,
-        dry_run=dry_run
+        dry_run=dry_run,
     )
 
 
@@ -248,7 +247,7 @@ def main() -> int:
         # Check which files need compilation
         files_to_compile: list[Path] = []
         for po_file in po_files:
-            mo_file = po_file.with_suffix('.mo')
+            mo_file = po_file.with_suffix(".mo")
             if args.force or needs_compilation(po_file, mo_file):
                 files_to_compile.append(po_file)
 
@@ -261,7 +260,9 @@ def main() -> int:
             logger.info(f"  {po_file}")
 
         if args.check_only:
-            logger.info("CHECK ONLY: Use --force or modify .po files to trigger compilation")
+            logger.info(
+                "CHECK ONLY: Use --force or modify .po files to trigger compilation"
+            )
             return 0
 
         if args.dry_run:
@@ -287,5 +288,5 @@ def main() -> int:
         return 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

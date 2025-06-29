@@ -34,7 +34,7 @@ class Top10UsersGraph(BaseGraph):
         width: int = 12,
         height: int = 8,
         dpi: int = 100,
-        background_color: str | None = None
+        background_color: str | None = None,
     ) -> None:
         """
         Initialize the top 10 users graph.
@@ -51,7 +51,7 @@ class Top10UsersGraph(BaseGraph):
             width=width,
             height=height,
             dpi=dpi,
-            background_color=background_color
+            background_color=background_color,
         )
 
     @override
@@ -83,17 +83,19 @@ class Top10UsersGraph(BaseGraph):
 
         try:
             # Step 1: Extract play history data from the full data structure
-            play_history_data_raw = data.get('play_history', {})
+            play_history_data_raw = data.get("play_history", {})
             if not isinstance(play_history_data_raw, dict):
                 raise ValueError("Missing or invalid 'play_history' data in input")
-            
+
             # Cast to the proper type for type checker
             play_history_data = cast(Mapping[str, object], play_history_data_raw)
 
             # Step 2: Validate the play history data
-            is_valid, error_msg = validate_graph_data(play_history_data, ['data'])
+            is_valid, error_msg = validate_graph_data(play_history_data, ["data"])
             if not is_valid:
-                raise ValueError(f"Invalid play history data for top 10 users graph: {error_msg}")
+                raise ValueError(
+                    f"Invalid play history data for top 10 users graph: {error_msg}"
+                )
 
             # Step 3: Process raw play history data
             try:
@@ -108,11 +110,13 @@ class Top10UsersGraph(BaseGraph):
             censor_usernames = self.should_censor_usernames()
 
             if processed_records:
-                top_users = aggregate_top_users(processed_records, limit=10, censor=censor_usernames)
+                top_users = aggregate_top_users(
+                    processed_records, limit=10, censor=censor_usernames
+                )
                 logger.info(f"Aggregated top {len(top_users)} users")
             else:
                 logger.warning("No valid records found, using empty data")
-                top_users_data = handle_empty_data('users')
+                top_users_data = handle_empty_data("users")
                 if isinstance(top_users_data, list):
                     top_users = top_users_data
                 else:
@@ -135,43 +139,52 @@ class Top10UsersGraph(BaseGraph):
                 # Create horizontal bar plot
                 _ = sns.barplot(
                     data=df,
-                    x='play_count',
-                    y='username',
-                    hue='username',
+                    x="play_count",
+                    y="username",
+                    hue="username",
                     ax=ax,
-                    orient='h',
-                    palette='viridis',
-                    legend=False
+                    orient="h",
+                    palette="viridis",
+                    legend=False,
                 )
 
                 # Customize the plot
-                _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)  # pyright: ignore[reportUnknownMemberType]
-                _ = ax.set_xlabel('Play Count', fontsize=12)  # pyright: ignore[reportUnknownMemberType]
-                _ = ax.set_ylabel('Username', fontsize=12)  # pyright: ignore[reportUnknownMemberType]
+                _ = ax.set_title(  # pyright: ignore[reportUnknownMemberType]
+                    self.get_title(), fontsize=18, fontweight="bold", pad=20
+                )
+                _ = ax.set_xlabel("Play Count", fontsize=12)  # pyright: ignore[reportUnknownMemberType]
+                _ = ax.set_ylabel("Username", fontsize=12)  # pyright: ignore[reportUnknownMemberType]
 
                 # Add value labels on bars if enabled
-                annotate_enabled = self.get_config_value('ANNOTATE_TOP_10_USERS', False)
+                annotate_enabled = self.get_config_value("ANNOTATE_TOP_10_USERS", False)
                 if annotate_enabled:
-                    max_count = float(max(df['play_count']))  # pyright: ignore[reportUnknownArgumentType]
+                    max_count = float(max(df["play_count"]))  # pyright: ignore[reportUnknownArgumentType]
                     for i, (_, row) in enumerate(df.iterrows()):  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType,reportUnknownVariableType]
-                        play_count = float(row['play_count'])  # pyright: ignore[reportUnknownArgumentType]
+                        play_count = float(row["play_count"])  # pyright: ignore[reportUnknownArgumentType]
                         self.add_bar_value_annotation(
                             ax,
                             x=play_count,
                             y=i,
                             value=int(play_count),
-                            ha='left',
-                            va='center',
-                            offset_x=max_count * 0.01
+                            ha="left",
+                            va="center",
+                            offset_x=max_count * 0.01,
                         )
 
                 logger.info(f"Created top 10 users graph with {len(top_users)} users")
 
             else:
                 # Handle empty data case
-                _ = ax.text(0.5, 0.5, "No user data available\nfor the selected time period",  # pyright: ignore[reportUnknownMemberType]
-                           ha='center', va='center', transform=ax.transAxes, fontsize=16)
-                _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
+                _ = ax.text(  # pyright: ignore[reportUnknownMemberType]
+                    0.5,
+                    0.5,
+                    "No user data available\nfor the selected time period",
+                    ha="center",
+                    va="center",
+                    transform=ax.transAxes,
+                    fontsize=16,
+                )
+                _ = ax.set_title(self.get_title(), fontsize=18, fontweight="bold")  # pyright: ignore[reportUnknownMemberType]
                 logger.warning("Generated empty top 10 users graph due to no data")
 
             # Step 8: Improve layout and save
@@ -179,10 +192,7 @@ class Top10UsersGraph(BaseGraph):
                 self.figure.tight_layout()
 
             # Save the figure using base class utility method
-            output_path = self.save_figure(
-                graph_type="top_10_users",
-                user_id=None
-            )
+            output_path = self.save_figure(graph_type="top_10_users", user_id=None)
 
             logger.info(f"Top 10 users graph saved to: {output_path}")
             return output_path

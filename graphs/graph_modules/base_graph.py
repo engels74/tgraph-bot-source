@@ -42,7 +42,7 @@ class BaseGraph(ABC):
         width: int = 12,
         height: int = 8,
         dpi: int = 100,
-        background_color: str | None = None
+        background_color: str | None = None,
     ) -> None:
         """
         Initialize the base graph.
@@ -62,7 +62,7 @@ class BaseGraph(ABC):
         # Use background color from config if not explicitly provided
         if background_color is None:
             if config is not None:
-                bg_color = self.get_config_value('GRAPH_BACKGROUND_COLOR')
+                bg_color = self.get_config_value("GRAPH_BACKGROUND_COLOR")
                 background_color = str(bg_color) if bg_color is not None else "#ffffff"
             else:
                 background_color = "#ffffff"
@@ -81,23 +81,23 @@ class BaseGraph(ABC):
     def get_config_value(self, key: str, default: object = None) -> object:
         """
         Get a configuration value from either TGraphBotConfig object or dict.
-        
+
         Args:
             key: Configuration key to retrieve
             default: Default value if key not found
-            
+
         Returns:
             Configuration value or default
         """
         if self.config is None:
             return default
-            
+
         if isinstance(self.config, dict):
             return self.config.get(key, default)
         else:
             # TGraphBotConfig object
             return getattr(self.config, key, default)
-        
+
     def setup_figure(self) -> tuple[matplotlib.figure.Figure, Axes]:
         """
         Setup the matplotlib figure and axes.
@@ -109,7 +109,7 @@ class BaseGraph(ABC):
         self.figure, self.axes = plt.subplots(  # pyright: ignore[reportUnknownMemberType]
             figsize=(self.width, self.height),
             dpi=self.dpi,
-            facecolor=self.background_color
+            facecolor=self.background_color,
         )
 
         # Ensure axes is not None (it shouldn't be with our usage)
@@ -135,14 +135,17 @@ class BaseGraph(ABC):
 
         # Set the default Seaborn style with enhanced appearance
         if self.get_grid_enabled():
-            sns.set_style("whitegrid", {
-                'axes.grid': True,
-                'axes.grid.axis': 'y',
-                'grid.linewidth': 0.5,
-                'grid.alpha': 0.7,
-                'axes.edgecolor': '#333333',
-                'axes.linewidth': 1.2,
-            })
+            sns.set_style(
+                "whitegrid",
+                {
+                    "axes.grid": True,
+                    "axes.grid.axis": "y",
+                    "grid.linewidth": 0.5,
+                    "grid.alpha": 0.7,
+                    "axes.edgecolor": "#333333",
+                    "axes.linewidth": 1.2,
+                },
+            )
         else:
             sns.set_style("white")
 
@@ -151,10 +154,17 @@ class BaseGraph(ABC):
             # Use colors from configuration for media type separation
             tv_color = self.get_tv_color()
             movie_color = self.get_movie_color()
-            custom_palette = [tv_color, movie_color, '#2ca02c', '#d62728']  # TV, Movies, Music, Other
+            custom_palette = [
+                tv_color,
+                movie_color,
+                "#2ca02c",
+                "#d62728",
+            ]  # TV, Movies, Music, Other
             sns.set_palette(custom_palette)
 
-    def create_separated_legend(self, ax: "Axes", media_types_present: list[str]) -> None:
+    def create_separated_legend(
+        self, ax: "Axes", media_types_present: list[str]
+    ) -> None:
         """
         Create a legend for separated media types.
 
@@ -163,36 +173,36 @@ class BaseGraph(ABC):
             media_types_present: List of media types present in the data
         """
         import matplotlib.patches as mpatches
-        
+
         display_info = get_media_type_display_info()
-        
+
         # Update display info with configuration colors
         if self.config is not None:
-            display_info['tv']['color'] = self.get_tv_color()
-            display_info['movie']['color'] = self.get_movie_color()
-        
+            display_info["tv"]["color"] = self.get_tv_color()
+            display_info["movie"]["color"] = self.get_movie_color()
+
         # Create legend entries for present media types
         legend_handles: list[mpatches.Patch] = []
         legend_labels: list[str] = []
-        
+
         for media_type in media_types_present:
             if media_type in display_info:
                 patch = mpatches.Patch(
-                    color=display_info[media_type]['color'],
-                    label=display_info[media_type]['display_name']
+                    color=display_info[media_type]["color"],
+                    label=display_info[media_type]["display_name"],
                 )
                 legend_handles.append(patch)
-                legend_labels.append(display_info[media_type]['display_name'])
-        
+                legend_labels.append(display_info[media_type]["display_name"])
+
         if legend_handles:
             _ = ax.legend(  # pyright: ignore[reportUnknownMemberType]
                 handles=legend_handles,
                 labels=legend_labels,
-                loc='best',
+                loc="best",
                 frameon=True,
                 fancybox=True,
                 shadow=True,
-                framealpha=0.9
+                framealpha=0.9,
             )
 
     def get_grid_enabled(self) -> bool:
@@ -202,7 +212,7 @@ class BaseGraph(ABC):
         Returns:
             True if grid should be enabled, False otherwise
         """
-        grid_enabled = self.get_config_value('ENABLE_GRAPH_GRID', False)
+        grid_enabled = self.get_config_value("ENABLE_GRAPH_GRID", False)
         return bool(grid_enabled)
 
     def get_media_type_separation_enabled(self) -> bool:
@@ -212,7 +222,7 @@ class BaseGraph(ABC):
         Returns:
             True if media type separation should be enabled, False otherwise
         """
-        separation_enabled = self.get_config_value('ENABLE_MEDIA_TYPE_SEPARATION', True)
+        separation_enabled = self.get_config_value("ENABLE_MEDIA_TYPE_SEPARATION", True)
         return bool(separation_enabled)
 
     def get_stacked_bar_charts_enabled(self) -> bool:
@@ -222,7 +232,7 @@ class BaseGraph(ABC):
         Returns:
             True if stacked bar charts should be enabled, False otherwise
         """
-        stacked_enabled = self.get_config_value('ENABLE_STACKED_BAR_CHARTS', False)
+        stacked_enabled = self.get_config_value("ENABLE_STACKED_BAR_CHARTS", False)
         return bool(stacked_enabled)
 
     def get_tv_color(self) -> str:
@@ -232,7 +242,7 @@ class BaseGraph(ABC):
         Returns:
             Hex color string for TV shows
         """
-        tv_color = self.get_config_value('TV_COLOR', "#1f77b4")
+        tv_color = self.get_config_value("TV_COLOR", "#1f77b4")
         return str(tv_color)
 
     def get_movie_color(self) -> str:
@@ -242,7 +252,7 @@ class BaseGraph(ABC):
         Returns:
             Hex color string for movies
         """
-        movie_color = self.get_config_value('MOVIE_COLOR', "#ff7f0e")
+        movie_color = self.get_config_value("MOVIE_COLOR", "#ff7f0e")
         return str(movie_color)
 
     def get_annotation_color(self) -> str:
@@ -252,7 +262,7 @@ class BaseGraph(ABC):
         Returns:
             Hex color string for annotations
         """
-        annotation_color = self.get_config_value('ANNOTATION_COLOR', "#ff0000")
+        annotation_color = self.get_config_value("ANNOTATION_COLOR", "#ff0000")
         return str(annotation_color)
 
     def get_annotation_outline_color(self) -> str:
@@ -262,7 +272,7 @@ class BaseGraph(ABC):
         Returns:
             Hex color string for annotation outlines
         """
-        outline_color = self.get_config_value('ANNOTATION_OUTLINE_COLOR', "#000000")
+        outline_color = self.get_config_value("ANNOTATION_OUTLINE_COLOR", "#000000")
         return str(outline_color)
 
     def is_annotation_outline_enabled(self) -> bool:
@@ -272,7 +282,7 @@ class BaseGraph(ABC):
         Returns:
             True if annotation outlines should be enabled, False otherwise
         """
-        outline_enabled = self.get_config_value('ENABLE_ANNOTATION_OUTLINE', True)
+        outline_enabled = self.get_config_value("ENABLE_ANNOTATION_OUTLINE", True)
         return bool(outline_enabled)
 
     def is_peak_annotations_enabled(self) -> bool:
@@ -282,7 +292,7 @@ class BaseGraph(ABC):
         Returns:
             True if peak annotations should be enabled, False otherwise
         """
-        peak_enabled = self.get_config_value('ENABLE_PEAK_ANNOTATIONS', True)
+        peak_enabled = self.get_config_value("ENABLE_PEAK_ANNOTATIONS", True)
         return bool(peak_enabled)
 
     def get_peak_annotation_color(self) -> str:
@@ -292,7 +302,7 @@ class BaseGraph(ABC):
         Returns:
             Hex color string for peak annotation background
         """
-        peak_color = self.get_config_value('PEAK_ANNOTATION_COLOR', "#ffcc00")
+        peak_color = self.get_config_value("PEAK_ANNOTATION_COLOR", "#ffcc00")
         return str(peak_color)
 
     def get_peak_annotation_text_color(self) -> str:
@@ -302,7 +312,7 @@ class BaseGraph(ABC):
         Returns:
             Hex color string for peak annotation text
         """
-        text_color = self.get_config_value('PEAK_ANNOTATION_TEXT_COLOR', "#000000")
+        text_color = self.get_config_value("PEAK_ANNOTATION_TEXT_COLOR", "#000000")
         return str(text_color)
 
     def should_censor_usernames(self) -> bool:
@@ -312,7 +322,7 @@ class BaseGraph(ABC):
         Returns:
             True if usernames should be censored, False otherwise
         """
-        censor_usernames = self.get_config_value('CENSOR_USERNAMES', True)
+        censor_usernames = self.get_config_value("CENSOR_USERNAMES", True)
         return bool(censor_usernames)
 
     def get_annotation_font_size(self) -> int:
@@ -322,7 +332,7 @@ class BaseGraph(ABC):
         Returns:
             Font size for annotations
         """
-        font_size = self.get_config_value('ANNOTATION_FONT_SIZE', 10)
+        font_size = self.get_config_value("ANNOTATION_FONT_SIZE", 10)
         if isinstance(font_size, (int, float)):
             return int(font_size)
         else:
@@ -332,39 +342,41 @@ class BaseGraph(ABC):
     def generate(self, data: Mapping[str, object]) -> str:
         """
         Generate the graph using the provided data.
-        
+
         Args:
             data: Dictionary containing the data needed for the graph
-            
+
         Returns:
             Path to the generated graph image file
         """
         pass
-        
+
     @abstractmethod
     def get_title(self) -> str:
         """
         Get the title for this graph type.
-        
+
         Returns:
             The graph title
         """
         pass
 
-    def get_enhanced_title_with_timeframe(self, base_title: str, use_months: bool = False) -> str:
+    def get_enhanced_title_with_timeframe(
+        self, base_title: str, use_months: bool = False
+    ) -> str:
         """
         Enhance a graph title with timeframe information from configuration.
-        
+
         Args:
             base_title: The base title for the graph (e.g., "Daily Play Count")
             use_months: If True, use TIME_RANGE_MONTHS instead of TIME_RANGE_DAYS
-            
+
         Returns:
             Enhanced title with timeframe information (e.g., "Daily Play Count (Last 30 days)")
         """
         if use_months:
             # Use TIME_RANGE_MONTHS for monthly graphs
-            time_range = self.get_config_value('TIME_RANGE_MONTHS', 12)
+            time_range = self.get_config_value("TIME_RANGE_MONTHS", 12)
             if isinstance(time_range, (int, float)):
                 time_range_int = int(time_range)
                 unit = "month" if time_range_int == 1 else "months"
@@ -373,7 +385,7 @@ class BaseGraph(ABC):
                 return base_title
         else:
             # Use TIME_RANGE_DAYS for daily/weekly/hourly graphs
-            time_range = self.get_config_value('TIME_RANGE_DAYS', 30)
+            time_range = self.get_config_value("TIME_RANGE_DAYS", 30)
             if isinstance(time_range, (int, float)):
                 time_range_int = int(time_range)
                 unit = "day" if time_range_int == 1 else "days"
@@ -387,12 +399,12 @@ class BaseGraph(ABC):
         x: float,
         y: float,
         value: float | int,
-        ha: str = 'center',
-        va: str = 'bottom',
+        ha: str = "center",
+        va: str = "bottom",
         offset_x: float = 0,
         offset_y: float = 0,
         fontsize: int | None = None,
-        fontweight: str = 'normal'
+        fontweight: str = "normal",
     ) -> None:
         """
         Add a value annotation to a bar or point with optional outline styling.
@@ -410,52 +422,63 @@ class BaseGraph(ABC):
             fontweight: Font weight for the annotation
         """
         from matplotlib.axes import Axes
-        
+
         if not isinstance(ax, Axes):
             return
-            
+
         # Use config-based font size if not specified
         if fontsize is None:
             fontsize = self.get_annotation_font_size()
-            
+
         # Format the value
         if isinstance(value, float):
-            text = f'{value:.1f}' if value % 1 else f'{int(value)}'
+            text = f"{value:.1f}" if value % 1 else f"{int(value)}"
         else:
             text = str(value)
-        
+
         # Calculate actual position with offsets
         actual_x = x + offset_x
         actual_y = y + offset_y
-        
+
         if self.is_annotation_outline_enabled():
             # Add text with white fill and black outline for better readability
             from matplotlib import patheffects
+
             _ = ax.text(  # pyright: ignore[reportUnknownMemberType]
-                actual_x, actual_y, text,
-                ha=ha, va=va,
+                actual_x,
+                actual_y,
+                text,
+                ha=ha,
+                va=va,
                 fontsize=fontsize,
                 fontweight=fontweight,
-                color='white',  # White text
+                color="white",  # White text
                 path_effects=[
                     patheffects.Stroke(
-                        linewidth=3, 
-                        foreground=self.get_annotation_outline_color()
+                        linewidth=3, foreground=self.get_annotation_outline_color()
                     ),
-                    patheffects.Normal()
-                ]
+                    patheffects.Normal(),
+                ],
             )
         else:
             # Add text without outline
             _ = ax.text(  # pyright: ignore[reportUnknownMemberType]
-                actual_x, actual_y, text,
-                ha=ha, va=va,
+                actual_x,
+                actual_y,
+                text,
+                ha=ha,
+                va=va,
                 fontsize=fontsize,
                 fontweight=fontweight,
-                color=self.get_annotation_color()
+                color=self.get_annotation_color(),
             )
 
-    def save_figure(self, output_path: str | None = None, graph_type: str | None = None, user_id: str | None = None) -> str:
+    def save_figure(
+        self,
+        output_path: str | None = None,
+        graph_type: str | None = None,
+        user_id: str | None = None,
+    ) -> str:
         """
         Save the current figure to a file.
 
@@ -490,10 +513,10 @@ class BaseGraph(ABC):
         self.figure.savefig(  # pyright: ignore[reportUnknownMemberType]
             output_path,
             dpi=self.dpi,
-            bbox_inches='tight',
+            bbox_inches="tight",
             facecolor=self.background_color,
-            edgecolor='none',
-            format='png'
+            edgecolor="none",
+            format="png",
         )
 
         logger.info(f"Saved graph to: {output_path}")
@@ -548,15 +571,20 @@ class BaseGraph(ABC):
         useful when generating multiple graphs in sequence.
         """
         try:
-            plt.close('all')
+            plt.close("all")
             logger.debug("Closed all matplotlib figures")
         except Exception as e:
             logger.warning(f"Error during bulk figure cleanup: {e}")
-            
+
     def __enter__(self) -> "BaseGraph":
         """Context manager entry."""
         return self
-        
-    def __exit__(self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: TracebackType | None) -> None:
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
         """Context manager exit with cleanup."""
         self.cleanup()

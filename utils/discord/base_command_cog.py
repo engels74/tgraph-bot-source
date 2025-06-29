@@ -32,7 +32,7 @@ class BaseCooldownConfig:
         self,
         user_cooldown_config_key: str,
         global_cooldown_config_key: str,
-        user_cooldown_multiplier: int = 60  # Convert minutes to seconds
+        user_cooldown_multiplier: int = 60,  # Convert minutes to seconds
     ) -> None:
         """
         Initialize cooldown configuration.
@@ -50,7 +50,7 @@ class BaseCooldownConfig:
 class BaseCommandCog(commands.Cog):
     """
     Base class for all TGraph Bot command cogs.
-    
+
     Provides common functionality including:
     - TGraphBot instance access with type safety
     - Cooldown management with configurable settings
@@ -59,7 +59,9 @@ class BaseCommandCog(commands.Cog):
     - Standardized logging patterns
     """
 
-    def __init__(self, bot: commands.Bot, cooldown_config: BaseCooldownConfig | None = None) -> None:
+    def __init__(
+        self, bot: commands.Bot, cooldown_config: BaseCooldownConfig | None = None
+    ) -> None:
         """
         Initialize the base command cog.
 
@@ -79,32 +81,37 @@ class BaseCommandCog(commands.Cog):
     def tgraph_bot(self) -> "TGraphBot":
         """
         Get the TGraphBot instance with proper type checking.
-        
+
         Returns:
             TGraphBot instance
-            
+
         Raises:
             TypeError: If bot is not a TGraphBot instance
         """
         # Import here to avoid circular imports
         from main import TGraphBot
-        
+
         # Strict type checking - only allow actual TGraphBot instances
         if isinstance(self.bot, TGraphBot):
             return self.bot
-        
+
         # Additional check for class name (for edge cases during extension loading)
-        if hasattr(self.bot, '__class__') and self.bot.__class__.__name__ == 'TGraphBot':
+        if (
+            hasattr(self.bot, "__class__")
+            and self.bot.__class__.__name__ == "TGraphBot"
+        ):
             # Verify it has the required TGraphBot attributes
-            if hasattr(self.bot, 'config_manager') and hasattr(self.bot, 'update_tracker'):
+            if hasattr(self.bot, "config_manager") and hasattr(
+                self.bot, "update_tracker"
+            ):
                 return cast("TGraphBot", self.bot)
-        
+
         raise TypeError(f"Expected TGraphBot instance, got {type(self.bot)}")
 
     def get_current_config(self) -> "TGraphBotConfig":
         """
         Get the current bot configuration.
-        
+
         Returns:
             Current configuration object
         """
@@ -127,14 +134,20 @@ class BaseCommandCog(commands.Cog):
         config = self.get_current_config()
 
         # Check global cooldown
-        global_cooldown_seconds = getattr(config, self.cooldown_config.global_cooldown_config_key, 0)
+        global_cooldown_seconds = getattr(
+            config, self.cooldown_config.global_cooldown_config_key, 0
+        )
         if global_cooldown_seconds > 0:
             if current_time < self._global_cooldown:
                 return True, self._global_cooldown - current_time
 
         # Check per-user cooldown
-        user_cooldown_minutes = getattr(config, self.cooldown_config.user_cooldown_config_key, 0)
-        user_cooldown_seconds = user_cooldown_minutes * self.cooldown_config.user_cooldown_multiplier
+        user_cooldown_minutes = getattr(
+            config, self.cooldown_config.user_cooldown_config_key, 0
+        )
+        user_cooldown_seconds = (
+            user_cooldown_minutes * self.cooldown_config.user_cooldown_multiplier
+        )
         if user_cooldown_seconds > 0:
             user_id = interaction.user.id
             if user_id in self._user_cooldowns:
@@ -157,13 +170,19 @@ class BaseCommandCog(commands.Cog):
         config = self.get_current_config()
 
         # Update global cooldown
-        global_cooldown_seconds = getattr(config, self.cooldown_config.global_cooldown_config_key, 0)
+        global_cooldown_seconds = getattr(
+            config, self.cooldown_config.global_cooldown_config_key, 0
+        )
         if global_cooldown_seconds > 0:
             self._global_cooldown = current_time + global_cooldown_seconds
 
         # Update per-user cooldown
-        user_cooldown_minutes = getattr(config, self.cooldown_config.user_cooldown_config_key, 0)
-        user_cooldown_seconds = user_cooldown_minutes * self.cooldown_config.user_cooldown_multiplier
+        user_cooldown_minutes = getattr(
+            config, self.cooldown_config.user_cooldown_config_key, 0
+        )
+        user_cooldown_seconds = (
+            user_cooldown_minutes * self.cooldown_config.user_cooldown_multiplier
+        )
         if user_cooldown_seconds > 0:
             user_id = interaction.user.id
             self._user_cooldowns[user_id] = current_time + user_cooldown_seconds
@@ -172,7 +191,7 @@ class BaseCommandCog(commands.Cog):
         self,
         interaction: discord.Interaction,
         command_name: str,
-        additional_context: dict[str, object] | None = None
+        additional_context: dict[str, object] | None = None,
     ) -> ErrorContext:
         """
         Create an error context for comprehensive logging.
@@ -190,7 +209,7 @@ class BaseCommandCog(commands.Cog):
             guild_id=interaction.guild.id if interaction.guild else None,
             channel_id=interaction.channel.id if interaction.channel else None,
             command_name=command_name,
-            additional_context=additional_context or {}
+            additional_context=additional_context or {},
         )
 
     async def handle_command_error(
@@ -198,7 +217,7 @@ class BaseCommandCog(commands.Cog):
         interaction: discord.Interaction,
         error: Exception,
         command_name: str,
-        additional_context: dict[str, object] | None = None
+        additional_context: dict[str, object] | None = None,
     ) -> None:
         """
         Handle command errors with standardized error context.
@@ -209,5 +228,7 @@ class BaseCommandCog(commands.Cog):
             command_name: Name of the command being executed
             additional_context: Additional context information
         """
-        context = self.create_error_context(interaction, command_name, additional_context)
+        context = self.create_error_context(
+            interaction, command_name, additional_context
+        )
         await handle_command_error(interaction, error, context)

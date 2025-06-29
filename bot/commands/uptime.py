@@ -14,10 +14,7 @@ from discord import app_commands
 from discord.ext import commands
 
 import i18n
-from utils.core.error_handler import (
-    ErrorContext,
-    handle_command_error
-)
+from utils.core.error_handler import ErrorContext, handle_command_error
 
 if TYPE_CHECKING:
     pass
@@ -27,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 class UptimeCog(commands.Cog):
     """Cog for the /uptime command."""
-    
+
     def __init__(self, bot: commands.Bot) -> None:
         """
         Initialize the Uptime cog.
@@ -36,11 +33,8 @@ class UptimeCog(commands.Cog):
             bot: The Discord bot instance
         """
         self.bot: commands.Bot = bot
-        
-    @app_commands.command(
-        name="uptime",
-        description=i18n.translate("Show bot uptime")
-    )
+
+    @app_commands.command(name="uptime", description=i18n.translate("Show bot uptime"))
     async def uptime(self, interaction: discord.Interaction) -> None:
         """
         Display how long the bot has been running.
@@ -50,7 +44,7 @@ class UptimeCog(commands.Cog):
         """
         try:
             # Get start time from bot instance
-            start_time = getattr(self.bot, 'start_time', time.time())
+            start_time = getattr(self.bot, "start_time", time.time())
             current_time = time.time()
             uptime_seconds = int(current_time - start_time)
 
@@ -74,20 +68,17 @@ class UptimeCog(commands.Cog):
             uptime_string = ", ".join(uptime_parts)
 
             embed = discord.Embed(
-                title=i18n.translate("Bot Uptime"),
-                color=discord.Color.green()
+                title=i18n.translate("Bot Uptime"), color=discord.Color.green()
             )
 
             _ = embed.add_field(
-                name=i18n.translate("Uptime"),
-                value=uptime_string,
-                inline=False
+                name=i18n.translate("Uptime"), value=uptime_string, inline=False
             )
 
             _ = embed.add_field(
                 name=i18n.translate("Started"),
                 value=f"<t:{int(start_time)}:F>",
-                inline=False
+                inline=False,
             )
 
             _ = embed.set_footer(text=i18n.translate("TGraph Bot is running smoothly!"))
@@ -100,7 +91,7 @@ class UptimeCog(commands.Cog):
                 user_id=interaction.user.id,
                 guild_id=interaction.guild.id if interaction.guild else None,
                 channel_id=interaction.channel.id if interaction.channel else None,
-                command_name="uptime"
+                command_name="uptime",
             )
 
             # Use enhanced error handling
@@ -110,7 +101,7 @@ class UptimeCog(commands.Cog):
 async def setup(bot: commands.Bot) -> None:
     """
     Setup function to add the cog to the bot.
-    
+
     Args:
         bot: The Discord bot instance
     """

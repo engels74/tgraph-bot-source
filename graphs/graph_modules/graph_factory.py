@@ -37,7 +37,7 @@ class GraphFactory:
             config: Configuration object containing graph settings
         """
         self.config: "TGraphBotConfig | dict[str, object]" = config
-        
+
     def create_enabled_graphs(self) -> list[BaseGraph]:
         """
         Create instances of all enabled graph types.
@@ -54,55 +54,55 @@ class GraphFactory:
                 return bool(self.config.get(key, default))
             else:
                 # Use direct attribute access for TGraphBotConfig objects
-                if key == 'ENABLE_DAILY_PLAY_COUNT':
+                if key == "ENABLE_DAILY_PLAY_COUNT":
                     return self.config.ENABLE_DAILY_PLAY_COUNT
-                elif key == 'ENABLE_PLAY_COUNT_BY_DAYOFWEEK':
+                elif key == "ENABLE_PLAY_COUNT_BY_DAYOFWEEK":
                     return self.config.ENABLE_PLAY_COUNT_BY_DAYOFWEEK
-                elif key == 'ENABLE_PLAY_COUNT_BY_HOUROFDAY':
+                elif key == "ENABLE_PLAY_COUNT_BY_HOUROFDAY":
                     return self.config.ENABLE_PLAY_COUNT_BY_HOUROFDAY
-                elif key == 'ENABLE_PLAY_COUNT_BY_MONTH':
+                elif key == "ENABLE_PLAY_COUNT_BY_MONTH":
                     return self.config.ENABLE_PLAY_COUNT_BY_MONTH
-                elif key == 'ENABLE_TOP_10_PLATFORMS':
+                elif key == "ENABLE_TOP_10_PLATFORMS":
                     return self.config.ENABLE_TOP_10_PLATFORMS
-                elif key == 'ENABLE_TOP_10_USERS':
+                elif key == "ENABLE_TOP_10_USERS":
                     return self.config.ENABLE_TOP_10_USERS
-                elif key == 'ENABLE_SAMPLE_GRAPH':
+                elif key == "ENABLE_SAMPLE_GRAPH":
                     # Sample graph is not in the main config schema, default to False
                     return False
                 return default
 
-        if get_config_value('ENABLE_DAILY_PLAY_COUNT'):
+        if get_config_value("ENABLE_DAILY_PLAY_COUNT"):
             logger.debug("Creating daily play count graph")
             graphs.append(DailyPlayCountGraph(config=self.config))
 
-        if get_config_value('ENABLE_PLAY_COUNT_BY_DAYOFWEEK'):
+        if get_config_value("ENABLE_PLAY_COUNT_BY_DAYOFWEEK"):
             logger.debug("Creating play count by day of week graph")
             graphs.append(PlayCountByDayOfWeekGraph(config=self.config))
 
-        if get_config_value('ENABLE_PLAY_COUNT_BY_HOUROFDAY'):
+        if get_config_value("ENABLE_PLAY_COUNT_BY_HOUROFDAY"):
             logger.debug("Creating play count by hour of day graph")
             graphs.append(PlayCountByHourOfDayGraph(config=self.config))
 
-        if get_config_value('ENABLE_PLAY_COUNT_BY_MONTH'):
+        if get_config_value("ENABLE_PLAY_COUNT_BY_MONTH"):
             logger.debug("Creating play count by month graph")
             graphs.append(PlayCountByMonthGraph(config=self.config))
 
-        if get_config_value('ENABLE_TOP_10_PLATFORMS'):
+        if get_config_value("ENABLE_TOP_10_PLATFORMS"):
             logger.debug("Creating top 10 platforms graph")
             graphs.append(Top10PlatformsGraph(config=self.config))
 
-        if get_config_value('ENABLE_TOP_10_USERS'):
+        if get_config_value("ENABLE_TOP_10_USERS"):
             logger.debug("Creating top 10 users graph")
             graphs.append(Top10UsersGraph(config=self.config))
 
         # Sample graph for demonstration (disabled by default)
-        if get_config_value('ENABLE_SAMPLE_GRAPH', default=False):
+        if get_config_value("ENABLE_SAMPLE_GRAPH", default=False):
             logger.debug("Creating sample graph")
             graphs.append(SampleGraph(config=self.config))
 
         logger.info(f"Created {len(graphs)} enabled graph instances")
         return graphs
-        
+
     def create_graph_by_type(self, graph_type: str) -> BaseGraph:
         """
         Create a specific graph instance by type name.
@@ -132,7 +132,7 @@ class GraphFactory:
 
         logger.debug(f"Creating graph of type: {graph_type}")
         return graph_class(config=self.config)
-        
+
     def get_enabled_graph_types(self) -> list[str]:
         """
         Get a list of enabled graph type names.
@@ -148,44 +148,44 @@ class GraphFactory:
                 return bool(self.config.get(key, default))
             else:
                 # Use direct attribute access for TGraphBotConfig objects
-                if key == 'ENABLE_DAILY_PLAY_COUNT':
+                if key == "ENABLE_DAILY_PLAY_COUNT":
                     return self.config.ENABLE_DAILY_PLAY_COUNT
-                elif key == 'ENABLE_PLAY_COUNT_BY_DAYOFWEEK':
+                elif key == "ENABLE_PLAY_COUNT_BY_DAYOFWEEK":
                     return self.config.ENABLE_PLAY_COUNT_BY_DAYOFWEEK
-                elif key == 'ENABLE_PLAY_COUNT_BY_HOUROFDAY':
+                elif key == "ENABLE_PLAY_COUNT_BY_HOUROFDAY":
                     return self.config.ENABLE_PLAY_COUNT_BY_HOUROFDAY
-                elif key == 'ENABLE_PLAY_COUNT_BY_MONTH':
+                elif key == "ENABLE_PLAY_COUNT_BY_MONTH":
                     return self.config.ENABLE_PLAY_COUNT_BY_MONTH
-                elif key == 'ENABLE_TOP_10_PLATFORMS':
+                elif key == "ENABLE_TOP_10_PLATFORMS":
                     return self.config.ENABLE_TOP_10_PLATFORMS
-                elif key == 'ENABLE_TOP_10_USERS':
+                elif key == "ENABLE_TOP_10_USERS":
                     return self.config.ENABLE_TOP_10_USERS
-                elif key == 'ENABLE_SAMPLE_GRAPH':
+                elif key == "ENABLE_SAMPLE_GRAPH":
                     # Sample graph is not in the main config schema, default to False
                     return False
                 return default
 
         # Check each graph type directly from config attributes
-        if get_config_value('ENABLE_DAILY_PLAY_COUNT'):
+        if get_config_value("ENABLE_DAILY_PLAY_COUNT"):
             enabled_types.append("daily_play_count")
 
-        if get_config_value('ENABLE_PLAY_COUNT_BY_DAYOFWEEK'):
+        if get_config_value("ENABLE_PLAY_COUNT_BY_DAYOFWEEK"):
             enabled_types.append("play_count_by_dayofweek")
 
-        if get_config_value('ENABLE_PLAY_COUNT_BY_HOUROFDAY'):
+        if get_config_value("ENABLE_PLAY_COUNT_BY_HOUROFDAY"):
             enabled_types.append("play_count_by_hourofday")
 
-        if get_config_value('ENABLE_PLAY_COUNT_BY_MONTH'):
+        if get_config_value("ENABLE_PLAY_COUNT_BY_MONTH"):
             enabled_types.append("play_count_by_month")
 
-        if get_config_value('ENABLE_TOP_10_PLATFORMS'):
+        if get_config_value("ENABLE_TOP_10_PLATFORMS"):
             enabled_types.append("top_10_platforms")
 
-        if get_config_value('ENABLE_TOP_10_USERS'):
+        if get_config_value("ENABLE_TOP_10_USERS"):
             enabled_types.append("top_10_users")
 
         # Sample graph (disabled by default)
-        if get_config_value('ENABLE_SAMPLE_GRAPH', default=False):
+        if get_config_value("ENABLE_SAMPLE_GRAPH", default=False):
             enabled_types.append("sample_graph")
 
         return enabled_types
@@ -202,7 +202,9 @@ class GraphFactory:
         """
         return ensure_graph_directory(base_path)
 
-    def cleanup_old_graphs(self, directory: Path | None = None, keep_days: int = 7) -> int:
+    def cleanup_old_graphs(
+        self, directory: Path | None = None, keep_days: int = 7
+    ) -> int:
         """
         Clean up old graph files from the output directory.
 
@@ -237,7 +239,9 @@ class GraphFactory:
         """
         return self.generate_graphs_with_exclusions(data, exclude_types=[])
 
-    def generate_graphs_with_exclusions(self, data: dict[str, object], exclude_types: list[str]) -> list[str]:
+    def generate_graphs_with_exclusions(
+        self, data: dict[str, object], exclude_types: list[str]
+    ) -> list[str]:
         """
         Generate enabled graphs with exclusions for specific graph types.
 
@@ -256,7 +260,7 @@ class GraphFactory:
             Exception: If any graph generation fails
         """
         graphs = self.create_enabled_graphs()
-        
+
         # Filter out excluded graph types
         if exclude_types:
             excluded_classes: list[type[BaseGraph]] = []
@@ -275,14 +279,20 @@ class GraphFactory:
                     excluded_classes.append(PlayCountByMonthGraph)
                 elif exclude_type == "sample_graph":
                     excluded_classes.append(SampleGraph)
-            
+
             # Filter graphs list
             original_count = len(graphs)
-            graphs = [graph for graph in graphs if not any(isinstance(graph, cls) for cls in excluded_classes)]
+            graphs = [
+                graph
+                for graph in graphs
+                if not any(isinstance(graph, cls) for cls in excluded_classes)
+            ]
             filtered_count = len(graphs)
-            
+
             if original_count > filtered_count:
-                logger.info(f"Excluded {original_count - filtered_count} graph(s) from generation: {exclude_types}")
+                logger.info(
+                    f"Excluded {original_count - filtered_count} graph(s) from generation: {exclude_types}"
+                )
 
         generated_paths: list[str] = []
 

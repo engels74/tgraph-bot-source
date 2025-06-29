@@ -40,7 +40,7 @@ class DailyPlayCountGraph(BaseGraph):
         width: int = 12,
         height: int = 8,
         dpi: int = 100,
-        background_color: str | None = None
+        background_color: str | None = None,
     ) -> None:
         """
         Initialize the daily play count graph.
@@ -57,7 +57,7 @@ class DailyPlayCountGraph(BaseGraph):
             width=width,
             height=height,
             dpi=dpi,
-            background_color=background_color
+            background_color=background_color,
         )
 
     @override
@@ -70,7 +70,9 @@ class DailyPlayCountGraph(BaseGraph):
         """
         return self.get_enhanced_title_with_timeframe("Daily Play Count")
 
-    def _filter_records_by_time_range(self, records: ProcessedRecords, time_range_days: int) -> ProcessedRecords:
+    def _filter_records_by_time_range(
+        self, records: ProcessedRecords, time_range_days: int
+    ) -> ProcessedRecords:
         """
         Filter processed records to respect the TIME_RANGE_DAYS configuration.
 
@@ -86,14 +88,17 @@ class DailyPlayCountGraph(BaseGraph):
 
         # Calculate cutoff date (time_range_days ago from today)
         cutoff_date = datetime.now() - timedelta(days=time_range_days)
-        
+
         # Filter records to only include those within the time range
         filtered_records = [
-            record for record in records
-            if 'datetime' in record and record['datetime'] >= cutoff_date
+            record
+            for record in records
+            if "datetime" in record and record["datetime"] >= cutoff_date
         ]
-        
-        logger.info(f"Filtered {len(records)} records down to {len(filtered_records)} records within {time_range_days} days")
+
+        logger.info(
+            f"Filtered {len(records)} records down to {len(filtered_records)} records within {time_range_days} days"
+        )
         return filtered_records
 
     def _get_time_range_days_from_config(self) -> int:
@@ -103,16 +108,20 @@ class DailyPlayCountGraph(BaseGraph):
         Returns:
             Number of days for the time range from config, defaults to 30 if not found
         """
-        time_range_days = self.get_config_value('TIME_RANGE_DAYS', 30)
-        
+        time_range_days = self.get_config_value("TIME_RANGE_DAYS", 30)
+
         # Ensure it's an integer
         if isinstance(time_range_days, (int, float)):
             return int(time_range_days)
         else:
-            logger.warning(f"Invalid TIME_RANGE_DAYS value: {time_range_days}, using default 30")
+            logger.warning(
+                f"Invalid TIME_RANGE_DAYS value: {time_range_days}, using default 30"
+            )
             return 30
 
-    def _setup_aligned_date_axis(self, ax: Axes, sorted_dates: list[str], num_dates: int) -> None:
+    def _setup_aligned_date_axis(
+        self, ax: Axes, sorted_dates: list[str], num_dates: int
+    ) -> None:
         """
         Setup the date axis with proper alignment between labels and grid lines.
 
@@ -121,52 +130,56 @@ class DailyPlayCountGraph(BaseGraph):
             sorted_dates: List of sorted date strings
             num_dates: Total number of dates
         """
-        
+
         # Determine optimal labeling strategy based on number of dates
         if num_dates <= 30:
             # For TIME_RANGE_DAYS=30 or less: Show every date for perfect alignment
             interval = 1
-            date_format = '%m/%d'
+            date_format = "%m/%d"
         elif num_dates <= 60:
             # Two months: Show every 2-3 days
             interval = max(1, num_dates // 20)  # Show ~20 labels max
-            date_format = '%m/%d'
+            date_format = "%m/%d"
         elif num_dates <= 90:
             # Three months: Show every 3-4 days
             interval = max(1, num_dates // 20)  # Show ~20 labels max
-            date_format = '%m/%d'
+            date_format = "%m/%d"
         elif num_dates <= 180:
             # Six months: Show weekly intervals
             interval = max(1, num_dates // 25)  # Show ~25 labels max
-            date_format = '%m/%d'
+            date_format = "%m/%d"
         else:
             # More than six months: Use year-month format with monthly intervals
             interval = max(1, num_dates // 24)  # Show ~24 labels max
-            date_format = '%Y-%m'
-        
+            date_format = "%Y-%m"
+
         # For better alignment, manually set the tick positions and labels
         # Calculate which dates to show based on the interval
         selected_indices = list(range(0, num_dates, interval))
-        
+
         # Ensure we always include the last date if it's not already included
         if selected_indices and selected_indices[-1] != num_dates - 1:
             selected_indices.append(num_dates - 1)
-        
+
         # Set the tick positions to align perfectly with data points
         _ = ax.set_xticks([i for i in selected_indices])  # pyright: ignore[reportUnknownMemberType] # matplotlib method
-        
+
         # Set the tick labels using the selected dates
         selected_dates = [sorted_dates[i] for i in selected_indices]
         selected_date_objects = [pd.to_datetime(date) for date in selected_dates]  # pyright: ignore[reportUnknownMemberType]
-        
+
         # Format the labels
-        formatted_labels = [date_obj.strftime(date_format) for date_obj in selected_date_objects]
+        formatted_labels = [
+            date_obj.strftime(date_format) for date_obj in selected_date_objects
+        ]
         _ = ax.set_xticklabels(formatted_labels)  # pyright: ignore[reportUnknownMemberType]
-        
+
         # Rotate labels for better readability
-        _ = ax.tick_params(axis='x', rotation=45)  # pyright: ignore[reportUnknownMemberType]
-        
-        logger.debug(f"Configured date axis with {len(selected_indices)} labels for {num_dates} data points")
+        _ = ax.tick_params(axis="x", rotation=45)  # pyright: ignore[reportUnknownMemberType]
+
+        logger.debug(
+            f"Configured date axis with {len(selected_indices)} labels for {num_dates} data points"
+        )
 
     @override
     def generate(self, data: Mapping[str, object]) -> str:
@@ -187,17 +200,19 @@ class DailyPlayCountGraph(BaseGraph):
 
         try:
             # Step 1: Extract play history data from the full data structure
-            play_history_data_raw = data.get('play_history', {})
+            play_history_data_raw = data.get("play_history", {})
             if not isinstance(play_history_data_raw, dict):
                 raise ValueError("Missing or invalid 'play_history' data in input")
-            
+
             # Cast to the proper type for type checker
             play_history_data = cast(Mapping[str, object], play_history_data_raw)
 
             # Step 2: Validate the play history data
-            is_valid, error_msg = validate_graph_data(play_history_data, ['data'])
+            is_valid, error_msg = validate_graph_data(play_history_data, ["data"])
             if not is_valid:
-                raise ValueError(f"Invalid play history data for daily play count graph: {error_msg}")
+                raise ValueError(
+                    f"Invalid play history data for daily play count graph: {error_msg}"
+                )
 
             # Step 3: Extract time range configuration
             time_range_days = self._get_time_range_days_from_config()
@@ -207,11 +222,13 @@ class DailyPlayCountGraph(BaseGraph):
             try:
                 processed_records = process_play_history_data(play_history_data)
                 logger.info(f"Processed {len(processed_records)} play history records")
-                
+
                 # Filter records to respect TIME_RANGE_DAYS configuration
-                filtered_records = self._filter_records_by_time_range(processed_records, time_range_days)
+                filtered_records = self._filter_records_by_time_range(
+                    processed_records, time_range_days
+                )
                 processed_records = filtered_records
-                
+
             except Exception as e:
                 logger.error(f"Error processing play history data: {e}")
                 # Use empty data structure for graceful degradation
@@ -222,15 +239,17 @@ class DailyPlayCountGraph(BaseGraph):
 
             # Step 6: Apply modern Seaborn styling
             self.apply_seaborn_style()
-            
+
             # Step 6.5: Configure Seaborn grid styling (explicit for line plots)
             if self.get_grid_enabled():
                 import seaborn as sns
+
                 sns.set_style("whitegrid")
                 # For line plots, explicitly enable grid on the axes
                 ax.grid(True, alpha=0.7, linewidth=0.5)  # pyright: ignore[reportUnknownMemberType] # matplotlib method with **kwargs
             else:
                 import seaborn as sns
+
                 sns.set_style("white")
                 ax.grid(False)  # pyright: ignore[reportUnknownMemberType] # matplotlib method with **kwargs
 
@@ -249,10 +268,7 @@ class DailyPlayCountGraph(BaseGraph):
                 self.figure.tight_layout()
 
             # Save the figure using base class utility method
-            output_path = self.save_figure(
-                graph_type="daily_play_count",
-                user_id=None
-            )
+            output_path = self.save_figure(graph_type="daily_play_count", user_id=None)
 
             logger.info(f"Daily play count graph saved to: {output_path}")
             return output_path
@@ -263,7 +279,9 @@ class DailyPlayCountGraph(BaseGraph):
         finally:
             self.cleanup()
 
-    def _generate_separated_visualization(self, ax: Axes, processed_records: ProcessedRecords) -> None:
+    def _generate_separated_visualization(
+        self, ax: Axes, processed_records: ProcessedRecords
+    ) -> None:
         """
         Generate separated visualization showing Movies and TV Series separately.
 
@@ -273,9 +291,11 @@ class DailyPlayCountGraph(BaseGraph):
         """
         # Get time range configuration for consistent date filling
         time_range_days = self._get_time_range_days_from_config()
-        
+
         # Aggregate data by date with media type separation, filling missing dates
-        separated_data = aggregate_by_date_separated(processed_records, fill_missing_dates=True, time_range_days=time_range_days)
+        separated_data = aggregate_by_date_separated(
+            processed_records, fill_missing_dates=True, time_range_days=time_range_days
+        )
         display_info = get_media_type_display_info()
 
         if not separated_data:
@@ -302,42 +322,43 @@ class DailyPlayCountGraph(BaseGraph):
 
             # Prepare data for this media type
             counts = [media_data.get(date, 0) for date in sorted_dates]
-            
+
             # Skip if no data for this media type
             if all(count == 0 for count in counts):
                 continue
 
             # Get display information
             if media_type in display_info:
-                label = display_info[media_type]['display_name']
-                color = display_info[media_type]['color']
-                
+                label = display_info[media_type]["display_name"]
+                color = display_info[media_type]["color"]
+
                 # Override with config colors if available
-                if media_type == 'tv':
+                if media_type == "tv":
                     color = self.get_tv_color()
-                elif media_type == 'movie':
+                elif media_type == "movie":
                     color = self.get_movie_color()
             else:
                 label = media_type.title()
-                color = '#666666'  # Default gray for unknown types
+                color = "#666666"  # Default gray for unknown types
 
             # Create the plot using numerical x-axis for better control
             import numpy as np
+
             x_positions = np.arange(len(sorted_dates))
             _ = ax.plot(  # pyright: ignore[reportUnknownMemberType] # matplotlib method
                 x_positions,
                 counts,
-                marker='o',
+                marker="o",
                 linewidth=3,
                 markersize=8,
                 label=label,
                 color=color,
                 markerfacecolor=color,
-                markeredgecolor='white',
+                markeredgecolor="white",
                 markeredgewidth=1.5,
-                alpha=0.8
+                alpha=0.8,
             )
-            
+
             media_types_plotted.append(media_type)
 
         if not media_types_plotted:
@@ -345,9 +366,9 @@ class DailyPlayCountGraph(BaseGraph):
             return
 
         # Customize the plot
-        _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)  # pyright: ignore[reportUnknownMemberType]
-        _ = ax.set_xlabel('Date', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
-        _ = ax.set_ylabel('Play Count', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
+        _ = ax.set_title(self.get_title(), fontsize=18, fontweight="bold", pad=20)  # pyright: ignore[reportUnknownMemberType]
+        _ = ax.set_xlabel("Date", fontsize=14, fontweight="bold")  # pyright: ignore[reportUnknownMemberType]
+        _ = ax.set_ylabel("Play Count", fontsize=14, fontweight="bold")  # pyright: ignore[reportUnknownMemberType]
 
         # Setup aligned date axis
         num_dates = len(sorted_dates)
@@ -355,16 +376,16 @@ class DailyPlayCountGraph(BaseGraph):
 
         # Add legend
         _ = ax.legend(  # pyright: ignore[reportUnknownMemberType]
-            loc='best',
+            loc="best",
             frameon=True,
             fancybox=True,
             shadow=True,
             framealpha=0.9,
-            fontsize=12
+            fontsize=12,
         )
 
         # Add bar value annotations if enabled
-        annotate_enabled = self.get_config_value('ANNOTATE_DAILY_PLAY_COUNT', False)
+        annotate_enabled = self.get_config_value("ANNOTATE_DAILY_PLAY_COUNT", False)
         if annotate_enabled:
             # Add value annotations for each data point
             for media_type, media_data in separated_data.items():
@@ -378,18 +399,22 @@ class DailyPlayCountGraph(BaseGraph):
                             x=float(i),
                             y=float(count_value),
                             value=count_value,
-                            ha='center',
-                            va='bottom',
-                            offset_y=2
+                            ha="center",
+                            va="bottom",
+                            offset_y=2,
                         )
-        
+
         # Add peak annotations if enabled (separate feature)
         if self.is_peak_annotations_enabled():
             self._add_peak_annotations(ax, separated_data, sorted_dates)
 
-        logger.info(f"Created separated daily play count graph with {len(media_types_plotted)} media types and {num_dates} data points")
+        logger.info(
+            f"Created separated daily play count graph with {len(media_types_plotted)} media types and {num_dates} data points"
+        )
 
-    def _generate_combined_visualization(self, ax: Axes, processed_records: ProcessedRecords) -> None:
+    def _generate_combined_visualization(
+        self, ax: Axes, processed_records: ProcessedRecords
+    ) -> None:
         """
         Generate traditional combined visualization (backward compatibility).
 
@@ -400,11 +425,15 @@ class DailyPlayCountGraph(BaseGraph):
         # Use traditional aggregation method with date filling
         if processed_records:
             time_range_days = self._get_time_range_days_from_config()
-            daily_counts = aggregate_by_date(processed_records, fill_missing_dates=True, time_range_days=time_range_days)
+            daily_counts = aggregate_by_date(
+                processed_records,
+                fill_missing_dates=True,
+                time_range_days=time_range_days,
+            )
             logger.info(f"Aggregated data for {len(daily_counts)} days")
         else:
             logger.warning("No valid records found, using empty data")
-            daily_counts = handle_empty_data('daily')
+            daily_counts = handle_empty_data("daily")
             if not isinstance(daily_counts, dict):
                 daily_counts = {}
 
@@ -422,31 +451,32 @@ class DailyPlayCountGraph(BaseGraph):
 
             # Create line plot with numerical x-axis for better control
             import numpy as np
+
             x_positions = np.arange(len(sorted_dates))
             _ = ax.plot(  # pyright: ignore[reportUnknownMemberType] # matplotlib method
                 x_positions,
                 sorted_counts,
-                marker='o',
+                marker="o",
                 linewidth=3,
                 markersize=8,
                 color=self.get_tv_color(),  # Use TV color as default
                 markerfacecolor=self.get_tv_color(),
-                markeredgecolor='white',
+                markeredgecolor="white",
                 markeredgewidth=1.5,
-                alpha=0.8
+                alpha=0.8,
             )
 
             # Customize the plot
-            _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold', pad=20)  # pyright: ignore[reportUnknownMemberType]
-            _ = ax.set_xlabel('Date', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
-            _ = ax.set_ylabel('Play Count', fontsize=14, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
+            _ = ax.set_title(self.get_title(), fontsize=18, fontweight="bold", pad=20)  # pyright: ignore[reportUnknownMemberType]
+            _ = ax.set_xlabel("Date", fontsize=14, fontweight="bold")  # pyright: ignore[reportUnknownMemberType]
+            _ = ax.set_ylabel("Play Count", fontsize=14, fontweight="bold")  # pyright: ignore[reportUnknownMemberType]
 
             # Setup aligned date axis
             num_dates = len(sorted_dates)
             self._setup_aligned_date_axis(ax, sorted_dates, num_dates)
 
             # Add bar value annotations if enabled
-            annotate_enabled = self.get_config_value('ANNOTATE_DAILY_PLAY_COUNT', False)
+            annotate_enabled = self.get_config_value("ANNOTATE_DAILY_PLAY_COUNT", False)
             if annotate_enabled:
                 # Add value annotations for each data point
                 for i, count in enumerate(sorted_counts):  # pyright: ignore[reportAny]  # tuple unpacking from zip
@@ -456,11 +486,11 @@ class DailyPlayCountGraph(BaseGraph):
                             x=float(i),
                             y=float(count),  # pyright: ignore[reportAny]
                             value=int(count),  # pyright: ignore[reportAny]
-                            ha='center',
-                            va='bottom',
-                            offset_y=2
+                            ha="center",
+                            va="bottom",
+                            offset_y=2,
                         )
-            
+
             # Add peak annotations if enabled (separate feature)
             if self.is_peak_annotations_enabled():
                 # Find peak for annotation
@@ -468,22 +498,24 @@ class DailyPlayCountGraph(BaseGraph):
                 max_idx = sorted_counts.index(max_count)
 
                 _ = ax.annotate(  # pyright: ignore[reportUnknownMemberType]
-                    f'Peak: {max_count}',
+                    f"Peak: {max_count}",
                     xy=(max_idx, max_count),  # Use index as x-coordinate
                     xytext=(10, 10),
-                    textcoords='offset points',
+                    textcoords="offset points",
                     bbox=dict(
-                        boxstyle='round,pad=0.3', 
-                        facecolor=self.get_peak_annotation_color(), 
-                        edgecolor='black',
-                        alpha=0.9
+                        boxstyle="round,pad=0.3",
+                        facecolor=self.get_peak_annotation_color(),
+                        edgecolor="black",
+                        alpha=0.9,
                     ),
-                    arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0'),
+                    arrowprops=dict(arrowstyle="->", connectionstyle="arc3,rad=0"),
                     color=self.get_peak_annotation_text_color(),
-                    fontweight='bold'
+                    fontweight="bold",
                 )
 
-            logger.info(f"Created combined daily play count graph with {num_dates} data points")
+            logger.info(
+                f"Created combined daily play count graph with {num_dates} data points"
+            )
 
         else:
             self._handle_empty_data_case(ax)
@@ -495,17 +527,24 @@ class DailyPlayCountGraph(BaseGraph):
         Args:
             ax: The matplotlib axes to display the message on
         """
-        _ = ax.text(0.5, 0.5, "No play data available\nfor the selected time period",  # pyright: ignore[reportUnknownMemberType]
-                   ha='center', va='center', transform=ax.transAxes, fontsize=16,
-                   bbox=dict(boxstyle='round,pad=0.5', facecolor='lightgray', alpha=0.7))
-        _ = ax.set_title(self.get_title(), fontsize=18, fontweight='bold')  # pyright: ignore[reportUnknownMemberType]
+        _ = ax.text(  # pyright: ignore[reportUnknownMemberType]
+            0.5,
+            0.5,
+            "No play data available\nfor the selected time period",
+            ha="center",
+            va="center",
+            transform=ax.transAxes,
+            fontsize=16,
+            bbox=dict(boxstyle="round,pad=0.5", facecolor="lightgray", alpha=0.7),
+        )
+        _ = ax.set_title(self.get_title(), fontsize=18, fontweight="bold")  # pyright: ignore[reportUnknownMemberType]
         logger.warning("Generated empty daily play count graph due to no data")
 
     def _add_peak_annotations(
-        self, 
-        ax: Axes, 
-        separated_data: dict[str, dict[str, int]], 
-        sorted_dates: list[str]
+        self,
+        ax: Axes,
+        separated_data: dict[str, dict[str, int]],
+        sorted_dates: list[str],
     ) -> None:
         """
         Add peak annotations for separated data.
@@ -516,35 +555,37 @@ class DailyPlayCountGraph(BaseGraph):
             sorted_dates: List of sorted date strings
         """
         display_info = get_media_type_display_info()
-        
+
         for media_type, media_data in separated_data.items():
             if not media_data:
                 continue
-                
+
             counts: list[int] = [media_data.get(date, 0) for date in sorted_dates]
             if all(count == 0 for count in counts):
                 continue
-                
+
             max_count: int = max(counts)
             if max_count > 0:
                 max_idx = counts.index(max_count)
-                
+
                 # Get label for this media type
-                label = display_info.get(media_type, {}).get('display_name', media_type.title())
-                
+                label = display_info.get(media_type, {}).get(
+                    "display_name", media_type.title()
+                )
+
                 _ = ax.annotate(  # pyright: ignore[reportUnknownMemberType]
-                    f'{label} Peak: {max_count}',
+                    f"{label} Peak: {max_count}",
                     xy=(float(max_idx), max_count),  # Use index as x-coordinate
                     xytext=(10, 10),
-                    textcoords='offset points',
+                    textcoords="offset points",
                     bbox=dict(
-                        boxstyle='round,pad=0.3', 
-                        facecolor=self.get_peak_annotation_color(), 
-                        edgecolor='black',
-                        alpha=0.9
+                        boxstyle="round,pad=0.3",
+                        facecolor=self.get_peak_annotation_color(),
+                        edgecolor="black",
+                        alpha=0.9,
                     ),
-                    arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0'),
+                    arrowprops=dict(arrowstyle="->", connectionstyle="arc3,rad=0"),
                     color=self.get_peak_annotation_text_color(),
                     fontsize=10,
-                    fontweight='bold'
+                    fontweight="bold",
                 )

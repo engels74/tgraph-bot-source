@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 
 class TaskStatus(Enum):
     """Status of background tasks."""
+
     IDLE = "idle"
     RUNNING = "running"
     FAILED = "failed"
@@ -34,6 +35,7 @@ class TaskStatus(Enum):
 
 class ErrorType(Enum):
     """Classification of error types for retry logic."""
+
     TRANSIENT = "transient"  # Temporary errors that may resolve (network, timeout)
     PERMANENT = "permanent"  # Errors that won't resolve with retry (config, auth)
     RATE_LIMITED = "rate_limited"  # Rate limiting errors
@@ -42,6 +44,7 @@ class ErrorType(Enum):
 
 class CircuitState(Enum):
     """Circuit breaker states."""
+
     CLOSED = "closed"  # Normal operation
     OPEN = "open"  # Failing, rejecting requests
     HALF_OPEN = "half_open"  # Testing if service recovered
@@ -164,9 +167,15 @@ class ErrorMetrics:
                 "unknown": self.unknown_errors,
             },
             "circuit_state": self.circuit_state.value,
-            "last_success": self.last_success.isoformat() if self.last_success else None,
-            "last_failure": self.last_failure.isoformat() if self.last_failure else None,
-            "last_attempt": self.last_attempt.isoformat() if self.last_attempt else None,
+            "last_success": self.last_success.isoformat()
+            if self.last_success
+            else None,
+            "last_failure": self.last_failure.isoformat()
+            if self.last_failure
+            else None,
+            "last_attempt": self.last_attempt.isoformat()
+            if self.last_attempt
+            else None,
         }
 
 
@@ -188,28 +197,49 @@ class ErrorClassifier:
         error_type = type(error).__name__.lower()
 
         # Network and timeout errors are usually transient
-        if any(keyword in error_str for keyword in [
-            "timeout", "connection", "network", "dns", "socket",
-            "temporary", "unavailable", "service", "gateway"
-        ]):
+        if any(
+            keyword in error_str
+            for keyword in [
+                "timeout",
+                "connection",
+                "network",
+                "dns",
+                "socket",
+                "temporary",
+                "unavailable",
+                "service",
+                "gateway",
+            ]
+        ):
             return ErrorType.TRANSIENT
 
-        if any(keyword in error_type for keyword in [
-            "timeout", "connection", "network", "http"
-        ]):
+        if any(
+            keyword in error_type
+            for keyword in ["timeout", "connection", "network", "http"]
+        ):
             return ErrorType.TRANSIENT
 
         # Rate limiting errors
-        if any(keyword in error_str for keyword in [
-            "rate limit", "too many requests", "quota", "throttle"
-        ]):
+        if any(
+            keyword in error_str
+            for keyword in ["rate limit", "too many requests", "quota", "throttle"]
+        ):
             return ErrorType.RATE_LIMITED
 
         # Authentication and configuration errors are permanent
-        if any(keyword in error_str for keyword in [
-            "unauthorized", "forbidden", "authentication", "permission",
-            "invalid api", "bad request", "not found", "configuration"
-        ]):
+        if any(
+            keyword in error_str
+            for keyword in [
+                "unauthorized",
+                "forbidden",
+                "authentication",
+                "permission",
+                "invalid api",
+                "bad request",
+                "not found",
+                "configuration",
+            ]
+        ):
             return ErrorType.PERMANENT
 
         # Default to unknown for unclassified errors
@@ -232,9 +262,11 @@ class CircuitBreaker:
             return True
         elif self.metrics.circuit_state == CircuitState.OPEN:
             # Check if we should transition to half-open
-            if (self.metrics.circuit_opened_at and
-                current_time - self.metrics.circuit_opened_at >=
-                timedelta(seconds=self.config.recovery_timeout)):
+            if (
+                self.metrics.circuit_opened_at
+                and current_time - self.metrics.circuit_opened_at
+                >= timedelta(seconds=self.config.recovery_timeout)
+            ):
                 self._transition_to_half_open()
                 return True
             return False
@@ -264,7 +296,9 @@ class CircuitBreaker:
         """Transition circuit to open state."""
         self.metrics.circuit_state = CircuitState.OPEN
         self.metrics.circuit_opened_at = datetime.now()
-        logger.warning(f"Circuit breaker opened after {self.metrics.consecutive_failures} failures")
+        logger.warning(
+            f"Circuit breaker opened after {self.metrics.consecutive_failures} failures"
+        )
 
     def _transition_to_half_open(self) -> None:
         """Transition circuit to half-open state."""
@@ -276,7 +310,9 @@ class CircuitBreaker:
         """Transition circuit to closed state."""
         self.metrics.circuit_state = CircuitState.CLOSED
         self.metrics.circuit_opened_at = None
-        logger.info(f"Circuit breaker closed after {self.metrics.consecutive_successes} successes")
+        logger.info(
+            f"Circuit breaker closed after {self.metrics.consecutive_successes} successes"
+        )
 
     def get_state(self) -> CircuitState:
         """Get current circuit state."""
@@ -295,7 +331,9 @@ class BackgroundTaskManager:
     and comprehensive error handling with retry logic and circuit breakers.
     """
 
-    def __init__(self, restart_delay: float = 30.0, retry_config: RetryConfig | None = None) -> None:
+    def __init__(
+        self, restart_delay: float = 30.0, retry_config: RetryConfig | None = None
+    ) -> None:
         """Initialize the background task manager."""
         self._tasks: dict[str, asyncio.Task[None]] = {}
         self._task_status: dict[str, TaskStatus] = {}
@@ -350,7 +388,7 @@ class BackgroundTaskManager:
         self,
         name: str,
         coro: Callable[[], Awaitable[None]],
-        restart_on_failure: bool = True
+        restart_on_failure: bool = True,
     ) -> None:
         """
         Add a new background task.
@@ -390,10 +428,7 @@ class BackgroundTaskManager:
         _ = self._task_health.pop(name, None)
 
     async def _task_wrapper(
-        self,
-        name: str,
-        coro: Callable[[], Awaitable[None]],
-        restart_on_failure: bool
+        self, name: str, coro: Callable[[], Awaitable[None]], restart_on_failure: bool
     ) -> None:
         """
         Enhanced wrapper for background tasks with comprehensive error handling,
@@ -416,8 +451,11 @@ class BackgroundTaskManager:
             try:
                 # Check circuit breaker before attempting operation
                 if not circuit_breaker.should_allow_request():
-                    self._log_audit_event(name, "circuit_breaker_blocked",
-                                         "Circuit breaker is open, blocking task execution")
+                    self._log_audit_event(
+                        name,
+                        "circuit_breaker_blocked",
+                        "Circuit breaker is open, blocking task execution",
+                    )
                     self._task_status[name] = TaskStatus.FAILED
 
                     # Wait for circuit breaker recovery timeout
@@ -435,15 +473,21 @@ class BackgroundTaskManager:
                 if name == "update_scheduler":
                     await coro()  # No timeout for scheduler loop
                 else:
-                    await asyncio.wait_for(coro(), timeout=300.0)  # 5 minute timeout for other tasks
+                    await asyncio.wait_for(
+                        coro(), timeout=300.0
+                    )  # 5 minute timeout for other tasks
 
                 # Record successful execution
                 self._task_status[name] = TaskStatus.IDLE
                 circuit_breaker.record_success()
                 metrics.record_success()
 
-                self._log_audit_event(name, "task_completed", "Task execution completed successfully")
-                logger.info(f"Task {name} completed successfully (success rate: {metrics.get_success_rate():.2%})")
+                self._log_audit_event(
+                    name, "task_completed", "Task execution completed successfully"
+                )
+                logger.info(
+                    f"Task {name} completed successfully (success rate: {metrics.get_success_rate():.2%})"
+                )
                 break
 
             except asyncio.CancelledError:
@@ -454,7 +498,9 @@ class BackgroundTaskManager:
 
             except asyncio.TimeoutError as e:
                 error_type = ErrorClassifier.classify_error(e)
-                self._handle_task_error(name, e, error_type, circuit_breaker, metrics, restart_on_failure)
+                self._handle_task_error(
+                    name, e, error_type, circuit_breaker, metrics, restart_on_failure
+                )
 
                 if not restart_on_failure:
                     break
@@ -465,10 +511,14 @@ class BackgroundTaskManager:
 
             except Exception as e:
                 error_type = ErrorClassifier.classify_error(e)
-                self._handle_task_error(name, e, error_type, circuit_breaker, metrics, restart_on_failure)
+                self._handle_task_error(
+                    name, e, error_type, circuit_breaker, metrics, restart_on_failure
+                )
 
                 if not restart_on_failure or error_type == ErrorType.PERMANENT:
-                    logger.error(f"Task {name} failed with {error_type.value} error, not restarting")
+                    logger.error(
+                        f"Task {name} failed with {error_type.value} error, not restarting"
+                    )
                     break
 
                 # Apply retry logic based on error type and configuration
@@ -482,7 +532,7 @@ class BackgroundTaskManager:
         error_type: ErrorType,
         circuit_breaker: CircuitBreaker,
         metrics: ErrorMetrics,
-        restart_on_failure: bool  # pyright: ignore[reportUnusedParameter]
+        restart_on_failure: bool,  # pyright: ignore[reportUnusedParameter]
     ) -> None:
         """Handle task errors with comprehensive logging and metrics."""
         self._task_status[name] = TaskStatus.FAILED
@@ -499,9 +549,7 @@ class BackgroundTaskManager:
 
         # Log audit event
         self._log_audit_event(
-            name,
-            "task_failed",
-            f"{error_type.value} error: {str(error)[:200]}"
+            name, "task_failed", f"{error_type.value} error: {str(error)[:200]}"
         )
 
         # Log circuit breaker state changes
@@ -524,6 +572,7 @@ class BackgroundTaskManager:
         # Add jitter if enabled (±25% random variation)
         if self._retry_config.jitter:
             import random
+
             jitter_factor = 0.75 + (random.random() * 0.5)  # 0.75 to 1.25
             delay *= jitter_factor
 
@@ -535,16 +584,11 @@ class BackgroundTaskManager:
             return
 
         try:
-            _ = await asyncio.wait_for(
-                self._shutdown_event.wait(),
-                timeout=delay
-            )
+            _ = await asyncio.wait_for(self._shutdown_event.wait(), timeout=delay)
             # If we reach here, shutdown was requested
         except asyncio.TimeoutError:
             # Timeout is expected, continue
             pass
-
-
 
     def _log_audit_event(self, task_name: str, event_type: str, message: str) -> None:
         """Log audit events for task operations."""
@@ -567,7 +611,9 @@ class BackgroundTaskManager:
         """Get metrics for a specific task."""
         return self._task_metrics.get(name)
 
-    def get_all_task_metrics(self) -> dict[str, dict[str, str | int | float | dict[str, int] | None]]:
+    def get_all_task_metrics(
+        self,
+    ) -> dict[str, dict[str, str | int | float | dict[str, int] | None]]:
         """Get metrics for all tasks."""
         return {name: metrics.to_dict() for name, metrics in self._task_metrics.items()}
 
@@ -590,17 +636,28 @@ class BackgroundTaskManager:
     def get_health_summary(self) -> dict[str, str | int | float | bool]:
         """Get comprehensive health summary of all tasks."""
         total_tasks = len(self._tasks)
-        running_tasks = sum(1 for status in self._task_status.values() if status == TaskStatus.RUNNING)
-        failed_tasks = sum(1 for status in self._task_status.values() if status == TaskStatus.FAILED)
+        running_tasks = sum(
+            1 for status in self._task_status.values() if status == TaskStatus.RUNNING
+        )
+        failed_tasks = sum(
+            1 for status in self._task_status.values() if status == TaskStatus.FAILED
+        )
 
         # Calculate overall success rate
-        total_attempts = sum(metrics.total_attempts for metrics in self._task_metrics.values())
-        total_successes = sum(metrics.total_successes for metrics in self._task_metrics.values())
-        overall_success_rate = total_successes / total_attempts if total_attempts > 0 else 0.0
+        total_attempts = sum(
+            metrics.total_attempts for metrics in self._task_metrics.values()
+        )
+        total_successes = sum(
+            metrics.total_successes for metrics in self._task_metrics.values()
+        )
+        overall_success_rate = (
+            total_successes / total_attempts if total_attempts > 0 else 0.0
+        )
 
         # Count circuit breaker states
         open_circuits = sum(
-            1 for breaker in self._circuit_breakers.values()
+            1
+            for breaker in self._circuit_breakers.values()
             if breaker.get_state() == CircuitState.OPEN
         )
 
@@ -625,8 +682,7 @@ class BackgroundTaskManager:
 
                 try:
                     _ = await asyncio.wait_for(
-                        self._shutdown_event.wait(),
-                        timeout=self._health_check_interval
+                        self._shutdown_event.wait(), timeout=self._health_check_interval
                     )
                     break  # Shutdown requested
                 except asyncio.TimeoutError:
@@ -774,7 +830,9 @@ class ScheduleState:
             "next_update": self.next_update.isoformat() if self.next_update else None,
             "is_running": self.is_running,
             "consecutive_failures": self.consecutive_failures,
-            "last_failure": self.last_failure.isoformat() if self.last_failure else None,
+            "last_failure": self.last_failure.isoformat()
+            if self.last_failure
+            else None,
             "last_error": str(self.last_error) if self.last_error else None,
         }
 
@@ -790,7 +848,11 @@ class ScheduleState:
 
         state.is_running = bool(data.get("is_running", False))
         consecutive_failures_value = data.get("consecutive_failures", 0)
-        state.consecutive_failures = int(consecutive_failures_value) if consecutive_failures_value is not None else 0
+        state.consecutive_failures = (
+            int(consecutive_failures_value)
+            if consecutive_failures_value is not None
+            else 0
+        )
 
         if data.get("last_failure"):
             state.last_failure = datetime.fromisoformat(str(data["last_failure"]))
@@ -820,7 +882,7 @@ class PersistentScheduleData:
             state=data.get("state", {}),  # pyright: ignore[reportArgumentType]
             config=data.get("config"),  # pyright: ignore[reportArgumentType]
             version=str(data.get("version", "1.0")),
-            saved_at=str(data.get("saved_at", datetime.now().isoformat()))
+            saved_at=str(data.get("saved_at", datetime.now().isoformat())),
         )
 
 
@@ -845,9 +907,13 @@ class StateManager:
         # Ensure parent directory exists
         self.state_file_path.parent.mkdir(parents=True, exist_ok=True)
 
-        logger.debug(f"StateManager initialized with state file: {self.state_file_path}")
+        logger.debug(
+            f"StateManager initialized with state file: {self.state_file_path}"
+        )
 
-    def save_state(self, state: ScheduleState, config: SchedulingConfig | None = None) -> None:
+    def save_state(
+        self, state: ScheduleState, config: SchedulingConfig | None = None
+    ) -> None:
         """
         Save scheduler state to persistent storage with atomic operation.
 
@@ -861,26 +927,30 @@ class StateManager:
             if config:
                 config_dict = {
                     "update_days": config.update_days,
-                    "fixed_update_time": config.fixed_update_time
+                    "fixed_update_time": config.fixed_update_time,
                 }
 
             persistent_data = PersistentScheduleData(
-                state=state.to_dict(),
-                config=config_dict
+                state=state.to_dict(), config=config_dict
             )
 
             # Atomic save using temporary file
             temp_file = None
             try:
                 with tempfile.NamedTemporaryFile(
-                    mode='w',
-                    encoding='utf-8',
+                    mode="w",
+                    encoding="utf-8",
                     dir=self.state_file_path.parent,
-                    prefix=f'.{self.state_file_path.name}.',
-                    suffix='.tmp',
+                    prefix=f".{self.state_file_path.name}.",
+                    suffix=".tmp",
                     delete=False,
                 ) as temp_file:
-                    json.dump(persistent_data.to_dict(), temp_file, indent=2, ensure_ascii=False)
+                    json.dump(
+                        persistent_data.to_dict(),
+                        temp_file,
+                        indent=2,
+                        ensure_ascii=False,
+                    )
                     temp_file.flush()
                     temp_path = Path(temp_file.name)
 
@@ -892,7 +962,9 @@ class StateManager:
                 # Clean up temporary file if it exists
                 if temp_file and Path(temp_file.name).exists():
                     Path(temp_file.name).unlink(missing_ok=True)
-                raise OSError(f"Failed to save state to {self.state_file_path}: {e}") from e
+                raise OSError(
+                    f"Failed to save state to {self.state_file_path}: {e}"
+                ) from e
 
         except Exception as e:
             logger.error(f"Failed to save scheduler state: {e}")
@@ -910,14 +982,16 @@ class StateManager:
                 logger.debug("No state file found, returning default state")
                 return ScheduleState(), None
 
-            with self.state_file_path.open('r', encoding='utf-8') as f:
+            with self.state_file_path.open("r", encoding="utf-8") as f:
                 data: dict[str, object] = json.load(f)  # pyright: ignore[reportAny]
 
             persistent_data = PersistentScheduleData.from_dict(data)
 
             # Validate version compatibility
             if persistent_data.version != "1.0":
-                logger.warning(f"State file version {persistent_data.version} may not be compatible")
+                logger.warning(
+                    f"State file version {persistent_data.version} may not be compatible"
+                )
 
             # Restore state
             state = ScheduleState.from_dict(persistent_data.state)
@@ -927,17 +1001,21 @@ class StateManager:
             if persistent_data.config:
                 config = SchedulingConfig(
                     update_days=int(persistent_data.config["update_days"]),
-                    fixed_update_time=str(persistent_data.config["fixed_update_time"])
+                    fixed_update_time=str(persistent_data.config["fixed_update_time"]),
                 )
 
             logger.info(f"State loaded successfully from {self.state_file_path}")
-            logger.debug(f"Loaded state: last_update={state.last_update}, next_update={state.next_update}")
+            logger.debug(
+                f"Loaded state: last_update={state.last_update}, next_update={state.next_update}"
+            )
 
             return state, config
 
         except (json.JSONDecodeError, KeyError, ValueError, TypeError) as e:
             logger.error(f"Failed to load state file (corrupted): {e}")
-            logger.info("Creating backup of corrupted state file and returning default state")
+            logger.info(
+                "Creating backup of corrupted state file and returning default state"
+            )
             self._backup_corrupted_state()
             return ScheduleState(), None
 
@@ -949,7 +1027,9 @@ class StateManager:
         """Create a backup of corrupted state file for debugging."""
         try:
             if self.state_file_path.exists():
-                backup_path = self.state_file_path.with_suffix(f".corrupted.{datetime.now().strftime('%Y%m%d_%H%M%S')}.json")
+                backup_path = self.state_file_path.with_suffix(
+                    f".corrupted.{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+                )
                 _ = self.state_file_path.rename(backup_path)
                 logger.info(f"Corrupted state file backed up to: {backup_path}")
         except Exception as e:
@@ -982,7 +1062,7 @@ class MissedUpdate:
         return {
             "scheduled_time": self.scheduled_time.isoformat(),
             "detected_at": self.detected_at.isoformat(),
-            "reason": self.reason
+            "reason": self.reason,
         }
 
 
@@ -1003,7 +1083,7 @@ class RecoveryManager:
         current_time: datetime,
         last_update: datetime | None,
         next_update: datetime | None,
-        config: SchedulingConfig
+        config: SchedulingConfig,
     ) -> list[MissedUpdate]:
         """
         Detect missed updates based on current time and last known state.
@@ -1031,11 +1111,13 @@ class RecoveryManager:
         # Check if we missed the scheduled next update
         if next_update and next_update < current_time:
             # We missed the scheduled update
-            missed_updates.append(MissedUpdate(
-                scheduled_time=next_update,
-                detected_at=current_time,
-                reason="missed_scheduled_update"
-            ))
+            missed_updates.append(
+                MissedUpdate(
+                    scheduled_time=next_update,
+                    detected_at=current_time,
+                    reason="missed_scheduled_update",
+                )
+            )
             logger.warning(f"Detected missed scheduled update: {next_update}")
 
         # Check for additional missed updates based on interval
@@ -1049,21 +1131,22 @@ class RecoveryManager:
                 for i in range(1, missed_intervals):
                     missed_time = last_update + timedelta(days=interval_days * i)
                     if missed_time < current_time:
-                        missed_updates.append(MissedUpdate(
-                            scheduled_time=missed_time,
-                            detected_at=current_time,
-                            reason="interval_based_missed_update"
-                        ))
-                        logger.warning(f"Detected missed interval update: {missed_time}")
+                        missed_updates.append(
+                            MissedUpdate(
+                                scheduled_time=missed_time,
+                                detected_at=current_time,
+                                reason="interval_based_missed_update",
+                            )
+                        )
+                        logger.warning(
+                            f"Detected missed interval update: {missed_time}"
+                        )
 
         logger.info(f"Detected {len(missed_updates)} missed updates")
         return missed_updates
 
     def validate_schedule_integrity(
-        self,
-        current_time: datetime,
-        state: ScheduleState,
-        config: SchedulingConfig
+        self, current_time: datetime, state: ScheduleState, config: SchedulingConfig
     ) -> tuple[bool, list[str]]:
         """
         Validate schedule integrity and detect inconsistencies.
@@ -1086,7 +1169,9 @@ class RecoveryManager:
             # Check if next_update is too far in the future
             max_future = current_time + timedelta(days=config.update_days * 2)
             if state.next_update > max_future:
-                issues.append(f"Next update time {state.next_update} is too far in the future")
+                issues.append(
+                    f"Next update time {state.next_update} is too far in the future"
+                )
 
         # Check if last_update and next_update are consistent
         if state.last_update and state.next_update:
@@ -1102,7 +1187,9 @@ class RecoveryManager:
 
         # Check for excessive consecutive failures
         if state.consecutive_failures > 10:
-            issues.append(f"Excessive consecutive failures: {state.consecutive_failures}")
+            issues.append(
+                f"Excessive consecutive failures: {state.consecutive_failures}"
+            )
 
         # Check if last_failure is too old compared to consecutive_failures
         if state.consecutive_failures > 0 and state.last_failure:
@@ -1122,10 +1209,7 @@ class RecoveryManager:
         return is_valid, issues
 
     def repair_schedule_state(
-        self,
-        current_time: datetime,
-        state: ScheduleState,
-        config: SchedulingConfig
+        self, current_time: datetime, state: ScheduleState, config: SchedulingConfig
     ) -> ScheduleState:
         """
         Attempt to repair inconsistent schedule state.
@@ -1146,14 +1230,18 @@ class RecoveryManager:
         # Fix next_update if it's in the past or invalid
         if not state.next_update or state.next_update <= current_time:
             new_next_update = schedule.calculate_next_update(current_time)
-            logger.info(f"Repairing next_update: {state.next_update} -> {new_next_update}")
+            logger.info(
+                f"Repairing next_update: {state.next_update} -> {new_next_update}"
+            )
             state.set_next_update(new_next_update)
 
         # Reset excessive consecutive failures if last failure is old
         if state.consecutive_failures > 5 and state.last_failure:
             time_since_failure = current_time - state.last_failure
             if time_since_failure.days > 3:  # More than 3 days old
-                logger.info(f"Resetting consecutive failures from {state.consecutive_failures} to 0 (last failure was {time_since_failure.days} days ago)")
+                logger.info(
+                    f"Resetting consecutive failures from {state.consecutive_failures} to 0 (last failure was {time_since_failure.days} days ago)"
+                )
                 state.consecutive_failures = 0
 
         # Clear running state if we're not actually running
@@ -1169,7 +1257,7 @@ class RecoveryManager:
         current_time: datetime,
         state: ScheduleState,
         config: SchedulingConfig,
-        update_callback: Callable[[], Awaitable[None]] | None = None
+        update_callback: Callable[[], Awaitable[None]] | None = None,
     ) -> tuple[ScheduleState, list[MissedUpdate]]:
         """
         Perform comprehensive recovery operations.
@@ -1203,7 +1291,9 @@ class RecoveryManager:
 
             for missed_update in missed_updates:
                 try:
-                    logger.info(f"Processing missed update from {missed_update.scheduled_time}")
+                    logger.info(
+                        f"Processing missed update from {missed_update.scheduled_time}"
+                    )
                     await update_callback()
                     processed_updates.append(missed_update)
 
@@ -1211,7 +1301,9 @@ class RecoveryManager:
                     state.record_successful_update(current_time)
 
                 except Exception as e:
-                    logger.error(f"Failed to process missed update from {missed_update.scheduled_time}: {e}")
+                    logger.error(
+                        f"Failed to process missed update from {missed_update.scheduled_time}: {e}"
+                    )
                     state.record_failure(current_time, e)
                     # Continue with other missed updates
 
@@ -1222,7 +1314,9 @@ class RecoveryManager:
         except Exception as e:
             logger.error(f"Failed to save recovered state: {e}")
 
-        logger.info(f"Recovery process completed. Processed {len(processed_updates)} missed updates")
+        logger.info(
+            f"Recovery process completed. Processed {len(processed_updates)} missed updates"
+        )
         return state, processed_updates
 
 
@@ -1279,7 +1373,9 @@ class UpdateSchedule:
 
         # Respect the update_days interval if we have a last update
         if self.state.last_update:
-            min_next_update = self.state.last_update + timedelta(days=self.config.update_days)
+            min_next_update = self.state.last_update + timedelta(
+                days=self.config.update_days
+            )
             if next_update < min_next_update:
                 # Find next occurrence that respects the interval
                 days_to_add = (min_next_update.date() - next_update.date()).days
@@ -1290,7 +1386,9 @@ class UpdateSchedule:
 
         return next_update
 
-    def is_valid_schedule_time(self, schedule_time: datetime, current_time: datetime) -> bool:
+    def is_valid_schedule_time(
+        self, schedule_time: datetime, current_time: datetime
+    ) -> bool:
         """
         Validate that a scheduled time is reasonable.
 
@@ -1339,7 +1437,9 @@ class UpdateSchedule:
         if self.state.consecutive_failures >= 3:
             if self.state.last_failure:
                 # Exponential backoff: 2^failures hours
-                failure_count = min(self.state.consecutive_failures, 6)  # Cap at 64 hours
+                failure_count = min(
+                    self.state.consecutive_failures, 6
+                )  # Cap at 64 hours
                 backoff_hours = 1 << failure_count  # Bit shift for 2^failure_count
                 backoff_until = self.state.last_failure + timedelta(hours=backoff_hours)
                 return current_time < backoff_until
@@ -1355,7 +1455,12 @@ class UpdateTracker:
     the BackgroundTaskManager for robust task lifecycle management.
     """
 
-    def __init__(self, bot: "commands.Bot", retry_config: RetryConfig | None = None, state_file_path: Path | None = None) -> None:
+    def __init__(
+        self,
+        bot: "commands.Bot",
+        retry_config: RetryConfig | None = None,
+        state_file_path: Path | None = None,
+    ) -> None:
         """
         Initialize the update tracker with enhanced error handling and recovery.
 
@@ -1370,8 +1475,7 @@ class UpdateTracker:
         # Initialize enhanced task manager with retry configuration
         self._retry_config: RetryConfig = retry_config or RetryConfig()
         self._task_manager: BackgroundTaskManager = BackgroundTaskManager(
-            restart_delay=30.0,
-            retry_config=self._retry_config
+            restart_delay=30.0, retry_config=self._retry_config
         )
 
         # Initialize scheduling components
@@ -1399,9 +1503,7 @@ class UpdateTracker:
         self.update_callback = callback
 
     async def start_scheduler(
-        self,
-        update_days: int = 7,
-        fixed_update_time: str | None = None
+        self, update_days: int = 7, fixed_update_time: str | None = None
     ) -> None:
         """
         Start the automatic update scheduler with recovery and persistence.
@@ -1417,8 +1519,7 @@ class UpdateTracker:
         # Initialize scheduling configuration
         fixed_time_str = fixed_update_time if fixed_update_time else "XX:XX"
         new_config = SchedulingConfig(
-            update_days=update_days,
-            fixed_update_time=fixed_time_str
+            update_days=update_days, fixed_update_time=fixed_time_str
         )
 
         # Attempt to load previous state and perform recovery
@@ -1437,9 +1538,7 @@ class UpdateTracker:
 
         # Add the scheduler task
         self._task_manager.add_task(
-            "update_scheduler",
-            self._scheduler_loop,
-            restart_on_failure=True
+            "update_scheduler", self._scheduler_loop, restart_on_failure=True
         )
 
         self._state.start_scheduler()
@@ -1474,8 +1573,11 @@ class UpdateTracker:
                 # Check if configuration changed
                 config_changed = False
                 if loaded_config:
-                    if (loaded_config.update_days != new_config.update_days or
-                        loaded_config.fixed_update_time != new_config.fixed_update_time):
+                    if (
+                        loaded_config.update_days != new_config.update_days
+                        or loaded_config.fixed_update_time
+                        != new_config.fixed_update_time
+                    ):
                         config_changed = True
                         logger.info("Configuration changed since last run")
 
@@ -1484,19 +1586,26 @@ class UpdateTracker:
 
                 # Perform recovery operations
                 current_time = datetime.now()
-                recovered_state, missed_updates = await self._recovery_manager.perform_recovery(
+                (
+                    recovered_state,
+                    missed_updates,
+                ) = await self._recovery_manager.perform_recovery(
                     current_time=current_time,
                     state=self._state,
                     config=self._config,
-                    update_callback=self.update_callback if config_changed else None
+                    update_callback=self.update_callback if config_changed else None,
                 )
 
                 self._state = recovered_state
 
                 if missed_updates:
-                    logger.info(f"Recovery completed: processed {len(missed_updates)} missed updates")
+                    logger.info(
+                        f"Recovery completed: processed {len(missed_updates)} missed updates"
+                    )
                     for missed in missed_updates:
-                        logger.info(f"  - Processed missed update from {missed.scheduled_time} ({missed.reason})")
+                        logger.info(
+                            f"  - Processed missed update from {missed.scheduled_time} ({missed.reason})"
+                        )
 
             else:
                 # No previous state, use new configuration
@@ -1536,52 +1645,61 @@ class UpdateTracker:
         self._is_started = False
         logger.info("Update scheduler stopped")
 
-    async def _wait_with_health_updates(self, total_wait_seconds: float, task_name: str = "update_scheduler") -> bool:
+    async def _wait_with_health_updates(
+        self, total_wait_seconds: float, task_name: str = "update_scheduler"
+    ) -> bool:
         """
         Wait for specified duration while periodically updating health status.
-        
+
         This method breaks long waits into smaller chunks to prevent health check
         false positives during extended sleep periods.
-        
+
         Args:
             total_wait_seconds: Total time to wait in seconds
             task_name: Name of the task for health updates
-            
+
         Returns:
             True if wait completed normally, False if shutdown was requested
         """
         if total_wait_seconds <= 0:
             return True
-            
+
         # Health update interval - keep it well below the 5-minute stale threshold
         health_update_interval = 120.0  # 2 minutes
-        
+
         elapsed = 0.0
-        
-        while elapsed < total_wait_seconds and not self._task_manager._shutdown_event.is_set():  # pyright: ignore[reportPrivateUsage]
+
+        while (
+            elapsed < total_wait_seconds
+            and not self._task_manager._shutdown_event.is_set()  # pyright: ignore[reportPrivateUsage]
+        ):
             # Calculate how long to sleep this iteration
             remaining = total_wait_seconds - elapsed
             chunk_duration = min(health_update_interval, remaining)
-            
+
             try:
                 # Wait for this chunk duration or until shutdown requested
                 _ = await asyncio.wait_for(
                     self._task_manager._shutdown_event.wait(),  # pyright: ignore[reportPrivateUsage]
-                    timeout=chunk_duration
+                    timeout=chunk_duration,
                 )
                 # Shutdown was requested
-                logger.debug(f"Shutdown requested during scheduler wait (elapsed: {elapsed:.1f}s)")
+                logger.debug(
+                    f"Shutdown requested during scheduler wait (elapsed: {elapsed:.1f}s)"
+                )
                 return False
-                
+
             except asyncio.TimeoutError:
                 # Timeout is expected - this chunk completed normally
                 elapsed += chunk_duration
-                
+
                 # Update health status to prevent stale detection
                 if task_name in self._task_manager._task_health:  # pyright: ignore[reportPrivateUsage]
                     self._task_manager._task_health[task_name] = datetime.now()  # pyright: ignore[reportPrivateUsage]
-                    logger.debug(f"Updated health for {task_name} during long wait (elapsed: {elapsed:.1f}s/{total_wait_seconds:.1f}s)")
-        
+                    logger.debug(
+                        f"Updated health for {task_name} during long wait (elapsed: {elapsed:.1f}s/{total_wait_seconds:.1f}s)"
+                    )
+
         return True
 
     async def _scheduler_loop(self) -> None:
@@ -1600,11 +1718,17 @@ class UpdateTracker:
 
                 # Check if we should skip this update due to recent failures
                 if self._schedule.should_skip_update(current_time):
-                    logger.info("Skipping update due to recent failures (exponential backoff)")
+                    logger.info(
+                        "Skipping update due to recent failures (exponential backoff)"
+                    )
                     # Wait a bit before checking again
-                    wait_completed = await self._wait_with_health_updates(300.0)  # 5 minutes
+                    wait_completed = await self._wait_with_health_updates(
+                        300.0
+                    )  # 5 minutes
                     if not wait_completed:
-                        logger.info("Scheduler loop terminated due to shutdown request during backoff")
+                        logger.info(
+                            "Scheduler loop terminated due to shutdown request during backoff"
+                        )
                         break
                     continue
 
@@ -1620,7 +1744,9 @@ class UpdateTracker:
                 wait_seconds = (next_update - current_time).total_seconds()
 
                 if wait_seconds > 0:
-                    logger.info(f"Next update scheduled for: {next_update} (wait time: {wait_seconds:.1f}s)")
+                    logger.info(
+                        f"Next update scheduled for: {next_update} (wait time: {wait_seconds:.1f}s)"
+                    )
                     wait_completed = await self._wait_with_health_updates(wait_seconds)
                     if not wait_completed:
                         # Shutdown was requested during wait
@@ -1641,7 +1767,9 @@ class UpdateTracker:
             # Wait before retrying to avoid tight error loops
             wait_completed = await self._wait_with_health_updates(60.0)  # 1 minute
             if not wait_completed:
-                logger.info("Scheduler loop terminated due to shutdown request during error recovery")
+                logger.info(
+                    "Scheduler loop terminated due to shutdown request during error recovery"
+                )
                 return
 
     async def _trigger_update(self) -> None:
@@ -1661,8 +1789,13 @@ class UpdateTracker:
         self._update_metrics.record_attempt()
         start_time = datetime.now()
 
-        logger.info(f"Triggering scheduled graph update (attempt {self._update_metrics.total_attempts})")
-        self._log_update_audit("update_started", f"Starting update attempt {self._update_metrics.total_attempts}")
+        logger.info(
+            f"Triggering scheduled graph update (attempt {self._update_metrics.total_attempts})"
+        )
+        self._log_update_audit(
+            "update_started",
+            f"Starting update attempt {self._update_metrics.total_attempts}",
+        )
 
         # Retry logic with exponential backoff
         last_exception: Exception | None = None
@@ -1679,17 +1812,25 @@ class UpdateTracker:
                     # Add jitter if enabled
                     if self._retry_config.jitter:
                         import random
+
                         jitter_factor = 0.75 + (random.random() * 0.5)  # 0.75 to 1.25
                         delay *= jitter_factor
 
-                    logger.info(f"Retrying update after {delay:.1f}s delay (attempt {attempt + 1}/{self._retry_config.max_attempts})")
-                    self._log_update_audit("update_retry", f"Retrying after {delay:.1f}s (attempt {attempt + 1})")
+                    logger.info(
+                        f"Retrying update after {delay:.1f}s delay (attempt {attempt + 1}/{self._retry_config.max_attempts})"
+                    )
+                    self._log_update_audit(
+                        "update_retry",
+                        f"Retrying after {delay:.1f}s (attempt {attempt + 1})",
+                    )
                     await asyncio.sleep(delay)
 
                 # Execute the update callback
                 if self.update_callback:
                     # Add timeout protection
-                    await asyncio.wait_for(self.update_callback(), timeout=600.0)  # 10 minute timeout
+                    await asyncio.wait_for(
+                        self.update_callback(), timeout=600.0
+                    )  # 10 minute timeout
                 else:
                     error_msg = "No update callback set"
                     logger.error(error_msg)
@@ -1763,7 +1904,10 @@ class UpdateTracker:
             # Log circuit breaker state if it opened
             if self._circuit_breaker.get_state() == CircuitState.OPEN:
                 logger.error("Circuit breaker opened due to repeated failures")
-                self._log_update_audit("circuit_breaker_opened", "Circuit breaker opened due to repeated failures")
+                self._log_update_audit(
+                    "circuit_breaker_opened",
+                    "Circuit breaker opened due to repeated failures",
+                )
 
             raise last_exception
         else:
@@ -1823,7 +1967,9 @@ class UpdateTracker:
             "consecutive_failures": self._state.consecutive_failures,
             "last_failure": self._state.last_failure,
             "config_update_days": self._config.update_days if self._config else None,
-            "config_fixed_time": self._config.fixed_update_time if self._config else None,
+            "config_fixed_time": self._config.fixed_update_time
+            if self._config
+            else None,
             "task_manager_healthy": self._task_manager.is_healthy(),
             "scheduler_task_status": scheduler_task_status.get("status"),
             "scheduler_task_health": scheduler_task_status.get("last_health"),
@@ -1866,13 +2012,18 @@ class UpdateTracker:
         await self.stop_scheduler()
 
         # Start with current configuration
-        fixed_time = None if self._config.fixed_update_time == "XX:XX" else self._config.fixed_update_time
+        fixed_time = (
+            None
+            if self._config.fixed_update_time == "XX:XX"
+            else self._config.fixed_update_time
+        )
         await self.start_scheduler(
-            update_days=self._config.update_days,
-            fixed_update_time=fixed_time
+            update_days=self._config.update_days, fixed_update_time=fixed_time
         )
 
-    def get_update_metrics(self) -> dict[str, str | int | float | dict[str, int] | None]:
+    def get_update_metrics(
+        self,
+    ) -> dict[str, str | int | float | dict[str, int] | None]:
         """Get comprehensive update metrics."""
         return self._update_metrics.to_dict()
 
@@ -1894,13 +2045,15 @@ class UpdateTracker:
 
         # Create comprehensive status dictionary
         comprehensive_status: dict[str, object] = dict(base_status)
-        comprehensive_status.update({
-            "update_metrics": self.get_update_metrics(),
-            "circuit_breaker": self.get_circuit_breaker_status(),
-            "task_manager_metrics": self._task_manager.get_all_task_metrics(),
-            "task_manager_health": self._task_manager.get_health_summary(),
-            "circuit_breaker_states": self._task_manager.get_all_circuit_breaker_status(),
-        })
+        comprehensive_status.update(
+            {
+                "update_metrics": self.get_update_metrics(),
+                "circuit_breaker": self.get_circuit_breaker_status(),
+                "task_manager_metrics": self._task_manager.get_all_task_metrics(),
+                "task_manager_health": self._task_manager.get_health_summary(),
+                "circuit_breaker_states": self._task_manager.get_all_circuit_breaker_status(),
+            }
+        )
 
         return comprehensive_status
 
@@ -1965,7 +2118,7 @@ class UpdateTracker:
             current_time=current_time,
             state=self._state,
             config=self._config,
-            update_callback=self.update_callback
+            update_callback=self.update_callback,
         )
 
         self._state = recovered_state
@@ -2066,11 +2219,13 @@ class UpdateTracker:
             for key, original_value in original_state.items():
                 new_value = repaired_state.get(key)
                 if original_value != new_value:
-                    repairs.append({
-                        "field": key,
-                        "old_value": original_value,
-                        "new_value": new_value,
-                    })
+                    repairs.append(
+                        {
+                            "field": key,
+                            "old_value": original_value,
+                            "new_value": new_value,
+                        }
+                    )
 
             result["repairs_performed"] = repairs
             logger.info(f"Schedule repairs completed: {len(repairs)} fields modified")

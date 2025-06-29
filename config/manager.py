@@ -13,7 +13,6 @@ from typing import Callable, override, Any
 from watchdog.events import FileSystemEventHandler, FileSystemEvent
 
 
-
 import yaml
 from pydantic import ValidationError
 
@@ -26,7 +25,7 @@ logger = logging.getLogger(__name__)
 class ConfigFileHandler(FileSystemEventHandler):
     """File system event handler for configuration file monitoring."""
 
-    def __init__(self, config_manager: 'ConfigManager', config_path: Path) -> None:
+    def __init__(self, config_manager: "ConfigManager", config_path: Path) -> None:
         """
         Initialize the config file handler.
 
@@ -35,7 +34,7 @@ class ConfigFileHandler(FileSystemEventHandler):
             config_path: Path to the configuration file to monitor
         """
         super().__init__()
-        self.config_manager: 'ConfigManager' = config_manager
+        self.config_manager: "ConfigManager" = config_manager
         self.config_path: Path = config_path
         self._last_modified: float = 0.0
 
@@ -46,7 +45,11 @@ class ConfigFileHandler(FileSystemEventHandler):
             return
 
         # Check if the modified file is our config file
-        src_path_str = event.src_path if isinstance(event.src_path, str) else event.src_path.decode('utf-8')
+        src_path_str = (
+            event.src_path
+            if isinstance(event.src_path, str)
+            else event.src_path.decode("utf-8")
+        )
         if Path(src_path_str).resolve() == self.config_path.resolve():
             # Debounce rapid file changes
             current_time = time.time()
@@ -71,7 +74,9 @@ class ConfigManager:
         """Initialize the configuration manager."""
         self._current_config: TGraphBotConfig | None = None
         self._config_lock: threading.RLock = threading.RLock()
-        self._change_callbacks: list[Callable[[TGraphBotConfig, TGraphBotConfig], None]] = []
+        self._change_callbacks: list[
+            Callable[[TGraphBotConfig, TGraphBotConfig], None]
+        ] = []
         self._file_observer: Any = None  # Observer | None  # pyright: ignore[reportExplicitAny]
         self._monitored_file: Path | None = None
         self._config_file_path: Path | None = None
@@ -80,13 +85,13 @@ class ConfigManager:
     def load_config(config_path: Path) -> TGraphBotConfig:
         """
         Load and validate configuration from a YAML file.
-        
+
         Args:
             config_path: Path to the YAML configuration file
-            
+
         Returns:
             TGraphBotConfig: Validated configuration object
-            
+
         Raises:
             FileNotFoundError: If the config file doesn't exist
             yaml.YAMLError: If the YAML syntax is invalid
@@ -94,9 +99,9 @@ class ConfigManager:
         """
         if not config_path.exists():
             raise FileNotFoundError(f"Configuration file not found: {config_path}")
-        
+
         try:
-            with config_path.open('r', encoding='utf-8') as f:
+            with config_path.open("r", encoding="utf-8") as f:
                 raw_config_data: object = yaml.safe_load(f)  # pyright: ignore[reportAny]
         except yaml.YAMLError as e:
             raise yaml.YAMLError(f"Invalid YAML syntax in {config_path}: {e}") from e
@@ -106,11 +111,13 @@ class ConfigManager:
         elif isinstance(raw_config_data, dict):
             config_data = raw_config_data  # pyright: ignore[reportUnknownVariableType]
         else:
-            raise ValueError(f"Configuration file must contain a YAML dictionary, got {type(raw_config_data).__name__}")
+            raise ValueError(
+                f"Configuration file must contain a YAML dictionary, got {type(raw_config_data).__name__}"
+            )
 
         # Parse configuration using match statement for specific fields
         parsed_data = ConfigManager._parse_config_data(config_data)
-        
+
         try:
             return TGraphBotConfig(**parsed_data)  # pyright: ignore[reportArgumentType]
         except ValidationError as e:
@@ -121,30 +128,30 @@ class ConfigManager:
     def _parse_config_data(config_data: dict[str, object]) -> dict[str, object]:
         """
         Parse configuration data using match statements for specific fields.
-        
+
         Args:
             config_data: Raw configuration data from YAML
-            
+
         Returns:
             dict[str, Any]: Parsed configuration data
         """
         parsed_data = config_data.copy()
-        
+
         # Parse specific fields using match statements as specified in requirements
         for key, value in config_data.items():
             match key:
-                case 'FIXED_UPDATE_TIME':
+                case "FIXED_UPDATE_TIME":
                     # Validate time format or XX:XX
                     match value:
-                        case str() if value == 'XX:XX':
+                        case str() if value == "XX:XX":
                             parsed_data[key] = value
-                        case str() if ':' in value:
+                        case str() if ":" in value:
                             # Let Pydantic handle time format validation
                             parsed_data[key] = value
                         case _:
                             parsed_data[key] = value
 
-                case 'LANGUAGE':
+                case "LANGUAGE":
                     # Validate language code
                     match value:
                         case str() if len(value) == 2 and value.isalpha():
@@ -152,40 +159,44 @@ class ConfigManager:
                         case _:
                             parsed_data[key] = value
 
-                case key if key.endswith('_COLOR'):
+                case key if key.endswith("_COLOR"):
                     # Normalize color values to lowercase
                     match value:
-                        case str() if value.startswith('#'):
+                        case str() if value.startswith("#"):
                             parsed_data[key] = value.lower()
                         case _:
                             parsed_data[key] = value
-                
+
                 case _:
                     # No special parsing needed
                     parsed_data[key] = value
-        
+
         return parsed_data
 
     @staticmethod
-    def save_config(config: TGraphBotConfig, config_path: Path, preserve_comments: bool = True) -> None:
+    def save_config(
+        config: TGraphBotConfig, config_path: Path, preserve_comments: bool = True
+    ) -> None:
         """
         Save configuration to a YAML file with atomic operation and comment preservation.
-        
+
         Args:
             config: Configuration object to save
             config_path: Path where to save the configuration
             preserve_comments: Whether to preserve existing comments (default: True)
-            
+
         Raises:
             OSError: If file operations fail
             yaml.YAMLError: If YAML serialization fails
         """
         config_dict = config.model_dump()
-        
+
         if preserve_comments and config_path.exists():
             # Read original file to preserve comments
-            original_content = config_path.read_text(encoding='utf-8')
-            updated_content = ConfigManager._preserve_comments(original_content, config_dict)
+            original_content = config_path.read_text(encoding="utf-8")
+            updated_content = ConfigManager._preserve_comments(
+                original_content, config_dict
+            )
             content_to_write = updated_content
         else:
             # Generate new YAML content without comment preservation
@@ -196,16 +207,16 @@ class ConfigManager:
                 allow_unicode=True,
                 indent=2,
             )
-        
+
         # Atomic save operation using temporary file
         temp_file = None
         try:
             with tempfile.NamedTemporaryFile(
-                mode='w',
-                encoding='utf-8',
+                mode="w",
+                encoding="utf-8",
                 dir=config_path.parent,
-                prefix=f'.{config_path.name}.',
-                suffix='.tmp',
+                prefix=f".{config_path.name}.",
+                suffix=".tmp",
                 delete=False,
             ) as temp_file:
                 _ = temp_file.write(content_to_write)
@@ -214,7 +225,7 @@ class ConfigManager:
 
             # Atomic move
             _ = temp_path.replace(config_path)
-            
+
         except Exception as e:
             # Clean up temporary file if it exists
             if temp_file and Path(temp_file.name).exists():
@@ -233,7 +244,7 @@ class ConfigManager:
         Returns:
             str: Updated YAML content with preserved comments
         """
-        lines = original_content.split('\n')
+        lines = original_content.split("\n")
         updated_lines: list[str] = []
         updated_keys: set[str] = set()
 
@@ -241,21 +252,21 @@ class ConfigManager:
             stripped = line.strip()
 
             # Preserve comment-only lines and empty lines
-            if not stripped or stripped.startswith('#'):
+            if not stripped or stripped.startswith("#"):
                 updated_lines.append(line)
                 continue
 
             # Check if line contains a configuration key
-            if ':' in line:
-                key_part = line.split(':')[0].strip()
+            if ":" in line:
+                key_part = line.split(":")[0].strip()
                 if key_part in new_config:
                     # Extract indentation and comment (only real comments, not values)
-                    indent = line[:len(line) - len(line.lstrip())]
-                    comment_part = ''
+                    indent = line[: len(line) - len(line.lstrip())]
+                    comment_part = ""
 
                     # Find actual comment (after the value, not within quotes)
-                    colon_index = line.index(':')
-                    value_part = line[colon_index + 1:].strip()
+                    colon_index = line.index(":")
+                    value_part = line[colon_index + 1 :].strip()
 
                     # Look for comment that's not part of a quoted string
                     comment_index = -1
@@ -263,27 +274,27 @@ class ConfigManager:
                     quote_char = None
 
                     for i, char in enumerate(value_part):
-                        if char in ('"', "'") and (i == 0 or value_part[i-1] != '\\'):
+                        if char in ('"', "'") and (i == 0 or value_part[i - 1] != "\\"):
                             if not in_quotes:
                                 in_quotes = True
                                 quote_char = char
                             elif char == quote_char:
                                 in_quotes = False
                                 quote_char = None
-                        elif char == '#' and not in_quotes:
+                        elif char == "#" and not in_quotes:
                             comment_index = i
                             break
 
                     if comment_index >= 0:
-                        comment_part = '  ' + value_part[comment_index:]
+                        comment_part = "  " + value_part[comment_index:]
 
                     # Format new value
                     new_value = new_config[key_part]
                     if new_value is None:
-                        formatted_value = 'null'
+                        formatted_value = "null"
                     elif isinstance(new_value, str):
                         # Quote strings that start with # or contain spaces
-                        if new_value.startswith('#') or ' ' in new_value:
+                        if new_value.startswith("#") or " " in new_value:
                             formatted_value = f"'{new_value}'"
                         else:
                             formatted_value = new_value
@@ -292,7 +303,9 @@ class ConfigManager:
                     else:
                         formatted_value = str(new_value)
 
-                    updated_line = f"{indent}{key_part}: {formatted_value}{comment_part}"
+                    updated_line = (
+                        f"{indent}{key_part}: {formatted_value}{comment_part}"
+                    )
                     updated_lines.append(updated_line)
                     updated_keys.add(key_part)
                 else:
@@ -304,10 +317,10 @@ class ConfigManager:
         for key, value in new_config.items():
             if key not in updated_keys:
                 if value is None:
-                    formatted_value = 'null'
+                    formatted_value = "null"
                 elif isinstance(value, str):
                     # Quote strings that start with # or contain spaces
-                    if value.startswith('#') or ' ' in value:
+                    if value.startswith("#") or " " in value:
                         formatted_value = f"'{value}'"
                     else:
                         formatted_value = value
@@ -318,25 +331,25 @@ class ConfigManager:
 
                 updated_lines.append(f"{key}: {formatted_value}")
 
-        return '\n'.join(updated_lines)
+        return "\n".join(updated_lines)
 
     @staticmethod
     def get_default_config() -> TGraphBotConfig:
         """
         Get a configuration object with default values.
-        
+
         Returns:
             TGraphBotConfig: Configuration with default values
-            
+
         Note:
             This creates a minimal config with placeholder values for required fields.
             Real configuration should be loaded from a proper config file.
         """
         default_data: dict[str, object] = {
-            'TAUTULLI_API_KEY': 'your_tautulli_api_key_here',
-            'TAUTULLI_URL': 'http://localhost:8181/api/v2',
-            'DISCORD_TOKEN': 'your_discord_bot_token_here',
-            'CHANNEL_ID': 123456789012345678,
+            "TAUTULLI_API_KEY": "your_tautulli_api_key_here",
+            "TAUTULLI_URL": "http://localhost:8181/api/v2",
+            "DISCORD_TOKEN": "your_discord_bot_token_here",
+            "CHANNEL_ID": 123456789012345678,
         }
 
         return TGraphBotConfig(**default_data)  # pyright: ignore[reportArgumentType]
@@ -345,13 +358,13 @@ class ConfigManager:
     def validate_config(config: TGraphBotConfig) -> bool:
         """
         Validate a configuration object.
-        
+
         Args:
             config: Configuration object to validate
-            
+
         Returns:
             bool: True if configuration is valid
-            
+
         Raises:
             ValidationError: If configuration is invalid
         """
@@ -367,20 +380,20 @@ class ConfigManager:
     def create_sample_config(sample_path: Path) -> None:
         """
         Create a sample configuration file with all options and documentation.
-        
+
         Args:
             sample_path: Path where to create the sample configuration file
         """
         sample_content = ConfigManager._generate_sample_content()
 
         _ = sample_path.parent.mkdir(parents=True, exist_ok=True)
-        _ = sample_path.write_text(sample_content, encoding='utf-8')
+        _ = sample_path.write_text(sample_content, encoding="utf-8")
 
     @staticmethod
     def _generate_sample_content() -> str:
         """
         Generate sample configuration file content with comprehensive documentation.
-        
+
         Returns:
             str: Sample configuration file content
         """
@@ -549,7 +562,7 @@ MY_STATS_GLOBAL_COOLDOWN_SECONDS: 60
     def config_file_path(self) -> Path | None:
         """
         Get the current config file path.
-        
+
         Returns:
             Path to the current config file, or None if not set
         """
@@ -559,7 +572,7 @@ MY_STATS_GLOBAL_COOLDOWN_SECONDS: 60
     def config_file_path(self, path: Path | None) -> None:
         """
         Set the current config file path.
-        
+
         Args:
             path: Path to the config file, or None to clear
         """
@@ -584,7 +597,9 @@ MY_STATS_GLOBAL_COOLDOWN_SECONDS: 60
         """
         with self._config_lock:
             if self._current_config is None:
-                raise RuntimeError("No configuration has been set. Call set_current_config() first.")
+                raise RuntimeError(
+                    "No configuration has been set. Call set_current_config() first."
+                )
             return self._current_config
 
     def update_runtime_config(self, new_config: TGraphBotConfig) -> None:
@@ -607,7 +622,9 @@ MY_STATS_GLOBAL_COOLDOWN_SECONDS: 60
                         # Log error but don't let callback failures break config updates
                         pass
 
-    def register_change_callback(self, callback: Callable[[TGraphBotConfig, TGraphBotConfig], None]) -> None:
+    def register_change_callback(
+        self, callback: Callable[[TGraphBotConfig, TGraphBotConfig], None]
+    ) -> None:
         """
         Register a callback to be called when configuration changes.
 
@@ -618,7 +635,9 @@ MY_STATS_GLOBAL_COOLDOWN_SECONDS: 60
             if callback not in self._change_callbacks:
                 self._change_callbacks.append(callback)
 
-    def unregister_change_callback(self, callback: Callable[[TGraphBotConfig, TGraphBotConfig], None]) -> None:
+    def unregister_change_callback(
+        self, callback: Callable[[TGraphBotConfig, TGraphBotConfig], None]
+    ) -> None:
         """
         Unregister a configuration change callback.
 
@@ -642,6 +661,7 @@ MY_STATS_GLOBAL_COOLDOWN_SECONDS: 60
 
             self._monitored_file = config_path.resolve()
             from watchdog.observers import Observer
+
             observer = Observer()
             self._file_observer = observer
 

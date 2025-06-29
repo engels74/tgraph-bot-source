@@ -31,10 +31,12 @@ from typing import Callable
 
 logger = logging.getLogger(__name__)
 
+
 # Global translation function
 def _default_translation(x: str) -> str:
     """Default fallback translation function."""
     return x
+
 
 _: Callable[[str], str] = _default_translation
 
@@ -71,10 +73,7 @@ def setup_i18n(language: str = "en", locale_dir: Path | None = None) -> None:
 
         # Try to load the specified language
         translation = gettext.translation(
-            _domain,
-            localedir=_locale_dir,
-            languages=[language],
-            fallback=True
+            _domain, localedir=_locale_dir, languages=[language], fallback=True
         )
 
         # Install the translation function globally
@@ -224,9 +223,9 @@ def ngettext(singular: str, plural: str, n: int, **kwargs: object) -> str:
                 return translated.format(n=n, **kwargs)
             except (KeyError, ValueError) as e:
                 logger.warning(f"Plural translation formatting error: {e}")
-                return translated.format(n=n) if '{n}' in translated else translated
+                return translated.format(n=n) if "{n}" in translated else translated
 
-        return translated.format(n=n) if '{n}' in translated else translated
+        return translated.format(n=n) if "{n}" in translated else translated
 
     except Exception as e:
         logger.warning(f"Plural translation error: {e}")

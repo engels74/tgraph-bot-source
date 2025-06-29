@@ -14,7 +14,7 @@ from .top_10_users_graph import Top10UsersGraph
 
 __all__ = [
     "DailyPlayCountGraph",
-    "PlayCountByDayOfWeekGraph", 
+    "PlayCountByDayOfWeekGraph",
     "PlayCountByHourOfDayGraph",
     "PlayCountByMonthGraph",
     "Top10PlatformsGraph",

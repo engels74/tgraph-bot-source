@@ -34,19 +34,25 @@ logger = logging.getLogger(__name__)
 
 class GraphGenerationError(Exception):
     """Custom exception for graph generation errors."""
+
     pass
 
 
 class ResourceCleanupError(Exception):
     """Custom exception for resource cleanup errors."""
+
     pass
 
 
 class ProgressTracker:
     """Enhanced progress tracking with error states and detailed reporting."""
 
-    def __init__(self, callback: Callable[[str, int, int, dict[str, object]], None] | None = None) -> None:
-        self.callback: Callable[[str, int, int, dict[str, object]], None] | None = callback
+    def __init__(
+        self, callback: Callable[[str, int, int, dict[str, object]], None] | None = None
+    ) -> None:
+        self.callback: Callable[[str, int, int, dict[str, object]], None] | None = (
+            callback
+        )
         self.start_time: float = time.time()
         self.current_step: int = 0
         self.total_steps: int = 0
@@ -63,13 +69,15 @@ class ProgressTracker:
             "elapsed_time": elapsed_time,
             "errors": self.errors.copy(),
             "warnings": self.warnings.copy(),
-            **kwargs
+            **kwargs,
         }
 
         if self.callback:
             self.callback(message, current, total, metadata)
 
-        logger.debug(f"Progress: {message} ({current}/{total}) - Elapsed: {elapsed_time:.2f}s")
+        logger.debug(
+            f"Progress: {message} ({current}/{total}) - Elapsed: {elapsed_time:.2f}s"
+        )
 
     def add_error(self, error: str) -> None:
         """Add an error to the tracker."""
@@ -90,7 +98,7 @@ class ProgressTracker:
             "error_count": len(self.errors),
             "warning_count": len(self.warnings),
             "errors": self.errors.copy(),
-            "warnings": self.warnings.copy()
+            "warnings": self.warnings.copy(),
         }
 
 
@@ -124,7 +132,12 @@ class GraphManager:
         await self._initialize_components()
         return self
 
-    async def __aexit__(self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: object) -> None:
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: object,
+    ) -> None:
         """Async context manager exit with cleanup."""
         await self._cleanup_components()
 
@@ -137,7 +150,7 @@ class GraphManager:
             base_url=config.TAUTULLI_URL,
             api_key=config.TAUTULLI_API_KEY,
             timeout=30.0,
-            max_retries=3
+            max_retries=3,
         )
         _ = await self._data_fetcher.__aenter__()
 
@@ -157,9 +170,10 @@ class GraphManager:
 
     async def generate_all_graphs(
         self,
-        progress_callback: Callable[[str, int, int, dict[str, object]], None] | None = None,
+        progress_callback: Callable[[str, int, int, dict[str, object]], None]
+        | None = None,
         max_retries: int = 3,
-        timeout_seconds: float = 300.0
+        timeout_seconds: float = 300.0,
     ) -> list[str]:
         """
         Generate all enabled graphs for the server with enhanced error handling and progress tracking.
@@ -184,9 +198,13 @@ class GraphManager:
             asyncio.TimeoutError: If generation exceeds timeout
         """
         if self._data_fetcher is None or self._graph_factory is None:
-            raise RuntimeError("GraphManager components not initialized. Use as async context manager.")
+            raise RuntimeError(
+                "GraphManager components not initialized. Use as async context manager."
+            )
 
-        logger.info("Starting server-wide graph generation with enhanced error handling")
+        logger.info(
+            "Starting server-wide graph generation with enhanced error handling"
+        )
 
         # Initialize progress tracker
         progress_tracker = ProgressTracker(progress_callback)
@@ -197,30 +215,37 @@ class GraphManager:
             config = self.config_manager.get_current_config()
 
             data = await self._fetch_graph_data_with_retry(
-                config.TIME_RANGE_DAYS,
-                max_retries,
-                progress_tracker
+                config.TIME_RANGE_DAYS, max_retries, progress_tracker
             )
 
-            progress_tracker.update("Data fetch completed successfully", 2, 4,
-                                   data_size=len(str(data)))
+            progress_tracker.update(
+                "Data fetch completed successfully", 2, 4, data_size=len(str(data))
+            )
 
             # Step 2: Validate data before generation
             progress_tracker.update("Validating fetched data", 3, 4)
             if not self._validate_graph_data(data, progress_tracker):
-                raise GraphGenerationError("Invalid or insufficient data for graph generation")
+                raise GraphGenerationError(
+                    "Invalid or insufficient data for graph generation"
+                )
 
             # Step 3: Generate graphs with timeout protection
-            progress_tracker.update("Starting graph generation in separate thread", 4, 4)
+            progress_tracker.update(
+                "Starting graph generation in separate thread", 4, 4
+            )
             logger.debug("Starting graph generation with timeout protection")
 
             try:
                 graph_files = await asyncio.wait_for(
-                    asyncio.to_thread(self._generate_graphs_sync, data, progress_tracker),
-                    timeout=timeout_seconds
+                    asyncio.to_thread(
+                        self._generate_graphs_sync, data, progress_tracker
+                    ),
+                    timeout=timeout_seconds,
                 )
             except asyncio.TimeoutError:
-                error_msg = f"Graph generation exceeded timeout of {timeout_seconds} seconds"
+                error_msg = (
+                    f"Graph generation exceeded timeout of {timeout_seconds} seconds"
+                )
                 progress_tracker.add_error(error_msg)
                 raise asyncio.TimeoutError(error_msg)
 
@@ -228,21 +253,27 @@ class GraphManager:
             valid_files = self._validate_generated_files(graph_files, progress_tracker)
 
             summary = progress_tracker.get_summary()
-            logger.info(f"Graph generation completed: {len(valid_files)} files, " +
-                       f"{summary['error_count']} errors, {summary['warning_count']} warnings, " +
-                       f"total time: {summary['total_time']:.2f}s")
+            logger.info(
+                f"Graph generation completed: {len(valid_files)} files, "
+                + f"{summary['error_count']} errors, {summary['warning_count']} warnings, "
+                + f"total time: {summary['total_time']:.2f}s"
+            )
 
             return valid_files
 
         except Exception as e:
             progress_tracker.add_error(f"Critical error in graph generation: {str(e)}")
             summary = progress_tracker.get_summary()
-            logger.exception(f"Graph generation failed after {summary['total_time']:.2f}s: {e}")
+            logger.exception(
+                f"Graph generation failed after {summary['total_time']:.2f}s: {e}"
+            )
 
             if isinstance(e, (GraphGenerationError, asyncio.TimeoutError)):
                 raise
             else:
-                raise GraphGenerationError(f"Unexpected error during graph generation: {e}") from e
+                raise GraphGenerationError(
+                    f"Unexpected error during graph generation: {e}"
+                ) from e
 
     async def _fetch_graph_data(self, time_range_days: int) -> dict[str, object]:
         """
@@ -263,7 +294,9 @@ class GraphManager:
         config = self.config_manager.get_current_config()
         time_range_months = config.TIME_RANGE_MONTHS
 
-        logger.debug(f"Fetching graph data for {time_range_days} days and {time_range_months} months")
+        logger.debug(
+            f"Fetching graph data for {time_range_days} days and {time_range_months} months"
+        )
 
         try:
             # Fetch play history data for all users (used by most graphs)
@@ -272,7 +305,9 @@ class GraphManager:
             )
 
             # Fetch monthly play data using the native Tautulli endpoint (for monthly graphs)
-            monthly_plays: dict[str, object] = await self._data_fetcher.get_plays_per_month(
+            monthly_plays: dict[
+                str, object
+            ] = await self._data_fetcher.get_plays_per_month(
                 time_range_months=time_range_months
             )
 
@@ -291,10 +326,7 @@ class GraphManager:
             raise
 
     async def _fetch_graph_data_with_retry(
-        self,
-        time_range_days: int,
-        max_retries: int,
-        progress_tracker: ProgressTracker
+        self, time_range_days: int, max_retries: int, progress_tracker: ProgressTracker
     ) -> dict[str, object]:
         """
         Fetch graph data with retry logic and exponential backoff.
@@ -315,8 +347,10 @@ class GraphManager:
         for attempt in range(max_retries + 1):
             try:
                 if attempt > 0:
-                    delay = min(2.0 ** attempt, 30.0)  # Exponential backoff, max 30s
-                    progress_tracker.add_warning(f"Retrying data fetch (attempt {attempt + 1}/{max_retries + 1}) after {delay}s delay")
+                    delay = min(2.0**attempt, 30.0)  # Exponential backoff, max 30s
+                    progress_tracker.add_warning(
+                        f"Retrying data fetch (attempt {attempt + 1}/{max_retries + 1}) after {delay}s delay"
+                    )
                     await asyncio.sleep(delay)
 
                 return await self._fetch_graph_data(time_range_days)
@@ -329,13 +363,19 @@ class GraphManager:
                     progress_tracker.add_warning(error_msg)
                     logger.warning(error_msg)
                 else:
-                    progress_tracker.add_error(f"All {max_retries + 1} data fetch attempts failed")
+                    progress_tracker.add_error(
+                        f"All {max_retries + 1} data fetch attempts failed"
+                    )
                     logger.error(f"Final data fetch attempt failed: {e}")
 
         # If we get here, all retries failed
-        raise GraphGenerationError(f"Failed to fetch data after {max_retries + 1} attempts") from last_exception
+        raise GraphGenerationError(
+            f"Failed to fetch data after {max_retries + 1} attempts"
+        ) from last_exception
 
-    def _validate_graph_data(self, data: dict[str, object], progress_tracker: ProgressTracker) -> bool:
+    def _validate_graph_data(
+        self, data: dict[str, object], progress_tracker: ProgressTracker
+    ) -> bool:
         """
         Validate that the fetched data is sufficient for graph generation.
 
@@ -371,10 +411,14 @@ class GraphManager:
 
             # Check for data content (this depends on Tautulli API structure)
             if not play_history:
-                progress_tracker.add_warning("Play history is empty - most graphs may be minimal")
+                progress_tracker.add_warning(
+                    "Play history is empty - most graphs may be minimal"
+                )
 
             if not monthly_plays:
-                progress_tracker.add_warning("Monthly plays is empty - monthly graph may be minimal")
+                progress_tracker.add_warning(
+                    "Monthly plays is empty - monthly graph may be minimal"
+                )
 
             logger.debug("Data validation passed")
             return True
@@ -384,7 +428,9 @@ class GraphManager:
             logger.exception(f"Error during data validation: {e}")
             return False
 
-    def _validate_generated_files(self, graph_files: list[str], progress_tracker: ProgressTracker) -> list[str]:
+    def _validate_generated_files(
+        self, graph_files: list[str], progress_tracker: ProgressTracker
+    ) -> list[str]:
         """
         Validate that generated graph files exist and are accessible.
 
@@ -404,7 +450,9 @@ class GraphManager:
                 path = Path(file_path)
 
                 if not path.exists():
-                    progress_tracker.add_error(f"Generated file does not exist: {file_path}")
+                    progress_tracker.add_error(
+                        f"Generated file does not exist: {file_path}"
+                    )
                     continue
 
                 if not path.is_file():
@@ -412,19 +460,25 @@ class GraphManager:
                     continue
 
                 if path.stat().st_size == 0:
-                    progress_tracker.add_warning(f"Generated file is empty: {file_path}")
+                    progress_tracker.add_warning(
+                        f"Generated file is empty: {file_path}"
+                    )
                     continue
 
                 valid_files.append(file_path)
 
             except Exception as e:
-                progress_tracker.add_error(f"Error validating file {file_path}: {str(e)}")
+                progress_tracker.add_error(
+                    f"Error validating file {file_path}: {str(e)}"
+                )
                 logger.exception(f"File validation error for {file_path}: {e}")
 
         logger.debug(f"Validated {len(valid_files)}/{len(graph_files)} generated files")
         return valid_files
 
-    def _generate_graphs_sync(self, data: dict[str, object], progress_tracker: ProgressTracker | None = None) -> list[str]:
+    def _generate_graphs_sync(
+        self, data: dict[str, object], progress_tracker: ProgressTracker | None = None
+    ) -> list[str]:
         """
         Synchronous graph generation (runs in separate thread).
 
@@ -459,7 +513,9 @@ class GraphManager:
                 if not generated_paths:
                     progress_tracker.add_warning("No graphs were generated")
                 else:
-                    logger.debug(f"Generated {len(generated_paths)} graphs synchronously")
+                    logger.debug(
+                        f"Generated {len(generated_paths)} graphs synchronously"
+                    )
 
             return generated_paths
 
@@ -470,31 +526,31 @@ class GraphManager:
             logger.exception(error_msg)
             raise GraphGenerationError(error_msg) from e
 
-        
     async def post_graphs_to_discord(self, graph_files: list[str]) -> None:
         """
         Post generated graphs to the configured Discord channel.
-        
+
         Args:
             graph_files: List of file paths to graph images
         """
         logger.info(f"Posting {len(graph_files)} graphs to Discord")
-        
+
         try:
             # TODO: Implement Discord posting
             # This will require bot instance and channel configuration
-            
+
             logger.info("Placeholder: Posting graphs to Discord")
-            
+
         except Exception as e:
             logger.exception(f"Error posting graphs to Discord: {e}")
             raise
-            
+
     async def cleanup_old_graphs(
         self,
         keep_days: int | None = None,
         timeout_seconds: float = 60.0,
-        progress_callback: Callable[[str, int, int, dict[str, object]], None] | None = None
+        progress_callback: Callable[[str, int, int, dict[str, object]], None]
+        | None = None,
     ) -> dict[str, object]:
         """
         Clean up old graph files based on retention policy with enhanced error handling.
@@ -525,22 +581,28 @@ class GraphManager:
             progress_tracker.update("Initializing cleanup operation", 1, 3)
 
             # Use asyncio.to_thread() for file I/O operations with timeout
-            # For cleanup, we need to handle the entire date-based structure  
+            # For cleanup, we need to handle the entire date-based structure
             base_graphs_dir = Path("data") / "graphs"
 
             progress_tracker.update("Scanning for old files", 2, 3)
 
             try:
                 deleted_count = await asyncio.wait_for(
-                    asyncio.to_thread(self._cleanup_dated_graphs, base_graphs_dir, keep_days),
-                    timeout=timeout_seconds
+                    asyncio.to_thread(
+                        self._cleanup_dated_graphs, base_graphs_dir, keep_days
+                    ),
+                    timeout=timeout_seconds,
                 )
             except asyncio.TimeoutError:
-                error_msg = f"Cleanup operation exceeded timeout of {timeout_seconds} seconds"
+                error_msg = (
+                    f"Cleanup operation exceeded timeout of {timeout_seconds} seconds"
+                )
                 progress_tracker.add_error(error_msg)
                 raise asyncio.TimeoutError(error_msg)
 
-            progress_tracker.update("Cleanup completed", 3, 3, files_deleted=deleted_count)
+            progress_tracker.update(
+                "Cleanup completed", 3, 3, files_deleted=deleted_count
+            )
 
             summary = progress_tracker.get_summary()
             cleanup_stats = {
@@ -548,10 +610,12 @@ class GraphManager:
                 "keep_days": keep_days,
                 "cleanup_time": summary["total_time"],
                 "errors": summary["errors"],
-                "warnings": summary["warnings"]
+                "warnings": summary["warnings"],
             }
 
-            logger.info(f"Successfully cleaned up {deleted_count} old graph files in {summary['total_time']:.2f}s")
+            logger.info(
+                f"Successfully cleaned up {deleted_count} old graph files in {summary['total_time']:.2f}s"
+            )
             return cleanup_stats
 
         except Exception as e:
@@ -563,7 +627,7 @@ class GraphManager:
                 raise
             else:
                 raise ResourceCleanupError(f"Failed to cleanup old graphs: {e}") from e
-            
+
     async def update_graphs_full_cycle(self) -> dict[str, object]:
         """
         Perform a complete graph update cycle with detailed reporting.
@@ -593,64 +657,72 @@ class GraphManager:
                 "graphs_generated": len(graph_files),
                 "cleanup_stats": cleanup_stats,
                 "total_cycle_time": cycle_time,
-                "success": True
+                "success": True,
             }
 
-            logger.info(f"Full graph update cycle completed successfully in {cycle_time:.2f}s")
+            logger.info(
+                f"Full graph update cycle completed successfully in {cycle_time:.2f}s"
+            )
             return cycle_results
 
         except Exception as e:
             cycle_time = time.time() - cycle_start_time
 
-            logger.exception(f"Error in full graph update cycle after {cycle_time:.2f}s: {e}")
+            logger.exception(
+                f"Error in full graph update cycle after {cycle_time:.2f}s: {e}"
+            )
             raise
 
     def _cleanup_dated_graphs(self, base_dir: Path, keep_days: int) -> int:
         """
         Clean up old graph files from the date-based directory structure.
-        
+
         Args:
             base_dir: Base directory containing date-based subdirectories
             keep_days: Number of days to keep files
-            
+
         Returns:
             Number of files deleted
         """
         from datetime import datetime, timedelta
-        
+
         total_deleted = 0
-        
+
         if not base_dir.exists():
             logger.debug(f"Base graphs directory does not exist: {base_dir}")
             return 0
-        
+
         cutoff_date = datetime.now() - timedelta(days=keep_days)
-        
+
         # Iterate through date-based subdirectories
         for date_dir in base_dir.iterdir():
             if not date_dir.is_dir():
                 continue
-                
+
             # Parse directory name to check if it's a date (YYYY-MM-DD format)
             try:
                 dir_date = datetime.strptime(date_dir.name, "%Y-%m-%d")
                 if dir_date < cutoff_date:
                     # This date directory is too old, clean it up
-                    deleted_count = cleanup_old_files(date_dir, 0)  # Delete all files in old date dir
+                    deleted_count = cleanup_old_files(
+                        date_dir, 0
+                    )  # Delete all files in old date dir
                     total_deleted += deleted_count
-                    
+
                     # Remove empty directory after cleanup
                     try:
                         if not any(date_dir.iterdir()):  # Directory is empty
                             date_dir.rmdir()
                             logger.debug(f"Removed empty date directory: {date_dir}")
                     except OSError as e:
-                        logger.warning(f"Could not remove empty directory {date_dir}: {e}")
-                        
+                        logger.warning(
+                            f"Could not remove empty directory {date_dir}: {e}"
+                        )
+
             except ValueError:
                 # Not a date directory, skip
                 logger.debug(f"Skipping non-date directory: {date_dir}")
                 continue
-        
+
         logger.info(f"Cleaned up {total_deleted} files from date-based graph structure")
         return total_deleted
