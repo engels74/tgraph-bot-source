@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TGraph Bot 1.0.0\n"
 "Report-Msgid-Bugs-To: https://github.com/engels74/tgraph-bot-source/issues\n"
-"POT-Creation-Date: 2025-06-29 01:23\n"
+"POT-Creation-Date: 2025-06-29 02:04\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: engels74 <141435164+engels74@users.noreply.github.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -51,7 +51,7 @@ msgstr ""
 #: tests/integration/test_locale_structure.py:140
 #: tests/integration/test_locale_structure.py:151
 #: tests/integration/test_locale_structure.py:162
-#: scripts/i18n/dev-helpers.py:126
+#: scripts/i18n/dev-helpers.py:127
 msgid "Bot is online and ready!"
 msgstr ""
 
