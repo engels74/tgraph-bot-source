@@ -549,7 +549,7 @@ def fix_english_base_file(po_file: Path) -> None:
         if changes_made > 0:
             # Write back the fixed content
             with open(po_file, 'w', encoding='utf-8') as file:
-                file.write('\n'.join(lines))
+                _ = file.write('\n'.join(lines))
             logger.info(f"Fixed {changes_made} empty English translations in {po_file}")
         
     except Exception as e:
