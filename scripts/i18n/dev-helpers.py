@@ -6,13 +6,13 @@ This script provides convenient shortcuts for common i18n operations
 during development.
 
 Usage:
-    python scripts/i18n/dev-helpers.py extract      # Extract strings
-    python scripts/i18n/dev-helpers.py update       # Update all translations  
-    python scripts/i18n/dev-helpers.py compile      # Compile to .mo files
-    python scripts/i18n/dev-helpers.py status       # Show translation status
-    python scripts/i18n/dev-helpers.py test         # Test translation loading
-    python scripts/i18n/dev-helpers.py fix-english  # Fix English base file for Weblate
-    python scripts/i18n/dev-helpers.py full         # Full workflow (extract + update + compile)
+    uv run python scripts/i18n/dev-helpers.py extract      # Extract strings
+    uv run python scripts/i18n/dev-helpers.py update       # Update all translations  
+    uv run python scripts/i18n/dev-helpers.py compile      # Compile to .mo files
+    uv run python scripts/i18n/dev-helpers.py status       # Show translation status
+    uv run python scripts/i18n/dev-helpers.py test         # Test translation loading
+    uv run python scripts/i18n/dev-helpers.py fix-english  # Fix English base file for Weblate
+    uv run python scripts/i18n/dev-helpers.py full         # Full workflow (extract + update + compile)
 """
 
 import argparse
