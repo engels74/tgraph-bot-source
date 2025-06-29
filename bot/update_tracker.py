@@ -417,7 +417,7 @@ class BackgroundTaskManager:
                 # Check circuit breaker before attempting operation
                 if not circuit_breaker.should_allow_request():
                     self._log_audit_event(name, "circuit_breaker_blocked",
-                                         f"Circuit breaker is open, blocking task execution")
+                                         "Circuit breaker is open, blocking task execution")
                     self._task_status[name] = TaskStatus.FAILED
 
                     # Wait for circuit breaker recovery timeout

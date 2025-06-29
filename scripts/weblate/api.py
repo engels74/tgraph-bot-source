@@ -253,7 +253,7 @@ def cmd_stats(api: WeblateAPI, _args: argparse.Namespace) -> None:
     in_progress = sum(1 for s in stats if 0 < s['translated_percent'] < 100)
     not_started = sum(1 for s in stats if s['translated_percent'] == 0)
     
-    console.print(f"\n[bold]Summary:[/bold]")
+    console.print("\n[bold]Summary:[/bold]")
     console.print(f"Total languages: {total_languages}")
     console.print(f"Completed (100%): {completed} [green]✓[/green]")
     console.print(f"In progress: {in_progress} [yellow]⚡[/yellow]")

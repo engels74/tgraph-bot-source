@@ -176,7 +176,7 @@ class PlayCountByHourOfDayGraph(BaseGraph):
                                 fontweight='bold'
                             )
 
-                logger.info(f"Created hour of day graph with data for 24 hours")
+                logger.info("Created hour of day graph with data for 24 hours")
 
             else:
                 # Handle empty data case
