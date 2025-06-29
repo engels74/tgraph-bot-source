@@ -45,15 +45,19 @@ class TestUpdateGraphsCog:
         """Test tgraph_bot property with wrong bot type."""
         regular_bot = commands.Bot(command_prefix="!", intents=discord.Intents.default())
 
+        def mock_init(self: UpdateGraphsCog, bot: commands.Bot) -> None:
+            """Mock initialization that just sets the bot attribute."""
+            setattr(self, 'bot', bot)
+
         # Mock the initialization to avoid accessing tgraph_bot during __init__
         with patch('bot.commands.update_graphs.ConfigurationHelper'), \
-             patch.object(UpdateGraphsCog, '__init__', lambda self, bot: setattr(self, 'bot', bot)):
+             patch.object(UpdateGraphsCog, '__init__', mock_init):
             # Create the cog (this should succeed)
             cog = UpdateGraphsCog(regular_bot)
             
             # Accessing tgraph_bot property should raise TypeError
             with pytest.raises(TypeError, match="Expected TGraphBot instance"):
-                _ = cog.tgraph_bot
+                cog.tgraph_bot  # Don't assign to _ to avoid type warning
 
     @pytest.mark.asyncio
     async def test_update_graphs_success_with_cleanup(
@@ -85,7 +89,7 @@ class TestUpdateGraphsCog:
             mock_graph_manager_class.return_value.__aexit__.return_value = None  # pyright: ignore[reportAny]
 
             # Execute the command
-            _ = await update_graphs_cog.update_graphs.callback(update_graphs_cog, mock_interaction)  # pyright: ignore[reportCallIssue]
+            _ = await update_graphs_cog.update_graphs.callback(update_graphs_cog, mock_interaction)  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
 
             # Verify the cleanup → generate → post sequence
             mock_cleanup.assert_called_once_with(mock_channel)
@@ -118,7 +122,7 @@ class TestUpdateGraphsCog:
              patch.object(update_graphs_cog, 'handle_command_error') as mock_error_handler:
 
             # Execute the command
-            _ = await update_graphs_cog.update_graphs.callback(update_graphs_cog, mock_interaction)  # pyright: ignore[reportCallIssue]
+            _ = await update_graphs_cog.update_graphs.callback(update_graphs_cog, mock_interaction)  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
 
             # Verify cleanup was attempted
             mock_cleanup.assert_called_once_with(mock_channel)
@@ -160,7 +164,7 @@ class TestUpdateGraphsCog:
             mock_graph_manager_class.return_value.__aexit__.return_value = None  # pyright: ignore[reportAny]
 
             # Execute the command
-            _ = await update_graphs_cog.update_graphs.callback(update_graphs_cog, mock_interaction)  # pyright: ignore[reportCallIssue]
+            _ = await update_graphs_cog.update_graphs.callback(update_graphs_cog, mock_interaction)  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
 
             # Verify cleanup was performed and generation attempted, but not posting
             mock_cleanup.assert_called_once_with(mock_channel)
@@ -421,7 +425,7 @@ class TestUpdateGraphsCog:
         )
 
         with patch.object(update_graphs_cog, 'check_cooldowns', return_value=(True, 30.0)):
-            _ = await update_graphs_cog.update_graphs.callback(update_graphs_cog, mock_interaction)  # pyright: ignore[reportCallIssue]
+            _ = await update_graphs_cog.update_graphs.callback(update_graphs_cog, mock_interaction)  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
 
             # Should send cooldown message and return early
             mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
@@ -458,7 +462,7 @@ class TestUpdateGraphsCog:
             mock_graph_manager_class.return_value.__aexit__.return_value = None  # pyright: ignore[reportAny]
 
             # Execute the command
-            _ = await update_graphs_cog.update_graphs.callback(update_graphs_cog, mock_interaction)  # pyright: ignore[reportCallIssue]
+            _ = await update_graphs_cog.update_graphs.callback(update_graphs_cog, mock_interaction)  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
 
             # Verify partial success warning was sent
             assert mock_interaction.followup.send.call_count >= 1  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]

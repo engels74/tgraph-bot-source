@@ -32,7 +32,11 @@ from typing import Callable
 logger = logging.getLogger(__name__)
 
 # Global translation function
-_: Callable[[str], str] = lambda x: x  # Default fallback
+def _default_translation(x: str) -> str:
+    """Default fallback translation function."""
+    return x
+
+_: Callable[[str], str] = _default_translation
 
 # Global variables for gettext configuration
 _current_language: str = "en"

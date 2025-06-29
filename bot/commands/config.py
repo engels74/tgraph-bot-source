@@ -99,14 +99,14 @@ class ConfigCog(BaseCommandCog):
         Raises:
             ValueError: If the value cannot be converted to the target type
         """
-        if target_type == str:
+        if target_type is str:
             return value
-        elif target_type == int:
+        elif target_type is int:
             try:
                 return int(value)
             except ValueError:
                 raise ValueError(f"'{value}' is not a valid integer")
-        elif target_type == bool:
+        elif target_type is bool:
             lower_value = value.lower()
             if lower_value in ('true', 'yes', '1', 'on', 'enabled'):
                 return True
@@ -114,7 +114,7 @@ class ConfigCog(BaseCommandCog):
                 return False
             else:
                 raise ValueError(f"'{value}' is not a valid boolean (use true/false, yes/no, 1/0, on/off, enabled/disabled)")
-        elif target_type == float:
+        elif target_type is float:
             try:
                 return float(value)
             except ValueError:
