@@ -350,8 +350,21 @@ def update_po_file(pot_file: Path, po_file: Path, preserve_translations: bool = 
     """
     # Parse existing translations if preserving them
     existing_translations: dict[str, str] = {}
+    existing_x_generator: str | None = None
+    
     if preserve_translations and po_file.exists():
         existing_translations = parse_po_file(po_file)
+        
+        # Also preserve the existing X-Generator header
+        try:
+            with open(po_file, 'r', encoding='utf-8') as file:
+                existing_content = file.read()
+            x_gen_match = re.search(r'"X-Generator: ([^"]+)\\n"', existing_content)
+            if x_gen_match:
+                existing_x_generator = x_gen_match.group(1)
+                logger.debug(f"Preserving existing X-Generator: {existing_x_generator}")
+        except Exception as e:
+            logger.debug(f"Could not extract existing X-Generator: {e}")
 
     # Read the .pot template
     if not pot_file.exists():
@@ -370,7 +383,7 @@ def update_po_file(pot_file: Path, po_file: Path, preserve_translations: bool = 
                 break
 
     # Generate updated .po content
-    po_content = generate_po_header(language)
+    po_content = generate_po_header(language, existing_x_generator)
 
     # Process each msgid from the pot file, but skip the header's empty msgid
     msgid_pattern = re.compile(r'(#:.*?\n)?(msgid\s+"[^"]*"\nmsgstr\s+"")', re.MULTILINE | re.DOTALL)
@@ -408,12 +421,13 @@ def update_po_file(pot_file: Path, po_file: Path, preserve_translations: bool = 
     logger.info(f"Updated .po file: {po_file}")
 
 
-def generate_po_header(language: str) -> str:
+def generate_po_header(language: str, existing_x_generator: str | None = None) -> str:
     """
     Generate the header for a .po file.
 
     Args:
         language: Language code (e.g., 'en', 'da')
+        existing_x_generator: Existing X-Generator value to preserve (optional)
 
     Returns:
         PO file header string
@@ -431,6 +445,9 @@ def generate_po_header(language: str) -> str:
     }
 
     language_name, plural_form = language_info.get(language, (language.title(), "nplurals=2; plural=n != 1;"))
+
+    # Use existing X-Generator value if available, otherwise default to Weblate 5.0
+    x_generator = existing_x_generator if existing_x_generator else "Weblate 5.0"
 
     return f'''# {language_name} translations for TGraph Bot
 # Copyright (C) {now.year} engels74
@@ -450,7 +467,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\\n"
 "Content-Transfer-Encoding: 8bit\\n"
 "Plural-Forms: {plural_form}\\n"
-"X-Generator: Weblate 5.0\\n"
+"X-Generator: {x_generator}\\n"
 
 '''
 
