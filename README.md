@@ -10,7 +10,7 @@
   <a href="https://github.com/engels74/tgraph-bot-source/blob/main/LICENSE"><img src="https://img.shields.io/badge/License%20(Source)-AGPL--3.0-orange" alt="License (Source)"></a>
   <a href="https://hub.docker.com/r/engels74/tgraph-bot"><img src="https://img.shields.io/docker/pulls/engels74/tgraph-bot.svg" alt="Docker Pulls"></a>
   <a href="https://github.com/engels74/tgraph-bot-source/stargazers"><img src="https://img.shields.io/github/stars/engels74/tgraph-bot-source.svg" alt="GitHub Stars"></a>
-  <a href="https://endsoftwarepatents.org/innovating-without-patents"><img style="height: 20px;" src="https://static.fsf.org/nosvn/esp/logos/patent-free.svg"></a>
+  <a href="https://deepwiki.com/engels74/tgraph-bot-source"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
 </p>
 
 > **🚧 Complete Rewrite in Progress**
