@@ -1,7 +1,7 @@
 # 📊 TGraph Bot (Tautulli Graph Bot)
 
 <p align="center">
-  <img src="https://i.imgur.com/L5Tj3nW.png" alt="TGraph Bot"/>
+  <img src="https://engels74.net/img/image-logos/tgraph-bot.svg" alt="base-image" style="width: 40%;"/>
 </p>
 
 <p align="center">
