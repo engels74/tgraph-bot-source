@@ -983,7 +983,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "basedpyright", marker = "extra == 'dev'", specifier = ">=1.29.4" },
+    { name = "basedpyright", marker = "extra == 'dev'", specifier = ">=1.30.1" },
     { name = "discord-py", specifier = ">=2.5.2" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "matplotlib", specifier = ">=3.10.3" },
@@ -993,7 +993,7 @@ requires-dist = [
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=1.0.0" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=6.2.1" },
     { name = "pyyaml", specifier = ">=6.0.2" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.12.1" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.12.2" },
     { name = "seaborn", specifier = ">=0.13.2" },
     { name = "semver", marker = "extra == 'dev'", specifier = ">=3.0.4" },
     { name = "toml", marker = "extra == 'dev'", specifier = ">=0.10.2" },
@@ -1005,9 +1005,9 @@ provides-extras = ["dev"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "basedpyright", specifier = ">=1.29.4" },
+    { name = "basedpyright", specifier = ">=1.30.1" },
     { name = "httpx", specifier = ">=0.28.1" },
-    { name = "pandas-stubs", specifier = ">=2.2.3.250527" },
+    { name = "pandas-stubs", specifier = ">=2.3.0.250703" },
     { name = "polib", specifier = ">=1.2.0" },
     { name = "psutil", specifier = ">=7.0.0" },
     { name = "pytest", specifier = ">=8.4.1" },
