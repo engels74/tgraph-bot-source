@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: TGraph Bot 1.0.0\n"
 "Report-Msgid-Bugs-To: https://github.com/engels74/tgraph-bot-source/issues\n"
 "POT-Creation-Date: 2025-07-11 12:39\n"
-"PO-Revision-Date: 2025-07-11 10:51+0000\n"
+"PO-Revision-Date: 2025-07-11 11:49+0000\n"
 "Last-Translator: Weblate Admin <admin@engels74.net>\n"
 "Language-Team: Danish <https://weblate.engels74.net/projects/tgraph-bot/main/"
 "da/>\n"
@@ -38,7 +38,7 @@ msgstr "Der opstod en fejl"
 
 #: utils/core/error_handler.py:318
 msgid "An error occurred while processing your request"
-msgstr "Der opstod en fejl under behandling af din anmodning"
+msgstr "Der opstod en fejl under behandlingen af din forespørgsel"
 
 #: bot/commands/about.py:61
 msgid "Author"
