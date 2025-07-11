@@ -8,15 +8,16 @@ msgstr ""
 "Project-Id-Version: TGraph Bot 1.0.0\n"
 "Report-Msgid-Bugs-To: https://github.com/engels74/tgraph-bot-source/issues\n"
 "POT-Creation-Date: 2025-07-11 12:39\n"
-"PO-Revision-Date: 2025-07-11 12:39\n"
-"Last-Translator: engels74 <141435164+engels74@users.noreply.github.com>\n"
-"Language-Team: Danish <https://hosted.weblate.org/projects/tgraph-bot/tgraph-bot/da/\n"
+"PO-Revision-Date: 2025-07-11 10:51+0000\n"
+"Last-Translator: Weblate Admin <admin@engels74.net>\n"
+"Language-Team: Danish <https://weblate.engels74.net/projects/tgraph-bot/main/"
+"da/>\n"
 "Language: da\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.0\n"
+"X-Generator: Weblate 5.12.2\n"
 
 #: utils/discord/command_utils.py:121
 msgid "***HIDDEN***"
@@ -519,7 +520,7 @@ msgstr "personlige statistikker"
 
 #: bot/commands/test_scheduler.py:93
 msgid "test scheduler"
-msgstr "test scheduler"
+msgstr "testplanlægger"
 
 #: bot/commands/update_graphs.py:114
 msgid "update graphs"
@@ -608,4 +609,3 @@ msgstr "❌ Deaktiveret"
 #: bot/commands/update_graphs.py:130
 msgid "🔄 Initializing graph generation"
 msgstr "🔄 Initialiserer graf generering"
-
