@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TGraph Bot 1.0.0\n"
 "Report-Msgid-Bugs-To: https://github.com/engels74/tgraph-bot-source/issues\n"
-"POT-Creation-Date: 2025-06-29 02:10\n"
-"PO-Revision-Date: 2025-06-29 02:10\n"
+"POT-Creation-Date: 2025-07-11 12:39\n"
+"PO-Revision-Date: 2025-07-11 12:39\n"
 "Last-Translator: engels74 <141435164+engels74@users.noreply.github.com>\n"
 "Language-Team: English <https://hosted.weblate.org/projects/tgraph-bot/tgraph-bot/en/\n"
 "Language: en\n"
@@ -18,162 +18,162 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 "X-Generator: Weblate 5.0\n"
 
-#: utils/discord/command_utils.py:135
+#: utils/discord/command_utils.py:121
 msgid "***HIDDEN***"
 msgstr "***HIDDEN***"
 
-#: bot/commands/my_stats.py:129
+#: bot/commands/my_stats.py:138
 msgid "1-3 minutes"
 msgstr "1-3 minutes"
 
-#: bot/commands/update_graphs.py:120
+#: bot/commands/update_graphs.py:135
 msgid "2-5 minutes depending on data size"
 msgstr "2-5 minutes depending on data size"
 
 #: utils/discord/command_utils.py:46
-#: utils/discord/command_utils.py:492
+#: utils/discord/command_utils.py:489
 msgid "An error occurred"
 msgstr "An error occurred"
 
-#: utils/core/error_handler.py:306
+#: utils/core/error_handler.py:318
 msgid "An error occurred while processing your request"
 msgstr "An error occurred while processing your request"
 
-#: bot/commands/about.py:65
+#: bot/commands/about.py:61
 msgid "Author"
 msgstr "Author"
 
-#: bot/commands/uptime.py:77
+#: bot/commands/uptime.py:71
 msgid "Bot Uptime"
 msgstr "Bot Uptime"
 
 #: tests/unit/test_i18n.py:113
-#: tests/integration/test_locale_structure.py:140
-#: tests/integration/test_locale_structure.py:151
-#: tests/integration/test_locale_structure.py:162
-#: scripts/i18n/dev-helpers.py:127
+#: tests/integration/test_locale_structure.py:164
+#: tests/integration/test_locale_structure.py:175
+#: tests/integration/test_locale_structure.py:186
+#: scripts/i18n/dev-helpers.py:140
 msgid "Bot is online and ready!"
 msgstr "Bot is online and ready!"
 
-#: bot/commands/update_graphs.py:330
+#: bot/commands/update_graphs.py:384
 msgid "Bot lacks permission to post in the configured channel."
 msgstr "Bot lacks permission to post in the configured channel."
 
-#: bot/commands/update_graphs.py:181
+#: bot/commands/update_graphs.py:214
 msgid "Check Logs"
 msgstr "Check Logs"
 
-#: bot/commands/my_stats.py:168
+#: bot/commands/my_stats.py:183
 msgid "Check Your DMs"
 msgstr "Check Your DMs"
 
-#: bot/commands/test_scheduler.py:208
+#: bot/commands/test_scheduler.py:238
 msgid "Check the bot logs for detailed error information and verify your configuration settings."
 msgstr "Check the bot logs for detailed error information and verify your configuration settings."
 
-#: utils/core/error_handler.py:349
+#: utils/core/error_handler.py:367
 msgid "Command Error"
 msgstr "Command Error"
 
-#: utils/discord/command_utils.py:373
+#: utils/discord/command_utils.py:357
 msgid "Command on Cooldown"
 msgstr "Command on Cooldown"
 
-#: bot/commands/test_scheduler.py:128
+#: bot/commands/test_scheduler.py:142
 msgid "Configuration"
 msgstr "Configuration"
 
-#: bot/commands/test_scheduler.py:125
+#: bot/commands/test_scheduler.py:139
 msgid "Current scheduler configuration and state"
 msgstr "Current scheduler configuration and state"
 
-#: bot/commands/my_stats.py:123
+#: bot/commands/my_stats.py:132
 msgid "Delivery Method"
 msgstr "Delivery Method"
 
-#: bot/commands/my_stats.py:124
+#: bot/commands/my_stats.py:133
 msgid "Direct Message (DM)"
 msgstr "Direct Message (DM)"
 
-#: bot/commands/update_graphs.py:338
+#: bot/commands/update_graphs.py:404
 msgid "Discord API error occurred while posting graphs."
 msgstr "Discord API error occurred while posting graphs."
 
-#: bot/commands/update_graphs.py:336
+#: bot/commands/update_graphs.py:397
 msgid "Discord rate limit reached. Please try again later."
 msgstr "Discord rate limit reached. Please try again later."
 
-#: bot/commands/about.py:42
+#: bot/commands/about.py:38
 msgid "Display information about the bot"
 msgstr "Display information about the bot"
 
-#: bot/commands/config.py:330
+#: bot/commands/config.py:338
 msgid "Edit bot configuration"
 msgstr "Edit bot configuration"
 
-#: bot/commands/my_stats.py:118
+#: bot/commands/my_stats.py:130
 msgid "Email"
 msgstr "Email"
 
-#: utils/discord/command_utils.py:148
+#: utils/discord/command_utils.py:134
 msgid "Empty"
 msgstr "Empty"
 
 #: utils/discord/command_utils.py:44
-#: utils/discord/command_utils.py:490
+#: utils/discord/command_utils.py:487
 msgid "Error"
 msgstr "Error"
 
-#: bot/commands/test_scheduler.py:197
+#: bot/commands/test_scheduler.py:225
 msgid "Error Details"
 msgstr "Error Details"
 
-#: utils/core/error_handler.py:313
+#: utils/core/error_handler.py:327
 msgid "Error in `{command_name}` command: {error_message}"
 msgstr "Error in `{command_name}` command: {error_message}"
 
-#: bot/commands/my_stats.py:128
-#: bot/commands/update_graphs.py:119
+#: bot/commands/my_stats.py:137
+#: bot/commands/update_graphs.py:134
 msgid "Estimated Time"
 msgstr "Estimated Time"
 
-#: bot/commands/update_graphs.py:165
+#: bot/commands/update_graphs.py:193
 msgid "Generated Graphs"
 msgstr "Generated Graphs"
 
-#: bot/commands/update_graphs.py:177
+#: bot/commands/update_graphs.py:207
 msgid "Generated {total} graphs but only posted {success} successfully"
 msgstr "Generated {total} graphs but only posted {success} successfully"
 
-#: bot/commands/update_graphs.py:111
+#: bot/commands/update_graphs.py:124
 msgid "Generating server graphs... This may take a few minutes."
 msgstr "Generating server graphs... This may take a few minutes."
 
-#: bot/commands/my_stats.py:115
+#: bot/commands/my_stats.py:126
 msgid "Generating your personal Plex statistics... This may take a moment."
 msgstr "Generating your personal Plex statistics... This may take a moment."
 
-#: bot/commands/my_stats.py:73
+#: bot/commands/my_stats.py:80
 msgid "Get your personal Plex statistics via DM"
 msgstr "Get your personal Plex statistics via DM"
 
-#: bot/commands/about.py:71
+#: bot/commands/about.py:65
 msgid "GitHub"
 msgstr "GitHub"
 
-#: bot/commands/update_graphs.py:135
+#: bot/commands/update_graphs.py:153
 msgid "Graph Generation"
 msgstr "Graph Generation"
 
-#: bot/commands/update_graphs.py:160
+#: bot/commands/update_graphs.py:185
 msgid "Graph Update Complete"
 msgstr "Graph Update Complete"
 
-#: bot/commands/update_graphs.py:110
+#: bot/commands/update_graphs.py:123
 msgid "Graph Update Started"
 msgstr "Graph Update Started"
 
-#: bot/commands/my_stats.py:158
+#: bot/commands/my_stats.py:169
 msgid "Graphs Generated"
 msgstr "Graphs Generated"
 
@@ -190,167 +190,167 @@ msgstr "Hello, {invalid_key}"
 msgid "Hello, {name}!"
 msgstr "Hello, {name}!"
 
-#: utils/discord/command_utils.py:110
+#: utils/discord/command_utils.py:100
 msgid "Information"
 msgstr "Information"
 
-#: bot/commands/about.py:77
+#: bot/commands/about.py:71
 msgid "License"
 msgstr "License"
 
-#: bot/commands/update_graphs.py:81
+#: bot/commands/update_graphs.py:88
 msgid "Manually trigger server-wide graph generation and posting"
 msgstr "Manually trigger server-wide graph generation and posting"
 
-#: bot/commands/update_graphs.py:352
+#: bot/commands/update_graphs.py:425
 msgid "Network error occurred while posting graphs."
 msgstr "Network error occurred while posting graphs."
 
-#: bot/commands/test_scheduler.py:207
-#: bot/commands/my_stats.py:186
+#: bot/commands/test_scheduler.py:237
+#: bot/commands/my_stats.py:207
 msgid "Next Steps"
 msgstr "Next Steps"
 
-#: bot/commands/update_graphs.py:148
+#: bot/commands/update_graphs.py:167
 msgid "No Graphs Generated"
 msgstr "No Graphs Generated"
 
-#: utils/discord/command_utils.py:421
-#: utils/discord/command_utils.py:431
+#: utils/discord/command_utils.py:412
+#: utils/discord/command_utils.py:430
 msgid "No content provided"
 msgstr "No content provided"
 
-#: bot/commands/update_graphs.py:149
+#: bot/commands/update_graphs.py:168
 msgid "No graph files were created. This may be due to insufficient data or configuration issues."
 msgstr "No graph files were created. This may be due to insufficient data or configuration issues."
 
-#: utils/discord/command_utils.py:143
+#: utils/discord/command_utils.py:129
 msgid "Not set"
 msgstr "Not set"
 
-#: utils/discord/command_utils.py:79
-#: utils/discord/command_utils.py:523
+#: utils/discord/command_utils.py:75
+#: utils/discord/command_utils.py:518
 msgid "Operation completed successfully"
 msgstr "Operation completed successfully"
 
-#: bot/commands/config.py:139
+#: bot/commands/config.py:140
 msgid "Optional: View a specific configuration setting"
 msgstr "Optional: View a specific configuration setting"
 
-#: bot/commands/update_graphs.py:176
+#: bot/commands/update_graphs.py:206
 msgid "Partial Success"
 msgstr "Partial Success"
 
-#: bot/commands/my_stats.py:149
+#: bot/commands/my_stats.py:158
 msgid "Personal Statistics Complete"
 msgstr "Personal Statistics Complete"
 
-#: bot/commands/my_stats.py:114
+#: bot/commands/my_stats.py:125
 msgid "Personal Statistics Request"
 msgstr "Personal Statistics Request"
 
-#: bot/commands/my_stats.py:109
+#: bot/commands/my_stats.py:118
 msgid "Please provide a valid email address (e.g., user@example.com)."
 msgstr "Please provide a valid email address (e.g., user@example.com)."
 
-#: bot/commands/my_stats.py:181
+#: bot/commands/my_stats.py:200
 msgid "Possible Causes"
 msgstr "Possible Causes"
 
-#: bot/commands/update_graphs.py:170
+#: bot/commands/update_graphs.py:198
 msgid "Posted Successfully"
 msgstr "Posted Successfully"
 
-#: bot/commands/test_scheduler.py:124
+#: bot/commands/test_scheduler.py:138
 msgid "Pre-Test Status"
 msgstr "Pre-Test Status"
 
-#: bot/commands/my_stats.py:163
+#: bot/commands/my_stats.py:176
 msgid "Processing Time"
 msgstr "Processing Time"
 
-#: utils/discord/command_utils.py:343
+#: utils/discord/command_utils.py:328
 msgid "Progress"
 msgstr "Progress"
 
-#: utils/discord/command_utils.py:383
+#: utils/discord/command_utils.py:368
 msgid "Reason"
 msgstr "Reason"
 
-#: utils/discord/command_utils.py:378
+#: utils/discord/command_utils.py:365
 msgid "Retry After"
 msgstr "Retry After"
 
-#: bot/commands/test_scheduler.py:137
+#: bot/commands/test_scheduler.py:153
 msgid "Scheduled Times"
 msgstr "Scheduled Times"
 
-#: bot/commands/test_scheduler.py:157
+#: bot/commands/test_scheduler.py:175
 msgid "Scheduler Test Completed Successfully"
 msgstr "Scheduler Test Completed Successfully"
 
-#: bot/commands/test_scheduler.py:193
+#: bot/commands/test_scheduler.py:219
 msgid "Scheduler Test Failed"
 msgstr "Scheduler Test Failed"
 
-#: bot/commands/test_scheduler.py:95
+#: bot/commands/test_scheduler.py:106
 msgid "Scheduler Test Started"
 msgstr "Scheduler Test Started"
 
-#: bot/commands/uptime.py:42
+#: bot/commands/uptime.py:37
 msgid "Show bot uptime"
 msgstr "Show bot uptime"
 
-#: bot/commands/update_graphs.py:182
+#: bot/commands/update_graphs.py:215
 msgid "Some files may have failed to upload"
 msgstr "Some files may have failed to upload"
 
-#: bot/commands/uptime.py:88
+#: bot/commands/uptime.py:79
 msgid "Started"
 msgstr "Started"
 
-#: bot/commands/test_scheduler.py:169
+#: bot/commands/test_scheduler.py:191
 msgid "State Updates"
 msgstr "State Updates"
 
-#: bot/commands/my_stats.py:177
+#: bot/commands/my_stats.py:194
 msgid "Statistics Generation Failed"
 msgstr "Statistics Generation Failed"
 
-#: bot/commands/update_graphs.py:114
+#: bot/commands/update_graphs.py:129
 msgid "Status"
 msgstr "Status"
 
-#: utils/discord/command_utils.py:77
-#: utils/discord/command_utils.py:521
+#: utils/discord/command_utils.py:73
+#: utils/discord/command_utils.py:516
 msgid "Success"
 msgstr "Success"
 
-#: bot/commands/update_graphs.py:161
+#: bot/commands/update_graphs.py:186
 msgid "Successfully generated and posted {count} graphs to {channel}"
 msgstr "Successfully generated and posted {count} graphs to {channel}"
 
-#: bot/commands/about.py:53
+#: bot/commands/about.py:49
 msgid "TGraph Bot"
 msgstr "TGraph Bot"
 
-#: bot/commands/about.py:88
+#: bot/commands/about.py:81
 msgid "TGraph Bot - Bringing Tautulli stats to Discord"
 msgstr "TGraph Bot - Bringing Tautulli stats to Discord"
 
-#: bot/commands/about.py:54
+#: bot/commands/about.py:50
 msgid "TGraph Bot - Tautulli Discord Graph Generator"
 msgstr "TGraph Bot - Tautulli Discord Graph Generator"
 
-#: bot/commands/uptime.py:93
+#: bot/commands/uptime.py:84
 msgid "TGraph Bot is running smoothly!"
 msgstr "TGraph Bot is running smoothly!"
 
-#: bot/commands/test_scheduler.py:99
+#: bot/commands/test_scheduler.py:110
 msgid "Test Method"
 msgstr "Test Method"
 
-#: bot/commands/test_scheduler.py:162
+#: bot/commands/test_scheduler.py:182
 msgid "Test Results"
 msgstr "Test Results"
 
@@ -363,15 +363,15 @@ msgstr "Test message"
 msgid "Test string"
 msgstr "Test string"
 
-#: bot/commands/test_scheduler.py:64
+#: bot/commands/test_scheduler.py:69
 msgid "Test the scheduled update functionality immediately"
 msgstr "Test the scheduled update functionality immediately"
 
-#: bot/commands/test_scheduler.py:96
+#: bot/commands/test_scheduler.py:107
 msgid "Testing the scheduled update functionality..."
 msgstr "Testing the scheduled update functionality..."
 
-#: bot/commands/config.py:333
+#: bot/commands/config.py:341
 msgid "The configuration setting to modify"
 msgstr "The configuration setting to modify"
 
@@ -379,59 +379,59 @@ msgstr "The configuration setting to modify"
 msgid "The external service is temporarily unavailable. Please try again later."
 msgstr "The external service is temporarily unavailable. Please try again later."
 
-#: bot/commands/config.py:334
+#: bot/commands/config.py:342
 msgid "The new value for the setting"
 msgstr "The new value for the setting"
 
-#: utils/core/error_handler.py:302
+#: utils/core/error_handler.py:306
 msgid "The provided input is invalid. Please check your parameters and try again."
 msgstr "The provided input is invalid. Please check your parameters and try again."
 
-#: bot/commands/test_scheduler.py:158
+#: bot/commands/test_scheduler.py:176
 msgid "The scheduled update routine executed successfully!"
 msgstr "The scheduled update routine executed successfully!"
 
-#: bot/commands/test_scheduler.py:194
+#: bot/commands/test_scheduler.py:220
 msgid "The scheduled update test encountered an error"
 msgstr "The scheduled update test encountered an error"
 
-#: bot/commands/test_scheduler.py:177
+#: bot/commands/test_scheduler.py:201
 msgid "The scheduler will work correctly at the configured time. All timing calculations and update workflows are functioning properly."
 msgstr "The scheduler will work correctly at the configured time. All timing calculations and update workflows are functioning properly."
 
-#: utils/core/error_handler.py:304
+#: utils/core/error_handler.py:312
 msgid "The server is experiencing resource constraints. Please try again later."
 msgstr "The server is experiencing resource constraints. Please try again later."
 
-#: utils/discord/command_utils.py:374
+#: utils/discord/command_utils.py:358
 msgid "The {command_name} command is currently on cooldown."
 msgstr "The {command_name} command is currently on cooldown."
 
-#: bot/commands/test_scheduler.py:203
+#: bot/commands/test_scheduler.py:231
 msgid "There may be an issue with:\n• Tautulli API connectivity\n• Discord channel permissions\n• Graph generation process\n• Bot configuration"
 msgstr "There may be an issue with:\n• Tautulli API connectivity\n• Discord channel permissions\n• Graph generation process\n• Bot configuration"
 
-#: utils/core/error_handler.py:299
+#: utils/core/error_handler.py:297
 msgid "There was a network connectivity issue. Please try again in a moment."
 msgstr "There was a network connectivity issue. Please try again in a moment."
 
-#: utils/core/error_handler.py:305
+#: utils/core/error_handler.py:315
 msgid "There was an issue communicating with Discord. Please try again."
 msgstr "There was an issue communicating with Discord. Please try again."
 
-#: utils/core/error_handler.py:303
+#: utils/core/error_handler.py:309
 msgid "There's a configuration issue. Please contact the server administrators."
 msgstr "There's a configuration issue. Please contact the server administrators."
 
-#: utils/discord/command_utils.py:384
+#: utils/discord/command_utils.py:369
 msgid "This prevents server overload during graph generation"
 msgstr "This prevents server overload during graph generation"
 
-#: bot/commands/my_stats.py:178
+#: bot/commands/my_stats.py:195
 msgid "Unable to generate your personal statistics."
 msgstr "Unable to generate your personal statistics."
 
-#: bot/commands/uptime.py:82
+#: bot/commands/uptime.py:75
 msgid "Uptime"
 msgstr "Uptime"
 
@@ -447,39 +447,39 @@ msgstr "User {user} has {n} message"
 msgid "User {user} has {n} messages"
 msgstr "User {user} has {n} messages"
 
-#: bot/commands/test_scheduler.py:100
+#: bot/commands/test_scheduler.py:111
 msgid "Using UpdateTracker.force_update() - same as scheduler"
 msgstr "Using UpdateTracker.force_update() - same as scheduler"
 
-#: bot/commands/about.py:59
+#: bot/commands/about.py:57
 msgid "Version"
 msgstr "Version"
 
-#: bot/commands/config.py:136
+#: bot/commands/config.py:137
 msgid "View current bot configuration"
 msgstr "View current bot configuration"
 
-#: bot/commands/config.py:131
+#: bot/commands/config.py:133
 msgid "View or edit bot configuration"
 msgstr "View or edit bot configuration"
 
-#: bot/commands/test_scheduler.py:176
+#: bot/commands/test_scheduler.py:200
 msgid "What This Confirms"
 msgstr "What This Confirms"
 
-#: bot/commands/test_scheduler.py:202
+#: bot/commands/test_scheduler.py:230
 msgid "What This Means"
 msgstr "What This Means"
 
-#: bot/commands/test_scheduler.py:104
+#: bot/commands/test_scheduler.py:117
 msgid "What This Tests"
 msgstr "What This Tests"
 
-#: bot/commands/about.py:83
+#: bot/commands/about.py:75
 msgid "Wiki"
 msgstr "Wiki"
 
-#: utils/core/error_handler.py:301
+#: utils/core/error_handler.py:303
 msgid "You don't have permission to perform this action."
 msgstr "You don't have permission to perform this action."
 
@@ -501,111 +501,111 @@ msgstr "You have {n} message"
 msgid "You have {n} messages"
 msgstr "You have {n} messages"
 
-#: bot/commands/my_stats.py:76
+#: bot/commands/my_stats.py:83
 msgid "Your Plex account email address (used to identify your statistics)"
 msgstr "Your Plex account email address (used to identify your statistics)"
 
-#: bot/commands/my_stats.py:169
+#: bot/commands/my_stats.py:184
 msgid "Your graphs have been sent privately"
 msgstr "Your graphs have been sent privately"
 
-#: bot/commands/my_stats.py:150
+#: bot/commands/my_stats.py:159
 msgid "Your personal Plex statistics have been generated and sent via DM!"
 msgstr "Your personal Plex statistics have been generated and sent via DM!"
 
-#: bot/commands/my_stats.py:101
+#: bot/commands/my_stats.py:107
 msgid "personal statistics"
 msgstr "personal statistics"
 
-#: bot/commands/test_scheduler.py:85
+#: bot/commands/test_scheduler.py:93
 msgid "test scheduler"
 msgstr "test scheduler"
 
-#: bot/commands/update_graphs.py:104
+#: bot/commands/update_graphs.py:114
 msgid "update graphs"
 msgstr "update graphs"
 
-#: bot/commands/update_graphs.py:166
+#: bot/commands/update_graphs.py:194
 msgid "{count} files"
 msgstr "{count} files"
 
-#: bot/commands/update_graphs.py:171
+#: bot/commands/update_graphs.py:199
 msgid "{count} individual messages"
 msgstr "{count} individual messages"
 
-#: bot/commands/my_stats.py:159
+#: bot/commands/my_stats.py:170
 msgid "{count} personal graphs"
 msgstr "{count} personal graphs"
 
-#: bot/commands/uptime.py:66
+#: bot/commands/uptime.py:60
 msgid "{n} day"
 msgstr "{n} day"
 
-#: bot/commands/uptime.py:66
+#: bot/commands/uptime.py:60
 msgid "{n} days"
 msgstr "{n} days"
 
-#: bot/commands/uptime.py:68
+#: bot/commands/uptime.py:62
 msgid "{n} hour"
 msgstr "{n} hour"
 
-#: bot/commands/uptime.py:68
+#: bot/commands/uptime.py:62
 msgid "{n} hours"
 msgstr "{n} hours"
 
-#: bot/commands/uptime.py:70
+#: bot/commands/uptime.py:64
 msgid "{n} minute"
 msgstr "{n} minute"
 
-#: bot/commands/uptime.py:70
+#: bot/commands/uptime.py:64
 msgid "{n} minutes"
 msgstr "{n} minutes"
 
-#: bot/commands/uptime.py:72
+#: bot/commands/uptime.py:66
 msgid "{n} second"
 msgstr "{n} second"
 
-#: bot/commands/uptime.py:72
+#: bot/commands/uptime.py:66
 msgid "{n} seconds"
 msgstr "{n} seconds"
 
-#: utils/discord/command_utils.py:370
+#: utils/discord/command_utils.py:354
 msgid "{time:.0f} seconds"
 msgstr "{time:.0f} seconds"
 
-#: utils/discord/command_utils.py:368
+#: utils/discord/command_utils.py:352
 msgid "{time:.1f} minutes"
 msgstr "{time:.1f} minutes"
 
-#: bot/commands/my_stats.py:164
+#: bot/commands/my_stats.py:177
 msgid "{time:.1f} seconds"
 msgstr "{time:.1f} seconds"
 
-#: bot/commands/my_stats.py:182
+#: bot/commands/my_stats.py:201
 msgid "• Email not found in Plex server\n• Insufficient data for graphs\n• Temporary server issue"
 msgstr "• Email not found in Plex server\n• Insufficient data for graphs\n• Temporary server issue"
 
-#: bot/commands/test_scheduler.py:105
+#: bot/commands/test_scheduler.py:118
 msgid "• UPDATE_DAYS configuration\n• FIXED_UPDATE_TIME configuration\n• Complete graph generation workflow\n• Error handling and retry logic\n• Scheduler state updates"
 msgstr "• UPDATE_DAYS configuration\n• FIXED_UPDATE_TIME configuration\n• Complete graph generation workflow\n• Error handling and retry logic\n• Scheduler state updates"
 
-#: bot/commands/my_stats.py:187
+#: bot/commands/my_stats.py:208
 msgid "• Verify your email is correct\n• Ensure you have Plex activity\n• Try again in a few minutes"
 msgstr "• Verify your email is correct\n• Ensure you have Plex activity\n• Try again in a few minutes"
 
-#: utils/discord/command_utils.py:139
+#: utils/discord/command_utils.py:125
 msgid "✅ Enabled"
 msgstr "✅ Enabled"
 
-#: bot/commands/test_scheduler.py:163
+#: bot/commands/test_scheduler.py:183
 msgid "✅ UPDATE_DAYS interval calculation working\n✅ FIXED_UPDATE_TIME scheduling working\n✅ Graph generation and posting successful\n✅ Scheduler state updated correctly"
 msgstr "✅ UPDATE_DAYS interval calculation working\n✅ FIXED_UPDATE_TIME scheduling working\n✅ Graph generation and posting successful\n✅ Scheduler state updated correctly"
 
-#: utils/discord/command_utils.py:139
+#: utils/discord/command_utils.py:125
 msgid "❌ Disabled"
 msgstr "❌ Disabled"
 
-#: bot/commands/update_graphs.py:115
+#: bot/commands/update_graphs.py:130
 msgid "🔄 Initializing graph generation"
 msgstr "🔄 Initializing graph generation"
 
