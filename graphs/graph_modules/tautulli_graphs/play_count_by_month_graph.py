@@ -721,8 +721,8 @@ class PlayCountByMonthGraph(BaseGraph):
         colors: list[str] = [color_mapping[mt] for mt in unique_media_types_list]
 
         # Sort months chronologically for proper x-axis ordering
-        df["month_sort"] = pd.to_datetime(df["month"], format="%Y-%m")  # pyright: ignore[reportUnknownMemberType] # pandas stubs incomplete
-        df = df.sort_values("month_sort")  # pyright: ignore[reportUnknownMemberType] # pandas stubs incomplete
+        df["month_sort"] = pd.to_datetime(df["month"], format="%Y-%m")
+        df = df.sort_values("month_sort")
 
         # Create grouped bar plot
         _ = sns.barplot(
