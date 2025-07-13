@@ -8,8 +8,8 @@ msgstr ""
 "Project-Id-Version: TGraph Bot 1.0.0\n"
 "Report-Msgid-Bugs-To: https://github.com/engels74/tgraph-bot-source/issues\n"
 "POT-Creation-Date: 2025-07-11 12:39\n"
-"PO-Revision-Date: 2025-07-13 22:02+0000\n"
-"Last-Translator: Weblate Admin <admin@engels74.net>\n"
+"PO-Revision-Date: 2025-07-13 22:50+0000\n"
+"Last-Translator: engels74 <141435164+engels74@users.noreply.github.com>\n"
 "Language-Team: Danish <https://weblate.engels74.net/projects/tgraph-bot/main/"
 "da/>\n"
 "Language: da\n"
@@ -86,7 +86,7 @@ msgstr "Konfiguration"
 
 #: bot/commands/test_scheduler.py:139
 msgid "Current scheduler configuration and state"
-msgstr "Nuværende scheduler konfiguration og tilstand"
+msgstr "Nuværende scheduler konfiguration og status"
 
 #: bot/commands/my_stats.py:132
 msgid "Delivery Method"
