@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: TGraph Bot 1.0.0\n"
 "Report-Msgid-Bugs-To: https://github.com/engels74/tgraph-bot-source/issues\n"
 "POT-Creation-Date: 2025-07-11 12:39\n"
-"PO-Revision-Date: 2025-07-11 11:49+0000\n"
+"PO-Revision-Date: 2025-07-13 22:02+0000\n"
 "Last-Translator: Weblate Admin <admin@engels74.net>\n"
 "Language-Team: Danish <https://weblate.engels74.net/projects/tgraph-bot/main/"
 "da/>\n"
@@ -201,7 +201,7 @@ msgstr "Licens"
 
 #: bot/commands/update_graphs.py:88
 msgid "Manually trigger server-wide graph generation and posting"
-msgstr "Manuel udløsning af server-bred graf generering og posting"
+msgstr "Manuel start af grafgenerering og publicering for hele serveren"
 
 #: bot/commands/update_graphs.py:425
 msgid "Network error occurred while posting graphs."
