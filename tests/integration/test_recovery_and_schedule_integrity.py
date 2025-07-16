@@ -7,7 +7,7 @@ missed update detection, and schedule integrity validation and repair.
 
 import asyncio
 import tempfile
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
@@ -43,12 +43,12 @@ class TestStateManager:
             state_file = Path(temp_dir) / "test_state.json"
             manager = StateManager(state_file)
             
-            # Create test state and config
+            # Create test state and config with timezone-aware datetimes
             state = ScheduleState()
-            state.last_update = datetime(2024, 1, 1, 12, 0, 0)
-            state.next_update = datetime(2024, 1, 8, 12, 0, 0)
+            state.last_update = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+            state.next_update = datetime(2024, 1, 8, 12, 0, 0, tzinfo=timezone.utc)
             state.consecutive_failures = 2
-            state.last_failure = datetime(2024, 1, 7, 12, 0, 0)
+            state.last_failure = datetime(2024, 1, 7, 12, 0, 0, tzinfo=timezone.utc)
             
             config = SchedulingConfig(update_days=7, fixed_update_time="12:00")
             
@@ -134,7 +134,7 @@ class TestRecoveryManager:
     
     def test_detect_missed_updates_no_history(self, recovery_manager: RecoveryManager) -> None:
         """Test missed update detection with no update history."""
-        current_time = datetime.now()
+        current_time = datetime.now(timezone.utc)
         config = SchedulingConfig(update_days=7, fixed_update_time="XX:XX")
         
         missed_updates = recovery_manager.detect_missed_updates(
@@ -145,7 +145,7 @@ class TestRecoveryManager:
     
     def test_detect_missed_scheduled_update(self, recovery_manager: RecoveryManager) -> None:
         """Test detection of missed scheduled update."""
-        current_time = datetime.now()
+        current_time = datetime.now(timezone.utc)
         last_update = current_time - timedelta(days=8)
         next_update = current_time - timedelta(hours=2)  # Missed by 2 hours
         config = SchedulingConfig(update_days=7, fixed_update_time="12:00")
@@ -160,7 +160,7 @@ class TestRecoveryManager:
     
     def test_detect_multiple_interval_missed_updates(self, recovery_manager: RecoveryManager) -> None:
         """Test detection of multiple missed interval updates."""
-        current_time = datetime.now()
+        current_time = datetime.now(timezone.utc)
         last_update = current_time - timedelta(days=21)  # 3 weeks ago
         config = SchedulingConfig(update_days=7, fixed_update_time="XX:XX")
         
@@ -175,7 +175,7 @@ class TestRecoveryManager:
     
     def test_validate_schedule_integrity_valid(self, recovery_manager: RecoveryManager) -> None:
         """Test schedule integrity validation with valid state."""
-        current_time = datetime.now()
+        current_time = datetime.now(timezone.utc)
         state = ScheduleState()
         state.last_update = current_time - timedelta(days=3)
         state.next_update = current_time + timedelta(days=4)
@@ -193,7 +193,7 @@ class TestRecoveryManager:
     
     def test_validate_schedule_integrity_invalid(self, recovery_manager: RecoveryManager) -> None:
         """Test schedule integrity validation with invalid state."""
-        current_time = datetime.now()
+        current_time = datetime.now(timezone.utc)
         state = ScheduleState()
         state.next_update = current_time - timedelta(hours=1)  # In the past
         state.consecutive_failures = 15  # Excessive failures
@@ -211,7 +211,7 @@ class TestRecoveryManager:
     
     def test_repair_schedule_state(self, recovery_manager: RecoveryManager) -> None:
         """Test schedule state repair functionality."""
-        current_time = datetime.now()
+        current_time = datetime.now(timezone.utc)
         state = ScheduleState()
         state.next_update = current_time - timedelta(hours=1)  # In the past
         state.consecutive_failures = 10
@@ -232,7 +232,7 @@ class TestRecoveryManager:
     @pytest.mark.asyncio
     async def test_perform_recovery_with_callback(self, recovery_manager: RecoveryManager) -> None:
         """Test comprehensive recovery with update callback."""
-        current_time = datetime.now()
+        current_time = datetime.now(timezone.utc)
         state = ScheduleState()
         state.last_update = current_time - timedelta(days=8)
         state.next_update = current_time - timedelta(hours=1)  # Missed

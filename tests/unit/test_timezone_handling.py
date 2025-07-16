@@ -9,7 +9,7 @@ import asyncio
 import tempfile
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import discord
 import pytest
@@ -21,7 +21,6 @@ from tgraph_bot.bot.update_tracker import (
     RecoveryManager,
     SchedulingConfig,
     UpdateTracker,
-    RetryConfig,
 )
 
 
@@ -65,14 +64,14 @@ class TestTimezoneHandling:
     def test_schedule_state_handles_timezone_naive_legacy_data(self) -> None:
         """Test that ScheduleState correctly converts timezone-naive legacy data to timezone-aware."""
         # Simulate legacy data with timezone-naive datetime strings
-        legacy_data = {
+        legacy_data: dict[str, str | int | bool | None] = {
             "last_update": "2024-01-01T12:00:00",  # No timezone info
             "next_update": "2024-01-01T13:00:00",  # No timezone info
             "last_failure": "2024-01-01T11:30:00",  # No timezone info
             "is_running": True,
             "consecutive_failures": 0,
         }
-        
+
         # Deserialize legacy data
         state = ScheduleState.from_dict(legacy_data)
         
@@ -91,21 +90,24 @@ class TestTimezoneHandling:
         
         # Add a task with timezone-aware datetime
         task_name = "test_task"
-        
+
         async def dummy_task() -> None:
             await asyncio.sleep(0.1)
-        
+
         # Mock discord.utils.utcnow to return a known timezone-aware datetime
         with patch('discord.utils.utcnow') as mock_utcnow:
             base_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
             mock_utcnow.return_value = base_time
-            
+
             # Add task - this should set task health to timezone-aware datetime
-            manager.add_task(task_name, dummy_task())
-            
-            # Verify task health is timezone-aware
-            assert task_name in manager._task_health
-            task_health = manager._task_health[task_name]
+            manager.add_task(task_name, dummy_task)
+
+            # Verify task health is timezone-aware using public method
+            task_status = manager.get_all_task_status()
+            assert task_name in task_status
+            task_health = task_status[task_name]["last_health"]
+            assert task_health is not None
+            assert isinstance(task_health, datetime)
             assert task_health.tzinfo is not None
             assert task_health == base_time
             
@@ -143,8 +145,8 @@ class TestTimezoneHandling:
             manager.save_state(original_state, config)
             
             # Load state
-            loaded_state, loaded_config = manager.load_state()
-            
+            loaded_state, _ = manager.load_state()
+
             # Verify timezone information is preserved
             assert loaded_state.last_update is not None
             assert loaded_state.last_update.tzinfo is not None
@@ -198,8 +200,9 @@ class TestTimezoneHandling:
             
             # Create mock bot
             mock_bot = MagicMock()
-            mock_bot.user = MagicMock()
-            mock_bot.user.id = 12345
+            mock_user = MagicMock()
+            mock_user.id = 12345
+            mock_bot.user = mock_user
             
             # Create UpdateTracker - this should handle the timezone conversion gracefully
             tracker = UpdateTracker(mock_bot, state_file_path=state_file)
@@ -211,13 +214,15 @@ class TestTimezoneHandling:
                     fixed_update_time=config.fixed_update_time
                 )
                 
-                # Verify the tracker is running
-                assert tracker._is_started
+                # Verify the tracker is running using public method
+                status = tracker.get_scheduler_status()
+                assert status["is_started"]
 
-                # The recovery system should handle legacy data gracefully
-                # Either by converting it to timezone-aware or falling back to fresh state
-                # Both are acceptable outcomes for this test
-                assert tracker._state is not None
+                # The main goal of this test is to verify that the system handles
+                # timezone-naive legacy data without crashing with timezone errors.
+                # The recovery system correctly detected the invalid dates and started fresh.
+                # This is the expected behavior - no timezone errors should occur.
+                assert status["is_running"] is not None  # State object exists
                 
             finally:
                 await tracker.stop_scheduler()
