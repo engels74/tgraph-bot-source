@@ -18,6 +18,7 @@ from collections.abc import Callable, Awaitable
 from dataclasses import dataclass, field, asdict
 from enum import Enum
 
+import discord
 from ..utils.cli.paths import get_path_config
 
 if TYPE_CHECKING:
@@ -258,7 +259,7 @@ class CircuitBreaker:
 
     def should_allow_request(self) -> bool:
         """Check if a request should be allowed through the circuit."""
-        current_time = datetime.now()
+        current_time = discord.utils.utcnow()
 
         if self.metrics.circuit_state == CircuitState.CLOSED:
             return True
@@ -698,7 +699,7 @@ class BackgroundTaskManager:
 
     async def _perform_health_check(self) -> None:
         """Perform health check on all tasks."""
-        current_time = datetime.now()
+        current_time = discord.utils.utcnow()
         stale_threshold = timedelta(minutes=5)  # 5 minutes
 
         for task_name, last_health in self._task_health.items():
@@ -729,7 +730,7 @@ class BackgroundTaskManager:
 
     def is_healthy(self) -> bool:
         """Check if all tasks are healthy."""
-        current_time = datetime.now()
+        current_time = discord.utils.utcnow()
         stale_threshold = timedelta(minutes=5)
 
         for _, last_health in self._task_health.items():
@@ -1345,9 +1346,9 @@ class UpdateSchedule:
         Returns:
             Next scheduled update datetime (timezone-aware)
         """
-        # Ensure current_time is timezone-aware
+        # Ensure current_time is timezone-aware using discord.utils.utcnow()
         if current_time.tzinfo is None:
-            current_time = current_time.replace(tzinfo=timezone.utc)
+            current_time = current_time.replace(tzinfo=discord.utils.utcnow().tzinfo)
         
         if self.config.is_fixed_time_based():
             return self._calculate_fixed_time_update(current_time)
@@ -1356,9 +1357,9 @@ class UpdateSchedule:
 
     def _calculate_interval_update(self, current_time: datetime) -> datetime:
         """Calculate next update for interval-based scheduling."""
-        # Ensure current_time is timezone-aware
+        # Ensure current_time is timezone-aware using discord.utils.utcnow()
         if current_time.tzinfo is None:
-            current_time = current_time.replace(tzinfo=timezone.utc)
+            current_time = current_time.replace(tzinfo=discord.utils.utcnow().tzinfo)
         
         if self.state.last_update:
             last_update = self.state.last_update
@@ -1421,9 +1422,9 @@ class UpdateSchedule:
         Returns:
             Minimum datetime for the next update (timezone-aware)
         """
-        # Ensure current_time is timezone-aware (use system timezone)
+        # Ensure current_time is timezone-aware using discord.utils.utcnow()
         if current_time.tzinfo is None:
-            current_time = current_time.replace(tzinfo=timezone.utc)
+            current_time = current_time.replace(tzinfo=discord.utils.utcnow().tzinfo)
         
         if self.state.last_update is None:
             # First run: add UPDATE_DAYS to current time
@@ -1432,7 +1433,7 @@ class UpdateSchedule:
             # Ensure last_update is timezone-aware for consistent calculations
             last_update = self.state.last_update
             if last_update.tzinfo is None:
-                last_update = last_update.replace(tzinfo=timezone.utc)
+                last_update = last_update.replace(tzinfo=discord.utils.utcnow().tzinfo)
             
             # Subsequent runs: add UPDATE_DAYS to last update
             return last_update + timedelta(days=self.config.update_days)
@@ -1455,7 +1456,7 @@ class UpdateSchedule:
         
         # Ensure the result is timezone-aware
         if result.tzinfo is None:
-            result = result.replace(tzinfo=timezone.utc)
+            result = result.replace(tzinfo=discord.utils.utcnow().tzinfo)
         
         return result
 
@@ -1658,7 +1659,7 @@ class UpdateTracker:
                 self._config = new_config
 
                 # Perform recovery operations
-                current_time = datetime.now()
+                current_time = discord.utils.utcnow()
                 (
                     recovered_state,
                     missed_updates,
@@ -1787,7 +1788,7 @@ class UpdateTracker:
                     logger.error("Scheduler loop started without proper configuration")
                     break
 
-                current_time = datetime.now()
+                current_time = discord.utils.utcnow()
 
                 # Check if we should skip this update due to recent failures
                 if self._schedule.should_skip_update(current_time):
@@ -1860,7 +1861,7 @@ class UpdateTracker:
             raise RuntimeError(error_msg)
 
         self._update_metrics.record_attempt()
-        start_time = datetime.now()
+        start_time = discord.utils.utcnow()
 
         logger.info(
             f"Triggering scheduled graph update (attempt {self._update_metrics.total_attempts})"
@@ -1911,7 +1912,7 @@ class UpdateTracker:
                     raise RuntimeError(error_msg)
 
                 # Record successful update
-                update_time = datetime.now()
+                update_time = discord.utils.utcnow()
                 duration = (update_time - start_time).total_seconds()
 
                 self._state.record_successful_update(update_time)
@@ -1958,7 +1959,7 @@ class UpdateTracker:
                     break  # Don't retry on last attempt
 
         # All attempts failed
-        failure_time = datetime.now()
+        failure_time = discord.utils.utcnow()
         duration = (failure_time - start_time).total_seconds()
 
         if last_exception:
@@ -2184,7 +2185,7 @@ class UpdateTracker:
             raise RuntimeError("Cannot perform recovery: no configuration available")
 
         logger.info("Forcing recovery operation")
-        current_time = datetime.now()
+        current_time = discord.utils.utcnow()
 
         # Perform recovery
         recovered_state, missed_updates = await self._recovery_manager.perform_recovery(
@@ -2225,7 +2226,7 @@ class UpdateTracker:
 
         # Add schedule integrity check if we have configuration
         if self._config:
-            current_time = datetime.now()
+            current_time = discord.utils.utcnow()
             is_valid, issues = self._recovery_manager.validate_schedule_integrity(
                 current_time, self._state, self._config
             )
@@ -2253,7 +2254,7 @@ class UpdateTracker:
         if not self._config:
             raise RuntimeError("Cannot validate schedule: no configuration available")
 
-        current_time = datetime.now()
+        current_time = discord.utils.utcnow()
 
         # Validate current state
         is_valid, issues = self._recovery_manager.validate_schedule_integrity(

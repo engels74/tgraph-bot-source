@@ -8,7 +8,7 @@ including file size limits, format validation, and error handling for graph imag
 import logging
 from datetime import datetime, time, timedelta
 from pathlib import Path
-from typing import NamedTuple
+from typing import NamedTuple, Literal
 
 import discord
 
@@ -23,21 +23,47 @@ DISCORD_FILE_SIZE_LIMIT_NITRO = 25 * 1024 * 1024  # 25MB for Nitro users
 # Supported image formats for Discord
 SUPPORTED_IMAGE_FORMATS = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
 
+# Discord timestamp styles (from discord.py)
+TimestampStyle = Literal['f', 'F', 'd', 'D', 't', 'T', 'R']
+
 
 def ensure_timezone_aware(dt: datetime) -> datetime:
     """
     Ensure a datetime object is timezone-aware.
     
+    Uses discord.utils.utcnow() for consistent timezone handling.
+    
     Args:
         dt: Datetime object that may be naive or timezone-aware
         
     Returns:
-        Timezone-aware datetime object
+        Timezone-aware datetime object (UTC)
     """
     if dt.tzinfo is None:
-        # If naive, assume it's in the system's local timezone
-        return dt.replace(tzinfo=datetime.now().astimezone().tzinfo)
+        # If naive, assume it's UTC (consistent with Discord's behavior)
+        return dt.replace(tzinfo=discord.utils.utcnow().tzinfo)
     return dt
+
+
+def format_next_update_timestamp(
+    next_update: datetime, 
+    style: TimestampStyle = "R"
+) -> str:
+    """
+    Format a datetime object as a Discord timestamp for next update display.
+    
+    Args:
+        next_update: The datetime for the next update
+        style: Discord timestamp style (default: 'R' for relative)
+        
+    Returns:
+        Formatted Discord timestamp string
+    """
+    # Ensure timezone-aware datetime
+    next_update = ensure_timezone_aware(next_update)
+    
+    # Use discord.py's format_dt function for consistent formatting
+    return discord.utils.format_dt(next_update, style=style)
 
 
 def calculate_next_update_time(
@@ -57,8 +83,8 @@ def calculate_next_update_time(
         Next update datetime, or None if calculation fails
     """
     try:
-        # Use timezone-aware datetime for consistent calculations
-        current_time = datetime.now().astimezone()
+        # Use discord.utils.utcnow() for consistent timezone-aware datetime
+        current_time = discord.utils.utcnow()
 
         # Handle interval-based updates
         if fixed_update_time == "XX:XX":
@@ -219,11 +245,8 @@ def create_graph_specific_embed(
     if update_days is not None and fixed_update_time is not None:
         next_update = calculate_next_update_time(update_days, fixed_update_time)
         if next_update:
-            # Ensure the datetime is timezone-aware for Discord formatting
-            next_update = ensure_timezone_aware(next_update)
-            
-            # Use discord.py's built-in timestamp formatting with relative time style
-            timestamp_str = discord.utils.format_dt(next_update, style="R")
+            # Use the optimized timestamp formatting function
+            timestamp_str = format_next_update_timestamp(next_update, style="R")
             current_description = embed.description or ""
             embed.description = (
                 current_description + f"\n\nNext update: {timestamp_str}"
