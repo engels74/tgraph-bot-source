@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TGraph Bot 1.0.0\n"
 "Report-Msgid-Bugs-To: https://github.com/engels74/tgraph-bot-source/issues\n"
-"POT-Creation-Date: 2025-07-16 16:27\n"
-"PO-Revision-Date: 2025-07-16 16:27\n"
+"POT-Creation-Date: 2025-07-16 17:28\n"
+"PO-Revision-Date: 2025-07-16 17:28\n"
 "Last-Translator: engels74 <141435164+engels74@users.noreply.github.com>\n"
 "Language-Team: English <https://hosted.weblate.org/projects/tgraph-bot/tgraph-bot/en/\n"
 "Language: en\n"
@@ -113,12 +113,12 @@ msgid "Command on Cooldown"
 msgstr "Command on Cooldown"
 
 #: src/tgraph_bot/bot/commands/config.py:320
-msgid "Config Global"
-msgstr "Config Global"
+msgid "Config command global cooldown"
+msgstr "Config command global cooldown"
 
 #: src/tgraph_bot/bot/commands/config.py:319
-msgid "Config User"
-msgstr "Config User"
+msgid "Config command per-user cooldown"
+msgstr "Config command per-user cooldown"
 
 #: src/tgraph_bot/bot/commands/test_scheduler.py:142
 msgid "Configuration"
@@ -370,12 +370,12 @@ msgid "Movie Color"
 msgstr "Movie Color"
 
 #: src/tgraph_bot/bot/commands/config.py:324
-msgid "My Stats Global"
-msgstr "My Stats Global"
+msgid "My stats command global cooldown"
+msgstr "My stats command global cooldown"
 
 #: src/tgraph_bot/bot/commands/config.py:323
-msgid "My Stats User"
-msgstr "My Stats User"
+msgid "My stats command per-user cooldown"
+msgstr "My stats command per-user cooldown"
 
 #: src/tgraph_bot/bot/commands/update_graphs.py:425
 msgid "Network error occurred while posting graphs."
@@ -744,12 +744,12 @@ msgid "Update Days"
 msgstr "Update Days"
 
 #: src/tgraph_bot/bot/commands/config.py:322
-msgid "Update Graphs Global"
-msgstr "Update Graphs Global"
+msgid "Update graphs command global cooldown"
+msgstr "Update graphs command global cooldown"
 
 #: src/tgraph_bot/bot/commands/config.py:321
-msgid "Update Graphs User"
-msgstr "Update Graphs User"
+msgid "Update graphs command per-user cooldown"
+msgstr "Update graphs command per-user cooldown"
 
 #: src/tgraph_bot/bot/commands/uptime.py:75
 msgid "Uptime"

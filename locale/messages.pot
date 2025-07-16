@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TGraph Bot 1.0.0\n"
 "Report-Msgid-Bugs-To: https://github.com/engels74/tgraph-bot-source/issues\n"
-"POT-Creation-Date: 2025-07-16 16:27\n"
+"POT-Creation-Date: 2025-07-16 17:28\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: engels74 <141435164+engels74@users.noreply.github.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -113,11 +113,11 @@ msgid "Command on Cooldown"
 msgstr ""
 
 #: src/tgraph_bot/bot/commands/config.py:320
-msgid "Config Global"
+msgid "Config command global cooldown"
 msgstr ""
 
 #: src/tgraph_bot/bot/commands/config.py:319
-msgid "Config User"
+msgid "Config command per-user cooldown"
 msgstr ""
 
 #: src/tgraph_bot/bot/commands/test_scheduler.py:142
@@ -370,11 +370,11 @@ msgid "Movie Color"
 msgstr ""
 
 #: src/tgraph_bot/bot/commands/config.py:324
-msgid "My Stats Global"
+msgid "My stats command global cooldown"
 msgstr ""
 
 #: src/tgraph_bot/bot/commands/config.py:323
-msgid "My Stats User"
+msgid "My stats command per-user cooldown"
 msgstr ""
 
 #: src/tgraph_bot/bot/commands/update_graphs.py:425
@@ -744,11 +744,11 @@ msgid "Update Days"
 msgstr ""
 
 #: src/tgraph_bot/bot/commands/config.py:322
-msgid "Update Graphs Global"
+msgid "Update graphs command global cooldown"
 msgstr ""
 
 #: src/tgraph_bot/bot/commands/config.py:321
-msgid "Update Graphs User"
+msgid "Update graphs command per-user cooldown"
 msgstr ""
 
 #: src/tgraph_bot/bot/commands/uptime.py:75
