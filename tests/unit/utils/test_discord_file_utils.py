@@ -401,7 +401,7 @@ class TestTimestampHandling:
             mock_format_dt.assert_called_once()
             call_args = mock_format_dt.call_args
             assert call_args is not None
-            args, kwargs = call_args  # pyright: ignore[reportAny]
+            _args, kwargs = call_args  # pyright: ignore[reportAny]
             assert kwargs.get('style') == 'F'  # pyright: ignore[reportAny]
             assert result == "<t:1737027000:F>"
 
@@ -417,7 +417,7 @@ class TestTimestampHandling:
             mock_format_dt.assert_called_once()
             call_args = mock_format_dt.call_args
             assert call_args is not None
-            args, kwargs = call_args  # pyright: ignore[reportAny]
+            args, _kwargs = call_args  # pyright: ignore[reportAny]
             # Verify the datetime passed to format_dt is timezone-aware
             assert args[0].tzinfo is not None  # pyright: ignore[reportAny]
             assert result == "<t:1737027000:R>"
@@ -439,7 +439,7 @@ class TestTimestampHandling:
                 mock_format_dt.assert_called_once()
                 call_args = mock_format_dt.call_args
                 assert call_args is not None
-                args, kwargs = call_args  # pyright: ignore[reportAny]
+                _args, kwargs = call_args  # pyright: ignore[reportAny]
                 assert kwargs.get('style') == style  # pyright: ignore[reportAny]
                 assert result == f"<t:1737027000:{style}>"
 
