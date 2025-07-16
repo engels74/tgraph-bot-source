@@ -9,7 +9,7 @@ This module handles the bot's startup sequence which includes:
 
 import asyncio
 import logging
-from datetime import datetime
+
 from typing import TYPE_CHECKING, Protocol, runtime_checkable
 from collections.abc import Sequence
 import discord
@@ -333,7 +333,7 @@ class StartupSequence:
                 return
 
             # Get current time as the baseline for scheduling
-            current_time = datetime.now()
+            current_time = discord.utils.utcnow()
 
             update_tracker = self.bot.update_tracker
 

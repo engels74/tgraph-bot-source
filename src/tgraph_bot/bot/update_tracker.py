@@ -115,21 +115,21 @@ class ErrorMetrics:
     def record_attempt(self) -> None:
         """Record an attempt."""
         self.total_attempts += 1
-        self.last_attempt = datetime.now()
+        self.last_attempt = discord.utils.utcnow()
 
     def record_success(self) -> None:
         """Record a successful operation."""
         self.total_successes += 1
         self.consecutive_successes += 1
         self.consecutive_failures = 0
-        self.last_success = datetime.now()
+        self.last_success = discord.utils.utcnow()
 
     def record_failure(self, error_type: ErrorType) -> None:
         """Record a failed operation."""
         self.total_failures += 1
         self.consecutive_failures += 1
         self.consecutive_successes = 0
-        self.last_failure = datetime.now()
+        self.last_failure = discord.utils.utcnow()
 
         # Update error type counters
         if error_type == ErrorType.TRANSIENT:
@@ -298,7 +298,7 @@ class CircuitBreaker:
     def _transition_to_open(self) -> None:
         """Transition circuit to open state."""
         self.metrics.circuit_state = CircuitState.OPEN
-        self.metrics.circuit_opened_at = datetime.now()
+        self.metrics.circuit_opened_at = discord.utils.utcnow()
         logger.warning(
             f"Circuit breaker opened after {self.metrics.consecutive_failures} failures"
         )
@@ -306,7 +306,7 @@ class CircuitBreaker:
     def _transition_to_half_open(self) -> None:
         """Transition circuit to half-open state."""
         self.metrics.circuit_state = CircuitState.HALF_OPEN
-        self.metrics.circuit_last_test = datetime.now()
+        self.metrics.circuit_last_test = discord.utils.utcnow()
         logger.info("Circuit breaker transitioning to half-open for testing")
 
     def _transition_to_closed(self) -> None:
@@ -409,7 +409,7 @@ class BackgroundTaskManager:
         task = asyncio.create_task(self._task_wrapper(name, coro, restart_on_failure))
         self._tasks[name] = task
         self._task_status[name] = TaskStatus.RUNNING
-        self._task_health[name] = datetime.now()
+        self._task_health[name] = discord.utils.utcnow()
 
     def remove_task(self, name: str) -> None:
         """
@@ -466,7 +466,7 @@ class BackgroundTaskManager:
                     continue
 
                 self._task_status[name] = TaskStatus.RUNNING
-                self._task_health[name] = datetime.now()
+                self._task_health[name] = discord.utils.utcnow()
                 metrics.record_attempt()
 
                 self._log_audit_event(name, "task_started", "Task execution started")
@@ -596,7 +596,7 @@ class BackgroundTaskManager:
     def _log_audit_event(self, task_name: str, event_type: str, message: str) -> None:
         """Log audit events for task operations."""
         audit_entry: dict[str, str | datetime | None] = {
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": discord.utils.utcnow().isoformat(),
             "task_name": task_name,
             "event_type": event_type,
             "message": message,
@@ -846,8 +846,14 @@ class ScheduleState:
 
         if data.get("last_update"):
             state.last_update = datetime.fromisoformat(str(data["last_update"]))
+            # Ensure timezone-aware datetime
+            if state.last_update.tzinfo is None:
+                state.last_update = state.last_update.replace(tzinfo=timezone.utc)
         if data.get("next_update"):
             state.next_update = datetime.fromisoformat(str(data["next_update"]))
+            # Ensure timezone-aware datetime
+            if state.next_update.tzinfo is None:
+                state.next_update = state.next_update.replace(tzinfo=timezone.utc)
 
         state.is_running = bool(data.get("is_running", False))
         consecutive_failures_value = data.get("consecutive_failures", 0)
@@ -859,6 +865,9 @@ class ScheduleState:
 
         if data.get("last_failure"):
             state.last_failure = datetime.fromisoformat(str(data["last_failure"]))
+            # Ensure timezone-aware datetime
+            if state.last_failure.tzinfo is None:
+                state.last_failure = state.last_failure.replace(tzinfo=timezone.utc)
         if data.get("last_error"):
             state.last_error = Exception(str(data["last_error"]))
 
@@ -872,7 +881,7 @@ class PersistentScheduleData:
     state: dict[str, str | int | bool | None]
     config: dict[str, str | int] | None = None
     version: str = "1.0"
-    saved_at: str = field(default_factory=lambda: datetime.now().isoformat())
+    saved_at: str = field(default_factory=lambda: discord.utils.utcnow().isoformat())
 
     def to_dict(self) -> dict[str, object]:
         """Convert to dictionary for JSON serialization."""
@@ -885,7 +894,7 @@ class PersistentScheduleData:
             state=data.get("state", {}),  # pyright: ignore[reportArgumentType]
             config=data.get("config"),  # pyright: ignore[reportArgumentType]
             version=str(data.get("version", "1.0")),
-            saved_at=str(data.get("saved_at", datetime.now().isoformat())),
+            saved_at=str(data.get("saved_at", discord.utils.utcnow().isoformat())),
         )
 
 
@@ -1030,7 +1039,7 @@ class StateManager:
         try:
             if self.state_file_path.exists():
                 backup_path = self.state_file_path.with_suffix(
-                    f".corrupted.{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+                    f".corrupted.{discord.utils.utcnow().strftime('%Y%m%d_%H%M%S')}.json"
                 )
                 _ = self.state_file_path.rename(backup_path)
                 logger.info(f"Corrupted state file backed up to: {backup_path}")
@@ -1769,7 +1778,7 @@ class UpdateTracker:
 
                 # Update health status to prevent stale detection
                 if task_name in self._task_manager._task_health:  # pyright: ignore[reportPrivateUsage]
-                    self._task_manager._task_health[task_name] = datetime.now()  # pyright: ignore[reportPrivateUsage]
+                    self._task_manager._task_health[task_name] = discord.utils.utcnow()  # pyright: ignore[reportPrivateUsage]
                     logger.debug(
                         f"Updated health for {task_name} during long wait (elapsed: {elapsed:.1f}s/{total_wait_seconds:.1f}s)"
                     )
@@ -1837,7 +1846,7 @@ class UpdateTracker:
             logger.exception(f"Error in scheduler loop: {e}")
             # Record the failure
             if self._state:
-                self._state.record_failure(datetime.now(), e)
+                self._state.record_failure(discord.utils.utcnow(), e)
             # Wait before retrying to avoid tight error loops
             wait_completed = await self._wait_with_health_updates(60.0)  # 1 minute
             if not wait_completed:
@@ -1993,7 +2002,7 @@ class UpdateTracker:
 
     def _log_update_audit(self, event_type: str, message: str) -> None:
         """Log audit events for update operations."""
-        timestamp = datetime.now().isoformat()
+        timestamp = discord.utils.utcnow().isoformat()
         audit_msg = f"[UPDATE_AUDIT] {timestamp} - {event_type}: {message}"
         logger.info(audit_msg)
 
