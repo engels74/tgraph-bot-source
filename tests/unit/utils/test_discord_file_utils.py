@@ -345,8 +345,11 @@ class TestCalculateNextUpdateTime:
         result = calculate_next_update_time(7, "XX:XX")
         
         assert result is not None
+        # Verify it's timezone-aware
+        assert result.tzinfo is not None
+        
         # Should be approximately 7 days from now
-        now = datetime.now()
+        now = datetime.now().astimezone()  # Use timezone-aware datetime
         expected_min = now + timedelta(days=6, hours=23)
         expected_max = now + timedelta(days=7, hours=1)
         assert expected_min <= result <= expected_max
@@ -356,7 +359,7 @@ class TestCalculateNextUpdateTime:
         # Mock no state file exists
         with patch('pathlib.Path.exists', return_value=False):
             # Use a time that's guaranteed to be in the future today (but not past midnight)
-            now = datetime.now()
+            now = datetime.now().astimezone()  # Use timezone-aware datetime
             # Use a time that's 30 minutes in the future, but cap it to ensure we don't go past 23:30
             if now.hour >= 23:
                 # If it's already late, use tomorrow morning at 08:00
@@ -372,6 +375,9 @@ class TestCalculateNextUpdateTime:
             result = calculate_next_update_time(1, time_str)
             
             assert result is not None
+            # Verify it's timezone-aware
+            assert result.tzinfo is not None
+            
             # Should be today (or tomorrow if we're late in the day) at the specified time
             expected = now.replace(
                 hour=future_time.hour,

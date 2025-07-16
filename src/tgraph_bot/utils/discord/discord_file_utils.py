@@ -24,6 +24,22 @@ DISCORD_FILE_SIZE_LIMIT_NITRO = 25 * 1024 * 1024  # 25MB for Nitro users
 SUPPORTED_IMAGE_FORMATS = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
 
 
+def ensure_timezone_aware(dt: datetime) -> datetime:
+    """
+    Ensure a datetime object is timezone-aware.
+    
+    Args:
+        dt: Datetime object that may be naive or timezone-aware
+        
+    Returns:
+        Timezone-aware datetime object
+    """
+    if dt.tzinfo is None:
+        # If naive, assume it's in the system's local timezone
+        return dt.replace(tzinfo=datetime.now().astimezone().tzinfo)
+    return dt
+
+
 def calculate_next_update_time(
     update_days: int, fixed_update_time: str
 ) -> datetime | None:
@@ -41,7 +57,8 @@ def calculate_next_update_time(
         Next update datetime, or None if calculation fails
     """
     try:
-        current_time = datetime.now()
+        # Use timezone-aware datetime for consistent calculations
+        current_time = datetime.now().astimezone()
 
         # Handle interval-based updates
         if fixed_update_time == "XX:XX":
@@ -54,8 +71,9 @@ def calculate_next_update_time(
         except (ValueError, AttributeError):
             return None
 
-        # Calculate next occurrence of the fixed time
+        # Calculate next occurrence of the fixed time (timezone-aware)
         next_update = datetime.combine(current_time.date(), update_time)
+        next_update = next_update.replace(tzinfo=current_time.tzinfo)
 
         # If time has passed today, schedule for tomorrow
         if next_update <= current_time:
@@ -79,6 +97,10 @@ def calculate_next_update_time(
                         last_update_str = state_data["state"]["last_update"]  # pyright: ignore[reportAny]
                         if last_update_str and isinstance(last_update_str, str):
                             last_update = datetime.fromisoformat(last_update_str)
+                            
+                            # Ensure last_update is timezone-aware
+                            if last_update.tzinfo is None:
+                                last_update = last_update.replace(tzinfo=current_time.tzinfo)
 
                             # Respect the update_days interval if we have a last update
                             min_next_update = last_update + timedelta(days=update_days)
@@ -89,6 +111,8 @@ def calculate_next_update_time(
                                 candidate_update = datetime.combine(
                                     candidate_date, update_time
                                 )
+                                # Ensure candidate_update is timezone-aware
+                                candidate_update = candidate_update.replace(tzinfo=current_time.tzinfo)
 
                                 # If the time on min_next_update date has already passed in min_next_update,
                                 # move to the next day
@@ -195,6 +219,9 @@ def create_graph_specific_embed(
     if update_days is not None and fixed_update_time is not None:
         next_update = calculate_next_update_time(update_days, fixed_update_time)
         if next_update:
+            # Ensure the datetime is timezone-aware for Discord formatting
+            next_update = ensure_timezone_aware(next_update)
+            
             # Use discord.py's built-in timestamp formatting with relative time style
             timestamp_str = discord.utils.format_dt(next_update, style="R")
             current_description = embed.description or ""

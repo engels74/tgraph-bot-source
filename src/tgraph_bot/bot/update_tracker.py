@@ -11,7 +11,7 @@ import logging
 import re
 import tempfile
 
-from datetime import datetime, time, timedelta, date
+from datetime import datetime, time, timedelta, date, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
 from collections.abc import Callable, Awaitable
@@ -1343,8 +1343,12 @@ class UpdateSchedule:
             current_time: Current datetime for calculation reference
 
         Returns:
-            Next scheduled update datetime
+            Next scheduled update datetime (timezone-aware)
         """
+        # Ensure current_time is timezone-aware
+        if current_time.tzinfo is None:
+            current_time = current_time.replace(tzinfo=timezone.utc)
+        
         if self.config.is_fixed_time_based():
             return self._calculate_fixed_time_update(current_time)
         else:
@@ -1352,8 +1356,15 @@ class UpdateSchedule:
 
     def _calculate_interval_update(self, current_time: datetime) -> datetime:
         """Calculate next update for interval-based scheduling."""
+        # Ensure current_time is timezone-aware
+        if current_time.tzinfo is None:
+            current_time = current_time.replace(tzinfo=timezone.utc)
+        
         if self.state.last_update:
-            return self.state.last_update + timedelta(days=self.config.update_days)
+            last_update = self.state.last_update
+            if last_update.tzinfo is None:
+                last_update = last_update.replace(tzinfo=timezone.utc)
+            return last_update + timedelta(days=self.config.update_days)
         else:
             # First run - schedule for next interval
             return current_time + timedelta(days=self.config.update_days)
@@ -1408,14 +1419,23 @@ class UpdateSchedule:
             current_time: Current datetime for calculation reference
             
         Returns:
-            Minimum datetime for the next update
+            Minimum datetime for the next update (timezone-aware)
         """
+        # Ensure current_time is timezone-aware (use system timezone)
+        if current_time.tzinfo is None:
+            current_time = current_time.replace(tzinfo=timezone.utc)
+        
         if self.state.last_update is None:
             # First run: add UPDATE_DAYS to current time
             return current_time + timedelta(days=self.config.update_days)
         else:
+            # Ensure last_update is timezone-aware for consistent calculations
+            last_update = self.state.last_update
+            if last_update.tzinfo is None:
+                last_update = last_update.replace(tzinfo=timezone.utc)
+            
             # Subsequent runs: add UPDATE_DAYS to last update
-            return self.state.last_update + timedelta(days=self.config.update_days)
+            return last_update + timedelta(days=self.config.update_days)
     
     def _find_next_fixed_time_occurrence(
         self, start_date: date, fixed_time: time
@@ -1428,9 +1448,16 @@ class UpdateSchedule:
             fixed_time: Time of day for the update
             
         Returns:
-            Next datetime combining start_date (or later) with fixed_time
+            Next datetime combining start_date (or later) with fixed_time (timezone-aware)
         """
-        return datetime.combine(start_date, fixed_time)
+        # Create timezone-aware datetime using system timezone
+        result = datetime.combine(start_date, fixed_time)
+        
+        # Ensure the result is timezone-aware
+        if result.tzinfo is None:
+            result = result.replace(tzinfo=timezone.utc)
+        
+        return result
 
     def is_valid_schedule_time(
         self, schedule_time: datetime, current_time: datetime
