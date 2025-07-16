@@ -417,7 +417,7 @@ class ConfigCog(BaseCommandCog):
                 name=i18n.translate("New Value"), value=str(converted_value), inline=True
             )
             _ = success_embed.set_footer(
-                text=i18n.translate("Configuration changes take effect immediately")
+                text=i18n.translate("Configuration changes require bot restart to take effect")
             )
 
             _ = await interaction.response.send_message(

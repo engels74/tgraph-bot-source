@@ -83,7 +83,6 @@ class TestDependencies:
         "seaborn",
         "httpx",
         "yaml",
-        "watchdog",
     ])
     def test_required_dependencies_importable(self, module_name: str) -> None:
         """Test that required dependencies can be imported."""

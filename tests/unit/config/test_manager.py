@@ -244,6 +244,85 @@ TV_COLOR: '{base_config.TV_COLOR}'  # Color for TV shows
         assert config.CENSOR_USERNAMES is False
         assert config.LANGUAGE == "es"
 
+    def test_config_manager_lifecycle(self, base_config: TGraphBotConfig) -> None:
+        """Test the configuration manager lifecycle without file monitoring."""
+        config_manager = ConfigManager()
+        
+        # Test that we can set and get current config
+        config_manager.set_current_config(base_config)
+        retrieved_config = config_manager.get_current_config()
+        assert retrieved_config == base_config
+        
+        # Test that we can update runtime config
+        modified_config = base_config.model_copy()
+        modified_config.UPDATE_DAYS = 14
+        config_manager.update_runtime_config(modified_config)
+        
+        updated_config = config_manager.get_current_config()
+        assert updated_config.UPDATE_DAYS == 14
+        
+        # Test config file path management
+        test_path = Path("/test/config.yml")
+        config_manager.config_file_path = test_path
+        assert config_manager.config_file_path == test_path
+        
+        del config_manager.config_file_path
+        assert config_manager.config_file_path is None
+
+    def test_config_change_callbacks(self, base_config: TGraphBotConfig) -> None:
+        """Test configuration change callback functionality."""
+        config_manager = ConfigManager()
+        config_manager.set_current_config(base_config)
+        
+        callback_called = False
+        old_config_received = None
+        new_config_received = None
+        
+        def test_callback(old_config: TGraphBotConfig, new_config: TGraphBotConfig) -> None:
+            nonlocal callback_called, old_config_received, new_config_received
+            callback_called = True
+            old_config_received = old_config
+            new_config_received = new_config
+        
+        # Register callback
+        config_manager.register_change_callback(test_callback)
+        
+        # Update config - should trigger callback
+        modified_config = base_config.model_copy()
+        modified_config.UPDATE_DAYS = 14
+        config_manager.update_runtime_config(modified_config)
+        
+        assert callback_called
+        assert old_config_received == base_config
+        assert new_config_received is not None
+        assert new_config_received.UPDATE_DAYS == 14
+        
+        # Unregister callback
+        config_manager.unregister_change_callback(test_callback)
+        
+        # Reset callback state
+        callback_called = False
+        
+        # Update config again - should not trigger callback
+        modified_config_2 = modified_config.model_copy()
+        modified_config_2.UPDATE_DAYS = 21
+        config_manager.update_runtime_config(modified_config_2)
+        
+        assert not callback_called
+
+    def test_config_manager_no_file_monitoring_methods(self) -> None:
+        """Test that file monitoring methods are not available after removal."""
+        config_manager = ConfigManager()
+        
+        # These methods should not exist after watchdog removal
+        assert not hasattr(config_manager, 'start_file_monitoring')
+        assert not hasattr(config_manager, 'stop_file_monitoring')
+        assert not hasattr(config_manager, '_reload_from_file')
+        
+        # These attributes should not exist after watchdog removal
+        assert not hasattr(config_manager, '_file_observer')
+        assert not hasattr(config_manager, '_monitored_file')
+
     def teardown_method(self) -> None:
         """Clean up after each test method."""
         # Any cleanup that's needed after tests

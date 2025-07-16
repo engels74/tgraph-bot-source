@@ -7,11 +7,8 @@ YAML configuration files with Pydantic model validation and comment preservation
 import logging
 import tempfile
 import threading
-import time
 from pathlib import Path
-from typing import Callable, override, Any
-from watchdog.events import FileSystemEventHandler, FileSystemEvent
-
+from typing import Callable
 
 import yaml
 from pydantic import ValidationError
@@ -22,52 +19,13 @@ from ..config.schema import TGraphBotConfig
 logger = logging.getLogger(__name__)
 
 
-class ConfigFileHandler(FileSystemEventHandler):
-    """File system event handler for configuration file monitoring."""
-
-    def __init__(self, config_manager: "ConfigManager", config_path: Path) -> None:
-        """
-        Initialize the config file handler.
-
-        Args:
-            config_manager: The ConfigManager instance to notify of changes
-            config_path: Path to the configuration file to monitor
-        """
-        super().__init__()
-        self.config_manager: "ConfigManager" = config_manager
-        self.config_path: Path = config_path
-        self._last_modified: float = 0.0
-
-    @override
-    def on_modified(self, event: FileSystemEvent) -> None:
-        """Handle file modification events."""
-        if event.is_directory:
-            return
-
-        # Check if the modified file is our config file
-        src_path_str = (
-            event.src_path
-            if isinstance(event.src_path, str)
-            else event.src_path.decode("utf-8")
-        )
-        if Path(src_path_str).resolve() == self.config_path.resolve():
-            # Debounce rapid file changes
-            current_time = time.time()
-            if current_time - self._last_modified < 0.5:  # 500ms debounce
-                return
-            self._last_modified = current_time
-
-            # Reload configuration
-            self.config_manager._reload_from_file()  # pyright: ignore[reportPrivateUsage]
-
-
 class ConfigManager:
     """
     Configuration manager for handling YAML config files with Pydantic validation.
 
     Provides methods for loading, saving, and validating configuration files
     while preserving comments and ensuring atomic operations. Also supports
-    live configuration management with change notifications and file monitoring.
+    live configuration management with change notifications.
     """
 
     def __init__(self) -> None:
@@ -77,8 +35,6 @@ class ConfigManager:
         self._change_callbacks: list[
             Callable[[TGraphBotConfig, TGraphBotConfig], None]
         ] = []
-        self._file_observer: Any = None  # Observer | None  # pyright: ignore[reportExplicitAny]
-        self._monitored_file: Path | None = None
         self._config_file_path: Path | None = None
 
     @staticmethod
@@ -648,59 +604,3 @@ MY_STATS_GLOBAL_COOLDOWN_SECONDS: 60
             if callback in self._change_callbacks:
                 self._change_callbacks.remove(callback)
 
-    def start_file_monitoring(self, config_path: Path) -> None:
-        """
-        Start monitoring the configuration file for changes.
-
-        Args:
-            config_path: Path to the configuration file to monitor
-        """
-        with self._config_lock:
-            if self._file_observer is not None:  # pyright: ignore[reportAny]
-                self.stop_file_monitoring()
-
-            self._monitored_file = config_path.resolve()
-            from watchdog.observers import Observer
-
-            observer = Observer()
-            self._file_observer = observer
-
-            # Create event handler
-            handler = ConfigFileHandler(self, self._monitored_file)
-
-            # Watch the directory containing the config file
-            watch_dir = self._monitored_file.parent
-            _ = observer.schedule(handler, str(watch_dir), recursive=False)
-
-            # Start monitoring
-            observer.start()
-
-    def stop_file_monitoring(self) -> None:
-        """Stop monitoring the configuration file for changes."""
-        with self._config_lock:
-            if self._file_observer is not None:  # pyright: ignore[reportAny]
-                self._file_observer.stop()  # pyright: ignore[reportAny]
-                self._file_observer.join()  # pyright: ignore[reportAny]
-                self._file_observer = None
-                self._monitored_file = None
-
-    def _reload_from_file(self) -> None:
-        """
-        Reload configuration from the monitored file.
-
-        This method is called by the file system event handler when the config file changes.
-        """
-        if self._monitored_file is None:
-            return
-
-        try:
-            # Load the new configuration
-            new_config = self.load_config(self._monitored_file)
-
-            # Update runtime configuration (this will trigger callbacks)
-            self.update_runtime_config(new_config)
-
-        except Exception:
-            # If loading fails, keep the current configuration
-            # In a real application, you might want to log this error
-            pass
