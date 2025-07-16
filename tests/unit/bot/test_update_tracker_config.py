@@ -180,16 +180,16 @@ class TestUpdateSchedule:
         assert abs((next_update - expected).total_seconds()) < 1
     
     def test_fixed_time_calculation_today(self) -> None:
-        """Test fixed time calculation for today."""
+        """Test fixed time calculation respects UPDATE_DAYS on first run."""
         config = SchedulingConfig(update_days=1, fixed_update_time="23:59")
         state = ScheduleState()
         schedule = UpdateSchedule(config, state)
         
-        # Test at early morning - should schedule for today
+        # Test at early morning - should schedule for tomorrow (respects UPDATE_DAYS=1)
         test_time = datetime.now().replace(hour=1, minute=0, second=0, microsecond=0)
         next_update = schedule.calculate_next_update(test_time)
 
-        assert next_update.date() == test_time.date()
+        assert next_update.date() == test_time.date() + timedelta(days=1)
         assert next_update.time() == time(23, 59)
     
     def test_fixed_time_calculation_tomorrow(self) -> None:

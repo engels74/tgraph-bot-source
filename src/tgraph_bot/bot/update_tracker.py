@@ -11,7 +11,7 @@ import logging
 import re
 import tempfile
 
-from datetime import datetime, time, timedelta
+from datetime import datetime, time, timedelta, date
 from pathlib import Path
 from typing import TYPE_CHECKING
 from collections.abc import Callable, Awaitable
@@ -1359,33 +1359,78 @@ class UpdateSchedule:
             return current_time + timedelta(days=self.config.update_days)
 
     def _calculate_fixed_time_update(self, current_time: datetime) -> datetime:
-        """Calculate next update for fixed time scheduling."""
+        """
+        Calculate next update for fixed time scheduling.
+        
+        Modern Python 3.13 implementation with consistent UPDATE_DAYS behavior.
+        Always respects the update_days interval regardless of state history.
+        
+        Args:
+            current_time: Current datetime for calculation reference
+            
+        Returns:
+            Next scheduled update datetime that respects both fixed time and interval
+            
+        Raises:
+            ValueError: If fixed time configuration is invalid
+        """
         fixed_time = self.config.get_fixed_time()
         if fixed_time is None:
             # Fallback to interval if fixed time is invalid
             return self._calculate_interval_update(current_time)
 
-        # Calculate next occurrence of the fixed time
-        next_update = datetime.combine(current_time.date(), fixed_time)
-
-        # If time has passed today, schedule for tomorrow
+        # Calculate the minimum next update time based on UPDATE_DAYS
+        min_next_update = self._calculate_minimum_next_update(current_time)
+        
+        # Find the next occurrence of fixed time that respects the interval
+        next_update = self._find_next_fixed_time_occurrence(
+            start_date=min_next_update.date(),
+            fixed_time=fixed_time
+        )
+        
+        # Validate the calculated time
         if next_update <= current_time:
-            next_update += timedelta(days=1)
-
-        # Respect the update_days interval if we have a last update
-        if self.state.last_update:
-            min_next_update = self.state.last_update + timedelta(
-                days=self.config.update_days
+            msg = (
+                f"Calculated next update {next_update} is not in the future "
+                f"(current time: {current_time})"
             )
-            if next_update < min_next_update:
-                # Find next occurrence that respects the interval
-                days_to_add = (min_next_update.date() - next_update.date()).days
-                next_update += timedelta(days=days_to_add)
-
-                # Ensure we still have the correct time after adding days
-                next_update = datetime.combine(next_update.date(), fixed_time)
-
+            raise ValueError(msg)
+            
         return next_update
+    
+    def _calculate_minimum_next_update(self, current_time: datetime) -> datetime:
+        """
+        Calculate the minimum next update time based on UPDATE_DAYS configuration.
+        
+        This ensures consistent behavior whether it's the first run or subsequent runs.
+        
+        Args:
+            current_time: Current datetime for calculation reference
+            
+        Returns:
+            Minimum datetime for the next update
+        """
+        if self.state.last_update is None:
+            # First run: add UPDATE_DAYS to current time
+            return current_time + timedelta(days=self.config.update_days)
+        else:
+            # Subsequent runs: add UPDATE_DAYS to last update
+            return self.state.last_update + timedelta(days=self.config.update_days)
+    
+    def _find_next_fixed_time_occurrence(
+        self, start_date: date, fixed_time: time
+    ) -> datetime:
+        """
+        Find the next occurrence of fixed time on or after the start date.
+        
+        Args:
+            start_date: Earliest date to consider
+            fixed_time: Time of day for the update
+            
+        Returns:
+            Next datetime combining start_date (or later) with fixed_time
+        """
+        return datetime.combine(start_date, fixed_time)
 
     def is_valid_schedule_time(
         self, schedule_time: datetime, current_time: datetime
