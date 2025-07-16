@@ -125,8 +125,8 @@ msgid "Configuration"
 msgstr "Konfiguration"
 
 #: src/tgraph_bot/bot/commands/config.py:420
-msgid "Configuration changes take effect immediately"
-msgstr "Konfigurationsændringer træder i kraft øjeblikkeligt"
+msgid "Configuration changes require bot restart to take effect"
+msgstr "Konfigurationsændringer kræver bot genstart for at træde i kraft"
 
 #: src/tgraph_bot/utils/core/config_utils.py:78
 msgid "Configuration setting `{key}` is not available."
