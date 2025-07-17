@@ -80,6 +80,13 @@ class TestGraphInstancesDimensions:
     @patch('matplotlib.pyplot.subplots')
     def test_graph_setup_figure_uses_configured_dimensions(self, mock_subplots) -> None:
         """Test that setup_figure uses configured dimensions."""
+        from unittest.mock import Mock
+        
+        # Configure mock to return figure and axes
+        mock_figure = Mock()
+        mock_axes = Mock()
+        mock_subplots.return_value = (mock_figure, mock_axes)
+        
         config_data = {
             "TAUTULLI_API_KEY": "test_api_key",
             "TAUTULLI_URL": "http://localhost:8181/api/v2",
