@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TGraph Bot 1.0.0\n"
 "Report-Msgid-Bugs-To: https://github.com/engels74/tgraph-bot-source/issues\n"
-"POT-Creation-Date: 2025-07-16 17:28\n"
+"POT-Creation-Date: 2025-07-17 23:59\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: engels74 <141435164+engels74@users.noreply.github.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -35,7 +35,7 @@ msgstr ""
 msgid "An error occurred"
 msgstr ""
 
-#: src/tgraph_bot/utils/core/error_handler.py:304
+#: src/tgraph_bot/utils/core/error_handler.py:319
 msgid "An error occurred while processing your request"
 msgstr ""
 
@@ -104,7 +104,7 @@ msgstr ""
 msgid "Color"
 msgstr ""
 
-#: src/tgraph_bot/utils/core/error_handler.py:351
+#: src/tgraph_bot/utils/core/error_handler.py:368
 msgid "Command Error"
 msgstr ""
 
@@ -180,7 +180,7 @@ msgstr ""
 msgid "Display information about the bot"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:152
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:278
 msgid "Displays play activity patterns across different days of the week."
 msgstr ""
 
@@ -217,7 +217,7 @@ msgstr ""
 msgid "Error Details"
 msgstr ""
 
-#: src/tgraph_bot/utils/core/error_handler.py:311
+#: src/tgraph_bot/utils/core/error_handler.py:328
 msgid "Error in command `{command_name}`: {error_message}"
 msgstr ""
 
@@ -234,20 +234,20 @@ msgstr ""
 msgid "Examples"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:387
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:472
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:539
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:632
 msgid "Failed to create Discord file for: {file_path}"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:248
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:383
 msgid "File does not exist: {file_path}"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:264
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:404
 msgid "File is empty: {file_path}"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:279
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:421
 msgid "File too large: {actual_mb:.1f}MB exceeds {limit_mb:.0f}MB limit"
 msgstr ""
 
@@ -353,15 +353,15 @@ msgstr ""
 msgid "Media Type Separation"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:160
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:290
 msgid "Monthly play activity trends over time."
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:168
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:300
 msgid "Most active users in the selected time period."
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:164
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:294
 msgid "Most popular platforms used for media consumption."
 msgstr ""
 
@@ -412,8 +412,8 @@ msgstr ""
 msgid "No description available"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:369
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:454
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:520
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:613
 msgid "No files provided for upload"
 msgstr ""
 
@@ -425,8 +425,8 @@ msgstr ""
 msgid "No graphs enabled"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:404
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:489
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:560
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:653
 msgid "No valid files to upload. Errors: {errors}"
 msgstr ""
 
@@ -447,7 +447,7 @@ msgstr ""
 msgid "Partial Success"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:254
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:392
 msgid "Path is not a file: {file_path}"
 msgstr ""
 
@@ -539,11 +539,11 @@ msgstr ""
 msgid "Show bot uptime"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:148
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:272
 msgid "Shows the number of plays per day over the selected time period."
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:156
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:284
 msgid "Shows when users are most active throughout the day."
 msgstr ""
 
@@ -559,7 +559,7 @@ msgstr ""
 msgid "State Updates"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:183
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:315
 msgid "Statistical visualization of Plex activity data."
 msgstr ""
 
@@ -588,7 +588,7 @@ msgstr ""
 msgid "Suggested Actions"
 msgstr ""
 
-#: src/tgraph_bot/utils/core/error_handler.py:302
+#: src/tgraph_bot/utils/core/error_handler.py:313
 msgid "System resources are currently limited. Please try again later."
 msgstr ""
 
@@ -653,7 +653,7 @@ msgstr ""
 msgid "The configuration setting to modify"
 msgstr ""
 
-#: src/tgraph_bot/utils/core/error_handler.py:298
+#: src/tgraph_bot/utils/core/error_handler.py:301
 msgid "The external service is temporarily unavailable. Please try again later."
 msgstr ""
 
@@ -661,7 +661,7 @@ msgstr ""
 msgid "The new value for the setting"
 msgstr ""
 
-#: src/tgraph_bot/utils/core/error_handler.py:300
+#: src/tgraph_bot/utils/core/error_handler.py:307
 msgid "The provided input is invalid. Please check your parameters and try again."
 msgstr ""
 
@@ -685,15 +685,15 @@ msgstr ""
 msgid "There may be an issue with:\n• Tautulli API connectivity\n• Discord channel permissions\n• Graph generation process\n• Bot configuration"
 msgstr ""
 
-#: src/tgraph_bot/utils/core/error_handler.py:303
+#: src/tgraph_bot/utils/core/error_handler.py:316
 msgid "There was a Discord communication error. Please try again."
 msgstr ""
 
-#: src/tgraph_bot/utils/core/error_handler.py:297
+#: src/tgraph_bot/utils/core/error_handler.py:298
 msgid "There was a network connectivity issue. Please try again in a moment."
 msgstr ""
 
-#: src/tgraph_bot/utils/core/error_handler.py:301
+#: src/tgraph_bot/utils/core/error_handler.py:310
 msgid "There's a configuration issue. Please contact the server administrators."
 msgstr ""
 
@@ -735,7 +735,7 @@ msgstr ""
 msgid "Unknown upload error occurred"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:289
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:435
 msgid "Unsupported file format: {file_format}. Supported: {supported_formats}"
 msgstr ""
 
@@ -820,7 +820,7 @@ msgstr ""
 msgid "Yes"
 msgstr ""
 
-#: src/tgraph_bot/utils/core/error_handler.py:299
+#: src/tgraph_bot/utils/core/error_handler.py:304
 msgid "You don't have permission to perform this action."
 msgstr ""
 
@@ -858,40 +858,8 @@ msgstr ""
 msgid "Your statistics were generated but couldn't be uploaded."
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/command_utils.py:205
-msgid "day"
-msgstr ""
-
-#: src/tgraph_bot/utils/discord/command_utils.py:205
-msgid "days"
-msgstr ""
-
-#: src/tgraph_bot/utils/discord/command_utils.py:207
-msgid "hour"
-msgstr ""
-
-#: src/tgraph_bot/utils/discord/command_utils.py:207
-msgid "hours"
-msgstr ""
-
-#: src/tgraph_bot/utils/discord/command_utils.py:209
-msgid "minute"
-msgstr ""
-
-#: src/tgraph_bot/utils/discord/command_utils.py:209
-msgid "minutes"
-msgstr ""
-
 #: src/tgraph_bot/bot/commands/my_stats.py:107
 msgid "personal statistics"
-msgstr ""
-
-#: src/tgraph_bot/utils/discord/command_utils.py:212
-msgid "second"
-msgstr ""
-
-#: src/tgraph_bot/utils/discord/command_utils.py:212
-msgid "seconds"
 msgstr ""
 
 #: src/tgraph_bot/bot/commands/test_scheduler.py:93
@@ -922,34 +890,42 @@ msgstr ""
 msgid "{current}/{total} steps ({progress_percent:.1f}%)"
 msgstr ""
 
+#: src/tgraph_bot/utils/discord/command_utils.py:205
 #: src/tgraph_bot/bot/commands/uptime.py:60
 msgid "{n} day"
 msgstr ""
 
+#: src/tgraph_bot/utils/discord/command_utils.py:205
 #: src/tgraph_bot/bot/commands/uptime.py:60
 msgid "{n} days"
 msgstr ""
 
+#: src/tgraph_bot/utils/discord/command_utils.py:207
 #: src/tgraph_bot/bot/commands/uptime.py:62
 msgid "{n} hour"
 msgstr ""
 
+#: src/tgraph_bot/utils/discord/command_utils.py:207
 #: src/tgraph_bot/bot/commands/uptime.py:62
 msgid "{n} hours"
 msgstr ""
 
+#: src/tgraph_bot/utils/discord/command_utils.py:209
 #: src/tgraph_bot/bot/commands/uptime.py:64
 msgid "{n} minute"
 msgstr ""
 
+#: src/tgraph_bot/utils/discord/command_utils.py:209
 #: src/tgraph_bot/bot/commands/uptime.py:64
 msgid "{n} minutes"
 msgstr ""
 
+#: src/tgraph_bot/utils/discord/command_utils.py:212
 #: src/tgraph_bot/bot/commands/uptime.py:66
 msgid "{n} second"
 msgstr ""
 
+#: src/tgraph_bot/utils/discord/command_utils.py:212
 #: src/tgraph_bot/bot/commands/uptime.py:66
 msgid "{n} seconds"
 msgstr ""
@@ -1014,19 +990,19 @@ msgstr ""
 msgid "🏔️ Peak Annotations"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:167
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:299
 msgid "👥 Top 10 Users"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:163
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:293
 msgid "💻 Top 10 Platforms"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:159
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:289
 msgid "📅 Play Count by Month"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:147
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:271
 msgid "📈 Daily Play Count"
 msgstr ""
 
@@ -1034,7 +1010,7 @@ msgstr ""
 msgid "📊 Enabled Graphs"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:182
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:314
 msgid "📊 Graph"
 msgstr ""
 
@@ -1042,7 +1018,7 @@ msgstr ""
 msgid "📊 Personal Statistics - Upload Issue"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:151
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:277
 msgid "📊 Play Count by Day of Week"
 msgstr ""
 
@@ -1070,7 +1046,7 @@ msgstr ""
 msgid "🔧 Configuration: {key}"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:155
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:283
 msgid "🕐 Play Count by Hour of Day"
 msgstr ""
 
