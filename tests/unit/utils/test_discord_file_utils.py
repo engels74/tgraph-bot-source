@@ -808,6 +808,121 @@ class TestCalculateNextUpdateTime:
                 f"but got {result} (today). UPDATE_DAYS=3 should be respected on first launch."
             )
 
+    def test_exact_user_scenario_reproduction(self) -> None:
+        """
+        Test that reproduces the exact scenario described by the user.
+
+        Scenario: UPDATE_DAYS=1, FIXED_UPDATE_TIME="23:59", current time is 20:24 on July 17th.
+        Expected: Should show July 18th at 23:59 (next day)
+        Bug: Shows July 17th at 23:59 (same day) on first launch
+        """
+        # Create a scheduler state file that exists and has the correct data
+        # This simulates the scenario where scheduler state is correct but Discord embed is wrong
+        state_data = {
+            "state": {
+                "last_update": "2025-07-17T20:24:41.214392+02:00",
+                "next_update": "2025-07-18T23:59:00+02:00",  # Correctly shows next day
+                "is_running": True,
+                "consecutive_failures": 0,
+                "last_failure": None,
+                "last_error": None
+            },
+            "config": {
+                "update_days": 1,
+                "fixed_update_time": "23:59"
+            },
+            "version": "1.0",
+            "saved_at": "2025-07-17T20:24:41.214512+02:00"
+        }
+
+        with (
+            patch('src.tgraph_bot.utils.discord.discord_file_utils.get_path_config') as mock_get_path_config,
+            patch('src.tgraph_bot.utils.discord.discord_file_utils.get_local_now') as mock_get_local_now,
+            patch('builtins.open', mock_open(read_data=json.dumps(state_data))) as mock_file
+        ):
+            # Create a mock path config that returns an existing state file
+            mock_state_file = Mock(spec=Path)
+            mock_state_file.exists = Mock(return_value=True)  # State file exists
+            mock_state_file.open = mock_file
+
+            mock_path_config = Mock()
+            mock_path_config.get_scheduler_state_path = Mock(return_value=mock_state_file)
+            mock_get_path_config.return_value = mock_path_config
+
+            # Mock current time: July 17th, 2025 at 20:24 (before 23:59)
+            mock_now = datetime(2025, 7, 17, 20, 24, 0, tzinfo=get_local_timezone())
+            mock_get_local_now.return_value = mock_now
+
+            # Configuration: UPDATE_DAYS=1, FIXED_UPDATE_TIME="23:59"
+            # This should schedule for July 18th at 23:59 (next day)
+            result = calculate_next_update_time(1, "23:59")
+
+            assert result is not None
+            assert result.tzinfo is not None
+
+            # Expected: Should return July 18th at 23:59 (next day, respecting UPDATE_DAYS=1)
+            expected_date = datetime(2025, 7, 18).date()  # July 18th (next day)
+            from datetime import time
+            expected_time = time(23, 59)
+            expected_result = datetime.combine(expected_date, expected_time).replace(tzinfo=get_local_timezone())
+
+            # This should match the scheduler state's next_update value
+            print(f"DEBUG: Current time: {mock_now}")
+            print(f"DEBUG: Result: {result}")
+            print(f"DEBUG: Expected: {expected_result}")
+            print(f"DEBUG: Result date: {result.date()}")
+            print(f"DEBUG: Expected date: {expected_result.date()}")
+
+            assert result == expected_result, (
+                f"Discord timestamp bug: Expected {expected_result} (next day at 23:59) "
+                f"but got {result}. Should match scheduler state's next_update value."
+            )
+
+    def test_debug_basic_logic_issue(self) -> None:
+        """
+        Debug test to understand what's happening with the basic logic.
+        """
+        # Simulate the exact scenario: no state file exists (first launch)
+        with (
+            patch('src.tgraph_bot.utils.discord.discord_file_utils.get_path_config') as mock_get_path_config,
+            patch('src.tgraph_bot.utils.discord.discord_file_utils.get_local_now') as mock_get_local_now
+        ):
+            # Create a mock path config that returns a non-existent state file
+            mock_state_file = Mock(spec=Path)
+            mock_state_file.exists = Mock(return_value=False)  # No state file (first launch)
+
+            mock_path_config = Mock()
+            mock_path_config.get_scheduler_state_path = Mock(return_value=mock_state_file)
+            mock_get_path_config.return_value = mock_path_config
+
+            # Mock current time: July 17th, 2025 at 20:24 (before 23:59)
+            mock_now = datetime(2025, 7, 17, 20, 24, 0, tzinfo=get_local_timezone())
+            mock_get_local_now.return_value = mock_now
+
+            # Configuration: UPDATE_DAYS=1, FIXED_UPDATE_TIME="23:59"
+            # With UPDATE_DAYS=1, this should schedule for July 18th at 23:59 (next day)
+            result = calculate_next_update_time(1, "23:59")
+
+            print(f"DEBUG: Current time: {mock_now}")
+            print(f"DEBUG: Result: {result}")
+            if result:
+                print(f"DEBUG: Result date: {result.date()}")
+            print(f"DEBUG: Current date: {mock_now.date()}")
+
+            assert result is not None, "Result should not be None"
+
+            # The bug: basic logic should schedule for TODAY at 23:59 when no state exists
+            # But with UPDATE_DAYS=1, it should actually schedule for TOMORROW
+            if result.date() == mock_now.date():
+                print("BUG REPRODUCED: Scheduled for same day instead of next day")
+                # This would be the bug - scheduling for same day when UPDATE_DAYS=1
+                # should schedule for next day
+                assert False, f"Bug reproduced: Got {result.date()} (same day) instead of next day"
+            else:
+                print("CORRECT: Scheduled for next day")
+                expected_date = mock_now.date() + timedelta(days=1)
+                assert result.date() == expected_date
+
 
 class TestCreateGraphSpecificEmbed:
     """Test cases for graph-specific embed creation."""

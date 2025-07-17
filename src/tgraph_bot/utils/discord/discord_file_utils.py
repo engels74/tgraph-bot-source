@@ -137,6 +137,7 @@ def calculate_next_update_time(
 
         # Try to load scheduler state to respect update_days interval from last update
         # This matches the scheduler logic in bot/update_tracker.py
+        scheduler_state_loaded = False
         try:
             import json
 
@@ -149,7 +150,30 @@ def calculate_next_update_time(
                     with state_file.open("r") as f:
                         state_data = json.load(f)  # pyright: ignore[reportAny]
 
-                    if "state" in state_data and "last_update" in state_data["state"]:
+                    # First, try to use the next_update value directly from scheduler state
+                    # This is the most accurate approach since the scheduler has already calculated it
+                    if "state" in state_data and "next_update" in state_data["state"]:
+                        next_update_str = state_data["state"]["next_update"]  # pyright: ignore[reportAny]
+                        if next_update_str and isinstance(next_update_str, str):
+                            try:
+                                scheduler_next_update = datetime.fromisoformat(next_update_str)
+
+                                # Ensure scheduler_next_update is timezone-aware
+                                if scheduler_next_update.tzinfo is None:
+                                    scheduler_next_update = scheduler_next_update.replace(
+                                        tzinfo=get_local_timezone()
+                                    )
+
+                                # Use the scheduler's next_update if it's in the future
+                                if scheduler_next_update > current_time:
+                                    next_update = scheduler_next_update
+                                    scheduler_state_loaded = True
+                            except (ValueError, TypeError):
+                                # If parsing fails, fall back to calculation from last_update
+                                pass
+
+                    # Fallback: calculate from last_update if next_update wasn't usable
+                    if not scheduler_state_loaded and "state" in state_data and "last_update" in state_data["state"]:
                         last_update_str = state_data["state"]["last_update"]  # pyright: ignore[reportAny]
                         if last_update_str and isinstance(last_update_str, str):
                             last_update = datetime.fromisoformat(last_update_str)
@@ -180,6 +204,7 @@ def calculate_next_update_time(
                                     candidate_update += timedelta(days=1)
 
                                 next_update = candidate_update
+                                scheduler_state_loaded = True
 
                 except (
                     OSError,
@@ -196,6 +221,16 @@ def calculate_next_update_time(
             logger.debug(
                 f"Could not load scheduler state for next update calculation: {e}"
             )
+
+        # Special case for UPDATE_DAYS=1 on first launch (no scheduler state)
+        # This matches the scheduler's behavior where it always adds UPDATE_DAYS to current time on first launch
+        if not scheduler_state_loaded and update_days == 1:
+            # On first launch with UPDATE_DAYS=1, scheduler schedules for tomorrow regardless of fixed time
+            min_next_update = current_time + timedelta(days=1)
+            if next_update < min_next_update:
+                # Find the next occurrence of fixed time on or after tomorrow
+                next_update = datetime.combine(min_next_update.date(), update_time)
+                next_update = next_update.replace(tzinfo=get_local_timezone())
 
         return next_update
 
