@@ -70,6 +70,18 @@ class TGraphBotConfig(BaseModel):
         default=True,
         description="Whether to censor usernames in graphs",
     )
+    GRAPH_WIDTH: Annotated[int, Field(ge=6, le=20)] = Field(
+        default=12,
+        description="Width of graphs in inches",
+    )
+    GRAPH_HEIGHT: Annotated[int, Field(ge=4, le=16)] = Field(
+        default=8,
+        description="Height of graphs in inches",
+    )
+    GRAPH_DPI: Annotated[int, Field(ge=72, le=300)] = Field(
+        default=100,
+        description="DPI (dots per inch) for graph image quality",
+    )
     ENABLE_GRAPH_GRID: bool = Field(
         default=False,
         description="Whether to enable grid lines in graphs",

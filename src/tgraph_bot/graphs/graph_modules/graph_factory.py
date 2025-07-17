@@ -38,6 +38,30 @@ class GraphFactory:
         """
         self.config: "TGraphBotConfig | dict[str, object]" = config
 
+    def _get_graph_dimensions(self) -> dict[str, int]:
+        """
+        Extract graph dimensions from configuration.
+
+        Returns:
+            Dictionary containing width, height, and dpi values
+        """
+        # Handle both dict and TGraphBotConfig objects
+        if isinstance(self.config, dict):
+            width = self.config.get("GRAPH_WIDTH", 12)
+            height = self.config.get("GRAPH_HEIGHT", 8)
+            dpi = self.config.get("GRAPH_DPI", 100)
+        else:
+            # TGraphBotConfig object
+            width = getattr(self.config, "GRAPH_WIDTH", 12)
+            height = getattr(self.config, "GRAPH_HEIGHT", 8)
+            dpi = getattr(self.config, "GRAPH_DPI", 100)
+        
+        return {
+            "width": int(width),
+            "height": int(height),
+            "dpi": int(dpi)
+        }
+
     def create_enabled_graphs(self) -> list[BaseGraph]:
         """
         Create instances of all enabled graph types.
@@ -46,6 +70,9 @@ class GraphFactory:
             List of graph instances for enabled graph types
         """
         graphs: list[BaseGraph] = []
+
+        # Get dimension parameters from config
+        dimensions = self._get_graph_dimensions()
 
         # Check each graph type and create if enabled
         def get_config_value(key: str, default: bool = True) -> bool:
@@ -73,32 +100,32 @@ class GraphFactory:
 
         if get_config_value("ENABLE_DAILY_PLAY_COUNT"):
             logger.debug("Creating daily play count graph")
-            graphs.append(DailyPlayCountGraph(config=self.config))
+            graphs.append(DailyPlayCountGraph(config=self.config, **dimensions))
 
         if get_config_value("ENABLE_PLAY_COUNT_BY_DAYOFWEEK"):
             logger.debug("Creating play count by day of week graph")
-            graphs.append(PlayCountByDayOfWeekGraph(config=self.config))
+            graphs.append(PlayCountByDayOfWeekGraph(config=self.config, **dimensions))
 
         if get_config_value("ENABLE_PLAY_COUNT_BY_HOUROFDAY"):
             logger.debug("Creating play count by hour of day graph")
-            graphs.append(PlayCountByHourOfDayGraph(config=self.config))
+            graphs.append(PlayCountByHourOfDayGraph(config=self.config, **dimensions))
 
         if get_config_value("ENABLE_PLAY_COUNT_BY_MONTH"):
             logger.debug("Creating play count by month graph")
-            graphs.append(PlayCountByMonthGraph(config=self.config))
+            graphs.append(PlayCountByMonthGraph(config=self.config, **dimensions))
 
         if get_config_value("ENABLE_TOP_10_PLATFORMS"):
             logger.debug("Creating top 10 platforms graph")
-            graphs.append(Top10PlatformsGraph(config=self.config))
+            graphs.append(Top10PlatformsGraph(config=self.config, **dimensions))
 
         if get_config_value("ENABLE_TOP_10_USERS"):
             logger.debug("Creating top 10 users graph")
-            graphs.append(Top10UsersGraph(config=self.config))
+            graphs.append(Top10UsersGraph(config=self.config, **dimensions))
 
         # Sample graph for demonstration (disabled by default)
         if get_config_value("ENABLE_SAMPLE_GRAPH", default=False):
             logger.debug("Creating sample graph")
-            graphs.append(SampleGraph(config=self.config))
+            graphs.append(SampleGraph(config=self.config, **dimensions))
 
         logger.info(f"Created {len(graphs)} enabled graph instances")
         return graphs
@@ -130,8 +157,11 @@ class GraphFactory:
         if graph_class is None:
             raise ValueError(f"Unknown graph type: {graph_type}")
 
+        # Get dimension parameters from config
+        dimensions = self._get_graph_dimensions()
+
         logger.debug(f"Creating graph of type: {graph_type}")
-        return graph_class(config=self.config)
+        return graph_class(config=self.config, **dimensions)
 
     def get_enabled_graph_types(self) -> list[str]:
         """

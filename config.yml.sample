@@ -85,6 +85,18 @@ GRAPH_BACKGROUND_COLOR: '#ffffff'
 # Whether to enable grid lines in graphs
 ENABLE_GRAPH_GRID: false
 
+# Graph Dimensions & Quality
+# ---------------------------
+
+# Width of graphs in inches (6-20)
+GRAPH_WIDTH: 12
+
+# Height of graphs in inches (4-16)
+GRAPH_HEIGHT: 8
+
+# DPI (dots per inch) for graph image quality (72-300)
+GRAPH_DPI: 100
+
 # Annotation Settings (All Types)
 # --------------------------------
 
