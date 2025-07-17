@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import pytest
+from typing import cast
 from unittest.mock import patch
 
 from src.tgraph_bot.graphs.graph_modules.graph_factory import GraphFactory
@@ -151,7 +151,7 @@ class TestGraphFactoryDimensions:
             "GRAPH_HEIGHT": 9,
             "GRAPH_DPI": 144,
         }
-        factory = GraphFactory(config_dict)
+        factory = GraphFactory(cast(dict[str, object], config_dict))
         
         with patch('src.tgraph_bot.graphs.graph_modules.graph_factory.DailyPlayCountGraph') as mock_daily:
             _ = factory.create_graph_by_type("daily_play_count")
@@ -173,7 +173,7 @@ class TestGraphFactoryDimensions:
             "CHANNEL_ID": 123456789012345678,
             # Missing GRAPH_WIDTH, GRAPH_HEIGHT, GRAPH_DPI
         }
-        factory = GraphFactory(config_dict)
+        factory = GraphFactory(cast(dict[str, object], config_dict))
         
         with patch('src.tgraph_bot.graphs.graph_modules.graph_factory.DailyPlayCountGraph') as mock_daily:
             _ = factory.create_graph_by_type("daily_play_count")
@@ -218,7 +218,7 @@ class TestGraphFactoryDimensions:
             "GRAPH_DPI": 72,
             "ENABLE_SAMPLE_GRAPH": True,
         }
-        factory = GraphFactory(config_dict)
+        factory = GraphFactory(cast(dict[str, object], config_dict))
         
         with patch('src.tgraph_bot.graphs.graph_modules.graph_factory.SampleGraph') as mock_sample:
             _ = factory.create_graph_by_type("sample_graph")
@@ -247,7 +247,7 @@ class TestGraphFactoryDimensions:
         
         # Test that the factory can extract dimensions from config
         # This tests the internal _get_graph_dimensions method
-        dimensions = factory._get_graph_dimensions()
+        dimensions = factory._get_graph_dimensions()  # pyright: ignore[reportPrivateUsage]
         assert dimensions == {"width": 18, "height": 14, "dpi": 200}
 
     def test_graph_factory_dimension_extraction_with_dict_config(self) -> None:
@@ -257,17 +257,17 @@ class TestGraphFactoryDimensions:
             "GRAPH_HEIGHT": 7,
             "GRAPH_DPI": 110,
         }
-        factory = GraphFactory(config_dict)
+        factory = GraphFactory(cast(dict[str, object], config_dict))
         
         # Test dimension extraction from dict
-        dimensions = factory._get_graph_dimensions()
+        dimensions = factory._get_graph_dimensions()  # pyright: ignore[reportPrivateUsage]
         assert dimensions == {"width": 13, "height": 7, "dpi": 110}
 
     def test_graph_factory_dimension_extraction_defaults(self) -> None:
         """Test that dimension extraction provides defaults when config is missing."""
         config_dict = {}  # Empty config
-        factory = GraphFactory(config_dict)
+        factory = GraphFactory(cast(dict[str, object], config_dict))
         
         # Test that defaults are provided
-        dimensions = factory._get_graph_dimensions()
+        dimensions = factory._get_graph_dimensions()  # pyright: ignore[reportPrivateUsage]
         assert dimensions == {"width": 12, "height": 8, "dpi": 100}

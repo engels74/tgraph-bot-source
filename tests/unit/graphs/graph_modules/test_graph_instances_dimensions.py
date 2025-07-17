@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-import pytest
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 from src.tgraph_bot.graphs.graph_modules.tautulli_graphs.daily_play_count_graph import DailyPlayCountGraph
 from src.tgraph_bot.graphs.graph_modules.tautulli_graphs.top_10_users_graph import Top10UsersGraph
@@ -78,7 +77,7 @@ class TestGraphInstancesDimensions:
         assert graph.dpi == 96
 
     @patch('matplotlib.pyplot.subplots')
-    def test_graph_setup_figure_uses_configured_dimensions(self, mock_subplots) -> None:
+    def test_graph_setup_figure_uses_configured_dimensions(self, mock_subplots: Mock) -> None:
         """Test that setup_figure uses configured dimensions."""
         from unittest.mock import Mock
         
@@ -112,7 +111,7 @@ class TestGraphInstancesDimensions:
         )
 
     @patch('matplotlib.figure.Figure.savefig')
-    def test_graph_save_figure_uses_configured_dpi(self, mock_savefig) -> None:
+    def test_graph_save_figure_uses_configured_dpi(self, mock_savefig: Mock) -> None:
         """Test that save_figure uses configured DPI."""
         config_data = {
             "TAUTULLI_API_KEY": "test_api_key",

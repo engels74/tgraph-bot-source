@@ -7,7 +7,7 @@ graph classes based on the enabled settings in the configuration.
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, cast, TypedDict
 from collections.abc import Mapping
 
 from .base_graph import BaseGraph
@@ -26,6 +26,13 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+class GraphDimensions(TypedDict):
+    """Type definition for graph dimensions dictionary."""
+    width: int
+    height: int
+    dpi: int
+
+
 class GraphFactory:
     """Factory class for creating graph instances based on configuration."""
 
@@ -38,7 +45,7 @@ class GraphFactory:
         """
         self.config: "TGraphBotConfig | dict[str, object]" = config
 
-    def _get_graph_dimensions(self) -> dict[str, int]:
+    def _get_graph_dimensions(self) -> GraphDimensions:
         """
         Extract graph dimensions from configuration.
 
@@ -56,11 +63,33 @@ class GraphFactory:
             height = getattr(self.config, "GRAPH_HEIGHT", 8)
             dpi = getattr(self.config, "GRAPH_DPI", 100)
         
-        return {
-            "width": int(width),
-            "height": int(height),
-            "dpi": int(dpi)
-        }
+        # Ensure values are integers by explicit conversion with type narrowing
+        def safe_int_conversion(value: object, default: int) -> int:
+            if isinstance(value, int):
+                return value
+            elif isinstance(value, str):
+                try:
+                    return int(value)
+                except ValueError:
+                    return default
+            elif value is None:
+                return default
+            else:
+                # For any other type, try to convert to int
+                try:
+                    return int(value)  # pyright: ignore[reportArgumentType]
+                except (ValueError, TypeError):
+                    return default
+        
+        width_val = safe_int_conversion(width, 12)
+        height_val = safe_int_conversion(height, 8)
+        dpi_val = safe_int_conversion(dpi, 100)
+        
+        return GraphDimensions(
+            width=width_val,
+            height=height_val,
+            dpi=dpi_val
+        )
 
     def create_enabled_graphs(self) -> list[BaseGraph]:
         """
