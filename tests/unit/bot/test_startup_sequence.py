@@ -244,6 +244,47 @@ class TestStartupSequence:
         # Verify state was updated
         assert mock_state.last_update is not None  # pyright: ignore[reportAny]
         mock_state_manager.save_state.assert_called_once()  # pyright: ignore[reportAny]
+
+    @pytest.mark.asyncio
+    async def test_update_scheduler_state_uses_local_timezone(self, startup_sequence: StartupSequence, mock_bot: MagicMock) -> None:
+        """Test that scheduler state update converts UTC time to local timezone."""
+        from zoneinfo import ZoneInfo
+        from tgraph_bot.bot.update_tracker import get_local_timezone
+        
+        # Mark initial post as completed
+        startup_sequence.initial_post_completed = True
+        
+        # Setup update tracker mocks with proper types
+        mock_state = MagicMock()
+        mock_state_manager = MagicMock()
+        
+        update_tracker_mock = cast(MagicMock, mock_bot.update_tracker)
+        update_tracker_mock._state = mock_state
+        update_tracker_mock._state_manager = mock_state_manager
+        update_tracker_mock.get_next_update_time.return_value = datetime.now()  # pyright: ignore[reportAny]
+        
+        # Mock discord.utils.utcnow to return a known UTC time
+        with patch('discord.utils.utcnow') as mock_utcnow:
+            from datetime import timezone
+            known_utc_time = datetime(2025, 7, 18, 12, 0, 0, tzinfo=timezone.utc)
+            mock_utcnow.return_value = known_utc_time
+            
+            # Run scheduler update
+            await startup_sequence.update_scheduler_state()
+            
+            # Verify that the assigned time is in local timezone, not UTC
+            assigned_time = mock_state.last_update
+            assert assigned_time is not None
+            
+            # The assigned time should be the UTC time converted to local timezone
+            expected_local_time = known_utc_time.astimezone(get_local_timezone())
+            assert assigned_time == expected_local_time
+            
+            # Verify the timezone is local, not UTC
+            assert assigned_time.tzinfo is not None
+            assert isinstance(assigned_time.tzinfo, ZoneInfo)
+            assert str(assigned_time.tzinfo) == str(get_local_timezone())
+            assert assigned_time.tzinfo != timezone.utc
     
     @pytest.mark.asyncio
     async def test_update_scheduler_state_skips_if_no_graphs(self, startup_sequence: StartupSequence) -> None:
