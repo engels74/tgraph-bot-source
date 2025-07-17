@@ -10,6 +10,7 @@ import tempfile
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from unittest.mock import MagicMock, patch
+from zoneinfo import ZoneInfo
 
 import discord
 import pytest
@@ -21,6 +22,15 @@ from tgraph_bot.bot.update_tracker import (
     RecoveryManager,
     SchedulingConfig,
     UpdateTracker,
+    get_local_timezone,
+    get_local_now,
+)
+from tgraph_bot.utils.discord.discord_file_utils import (
+    get_local_timezone as utils_get_local_timezone,
+    get_local_now as utils_get_local_now,
+    calculate_next_update_time,
+    format_next_update_timestamp,
+    ensure_timezone_aware,
 )
 
 
@@ -75,13 +85,13 @@ class TestTimezoneHandling:
         # Deserialize legacy data
         state = ScheduleState.from_dict(legacy_data)
         
-        # Verify all datetimes are now timezone-aware (converted to UTC)
+        # Verify all datetimes are now timezone-aware (converted to local timezone)
         assert state.last_update is not None
-        assert state.last_update.tzinfo == timezone.utc
+        assert state.last_update.tzinfo is not None
         assert state.next_update is not None
-        assert state.next_update.tzinfo == timezone.utc
+        assert state.next_update.tzinfo is not None
         assert state.last_failure is not None
-        assert state.last_failure.tzinfo == timezone.utc
+        assert state.last_failure.tzinfo is not None
 
     @pytest.mark.asyncio
     async def test_background_task_manager_health_check_with_timezone_aware_datetimes(self) -> None:
@@ -94,10 +104,10 @@ class TestTimezoneHandling:
         async def dummy_task() -> None:
             await asyncio.sleep(0.1)
 
-        # Mock discord.utils.utcnow to return a known timezone-aware datetime
-        with patch('discord.utils.utcnow') as mock_utcnow:
-            base_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
-            mock_utcnow.return_value = base_time
+        # Mock get_local_now to return a known timezone-aware datetime
+        with patch('tgraph_bot.bot.update_tracker.get_local_now') as mock_local_now:
+            base_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=get_local_timezone())
+            mock_local_now.return_value = base_time
 
             # Add task - this should set task health to timezone-aware datetime
             manager.add_task(task_name, dummy_task)
@@ -113,7 +123,7 @@ class TestTimezoneHandling:
             
             # Test health check with timezone-aware current time
             future_time = base_time + timedelta(minutes=10)
-            mock_utcnow.return_value = future_time
+            mock_local_now.return_value = future_time
             
             # This should not raise a timezone error
             is_healthy = manager.is_healthy()
@@ -121,7 +131,7 @@ class TestTimezoneHandling:
             
             # Test with recent time (should be healthy)
             recent_time = base_time + timedelta(minutes=1)
-            mock_utcnow.return_value = recent_time
+            mock_local_now.return_value = recent_time
             
             is_healthy = manager.is_healthy()
             assert is_healthy  # Should be healthy
@@ -251,3 +261,205 @@ class TestTimezoneHandling:
             metrics.record_failure(ErrorType.TRANSIENT)
             assert metrics.last_failure is not None
             assert metrics.last_failure.tzinfo is not None
+
+
+class TestLocalTimezoneHandling:
+    """Test local timezone handling functions."""
+
+    def test_get_local_timezone(self) -> None:
+        """Test that get_local_timezone returns system local timezone."""
+        # Test update_tracker version
+        tz = get_local_timezone()
+        assert tz is not None
+        assert isinstance(tz, ZoneInfo)
+        
+        # Test utils version
+        utils_tz = utils_get_local_timezone()
+        assert utils_tz is not None
+        assert isinstance(utils_tz, ZoneInfo)
+        
+        # Both should return equivalent timezone
+        assert str(tz) == str(utils_tz)
+
+    def test_get_local_now(self) -> None:
+        """Test that get_local_now returns timezone-aware local datetime."""
+        # Test update_tracker version
+        now = get_local_now()
+        assert now.tzinfo is not None
+        assert isinstance(now.tzinfo, ZoneInfo)
+        
+        # Test utils version
+        utils_now = utils_get_local_now()
+        assert utils_now.tzinfo is not None
+        assert isinstance(utils_now.tzinfo, ZoneInfo)
+        
+        # Both should have same timezone
+        assert str(now.tzinfo) == str(utils_now.tzinfo)
+
+    def test_ensure_timezone_aware_with_naive_datetime(self) -> None:
+        """Test ensure_timezone_aware converts naive datetime to local timezone."""
+        naive_dt = datetime(2025, 1, 1, 12, 0, 0)  # No timezone
+        
+        aware_dt = ensure_timezone_aware(naive_dt)
+        
+        assert aware_dt.tzinfo is not None
+        assert isinstance(aware_dt.tzinfo, ZoneInfo)
+        assert aware_dt.year == 2025
+        assert aware_dt.month == 1
+        assert aware_dt.day == 1
+        assert aware_dt.hour == 12
+        assert aware_dt.minute == 0
+        assert aware_dt.second == 0
+
+    def test_ensure_timezone_aware_with_aware_datetime(self) -> None:
+        """Test ensure_timezone_aware preserves timezone-aware datetime."""
+        aware_dt = datetime(2025, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        
+        result = ensure_timezone_aware(aware_dt)
+        
+        assert result is aware_dt  # Should return same object
+        assert result.tzinfo == timezone.utc
+
+    def test_calculate_next_update_time_fixed_time(self) -> None:
+        """Test calculate_next_update_time with fixed time uses local timezone."""
+        next_update = calculate_next_update_time(1, "23:59")
+        
+        assert next_update is not None
+        assert next_update.tzinfo is not None
+        assert isinstance(next_update.tzinfo, ZoneInfo)
+        assert next_update.hour == 23
+        assert next_update.minute == 59
+        assert next_update.second == 0
+
+    def test_calculate_next_update_time_interval_based(self) -> None:
+        """Test calculate_next_update_time with interval-based scheduling."""
+        next_update = calculate_next_update_time(2, "XX:XX")
+        
+        assert next_update is not None
+        assert next_update.tzinfo is not None
+        assert isinstance(next_update.tzinfo, ZoneInfo)
+        
+        # Should be approximately 2 days from now
+        now = get_local_now()
+        diff = next_update - now
+        assert 1.9 <= diff.total_seconds() / 86400 <= 2.1  # Between 1.9 and 2.1 days
+
+    def test_format_next_update_timestamp(self) -> None:
+        """Test format_next_update_timestamp creates Discord timestamp."""
+        # Create a fixed datetime in local timezone
+        dt = datetime(2025, 7, 18, 23, 59, 0, tzinfo=get_local_timezone())
+        
+        # Test default style (relative)
+        timestamp = format_next_update_timestamp(dt)
+        assert timestamp.startswith("<t:")
+        assert timestamp.endswith(":R>")
+        
+        # Test specific style
+        timestamp_f = format_next_update_timestamp(dt, "f")
+        assert timestamp_f.startswith("<t:")
+        assert timestamp_f.endswith(":f>")
+        
+        # Test with naive datetime (should be converted to local timezone)
+        naive_dt = datetime(2025, 7, 18, 23, 59, 0)
+        timestamp_naive = format_next_update_timestamp(naive_dt)
+        assert timestamp_naive.startswith("<t:")
+        assert timestamp_naive.endswith(":R>")
+
+    def test_scheduler_state_with_local_timezone(self) -> None:
+        """Test ScheduleState correctly handles local timezone datetimes."""
+        state = ScheduleState()
+        local_time = get_local_now()
+        
+        state.last_update = local_time
+        state.next_update = local_time + timedelta(days=1)
+        
+        # Test serialization
+        state_dict = state.to_dict()
+        assert state_dict["last_update"] is not None
+        assert state_dict["next_update"] is not None
+        
+        # Test deserialization
+        restored_state = ScheduleState.from_dict(state_dict)
+        assert restored_state.last_update is not None
+        assert restored_state.next_update is not None
+        assert restored_state.last_update.tzinfo is not None
+        assert restored_state.next_update.tzinfo is not None
+
+    def test_scheduling_config_with_local_time(self) -> None:
+        """Test SchedulingConfig works with local timezone."""
+        config = SchedulingConfig(update_days=1, fixed_update_time="23:59")
+        
+        # Test fixed time parsing
+        fixed_time = config.get_fixed_time()
+        assert fixed_time is not None
+        assert fixed_time.hour == 23
+        assert fixed_time.minute == 59
+        
+        # Test is_fixed_time_based
+        assert config.is_fixed_time_based()
+        
+        # Test interval-based config
+        interval_config = SchedulingConfig(update_days=2, fixed_update_time="XX:XX")
+        assert not interval_config.is_fixed_time_based()
+
+    @pytest.mark.asyncio
+    async def test_update_tracker_with_local_timezone(self) -> None:
+        """Test UpdateTracker uses local timezone consistently."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            state_file = Path(temp_dir) / "test_state.json"
+            
+            # Create mock bot
+            mock_bot = MagicMock()
+            mock_user = MagicMock()
+            mock_user.id = 12345
+            mock_bot.user = mock_user
+            
+            # Create UpdateTracker
+            tracker = UpdateTracker(mock_bot, state_file_path=state_file)
+            
+            try:
+                # Start scheduler with local timezone
+                await tracker.start_scheduler(
+                    update_days=1,
+                    fixed_update_time="23:59"
+                )
+                
+                # Check scheduler status
+                status = tracker.get_scheduler_status()
+                assert status["is_started"]
+                
+                # Check that state uses local timezone
+                next_update = status["next_update"]
+                if next_update:
+                    assert next_update.tzinfo is not None
+                    assert isinstance(next_update.tzinfo, (ZoneInfo, timezone))
+                
+            finally:
+                await tracker.stop_scheduler()
+
+    def test_mixed_timezone_data_conversion(self) -> None:
+        """Test that mixed timezone data is handled correctly."""
+        # Create state with mixed timezone data
+        legacy_data = {
+            "last_update": "2025-01-01T12:00:00",  # Naive
+            "next_update": "2025-01-01T13:00:00+00:00",  # UTC
+            "last_failure": "2025-01-01T11:30:00+02:00",  # Europe/Copenhagen
+            "is_running": True,
+            "consecutive_failures": 0,
+        }
+        
+        # Deserialize - should convert all to timezone-aware
+        state = ScheduleState.from_dict(legacy_data)
+        
+        assert state.last_update is not None
+        assert state.last_update.tzinfo is not None
+        assert state.next_update is not None
+        assert state.next_update.tzinfo is not None
+        assert state.last_failure is not None
+        assert state.last_failure.tzinfo is not None
+        
+        # All should be timezone-aware, but may have different timezones
+        # The key is that they're all timezone-aware for consistent comparisons
+        assert state.last_update.tzinfo is not None
+        assert state.next_update.tzinfo is not None
+        assert state.last_failure.tzinfo is not None

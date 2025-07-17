@@ -14,6 +14,7 @@ import functools
 import logging
 import traceback
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 from enum import Enum
 from typing import TYPE_CHECKING, TypeVar, ParamSpec
 from collections import defaultdict
@@ -72,7 +73,7 @@ class ErrorContext:
         self.channel_id: int | None = channel_id
         self.command_name: str | None = command_name
         self.additional_context: dict[str, object] = additional_context or {}
-        self.timestamp: datetime = datetime.now()
+        self.timestamp: datetime = datetime.now(ZoneInfo("localtime"))
 
     def to_dict(self) -> dict[str, object]:
         """Convert context to dictionary for logging."""
@@ -294,14 +295,30 @@ def create_user_friendly_message(
 ) -> str:
     """Create a user-friendly error message based on error category."""
     base_messages = {
-        ErrorCategory.NETWORK: i18n.translate("There was a network connectivity issue. Please try again in a moment."),
-        ErrorCategory.API: i18n.translate("The external service is temporarily unavailable. Please try again later."),
-        ErrorCategory.PERMISSION: i18n.translate("You don't have permission to perform this action."),
-        ErrorCategory.VALIDATION: i18n.translate("The provided input is invalid. Please check your parameters and try again."),
-        ErrorCategory.CONFIGURATION: i18n.translate("There's a configuration issue. Please contact the server administrators."),
-        ErrorCategory.RESOURCE: i18n.translate("System resources are currently limited. Please try again later."),
-        ErrorCategory.DISCORD: i18n.translate("There was a Discord communication error. Please try again."),
-        ErrorCategory.UNKNOWN: i18n.translate("An error occurred while processing your request"),
+        ErrorCategory.NETWORK: i18n.translate(
+            "There was a network connectivity issue. Please try again in a moment."
+        ),
+        ErrorCategory.API: i18n.translate(
+            "The external service is temporarily unavailable. Please try again later."
+        ),
+        ErrorCategory.PERMISSION: i18n.translate(
+            "You don't have permission to perform this action."
+        ),
+        ErrorCategory.VALIDATION: i18n.translate(
+            "The provided input is invalid. Please check your parameters and try again."
+        ),
+        ErrorCategory.CONFIGURATION: i18n.translate(
+            "There's a configuration issue. Please contact the server administrators."
+        ),
+        ErrorCategory.RESOURCE: i18n.translate(
+            "System resources are currently limited. Please try again later."
+        ),
+        ErrorCategory.DISCORD: i18n.translate(
+            "There was a Discord communication error. Please try again."
+        ),
+        ErrorCategory.UNKNOWN: i18n.translate(
+            "An error occurred while processing your request"
+        ),
     }
 
     message = base_messages.get(category, base_messages[ErrorCategory.UNKNOWN])
@@ -533,7 +550,7 @@ async def log_performance_metrics(
         "operation": operation_name,
         "duration_seconds": duration,
         "success": success,
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": datetime.now(ZoneInfo("localtime")).isoformat(),
     }
 
     if additional_metrics:

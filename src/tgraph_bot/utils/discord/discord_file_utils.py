@@ -9,6 +9,7 @@ import logging
 from datetime import datetime, time, timedelta
 from pathlib import Path
 from typing import NamedTuple, Literal
+from zoneinfo import ZoneInfo
 
 import discord
 
@@ -24,44 +25,64 @@ DISCORD_FILE_SIZE_LIMIT_NITRO = 25 * 1024 * 1024  # 25MB for Nitro users
 SUPPORTED_IMAGE_FORMATS = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
 
 # Discord timestamp styles (from discord.py)
-TimestampStyle = Literal['f', 'F', 'd', 'D', 't', 'T', 'R']
+TimestampStyle = Literal["f", "F", "d", "D", "t", "T", "R"]
+
+
+def get_local_timezone() -> ZoneInfo:
+    """
+    Get the system's local timezone.
+
+    Returns:
+        ZoneInfo object representing the local timezone
+    """
+    # Use the system's local timezone
+    return ZoneInfo("localtime")
+
+
+def get_local_now() -> datetime:
+    """
+    Get the current local datetime (timezone-aware).
+
+    Returns:
+        Current datetime in the system's local timezone
+    """
+    return datetime.now(get_local_timezone())
 
 
 def ensure_timezone_aware(dt: datetime) -> datetime:
     """
     Ensure a datetime object is timezone-aware.
-    
-    Uses discord.utils.utcnow() for consistent timezone handling.
-    
+
+    Uses the system's local timezone for consistent scheduling.
+
     Args:
         dt: Datetime object that may be naive or timezone-aware
-        
+
     Returns:
-        Timezone-aware datetime object (UTC)
+        Timezone-aware datetime object (local timezone)
     """
     if dt.tzinfo is None:
-        # If naive, assume it's UTC (consistent with Discord's behavior)
-        return dt.replace(tzinfo=discord.utils.utcnow().tzinfo)
+        # If naive, assume it's in local timezone
+        return dt.replace(tzinfo=get_local_timezone())
     return dt
 
 
 def format_next_update_timestamp(
-    next_update: datetime, 
-    style: TimestampStyle = "R"
+    next_update: datetime, style: TimestampStyle = "R"
 ) -> str:
     """
     Format a datetime object as a Discord timestamp for next update display.
-    
+
     Args:
         next_update: The datetime for the next update
         style: Discord timestamp style (default: 'R' for relative)
-        
+
     Returns:
         Formatted Discord timestamp string
     """
     # Ensure timezone-aware datetime
     next_update = ensure_timezone_aware(next_update)
-    
+
     # Use discord.py's format_dt function for consistent formatting
     return discord.utils.format_dt(next_update, style=style)
 
@@ -83,8 +104,8 @@ def calculate_next_update_time(
         Next update datetime, or None if calculation fails
     """
     try:
-        # Use discord.utils.utcnow() for consistent timezone-aware datetime
-        current_time = discord.utils.utcnow()
+        # Use local timezone for consistent scheduling
+        current_time = get_local_now()
 
         # Handle interval-based updates
         if fixed_update_time == "XX:XX":
@@ -99,7 +120,7 @@ def calculate_next_update_time(
 
         # Calculate next occurrence of the fixed time (timezone-aware)
         next_update = datetime.combine(current_time.date(), update_time)
-        next_update = next_update.replace(tzinfo=current_time.tzinfo)
+        next_update = next_update.replace(tzinfo=get_local_timezone())
 
         # If time has passed today, schedule for tomorrow
         if next_update <= current_time:
@@ -123,10 +144,12 @@ def calculate_next_update_time(
                         last_update_str = state_data["state"]["last_update"]  # pyright: ignore[reportAny]
                         if last_update_str and isinstance(last_update_str, str):
                             last_update = datetime.fromisoformat(last_update_str)
-                            
+
                             # Ensure last_update is timezone-aware
                             if last_update.tzinfo is None:
-                                last_update = last_update.replace(tzinfo=current_time.tzinfo)
+                                last_update = last_update.replace(
+                                    tzinfo=get_local_timezone()
+                                )
 
                             # Respect the update_days interval if we have a last update
                             min_next_update = last_update + timedelta(days=update_days)
@@ -138,7 +161,9 @@ def calculate_next_update_time(
                                     candidate_date, update_time
                                 )
                                 # Ensure candidate_update is timezone-aware
-                                candidate_update = candidate_update.replace(tzinfo=current_time.tzinfo)
+                                candidate_update = candidate_update.replace(
+                                    tzinfo=get_local_timezone()
+                                )
 
                                 # If the time on min_next_update date has already passed in min_next_update,
                                 # move to the next day
@@ -195,15 +220,21 @@ def create_graph_specific_embed(
     graph_info = {
         "daily_play_count": {
             "title": translate("📈 Daily Play Count"),
-            "description": translate("Shows the number of plays per day over the selected time period."),
+            "description": translate(
+                "Shows the number of plays per day over the selected time period."
+            ),
         },
         "play_count_by_dayofweek": {
             "title": translate("📊 Play Count by Day of Week"),
-            "description": translate("Displays play activity patterns across different days of the week."),
+            "description": translate(
+                "Displays play activity patterns across different days of the week."
+            ),
         },
         "play_count_by_hourofday": {
             "title": translate("🕐 Play Count by Hour of Day"),
-            "description": translate("Shows when users are most active throughout the day."),
+            "description": translate(
+                "Shows when users are most active throughout the day."
+            ),
         },
         "play_count_by_month": {
             "title": translate("📅 Play Count by Month"),
@@ -211,7 +242,9 @@ def create_graph_specific_embed(
         },
         "top_10_platforms": {
             "title": translate("💻 Top 10 Platforms"),
-            "description": translate("Most popular platforms used for media consumption."),
+            "description": translate(
+                "Most popular platforms used for media consumption."
+            ),
         },
         "top_10_users": {
             "title": translate("👥 Top 10 Users"),
@@ -230,7 +263,9 @@ def create_graph_specific_embed(
     if not info:
         info = {
             "title": translate("📊 Graph"),
-            "description": translate("Statistical visualization of Plex activity data."),
+            "description": translate(
+                "Statistical visualization of Plex activity data."
+            ),
         }
 
     # Create the embed
@@ -295,13 +330,19 @@ def validate_file_for_discord(
         # Check if file exists
         if not path.exists():
             return FileValidationResult(
-                valid=False, error_message=translate("File does not exist: {file_path}", file_path=file_path)
+                valid=False,
+                error_message=translate(
+                    "File does not exist: {file_path}", file_path=file_path
+                ),
             )
 
         # Check if it's actually a file
         if not path.is_file():
             return FileValidationResult(
-                valid=False, error_message=translate("Path is not a file: {file_path}", file_path=file_path)
+                valid=False,
+                error_message=translate(
+                    "Path is not a file: {file_path}", file_path=file_path
+                ),
             )
 
         # Get file size
@@ -311,7 +352,9 @@ def validate_file_for_discord(
         if file_size == 0:
             return FileValidationResult(
                 valid=False,
-                error_message=translate("File is empty: {file_path}", file_path=file_path),
+                error_message=translate(
+                    "File is empty: {file_path}", file_path=file_path
+                ),
                 file_size=file_size,
             )
 
@@ -326,17 +369,25 @@ def validate_file_for_discord(
             actual_mb = file_size / (1024 * 1024)
             return FileValidationResult(
                 valid=False,
-                error_message=translate("File too large: {actual_mb:.1f}MB exceeds {limit_mb:.0f}MB limit", actual_mb=actual_mb, limit_mb=limit_mb),
+                error_message=translate(
+                    "File too large: {actual_mb:.1f}MB exceeds {limit_mb:.0f}MB limit",
+                    actual_mb=actual_mb,
+                    limit_mb=limit_mb,
+                ),
                 file_size=file_size,
             )
 
         # Check file format
         file_format = path.suffix.lower()
         if file_format not in SUPPORTED_IMAGE_FORMATS:
-            supported_formats = ', '.join(SUPPORTED_IMAGE_FORMATS)
+            supported_formats = ", ".join(SUPPORTED_IMAGE_FORMATS)
             return FileValidationResult(
                 valid=False,
-                error_message=translate("Unsupported file format: {file_format}. Supported: {supported_formats}", file_format=file_format, supported_formats=supported_formats),
+                error_message=translate(
+                    "Unsupported file format: {file_format}. Supported: {supported_formats}",
+                    file_format=file_format,
+                    supported_formats=supported_formats,
+                ),
                 file_size=file_size,
                 file_format=file_format,
             )
@@ -415,6 +466,7 @@ async def upload_files_to_channel(
     if not file_paths:
         # Import i18n locally to avoid circular imports
         from ...i18n import translate
+
         return DiscordUploadResult(
             success=False, error_message=translate("No files provided for upload")
         )
@@ -433,8 +485,12 @@ async def upload_files_to_channel(
                 else:
                     # Import i18n locally to avoid circular imports
                     from ...i18n import translate
+
                     validation_errors.append(
-                        translate("Failed to create Discord file for: {file_path}", file_path=file_path)
+                        translate(
+                            "Failed to create Discord file for: {file_path}",
+                            file_path=file_path,
+                        )
                     )
             else:
                 validation_errors.append(f"{file_path}: {validation.error_message}")
@@ -448,10 +504,13 @@ async def upload_files_to_channel(
         if not discord_files:
             # Import i18n locally to avoid circular imports
             from ...i18n import translate
-            errors = '; '.join(validation_errors)
+
+            errors = "; ".join(validation_errors)
             return DiscordUploadResult(
                 success=False,
-                error_message=translate("No valid files to upload. Errors: {errors}", errors=errors),
+                error_message=translate(
+                    "No valid files to upload. Errors: {errors}", errors=errors
+                ),
             )
 
         # Upload files to Discord
@@ -500,6 +559,7 @@ async def upload_files_to_user_dm(
     if not file_paths:
         # Import i18n locally to avoid circular imports
         from ...i18n import translate
+
         return DiscordUploadResult(
             success=False, error_message=translate("No files provided for upload")
         )
@@ -518,8 +578,12 @@ async def upload_files_to_user_dm(
                 else:
                     # Import i18n locally to avoid circular imports
                     from ...i18n import translate
+
                     validation_errors.append(
-                        translate("Failed to create Discord file for: {file_path}", file_path=file_path)
+                        translate(
+                            "Failed to create Discord file for: {file_path}",
+                            file_path=file_path,
+                        )
                     )
             else:
                 validation_errors.append(f"{file_path}: {validation.error_message}")
@@ -533,10 +597,13 @@ async def upload_files_to_user_dm(
         if not discord_files:
             # Import i18n locally to avoid circular imports
             from ...i18n import translate
-            errors = '; '.join(validation_errors)
+
+            errors = "; ".join(validation_errors)
             return DiscordUploadResult(
                 success=False,
-                error_message=translate("No valid files to upload. Errors: {errors}", errors=errors),
+                error_message=translate(
+                    "No valid files to upload. Errors: {errors}", errors=errors
+                ),
             )
 
         # Upload files to user DM
