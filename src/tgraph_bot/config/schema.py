@@ -71,7 +71,7 @@ class TGraphBotConfig(BaseModel):
         description="Whether to censor usernames in graphs",
     )
     GRAPH_WIDTH: Annotated[int, Field(ge=6, le=20)] = Field(
-        default=12,
+        default=14,
         description="Width of graphs in inches",
     )
     GRAPH_HEIGHT: Annotated[int, Field(ge=4, le=16)] = Field(

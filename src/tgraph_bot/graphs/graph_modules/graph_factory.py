@@ -47,12 +47,12 @@ class GraphFactory:
         """
         # Handle both dict and TGraphBotConfig objects
         if isinstance(self.config, dict):
-            width = self.config.get("GRAPH_WIDTH", 12)
+            width = self.config.get("GRAPH_WIDTH", 14)
             height = self.config.get("GRAPH_HEIGHT", 8)
             dpi = self.config.get("GRAPH_DPI", 100)
         else:
             # TGraphBotConfig object
-            width = getattr(self.config, "GRAPH_WIDTH", 12)
+            width = getattr(self.config, "GRAPH_WIDTH", 14)
             height = getattr(self.config, "GRAPH_HEIGHT", 8)
             dpi = getattr(self.config, "GRAPH_DPI", 100)
         
