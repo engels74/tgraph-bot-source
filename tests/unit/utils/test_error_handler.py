@@ -212,9 +212,9 @@ class TestUserFriendlyMessages:
         error = Exception("Test error")
         context = ErrorContext(command_name="test_command")
         message = create_user_friendly_message(error, ErrorCategory.API, context)
-        
+
         assert "test_command" in message
-        assert "Error in `test_command` command:" in message
+        assert "Error in command `test_command`:" in message
     
     def test_create_user_friendly_message_permission(self) -> None:
         """Test user-friendly message for permission errors."""

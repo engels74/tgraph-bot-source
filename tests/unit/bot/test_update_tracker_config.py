@@ -7,7 +7,6 @@ and data structure management for the automated update system.
 
 import pytest
 from datetime import datetime, time, timedelta
-from zoneinfo import ZoneInfo
 
 from src.tgraph_bot.bot.update_tracker import SchedulingConfig, ScheduleState, UpdateSchedule, get_local_timezone
 

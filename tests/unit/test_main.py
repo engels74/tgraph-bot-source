@@ -1176,7 +1176,11 @@ class TestCleanupBotMessages(AsyncTestBase):
         mock_bot_message = MagicMock()
         mock_bot_message.author.id = 123456789  # pyright: ignore[reportAny]
         mock_bot_message.id = "msg1"
-        mock_bot_message.delete = AsyncMock(side_effect=discord.NotFound(response=MagicMock(), message="Not found"))
+
+        # Create AsyncMock that properly raises NotFound
+        delete_mock = AsyncMock()
+        delete_mock.side_effect = discord.NotFound(response=MagicMock(), message="Not found")
+        mock_bot_message.delete = delete_mock
         
         async def mock_history(*args: object, **kwargs: object) -> AsyncIterator[MagicMock]:  # pyright: ignore[reportUnusedParameter]
             for message in [mock_bot_message]:
@@ -1188,8 +1192,9 @@ class TestCleanupBotMessages(AsyncTestBase):
             # Should not raise exception for NotFound
             # Testing protected method _cleanup_bot_messages is intentional - it's a key internal method
             await bot._cleanup_bot_messages(mock_channel)  # pyright: ignore[reportPrivateUsage]
-            
-            mock_bot_message.delete.assert_called_once()  # pyright: ignore[reportAny]
+
+            # Verify the delete method was called
+            delete_mock.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_cleanup_bot_messages_rate_limit_protection(self) -> None:
