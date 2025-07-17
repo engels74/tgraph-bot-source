@@ -715,12 +715,98 @@ class TestCalculateNextUpdateTime:
         """Test handling of invalid time formats."""
         result = calculate_next_update_time(7, "invalid")
         assert result is None
-        
+
         result = calculate_next_update_time(7, "25:00")
         assert result is None
-        
+
         result = calculate_next_update_time(7, "12:60")
         assert result is None
+
+    def test_first_launch_bug_reproduction_basic_logic_only(self) -> None:
+        """
+        Test that reproduces the Discord timestamp bug by testing ONLY the basic logic.
+
+        This test bypasses the scheduler state loading to test the basic logic directly.
+        The bug is that the basic logic doesn't respect UPDATE_DAYS on first launch.
+        """
+        # Mock current time: July 17th, 2025 at 10:00 AM (before 14:00)
+        mock_now = datetime(2025, 7, 17, 10, 0, 0, tzinfo=get_local_timezone())
+
+        # Test the basic logic directly (lines 121-127 in discord_file_utils.py)
+        from datetime import time
+        update_time = time(14, 0)  # 2:00 PM
+
+        # This is the current basic logic from the function
+        next_update = datetime.combine(mock_now.date(), update_time)
+        next_update = next_update.replace(tzinfo=get_local_timezone())
+
+        # If time has passed today, schedule for tomorrow
+        if next_update <= mock_now:
+            next_update += timedelta(days=1)
+
+        # BUG: This basic logic schedules for TODAY at 14:00 (July 17th)
+        # But with UPDATE_DAYS=2, it should schedule for July 19th at 14:00
+
+        print(f"DEBUG: Current time: {mock_now}")
+        print(f"DEBUG: Basic logic result: {next_update}")
+        print(f"DEBUG: Basic logic date: {next_update.date()}")
+
+        # The bug: basic logic returns today's date when time hasn't passed
+        assert next_update.date() == mock_now.date(), "Basic logic should schedule for today when time hasn't passed"
+
+        # But with UPDATE_DAYS=2, we should get July 19th (current + 2 days)
+        expected_with_update_days = mock_now.date() + timedelta(days=2)
+        print(f"DEBUG: Expected with UPDATE_DAYS=2: {expected_with_update_days}")
+
+        # This demonstrates the bug - basic logic ignores UPDATE_DAYS
+        assert next_update.date() != expected_with_update_days, "This demonstrates the bug: basic logic ignores UPDATE_DAYS"
+
+    def test_first_launch_bug_reproduction(self) -> None:
+        """
+        Test that reproduces the Discord timestamp bug on first launch with UPDATE_DAYS > 1.
+
+        Bug: On first launch, when no scheduler state exists, the basic logic
+        doesn't respect UPDATE_DAYS and schedules for the next occurrence of the
+        fixed time instead of respecting the update interval.
+        """
+        # Simulate first launch scenario: no scheduler state file exists
+        with (
+            patch('src.tgraph_bot.utils.discord.discord_file_utils.get_path_config') as mock_get_path_config,
+            patch('src.tgraph_bot.utils.discord.discord_file_utils.get_local_now') as mock_get_local_now
+        ):
+            # Create a mock path config that returns a non-existent state file
+            mock_state_file = Mock(spec=Path)
+            mock_state_file.exists = Mock(return_value=False)  # No state file (first launch)
+
+            mock_path_config = Mock()
+            mock_path_config.get_scheduler_state_path = Mock(return_value=mock_state_file)
+            mock_get_path_config.return_value = mock_path_config
+
+            # Mock current time: July 17th, 2025 at 10:00 AM (before 14:00)
+            mock_now = datetime(2025, 7, 17, 10, 0, 0, tzinfo=get_local_timezone())
+            mock_get_local_now.return_value = mock_now
+
+            # Configuration: UPDATE_DAYS=3, FIXED_UPDATE_TIME="14:00"
+            # This should schedule for July 20th (3 days from now) at 14:00
+            result = calculate_next_update_time(3, "14:00")
+
+            assert result is not None
+            assert result.tzinfo is not None
+
+            # BUG: With current basic logic, when time hasn't passed today and no state exists,
+            # it schedules for TODAY at 14:00 instead of respecting UPDATE_DAYS=3
+            # EXPECTED: Should return July 20th at 14:00 (3 days from now, respecting UPDATE_DAYS=3)
+
+            expected_date = mock_now.date() + timedelta(days=3)  # July 20th
+            from datetime import time
+            expected_time = time(14, 0)
+            expected_result = datetime.combine(expected_date, expected_time).replace(tzinfo=get_local_timezone())
+
+            # This should FAIL with the buggy implementation and PASS after the fix
+            assert result == expected_result, (
+                f"Discord timestamp bug: Expected {expected_result} (3 days from now) "
+                f"but got {result} (today). UPDATE_DAYS=3 should be respected on first launch."
+            )
 
 
 class TestCreateGraphSpecificEmbed:

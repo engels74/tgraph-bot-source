@@ -126,6 +126,15 @@ def calculate_next_update_time(
         if next_update <= current_time:
             next_update += timedelta(days=1)
 
+        # For UPDATE_DAYS > 1, ensure we respect the minimum interval from current time
+        # This matches the scheduler logic for first launch
+        if update_days > 1:
+            min_next_update = current_time + timedelta(days=update_days)
+            if next_update < min_next_update:
+                # Find the next occurrence of fixed time on or after the minimum date
+                next_update = datetime.combine(min_next_update.date(), update_time)
+                next_update = next_update.replace(tzinfo=get_local_timezone())
+
         # Try to load scheduler state to respect update_days interval from last update
         # This matches the scheduler logic in bot/update_tracker.py
         try:
