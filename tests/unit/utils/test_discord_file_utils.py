@@ -485,21 +485,24 @@ class TestCalculateNextUpdateTime:
             # Verify it's timezone-aware
             assert result.tzinfo is not None
 
-            # Should be today at 18:00 in local timezone
-            expected = mock_now.replace(hour=18, minute=0, second=0, microsecond=0)
+            # Should be tomorrow at 18:00 in local timezone (respects UPDATE_DAYS=1 on first run)
+            expected = datetime(2025, 1, 16, 18, 0, 0, tzinfo=get_local_timezone())
             assert result == expected
         
     def test_fixed_time_update_past_today_no_state(self) -> None:
         """Test fixed time update when time has already passed today and no scheduler state."""
         # Mock no state file exists and mock get_local_now
         with (
-            patch('src.tgraph_bot.utils.discord.discord_file_utils.Path') as mock_path_class,
+            patch('src.tgraph_bot.utils.discord.discord_file_utils.get_path_config') as mock_get_path_config,
             patch('src.tgraph_bot.utils.discord.discord_file_utils.get_local_now') as mock_get_local_now
         ):
-            # Create a properly typed mock Path instance
-            mock_path_instance = Mock(spec=Path)
-            mock_path_instance.exists = Mock(return_value=False)
-            mock_path_class.return_value = mock_path_instance
+            # Create a mock path config that returns a non-existent state file
+            mock_state_file = Mock(spec=Path)
+            mock_state_file.exists = Mock(return_value=False)  # No state file (first launch)
+
+            mock_path_config = Mock()
+            mock_path_config.get_scheduler_state_path = Mock(return_value=mock_state_file)
+            mock_get_path_config.return_value = mock_path_config
 
             # Mock the current time to be 15:30 (3:30 PM) in local timezone
             mock_now = datetime(2025, 6, 28, 15, 30, 0, tzinfo=get_local_timezone())
@@ -535,14 +538,17 @@ class TestCalculateNextUpdateTime:
         mock_state_content = json.dumps(scheduler_state)
 
         with (
-            patch('src.tgraph_bot.utils.discord.discord_file_utils.Path') as mock_path_class,
+            patch('src.tgraph_bot.utils.discord.discord_file_utils.get_path_config') as mock_get_path_config,
             patch('builtins.open', mock_open(read_data=mock_state_content)),  # pyright: ignore[reportAny]
             patch('src.tgraph_bot.utils.discord.discord_file_utils.get_local_now') as mock_get_local_now
         ):
-            # Create a properly typed mock Path instance
-            mock_path_instance = Mock(spec=Path)
-            mock_path_instance.exists = Mock(return_value=True)
-            mock_path_class.return_value = mock_path_instance
+            # Create a mock path config that returns an existing state file
+            mock_state_file = Mock(spec=Path)
+            mock_state_file.exists = Mock(return_value=True)  # State file exists
+
+            mock_path_config = Mock()
+            mock_path_config.get_scheduler_state_path = Mock(return_value=mock_state_file)
+            mock_get_path_config.return_value = mock_path_config
 
             # Mock get_local_now
             mock_get_local_now.return_value = mock_now
@@ -572,10 +578,21 @@ class TestCalculateNextUpdateTime:
         last_update = now - timedelta(days=2)
 
         # Use the correct scheduler state format that matches the actual implementation
+        # Set next_update to respect the 7-day interval from last_update but at the correct fixed time (14:30)
+        min_next_update = last_update + timedelta(days=7)
+        next_update_date = min_next_update.date()
+        next_update_time = past_time.time()  # Use the fixed time (14:30)
+        next_update_datetime = datetime.combine(next_update_date, next_update_time)
+        next_update_datetime = next_update_datetime.replace(tzinfo=get_local_timezone())
+
+        # If the fixed time on that date is before the minimum time, move to next day
+        if next_update_datetime < min_next_update:
+            next_update_datetime += timedelta(days=1)
+
         scheduler_state = {
             "state": {
                 "last_update": last_update.isoformat(),
-                "next_update": (now + timedelta(days=5)).isoformat()
+                "next_update": next_update_datetime.isoformat()
             }
         }
 

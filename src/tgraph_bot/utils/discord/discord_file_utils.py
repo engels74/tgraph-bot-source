@@ -158,11 +158,14 @@ def calculate_next_update_time(
                             try:
                                 scheduler_next_update = datetime.fromisoformat(next_update_str)
 
-                                # Ensure scheduler_next_update is timezone-aware
+                                # Ensure scheduler_next_update is timezone-aware and in local timezone
                                 if scheduler_next_update.tzinfo is None:
                                     scheduler_next_update = scheduler_next_update.replace(
                                         tzinfo=get_local_timezone()
                                     )
+                                else:
+                                    # Convert to local timezone to ensure consistent ZoneInfo type
+                                    scheduler_next_update = scheduler_next_update.astimezone(get_local_timezone())
 
                                 # Use the scheduler's next_update if it's in the future
                                 if scheduler_next_update > current_time:
@@ -178,11 +181,14 @@ def calculate_next_update_time(
                         if last_update_str and isinstance(last_update_str, str):
                             last_update = datetime.fromisoformat(last_update_str)
 
-                            # Ensure last_update is timezone-aware
+                            # Ensure last_update is timezone-aware and in local timezone
                             if last_update.tzinfo is None:
                                 last_update = last_update.replace(
                                     tzinfo=get_local_timezone()
                                 )
+                            else:
+                                # Convert to local timezone to ensure consistent ZoneInfo type
+                                last_update = last_update.astimezone(get_local_timezone())
 
                             # Respect the update_days interval if we have a last update
                             min_next_update = last_update + timedelta(days=update_days)
@@ -223,14 +229,13 @@ def calculate_next_update_time(
             )
 
         # Special case for UPDATE_DAYS=1 on first launch (no scheduler state)
-        # This matches the scheduler's behavior where it always adds UPDATE_DAYS to current time on first launch
+        # This matches the scheduler behavior: always add UPDATE_DAYS to current time on first run
+        # regardless of whether the fixed time has passed today
         if not scheduler_state_loaded and update_days == 1:
-            # On first launch with UPDATE_DAYS=1, scheduler schedules for tomorrow regardless of fixed time
+            # On first launch, scheduler always adds UPDATE_DAYS to current time
             min_next_update = current_time + timedelta(days=1)
-            if next_update < min_next_update:
-                # Find the next occurrence of fixed time on or after tomorrow
-                next_update = datetime.combine(min_next_update.date(), update_time)
-                next_update = next_update.replace(tzinfo=get_local_timezone())
+            next_update = datetime.combine(min_next_update.date(), update_time)
+            next_update = next_update.replace(tzinfo=get_local_timezone())
 
         return next_update
 

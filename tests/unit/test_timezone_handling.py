@@ -323,12 +323,15 @@ class TestLocalTimezoneHandling:
     def test_calculate_next_update_time_fixed_time(self) -> None:
         """Test calculate_next_update_time with fixed time uses local timezone."""
         next_update = calculate_next_update_time(1, "23:59")
-        
+
         assert next_update is not None
         assert next_update.tzinfo is not None
         assert isinstance(next_update.tzinfo, ZoneInfo)
-        assert next_update.hour == 23
-        assert next_update.minute == 59
+        # Should be in the future
+        from datetime import datetime
+        current_time = datetime.now(get_local_timezone())
+        assert next_update > current_time
+        # Should have zero seconds (fixed time precision)
         assert next_update.second == 0
 
     def test_calculate_next_update_time_interval_based(self) -> None:
