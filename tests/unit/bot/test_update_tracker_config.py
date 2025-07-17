@@ -7,8 +7,9 @@ and data structure management for the automated update system.
 
 import pytest
 from datetime import datetime, time, timedelta
+from zoneinfo import ZoneInfo
 
-from src.tgraph_bot.bot.update_tracker import SchedulingConfig, ScheduleState, UpdateSchedule
+from src.tgraph_bot.bot.update_tracker import SchedulingConfig, ScheduleState, UpdateSchedule, get_local_timezone
 
 
 class TestSchedulingConfig:
@@ -104,7 +105,7 @@ class TestScheduleState:
     def test_update_tracking(self) -> None:
         """Test update tracking functionality."""
         state = ScheduleState()
-        now = datetime.now()
+        now = datetime.now(get_local_timezone())
         
         # Record successful update
         state.record_successful_update(now)
@@ -115,7 +116,7 @@ class TestScheduleState:
     def test_failure_tracking(self) -> None:
         """Test failure tracking functionality."""
         state = ScheduleState()
-        now = datetime.now()
+        now = datetime.now(get_local_timezone())
         error = Exception("Test error")
         
         # Record failure
@@ -135,7 +136,7 @@ class TestScheduleState:
     def test_schedule_management(self) -> None:
         """Test schedule management."""
         state = ScheduleState()
-        next_time = datetime.now() + timedelta(hours=1)
+        next_time = datetime.now(get_local_timezone()) + timedelta(hours=1)
         
         state.set_next_update(next_time)
         assert state.next_update == next_time
@@ -157,7 +158,7 @@ class TestUpdateSchedule:
         schedule = UpdateSchedule(config, state)
         
         # First calculation (no previous update)
-        now = datetime.now()
+        now = datetime.now(get_local_timezone())
         next_update = schedule.calculate_next_update(now)
         
         expected = now + timedelta(days=7)
@@ -170,11 +171,11 @@ class TestUpdateSchedule:
         state = ScheduleState()
         
         # Set previous update
-        last_update = datetime.now() - timedelta(days=3)
+        last_update = datetime.now(get_local_timezone()) - timedelta(days=3)
         state.record_successful_update(last_update)
         
         schedule = UpdateSchedule(config, state)
-        next_update = schedule.calculate_next_update(datetime.now())
+        next_update = schedule.calculate_next_update(datetime.now(get_local_timezone()))
         
         expected = last_update + timedelta(days=7)
         assert abs((next_update - expected).total_seconds()) < 1
@@ -186,7 +187,7 @@ class TestUpdateSchedule:
         schedule = UpdateSchedule(config, state)
         
         # Test at early morning - should schedule for tomorrow (respects UPDATE_DAYS=1)
-        test_time = datetime.now().replace(hour=1, minute=0, second=0, microsecond=0)
+        test_time = datetime.now(get_local_timezone()).replace(hour=1, minute=0, second=0, microsecond=0)
         next_update = schedule.calculate_next_update(test_time)
 
         assert next_update.date() == test_time.date() + timedelta(days=1)
@@ -199,7 +200,7 @@ class TestUpdateSchedule:
         schedule = UpdateSchedule(config, state)
         
         # Test at late evening - should schedule for tomorrow
-        test_time = datetime.now().replace(hour=22, minute=0, second=0, microsecond=0)
+        test_time = datetime.now(get_local_timezone()).replace(hour=22, minute=0, second=0, microsecond=0)
         next_update = schedule.calculate_next_update(test_time)
         
         expected_date = test_time.date() + timedelta(days=1)
@@ -212,7 +213,7 @@ class TestUpdateSchedule:
         state = ScheduleState()
 
         # Set last update to 2 days ago with clean time
-        base_time = datetime.now().replace(hour=12, minute=0, second=0, microsecond=0)
+        base_time = datetime.now(get_local_timezone()).replace(hour=12, minute=0, second=0, microsecond=0)
         last_update = base_time - timedelta(days=2)
         state.record_successful_update(last_update)
 
@@ -231,7 +232,7 @@ class TestUpdateSchedule:
         state = ScheduleState()
         schedule = UpdateSchedule(config, state)
         
-        now = datetime.now()
+        now = datetime.now(get_local_timezone())
         
         # Valid future time
         future_time = now + timedelta(hours=1)

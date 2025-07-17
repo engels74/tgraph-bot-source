@@ -7,7 +7,7 @@ UPDATE_DAYS was ignored on first run with fixed time scheduling.
 
 from datetime import datetime, timedelta, time
 
-from src.tgraph_bot.bot.update_tracker import SchedulingConfig, ScheduleState, UpdateSchedule
+from src.tgraph_bot.bot.update_tracker import SchedulingConfig, ScheduleState, UpdateSchedule, get_local_timezone
 
 
 class TestFixedTimeSchedulingBugFix:
@@ -21,7 +21,7 @@ class TestFixedTimeSchedulingBugFix:
         schedule = UpdateSchedule(config, state)
         
         # Current time: 2025-07-16 21:28:00 (same as bug report)
-        current_time = datetime(2025, 7, 16, 21, 28, 0)
+        current_time = datetime(2025, 7, 16, 21, 28, 0, tzinfo=get_local_timezone())
         
         # Calculate next update
         next_update = schedule.calculate_next_update(current_time)
@@ -29,7 +29,7 @@ class TestFixedTimeSchedulingBugFix:
         # Expected: Should be 2025-07-17 23:59:00 (next day due to UPDATE_DAYS=1)
         expected_date = current_time.date() + timedelta(days=1)
         expected_time = time(23, 59)
-        expected_next_update = datetime.combine(expected_date, expected_time)
+        expected_next_update = datetime.combine(expected_date, expected_time).replace(tzinfo=get_local_timezone())
         
         assert next_update == expected_next_update
         assert next_update.date() == (current_time.date() + timedelta(days=1))
@@ -42,13 +42,13 @@ class TestFixedTimeSchedulingBugFix:
         state = ScheduleState()  # No last_update (first run)
         schedule = UpdateSchedule(config, state)
         
-        current_time = datetime(2025, 7, 16, 10, 0, 0)
+        current_time = datetime(2025, 7, 16, 10, 0, 0, tzinfo=get_local_timezone())
         next_update = schedule.calculate_next_update(current_time)
         
         # Expected: Should be 3 days later at 14:30
         expected_date = current_time.date() + timedelta(days=3)
         expected_time = time(14, 30)
-        expected_next_update = datetime.combine(expected_date, expected_time)
+        expected_next_update = datetime.combine(expected_date, expected_time).replace(tzinfo=get_local_timezone())
         
         assert next_update == expected_next_update
         assert next_update.date() == (current_time.date() + timedelta(days=3))
@@ -59,16 +59,16 @@ class TestFixedTimeSchedulingBugFix:
         # Setup: Subsequent run scenario (has last_update)
         config = SchedulingConfig(update_days=2, fixed_update_time="12:00")
         state = ScheduleState()
-        state.last_update = datetime(2025, 7, 14, 12, 0, 0)  # 2 days ago
+        state.last_update = datetime(2025, 7, 14, 12, 0, 0, tzinfo=get_local_timezone())  # 2 days ago
         schedule = UpdateSchedule(config, state)
         
-        current_time = datetime(2025, 7, 16, 10, 0, 0)
+        current_time = datetime(2025, 7, 16, 10, 0, 0, tzinfo=get_local_timezone())
         next_update = schedule.calculate_next_update(current_time)
         
         # Expected: Should be 2 days after last_update at 12:00
         expected_date = state.last_update.date() + timedelta(days=2)
         expected_time = time(12, 0)
-        expected_next_update = datetime.combine(expected_date, expected_time)
+        expected_next_update = datetime.combine(expected_date, expected_time).replace(tzinfo=get_local_timezone())
         
         assert next_update == expected_next_update
         assert next_update.date() == (state.last_update.date() + timedelta(days=2))
@@ -82,12 +82,12 @@ class TestFixedTimeSchedulingBugFix:
         schedule = UpdateSchedule(config, state)
         
         # Bot started at 2025-07-16T21:28:00.798405
-        current_time = datetime(2025, 7, 16, 21, 28, 0, 798405)
+        current_time = datetime(2025, 7, 16, 21, 28, 0, 798405, tzinfo=get_local_timezone())
         next_update = schedule.calculate_next_update(current_time)
         
         # Before fix: Would be 2025-07-16T23:59:00 (same day - BUG!)
         # After fix: Should be 2025-07-17T23:59:00 (next day - CORRECT!)
-        expected_next_update = datetime(2025, 7, 17, 23, 59, 0)
+        expected_next_update = datetime(2025, 7, 17, 23, 59, 0, tzinfo=get_local_timezone())
         
         assert next_update == expected_next_update
         assert next_update.date() > current_time.date()  # Must be future date
@@ -100,11 +100,11 @@ class TestFixedTimeSchedulingBugFix:
         schedule = UpdateSchedule(config, state)
         
         # Current time is after 10:00 today
-        current_time = datetime(2025, 7, 16, 15, 30, 0)
+        current_time = datetime(2025, 7, 16, 15, 30, 0, tzinfo=get_local_timezone())
         next_update = schedule.calculate_next_update(current_time)
         
         # Should be tomorrow at 10:00 (respecting UPDATE_DAYS=1)
-        expected_next_update = datetime(2025, 7, 17, 10, 0, 0)
+        expected_next_update = datetime(2025, 7, 17, 10, 0, 0, tzinfo=get_local_timezone())
         
         assert next_update == expected_next_update
         assert next_update.date() == (current_time.date() + timedelta(days=1))
@@ -117,11 +117,11 @@ class TestFixedTimeSchedulingBugFix:
         schedule = UpdateSchedule(config, state)
         
         # Current time is before 18:00 today
-        current_time = datetime(2025, 7, 16, 12, 0, 0)
+        current_time = datetime(2025, 7, 16, 12, 0, 0, tzinfo=get_local_timezone())
         next_update = schedule.calculate_next_update(current_time)
         
         # Should be tomorrow at 18:00 (respecting UPDATE_DAYS=1)
-        expected_next_update = datetime(2025, 7, 17, 18, 0, 0)
+        expected_next_update = datetime(2025, 7, 17, 18, 0, 0, tzinfo=get_local_timezone())
         
         assert next_update == expected_next_update
         assert next_update.date() == (current_time.date() + timedelta(days=1))
@@ -135,7 +135,7 @@ class TestFixedTimeSchedulingBugFix:
         
         # Create a scenario where calculated time would be in the past
         # (This shouldn't happen with our fix, but test the validation)
-        current_time = datetime(2025, 7, 16, 21, 28, 0)
+        current_time = datetime(2025, 7, 16, 21, 28, 0, tzinfo=get_local_timezone())
         
         # Mock the calculation to return a past time to test validation
         past_time = current_time - timedelta(hours=1)
@@ -154,7 +154,7 @@ class TestFixedTimeSchedulingBugFix:
         # First run scenario
         state_first = ScheduleState()
         schedule_first = UpdateSchedule(config, state_first)
-        current_time = datetime(2025, 7, 16, 10, 0, 0)
+        current_time = datetime(2025, 7, 16, 10, 0, 0, tzinfo=get_local_timezone())
         first_run_next = schedule_first.calculate_next_update(current_time)
         
         # Subsequent run scenario with same timing
@@ -166,7 +166,7 @@ class TestFixedTimeSchedulingBugFix:
         # Both should respect UPDATE_DAYS=2 and schedule 2 days later
         expected_date = current_time.date() + timedelta(days=2)
         expected_time = time(15, 45)
-        expected_next_update = datetime.combine(expected_date, expected_time)
+        expected_next_update = datetime.combine(expected_date, expected_time).replace(tzinfo=get_local_timezone())
         
         assert first_run_next == expected_next_update
         assert subsequent_run_next == expected_next_update
@@ -178,7 +178,7 @@ class TestFixedTimeSchedulingBugFix:
         state = ScheduleState()
         schedule = UpdateSchedule(config, state)
         
-        current_time = datetime(2025, 7, 16, 14, 30, 0)
+        current_time = datetime(2025, 7, 16, 14, 30, 0, tzinfo=get_local_timezone())
         next_update = schedule.calculate_next_update(current_time)
         
         # Should be exactly 3 days later (interval scheduling)

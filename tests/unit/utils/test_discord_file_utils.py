@@ -13,6 +13,7 @@ from unittest.mock import AsyncMock, MagicMock, patch, mock_open, Mock
 import discord
 import pytest
 
+from src.tgraph_bot.bot.update_tracker import get_local_timezone
 from src.tgraph_bot.utils.discord.discord_file_utils import (
     DISCORD_FILE_SIZE_LIMIT_NITRO,
     DISCORD_FILE_SIZE_LIMIT_REGULAR,
@@ -450,10 +451,9 @@ class TestCalculateNextUpdateTime:
     def test_interval_based_update(self) -> None:
         """Test interval-based update calculation."""
         # Test with interval-based updates (XX:XX)
-        with patch('src.tgraph_bot.utils.discord.discord_file_utils.discord.utils.utcnow') as mock_utcnow:
-            import datetime as dt
-            mock_now = datetime(2025, 1, 15, 12, 30, 0, tzinfo=dt.timezone.utc)
-            mock_utcnow.return_value = mock_now
+        with patch('src.tgraph_bot.utils.discord.discord_file_utils.get_local_now') as mock_get_local_now:
+            mock_now = datetime(2025, 1, 15, 12, 30, 0, tzinfo=get_local_timezone())
+            mock_get_local_now.return_value = mock_now
 
             result = calculate_next_update_time(7, "XX:XX")
 
@@ -467,15 +467,14 @@ class TestCalculateNextUpdateTime:
         
     def test_fixed_time_update_future_today_no_state(self) -> None:
         """Test fixed time update when time hasn't passed today and no scheduler state."""
-        # Mock no state file exists and mock discord.utils.utcnow
+        # Mock no state file exists and mock get_local_now
         with (
             patch('pathlib.Path.exists', return_value=False),
-            patch('src.tgraph_bot.utils.discord.discord_file_utils.discord.utils.utcnow') as mock_utcnow
+            patch('src.tgraph_bot.utils.discord.discord_file_utils.get_local_now') as mock_get_local_now
         ):
-            import datetime as dt
             # Use a fixed time for predictable testing
-            mock_now = datetime(2025, 1, 15, 14, 30, 0, tzinfo=dt.timezone.utc)
-            mock_utcnow.return_value = mock_now
+            mock_now = datetime(2025, 1, 15, 14, 30, 0, tzinfo=get_local_timezone())
+            mock_get_local_now.return_value = mock_now
 
             # Use a time that's in the future today (18:00)
             time_str = "18:00"
@@ -486,27 +485,25 @@ class TestCalculateNextUpdateTime:
             # Verify it's timezone-aware
             assert result.tzinfo is not None
 
-            # Should be today at 18:00 UTC
+            # Should be today at 18:00 in local timezone
             expected = mock_now.replace(hour=18, minute=0, second=0, microsecond=0)
             assert result == expected
         
     def test_fixed_time_update_past_today_no_state(self) -> None:
         """Test fixed time update when time has already passed today and no scheduler state."""
-        # Mock no state file exists and mock discord.utils.utcnow at the module level
+        # Mock no state file exists and mock get_local_now
         with (
             patch('src.tgraph_bot.utils.discord.discord_file_utils.Path') as mock_path_class,
-            patch('src.tgraph_bot.utils.discord.discord_file_utils.discord.utils.utcnow') as mock_utcnow
+            patch('src.tgraph_bot.utils.discord.discord_file_utils.get_local_now') as mock_get_local_now
         ):
-            import datetime as dt
-
             # Create a properly typed mock Path instance
             mock_path_instance = Mock(spec=Path)
             mock_path_instance.exists = Mock(return_value=False)
             mock_path_class.return_value = mock_path_instance
 
-            # Mock the current time to be 15:30 (3:30 PM) UTC
-            mock_now = datetime(2025, 6, 28, 15, 30, 0, tzinfo=dt.timezone.utc)
-            mock_utcnow.return_value = mock_now
+            # Mock the current time to be 15:30 (3:30 PM) in local timezone
+            mock_now = datetime(2025, 6, 28, 15, 30, 0, tzinfo=get_local_timezone())
+            mock_get_local_now.return_value = mock_now
 
             # Use a time that has definitely passed today (10:00 AM)
             time_str = "10:00"
@@ -516,16 +513,14 @@ class TestCalculateNextUpdateTime:
             assert result is not None
             # Verify it's timezone-aware
             assert result.tzinfo is not None
-            # Should be tomorrow at 10:00 UTC
-            expected = datetime(2025, 6, 29, 10, 0, 0, tzinfo=dt.timezone.utc)
+            # Should be tomorrow at 10:00 in local timezone
+            expected = datetime(2025, 6, 29, 10, 0, 0, tzinfo=get_local_timezone())
             assert result == expected
 
     def test_fixed_time_with_scheduler_state_respects_interval(self) -> None:
         """Test fixed time calculation respects scheduler state last_update and update_days."""
-        import datetime as dt
-
         # Create a scenario where fixed time has passed today, but we need to respect update_days interval
-        mock_now = datetime(2025, 6, 28, 15, 30, 0, tzinfo=dt.timezone.utc)  # 3:30 PM UTC
+        mock_now = datetime(2025, 6, 28, 15, 30, 0, tzinfo=get_local_timezone())  # 3:30 PM local time
 
         # Last update was yesterday at 14:30 (1 day and 1 hour ago)
         last_update = mock_now - timedelta(days=1, hours=1)
@@ -542,15 +537,15 @@ class TestCalculateNextUpdateTime:
         with (
             patch('src.tgraph_bot.utils.discord.discord_file_utils.Path') as mock_path_class,
             patch('builtins.open', mock_open(read_data=mock_state_content)),  # pyright: ignore[reportAny]
-            patch('src.tgraph_bot.utils.discord.discord_file_utils.discord.utils.utcnow') as mock_utcnow
+            patch('src.tgraph_bot.utils.discord.discord_file_utils.get_local_now') as mock_get_local_now
         ):
             # Create a properly typed mock Path instance
             mock_path_instance = Mock(spec=Path)
             mock_path_instance.exists = Mock(return_value=True)
             mock_path_class.return_value = mock_path_instance
 
-            # Mock discord.utils.utcnow
-            mock_utcnow.return_value = mock_now
+            # Mock get_local_now
+            mock_get_local_now.return_value = mock_now
 
             # Use a time that has passed today (10:00 AM)
             time_str = "10:00"
@@ -560,18 +555,17 @@ class TestCalculateNextUpdateTime:
             assert result is not None
             # Verify it's timezone-aware
             assert result.tzinfo is not None
-            # Should be tomorrow at 10:00 UTC (respecting 1-day interval from last update)
-            expected = datetime(2025, 6, 29, 10, 0, 0, tzinfo=dt.timezone.utc)
+            # Should be tomorrow at 10:00 in local timezone (respecting 1-day interval from last update)
+            expected = datetime(2025, 6, 29, 10, 0, 0, tzinfo=get_local_timezone())
             assert result == expected
 
     def test_fixed_time_with_scheduler_state_longer_interval(self) -> None:
         """Test fixed time calculation with longer update interval from scheduler state."""
-        import datetime as dt
         from pathlib import Path
 
         # Use timezone-aware datetime for consistent testing
-        now = datetime(2025, 1, 15, 16, 30, 0, tzinfo=dt.timezone.utc)
-        past_time = now - timedelta(hours=2)  # 14:30 UTC
+        now = datetime(2025, 1, 15, 16, 30, 0, tzinfo=get_local_timezone())
+        past_time = now - timedelta(hours=2)  # 14:30 local time
         time_str = past_time.strftime("%H:%M")  # "14:30"
 
         # Last update was 2 days ago
@@ -597,8 +591,8 @@ class TestCalculateNextUpdateTime:
             json.dump(scheduler_state, f)
 
         try:
-            with patch('src.tgraph_bot.utils.discord.discord_file_utils.discord.utils.utcnow') as mock_utcnow:
-                mock_utcnow.return_value = now
+            with patch('src.tgraph_bot.utils.discord.discord_file_utils.get_local_now') as mock_get_local_now:
+                mock_get_local_now.return_value = now
 
                 result = calculate_next_update_time(7, time_str)  # 7 day interval
 
@@ -624,22 +618,20 @@ class TestCalculateNextUpdateTime:
 
     def test_fixed_time_with_malformed_scheduler_state(self) -> None:
         """Test fixed time calculation with malformed scheduler state file."""
-        import datetime as dt
-
         # Mock malformed JSON in state file
         with (
             patch('src.tgraph_bot.utils.discord.discord_file_utils.Path') as mock_path_class,
             patch('builtins.open', mock_open(read_data="invalid json")),  # pyright: ignore[reportAny]
-            patch('src.tgraph_bot.utils.discord.discord_file_utils.discord.utils.utcnow') as mock_utcnow
+            patch('src.tgraph_bot.utils.discord.discord_file_utils.get_local_now') as mock_get_local_now
         ):
             # Create a properly typed mock Path instance
             mock_path_instance = Mock(spec=Path)
             mock_path_instance.exists = Mock(return_value=True)
             mock_path_class.return_value = mock_path_instance
 
-            # Mock the current time to be 15:30 (3:30 PM) UTC
-            mock_now = datetime(2025, 6, 28, 15, 30, 0, tzinfo=dt.timezone.utc)
-            mock_utcnow.return_value = mock_now
+            # Mock the current time to be 15:30 (3:30 PM) local time
+            mock_now = datetime(2025, 6, 28, 15, 30, 0, tzinfo=get_local_timezone())
+            mock_get_local_now.return_value = mock_now
 
             # Use a time that has definitely passed today (10:00 AM)
             time_str = "10:00"
@@ -649,15 +641,13 @@ class TestCalculateNextUpdateTime:
             assert result is not None
             # Verify it's timezone-aware
             assert result.tzinfo is not None
-            # Should fall back to simple logic: tomorrow at 10:00 UTC
-            expected = datetime(2025, 6, 29, 10, 0, 0, tzinfo=dt.timezone.utc)
+            # Should fall back to simple logic: tomorrow at 10:00 local time
+            expected = datetime(2025, 6, 29, 10, 0, 0, tzinfo=get_local_timezone())
             assert result == expected
 
     def test_fixed_time_with_missing_last_update_in_state(self) -> None:
         """Test fixed time calculation when scheduler state lacks last_update."""
-        import datetime as dt
-
-        mock_now = datetime(2025, 6, 28, 15, 30, 0, tzinfo=dt.timezone.utc)  # 3:30 PM UTC
+        mock_now = datetime(2025, 6, 28, 15, 30, 0, tzinfo=get_local_timezone())  # 3:30 PM local time
 
         scheduler_state = {
             "state": {
@@ -671,15 +661,15 @@ class TestCalculateNextUpdateTime:
         with (
             patch('src.tgraph_bot.utils.discord.discord_file_utils.Path') as mock_path_class,
             patch('builtins.open', mock_open(read_data=mock_state_content)),  # pyright: ignore[reportAny]
-            patch('src.tgraph_bot.utils.discord.discord_file_utils.discord.utils.utcnow') as mock_utcnow
+            patch('src.tgraph_bot.utils.discord.discord_file_utils.get_local_now') as mock_get_local_now
         ):
             # Create a properly typed mock Path instance
             mock_path_instance = Mock(spec=Path)
             mock_path_instance.exists = Mock(return_value=True)
             mock_path_class.return_value = mock_path_instance
 
-            # Mock discord.utils.utcnow
-            mock_utcnow.return_value = mock_now
+            # Mock get_local_now
+            mock_get_local_now.return_value = mock_now
 
             # Use a time that has definitely passed today (10:00 AM)
             time_str = "10:00"
@@ -689,27 +679,25 @@ class TestCalculateNextUpdateTime:
             assert result is not None
             # Verify it's timezone-aware
             assert result.tzinfo is not None
-            # Should fall back to simple logic: tomorrow at 10:00 UTC
-            expected = datetime(2025, 6, 29, 10, 0, 0, tzinfo=dt.timezone.utc)
+            # Should fall back to simple logic: tomorrow at 10:00 local time
+            expected = datetime(2025, 6, 29, 10, 0, 0, tzinfo=get_local_timezone())
             assert result == expected
 
     def test_fixed_time_with_file_read_error(self) -> None:
         """Test fixed time calculation when scheduler state file cannot be read."""
-        import datetime as dt
-
         with (
             patch('src.tgraph_bot.utils.discord.discord_file_utils.Path') as mock_path_class,
             patch('builtins.open', side_effect=IOError("Permission denied")),
-            patch('src.tgraph_bot.utils.discord.discord_file_utils.discord.utils.utcnow') as mock_utcnow
+            patch('src.tgraph_bot.utils.discord.discord_file_utils.get_local_now') as mock_get_local_now
         ):
             # Create a properly typed mock Path instance
             mock_path_instance = Mock(spec=Path)
             mock_path_instance.exists = Mock(return_value=True)
             mock_path_class.return_value = mock_path_instance
 
-            # Mock the current time to be 15:30 (3:30 PM) UTC
-            mock_now = datetime(2025, 6, 28, 15, 30, 0, tzinfo=dt.timezone.utc)
-            mock_utcnow.return_value = mock_now
+            # Mock the current time to be 15:30 (3:30 PM) local time
+            mock_now = datetime(2025, 6, 28, 15, 30, 0, tzinfo=get_local_timezone())
+            mock_get_local_now.return_value = mock_now
 
             # Use a time that has definitely passed today (10:00 AM)
             time_str = "10:00"
@@ -719,8 +707,8 @@ class TestCalculateNextUpdateTime:
             assert result is not None
             # Verify it's timezone-aware
             assert result.tzinfo is not None
-            # Should fall back to simple logic: tomorrow at 10:00 UTC
-            expected = datetime(2025, 6, 29, 10, 0, 0, tzinfo=dt.timezone.utc)
+            # Should fall back to simple logic: tomorrow at 10:00 local time
+            expected = datetime(2025, 6, 29, 10, 0, 0, tzinfo=get_local_timezone())
             assert result == expected
 
     def test_invalid_time_format(self) -> None:
@@ -773,12 +761,10 @@ class TestCreateGraphSpecificEmbed:
         
     def test_embed_with_next_update_time(self) -> None:
         """Test embed creation with next update time included."""
-        # Mock discord.utils.utcnow to ensure predictable behavior
-        import datetime as dt
-
-        with patch('src.tgraph_bot.utils.discord.discord_file_utils.discord.utils.utcnow') as mock_utcnow:
-            mock_now = datetime(2025, 1, 15, 12, 0, 0, tzinfo=dt.timezone.utc)
-            mock_utcnow.return_value = mock_now
+        # Mock get_local_now to ensure predictable behavior
+        with patch('src.tgraph_bot.utils.discord.discord_file_utils.get_local_now') as mock_get_local_now:
+            mock_now = datetime(2025, 1, 15, 12, 0, 0, tzinfo=get_local_timezone())
+            mock_get_local_now.return_value = mock_now
 
             embed = create_graph_specific_embed(
                 "daily_play_count.png",
@@ -795,12 +781,10 @@ class TestCreateGraphSpecificEmbed:
         
     def test_embed_with_interval_update(self) -> None:
         """Test embed creation with interval-based updates."""
-        # Mock discord.utils.utcnow to ensure predictable behavior
-        import datetime as dt
-
-        with patch('src.tgraph_bot.utils.discord.discord_file_utils.discord.utils.utcnow') as mock_utcnow:
-            mock_now = datetime(2025, 1, 15, 12, 0, 0, tzinfo=dt.timezone.utc)
-            mock_utcnow.return_value = mock_now
+        # Mock get_local_now to ensure predictable behavior
+        with patch('src.tgraph_bot.utils.discord.discord_file_utils.get_local_now') as mock_get_local_now:
+            mock_now = datetime(2025, 1, 15, 12, 0, 0, tzinfo=get_local_timezone())
+            mock_get_local_now.return_value = mock_now
 
             embed = create_graph_specific_embed(
                 "daily_play_count.png",

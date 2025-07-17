@@ -11,7 +11,7 @@ from unittest.mock import AsyncMock
 
 from discord.ext import commands
 
-from src.tgraph_bot.bot.update_tracker import SchedulingConfig, ScheduleState, UpdateSchedule, UpdateTracker
+from src.tgraph_bot.bot.update_tracker import SchedulingConfig, ScheduleState, UpdateSchedule, UpdateTracker, get_local_timezone
 from tests.utils.test_helpers import create_mock_discord_bot
 
 
@@ -24,7 +24,7 @@ class TestEnhancedScheduling:
         state = ScheduleState()
         schedule = UpdateSchedule(config, state)
         
-        now = datetime.now()
+        now = datetime.now(get_local_timezone())
         time_until = schedule.calculate_time_until_next_update(now)
         
         # Should be approximately 7 days
@@ -37,7 +37,7 @@ class TestEnhancedScheduling:
         state = ScheduleState()
         schedule = UpdateSchedule(config, state)
         
-        now = datetime.now()
+        now = datetime.now(get_local_timezone())
         assert schedule.should_skip_update(now) is False
     
     def test_should_skip_update_few_failures(self) -> None:
@@ -47,7 +47,7 @@ class TestEnhancedScheduling:
         schedule = UpdateSchedule(config, state)
         
         # Record 2 failures (below threshold)
-        now = datetime.now()
+        now = datetime.now(get_local_timezone())
         error = Exception("Test error")
         state.record_failure(now - timedelta(minutes=30), error)
         state.record_failure(now - timedelta(minutes=15), error)
@@ -61,7 +61,7 @@ class TestEnhancedScheduling:
         schedule = UpdateSchedule(config, state)
         
         # Record 3 failures (at threshold)
-        now = datetime.now()
+        now = datetime.now(get_local_timezone())
         error = Exception("Test error")
         state.record_failure(now - timedelta(hours=2), error)
         state.record_failure(now - timedelta(hours=1), error)
@@ -77,19 +77,19 @@ class TestEnhancedScheduling:
         schedule = UpdateSchedule(config, state)
         
         # Record 3 failures but long ago
-        old_time = datetime.now() - timedelta(days=1)
+        old_time = datetime.now(get_local_timezone()) - timedelta(days=1)
         error = Exception("Test error")
         state.record_failure(old_time, error)
         state.record_failure(old_time, error)
         state.record_failure(old_time, error)
         
         # Should not skip because backoff period has expired
-        now = datetime.now()
+        now = datetime.now(get_local_timezone())
         assert schedule.should_skip_update(now) is False
     
     def test_exponential_backoff_calculation(self) -> None:
         """Test exponential backoff calculation."""
-        now = datetime.now()
+        now = datetime.now(get_local_timezone())
         error = Exception("Test error")
 
         # Test different failure counts
@@ -186,11 +186,11 @@ class TestUpdateTrackerEnhanced:
         schedule = UpdateSchedule(config, state)
         
         # Set a previous update
-        last_update = datetime(2024, 1, 1, 14, 30)  # Winter time
+        last_update = datetime(2024, 1, 1, 14, 30, tzinfo=get_local_timezone())  # Winter time
         state.record_successful_update(last_update)
         
         # Calculate next update during potential DST transition
-        current_time = datetime(2024, 1, 5, 10, 0)  # 4 days later
+        current_time = datetime(2024, 1, 5, 10, 0, tzinfo=get_local_timezone())  # 4 days later
         next_update = schedule.calculate_next_update(current_time)
         
         # Should respect the interval and maintain the correct time

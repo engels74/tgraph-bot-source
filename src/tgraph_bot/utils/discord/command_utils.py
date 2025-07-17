@@ -122,7 +122,7 @@ def format_config_value(key: str, value: str | int | float | bool | None) -> str
 
     # Format boolean values
     if isinstance(value, bool):
-        return i18n.translate("Enabled") if value else i18n.translate("Disabled")
+        return "✅ " + i18n.translate("Enabled") if value else "❌ " + i18n.translate("Disabled")
 
     # Format None values
     if value is None:
@@ -202,14 +202,14 @@ def format_uptime(seconds: int) -> str:
 
     parts: list[str] = []
     if days > 0:
-        parts.append(i18n.ngettext("day", "days", days))
+        parts.append(i18n.ngettext("{n} day", "{n} days", days))
     if hours > 0:
-        parts.append(i18n.ngettext("hour", "hours", hours))
+        parts.append(i18n.ngettext("{n} hour", "{n} hours", hours))
     if minutes > 0:
-        parts.append(i18n.ngettext("minute", "minutes", minutes))
+        parts.append(i18n.ngettext("{n} minute", "{n} minutes", minutes))
     if remaining_seconds > 0 or not parts:
         parts.append(
-            i18n.ngettext("second", "seconds", remaining_seconds)
+            i18n.ngettext("{n} second", "{n} seconds", remaining_seconds)
         )
 
     return ", ".join(parts)
