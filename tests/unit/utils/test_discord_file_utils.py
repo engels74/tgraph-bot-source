@@ -855,7 +855,7 @@ class TestCalculateNextUpdateTime:
         with (
             patch('src.tgraph_bot.utils.discord.discord_file_utils.get_path_config') as mock_get_path_config,
             patch('src.tgraph_bot.utils.discord.discord_file_utils.get_local_now') as mock_get_local_now,
-            patch('builtins.open', mock_open(read_data=json.dumps(state_data))) as mock_file
+            patch('builtins.open', mock_open(read_data=json.dumps(state_data))) as mock_file  # pyright: ignore[reportAny]
         ):
             # Create a mock path config that returns an existing state file
             mock_state_file = Mock(spec=Path)
