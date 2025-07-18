@@ -7,7 +7,7 @@ by month, supporting both combined and separated media type visualization.
 
 import logging
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, override, cast
+from typing import TYPE_CHECKING, override
 
 import numpy as np
 import pandas as pd
@@ -16,8 +16,9 @@ from matplotlib.axes import Axes
 from matplotlib.container import BarContainer
 
 from ..base_graph import BaseGraph
+from ..data_processor import data_processor
+from ..visualization_mixin import VisualizationMixin
 from ..utils import (
-    validate_graph_data,
     aggregate_by_month,
     aggregate_by_month_separated,
     get_media_type_display_info,
@@ -30,7 +31,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class PlayCountByMonthGraph(BaseGraph):
+class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
     """Graph showing play counts by month."""
 
     def __init__(
@@ -89,46 +90,16 @@ class PlayCountByMonthGraph(BaseGraph):
         logger.info("Generating play count by month graph")
 
         try:
-            # Step 1: Extract monthly plays data from the full data structure
-            monthly_plays_data_raw = data.get("monthly_plays", {})
-            if not isinstance(monthly_plays_data_raw, dict):
-                raise ValueError("Missing or invalid 'monthly_plays' data in input")
+            # Step 1: Extract monthly plays data using DataProcessor
+            response_data = data_processor.extract_monthly_plays_data(data)
 
-            # Cast to the proper type for type checker
-            monthly_plays_data = cast(Mapping[str, object], monthly_plays_data_raw)
+            # Step 2: Setup figure with styling using combined utility
+            _, ax = self.setup_figure_with_styling()
 
-            # Step 2: Validate the monthly plays data structure
-            # Monthly plays data should have 'categories' and 'series' keys directly (no 'data' wrapper)
-            is_valid, error_msg = validate_graph_data(
-                monthly_plays_data, ["categories", "series"]
-            )
-            if not is_valid:
-                raise ValueError(
-                    f"Invalid monthly plays data for monthly graph: {error_msg}"
-                )
+            # Step 3: Configure grid styling (explicit for bar charts)
+            self.configure_seaborn_style_with_grid()
 
-            # Step 3: Use the monthly plays data directly (no 'data' key extraction needed)
-            response_data = monthly_plays_data
-            if not isinstance(response_data, dict):
-                raise ValueError("Invalid response data structure in monthly_plays")
-
-            # Step 4: Setup figure and axes
-            _, ax = self.setup_figure()
-
-            # Step 5: Apply modern Seaborn styling
-            self.apply_seaborn_style()
-
-            # Step 5.5: Configure Seaborn grid styling (explicit for consistency)
-            if self.get_grid_enabled():
-                import seaborn as sns
-
-                sns.set_style("whitegrid")
-            else:
-                import seaborn as sns
-
-                sns.set_style("white")
-
-            # Step 6: Check if media type separation is enabled
+            # Step 4: Check if media type separation is enabled
             use_separation = self.get_media_type_separation_enabled()
 
             if use_separation:
@@ -144,16 +115,8 @@ class PlayCountByMonthGraph(BaseGraph):
                 # Generate traditional combined visualization using monthly API data
                 self._generate_combined_visualization_from_api(ax, response_data)
 
-            # Step 7: Improve layout and save
-            if self.figure is not None:
-                self.figure.tight_layout()
-
-            # Save the figure using base class utility method
-            output_path = self.save_figure(
-                graph_type="play_count_by_month", user_id=None
-            )
-
-            logger.info(f"Play count by month graph saved to: {output_path}")
+            # Step 5: Finalize and save using combined utility
+            output_path = self.finalize_and_save_figure(graph_type="play_count_by_month", user_id=None)
             return output_path
 
         except Exception as e:
@@ -177,11 +140,11 @@ class PlayCountByMonthGraph(BaseGraph):
         series = response_data.get("series", [])
 
         if not isinstance(categories, list) or not isinstance(series, list):
-            self._handle_empty_data_case(ax)
+            self.display_no_data_message("No play data available\nfor the selected time period")
             return
 
         if not categories or not series:
-            self._handle_empty_data_case(ax)
+            self.display_no_data_message("No play data available\nfor the selected time period")
             return
 
         # Prepare data for plotting
@@ -236,7 +199,7 @@ class PlayCountByMonthGraph(BaseGraph):
                     )
 
         if not plot_data:
-            self._handle_empty_data_case(ax)
+            self.display_no_data_message("No play data available\nfor the selected time period")
             return
 
         # Create DataFrame for Seaborn
@@ -341,11 +304,11 @@ class PlayCountByMonthGraph(BaseGraph):
         series_raw = response_data.get("series", [])
 
         if not isinstance(categories_raw, list) or not isinstance(series_raw, list):
-            self._handle_empty_data_case(ax)
+            self.display_no_data_message("No play data available\nfor the selected time period")
             return
 
         if not categories_raw or not series_raw:
-            self._handle_empty_data_case(ax)
+            self.display_no_data_message("No play data available\nfor the selected time period")
             return
 
         # Type-safe assignments after validation
@@ -394,7 +357,7 @@ class PlayCountByMonthGraph(BaseGraph):
                 media_type_colors[media_type] = "#666666"
 
         if not media_type_data:
-            self._handle_empty_data_case(ax)
+            self.display_no_data_message("No play data available\nfor the selected time period")
             return
 
         # Create data arrays for stacking
@@ -522,11 +485,11 @@ class PlayCountByMonthGraph(BaseGraph):
         series = response_data.get("series", [])
 
         if not isinstance(categories, list) or not isinstance(series, list):
-            self._handle_empty_data_case(ax)
+            self.display_no_data_message("No play data available\nfor the selected time period")
             return
 
         if not categories or not series:
-            self._handle_empty_data_case(ax)
+            self.display_no_data_message("No play data available\nfor the selected time period")
             return
 
         # Combine all series data into totals for each month
@@ -558,7 +521,7 @@ class PlayCountByMonthGraph(BaseGraph):
                     )  # external API data conversion
 
         if not month_totals or all(count == 0 for count in month_totals.values()):
-            self._handle_empty_data_case(ax)
+            self.display_no_data_message("No play data available\nfor the selected time period")
             return
 
         # Convert to DataFrame for plotting
@@ -614,25 +577,7 @@ class PlayCountByMonthGraph(BaseGraph):
             f"Created combined monthly play count graph with {len(month_totals)} months"
         )
 
-    def _handle_empty_data_case(self, ax: Axes) -> None:
-        """
-        Handle the case where no data is available.
 
-        Args:
-            ax: The matplotlib axes to display the message on
-        """
-        _ = ax.text(  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
-            0.5,
-            0.5,
-            "No play data available\nfor the selected time period",
-            ha="center",
-            va="center",
-            transform=ax.transAxes,
-            fontsize=16,
-            bbox=dict(boxstyle="round,pad=0.5", facecolor="lightgray", alpha=0.7),
-        )
-        _ = ax.set_title(self.get_title(), fontsize=18, fontweight="bold")  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
-        logger.warning("Generated empty monthly play count graph due to no data")
 
     # Keep the old methods for backward compatibility
     def _generate_separated_visualization(
@@ -653,7 +598,7 @@ class PlayCountByMonthGraph(BaseGraph):
         display_info = get_media_type_display_info()
 
         if not separated_data:
-            self._handle_empty_data_case(ax)
+            self.display_no_data_message("No play data available\nfor the selected time period")
             return
 
         # Prepare data for plotting
@@ -686,7 +631,7 @@ class PlayCountByMonthGraph(BaseGraph):
                 )
 
         if not plot_data:
-            self._handle_empty_data_case(ax)
+            self.display_no_data_message("No play data available\nfor the selected time period")
             return
 
         # Create DataFrame for Seaborn
@@ -850,4 +795,4 @@ class PlayCountByMonthGraph(BaseGraph):
                 f"Created combined monthly play count graph with {len(sorted_months)} months"
             )
         else:
-            self._handle_empty_data_case(ax)
+            self.display_no_data_message("No play data available\nfor the selected time period")
