@@ -24,6 +24,7 @@ from typing import TYPE_CHECKING, Callable
 
 from .graph_modules.data_fetcher import DataFetcher
 from .graph_modules.graph_factory import GraphFactory
+from .graph_modules.progress_tracker import ProgressTracker
 from .graph_modules.utils import cleanup_old_files, get_current_graph_storage_path
 
 if TYPE_CHECKING:
@@ -44,62 +45,7 @@ class ResourceCleanupError(Exception):
     pass
 
 
-class ProgressTracker:
-    """Enhanced progress tracking with error states and detailed reporting."""
-
-    def __init__(
-        self, callback: Callable[[str, int, int, dict[str, object]], None] | None = None
-    ) -> None:
-        self.callback: Callable[[str, int, int, dict[str, object]], None] | None = (
-            callback
-        )
-        self.start_time: float = time.time()
-        self.current_step: int = 0
-        self.total_steps: int = 0
-        self.errors: list[str] = []
-        self.warnings: list[str] = []
-
-    def update(self, message: str, current: int, total: int, **kwargs: object) -> None:
-        """Update progress with additional metadata."""
-        self.current_step = current
-        self.total_steps = total
-        elapsed_time = time.time() - self.start_time
-
-        metadata: dict[str, object] = {
-            "elapsed_time": elapsed_time,
-            "errors": self.errors.copy(),
-            "warnings": self.warnings.copy(),
-            **kwargs,
-        }
-
-        if self.callback:
-            self.callback(message, current, total, metadata)
-
-        logger.debug(
-            f"Progress: {message} ({current}/{total}) - Elapsed: {elapsed_time:.2f}s"
-        )
-
-    def add_error(self, error: str) -> None:
-        """Add an error to the tracker."""
-        self.errors.append(error)
-        logger.error(f"Progress tracker error: {error}")
-
-    def add_warning(self, warning: str) -> None:
-        """Add a warning to the tracker."""
-        self.warnings.append(warning)
-        logger.warning(f"Progress tracker warning: {warning}")
-
-    def get_summary(self) -> dict[str, object]:
-        """Get a summary of the progress tracking session."""
-        return {
-            "total_time": time.time() - self.start_time,
-            "completed_steps": self.current_step,
-            "total_steps": self.total_steps,
-            "error_count": len(self.errors),
-            "warning_count": len(self.warnings),
-            "errors": self.errors.copy(),
-            "warnings": self.warnings.copy(),
-        }
+# ProgressTracker is now imported from .graph_modules.progress_tracker
 
 
 class GraphManager:
