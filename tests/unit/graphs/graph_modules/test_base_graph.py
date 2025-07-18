@@ -362,3 +362,200 @@ class TestBaseGraph:
         )
         graph_disabled = ConcreteGraph(config=config_disabled)
         assert graph_disabled.get_media_type_separation_enabled() is False
+
+    def test_extract_and_validate_play_history_data_success(self) -> None:
+        """Test successful extraction and validation of play history data."""
+        graph = ConcreteGraph()
+        
+        # Valid input data
+        input_data = {
+            "play_history": {
+                "data": [
+                    {"date": "2023-01-01", "user": "test_user", "platform": "Web"},
+                    {"date": "2023-01-02", "user": "test_user2", "platform": "Mobile"},
+                ]
+            }
+        }
+        
+        result = graph.extract_and_validate_play_history_data(input_data)
+        assert isinstance(result, dict)
+        assert "data" in result
+        assert isinstance(result["data"], list)
+        assert len(result["data"]) == 2
+
+    def test_extract_and_validate_play_history_data_missing_play_history(self) -> None:
+        """Test extraction with missing play_history key."""
+        graph = ConcreteGraph()
+        
+        # Input data without play_history key
+        input_data = {"other_data": "value"}
+        
+        with pytest.raises(ValueError, match="Invalid play history data: Missing required key: data"):
+            graph.extract_and_validate_play_history_data(input_data)
+
+    def test_extract_and_validate_play_history_data_invalid_play_history(self) -> None:
+        """Test extraction with invalid play_history data."""
+        graph = ConcreteGraph()
+        
+        # Input data with invalid play_history (not a dict)
+        input_data = {"play_history": "invalid_data"}
+        
+        with pytest.raises(ValueError, match="Missing or invalid 'play_history' data in input"):
+            graph.extract_and_validate_play_history_data(input_data)
+
+    def test_extract_and_validate_play_history_data_missing_data_key(self) -> None:
+        """Test extraction with missing data key in play_history."""
+        graph = ConcreteGraph()
+        
+        # Input data without data key in play_history
+        input_data = {"play_history": {"other_key": "value"}}
+        
+        with pytest.raises(ValueError, match="Invalid play history data: Missing required key: data"):
+            graph.extract_and_validate_play_history_data(input_data)
+
+    def test_process_play_history_safely_success(self) -> None:
+        """Test successful processing of play history data."""
+        graph = ConcreteGraph()
+        
+        # Mock the process_play_history_data function
+        with patch('src.tgraph_bot.graphs.graph_modules.base_graph.process_play_history_data') as mock_process:
+            mock_process.return_value = [
+                {"date": "2023-01-01", "user": "test_user", "platform": "Web", "media_type": "tv", "duration": 3600},
+                {"date": "2023-01-02", "user": "test_user2", "platform": "Mobile", "media_type": "movie", "duration": 7200},
+            ]
+            
+            play_history_data = {"data": [{"mock": "data"}]}
+            result = graph.process_play_history_safely(play_history_data)
+            
+            assert isinstance(result, list)
+            assert len(result) == 2
+            mock_process.assert_called_once_with(play_history_data)
+
+    def test_process_play_history_safely_error_handling(self) -> None:
+        """Test error handling in play history processing."""
+        graph = ConcreteGraph()
+        
+        # Mock the process_play_history_data function to raise an error
+        with patch('src.tgraph_bot.graphs.graph_modules.base_graph.process_play_history_data') as mock_process:
+            mock_process.side_effect = ValueError("Processing failed")
+            
+            play_history_data = {"data": [{"mock": "data"}]}
+            result = graph.process_play_history_safely(play_history_data)
+            
+            # Should return empty list on error
+            assert result == []
+            mock_process.assert_called_once_with(play_history_data)
+
+    def test_setup_figure_with_styling(self) -> None:
+        """Test combined figure setup and styling."""
+        graph = ConcreteGraph()
+        
+        figure, axes = graph.setup_figure_with_styling()
+        
+        # Verify setup was successful
+        assert graph.figure is not None
+        assert graph.axes is not None
+        assert figure is graph.figure
+        assert axes is graph.axes
+        
+        # Clean up
+        graph.cleanup()
+
+    def test_finalize_and_save_figure(self) -> None:
+        """Test figure finalization and saving."""
+        graph = ConcreteGraph()
+        
+        # Setup figure first
+        _ = graph.setup_figure_with_styling()
+        if graph.axes is not None:
+            _ = graph.axes.plot([1, 2, 3], [1, 4, 2])  # pyright: ignore[reportUnknownMemberType]
+        
+        # Save and finalize
+        output_path = graph.finalize_and_save_figure(graph_type="test_graph")
+        
+        # Verify file was created
+        assert Path(output_path).exists()
+        assert "test_graph" in output_path
+        
+        # Clean up
+        Path(output_path).unlink(missing_ok=True)
+
+    def test_get_time_range_days_from_config_default(self) -> None:
+        """Test get_time_range_days_from_config with default value."""
+        graph = ConcreteGraph()
+        
+        # Should return default value (30) when no config provided
+        result = graph.get_time_range_days_from_config()
+        assert result == 30
+
+    def test_get_time_range_days_from_config_with_config(self) -> None:
+        """Test get_time_range_days_from_config with configuration."""
+        from src.tgraph_bot.config.schema import TGraphBotConfig
+        
+        config = TGraphBotConfig(
+            TAUTULLI_API_KEY="test_api_key",
+            TAUTULLI_URL="http://localhost:8181/api/v2",
+            DISCORD_TOKEN="test_discord_token",
+            CHANNEL_ID=123456789,
+            TIME_RANGE_DAYS=60,
+        )
+        graph = ConcreteGraph(config=config)
+        
+        result = graph.get_time_range_days_from_config()
+        assert result == 60
+
+    def test_get_time_range_days_from_config_invalid_value(self) -> None:
+        """Test get_time_range_days_from_config with invalid value."""
+        graph = ConcreteGraph(config={"TIME_RANGE_DAYS": "invalid"})
+        
+        result = graph.get_time_range_days_from_config()
+        assert result == 30  # Should return default
+
+    def test_get_time_range_months_from_config_default(self) -> None:
+        """Test get_time_range_months_from_config with default value."""
+        graph = ConcreteGraph()
+        
+        # Should return default value (12) when no config provided
+        result = graph.get_time_range_months_from_config()
+        assert result == 12
+
+    def test_get_time_range_months_from_config_with_config(self) -> None:
+        """Test get_time_range_months_from_config with configuration."""
+        from src.tgraph_bot.config.schema import TGraphBotConfig
+        
+        config = TGraphBotConfig(
+            TAUTULLI_API_KEY="test_api_key",
+            TAUTULLI_URL="http://localhost:8181/api/v2",
+            DISCORD_TOKEN="test_discord_token",
+            CHANNEL_ID=123456789,
+            TIME_RANGE_MONTHS=24,
+        )
+        graph = ConcreteGraph(config=config)
+        
+        result = graph.get_time_range_months_from_config()
+        assert result == 24
+
+    def test_handle_empty_data_with_message(self) -> None:
+        """Test empty data handling with custom message."""
+        graph = ConcreteGraph()
+        
+        # Setup figure
+        _ = graph.setup_figure()
+        
+        # Test with default message
+        if graph.axes is not None:
+            graph.handle_empty_data_with_message(graph.axes)
+            
+            # Verify axes was configured (we can't easily test visual output,
+            # but we can verify no exceptions were raised)
+            assert graph.axes is not None
+        
+        # Test with custom message
+        if graph.axes is not None:
+            graph.handle_empty_data_with_message(graph.axes, "Custom empty message")
+            
+            # Verify axes was configured
+            assert graph.axes is not None
+        
+        # Clean up
+        graph.cleanup()

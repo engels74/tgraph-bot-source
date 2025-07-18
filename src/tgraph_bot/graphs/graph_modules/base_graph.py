@@ -25,6 +25,9 @@ from .utils import (
     censor_username,
     apply_modern_seaborn_styling,
     get_media_type_display_info,
+    validate_graph_data,
+    process_play_history_data,
+    ProcessedRecords,
 )
 
 if TYPE_CHECKING:
@@ -588,3 +591,180 @@ class BaseGraph(ABC):
     ) -> None:
         """Context manager exit with cleanup."""
         self.cleanup()
+
+    def extract_and_validate_play_history_data(
+        self, data: Mapping[str, object]
+    ) -> Mapping[str, object]:
+        """
+        Extract and validate play history data from the input data structure.
+        
+        This method implements the common pattern found across all Tautulli graph classes
+        for extracting and validating play_history data from the API response.
+        
+        Args:
+            data: Dictionary containing the full data structure from Tautulli API
+            
+        Returns:
+            Validated play history data mapping
+            
+        Raises:
+            ValueError: If data is invalid or missing required fields
+        """
+        from typing import cast
+        
+        # Extract play history data from the full data structure
+        play_history_data_raw = data.get("play_history", {})
+        if not isinstance(play_history_data_raw, dict):
+            raise ValueError("Missing or invalid 'play_history' data in input")
+        
+        # Cast to the proper type for type checker
+        play_history_data = cast(Mapping[str, object], play_history_data_raw)
+        
+        # Validate the play history data
+        is_valid, error_msg = validate_graph_data(play_history_data, ["data"])
+        if not is_valid:
+            raise ValueError(f"Invalid play history data: {error_msg}")
+        
+        return play_history_data
+
+    def process_play_history_safely(
+        self, play_history_data: Mapping[str, object]
+    ) -> ProcessedRecords:
+        """
+        Process play history data with error handling.
+        
+        This method implements the common pattern found across all Tautulli graph classes
+        for processing play history data with graceful error handling.
+        
+        Args:
+            play_history_data: Validated play history data mapping
+            
+        Returns:
+            List of processed play history records, empty list if processing fails
+        """
+        try:
+            processed_records = process_play_history_data(play_history_data)
+            logger.info(f"Processed {len(processed_records)} play history records")
+            return processed_records
+        except Exception as e:
+            logger.error(f"Error processing play history data: {e}")
+            # Return empty list for graceful degradation
+            return []
+
+    def setup_figure_with_styling(self) -> tuple[matplotlib.figure.Figure, Axes]:
+        """
+        Setup figure and apply common styling patterns.
+        
+        This method combines the common sequence of setup_figure() and apply_seaborn_style()
+        calls found across all graph classes.
+        
+        Returns:
+            Tuple of (figure, axes) ready for plotting
+        """
+        # Setup figure and axes
+        figure, axes = self.setup_figure()
+        
+        # Apply modern Seaborn styling
+        self.apply_seaborn_style()
+        
+        return figure, axes
+
+    def finalize_and_save_figure(
+        self, graph_type: str, user_id: str | None = None
+    ) -> str:
+        """
+        Finalize figure layout and save with cleanup.
+        
+        This method implements the common pattern found across all graph classes
+        for finalizing the figure layout, saving, and cleanup.
+        
+        Args:
+            graph_type: Type of graph for filename generation
+            user_id: User ID for personal graphs (optional)
+            
+        Returns:
+            Path to the saved graph file
+            
+        Raises:
+            ValueError: If figure is not initialized
+        """
+        # Improve layout
+        if self.figure is not None:
+            self.figure.tight_layout()
+        
+        # Save the figure using base class utility method
+        output_path = self.save_figure(graph_type=graph_type, user_id=user_id)
+        
+        logger.info(f"Graph saved to: {output_path}")
+        return output_path
+
+    def get_time_range_days_from_config(self) -> int:
+        """
+        Extract the TIME_RANGE_DAYS value from the graph's configuration.
+        
+        This method implements the common pattern found across all graph classes
+        for extracting the time range configuration.
+        
+        Returns:
+            Number of days for the time range from config, defaults to 30 if not found
+        """
+        time_range = self.get_config_value("TIME_RANGE_DAYS", 30)
+        
+        if isinstance(time_range, (int, float)):
+            return int(time_range)
+        else:
+            logger.warning(f"Invalid TIME_RANGE_DAYS value: {time_range}, using default 30")
+            return 30
+
+    def get_time_range_months_from_config(self) -> int:
+        """
+        Extract the TIME_RANGE_MONTHS value from the graph's configuration.
+        
+        This method implements the common pattern found across some graph classes
+        for extracting the monthly time range configuration.
+        
+        Returns:
+            Number of months for the time range from config, defaults to 12 if not found
+        """
+        time_range = self.get_config_value("TIME_RANGE_MONTHS", 12)
+        
+        if isinstance(time_range, (int, float)):
+            return int(time_range)
+        else:
+            logger.warning(f"Invalid TIME_RANGE_MONTHS value: {time_range}, using default 12")
+            return 12
+
+    def handle_empty_data_with_message(self, ax: Axes, message: str = "No data available for the selected time range.") -> None:
+        """
+        Handle empty data case with standardized message display.
+        
+        This method implements the common pattern found across graph classes
+        for handling empty data scenarios with user-friendly messages.
+        
+        Args:
+            ax: The matplotlib axes to display the message on
+            message: Message to display to the user
+        """
+        # Clear any existing content
+        ax.clear()
+        
+        # Display the message
+        _ = ax.text(  # pyright: ignore[reportUnknownMemberType]
+            0.5, 0.5, message,
+            horizontalalignment='center',
+            verticalalignment='center',
+            transform=ax.transAxes,
+            fontsize=14,
+            fontweight='bold'
+        )
+        
+        # Remove axes decorations
+        _ = ax.set_xticks([])  # pyright: ignore[reportUnknownMemberType]
+        _ = ax.set_yticks([])  # pyright: ignore[reportUnknownMemberType]
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+        ax.spines['left'].set_visible(False)
+        
+        # Set a simple title
+        _ = ax.set_title(self.get_title(), fontsize=16, fontweight='bold', pad=20)  # pyright: ignore[reportUnknownMemberType]
