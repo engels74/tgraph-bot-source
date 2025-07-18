@@ -24,7 +24,6 @@ from .utils import (
     validate_color,
     censor_username,
     apply_modern_seaborn_styling,
-    get_media_type_display_info,
     validate_graph_data,
     process_play_history_data,
     ProcessedRecords,
@@ -33,6 +32,7 @@ from .utils import (
 if TYPE_CHECKING:
     from ...config.schema import TGraphBotConfig
     from .config_accessor import ConfigAccessor
+    from .media_type_processor import MediaTypeProcessor
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +70,9 @@ class BaseGraph(ABC):
             self._config_accessor: "ConfigAccessor | None" = ConfigAccessor(config)
         else:
             self._config_accessor = None
+
+        # Lazy initialization for MediaTypeProcessor
+        self._media_type_processor: "MediaTypeProcessor | None" = None
 
         # Use background color from config if not explicitly provided
         if background_color is None:
@@ -112,6 +115,24 @@ class BaseGraph(ABC):
             except Exception:
                 # If key doesn't exist and no default provided, return None for backward compatibility
                 return None
+
+    @property
+    def media_type_processor(self) -> "MediaTypeProcessor":
+        """
+        Get the MediaTypeProcessor instance for this graph.
+
+        This property provides lazy initialization of the MediaTypeProcessor
+        to avoid circular import issues while providing centralized media
+        type handling functionality.
+
+        Returns:
+            MediaTypeProcessor instance configured with this graph's config accessor
+        """
+        if self._media_type_processor is None:
+            # Import here to avoid circular imports
+            from .media_type_processor import MediaTypeProcessor
+            self._media_type_processor = MediaTypeProcessor(self._config_accessor)
+        return self._media_type_processor
 
     def setup_figure(self) -> tuple[matplotlib.figure.Figure, Axes]:
         """
@@ -166,15 +187,12 @@ class BaseGraph(ABC):
 
         # Set color palette based on configuration
         if self.config is not None and self.get_media_type_separation_enabled():
-            # Use colors from configuration for media type separation
-            tv_color = self.get_tv_color()
-            movie_color = self.get_movie_color()
+            # Use colors from MediaTypeProcessor for media type separation
+            preferred_order = self.media_type_processor.get_preferred_order()
             custom_palette = [
-                tv_color,
-                movie_color,
-                "#2ca02c",
-                "#d62728",
-            ]  # TV, Movies, Music, Other
+                self.media_type_processor.get_color_for_type(media_type)
+                for media_type in preferred_order
+            ]
             sns.set_palette(custom_palette)
 
     def create_separated_legend(
@@ -189,25 +207,18 @@ class BaseGraph(ABC):
         """
         import matplotlib.patches as mpatches
 
-        display_info = get_media_type_display_info()
-
-        # Update display info with configuration colors
-        if self.config is not None:
-            display_info["tv"]["color"] = self.get_tv_color()
-            display_info["movie"]["color"] = self.get_movie_color()
-
         # Create legend entries for present media types
         legend_handles: list[mpatches.Patch] = []
         legend_labels: list[str] = []
 
         for media_type in media_types_present:
-            if media_type in display_info:
-                patch = mpatches.Patch(
-                    color=display_info[media_type]["color"],
-                    label=display_info[media_type]["display_name"],
-                )
-                legend_handles.append(patch)
-                legend_labels.append(display_info[media_type]["display_name"])
+            display_info = self.media_type_processor.get_display_info(media_type)
+            patch = mpatches.Patch(
+                color=display_info.color,
+                label=display_info.display_name,
+            )
+            legend_handles.append(patch)
+            legend_labels.append(display_info.display_name)
 
         if legend_handles:
             _ = ax.legend(  # pyright: ignore[reportUnknownMemberType]
@@ -257,8 +268,7 @@ class BaseGraph(ABC):
         Returns:
             Hex color string for TV shows
         """
-        tv_color = self.get_config_value("TV_COLOR", "#1f77b4")
-        return str(tv_color)
+        return self.media_type_processor.get_color_for_type("tv")
 
     def get_movie_color(self) -> str:
         """
@@ -267,8 +277,7 @@ class BaseGraph(ABC):
         Returns:
             Hex color string for movies
         """
-        movie_color = self.get_config_value("MOVIE_COLOR", "#ff7f0e")
-        return str(movie_color)
+        return self.media_type_processor.get_color_for_type("movie")
 
     def get_annotation_color(self) -> str:
         """

@@ -691,52 +691,35 @@ def classify_media_type(media_type: str) -> str:
     """
     Classify a Tautulli media type into standardized categories.
 
+    This function is maintained for backward compatibility.
+    New code should use MediaTypeProcessor directly.
+
     Args:
         media_type: The raw media type from Tautulli API
 
     Returns:
         Standardized media type ('movie', 'tv', 'music', 'other')
     """
-    if not media_type:
-        return "other"
-
-    media_type_lower = media_type.lower()
-
-    if media_type_lower in ["movie"]:
-        return "movie"
-    elif media_type_lower in ["episode", "show", "tv"]:
-        return "tv"
-    elif media_type_lower in ["track", "album", "artist", "music"]:
-        return "music"
-    else:
-        return "other"
+    # Use MediaTypeProcessor for consistent classification
+    from .media_type_processor import MediaTypeProcessor
+    processor = MediaTypeProcessor()
+    return processor.classify_media_type(media_type)
 
 
 def get_media_type_display_info() -> dict[str, dict[str, str]]:
     """
     Get display information for media types including colors and labels.
 
+    This function is maintained for backward compatibility.
+    New code should use MediaTypeProcessor directly.
+
     Returns:
         Dictionary mapping media type to display info (name, color)
     """
-    return {
-        "movie": {
-            "display_name": "Movies",
-            "color": "#ff7f0e",  # Orange - matches MOVIE_COLOR default
-        },
-        "tv": {
-            "display_name": "TV Series",
-            "color": "#1f77b4",  # Blue - matches TV_COLOR default
-        },
-        "music": {
-            "display_name": "Music",
-            "color": "#2ca02c",  # Green
-        },
-        "other": {
-            "display_name": "Other",
-            "color": "#d62728",  # Red
-        },
-    }
+    # Use MediaTypeProcessor for consistent display info
+    from .media_type_processor import MediaTypeProcessor
+    processor = MediaTypeProcessor()
+    return processor.get_all_display_info()
 
 
 def aggregate_by_date_separated(
