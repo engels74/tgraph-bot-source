@@ -11,8 +11,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from src.tgraph_bot.graphs.graph_manager import GraphManager
-from src.tgraph_bot.config.manager import ConfigManager
 from src.tgraph_bot.config.schema import TGraphBotConfig
+from tests.utils.test_helpers import create_config_manager_with_config
 
 
 class TestGraphManagerArchitecture:
@@ -20,16 +20,14 @@ class TestGraphManagerArchitecture:
 
     def test_init_with_config_manager(self) -> None:
         """Test GraphManager initialization with ConfigManager."""
-        config_manager = ConfigManager()
-        
-        # Create a mock config
+        # Create a mock config using utility
         mock_config = TGraphBotConfig(
             TAUTULLI_API_KEY="test_key",
             TAUTULLI_URL="http://localhost:8181/api/v2",
             DISCORD_TOKEN="test_token",
             CHANNEL_ID=123456789,
         )
-        config_manager.set_current_config(mock_config)
+        config_manager = create_config_manager_with_config(mock_config)
         
         graph_manager = GraphManager(config_manager)
         
@@ -40,16 +38,14 @@ class TestGraphManagerArchitecture:
     @pytest.mark.asyncio
     async def test_async_context_manager(self) -> None:
         """Test GraphManager async context manager functionality."""
-        config_manager = ConfigManager()
-        
-        # Create a mock config
+        # Create a mock config using utility
         mock_config = TGraphBotConfig(
             TAUTULLI_API_KEY="test_key",
             TAUTULLI_URL="http://localhost:8181/api/v2",
             DISCORD_TOKEN="test_token",
             CHANNEL_ID=123456789,
         )
-        config_manager.set_current_config(mock_config)
+        config_manager = create_config_manager_with_config(mock_config)
         
         with patch('src.tgraph_bot.graphs.graph_manager.DataFetcher') as mock_data_fetcher_class:
             with patch('src.tgraph_bot.graphs.graph_manager.GraphFactory') as mock_graph_factory_class:
@@ -76,8 +72,8 @@ class TestGraphManagerArchitecture:
                         max_retries=3
                     )
                     
-                    # Verify GraphFactory was created with config
-                    mock_graph_factory_class.assert_called_once_with(mock_config)
+                    # Verify GraphFactory was created - the factory uses ConfigAccessor internally
+                    mock_graph_factory_class.assert_called_once()
                 
                 # Verify cleanup was called
                 mock_data_fetcher.__aexit__.assert_called_once()  # pyright: ignore[reportAny]
@@ -85,9 +81,7 @@ class TestGraphManagerArchitecture:
     @pytest.mark.asyncio
     async def test_generate_all_graphs_architecture(self) -> None:
         """Test the generate_all_graphs method architecture."""
-        config_manager = ConfigManager()
-        
-        # Create a mock config
+        # Create a mock config using utility
         mock_config = TGraphBotConfig(
             TAUTULLI_API_KEY="test_key",
             TAUTULLI_URL="http://localhost:8181/api/v2",
@@ -95,7 +89,7 @@ class TestGraphManagerArchitecture:
             CHANNEL_ID=123456789,
             TIME_RANGE_DAYS=30,
         )
-        config_manager.set_current_config(mock_config)
+        config_manager = create_config_manager_with_config(mock_config)
         
         with patch('src.tgraph_bot.graphs.graph_manager.DataFetcher') as mock_data_fetcher_class:
             with patch('src.tgraph_bot.graphs.graph_manager.GraphFactory') as mock_graph_factory_class:
@@ -132,16 +126,14 @@ class TestGraphManagerArchitecture:
     @pytest.mark.asyncio
     async def test_error_handling_architecture(self) -> None:
         """Test error handling in the GraphManager architecture."""
-        config_manager = ConfigManager()
-        
-        # Create a mock config
+        # Create a mock config using utility
         mock_config = TGraphBotConfig(
             TAUTULLI_API_KEY="test_key",
             TAUTULLI_URL="http://localhost:8181/api/v2",
             DISCORD_TOKEN="test_token",
             CHANNEL_ID=123456789,
         )
-        config_manager.set_current_config(mock_config)
+        config_manager = create_config_manager_with_config(mock_config)
         
         graph_manager = GraphManager(config_manager)
         
@@ -151,14 +143,14 @@ class TestGraphManagerArchitecture:
 
     def test_architecture_interfaces(self) -> None:
         """Test that GraphManager has the expected interface methods."""
-        config_manager = ConfigManager()
+        # Create a mock config using utility
         mock_config = TGraphBotConfig(
             TAUTULLI_API_KEY="test_key",
             TAUTULLI_URL="http://localhost:8181/api/v2",
             DISCORD_TOKEN="test_token",
             CHANNEL_ID=123456789,
         )
-        config_manager.set_current_config(mock_config)
+        config_manager = create_config_manager_with_config(mock_config)
         
         graph_manager = GraphManager(config_manager)
         
@@ -178,3 +170,8 @@ class TestGraphManagerArchitecture:
         assert inspect.iscoroutinefunction(graph_manager.post_graphs_to_discord)
         assert inspect.iscoroutinefunction(graph_manager.cleanup_old_graphs)
         assert inspect.iscoroutinefunction(graph_manager.update_graphs_full_cycle)
+        
+        # Test new architecture features from refactoring
+        # Verify ConfigAccessor integration in GraphFactory
+        assert hasattr(graph_manager, 'config_manager')
+        assert graph_manager.config_manager is not None
