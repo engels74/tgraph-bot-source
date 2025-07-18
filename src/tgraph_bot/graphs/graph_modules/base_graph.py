@@ -32,6 +32,7 @@ from .utils import (
 
 if TYPE_CHECKING:
     from ...config.schema import TGraphBotConfig
+    from .config_accessor import ConfigAccessor
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +63,14 @@ class BaseGraph(ABC):
         """
         self.config: "TGraphBotConfig | dict[str, object] | None" = config
 
+        # Initialize ConfigAccessor for centralized configuration access
+        if config is not None:
+            # Import here to avoid circular imports
+            from .config_accessor import ConfigAccessor
+            self._config_accessor: "ConfigAccessor | None" = ConfigAccessor(config)
+        else:
+            self._config_accessor = None
+
         # Use background color from config if not explicitly provided
         if background_color is None:
             if config is not None:
@@ -83,7 +92,7 @@ class BaseGraph(ABC):
 
     def get_config_value(self, key: str, default: object = None) -> object:
         """
-        Get a configuration value from either TGraphBotConfig object or dict.
+        Get a configuration value using the centralized ConfigAccessor.
 
         Args:
             key: Configuration key to retrieve
@@ -92,14 +101,17 @@ class BaseGraph(ABC):
         Returns:
             Configuration value or default
         """
-        if self.config is None:
+        if self._config_accessor is None:
             return default
 
-        if isinstance(self.config, dict):
-            return self.config.get(key, default)
+        if default is not None:
+            return self._config_accessor.get_value(key, default)
         else:
-            # TGraphBotConfig object
-            return getattr(self.config, key, default)
+            try:
+                return self._config_accessor.get_value(key)
+            except Exception:
+                # If key doesn't exist and no default provided, return None for backward compatibility
+                return None
 
     def setup_figure(self) -> tuple[matplotlib.figure.Figure, Axes]:
         """
