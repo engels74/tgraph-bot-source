@@ -13,6 +13,7 @@ from matplotlib.axes import Axes
 import pandas as pd
 import seaborn as sns
 
+from ..annotation_helper import AnnotationHelper
 from ..base_graph import BaseGraph
 from ..data_processor import data_processor
 from ..visualization_mixin import VisualizationMixin
@@ -55,6 +56,7 @@ class PlayCountByHourOfDayGraph(BaseGraph, VisualizationMixin):
             dpi=dpi,
             background_color=background_color,
         )
+        self.annotation_helper: AnnotationHelper = AnnotationHelper(self)
 
     @override
     def get_title(self) -> str:
@@ -157,25 +159,12 @@ class PlayCountByHourOfDayGraph(BaseGraph, VisualizationMixin):
             _ = ax.set_xticklabels([f"{h:02d}:00" for h in range(0, 24, 2)])  # pyright: ignore[reportUnknownMemberType]
 
             # Add bar value annotations if enabled
-            annotate_enabled = self.get_config_value(
-                "ANNOTATE_PLAY_COUNT_BY_HOUROFDAY", False
+            self.annotation_helper.annotate_bar_patches(
+                ax,
+                "ANNOTATE_PLAY_COUNT_BY_HOUROFDAY",
+                offset_y=1,
+                fontweight="bold",
             )
-            if annotate_enabled:
-                # Get all bar patches and annotate them
-                for patch in ax.patches:
-                    height = patch.get_height()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
-                    if height and height > 0:  # Only annotate non-zero values
-                        x_val = patch.get_x() + patch.get_width() / 2  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
-                        self.add_bar_value_annotation(
-                            ax,
-                            x=float(x_val),  # pyright: ignore[reportUnknownArgumentType]
-                            y=float(height),  # pyright: ignore[reportUnknownArgumentType]
-                            value=int(height),  # pyright: ignore[reportUnknownArgumentType]
-                            ha="center",
-                            va="bottom",
-                            offset_y=1,
-                            fontweight="bold",
-                        )
 
             logger.info("Created hour of day graph with data for 24 hours")
 

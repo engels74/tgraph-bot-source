@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, override
 import pandas as pd
 import seaborn as sns
 
+from ..annotation_helper import AnnotationHelper
 from ..base_graph import BaseGraph
 from ..data_processor import data_processor
 from ..visualization_mixin import VisualizationMixin
@@ -53,6 +54,7 @@ class Top10PlatformsGraph(BaseGraph, VisualizationMixin):
             dpi=dpi,
             background_color=background_color,
         )
+        self.annotation_helper: AnnotationHelper = AnnotationHelper(self)
 
     @override
     def get_title(self) -> str:
@@ -129,31 +131,14 @@ class Top10PlatformsGraph(BaseGraph, VisualizationMixin):
                 self.configure_tick_parameters(axis="both", labelsize=12)
 
                 # Add value annotations if enabled
-                annotate_enabled = self.get_config_value(
-                    "ANNOTATE_TOP_10_PLATFORMS", False
+                self.annotation_helper.annotate_horizontal_bar_patches(
+                    ax,
+                    "ANNOTATE_TOP_10_PLATFORMS",
+                    offset_x_ratio=0.01,
+                    ha="left",
+                    va="center",
+                    fontweight="bold",
                 )
-                if annotate_enabled:
-                    # Get max play count for positioning annotations
-                    play_counts: list[int | float] = []
-                    for p in top_platforms:
-                        count = p.get("play_count", 0)
-                        if isinstance(count, (int, float)):
-                            play_counts.append(count)
-                    max_play_count = max(play_counts) if play_counts else 1
-                    for bar in ax.patches:
-                        width = bar.get_width()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
-                        if width and width > 0:  # Only annotate non-zero values
-                            y_val = bar.get_y() + bar.get_height() / 2.0  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
-                            self.add_bar_value_annotation(
-                                ax,
-                                x=float(width),  # pyright: ignore[reportUnknownArgumentType]
-                                y=float(y_val),  # pyright: ignore[reportUnknownArgumentType]
-                                value=int(width),  # pyright: ignore[reportUnknownArgumentType]
-                                ha="left",
-                                va="center",
-                                offset_x=max_play_count * 0.01,
-                                fontweight="bold",
-                            )
             else:
                 # Handle empty data case using mixin utility
                 self.display_no_data_message(

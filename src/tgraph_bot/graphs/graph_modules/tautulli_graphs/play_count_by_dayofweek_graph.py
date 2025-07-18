@@ -16,6 +16,7 @@ import seaborn as sns
 from matplotlib.axes import Axes
 from matplotlib.container import BarContainer
 
+from ..annotation_helper import AnnotationHelper
 from ..base_graph import BaseGraph
 from ..data_processor import data_processor
 from ..empty_data_handler import EmptyDataHandler
@@ -61,6 +62,7 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
             dpi=dpi,
             background_color=background_color,
         )
+        self.annotation_helper: AnnotationHelper = AnnotationHelper(self)
 
     @override
     def get_title(self) -> str:
@@ -244,25 +246,12 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
         )
 
         # Add bar value annotations if enabled
-        annotate_enabled = self.get_config_value(
-            "ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK", False
+        self.annotation_helper.annotate_bar_patches(
+            ax,
+            "ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK",
+            offset_y=1,
+            fontweight="bold",
         )
-        if annotate_enabled:
-            # Get all bar patches and annotate them
-            for patch in ax.patches:
-                height = patch.get_height()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
-                if height and height > 0:  # Only annotate non-zero values
-                    x_val = patch.get_x() + patch.get_width() / 2  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
-                    self.add_bar_value_annotation(
-                        ax,
-                        x=float(x_val),  # pyright: ignore[reportUnknownArgumentType]
-                        y=float(height),  # pyright: ignore[reportUnknownArgumentType]
-                        value=int(height),  # pyright: ignore[reportUnknownArgumentType]
-                        ha="center",
-                        va="bottom",
-                        offset_y=1,
-                        fontweight="bold",
-                    )
 
         logger.info(
             f"Created separated day of week graph with {len(unique_media_types_list)} media types"
@@ -391,44 +380,15 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
         )
 
         # Add annotations if enabled
-        annotate_enabled = self.get_config_value(
-            "ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK", False
+        self.annotation_helper.annotate_stacked_bar_segments(
+            ax,
+            "ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK",
+            bar_containers,
+            day_order,
+            include_totals=True,
+            segment_fontsize=9,
+            total_fontsize=11,
         )
-        if annotate_enabled:
-            # Annotate individual segments and totals
-            for i, _ in enumerate(day_order):
-                cumulative_height = 0.0
-
-                # Annotate each segment
-                for bars, media_type, values in bar_containers:
-                    value = float(values[i])  # pyright: ignore[reportAny] # numpy array indexing returns Any
-                    if value > 0:
-                        # Position annotation in the middle of this segment
-                        self.add_bar_value_annotation(
-                            ax,
-                            x=float(i),
-                            y=cumulative_height + value / 2,
-                            value=int(value),
-                            ha="center",
-                            va="center",
-                            fontsize=9,
-                            fontweight="normal",
-                        )
-                    cumulative_height += value
-
-                # Add total annotation at the top
-                if cumulative_height > 0:
-                    self.add_bar_value_annotation(
-                        ax,
-                        x=float(i),
-                        y=cumulative_height,
-                        value=int(cumulative_height),
-                        ha="center",
-                        va="bottom",
-                        offset_y=2,
-                        fontsize=11,
-                        fontweight="bold",
-                    )
 
         logger.info(
             f"Created stacked day of week graph with {len(ordered_media_types)} media types"
@@ -495,25 +455,12 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
             _ = ax.set_ylabel("Play Count", fontsize=14, fontweight="bold")  # pyright: ignore[reportUnknownMemberType]
 
             # Add bar value annotations if enabled
-            annotate_enabled = self.get_config_value(
-                "ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK", False
+            self.annotation_helper.annotate_bar_patches(
+                ax,
+                "ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK",
+                offset_y=1,
+                fontweight="bold",
             )
-            if annotate_enabled:
-                # Get all bar patches and annotate them
-                for patch in ax.patches:
-                    height = patch.get_height()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
-                    if height and height > 0:  # Only annotate non-zero values
-                        x_val = patch.get_x() + patch.get_width() / 2  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
-                        self.add_bar_value_annotation(
-                            ax,
-                            x=float(x_val),  # pyright: ignore[reportUnknownArgumentType]
-                            y=float(height),  # pyright: ignore[reportUnknownArgumentType]
-                            value=int(height),  # pyright: ignore[reportUnknownArgumentType]
-                            ha="center",
-                            va="bottom",
-                            offset_y=1,
-                            fontweight="bold",
-                        )
 
             logger.info(f"Created combined day of week graph with {len(days)} days")
         else:

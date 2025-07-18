@@ -14,6 +14,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 from matplotlib.axes import Axes
 
+from ..annotation_helper import AnnotationHelper
 from ..base_graph import BaseGraph
 from ..data_processor import data_processor
 from ..empty_data_handler import EmptyDataHandler
@@ -60,6 +61,7 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
             dpi=dpi,
             background_color=background_color,
         )
+        self.annotation_helper: AnnotationHelper = AnnotationHelper(self)
 
     @override
     def get_title(self) -> str:
@@ -432,41 +434,23 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
             self._setup_aligned_date_axis(ax, sorted_dates, num_dates)
 
             # Add bar value annotations if enabled
-            annotate_enabled = self.get_config_value("ANNOTATE_DAILY_PLAY_COUNT", False)
-            if annotate_enabled:
-                # Add value annotations for each data point
-                for i, count in enumerate(sorted_counts):  # pyright: ignore[reportAny]  # tuple unpacking from zip
-                    if count > 0:
-                        self.add_bar_value_annotation(
-                            ax,
-                            x=float(i),
-                            y=float(count),  # pyright: ignore[reportAny]
-                            value=int(count),  # pyright: ignore[reportAny]
-                            ha="center",
-                            va="bottom",
-                            offset_y=2,
-                        )
+            self.annotation_helper.annotate_bar_patches(
+                ax,
+                "ANNOTATE_DAILY_PLAY_COUNT",
+                offset_y=2,
+            )
 
             # Add peak annotations if enabled (separate feature)
             if self.is_peak_annotations_enabled():
                 # Find peak for annotation
                 max_count = cast(int, max(sorted_counts))
                 max_idx = sorted_counts.index(max_count)
-
-                _ = ax.annotate(  # pyright: ignore[reportUnknownMemberType]
-                    f"Peak: {max_count}",
-                    xy=(max_idx, max_count),  # Use index as x-coordinate
-                    xytext=(10, 10),
-                    textcoords="offset points",
-                    bbox=dict(
-                        boxstyle="round,pad=0.3",
-                        facecolor=self.get_peak_annotation_color(),
-                        edgecolor="black",
-                        alpha=0.9,
-                    ),
-                    arrowprops=dict(arrowstyle="->", connectionstyle="arc3,rad=0"),
-                    color=self.get_peak_annotation_text_color(),
-                    fontweight="bold",
+                self.annotation_helper.annotate_peak_value(
+                    ax,
+                    x=float(max_idx),
+                    y=float(max_count),
+                    value=max_count,
+                    label_prefix="Peak",
                 )
 
             logger.info(
@@ -524,19 +508,10 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
                     "display_name", media_type.title()
                 )
 
-                _ = ax.annotate(  # pyright: ignore[reportUnknownMemberType]
-                    f"{label} Peak: {max_count}",
-                    xy=(float(max_idx), max_count),  # Use index as x-coordinate
-                    xytext=(10, 10),
-                    textcoords="offset points",
-                    bbox=dict(
-                        boxstyle="round,pad=0.3",
-                        facecolor=self.get_peak_annotation_color(),
-                        edgecolor="black",
-                        alpha=0.9,
-                    ),
-                    arrowprops=dict(arrowstyle="->", connectionstyle="arc3,rad=0"),
-                    color=self.get_peak_annotation_text_color(),
-                    fontsize=10,
-                    fontweight="bold",
+                self.annotation_helper.annotate_peak_value(
+                    ax,
+                    x=float(max_idx),
+                    y=float(max_count),
+                    value=max_count,
+                    label_prefix=f"{label} Peak",
                 )
