@@ -18,6 +18,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from src.tgraph_bot.graphs.graph_modules.base_graph import BaseGraph
+from src.tgraph_bot.config.schema import TGraphBotConfig
 from tests.utils.graph_helpers import (
     matplotlib_cleanup,
     assert_graph_properties,
@@ -381,7 +382,9 @@ class TestBaseGraph:
         assert isinstance(result, dict)
         assert "data" in result
         assert isinstance(result["data"], list)
-        assert len(result["data"]) == 2
+        data_list = result["data"]
+        assert isinstance(data_list, list)
+        assert len(data_list) == 2
 
     def test_extract_and_validate_play_history_data_missing_play_history(self) -> None:
         """Test extraction with missing play_history key."""
@@ -391,7 +394,7 @@ class TestBaseGraph:
         input_data = {"other_data": "value"}
         
         with pytest.raises(ValueError, match="Invalid play history data: Missing required key: data"):
-            graph.extract_and_validate_play_history_data(input_data)
+            _ = graph.extract_and_validate_play_history_data(input_data)
 
     def test_extract_and_validate_play_history_data_invalid_play_history(self) -> None:
         """Test extraction with invalid play_history data."""
@@ -401,7 +404,7 @@ class TestBaseGraph:
         input_data = {"play_history": "invalid_data"}
         
         with pytest.raises(ValueError, match="Missing or invalid 'play_history' data in input"):
-            graph.extract_and_validate_play_history_data(input_data)
+            _ = graph.extract_and_validate_play_history_data(input_data)
 
     def test_extract_and_validate_play_history_data_missing_data_key(self) -> None:
         """Test extraction with missing data key in play_history."""
@@ -411,7 +414,7 @@ class TestBaseGraph:
         input_data = {"play_history": {"other_key": "value"}}
         
         with pytest.raises(ValueError, match="Invalid play history data: Missing required key: data"):
-            graph.extract_and_validate_play_history_data(input_data)
+            _ = graph.extract_and_validate_play_history_data(input_data)
 
     def test_process_play_history_safely_success(self) -> None:
         """Test successful processing of play history data."""
@@ -521,8 +524,6 @@ class TestBaseGraph:
 
     def test_get_time_range_months_from_config_with_config(self) -> None:
         """Test get_time_range_months_from_config with configuration."""
-        from src.tgraph_bot.config.schema import TGraphBotConfig
-        
         config = TGraphBotConfig(
             TAUTULLI_API_KEY="test_api_key",
             TAUTULLI_URL="http://localhost:8181/api/v2",
@@ -559,3 +560,264 @@ class TestBaseGraph:
         
         # Clean up
         graph.cleanup()
+
+    def test_config_accessor_integration(self) -> None:
+        """Test ConfigAccessor integration in BaseGraph."""
+        config = TGraphBotConfig(
+            TAUTULLI_API_KEY="test_api_key",
+            TAUTULLI_URL="http://localhost:8181/api/v2",
+            DISCORD_TOKEN="test_discord_token",
+            CHANNEL_ID=123456789,
+            ENABLE_MEDIA_TYPE_SEPARATION=True,
+            ENABLE_STACKED_BAR_CHARTS=False,
+        )
+        graph = ConcreteGraph(config=config)
+        
+        # Test ConfigAccessor is properly initialized
+        assert graph._config_accessor is not None
+        
+        # Test config value retrieval through BaseGraph methods
+        assert graph.get_media_type_separation_enabled() is True
+        assert graph.get_stacked_bar_charts_enabled() is False
+        
+    def test_config_accessor_none_when_no_config(self) -> None:
+        """Test ConfigAccessor is None when no config provided."""
+        graph = ConcreteGraph()
+        assert graph._config_accessor is None
+        
+        # Should use defaults when no config available
+        assert graph.get_media_type_separation_enabled() is True  # default
+        assert graph.get_stacked_bar_charts_enabled() is False    # default
+
+    def test_media_type_processor_lazy_initialization(self) -> None:
+        """Test MediaTypeProcessor lazy initialization."""
+        config = TGraphBotConfig(
+            TAUTULLI_API_KEY="test_api_key",
+            TAUTULLI_URL="http://localhost:8181/api/v2",
+            DISCORD_TOKEN="test_discord_token",
+            CHANNEL_ID=123456789,
+        )
+        graph = ConcreteGraph(config=config)
+        
+        # Initially None
+        assert graph._media_type_processor is None
+        
+        # Access property triggers lazy initialization
+        processor = graph.media_type_processor
+        assert processor is not None
+        assert graph._media_type_processor is processor
+        
+        # Subsequent access returns same instance
+        processor2 = graph.media_type_processor
+        assert processor2 is processor
+
+    def test_apply_seaborn_style_with_grid(self) -> None:
+        """Test apply_seaborn_style with grid enabled."""
+        config = TGraphBotConfig(
+            TAUTULLI_API_KEY="test_api_key",
+            TAUTULLI_URL="http://localhost:8181/api/v2",
+            DISCORD_TOKEN="test_discord_token",
+            CHANNEL_ID=123456789,
+            ENABLE_GRAPH_GRID=True,
+        )
+        graph = ConcreteGraph(config=config)
+        _ = graph.setup_figure()
+        
+        # Should not raise exception
+        graph.apply_seaborn_style()
+        
+        # Clean up
+        graph.cleanup()
+
+    def test_apply_seaborn_style_without_grid(self) -> None:
+        """Test apply_seaborn_style with grid disabled."""
+        config = TGraphBotConfig(
+            TAUTULLI_API_KEY="test_api_key",
+            TAUTULLI_URL="http://localhost:8181/api/v2",
+            DISCORD_TOKEN="test_discord_token",
+            CHANNEL_ID=123456789,
+            ENABLE_GRAPH_GRID=False,
+        )
+        graph = ConcreteGraph(config=config)
+        _ = graph.setup_figure()
+        
+        # Should not raise exception
+        graph.apply_seaborn_style()
+        
+        # Clean up
+        graph.cleanup()
+
+    def test_get_grid_enabled(self) -> None:
+        """Test get_grid_enabled method."""
+        # Test with grid enabled
+        config_enabled = TGraphBotConfig(
+            TAUTULLI_API_KEY="test_api_key",
+            TAUTULLI_URL="http://localhost:8181/api/v2",
+            DISCORD_TOKEN="test_discord_token",
+            CHANNEL_ID=123456789,
+            ENABLE_GRAPH_GRID=True,
+        )
+        graph_enabled = ConcreteGraph(config=config_enabled)
+        assert graph_enabled.get_grid_enabled() is True
+        
+        # Test with grid disabled
+        config_disabled = TGraphBotConfig(
+            TAUTULLI_API_KEY="test_api_key",
+            TAUTULLI_URL="http://localhost:8181/api/v2",
+            DISCORD_TOKEN="test_discord_token",
+            CHANNEL_ID=123456789,
+            ENABLE_GRAPH_GRID=False,
+        )
+        graph_disabled = ConcreteGraph(config=config_disabled)
+        assert graph_disabled.get_grid_enabled() is False
+        
+        # Test default when no config
+        graph_default = ConcreteGraph()
+        assert graph_default.get_grid_enabled() is False  # default
+
+    def test_color_methods(self) -> None:
+        """Test color retrieval methods."""
+        graph = ConcreteGraph()
+        
+        # These should not raise exceptions and return valid colors
+        tv_color = graph.get_tv_color()
+        movie_color = graph.get_movie_color()
+        annotation_color = graph.get_annotation_color()
+        outline_color = graph.get_annotation_outline_color()
+        peak_color = graph.get_peak_annotation_color()
+        peak_text_color = graph.get_peak_annotation_text_color()
+        
+        # Should be valid color strings
+        assert isinstance(tv_color, str)
+        assert isinstance(movie_color, str)
+        assert isinstance(annotation_color, str)
+        assert isinstance(outline_color, str)
+        assert isinstance(peak_color, str)
+        assert isinstance(peak_text_color, str)
+
+    def test_annotation_settings_methods(self) -> None:
+        """Test annotation configuration methods."""
+        graph = ConcreteGraph()
+        
+        # Test boolean settings
+        assert isinstance(graph.is_annotation_outline_enabled(), bool)
+        assert isinstance(graph.is_peak_annotations_enabled(), bool)
+        assert isinstance(graph.should_censor_usernames(), bool)
+        
+        # Test font size setting
+        font_size = graph.get_annotation_font_size()
+        assert isinstance(font_size, int)
+        assert font_size > 0
+
+    def test_enhanced_title_with_timeframe_days(self) -> None:
+        """Test enhanced title generation with days timeframe."""
+        config = TGraphBotConfig(
+            TAUTULLI_API_KEY="test_api_key",
+            TAUTULLI_URL="http://localhost:8181/api/v2",
+            DISCORD_TOKEN="test_discord_token",
+            CHANNEL_ID=123456789,
+            TIME_RANGE_DAYS=7,
+        )
+        graph = ConcreteGraph(config=config)
+        
+        result = graph.get_enhanced_title_with_timeframe("Daily Play Count", use_months=False)
+        assert result == "Daily Play Count (Last 7 days)"
+        
+        # Test singular form
+        config_singular = TGraphBotConfig(
+            TAUTULLI_API_KEY="test_api_key",
+            TAUTULLI_URL="http://localhost:8181/api/v2",
+            DISCORD_TOKEN="test_discord_token",
+            CHANNEL_ID=123456789,
+            TIME_RANGE_DAYS=1,
+        )
+        graph_singular = ConcreteGraph(config=config_singular)
+        
+        result_singular = graph_singular.get_enhanced_title_with_timeframe("Daily Play Count", use_months=False)
+        assert result_singular == "Daily Play Count (Last 1 day)"
+
+    def test_enhanced_title_with_timeframe_months(self) -> None:
+        """Test enhanced title generation with months timeframe."""
+        config = TGraphBotConfig(
+            TAUTULLI_API_KEY="test_api_key",
+            TAUTULLI_URL="http://localhost:8181/api/v2",
+            DISCORD_TOKEN="test_discord_token",
+            CHANNEL_ID=123456789,
+            TIME_RANGE_MONTHS=6,
+        )
+        graph = ConcreteGraph(config=config)
+        
+        result = graph.get_enhanced_title_with_timeframe("Monthly Play Count", use_months=True)
+        assert result == "Monthly Play Count (Last 6 months)"
+        
+        # Test singular form
+        config_singular = TGraphBotConfig(
+            TAUTULLI_API_KEY="test_api_key",
+            TAUTULLI_URL="http://localhost:8181/api/v2",
+            DISCORD_TOKEN="test_discord_token",
+            CHANNEL_ID=123456789,
+            TIME_RANGE_MONTHS=1,
+        )
+        graph_singular = ConcreteGraph(config=config_singular)
+        
+        result_singular = graph_singular.get_enhanced_title_with_timeframe("Monthly Play Count", use_months=True)
+        assert result_singular == "Monthly Play Count (Last 1 month)"
+
+    def test_add_bar_value_annotation_with_outline(self) -> None:
+        """Test add_bar_value_annotation with outline enabled."""
+        config = TGraphBotConfig(
+            TAUTULLI_API_KEY="test_api_key",
+            TAUTULLI_URL="http://localhost:8181/api/v2",
+            DISCORD_TOKEN="test_discord_token",
+            CHANNEL_ID=123456789,
+            ENABLE_ANNOTATION_OUTLINE=True,
+        )
+        graph = ConcreteGraph(config=config)
+        _ = graph.setup_figure()
+        
+        # Should not raise exception
+        if graph.axes is not None:
+            graph.add_bar_value_annotation(
+                graph.axes, x=1.0, y=2.0, value=42, ha="center", va="bottom"
+            )
+        
+        # Clean up
+        graph.cleanup()
+
+    def test_add_bar_value_annotation_without_outline(self) -> None:
+        """Test add_bar_value_annotation with outline disabled."""
+        config = TGraphBotConfig(
+            TAUTULLI_API_KEY="test_api_key",
+            TAUTULLI_URL="http://localhost:8181/api/v2",
+            DISCORD_TOKEN="test_discord_token",
+            CHANNEL_ID=123456789,
+            ENABLE_ANNOTATION_OUTLINE=False,
+        )
+        graph = ConcreteGraph(config=config)
+        _ = graph.setup_figure()
+        
+        # Should not raise exception
+        if graph.axes is not None:
+            graph.add_bar_value_annotation(
+                graph.axes, x=1.0, y=2.0, value=42.5, ha="left", va="top"
+            )
+        
+        # Clean up
+        graph.cleanup()
+
+    def test_create_separated_legend(self) -> None:
+        """Test create_separated_legend method."""
+        graph = ConcreteGraph()
+        _ = graph.setup_figure()
+        
+        # Should not raise exception
+        if graph.axes is not None:
+            graph.create_separated_legend(graph.axes, ["tv", "movie"])
+        
+        # Clean up
+        graph.cleanup()
+
+    def test_cleanup_all_figures_class_method(self) -> None:
+        """Test cleanup_all_figures class method."""
+        # Should not raise exception
+        BaseGraph.cleanup_all_figures()

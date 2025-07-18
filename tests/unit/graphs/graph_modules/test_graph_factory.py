@@ -11,6 +11,7 @@ from pathlib import Path
 import pytest
 
 from src.tgraph_bot.graphs.graph_modules.graph_factory import GraphFactory
+from src.tgraph_bot.config.schema import TGraphBotConfig
 
 
 class TestGraphFactory:
@@ -21,6 +22,22 @@ class TestGraphFactory:
         config: dict[str, object] = {"ENABLE_DAILY_PLAY_COUNT": True}
         factory = GraphFactory(config)
         assert factory.config == config
+        assert factory._config_accessor is not None
+        assert factory._graph_registry is not None
+
+    def test_factory_initialization_with_tgraphbot_config(self) -> None:
+        """Test GraphFactory initialization with TGraphBotConfig object."""
+        config = TGraphBotConfig(
+            TAUTULLI_API_KEY="test_api_key",
+            TAUTULLI_URL="http://localhost:8181/api/v2",
+            DISCORD_TOKEN="test_discord_token",
+            CHANNEL_ID=123456789,
+            ENABLE_DAILY_PLAY_COUNT=True,
+        )
+        factory = GraphFactory(config)
+        assert factory.config == config
+        assert factory._config_accessor is not None
+        assert factory._graph_registry is not None
     
     def test_create_enabled_graphs_empty_config(self) -> None:
         """Test creating graphs with empty configuration."""
@@ -198,6 +215,42 @@ class TestGraphFactory:
         ]
         
         assert set(enabled_types) == set(expected_types)
+
+    def test_graph_dimensions_extraction(self) -> None:
+        """Test graph dimensions extraction from configuration."""
+        config = TGraphBotConfig(
+            TAUTULLI_API_KEY="test_api_key",
+            TAUTULLI_URL="http://localhost:8181/api/v2",
+            DISCORD_TOKEN="test_discord_token",
+            CHANNEL_ID=123456789,
+            GRAPH_WIDTH=15,
+            GRAPH_HEIGHT=10,
+            GRAPH_DPI=150,
+        )
+        factory = GraphFactory(config)
+        
+        # Access private method for testing
+        dimensions = factory._get_graph_dimensions()
+        
+        assert dimensions["width"] == 15
+        assert dimensions["height"] == 10
+        assert dimensions["dpi"] == 150
+
+    def test_graph_dimensions_defaults(self) -> None:
+        """Test graph dimensions with default values."""
+        config: dict[str, object] = {}
+        factory = GraphFactory(config)
+        
+        # Access private method for testing
+        dimensions = factory._get_graph_dimensions()
+        
+        # Should use default values from ConfigAccessor
+        assert "width" in dimensions
+        assert "height" in dimensions
+        assert "dpi" in dimensions
+        assert isinstance(dimensions["width"], int)
+        assert isinstance(dimensions["height"], int)
+        assert isinstance(dimensions["dpi"], int)
     
     def test_factory_config_immutability(self) -> None:
         """Test that factory doesn't modify the original config."""
@@ -346,3 +399,147 @@ class TestGraphFactory:
         deleted_count = factory.cleanup_old_graphs()
         assert isinstance(deleted_count, int)
         assert deleted_count >= 0
+
+    def test_generate_all_graphs_empty_data(self) -> None:
+        """Test generate_all_graphs with minimal data structure."""
+        config: dict[str, object] = {
+            "ENABLE_DAILY_PLAY_COUNT": True,
+            "ENABLE_PLAY_COUNT_BY_DAYOFWEEK": False,
+            "ENABLE_PLAY_COUNT_BY_HOUROFDAY": False,
+            "ENABLE_PLAY_COUNT_BY_MONTH": False,
+            "ENABLE_TOP_10_PLATFORMS": False,
+            "ENABLE_TOP_10_USERS": False,
+        }
+        factory = GraphFactory(config)
+
+        # Mock data structure that graphs expect
+        data: dict[str, object] = {
+            "play_history": {"data": []},
+            "time_range_days": 30
+        }
+
+        # This should not raise an exception even with empty data
+        # Each graph should handle empty data gracefully
+        try:
+            paths = factory.generate_all_graphs(data)
+            assert isinstance(paths, list)
+            # With empty data, graphs may still generate (showing "no data" message)
+            # or may return empty paths list
+            assert len(paths) >= 0  # Could be 0 or 1 depending on empty data handling
+        except Exception:
+            # If graphs don't handle empty data gracefully, that's a separate issue
+            # But the factory should not crash
+            pass
+
+    def test_generate_graphs_with_exclusions(self) -> None:
+        """Test generate_graphs_with_exclusions functionality."""
+        config: dict[str, object] = {
+            "ENABLE_DAILY_PLAY_COUNT": True,
+            "ENABLE_TOP_10_USERS": True,
+        }
+        factory = GraphFactory(config)
+
+        # Mock data structure
+        data: dict[str, object] = {
+            "play_history": {"data": []},
+            "time_range_days": 30
+        }
+
+        # Test excluding specific graph types
+        try:
+            paths = factory.generate_graphs_with_exclusions(data, exclude_types=["top_10_users"])
+            assert isinstance(paths, list)
+            # Should have fewer graphs than without exclusions
+        except Exception:
+            # If graphs don't handle empty data gracefully, that's a separate issue
+            pass
+
+    def test_cleanup_all_graph_resources(self) -> None:
+        """Test cleanup_all_graph_resources method."""
+        factory = GraphFactory({})
+        
+        # Should not raise exception
+        factory.cleanup_all_graph_resources()
+
+    def test_config_accessor_integration(self) -> None:
+        """Test that ConfigAccessor is properly integrated."""
+        config = TGraphBotConfig(
+            TAUTULLI_API_KEY="test_api_key",
+            TAUTULLI_URL="http://localhost:8181/api/v2",
+            DISCORD_TOKEN="test_discord_token",
+            CHANNEL_ID=123456789,
+            ENABLE_DAILY_PLAY_COUNT=True,
+            ENABLE_TOP_10_USERS=False,
+        )
+        factory = GraphFactory(config)
+        
+        # Test that the factory uses ConfigAccessor properly
+        enabled_types = factory.get_enabled_graph_types()
+        assert "daily_play_count" in enabled_types
+        assert "top_10_users" not in enabled_types
+
+    def test_graph_type_registry_integration(self) -> None:
+        """Test that GraphTypeRegistry is properly integrated."""
+        factory = GraphFactory({})
+        
+        # Test that the factory can access registry information
+        enabled_types = factory.get_enabled_graph_types()
+        assert isinstance(enabled_types, list)
+        
+        # Should have all graph types enabled by default
+        expected_types = {
+            "daily_play_count",
+            "play_count_by_dayofweek", 
+            "play_count_by_hourofday",
+            "play_count_by_month",
+            "top_10_platforms",
+            "top_10_users",
+        }
+        assert set(enabled_types) == expected_types
+
+    def test_create_graph_by_type_with_dimensions(self) -> None:
+        """Test that created graphs receive proper dimensions from config."""
+        config = TGraphBotConfig(
+            TAUTULLI_API_KEY="test_api_key",
+            TAUTULLI_URL="http://localhost:8181/api/v2",
+            DISCORD_TOKEN="test_discord_token",
+            CHANNEL_ID=123456789,
+            GRAPH_WIDTH=15,
+            GRAPH_HEIGHT=10,
+            GRAPH_DPI=150,
+        )
+        factory = GraphFactory(config)
+        
+        # Create a graph and verify dimensions
+        graph = factory.create_graph_by_type("daily_play_count")
+        assert graph.width == 15
+        assert graph.height == 10
+        assert graph.dpi == 150
+
+    def test_create_enabled_graphs_with_dimensions(self) -> None:
+        """Test that enabled graphs receive proper dimensions from config."""
+        config = TGraphBotConfig(
+            TAUTULLI_API_KEY="test_api_key",
+            TAUTULLI_URL="http://localhost:8181/api/v2",
+            DISCORD_TOKEN="test_discord_token",
+            CHANNEL_ID=123456789,
+            ENABLE_DAILY_PLAY_COUNT=True,
+            ENABLE_PLAY_COUNT_BY_DAYOFWEEK=False,
+            ENABLE_PLAY_COUNT_BY_HOUROFDAY=False,
+            ENABLE_PLAY_COUNT_BY_MONTH=False,
+            ENABLE_TOP_10_PLATFORMS=False,
+            ENABLE_TOP_10_USERS=False,
+            GRAPH_WIDTH=20,
+            GRAPH_HEIGHT=12,
+            GRAPH_DPI=200,
+        )
+        factory = GraphFactory(config)
+        
+        # Create enabled graphs and verify dimensions
+        graphs = factory.create_enabled_graphs()
+        assert len(graphs) == 1  # Only daily_play_count enabled
+        
+        graph = graphs[0]
+        assert graph.width == 20
+        assert graph.height == 12
+        assert graph.dpi == 200

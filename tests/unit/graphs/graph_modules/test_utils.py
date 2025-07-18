@@ -13,16 +13,20 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from src.tgraph_bot.graphs.graph_modules.utils import (
+    apply_modern_seaborn_styling,
     cleanup_old_files,
     censor_username,
     ensure_graph_directory,
     format_date,
     format_duration,
     generate_graph_filename,
+    get_current_graph_storage_path,
     get_date_range,
     parse_date,
+    process_play_history_data,
     sanitize_filename,
     validate_color,
+    validate_graph_data,
 )
 
 
@@ -320,3 +324,108 @@ class TestColorUtilities:
         
         for color in invalid_named_colors:
             assert validate_color(color) is False
+
+
+class TestDataProcessingUtilities:
+    """Test cases for data processing utility functions."""
+
+    def test_validate_graph_data_valid_data(self) -> None:
+        """Test validate_graph_data with valid data."""
+        valid_data = {
+            "data": [{"date": "2023-01-01", "value": 10}],
+            "total": 100
+        }
+        
+        is_valid, error_msg = validate_graph_data(valid_data, ["data"])
+        assert is_valid is True
+        assert error_msg == ""
+
+    def test_validate_graph_data_missing_required_key(self) -> None:
+        """Test validate_graph_data with missing required key."""
+        invalid_data = {
+            "total": 100
+        }
+        
+        is_valid, error_msg = validate_graph_data(invalid_data, ["data"])
+        assert is_valid is False
+        assert "Missing required key: data" in error_msg
+
+    def test_validate_graph_data_empty_data(self) -> None:
+        """Test validate_graph_data with empty data structure."""
+        empty_data: dict[str, object] = {}
+        
+        is_valid, error_msg = validate_graph_data(empty_data, ["data"])
+        assert is_valid is False
+        assert "Missing required key: data" in error_msg
+
+    def test_process_play_history_data_valid_data(self) -> None:
+        """Test process_play_history_data with valid data."""
+        raw_data = {
+            "data": [
+                {
+                    "date": 1640995200,  # Unix timestamp
+                    "user": "testuser",
+                    "platform": "Web",
+                    "media_type": "episode",
+                    "duration": 3600,
+                    "stopped": 3600,
+                    "paused_counter": 0
+                }
+            ]
+        }
+        
+        result = process_play_history_data(raw_data)
+        assert isinstance(result, list)
+        assert len(result) == 1
+        
+        record = result[0]
+        assert record["user"] == "testuser"
+        assert record["platform"] == "Web"
+        assert record["media_type"] == "episode"  # Raw media type is preserved in this step
+        assert record["duration"] == 3600
+        assert "datetime" in record
+
+    def test_process_play_history_data_empty_data(self) -> None:
+        """Test process_play_history_data with empty data."""
+        raw_data: dict[str, object] = {"data": []}
+        
+        result = process_play_history_data(raw_data)
+        assert isinstance(result, list)
+        assert len(result) == 0
+
+    def test_process_play_history_data_invalid_data(self) -> None:
+        """Test process_play_history_data with invalid data structure."""
+        raw_data = {"invalid": "data"}
+        
+        # Should handle gracefully by returning empty list when "data" key is missing
+        result = process_play_history_data(raw_data)
+        assert isinstance(result, list)
+        assert len(result) == 0
+
+
+class TestGraphStorageUtilities:
+    """Test cases for graph storage utility functions."""
+
+    def test_get_current_graph_storage_path_no_user(self) -> None:
+        """Test get_current_graph_storage_path without user email."""
+        result = get_current_graph_storage_path()
+        assert isinstance(result, Path)
+        assert result.name.startswith("2")  # Should start with year
+
+    def test_get_current_graph_storage_path_with_user(self) -> None:
+        """Test get_current_graph_storage_path with user email."""
+        result = get_current_graph_storage_path(user_email="test@example.com")
+        assert isinstance(result, Path)
+        # The function sanitizes email addresses by replacing @ and . with _
+        assert "test_at_example_com" in str(result)
+
+    def test_apply_modern_seaborn_styling(self) -> None:
+        """Test apply_modern_seaborn_styling function."""
+        # Should not raise exception
+        apply_modern_seaborn_styling()
+        
+        # Verify seaborn was configured (basic check)
+        import seaborn as sns
+        # Just verify we can call this without error
+        # The styling effects are hard to test directly
+        assert sns is not None
