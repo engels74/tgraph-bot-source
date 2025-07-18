@@ -41,8 +41,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, final
 
-from ...i18n import translate
-from ...utils.core.error_handler import (
+from ....i18n import translate
+from ....utils.core.error_handler import (
     ErrorCategory,
     ErrorContext,
     ErrorSeverity,

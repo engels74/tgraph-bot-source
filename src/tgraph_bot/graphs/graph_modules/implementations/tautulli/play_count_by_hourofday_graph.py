@@ -13,17 +13,17 @@ import pandas as pd
 import seaborn as sns
 from matplotlib.axes import Axes
 
-from ..annotation_helper import AnnotationHelper
-from ..base_graph import BaseGraph
-from ..data_processor import data_processor
-from ..utils import (
+from ...utils.annotation_helper import AnnotationHelper
+from ...core.base_graph import BaseGraph
+from ...data.data_processor import data_processor
+from ...utils.utils import (
     ProcessedRecords,
     aggregate_by_hour_of_day,
 )
-from ..visualization_mixin import VisualizationMixin
+from ...visualization.visualization_mixin import VisualizationMixin
 
 if TYPE_CHECKING:
-    from ....config.schema import TGraphBotConfig
+    from .....config.schema import TGraphBotConfig
 
 logger = logging.getLogger(__name__)
 

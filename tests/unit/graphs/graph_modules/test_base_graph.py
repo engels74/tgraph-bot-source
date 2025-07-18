@@ -17,7 +17,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.tgraph_bot.graphs.graph_modules.base_graph import BaseGraph
+from src.tgraph_bot.graphs.graph_modules.core.base_graph import BaseGraph
 from src.tgraph_bot.config.schema import TGraphBotConfig
 from tests.utils.graph_helpers import (
     matplotlib_cleanup,

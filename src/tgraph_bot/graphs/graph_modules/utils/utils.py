@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, TypedDict, TypeVar
 
-from ...utils.cli.paths import get_path_config
+from ....utils.cli.paths import get_path_config
 
 if TYPE_CHECKING:
     pass
@@ -701,7 +701,7 @@ def classify_media_type(media_type: str) -> str:
         Standardized media type ('movie', 'tv', 'music', 'other')
     """
     # Use MediaTypeProcessor for consistent classification
-    from .media_type_processor import MediaTypeProcessor
+    from ..data.media_type_processor import MediaTypeProcessor
 
     processor = MediaTypeProcessor()
     return processor.classify_media_type(media_type)
@@ -718,7 +718,7 @@ def get_media_type_display_info() -> dict[str, dict[str, str]]:
         Dictionary mapping media type to display info (name, color)
     """
     # Use MediaTypeProcessor for consistent display info
-    from .media_type_processor import MediaTypeProcessor
+    from ..data.media_type_processor import MediaTypeProcessor
 
     processor = MediaTypeProcessor()
     return processor.get_all_display_info()

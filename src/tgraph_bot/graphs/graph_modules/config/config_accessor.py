@@ -11,10 +11,10 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, TypeVar, final, overload
 
-from ...utils.core.error_handler import ConfigurationError
+from ....utils.core.error_handler import ConfigurationError
 
 if TYPE_CHECKING:
-    from ...config.schema import TGraphBotConfig
+    from ....config.schema import TGraphBotConfig
 
 logger = logging.getLogger(__name__)
 

@@ -11,12 +11,12 @@ from pathlib import Path
 from typing import TYPE_CHECKING, TypedDict, cast
 
 from .base_graph import BaseGraph
-from .config_accessor import ConfigAccessor
+from ..config.config_accessor import ConfigAccessor
 from .graph_type_registry import GraphTypeRegistry, get_graph_type_registry
-from .utils import cleanup_old_files, ensure_graph_directory
+from ..utils.utils import cleanup_old_files, ensure_graph_directory
 
 if TYPE_CHECKING:
-    from ...config.schema import TGraphBotConfig
+    from ....config.schema import TGraphBotConfig
 
 logger = logging.getLogger(__name__)
 

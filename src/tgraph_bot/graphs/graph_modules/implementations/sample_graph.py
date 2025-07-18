@@ -10,11 +10,11 @@ import logging
 from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, cast, override
 
-from .base_graph import BaseGraph
-from .visualization_mixin import VisualizationMixin
+from ..core.base_graph import BaseGraph
+from ..visualization.visualization_mixin import VisualizationMixin
 
 if TYPE_CHECKING:
-    from ...config.schema import TGraphBotConfig
+    from ....config.schema import TGraphBotConfig
 
 logger = logging.getLogger(__name__)
 

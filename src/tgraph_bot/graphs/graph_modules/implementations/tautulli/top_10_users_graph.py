@@ -11,16 +11,16 @@ from typing import TYPE_CHECKING, override
 import pandas as pd
 import seaborn as sns
 
-from ..base_graph import BaseGraph
-from ..data_processor import data_processor
-from ..utils import (
+from ...core.base_graph import BaseGraph
+from ...data.data_processor import data_processor
+from ...utils.utils import (
     aggregate_top_users,
     handle_empty_data,
 )
-from ..visualization_mixin import VisualizationMixin
+from ...visualization.visualization_mixin import VisualizationMixin
 
 if TYPE_CHECKING:
-    from ....config.schema import TGraphBotConfig
+    from .....config.schema import TGraphBotConfig
 
 logger = logging.getLogger(__name__)
 

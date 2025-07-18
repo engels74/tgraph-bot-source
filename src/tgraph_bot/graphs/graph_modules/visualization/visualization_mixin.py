@@ -14,7 +14,7 @@ import matplotlib.axes
 import seaborn as sns
 
 if TYPE_CHECKING:
-    from ...config.schema import TGraphBotConfig
+    from ....config.schema import TGraphBotConfig
 
 logger = logging.getLogger(__name__)
 

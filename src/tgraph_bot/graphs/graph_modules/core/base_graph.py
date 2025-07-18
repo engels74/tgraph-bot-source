@@ -18,7 +18,7 @@ import matplotlib.figure
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 
-from .utils import (
+from ..utils.utils import (
     ProcessedRecords,
     apply_modern_seaborn_styling,
     censor_username,
@@ -30,9 +30,9 @@ from .utils import (
 )
 
 if TYPE_CHECKING:
-    from ...config.schema import TGraphBotConfig
-    from .config_accessor import ConfigAccessor
-    from .media_type_processor import MediaTypeProcessor
+    from ....config.schema import TGraphBotConfig
+    from ..config.config_accessor import ConfigAccessor
+    from ..data.media_type_processor import MediaTypeProcessor
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +66,7 @@ class BaseGraph(ABC):
         # Initialize ConfigAccessor for centralized configuration access
         if config is not None:
             # Import here to avoid circular imports
-            from .config_accessor import ConfigAccessor
+            from ..config.config_accessor import ConfigAccessor
 
             self._config_accessor: "ConfigAccessor | None" = ConfigAccessor(config)
         else:
@@ -131,7 +131,7 @@ class BaseGraph(ABC):
         """
         if self._media_type_processor is None:
             # Import here to avoid circular imports
-            from .media_type_processor import MediaTypeProcessor
+            from ..data.media_type_processor import MediaTypeProcessor
 
             self._media_type_processor = MediaTypeProcessor(self._config_accessor)
         return self._media_type_processor

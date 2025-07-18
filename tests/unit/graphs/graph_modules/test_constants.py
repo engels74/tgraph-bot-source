@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pytest
 
-from src.tgraph_bot.graphs.graph_modules.constants import (
+from src.tgraph_bot.graphs.graph_modules.types.constants import (
     DAYS_OF_WEEK,
     DATETIME_FORMATS,
     MEDIA_TYPES,
