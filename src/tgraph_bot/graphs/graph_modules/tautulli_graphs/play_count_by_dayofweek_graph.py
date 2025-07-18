@@ -8,7 +8,7 @@ Supports both combined and separated media type visualization.
 
 import logging
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, override, cast
+from typing import TYPE_CHECKING, override
 
 import numpy as np
 import pandas as pd
@@ -17,9 +17,9 @@ from matplotlib.axes import Axes
 from matplotlib.container import BarContainer
 
 from ..base_graph import BaseGraph
+from ..data_processor import data_processor
+from ..visualization_mixin import VisualizationMixin
 from ..utils import (
-    validate_graph_data,
-    process_play_history_data,
     aggregate_by_day_of_week,
     aggregate_by_day_of_week_separated,
     get_media_type_display_info,
@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class PlayCountByDayOfWeekGraph(BaseGraph):
+class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
     """Graph showing play counts by day of the week."""
 
     def __init__(
@@ -89,44 +89,14 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
         logger.info("Generating play count by day of week graph")
 
         try:
-            # Step 1: Extract play history data from the full data structure
-            play_history_data_raw = data.get("play_history", {})
-            if not isinstance(play_history_data_raw, dict):
-                raise ValueError("Missing or invalid 'play_history' data in input")
+            # Step 1: Extract and process play history data using DataProcessor
+            _, processed_records = data_processor.extract_and_process_play_history(data)
 
-            # Cast to the proper type for type checker
-            play_history_data = cast(Mapping[str, object], play_history_data_raw)
+            # Step 2: Setup figure with styling using combined utility
+            _, ax = self.setup_figure_with_styling()
 
-            # Step 2: Validate the play history data
-            is_valid, error_msg = validate_graph_data(play_history_data, ["data"])
-            if not is_valid:
-                raise ValueError(
-                    f"Invalid play history data for play count by day of week graph: {error_msg}"
-                )
-
-            # Step 3: Process raw play history data
-            try:
-                processed_records = process_play_history_data(play_history_data)
-                logger.info(f"Processed {len(processed_records)} play history records")
-            except Exception as e:
-                logger.error(f"Error processing play history data: {e}")
-                processed_records = []
-
-            # Step 4: Setup figure and axes
-            _, ax = self.setup_figure()
-
-            # Step 5: Apply modern Seaborn styling
-            self.apply_seaborn_style()
-
-            # Step 5.5: Configure Seaborn grid styling (explicit for consistency)
-            if self.get_grid_enabled():
-                import seaborn as sns
-
-                sns.set_style("whitegrid")
-            else:
-                import seaborn as sns
-
-                sns.set_style("white")
+            # Step 3: Configure grid styling
+            self.configure_seaborn_style_with_grid()
 
             # Step 6: Check if media type separation is enabled
             use_separation = self.get_media_type_separation_enabled()
@@ -144,16 +114,10 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
                 # Generate traditional combined visualization
                 self._generate_combined_visualization(ax, processed_records)
 
-            # Step 7: Improve layout and save
-            if self.figure is not None:
-                self.figure.tight_layout()
-
-            # Save the figure using base class utility method
-            output_path = self.save_figure(
+            # Step 4: Finalize and save using combined utility
+            output_path = self.finalize_and_save_figure(
                 graph_type="play_count_by_dayofweek", user_id=None
             )
-
-            logger.info(f"Play count by day of week graph saved to: {output_path}")
             return output_path
 
         except Exception as e:
@@ -561,15 +525,7 @@ class PlayCountByDayOfWeekGraph(BaseGraph):
         Args:
             ax: The matplotlib axes to display the message on
         """
-        _ = ax.text(  # pyright: ignore[reportUnknownMemberType]
-            0.5,
-            0.5,
-            "No play data available\nfor the selected time period",
-            ha="center",
-            va="center",
-            transform=ax.transAxes,
-            fontsize=16,
-            bbox=dict(boxstyle="round,pad=0.5", facecolor="lightgray", alpha=0.7),
+        self.handle_empty_data_with_message(
+            ax, "No play data available\nfor the selected time period"
         )
-        _ = ax.set_title(self.get_title(), fontsize=18, fontweight="bold")  # pyright: ignore[reportUnknownMemberType]
         logger.warning("Generated empty day of week graph due to no data")

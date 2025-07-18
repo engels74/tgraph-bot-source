@@ -15,9 +15,9 @@ import pandas as pd
 from matplotlib.axes import Axes
 
 from ..base_graph import BaseGraph
+from ..data_processor import data_processor
+from ..visualization_mixin import VisualizationMixin
 from ..utils import (
-    validate_graph_data,
-    process_play_history_data,
     aggregate_by_date,
     aggregate_by_date_separated,
     handle_empty_data,
@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class DailyPlayCountGraph(BaseGraph):
+class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
     """Graph showing daily play counts over time."""
 
     def __init__(
@@ -108,16 +108,7 @@ class DailyPlayCountGraph(BaseGraph):
         Returns:
             Number of days for the time range from config, defaults to 30 if not found
         """
-        time_range_days = self.get_config_value("TIME_RANGE_DAYS", 30)
-
-        # Ensure it's an integer
-        if isinstance(time_range_days, (int, float)):
-            return int(time_range_days)
-        else:
-            logger.warning(
-                f"Invalid TIME_RANGE_DAYS value: {time_range_days}, using default 30"
-            )
-            return 30
+        return self.get_time_range_days_from_config()
 
     def _setup_aligned_date_axis(
         self, ax: Axes, sorted_dates: list[str], num_dates: int
@@ -199,58 +190,28 @@ class DailyPlayCountGraph(BaseGraph):
         logger.info("Generating daily play count graph")
 
         try:
-            # Step 1: Extract play history data from the full data structure
-            play_history_data_raw = data.get("play_history", {})
-            if not isinstance(play_history_data_raw, dict):
-                raise ValueError("Missing or invalid 'play_history' data in input")
-
-            # Cast to the proper type for type checker
-            play_history_data = cast(Mapping[str, object], play_history_data_raw)
-
-            # Step 2: Validate the play history data
-            is_valid, error_msg = validate_graph_data(play_history_data, ["data"])
-            if not is_valid:
-                raise ValueError(
-                    f"Invalid play history data for daily play count graph: {error_msg}"
-                )
-
-            # Step 3: Extract time range configuration
+            # Step 1: Extract and process play history data using DataProcessor
+            _, processed_records = data_processor.extract_and_process_play_history(data)
+            
+            # Step 2: Extract time range configuration
             time_range_days = self._get_time_range_days_from_config()
             logger.info(f"Using TIME_RANGE_DAYS configuration: {time_range_days} days")
 
-            # Step 4: Process raw play history data
-            try:
-                processed_records = process_play_history_data(play_history_data)
-                logger.info(f"Processed {len(processed_records)} play history records")
+            # Step 3: Filter records to respect TIME_RANGE_DAYS configuration
+            filtered_records = self._filter_records_by_time_range(
+                processed_records, time_range_days
+            )
+            processed_records = filtered_records
 
-                # Filter records to respect TIME_RANGE_DAYS configuration
-                filtered_records = self._filter_records_by_time_range(
-                    processed_records, time_range_days
-                )
-                processed_records = filtered_records
+            # Step 4: Setup figure with styling using combined utility
+            _, ax = self.setup_figure_with_styling()
 
-            except Exception as e:
-                logger.error(f"Error processing play history data: {e}")
-                # Use empty data structure for graceful degradation
-                processed_records = []
-
-            # Step 5: Setup figure and axes
-            _, ax = self.setup_figure()
-
-            # Step 6: Apply modern Seaborn styling
-            self.apply_seaborn_style()
-
-            # Step 6.5: Configure Seaborn grid styling (explicit for line plots)
+            # Step 5: Configure grid styling (explicit for line plots)
+            self.configure_seaborn_style_with_grid()
             if self.get_grid_enabled():
-                import seaborn as sns
-
-                sns.set_style("whitegrid")
                 # For line plots, explicitly enable grid on the axes
                 ax.grid(True, alpha=0.7, linewidth=0.5)  # pyright: ignore[reportUnknownMemberType] # matplotlib method with **kwargs
             else:
-                import seaborn as sns
-
-                sns.set_style("white")
                 ax.grid(False)  # pyright: ignore[reportUnknownMemberType] # matplotlib method with **kwargs
 
             # Step 7: Check if media type separation is enabled
@@ -263,14 +224,8 @@ class DailyPlayCountGraph(BaseGraph):
                 # Generate traditional combined visualization
                 self._generate_combined_visualization(ax, processed_records)
 
-            # Step 8: Improve layout and save
-            if self.figure is not None:
-                self.figure.tight_layout()
-
-            # Save the figure using base class utility method
-            output_path = self.save_figure(graph_type="daily_play_count", user_id=None)
-
-            logger.info(f"Daily play count graph saved to: {output_path}")
+            # Step 8: Finalize and save using combined utility
+            output_path = self.finalize_and_save_figure(graph_type="daily_play_count", user_id=None)
             return output_path
 
         except Exception as e:

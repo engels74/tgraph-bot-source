@@ -10,9 +10,8 @@ import logging
 from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, cast, override
 
-import seaborn as sns
-
 from .base_graph import BaseGraph
+from .visualization_mixin import VisualizationMixin
 
 if TYPE_CHECKING:
     from ...config.schema import TGraphBotConfig
@@ -20,7 +19,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class SampleGraph(BaseGraph):
+class SampleGraph(BaseGraph, VisualizationMixin):
     """
     Sample concrete graph implementation demonstrating the BaseGraph pattern.
 
@@ -111,31 +110,33 @@ class SampleGraph(BaseGraph):
         custom_title = cast(str, data.get("title")) if data.get("title") else None
         user_id = data.get("user_id")
 
-        # Step 2: Setup figure using base class method
-        figure, axes = self.setup_figure()
-
-        # Step 3: Configure seaborn style for better aesthetics
-        sns.set_style("whitegrid")
-        sns.set_palette("husl")
+        # Step 2: Setup figure with styling using combined utility
+        figure, axes = self.setup_figure_with_seaborn_grid()
+        
+        # Step 3: Apply seaborn palette
+        self.apply_seaborn_palette("husl")
 
         # Step 4: Create the visualization
         try:
             # Create a simple line plot with markers
             _ = axes.plot(x_values, y_values, marker="o", linewidth=2, markersize=6)  # pyright: ignore[reportUnknownMemberType]
 
-            # Set title (use custom title if provided, otherwise use default)
+            # Set title and axis labels using mixin utility
             title = custom_title if custom_title else self.get_title()
-            _ = axes.set_title(title, fontsize=16, fontweight="bold", pad=20)  # pyright: ignore[reportUnknownMemberType]
-
-            # Set axis labels
-            _ = axes.set_xlabel("X Values", fontsize=12)  # pyright: ignore[reportUnknownMemberType]
-            _ = axes.set_ylabel("Y Values", fontsize=12)  # pyright: ignore[reportUnknownMemberType]
+            self.setup_standard_title_and_axes(
+                title=title,
+                xlabel="X Values",
+                ylabel="Y Values",
+                title_fontsize=16,
+                label_fontsize=12,
+                title_pad=20
+            )
 
             # Add grid for better readability
-            axes.grid(True, alpha=0.3)  # pyright: ignore[reportUnknownMemberType]
+            self.configure_standard_grid(alpha=0.3)
 
-            # Improve layout
-            figure.tight_layout()
+            # Improve layout using mixin utility
+            self.finalize_plot_layout()
 
             logger.info(f"Generated sample graph with {len(x_values)} data points")
 
