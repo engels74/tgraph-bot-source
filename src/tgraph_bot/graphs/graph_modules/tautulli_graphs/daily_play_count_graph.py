@@ -8,8 +8,8 @@ simplifies the plotting code and produces a more aesthetically pleasing result.
 
 import logging
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, override, cast
 from datetime import datetime, timedelta
+from typing import TYPE_CHECKING, cast, override
 
 import pandas as pd
 from matplotlib.axes import Axes
@@ -18,14 +18,14 @@ from ..annotation_helper import AnnotationHelper
 from ..base_graph import BaseGraph
 from ..data_processor import data_processor
 from ..empty_data_handler import EmptyDataHandler
-from ..visualization_mixin import VisualizationMixin
 from ..utils import (
+    ProcessedRecords,
     aggregate_by_date,
     aggregate_by_date_separated,
-    handle_empty_data,
     get_media_type_display_info,
-    ProcessedRecords,
+    handle_empty_data,
 )
+from ..visualization_mixin import VisualizationMixin
 
 if TYPE_CHECKING:
     from ....config.schema import TGraphBotConfig
@@ -195,7 +195,7 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
         try:
             # Step 1: Extract and process play history data using DataProcessor
             _, processed_records = data_processor.extract_and_process_play_history(data)
-            
+
             # Step 2: Extract time range configuration
             time_range_days = self._get_time_range_days_from_config()
             logger.info(f"Using TIME_RANGE_DAYS configuration: {time_range_days} days")
@@ -228,7 +228,9 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
                 self._generate_combined_visualization(ax, processed_records)
 
             # Step 8: Finalize and save using combined utility
-            output_path = self.finalize_and_save_figure(graph_type="daily_play_count", user_id=None)
+            output_path = self.finalize_and_save_figure(
+                graph_type="daily_play_count", user_id=None
+            )
             return output_path
 
         except Exception as e:
@@ -472,7 +474,7 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
             ax,
             message="No play data available\nfor the selected time period",
             set_title=self.get_title(),
-            log_message="Generated empty daily play count graph due to no data"
+            log_message="Generated empty daily play count graph due to no data",
         )
 
     def _add_peak_annotations(

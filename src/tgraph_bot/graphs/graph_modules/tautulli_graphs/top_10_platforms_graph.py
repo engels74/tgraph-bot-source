@@ -14,11 +14,11 @@ import seaborn as sns
 from ..annotation_helper import AnnotationHelper
 from ..base_graph import BaseGraph
 from ..data_processor import data_processor
-from ..visualization_mixin import VisualizationMixin
 from ..utils import (
     aggregate_top_platforms,
     handle_empty_data,
 )
+from ..visualization_mixin import VisualizationMixin
 
 if TYPE_CHECKING:
     from ....config.schema import TGraphBotConfig
@@ -141,14 +141,14 @@ class Top10PlatformsGraph(BaseGraph, VisualizationMixin):
                 )
             else:
                 # Handle empty data case using mixin utility
-                self.display_no_data_message(
-                    message="No platform data available"
-                )
+                self.display_no_data_message(message="No platform data available")
                 # Set title for empty data case
                 self.setup_standard_title_and_axes(title=self.get_title())
 
             # Step 6: Finalize and save using combined utility
-            output_path = self.finalize_and_save_figure(graph_type="top_10_platforms", user_id=None)
+            output_path = self.finalize_and_save_figure(
+                graph_type="top_10_platforms", user_id=None
+            )
             return output_path
 
         except Exception as e:

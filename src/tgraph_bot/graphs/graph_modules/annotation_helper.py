@@ -78,7 +78,7 @@ class AnnotationHelper:
             graph: Graph instance that implements AnnotationProtocol
         """
         self.graph: AnnotationProtocol = graph
-    
+
     def annotate_bar_patches(
         self,
         ax: object,  # matplotlib.axes.Axes
@@ -125,7 +125,7 @@ class AnnotationHelper:
                     )
         except Exception as e:
             logger.warning(f"Failed to annotate bar patches: {e}")
-    
+
     def annotate_horizontal_bar_patches(
         self,
         ax: object,  # matplotlib.axes.Axes
@@ -138,10 +138,10 @@ class AnnotationHelper:
     ) -> None:
         """
         Annotate horizontal bar patches with their values.
-        
+
         This method handles the specific case of horizontal bar charts where
         the value is represented by the bar width rather than height.
-        
+
         Args:
             ax: Matplotlib axes containing horizontal bar patches
             config_key: Configuration key to check if annotations are enabled
@@ -154,7 +154,7 @@ class AnnotationHelper:
         annotate_enabled = self.graph.get_config_value(config_key, False)
         if not annotate_enabled:
             return
-        
+
         try:
             # Calculate max width for offset positioning
             max_width = 0.0
@@ -181,7 +181,7 @@ class AnnotationHelper:
                     )
         except Exception as e:
             logger.warning(f"Failed to annotate horizontal bar patches: {e}")
-    
+
     def annotate_stacked_bar_segments(
         self,
         ax: object,  # matplotlib.axes.Axes
@@ -194,10 +194,10 @@ class AnnotationHelper:
     ) -> None:
         """
         Annotate stacked bar chart segments and optionally totals.
-        
+
         This method handles the complex case of stacked bar charts where each
         segment needs annotation and optionally a total at the top.
-        
+
         Args:
             ax: Matplotlib axes containing stacked bars
             config_key: Configuration key to check if annotations are enabled
@@ -210,11 +210,11 @@ class AnnotationHelper:
         annotate_enabled = self.graph.get_config_value(config_key, False)
         if not annotate_enabled:
             return
-        
+
         try:
             for i, _ in enumerate(categories):
                 cumulative_height = 0.0
-                
+
                 # Annotate each segment
                 for bars, media_type, values in bar_containers:
                     value = float(values[i])  # type: ignore[reportArgumentType,reportIndexIssue]
@@ -231,7 +231,7 @@ class AnnotationHelper:
                             fontweight="normal",
                         )
                     cumulative_height += value
-                
+
                 # Add total annotation at the top if requested
                 if include_totals and cumulative_height > 0:
                     self._add_text_annotation(
@@ -247,7 +247,7 @@ class AnnotationHelper:
                     )
         except Exception as e:
             logger.warning(f"Failed to annotate stacked bar segments: {e}")
-    
+
     def annotate_peak_value(
         self,
         ax: object,  # matplotlib.axes.Axes
@@ -260,10 +260,10 @@ class AnnotationHelper:
     ) -> None:
         """
         Add a peak value annotation with arrow and styled box.
-        
+
         This method creates a prominent annotation for highlighting peak values
         with customizable styling and positioning.
-        
+
         Args:
             ax: Matplotlib axes to add annotation to
             x: X-coordinate of the peak
@@ -275,7 +275,7 @@ class AnnotationHelper:
         """
         if not self.graph.is_peak_annotations_enabled():
             return
-        
+
         try:
             ax.annotate(  # type: ignore[reportAttributeAccessIssue]
                 f"{label_prefix}: {value}",
@@ -294,7 +294,7 @@ class AnnotationHelper:
             )
         except Exception as e:
             logger.warning(f"Failed to add peak annotation: {e}")
-    
+
     def _add_text_annotation(
         self,
         ax: object,  # matplotlib.axes.Axes
@@ -310,10 +310,10 @@ class AnnotationHelper:
     ) -> None:
         """
         Add a text annotation with consistent styling.
-        
+
         This is the core method that handles the actual text placement with
         proper styling, outline effects, and positioning.
-        
+
         Args:
             ax: Matplotlib axes to add annotation to
             x: X-coordinate for annotation
@@ -327,28 +327,28 @@ class AnnotationHelper:
             fontweight: Font weight
         """
         from matplotlib.axes import Axes
-        
+
         if not isinstance(ax, Axes):
             return
-        
+
         # Use config-based font size if not specified
         if fontsize is None:
             fontsize = self.graph.get_annotation_font_size()
-        
+
         # Format the value for display
         if isinstance(value, float) and value.is_integer():
             text = str(int(value))
         else:
             text = str(value)
-        
+
         # Calculate actual position with offsets
         actual_x = x + offset_x
         actual_y = y + offset_y
-        
+
         if self.graph.is_annotation_outline_enabled():
             # Add text with outline for better readability
             from matplotlib import patheffects
-            
+
             _ = ax.text(  # type: ignore[reportAttributeAccessIssue]
                 actual_x,
                 actual_y,
@@ -360,7 +360,8 @@ class AnnotationHelper:
                 color="white",
                 path_effects=[
                     patheffects.Stroke(
-                        linewidth=3, foreground=self.graph.get_annotation_outline_color()
+                        linewidth=3,
+                        foreground=self.graph.get_annotation_outline_color(),
                     ),
                     patheffects.Normal(),
                 ],

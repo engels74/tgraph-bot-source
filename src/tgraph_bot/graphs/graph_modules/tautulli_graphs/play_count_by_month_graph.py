@@ -19,13 +19,13 @@ from ..annotation_helper import AnnotationHelper
 from ..base_graph import BaseGraph
 from ..data_processor import data_processor
 from ..empty_data_handler import EmptyDataHandler
-from ..visualization_mixin import VisualizationMixin
 from ..utils import (
+    ProcessedRecords,
     aggregate_by_month,
     aggregate_by_month_separated,
     get_media_type_display_info,
-    ProcessedRecords,
 )
+from ..visualization_mixin import VisualizationMixin
 
 if TYPE_CHECKING:
     from ....config.schema import TGraphBotConfig
@@ -119,7 +119,9 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
                 self._generate_combined_visualization_from_api(ax, response_data)
 
             # Step 5: Finalize and save using combined utility
-            output_path = self.finalize_and_save_figure(graph_type="play_count_by_month", user_id=None)
+            output_path = self.finalize_and_save_figure(
+                graph_type="play_count_by_month", user_id=None
+            )
             return output_path
 
         except Exception as e:
@@ -542,8 +544,6 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
             f"Created combined monthly play count graph with {len(month_totals)} months"
         )
 
-
-
     # Keep the old methods for backward compatibility
     def _generate_separated_visualization(
         self, ax: Axes, processed_records: ProcessedRecords
@@ -772,5 +772,5 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
         empty_data_handler.display_empty_data_message(
             self.axes,
             message="No play data available\nfor the selected time period",
-            log_message="Generated empty monthly play count graph due to no data"
+            log_message="Generated empty monthly play count graph due to no data",
         )

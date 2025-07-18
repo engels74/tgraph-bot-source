@@ -12,8 +12,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import TypedDict
 from types import TracebackType
+from typing import TypedDict
 from urllib.parse import urljoin
 
 import httpx

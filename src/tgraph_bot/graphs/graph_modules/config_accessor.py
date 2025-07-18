@@ -9,7 +9,7 @@ GraphFactory and other graph-related modules.
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, TypeVar, overload, final
+from typing import TYPE_CHECKING, TypeVar, final, overload
 
 from ...utils.core.error_handler import ConfigurationError
 
@@ -25,7 +25,7 @@ T = TypeVar("T")
 class ConfigAccessor:
     """
     Centralized configuration access utility for graph modules.
-    
+
     This class provides type-safe configuration access for both dict and
     TGraphBotConfig objects, eliminating the need for duplicated configuration
     access logic throughout the graph modules.
@@ -119,7 +119,9 @@ class ConfigAccessor:
             return int(raw_value)  # pyright: ignore[reportArgumentType]
         except (ConfigurationError, ValueError, TypeError):
             # If key doesn't exist or conversion fails, use default
-            logger.warning(f"Could not get or convert config value '{key}' to int, using default: {default}")
+            logger.warning(
+                f"Could not get or convert config value '{key}' to int, using default: {default}"
+            )
             return default
 
     def get_graph_enable_value(self, graph_type: str, default: bool = True) -> bool:
@@ -167,7 +169,7 @@ class ConfigAccessor:
         width = self.get_int_value("GRAPH_WIDTH", 12)
         height = self.get_int_value("GRAPH_HEIGHT", 8)
         dpi = self.get_int_value("GRAPH_DPI", 100)
-        
+
         return {
             "width": width,
             "height": height,
@@ -203,13 +205,13 @@ class ConfigAccessor:
             ConfigurationError: If any required key is missing
         """
         missing_keys: list[str] = []
-        
+
         for key in keys:
             try:
                 _ = self.get_value(key)
             except ConfigurationError:
                 missing_keys.append(key)
-        
+
         if missing_keys:
             raise ConfigurationError(
                 f"Missing required configuration keys: {missing_keys}",
@@ -225,15 +227,17 @@ class ConfigAccessor:
         """
         graph_enable_keys = [
             "ENABLE_DAILY_PLAY_COUNT",
-            "ENABLE_PLAY_COUNT_BY_DAYOFWEEK", 
+            "ENABLE_PLAY_COUNT_BY_DAYOFWEEK",
             "ENABLE_PLAY_COUNT_BY_HOUROFDAY",
             "ENABLE_PLAY_COUNT_BY_MONTH",
             "ENABLE_TOP_10_PLATFORMS",
             "ENABLE_TOP_10_USERS",
             "ENABLE_SAMPLE_GRAPH",
         ]
-        
+
         return {
-            key: self.get_graph_enable_value(key, default=True if key != "ENABLE_SAMPLE_GRAPH" else False)
+            key: self.get_graph_enable_value(
+                key, default=True if key != "ENABLE_SAMPLE_GRAPH" else False
+            )
             for key in graph_enable_keys
         }

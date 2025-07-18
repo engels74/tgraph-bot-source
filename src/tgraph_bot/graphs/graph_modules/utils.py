@@ -12,7 +12,7 @@ from collections import defaultdict
 from collections.abc import Mapping
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import TypeVar, TYPE_CHECKING, TypedDict
+from typing import TYPE_CHECKING, TypedDict, TypeVar
 
 from ...utils.cli.paths import get_path_config
 
@@ -702,6 +702,7 @@ def classify_media_type(media_type: str) -> str:
     """
     # Use MediaTypeProcessor for consistent classification
     from .media_type_processor import MediaTypeProcessor
+
     processor = MediaTypeProcessor()
     return processor.classify_media_type(media_type)
 
@@ -718,6 +719,7 @@ def get_media_type_display_info() -> dict[str, dict[str, str]]:
     """
     # Use MediaTypeProcessor for consistent display info
     from .media_type_processor import MediaTypeProcessor
+
     processor = MediaTypeProcessor()
     return processor.get_all_display_info()
 
@@ -913,8 +915,8 @@ def apply_modern_seaborn_styling() -> None:
     """
     Apply modern Seaborn styling for professional-looking graphs.
     """
-    import seaborn as sns
     import matplotlib.pyplot as plt
+    import seaborn as sns
 
     # Set the modern style
     sns.set_style(

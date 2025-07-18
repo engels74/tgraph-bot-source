@@ -25,8 +25,8 @@ Usage Examples:
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, Final, final
 from dataclasses import dataclass
+from typing import TYPE_CHECKING, Final, final
 
 if TYPE_CHECKING:
     pass
@@ -36,10 +36,12 @@ if TYPE_CHECKING:
 # Day and Time Constants
 # =============================================================================
 
+
 @final
 @dataclass(frozen=True)
 class DaysOfWeek:
     """Constants for days of the week."""
+
     MONDAY: Final[str] = "Monday"
     TUESDAY: Final[str] = "Tuesday"
     WEDNESDAY: Final[str] = "Wednesday"
@@ -47,7 +49,7 @@ class DaysOfWeek:
     FRIDAY: Final[str] = "Friday"
     SATURDAY: Final[str] = "Saturday"
     SUNDAY: Final[str] = "Sunday"
-    
+
     @classmethod
     def get_ordered_list(cls) -> list[str]:
         """Get days of week in order starting from Monday."""
@@ -60,12 +62,12 @@ class DaysOfWeek:
             cls.SATURDAY,
             cls.SUNDAY,
         ]
-    
+
     @classmethod
     def get_weekend_days(cls) -> list[str]:
         """Get weekend days."""
         return [cls.SATURDAY, cls.SUNDAY]
-    
+
     @classmethod
     def get_weekday_days(cls) -> list[str]:
         """Get weekday days."""
@@ -82,12 +84,13 @@ class DaysOfWeek:
 @dataclass(frozen=True)
 class DateTimeFormats:
     """Constants for date and time formatting."""
+
     DATE_FORMAT: Final[str] = "%Y-%m-%d"
     DATETIME_FORMAT: Final[str] = "%Y-%m-%d %H:%M:%S"
     TIMESTAMP_FORMAT: Final[str] = "%Y%m%d_%H%M%S"
     MONTH_FORMAT: Final[str] = "%Y-%m"
     HOUR_FORMAT: Final[str] = "%H"
-    
+
     # Display formats
     DISPLAY_DATE_FORMAT: Final[str] = "%B %d, %Y"
     DISPLAY_DATETIME_FORMAT: Final[str] = "%B %d, %Y at %I:%M %p"
@@ -97,22 +100,24 @@ class DateTimeFormats:
 # Media Type Constants
 # =============================================================================
 
+
 @final
 @dataclass(frozen=True)
 class MediaTypes:
     """Constants for media types."""
+
     MOVIE: Final[str] = "movie"
     TV: Final[str] = "tv"
     EPISODE: Final[str] = "episode"
     MUSIC: Final[str] = "music"
     OTHER: Final[str] = "other"
     UNKNOWN: Final[str] = "unknown"
-    
+
     @classmethod
     def get_all_types(cls) -> list[str]:
         """Get all media types."""
         return [cls.MOVIE, cls.TV, cls.EPISODE, cls.MUSIC, cls.OTHER, cls.UNKNOWN]
-    
+
     @classmethod
     def get_primary_types(cls) -> list[str]:
         """Get primary media types (movie, tv)."""
@@ -123,6 +128,7 @@ class MediaTypes:
 @dataclass(frozen=True)
 class MediaTypeDisplayNames:
     """Display names for media types."""
+
     MOVIE: Final[str] = "Movies"
     TV: Final[str] = "TV Series"
     EPISODE: Final[str] = "Episodes"
@@ -161,10 +167,12 @@ class MediaTypeAliases:
 # Graph Type Constants
 # =============================================================================
 
+
 @final
 @dataclass(frozen=True)
 class GraphTypes:
     """Constants for graph types."""
+
     DAILY_PLAY_COUNT: Final[str] = "daily_play_count"
     PLAY_COUNT_BY_DAYOFWEEK: Final[str] = "play_count_by_dayofweek"
     PLAY_COUNT_BY_HOUROFDAY: Final[str] = "play_count_by_hourofday"
@@ -172,7 +180,7 @@ class GraphTypes:
     TOP_10_PLATFORMS: Final[str] = "top_10_platforms"
     TOP_10_USERS: Final[str] = "top_10_users"
     SAMPLE_GRAPH: Final[str] = "sample_graph"
-    
+
     @classmethod
     def get_all_types(cls) -> list[str]:
         """Get all graph types."""
@@ -185,7 +193,7 @@ class GraphTypes:
             cls.TOP_10_USERS,
             cls.SAMPLE_GRAPH,
         ]
-    
+
     @classmethod
     def get_tautulli_types(cls) -> list[str]:
         """Get Tautulli-specific graph types."""
@@ -203,6 +211,7 @@ class GraphTypes:
 @dataclass(frozen=True)
 class GraphTitles:
     """Default titles for graph types."""
+
     DAILY_PLAY_COUNT: Final[str] = "Daily Play Count"
     PLAY_COUNT_BY_DAYOFWEEK: Final[str] = "Play Count by Day of Week"
     PLAY_COUNT_BY_HOUROFDAY: Final[str] = "Play Count by Hour of Day"
@@ -216,31 +225,33 @@ class GraphTitles:
 # Color Constants
 # =============================================================================
 
+
 @final
 @dataclass(frozen=True)
 class DefaultColors:
     """Default color constants."""
+
     # Primary colors
     TV_COLOR: Final[str] = "#1f77b4"  # Blue
     MOVIE_COLOR: Final[str] = "#ff7f0e"  # Orange
     MUSIC_COLOR: Final[str] = "#2ca02c"  # Green
     OTHER_COLOR: Final[str] = "#d62728"  # Red
     UNKNOWN_COLOR: Final[str] = "#666666"  # Gray
-    
+
     # Background colors
     GRAPH_BACKGROUND: Final[str] = "#ffffff"  # White
     FIGURE_BACKGROUND: Final[str] = "#ffffff"  # White
-    
+
     # Annotation colors
     ANNOTATION_COLOR: Final[str] = "#ff0000"  # Red
     ANNOTATION_OUTLINE: Final[str] = "#000000"  # Black
     PEAK_ANNOTATION: Final[str] = "#ffcc00"  # Yellow
     PEAK_ANNOTATION_TEXT: Final[str] = "#000000"  # Black
-    
+
     # Grid and axis colors
     GRID_COLOR: Final[str] = "#cccccc"  # Light gray
     AXIS_COLOR: Final[str] = "#333333"  # Dark gray
-    
+
     @classmethod
     def get_media_type_colors(cls) -> dict[str, str]:
         """Get color mapping for media types."""
@@ -257,6 +268,7 @@ class DefaultColors:
 @dataclass(frozen=True)
 class ColorPalettes:
     """Color palettes for graphs."""
+
     VIRIDIS: Final[str] = "viridis"
     PLASMA: Final[str] = "plasma"
     INFERNO: Final[str] = "inferno"
@@ -272,10 +284,12 @@ class ColorPalettes:
 # Configuration Key Constants
 # =============================================================================
 
+
 @final
 @dataclass(frozen=True)
 class ConfigKeys:
     """Configuration key constants."""
+
     # Graph enable/disable keys
     ENABLE_DAILY_PLAY_COUNT: Final[str] = "ENABLE_DAILY_PLAY_COUNT"
     ENABLE_PLAY_COUNT_BY_DAYOFWEEK: Final[str] = "ENABLE_PLAY_COUNT_BY_DAYOFWEEK"
@@ -283,7 +297,7 @@ class ConfigKeys:
     ENABLE_PLAY_COUNT_BY_MONTH: Final[str] = "ENABLE_PLAY_COUNT_BY_MONTH"
     ENABLE_TOP_10_PLATFORMS: Final[str] = "ENABLE_TOP_10_PLATFORMS"
     ENABLE_TOP_10_USERS: Final[str] = "ENABLE_TOP_10_USERS"
-    
+
     # Color configuration keys
     TV_COLOR: Final[str] = "TV_COLOR"
     MOVIE_COLOR: Final[str] = "MOVIE_COLOR"
@@ -292,7 +306,7 @@ class ConfigKeys:
     ANNOTATION_OUTLINE_COLOR: Final[str] = "ANNOTATION_OUTLINE_COLOR"
     PEAK_ANNOTATION_COLOR: Final[str] = "PEAK_ANNOTATION_COLOR"
     PEAK_ANNOTATION_TEXT_COLOR: Final[str] = "PEAK_ANNOTATION_TEXT_COLOR"
-    
+
     # Annotation enable/disable keys
     ANNOTATE_DAILY_PLAY_COUNT: Final[str] = "ANNOTATE_DAILY_PLAY_COUNT"
     ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK: Final[str] = "ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK"
@@ -300,7 +314,7 @@ class ConfigKeys:
     ANNOTATE_PLAY_COUNT_BY_MONTH: Final[str] = "ANNOTATE_PLAY_COUNT_BY_MONTH"
     ANNOTATE_TOP_10_PLATFORMS: Final[str] = "ANNOTATE_TOP_10_PLATFORMS"
     ANNOTATE_TOP_10_USERS: Final[str] = "ANNOTATE_TOP_10_USERS"
-    
+
     # Other configuration keys
     TIME_RANGE_DAYS: Final[str] = "TIME_RANGE_DAYS"
     TIME_RANGE_MONTHS: Final[str] = "TIME_RANGE_MONTHS"
@@ -314,16 +328,18 @@ class ConfigKeys:
 # File and Path Constants
 # =============================================================================
 
+
 @final
 @dataclass(frozen=True)
 class FileExtensions:
     """File extension constants."""
+
     PNG: Final[str] = ".png"
     JPG: Final[str] = ".jpg"
     JPEG: Final[str] = ".jpeg"
     SVG: Final[str] = ".svg"
     PDF: Final[str] = ".pdf"
-    
+
     @classmethod
     def get_image_extensions(cls) -> list[str]:
         """Get supported image extensions."""
@@ -334,6 +350,7 @@ class FileExtensions:
 @dataclass(frozen=True)
 class FileFormats:
     """File format constants."""
+
     PNG: Final[str] = "png"
     JPG: Final[str] = "jpg"
     JPEG: Final[str] = "jpeg"
@@ -345,6 +362,7 @@ class FileFormats:
 @dataclass(frozen=True)
 class PathPatterns:
     """Path pattern constants."""
+
     INVALID_FILENAME_CHARS: Final[str] = r'[<>:"/\\|?*]'
     REPLACEMENT_CHAR: Final[str] = "_"
     DEFAULT_FILENAME: Final[str] = "unnamed"
@@ -359,6 +377,7 @@ class PathPatterns:
 # =============================================================================
 # Validation Functions
 # =============================================================================
+
 
 def validate_color(color: object) -> bool:
     """
@@ -423,6 +442,7 @@ def validate_day_of_week(day: object) -> bool:
 # =============================================================================
 # Localization Support
 # =============================================================================
+
 
 def get_localized_day_names(locale: str = "en") -> list[str]:  # noqa: ARG001
     """

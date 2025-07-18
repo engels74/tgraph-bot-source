@@ -13,11 +13,11 @@ import seaborn as sns
 
 from ..base_graph import BaseGraph
 from ..data_processor import data_processor
-from ..visualization_mixin import VisualizationMixin
 from ..utils import (
     aggregate_top_users,
     handle_empty_data,
 )
+from ..visualization_mixin import VisualizationMixin
 
 if TYPE_CHECKING:
     from ....config.schema import TGraphBotConfig
@@ -170,7 +170,9 @@ class Top10UsersGraph(BaseGraph, VisualizationMixin):
                 logger.warning("Generated empty top 10 users graph due to no data")
 
             # Step 6: Finalize and save using combined utility
-            output_path = self.finalize_and_save_figure(graph_type="top_10_users", user_id=None)
+            output_path = self.finalize_and_save_figure(
+                graph_type="top_10_users", user_id=None
+            )
             return output_path
 
         except Exception as e:

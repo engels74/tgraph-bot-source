@@ -8,19 +8,19 @@ by hour of the day, resulting in a cleaner implementation and superior visual ou
 import logging
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, override
-from matplotlib.axes import Axes
 
 import pandas as pd
 import seaborn as sns
+from matplotlib.axes import Axes
 
 from ..annotation_helper import AnnotationHelper
 from ..base_graph import BaseGraph
 from ..data_processor import data_processor
-from ..visualization_mixin import VisualizationMixin
 from ..utils import (
-    aggregate_by_hour_of_day,
     ProcessedRecords,
+    aggregate_by_hour_of_day,
 )
+from ..visualization_mixin import VisualizationMixin
 
 if TYPE_CHECKING:
     from ....config.schema import TGraphBotConfig

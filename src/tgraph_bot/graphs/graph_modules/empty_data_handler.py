@@ -20,7 +20,7 @@ Usage Examples:
     Custom message with styling:
         >>> handler = EmptyDataHandler()
         >>> handler.display_empty_data_message(
-        ...     ax, 
+        ...     ax,
         ...     message="No user data available",
         ...     fontsize=18,
         ...     alpha=0.8
@@ -50,7 +50,7 @@ logger = logging.getLogger(__name__)
 
 class AxesProtocol(Protocol):
     """Protocol for matplotlib axes objects."""
-    
+
     def text(
         self,
         x: float,
@@ -66,7 +66,7 @@ class AxesProtocol(Protocol):
     ) -> object:
         """Add text to the axes."""
         ...
-    
+
     def set_title(
         self,
         label: str,
@@ -76,27 +76,27 @@ class AxesProtocol(Protocol):
     ) -> object:
         """Set the title of the axes."""
         ...
-    
+
     def clear(self) -> None:
         """Clear the axes."""
         ...
-    
+
     def set_xlim(self, left: float, right: float) -> None:
         """Set x-axis limits."""
         ...
-    
+
     def set_ylim(self, bottom: float, top: float) -> None:
         """Set y-axis limits."""
         ...
-    
+
     def set_xticks(self, ticks: list[float]) -> None:
         """Set x-axis tick locations."""
         ...
-    
+
     def set_yticks(self, ticks: list[float]) -> None:
         """Set y-axis tick locations."""
         ...
-    
+
     @property
     def transAxes(self) -> object:
         """Transform for axes coordinates."""
@@ -107,11 +107,11 @@ class AxesProtocol(Protocol):
 class EmptyDataHandler:
     """
     Centralized utility for handling empty data scenarios in graph generation.
-    
+
     This class consolidates the various empty data handling patterns found across
     graph implementations, providing a standardized approach to displaying
     user-friendly messages when no data is available.
-    
+
     The handler supports:
     - Customizable message content and styling
     - Localization through the i18n system
@@ -119,24 +119,24 @@ class EmptyDataHandler:
     - Consistent logging patterns
     - Configurable visual styling options
     """
-    
+
     # Default message constants
     DEFAULT_MESSAGE = "No data available\nfor the selected time period"
     DEFAULT_PLAY_DATA_MESSAGE = "No play data available\nfor the selected time period"
     DEFAULT_USER_DATA_MESSAGE = "No user data available\nfor the selected time period"
     DEFAULT_PLATFORM_DATA_MESSAGE = "No platform data available"
-    
+
     # Default styling constants
     DEFAULT_FONTSIZE = 16
     DEFAULT_FONTWEIGHT = "bold"
     DEFAULT_ALPHA = 0.7
     DEFAULT_FACECOLOR = "lightgray"
     DEFAULT_BOXSTYLE = "round,pad=0.5"
-    
+
     def __init__(self) -> None:
         """Initialize the EmptyDataHandler."""
         pass
-    
+
     def display_empty_data_message(
         self,
         ax: Axes | AxesProtocol | None,
@@ -154,10 +154,10 @@ class EmptyDataHandler:
     ) -> None:
         """
         Display a standardized empty data message on the provided axes.
-        
+
         This method consolidates the empty data display patterns found across
         graph implementations, providing consistent styling and behavior.
-        
+
         Args:
             ax: The matplotlib axes to display the message on
             message: Custom message to display (uses default if None)
@@ -174,7 +174,7 @@ class EmptyDataHandler:
         if ax is None:
             logger.warning("Cannot display empty data message: axes is None")
             return
-        
+
         # Use default values if not provided
         message = message or self.DEFAULT_MESSAGE
         fontsize = fontsize or self.DEFAULT_FONTSIZE
@@ -182,11 +182,11 @@ class EmptyDataHandler:
         alpha = alpha or self.DEFAULT_ALPHA
         facecolor = facecolor or self.DEFAULT_FACECOLOR
         boxstyle = boxstyle or self.DEFAULT_BOXSTYLE
-        
+
         # Clear axes if requested (some implementations need this)
         if clear_axes:
             ax.clear()
-        
+
         # Display the message with consistent styling
         _ = ax.text(  # pyright: ignore[reportUnknownMemberType]
             0.5,
@@ -203,12 +203,12 @@ class EmptyDataHandler:
         # Set title if provided
         if set_title:
             _ = ax.set_title(set_title, fontsize=18, fontweight="bold")  # pyright: ignore[reportUnknownMemberType]
-        
+
         # Log warning if requested
         if log_warning:
             log_msg = log_message or f"Generated empty graph due to no data: {message}"
             logger.warning(log_msg)
-    
+
     def display_localized_empty_data_message(
         self,
         ax: Axes | AxesProtocol | None,
@@ -227,10 +227,10 @@ class EmptyDataHandler:
     ) -> None:
         """
         Display a localized empty data message using the i18n system.
-        
+
         This method provides localization support for empty data messages,
         allowing for internationalized user experiences.
-        
+
         Args:
             ax: The matplotlib axes to display the message on
             message_key: Translation key for the message
@@ -251,7 +251,7 @@ class EmptyDataHandler:
         except Exception as e:
             logger.warning(f"Failed to translate message key '{message_key}': {e}")
             translated_message = self.DEFAULT_MESSAGE
-        
+
         # Use the standard display method with the translated message
         self.display_empty_data_message(
             ax,
@@ -266,17 +266,17 @@ class EmptyDataHandler:
             log_warning=log_warning,
             log_message=log_message,
         )
-    
+
     def get_standard_empty_message(self, graph_type: str) -> str:
         """
         Get a standard empty data message for a specific graph type.
-        
+
         This method provides consistent messaging across different graph types
         while allowing for type-specific customization.
-        
+
         Args:
             graph_type: Type of graph (e.g., "play_data", "user_data", "platform_data")
-            
+
         Returns:
             Appropriate empty data message for the graph type
         """
@@ -291,24 +291,24 @@ class EmptyDataHandler:
             "users": self.DEFAULT_USER_DATA_MESSAGE,
             "platforms": self.DEFAULT_PLATFORM_DATA_MESSAGE,
         }
-        
+
         return message_map.get(graph_type, self.DEFAULT_MESSAGE)
-    
+
     def clear_axes_for_empty_data(self, ax: Axes | AxesProtocol | None) -> None:
         """
         Clear axes content and prepare for empty data display.
-        
+
         This method provides a standardized way to clear axes content
         when displaying empty data messages, ensuring consistent
         empty data presentation across graph implementations.
-        
+
         Args:
             ax: The matplotlib axes to clear
         """
         if ax is None:
             logger.warning("Cannot clear axes: axes is None")
             return
-        
+
         ax.clear()
         _ = ax.set_xlim(0, 1)
         _ = ax.set_ylim(0, 1)

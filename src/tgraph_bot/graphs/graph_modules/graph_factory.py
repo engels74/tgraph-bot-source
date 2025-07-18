@@ -6,14 +6,14 @@ graph classes based on the enabled settings in the configuration.
 """
 
 import logging
-from pathlib import Path
-from typing import TYPE_CHECKING, cast, TypedDict
 from collections.abc import Mapping
+from pathlib import Path
+from typing import TYPE_CHECKING, TypedDict, cast
 
 from .base_graph import BaseGraph
-from .utils import cleanup_old_files, ensure_graph_directory
 from .config_accessor import ConfigAccessor
-from .graph_type_registry import get_graph_type_registry, GraphTypeRegistry
+from .graph_type_registry import GraphTypeRegistry, get_graph_type_registry
+from .utils import cleanup_old_files, ensure_graph_directory
 
 if TYPE_CHECKING:
     from ...config.schema import TGraphBotConfig
@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 class GraphDimensions(TypedDict):
     """Type definition for graph dimensions dictionary."""
+
     width: int
     height: int
     dpi: int
@@ -53,7 +54,7 @@ class GraphFactory:
         return GraphDimensions(
             width=dimensions["width"],
             height=dimensions["height"],
-            dpi=dimensions["dpi"]
+            dpi=dimensions["dpi"],
         )
 
     def create_enabled_graphs(self) -> list[BaseGraph]:
@@ -74,8 +75,7 @@ class GraphFactory:
 
             # Check if this graph type is enabled
             is_enabled = self._config_accessor.get_graph_enable_value(
-                type_info.enable_key,
-                default=type_info.default_enabled
+                type_info.enable_key, default=type_info.default_enabled
             )
 
             if is_enabled:
@@ -124,8 +124,7 @@ class GraphFactory:
 
             # Check if this graph type is enabled
             is_enabled = self._config_accessor.get_graph_enable_value(
-                type_info.enable_key,
-                default=type_info.default_enabled
+                type_info.enable_key, default=type_info.default_enabled
             )
 
             if is_enabled:

@@ -41,13 +41,13 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, final
 
-from ...utils.core.error_handler import (
-    TGraphBotError,
-    ErrorCategory,
-    ErrorSeverity,
-    ErrorContext,
-)
 from ...i18n import translate
+from ...utils.core.error_handler import (
+    ErrorCategory,
+    ErrorContext,
+    ErrorSeverity,
+    TGraphBotError,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -58,11 +58,11 @@ logger = logging.getLogger(__name__)
 class GraphError(TGraphBotError):
     """
     Base exception class for graph-related errors.
-    
+
     This class extends TGraphBotError to provide graph-specific error handling
     with additional context information relevant to graph operations.
     """
-    
+
     def __init__(
         self,
         message: str,
@@ -76,7 +76,7 @@ class GraphError(TGraphBotError):
     ) -> None:
         """
         Initialize a graph error.
-        
+
         Args:
             message: Technical error message for logging
             category: Error category for handling strategy
@@ -103,12 +103,12 @@ class GraphError(TGraphBotError):
 class GraphDataError(GraphError):
     """
     Data-related errors in graph processing.
-    
+
     This exception is raised when there are issues with the data provided
     to graph generation, including missing data, invalid formats, or
     data validation failures.
     """
-    
+
     def __init__(
         self,
         message: str,
@@ -122,7 +122,7 @@ class GraphDataError(GraphError):
     ) -> None:
         """
         Initialize a graph data error.
-        
+
         Args:
             message: Technical error message
             user_message: User-friendly message
@@ -138,13 +138,13 @@ class GraphDataError(GraphError):
             if data_context:
                 user_message = translate(
                     "The {data_context} data provided is invalid or incomplete. Please check your data source and try again.",
-                    data_context=data_context
+                    data_context=data_context,
                 )
             else:
                 user_message = translate(
                     "The data provided for graph generation is invalid. Please check your data source and try again."
                 )
-        
+
         super().__init__(
             message=message,
             category=ErrorCategory.VALIDATION,
@@ -164,12 +164,12 @@ class GraphDataError(GraphError):
 class GraphConfigurationError(GraphError):
     """
     Configuration-related errors in graph processing.
-    
+
     This exception is raised when there are issues with graph configuration,
     including missing configuration values, invalid settings, or
     configuration validation failures.
     """
-    
+
     def __init__(
         self,
         message: str,
@@ -182,7 +182,7 @@ class GraphConfigurationError(GraphError):
     ) -> None:
         """
         Initialize a graph configuration error.
-        
+
         Args:
             message: Technical error message
             user_message: User-friendly message
@@ -197,13 +197,13 @@ class GraphConfigurationError(GraphError):
             if config_key:
                 user_message = translate(
                     "The configuration setting '{config_key}' is invalid or missing. Please check your configuration and try again.",
-                    config_key=config_key
+                    config_key=config_key,
                 )
             else:
                 user_message = translate(
                     "There is an issue with the graph configuration. Please check your settings and try again."
                 )
-        
+
         super().__init__(
             message=message,
             category=ErrorCategory.CONFIGURATION,
@@ -223,12 +223,12 @@ class GraphConfigurationError(GraphError):
 class GraphGenerationError(GraphError):
     """
     Graph generation and rendering errors.
-    
+
     This exception is raised when there are issues during the actual
     graph generation process, including matplotlib errors, file I/O
     issues, or rendering failures.
     """
-    
+
     def __init__(
         self,
         message: str,
@@ -241,7 +241,7 @@ class GraphGenerationError(GraphError):
     ) -> None:
         """
         Initialize a graph generation error.
-        
+
         Args:
             message: Technical error message
             user_message: User-friendly message
@@ -256,13 +256,13 @@ class GraphGenerationError(GraphError):
             if graph_type:
                 user_message = translate(
                     "Failed to generate the {graph_type} graph. This may be a temporary issue - please try again.",
-                    graph_type=graph_type.replace("_", " ").title()
+                    graph_type=graph_type.replace("_", " ").title(),
                 )
             else:
                 user_message = translate(
                     "Failed to generate the requested graph. This may be a temporary issue - please try again."
                 )
-        
+
         super().__init__(
             message=message,
             category=ErrorCategory.RESOURCE,
@@ -281,12 +281,12 @@ class GraphGenerationError(GraphError):
 class GraphValidationError(GraphError):
     """
     Graph validation and verification errors.
-    
+
     This exception is raised when generated graphs fail validation checks,
     including file integrity issues, dimension validation failures, or
     content verification problems.
     """
-    
+
     def __init__(
         self,
         message: str,
@@ -299,7 +299,7 @@ class GraphValidationError(GraphError):
     ) -> None:
         """
         Initialize a graph validation error.
-        
+
         Args:
             message: Technical error message
             user_message: User-friendly message
@@ -314,7 +314,7 @@ class GraphValidationError(GraphError):
             user_message = translate(
                 "The generated graph failed validation checks. Please try generating the graph again."
             )
-        
+
         super().__init__(
             message=message,
             category=ErrorCategory.VALIDATION,
@@ -343,17 +343,14 @@ ERROR_MESSAGES = {
 }
 
 
-def create_standardized_error_message(
-    template_key: str,
-    **kwargs: object
-) -> str:
+def create_standardized_error_message(template_key: str, **kwargs: object) -> str:
     """
     Create a standardized error message using templates.
-    
+
     Args:
         template_key: Key for the error message template
         **kwargs: Template variables
-        
+
     Returns:
         Formatted error message
     """

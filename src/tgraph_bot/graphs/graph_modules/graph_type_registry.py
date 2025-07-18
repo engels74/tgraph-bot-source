@@ -9,8 +9,8 @@ graph type mappings, enable keys, and class relationships.
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, NamedTuple, final
 from collections.abc import Mapping
+from typing import TYPE_CHECKING, NamedTuple, final
 
 if TYPE_CHECKING:
     from .base_graph import BaseGraph
@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 class GraphTypeInfo(NamedTuple):
     """Information about a graph type."""
+
     type_name: str
     enable_key: str
     graph_class: type[BaseGraph]
@@ -31,7 +32,7 @@ class GraphTypeInfo(NamedTuple):
 class GraphTypeRegistry:
     """
     Centralized registry for all graph types.
-    
+
     This class provides a single source of truth for graph type mappings,
     eliminating the need for duplicated mapping logic throughout the codebase.
     """
@@ -48,13 +49,17 @@ class GraphTypeRegistry:
             return
 
         # Import graph classes here to avoid circular imports
+        from .sample_graph import SampleGraph
         from .tautulli_graphs.daily_play_count_graph import DailyPlayCountGraph
-        from .tautulli_graphs.play_count_by_dayofweek_graph import PlayCountByDayOfWeekGraph
-        from .tautulli_graphs.play_count_by_hourofday_graph import PlayCountByHourOfDayGraph
+        from .tautulli_graphs.play_count_by_dayofweek_graph import (
+            PlayCountByDayOfWeekGraph,
+        )
+        from .tautulli_graphs.play_count_by_hourofday_graph import (
+            PlayCountByHourOfDayGraph,
+        )
         from .tautulli_graphs.play_count_by_month_graph import PlayCountByMonthGraph
         from .tautulli_graphs.top_10_platforms_graph import Top10PlatformsGraph
         from .tautulli_graphs.top_10_users_graph import Top10UsersGraph
-        from .sample_graph import SampleGraph
 
         # Register all graph types
         self._register_graph_type(
@@ -62,7 +67,7 @@ class GraphTypeRegistry:
             enable_key="ENABLE_DAILY_PLAY_COUNT",
             graph_class=DailyPlayCountGraph,
             default_enabled=True,
-            description="Daily play count graph showing plays over time"
+            description="Daily play count graph showing plays over time",
         )
 
         self._register_graph_type(
@@ -70,7 +75,7 @@ class GraphTypeRegistry:
             enable_key="ENABLE_PLAY_COUNT_BY_DAYOFWEEK",
             graph_class=PlayCountByDayOfWeekGraph,
             default_enabled=True,
-            description="Play count by day of week graph"
+            description="Play count by day of week graph",
         )
 
         self._register_graph_type(
@@ -78,7 +83,7 @@ class GraphTypeRegistry:
             enable_key="ENABLE_PLAY_COUNT_BY_HOUROFDAY",
             graph_class=PlayCountByHourOfDayGraph,
             default_enabled=True,
-            description="Play count by hour of day graph"
+            description="Play count by hour of day graph",
         )
 
         self._register_graph_type(
@@ -86,7 +91,7 @@ class GraphTypeRegistry:
             enable_key="ENABLE_PLAY_COUNT_BY_MONTH",
             graph_class=PlayCountByMonthGraph,
             default_enabled=True,
-            description="Play count by month graph"
+            description="Play count by month graph",
         )
 
         self._register_graph_type(
@@ -94,7 +99,7 @@ class GraphTypeRegistry:
             enable_key="ENABLE_TOP_10_PLATFORMS",
             graph_class=Top10PlatformsGraph,
             default_enabled=True,
-            description="Top 10 platforms graph"
+            description="Top 10 platforms graph",
         )
 
         self._register_graph_type(
@@ -102,7 +107,7 @@ class GraphTypeRegistry:
             enable_key="ENABLE_TOP_10_USERS",
             graph_class=Top10UsersGraph,
             default_enabled=True,
-            description="Top 10 users graph"
+            description="Top 10 users graph",
         )
 
         self._register_graph_type(
@@ -110,11 +115,13 @@ class GraphTypeRegistry:
             enable_key="ENABLE_SAMPLE_GRAPH",
             graph_class=SampleGraph,
             default_enabled=False,
-            description="Sample graph for demonstration purposes"
+            description="Sample graph for demonstration purposes",
         )
 
         self._initialized = True
-        logger.debug(f"Graph type registry initialized with {len(self._registry)} graph types")
+        logger.debug(
+            f"Graph type registry initialized with {len(self._registry)} graph types"
+        )
 
     def _register_graph_type(
         self,
@@ -141,7 +148,7 @@ class GraphTypeRegistry:
             default_enabled=default_enabled,
             description=description,
         )
-        
+
         self._registry[type_name] = info
         self._class_to_type[graph_class] = type_name
 
@@ -159,10 +166,10 @@ class GraphTypeRegistry:
             ValueError: If graph type is not registered
         """
         self._ensure_initialized()
-        
+
         if type_name not in self._registry:
             raise ValueError(f"Unknown graph type: {type_name}")
-        
+
         return self._registry[type_name].graph_class
 
     def get_enable_key(self, type_name: str) -> str:
@@ -179,10 +186,10 @@ class GraphTypeRegistry:
             ValueError: If graph type is not registered
         """
         self._ensure_initialized()
-        
+
         if type_name not in self._registry:
             raise ValueError(f"Unknown graph type: {type_name}")
-        
+
         return self._registry[type_name].enable_key
 
     def get_type_name_from_class(self, graph_class: type[BaseGraph]) -> str:
@@ -199,10 +206,10 @@ class GraphTypeRegistry:
             ValueError: If graph class is not registered
         """
         self._ensure_initialized()
-        
+
         if graph_class not in self._class_to_type:
             raise ValueError(f"Unknown graph class: {graph_class}")
-        
+
         return self._class_to_type[graph_class]
 
     def get_default_enabled(self, type_name: str) -> bool:
@@ -219,10 +226,10 @@ class GraphTypeRegistry:
             ValueError: If graph type is not registered
         """
         self._ensure_initialized()
-        
+
         if type_name not in self._registry:
             raise ValueError(f"Unknown graph type: {type_name}")
-        
+
         return self._registry[type_name].default_enabled
 
     def get_all_type_names(self) -> list[str]:
@@ -259,10 +266,10 @@ class GraphTypeRegistry:
             ValueError: If graph type is not registered
         """
         self._ensure_initialized()
-        
+
         if type_name not in self._registry:
             raise ValueError(f"Unknown graph type: {type_name}")
-        
+
         return self._registry[type_name]
 
     def get_all_type_info(self) -> Mapping[str, GraphTypeInfo]:
@@ -302,13 +309,13 @@ class GraphTypeRegistry:
             ValueError: If any graph type is not registered
         """
         self._ensure_initialized()
-        
+
         classes: list[type[BaseGraph]] = []
         for type_name in type_names:
             if type_name not in self._registry:
                 raise ValueError(f"Unknown graph type: {type_name}")
             classes.append(self._registry[type_name].graph_class)
-        
+
         return classes
 
 

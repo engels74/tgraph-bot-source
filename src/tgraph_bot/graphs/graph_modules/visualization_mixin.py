@@ -8,7 +8,7 @@ and common visualization patterns into reusable methods.
 """
 
 import logging
-from typing import TYPE_CHECKING, Any, Protocol, Literal
+from typing import TYPE_CHECKING, Any, Literal, Protocol
 
 import matplotlib.axes
 import seaborn as sns
@@ -183,7 +183,9 @@ class VisualizationMixin:
         else:
             logger.warning("Cannot finalize layout: figure is None or not available")
 
-    def configure_standard_grid(self: VisualizationProtocol, alpha: float = 0.3) -> None:
+    def configure_standard_grid(
+        self: VisualizationProtocol, alpha: float = 0.3
+    ) -> None:
         """
         Configure standard grid settings.
 
@@ -357,14 +359,16 @@ class VisualizationMixin:
         if self.axes is not None:
             # Set title
             display_title = self.get_title()
-            _ = self.axes.set_title(display_title, fontsize=18, fontweight="bold", pad=20)
-            
+            _ = self.axes.set_title(
+                display_title, fontsize=18, fontweight="bold", pad=20
+            )
+
             # Set axis labels
             if xlabel is not None:
                 _ = self.axes.set_xlabel(xlabel, fontsize=12)
             if ylabel is not None:
                 _ = self.axes.set_ylabel(ylabel, fontsize=12)
-            
+
             # Configure tick parameters
             self.axes.tick_params(axis="x", rotation=rotation)
 

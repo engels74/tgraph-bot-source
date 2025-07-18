@@ -20,13 +20,13 @@ from ..annotation_helper import AnnotationHelper
 from ..base_graph import BaseGraph
 from ..data_processor import data_processor
 from ..empty_data_handler import EmptyDataHandler
-from ..visualization_mixin import VisualizationMixin
 from ..utils import (
+    ProcessedRecords,
     aggregate_by_day_of_week,
     aggregate_by_day_of_week_separated,
     get_media_type_display_info,
-    ProcessedRecords,
 )
+from ..visualization_mixin import VisualizationMixin
 
 if TYPE_CHECKING:
     from ....config.schema import TGraphBotConfig
@@ -477,5 +477,5 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
         empty_data_handler.display_empty_data_message(
             ax,
             message="No play data available\nfor the selected time period",
-            log_message="Generated empty day of week graph due to no data"
+            log_message="Generated empty day of week graph due to no data",
         )

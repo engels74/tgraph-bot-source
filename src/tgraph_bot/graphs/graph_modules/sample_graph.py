@@ -112,7 +112,7 @@ class SampleGraph(BaseGraph, VisualizationMixin):
 
         # Step 2: Setup figure with styling using combined utility
         figure, axes = self.setup_figure_with_seaborn_grid()
-        
+
         # Step 3: Apply seaborn palette
         self.apply_seaborn_palette("husl")
 
@@ -129,7 +129,7 @@ class SampleGraph(BaseGraph, VisualizationMixin):
                 ylabel="Y Values",
                 title_fontsize=16,
                 label_fontsize=12,
-                title_pad=20
+                title_pad=20,
             )
 
             # Add grid for better readability
