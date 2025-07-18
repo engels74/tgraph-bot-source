@@ -12,13 +12,8 @@ from collections.abc import Mapping
 
 from .base_graph import BaseGraph
 from .utils import cleanup_old_files, ensure_graph_directory
-from .tautulli_graphs.daily_play_count_graph import DailyPlayCountGraph
-from .tautulli_graphs.play_count_by_dayofweek_graph import PlayCountByDayOfWeekGraph
-from .tautulli_graphs.play_count_by_hourofday_graph import PlayCountByHourOfDayGraph
-from .tautulli_graphs.play_count_by_month_graph import PlayCountByMonthGraph
-from .tautulli_graphs.top_10_platforms_graph import Top10PlatformsGraph
-from .tautulli_graphs.top_10_users_graph import Top10UsersGraph
-from .sample_graph import SampleGraph
+from .config_accessor import ConfigAccessor
+from .graph_type_registry import get_graph_type_registry, GraphTypeRegistry
 
 if TYPE_CHECKING:
     from ...config.schema import TGraphBotConfig
@@ -44,6 +39,8 @@ class GraphFactory:
             config: Configuration object containing graph settings
         """
         self.config: "TGraphBotConfig | dict[str, object]" = config
+        self._config_accessor: ConfigAccessor = ConfigAccessor(config)
+        self._graph_registry: GraphTypeRegistry = get_graph_type_registry()
 
     def _get_graph_dimensions(self) -> GraphDimensions:
         """
@@ -52,43 +49,11 @@ class GraphFactory:
         Returns:
             Dictionary containing width, height, and dpi values
         """
-        # Handle both dict and TGraphBotConfig objects
-        if isinstance(self.config, dict):
-            width = self.config.get("GRAPH_WIDTH", 12)
-            height = self.config.get("GRAPH_HEIGHT", 8)
-            dpi = self.config.get("GRAPH_DPI", 100)
-        else:
-            # TGraphBotConfig object
-            width = getattr(self.config, "GRAPH_WIDTH", 12)
-            height = getattr(self.config, "GRAPH_HEIGHT", 8)
-            dpi = getattr(self.config, "GRAPH_DPI", 100)
-        
-        # Ensure values are integers by explicit conversion with type narrowing
-        def safe_int_conversion(value: object, default: int) -> int:
-            if isinstance(value, int):
-                return value
-            elif isinstance(value, str):
-                try:
-                    return int(value)
-                except ValueError:
-                    return default
-            elif value is None:
-                return default
-            else:
-                # For any other type, try to convert to int
-                try:
-                    return int(value)  # pyright: ignore[reportArgumentType]
-                except (ValueError, TypeError):
-                    return default
-        
-        width_val = safe_int_conversion(width, 12)
-        height_val = safe_int_conversion(height, 8)
-        dpi_val = safe_int_conversion(dpi, 100)
-        
+        dimensions = self._config_accessor.get_graph_dimensions()
         return GraphDimensions(
-            width=width_val,
-            height=height_val,
-            dpi=dpi_val
+            width=dimensions["width"],
+            height=dimensions["height"],
+            dpi=dimensions["dpi"]
         )
 
     def create_enabled_graphs(self) -> list[BaseGraph]:
@@ -103,58 +68,21 @@ class GraphFactory:
         # Get dimension parameters from config
         dimensions = self._get_graph_dimensions()
 
-        # Check each graph type and create if enabled
-        def get_config_value(key: str, default: bool = True) -> bool:
-            # Handle both dict and TGraphBotConfig objects
-            if isinstance(self.config, dict):
-                return bool(self.config.get(key, default))
-            else:
-                # Use direct attribute access for TGraphBotConfig objects
-                if key == "ENABLE_DAILY_PLAY_COUNT":
-                    return self.config.ENABLE_DAILY_PLAY_COUNT
-                elif key == "ENABLE_PLAY_COUNT_BY_DAYOFWEEK":
-                    return self.config.ENABLE_PLAY_COUNT_BY_DAYOFWEEK
-                elif key == "ENABLE_PLAY_COUNT_BY_HOUROFDAY":
-                    return self.config.ENABLE_PLAY_COUNT_BY_HOUROFDAY
-                elif key == "ENABLE_PLAY_COUNT_BY_MONTH":
-                    return self.config.ENABLE_PLAY_COUNT_BY_MONTH
-                elif key == "ENABLE_TOP_10_PLATFORMS":
-                    return self.config.ENABLE_TOP_10_PLATFORMS
-                elif key == "ENABLE_TOP_10_USERS":
-                    return self.config.ENABLE_TOP_10_USERS
-                elif key == "ENABLE_SAMPLE_GRAPH":
-                    # Sample graph is not in the main config schema, default to False
-                    return False
-                return default
+        # Get all graph types and check which ones are enabled
+        for type_name in self._graph_registry.get_all_type_names():
+            type_info = self._graph_registry.get_type_info(type_name)
 
-        if get_config_value("ENABLE_DAILY_PLAY_COUNT"):
-            logger.debug("Creating daily play count graph")
-            graphs.append(DailyPlayCountGraph(config=self.config, **dimensions))
+            # Check if this graph type is enabled
+            is_enabled = self._config_accessor.get_graph_enable_value(
+                type_info.enable_key,
+                default=type_info.default_enabled
+            )
 
-        if get_config_value("ENABLE_PLAY_COUNT_BY_DAYOFWEEK"):
-            logger.debug("Creating play count by day of week graph")
-            graphs.append(PlayCountByDayOfWeekGraph(config=self.config, **dimensions))
-
-        if get_config_value("ENABLE_PLAY_COUNT_BY_HOUROFDAY"):
-            logger.debug("Creating play count by hour of day graph")
-            graphs.append(PlayCountByHourOfDayGraph(config=self.config, **dimensions))
-
-        if get_config_value("ENABLE_PLAY_COUNT_BY_MONTH"):
-            logger.debug("Creating play count by month graph")
-            graphs.append(PlayCountByMonthGraph(config=self.config, **dimensions))
-
-        if get_config_value("ENABLE_TOP_10_PLATFORMS"):
-            logger.debug("Creating top 10 platforms graph")
-            graphs.append(Top10PlatformsGraph(config=self.config, **dimensions))
-
-        if get_config_value("ENABLE_TOP_10_USERS"):
-            logger.debug("Creating top 10 users graph")
-            graphs.append(Top10UsersGraph(config=self.config, **dimensions))
-
-        # Sample graph for demonstration (disabled by default)
-        if get_config_value("ENABLE_SAMPLE_GRAPH", default=False):
-            logger.debug("Creating sample graph")
-            graphs.append(SampleGraph(config=self.config, **dimensions))
+            if is_enabled:
+                logger.debug(f"Creating {type_name} graph")
+                graph_class = type_info.graph_class
+                graph_instance = graph_class(config=self.config, **dimensions)
+                graphs.append(graph_instance)
 
         logger.info(f"Created {len(graphs)} enabled graph instances")
         return graphs
@@ -172,19 +100,8 @@ class GraphFactory:
         Raises:
             ValueError: If graph type is not recognized
         """
-        graph_type_map = {
-            "daily_play_count": DailyPlayCountGraph,
-            "play_count_by_dayofweek": PlayCountByDayOfWeekGraph,
-            "play_count_by_hourofday": PlayCountByHourOfDayGraph,
-            "play_count_by_month": PlayCountByMonthGraph,
-            "top_10_platforms": Top10PlatformsGraph,
-            "top_10_users": Top10UsersGraph,
-            "sample_graph": SampleGraph,
-        }
-
-        graph_class = graph_type_map.get(graph_type)
-        if graph_class is None:
-            raise ValueError(f"Unknown graph type: {graph_type}")
+        # Use the registry to get the graph class
+        graph_class = self._graph_registry.get_graph_class(graph_type)
 
         # Get dimension parameters from config
         dimensions = self._get_graph_dimensions()
@@ -201,51 +118,18 @@ class GraphFactory:
         """
         enabled_types: list[str] = []
 
-        def get_config_value(key: str, default: bool = True) -> bool:
-            # Handle both dict and TGraphBotConfig objects
-            if isinstance(self.config, dict):
-                return bool(self.config.get(key, default))
-            else:
-                # Use direct attribute access for TGraphBotConfig objects
-                if key == "ENABLE_DAILY_PLAY_COUNT":
-                    return self.config.ENABLE_DAILY_PLAY_COUNT
-                elif key == "ENABLE_PLAY_COUNT_BY_DAYOFWEEK":
-                    return self.config.ENABLE_PLAY_COUNT_BY_DAYOFWEEK
-                elif key == "ENABLE_PLAY_COUNT_BY_HOUROFDAY":
-                    return self.config.ENABLE_PLAY_COUNT_BY_HOUROFDAY
-                elif key == "ENABLE_PLAY_COUNT_BY_MONTH":
-                    return self.config.ENABLE_PLAY_COUNT_BY_MONTH
-                elif key == "ENABLE_TOP_10_PLATFORMS":
-                    return self.config.ENABLE_TOP_10_PLATFORMS
-                elif key == "ENABLE_TOP_10_USERS":
-                    return self.config.ENABLE_TOP_10_USERS
-                elif key == "ENABLE_SAMPLE_GRAPH":
-                    # Sample graph is not in the main config schema, default to False
-                    return False
-                return default
+        # Check each graph type using the registry
+        for type_name in self._graph_registry.get_all_type_names():
+            type_info = self._graph_registry.get_type_info(type_name)
 
-        # Check each graph type directly from config attributes
-        if get_config_value("ENABLE_DAILY_PLAY_COUNT"):
-            enabled_types.append("daily_play_count")
+            # Check if this graph type is enabled
+            is_enabled = self._config_accessor.get_graph_enable_value(
+                type_info.enable_key,
+                default=type_info.default_enabled
+            )
 
-        if get_config_value("ENABLE_PLAY_COUNT_BY_DAYOFWEEK"):
-            enabled_types.append("play_count_by_dayofweek")
-
-        if get_config_value("ENABLE_PLAY_COUNT_BY_HOUROFDAY"):
-            enabled_types.append("play_count_by_hourofday")
-
-        if get_config_value("ENABLE_PLAY_COUNT_BY_MONTH"):
-            enabled_types.append("play_count_by_month")
-
-        if get_config_value("ENABLE_TOP_10_PLATFORMS"):
-            enabled_types.append("top_10_platforms")
-
-        if get_config_value("ENABLE_TOP_10_USERS"):
-            enabled_types.append("top_10_users")
-
-        # Sample graph (disabled by default)
-        if get_config_value("ENABLE_SAMPLE_GRAPH", default=False):
-            enabled_types.append("sample_graph")
+            if is_enabled:
+                enabled_types.append(type_name)
 
         return enabled_types
 
@@ -322,22 +206,8 @@ class GraphFactory:
 
         # Filter out excluded graph types
         if exclude_types:
-            excluded_classes: list[type[BaseGraph]] = []
-            for exclude_type in exclude_types:
-                if exclude_type == "top_10_users":
-                    excluded_classes.append(Top10UsersGraph)
-                elif exclude_type == "top_10_platforms":
-                    excluded_classes.append(Top10PlatformsGraph)
-                elif exclude_type == "daily_play_count":
-                    excluded_classes.append(DailyPlayCountGraph)
-                elif exclude_type == "play_count_by_dayofweek":
-                    excluded_classes.append(PlayCountByDayOfWeekGraph)
-                elif exclude_type == "play_count_by_hourofday":
-                    excluded_classes.append(PlayCountByHourOfDayGraph)
-                elif exclude_type == "play_count_by_month":
-                    excluded_classes.append(PlayCountByMonthGraph)
-                elif exclude_type == "sample_graph":
-                    excluded_classes.append(SampleGraph)
+            # Get excluded classes using the registry
+            excluded_classes = self._graph_registry.get_classes_for_types(exclude_types)
 
             # Filter graphs list
             original_count = len(graphs)

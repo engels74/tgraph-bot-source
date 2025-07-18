@@ -24,7 +24,7 @@ class TestGraphFactoryDimensions:
         factory = GraphFactory(config)
         
         # Mock the graph classes to capture initialization parameters
-        with patch('src.tgraph_bot.graphs.graph_modules.graph_factory.DailyPlayCountGraph') as mock_daily:
+        with patch('src.tgraph_bot.graphs.graph_modules.tautulli_graphs.daily_play_count_graph.DailyPlayCountGraph') as mock_daily:
             _ = factory.create_graph_by_type("daily_play_count")
             
             # Verify that the graph was created with dimension parameters
@@ -49,7 +49,7 @@ class TestGraphFactoryDimensions:
         config = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
         factory = GraphFactory(config)
         
-        with patch('src.tgraph_bot.graphs.graph_modules.graph_factory.Top10UsersGraph') as mock_top_users:
+        with patch('src.tgraph_bot.graphs.graph_modules.tautulli_graphs.top_10_users_graph.Top10UsersGraph') as mock_top_users:
             _ = factory.create_graph_by_type("top_10_users")
             
             # Verify that the graph was created with custom dimensions
@@ -84,19 +84,19 @@ class TestGraphFactoryDimensions:
         ]
         
         for graph_type in graph_types:
-            # Get the class name from the graph type
-            class_name_map = {
-                "daily_play_count": "DailyPlayCountGraph",
-                "play_count_by_dayofweek": "PlayCountByDayOfWeekGraph",
-                "play_count_by_hourofday": "PlayCountByHourOfDayGraph",
-                "play_count_by_month": "PlayCountByMonthGraph",
-                "top_10_platforms": "Top10PlatformsGraph",
-                "top_10_users": "Top10UsersGraph",
+            # Get the module and class name from the graph type
+            module_class_map = {
+                "daily_play_count": "src.tgraph_bot.graphs.graph_modules.tautulli_graphs.daily_play_count_graph.DailyPlayCountGraph",
+                "play_count_by_dayofweek": "src.tgraph_bot.graphs.graph_modules.tautulli_graphs.play_count_by_dayofweek_graph.PlayCountByDayOfWeekGraph",
+                "play_count_by_hourofday": "src.tgraph_bot.graphs.graph_modules.tautulli_graphs.play_count_by_hourofday_graph.PlayCountByHourOfDayGraph",
+                "play_count_by_month": "src.tgraph_bot.graphs.graph_modules.tautulli_graphs.play_count_by_month_graph.PlayCountByMonthGraph",
+                "top_10_platforms": "src.tgraph_bot.graphs.graph_modules.tautulli_graphs.top_10_platforms_graph.Top10PlatformsGraph",
+                "top_10_users": "src.tgraph_bot.graphs.graph_modules.tautulli_graphs.top_10_users_graph.Top10UsersGraph",
             }
-            
-            class_name = class_name_map[graph_type]
-            
-            with patch(f'src.tgraph_bot.graphs.graph_modules.graph_factory.{class_name}') as mock_graph:
+
+            module_class_path = module_class_map[graph_type]
+
+            with patch(module_class_path) as mock_graph:
                 _ = factory.create_graph_by_type(graph_type)
                 
                 # Verify dimensions were passed to each graph type
@@ -128,9 +128,9 @@ class TestGraphFactoryDimensions:
         factory = GraphFactory(config)
         
         # Mock all graph classes
-        with patch('src.tgraph_bot.graphs.graph_modules.graph_factory.DailyPlayCountGraph') as mock_daily, \
-             patch('src.tgraph_bot.graphs.graph_modules.graph_factory.PlayCountByHourOfDayGraph') as mock_hourly, \
-             patch('src.tgraph_bot.graphs.graph_modules.graph_factory.Top10UsersGraph') as mock_users:
+        with patch('src.tgraph_bot.graphs.graph_modules.tautulli_graphs.daily_play_count_graph.DailyPlayCountGraph') as mock_daily, \
+             patch('src.tgraph_bot.graphs.graph_modules.tautulli_graphs.play_count_by_hourofday_graph.PlayCountByHourOfDayGraph') as mock_hourly, \
+             patch('src.tgraph_bot.graphs.graph_modules.tautulli_graphs.top_10_users_graph.Top10UsersGraph') as mock_users:
             
             # Create enabled graphs
             _ = factory.create_enabled_graphs()
@@ -153,7 +153,7 @@ class TestGraphFactoryDimensions:
         }
         factory = GraphFactory(cast(dict[str, object], config_dict))
         
-        with patch('src.tgraph_bot.graphs.graph_modules.graph_factory.DailyPlayCountGraph') as mock_daily:
+        with patch('src.tgraph_bot.graphs.graph_modules.tautulli_graphs.daily_play_count_graph.DailyPlayCountGraph') as mock_daily:
             _ = factory.create_graph_by_type("daily_play_count")
             
             # Verify that dictionary config values were used
@@ -175,7 +175,7 @@ class TestGraphFactoryDimensions:
         }
         factory = GraphFactory(cast(dict[str, object], config_dict))
         
-        with patch('src.tgraph_bot.graphs.graph_modules.graph_factory.DailyPlayCountGraph') as mock_daily:
+        with patch('src.tgraph_bot.graphs.graph_modules.tautulli_graphs.daily_play_count_graph.DailyPlayCountGraph') as mock_daily:
             _ = factory.create_graph_by_type("daily_play_count")
             
             # Verify that default values were used
@@ -199,7 +199,7 @@ class TestGraphFactoryDimensions:
         config = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
         factory = GraphFactory(config)
         
-        with patch('src.tgraph_bot.graphs.graph_modules.graph_factory.Top10PlatformsGraph') as mock_platforms:
+        with patch('src.tgraph_bot.graphs.graph_modules.tautulli_graphs.top_10_platforms_graph.Top10PlatformsGraph') as mock_platforms:
             _ = factory.create_graph_by_type("top_10_platforms")
             
             # Verify that partial config was used with defaults for missing values
@@ -220,7 +220,7 @@ class TestGraphFactoryDimensions:
         }
         factory = GraphFactory(cast(dict[str, object], config_dict))
         
-        with patch('src.tgraph_bot.graphs.graph_modules.graph_factory.SampleGraph') as mock_sample:
+        with patch('src.tgraph_bot.graphs.graph_modules.sample_graph.SampleGraph') as mock_sample:
             _ = factory.create_graph_by_type("sample_graph")
             
             # Verify that sample graph received dimensions
