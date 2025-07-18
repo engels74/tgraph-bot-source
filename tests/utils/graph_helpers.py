@@ -573,4 +573,124 @@ def validate_no_memory_leaks(
     memory_increase: float = final_memory - initial_memory
     
     assert memory_increase <= max_memory_increase_mb, \
-        f"Memory increased by {memory_increase:.2f}MB, which exceeds the {max_memory_increase_mb}MB limit" 
+        f"Memory increased by {memory_increase:.2f}MB, which exceeds the {max_memory_increase_mb}MB limit"
+
+
+def run_standard_graph_tests(
+    graph_class: type[BaseGraph],
+    sample_data: dict[str, object],
+    expected_title: str,
+    *,
+    config: TGraphBotConfig | None = None,
+    expected_file_pattern: str | None = None,
+) -> None:
+    """
+    Run standard graph tests for any graph implementation.
+    
+    This function consolidates common test patterns that should be applied
+    to all graph implementations, reducing code duplication in individual
+    graph test files.
+    
+    Args:
+        graph_class: The graph class to test
+        sample_data: Sample data for graph generation
+        expected_title: Expected graph title
+        config: Optional configuration for testing
+        expected_file_pattern: Optional pattern that should appear in output filename
+        
+    Raises:
+        AssertionError: If any standard test fails
+        
+    Example:
+        >>> from src.tgraph_bot.graphs.graph_modules.tautulli_graphs.daily_play_count_graph import DailyPlayCountGraph
+        >>> sample_data = {"play_history": {"data": []}}
+        >>> run_standard_graph_tests(
+        ...     DailyPlayCountGraph,
+        ...     sample_data,
+        ...     "Daily Play Count (Last 30 days)",
+        ...     expected_file_pattern="daily_play_count"
+        ... )
+    """
+    from pathlib import Path
+    
+    # Test 1: Basic initialization
+    graph = graph_class(config=config) if config else graph_class()
+    assert graph.get_title() == expected_title
+    
+    # Test 2: Custom dimensions
+    graph_custom = graph_class(width=14, height=10, dpi=120)
+    assert graph_custom.width == 14
+    assert graph_custom.height == 10
+    assert graph_custom.dpi == 120
+    
+    # Test 3: Graph generation with valid data
+    with matplotlib_cleanup():
+        graph = graph_class(config=config) if config else graph_class()
+        output_path = graph.generate(sample_data)
+        
+        # Verify file was created
+        assert Path(output_path).exists()
+        assert output_path.endswith('.png')
+        
+        # Check filename pattern if provided
+        if expected_file_pattern:
+            assert expected_file_pattern in output_path
+        
+        # Clean up
+        Path(output_path).unlink(missing_ok=True)
+    
+    # Test 4: Empty data handling
+    with matplotlib_cleanup():
+        graph = graph_class(config=config) if config else graph_class()
+        empty_data: dict[str, object] = {"play_history": {"data": []}}
+        
+        output_path = graph.generate(empty_data)
+        
+        # Verify file was created even with empty data
+        assert Path(output_path).exists()
+        assert output_path.endswith('.png')
+        
+        # Clean up
+        Path(output_path).unlink(missing_ok=True)
+
+
+def run_standard_graph_error_tests(
+    graph_class: type[BaseGraph],
+    invalid_data_samples: list[dict[str, object]],
+    expected_error_patterns: list[str],
+) -> None:
+    """
+    Run standard error handling tests for graph implementations.
+    
+    This function tests that graph implementations properly handle
+    invalid data and raise appropriate errors with meaningful messages.
+    
+    Args:
+        graph_class: The graph class to test
+        invalid_data_samples: List of invalid data samples to test
+        expected_error_patterns: List of expected error message patterns
+        
+    Raises:
+        AssertionError: If error handling doesn't work as expected
+        
+    Example:
+        >>> from src.tgraph_bot.graphs.graph_modules.tautulli_graphs.daily_play_count_graph import DailyPlayCountGraph
+        >>> invalid_samples = [{"invalid_key": "invalid_value"}]
+        >>> error_patterns = ["Invalid play history data"]
+        >>> run_standard_graph_error_tests(
+        ...     DailyPlayCountGraph,
+        ...     invalid_samples,
+        ...     error_patterns
+        ... )
+    """
+    import pytest
+    
+    assert len(invalid_data_samples) == len(expected_error_patterns), \
+        "Number of invalid data samples must match number of error patterns"
+    
+    for invalid_data, error_pattern in zip(invalid_data_samples, expected_error_patterns, strict=True):
+        with matplotlib_cleanup():
+            graph = graph_class()
+            
+            with pytest.raises(ValueError, match=error_pattern):
+                _ = graph.generate(invalid_data) 
