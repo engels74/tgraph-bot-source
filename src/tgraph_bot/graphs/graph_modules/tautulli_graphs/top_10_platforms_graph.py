@@ -6,15 +6,15 @@ This module inherits from BaseGraph and uses Seaborn to plot the top 10 platform
 
 import logging
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, override, cast
+from typing import TYPE_CHECKING, override
 
 import pandas as pd
 import seaborn as sns
 
 from ..base_graph import BaseGraph
+from ..data_processor import data_processor
+from ..visualization_mixin import VisualizationMixin
 from ..utils import (
-    validate_graph_data,
-    process_play_history_data,
     aggregate_top_platforms,
     handle_empty_data,
 )
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class Top10PlatformsGraph(BaseGraph):
+class Top10PlatformsGraph(BaseGraph, VisualizationMixin):
     """Graph showing the top 10 platforms by play count."""
 
     def __init__(
@@ -78,24 +78,10 @@ class Top10PlatformsGraph(BaseGraph):
         logger.info("Generating top 10 platforms graph")
 
         try:
-            # Step 1: Extract play history data from the full data structure
-            play_history_data_raw = data.get("play_history", {})
-            if not isinstance(play_history_data_raw, dict):
-                raise ValueError("Missing or invalid 'play_history' data in input")
+            # Step 1: Extract and process play history data using DataProcessor
+            _, processed_records = data_processor.extract_and_process_play_history(data)
 
-            # Cast to the proper type for type checker
-            play_history_data = cast(Mapping[str, object], play_history_data_raw)
-
-            # Step 2: Validate the play history data
-            is_valid, error_msg = validate_graph_data(play_history_data, ["data"])
-            if not is_valid:
-                raise ValueError(f"Invalid play history data: {error_msg}")
-
-            # Step 3: Process play history data
-            processed_records = process_play_history_data(play_history_data)
-            logger.info(f"Processed {len(processed_records)} play history records")
-
-            # Step 4: Aggregate top platforms data
+            # Step 2: Aggregate top platforms data
             if processed_records:
                 top_platforms = aggregate_top_platforms(processed_records, limit=10)
                 logger.info(f"Found {len(top_platforms)} top platforms")
@@ -107,21 +93,18 @@ class Top10PlatformsGraph(BaseGraph):
                 else:
                     top_platforms = []
 
-            # Step 5: Setup figure and axes
-            _, ax = self.setup_figure()
+            # Step 3: Setup figure with styling using combined utility
+            _, ax = self.setup_figure_with_styling()
 
-            # Step 6: Configure Seaborn styling
-            if self.get_grid_enabled():
-                sns.set_style("whitegrid")
-            else:
-                sns.set_style("white")
+            # Step 4: Configure grid styling
+            self.configure_seaborn_style_with_grid()
 
-            # Step 6: Prepare data for Seaborn
+            # Step 5: Create visualization
             if top_platforms:
                 # Convert to DataFrame for Seaborn
                 df = pd.DataFrame(top_platforms)
 
-                # Step 7: Create horizontal bar plot using Seaborn
+                # Create horizontal bar plot using Seaborn
                 color = self.get_tv_color()
                 _ = sns.barplot(
                     data=df,
@@ -133,16 +116,17 @@ class Top10PlatformsGraph(BaseGraph):
                     orient="h",
                 )
 
-                # Step 8: Customize the plot
-                _ = ax.set_title(  # pyright: ignore[reportUnknownMemberType]
-                    self.get_title(), fontsize=18, fontweight="bold", pad=20
+                # Customize the plot
+                self.setup_standard_title_and_axes(
+                    title=self.get_title(),
+                    xlabel="Play Count",
+                    ylabel="Platform",
+                    title_fontsize=18,
+                    label_fontsize=14,
                 )
-                _ = ax.set_xlabel("Play Count", fontsize=14, fontweight="bold")  # pyright: ignore[reportUnknownMemberType]
-                _ = ax.set_ylabel("Platform", fontsize=14, fontweight="bold")  # pyright: ignore[reportUnknownMemberType]
 
-                # Adjust tick parameters
-                ax.tick_params(axis="x", labelsize=12)  # pyright: ignore[reportUnknownMemberType]
-                ax.tick_params(axis="y", labelsize=12)  # pyright: ignore[reportUnknownMemberType]
+                # Configure tick parameters
+                self.configure_tick_parameters(axis="both", labelsize=12)
 
                 # Add value annotations if enabled
                 annotate_enabled = self.get_config_value(
@@ -171,26 +155,15 @@ class Top10PlatformsGraph(BaseGraph):
                                 fontweight="bold",
                             )
             else:
-                # Handle empty data case
-                _ = ax.text(  # pyright: ignore[reportUnknownMemberType]
-                    0.5,
-                    0.5,
-                    "No platform data available",
-                    ha="center",
-                    va="center",
-                    transform=ax.transAxes,
-                    fontsize=16,
+                # Handle empty data case using mixin utility
+                self.display_no_data_message(
+                    message="No platform data available"
                 )
-                _ = ax.set_title(self.get_title(), fontsize=18, fontweight="bold")  # pyright: ignore[reportUnknownMemberType]
+                # Set title for empty data case
+                self.setup_standard_title_and_axes(title=self.get_title())
 
-            # Adjust layout to prevent label cutoff
-            if self.figure is not None:
-                self.figure.tight_layout()
-
-            # Save the figure using base class utility method
-            output_path = self.save_figure(graph_type="top_10_platforms", user_id=None)
-
-            logger.info(f"Top 10 platforms graph saved to: {output_path}")
+            # Step 6: Finalize and save using combined utility
+            output_path = self.finalize_and_save_figure(graph_type="top_10_platforms", user_id=None)
             return output_path
 
         except Exception as e:

@@ -6,15 +6,15 @@ This module inherits from BaseGraph and uses Seaborn to plot the top 10 users.
 
 import logging
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, override, cast
+from typing import TYPE_CHECKING, override
 
 import pandas as pd
 import seaborn as sns
 
 from ..base_graph import BaseGraph
+from ..data_processor import data_processor
+from ..visualization_mixin import VisualizationMixin
 from ..utils import (
-    validate_graph_data,
-    process_play_history_data,
     aggregate_top_users,
     handle_empty_data,
 )
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class Top10UsersGraph(BaseGraph):
+class Top10UsersGraph(BaseGraph, VisualizationMixin):
     """Graph showing the top 10 users by play count."""
 
     def __init__(
@@ -82,31 +82,10 @@ class Top10UsersGraph(BaseGraph):
         logger.info("Generating top 10 users graph")
 
         try:
-            # Step 1: Extract play history data from the full data structure
-            play_history_data_raw = data.get("play_history", {})
-            if not isinstance(play_history_data_raw, dict):
-                raise ValueError("Missing or invalid 'play_history' data in input")
+            # Step 1: Extract and process play history data using DataProcessor
+            _, processed_records = data_processor.extract_and_process_play_history(data)
 
-            # Cast to the proper type for type checker
-            play_history_data = cast(Mapping[str, object], play_history_data_raw)
-
-            # Step 2: Validate the play history data
-            is_valid, error_msg = validate_graph_data(play_history_data, ["data"])
-            if not is_valid:
-                raise ValueError(
-                    f"Invalid play history data for top 10 users graph: {error_msg}"
-                )
-
-            # Step 3: Process raw play history data
-            try:
-                processed_records = process_play_history_data(play_history_data)
-                logger.info(f"Processed {len(processed_records)} play history records")
-            except Exception as e:
-                logger.error(f"Error processing play history data: {e}")
-                # Use empty data structure for graceful degradation
-                processed_records = []
-
-            # Step 4: Aggregate top users data
+            # Step 2: Aggregate top users data
             censor_usernames = self.should_censor_usernames()
 
             if processed_records:
@@ -122,16 +101,13 @@ class Top10UsersGraph(BaseGraph):
                 else:
                     top_users = []
 
-            # Step 5: Setup figure and axes
-            _, ax = self.setup_figure()
+            # Step 3: Setup figure with styling using combined utility
+            _, ax = self.setup_figure_with_styling()
 
-            # Step 6: Configure Seaborn styling
-            if self.get_grid_enabled():
-                sns.set_style("whitegrid")
-            else:
-                sns.set_style("white")
+            # Step 4: Configure grid styling
+            self.configure_seaborn_style_with_grid()
 
-            # Step 7: Create visualization
+            # Step 5: Create visualization
             if top_users:
                 # Convert to pandas DataFrame for easier plotting
                 df = pd.DataFrame(top_users)
@@ -149,52 +125,52 @@ class Top10UsersGraph(BaseGraph):
                 )
 
                 # Customize the plot
-                _ = ax.set_title(  # pyright: ignore[reportUnknownMemberType]
-                    self.get_title(), fontsize=18, fontweight="bold", pad=20
+                self.setup_standard_title_and_axes(
+                    title=self.get_title(),
+                    xlabel="Play Count",
+                    ylabel="Username",
+                    title_fontsize=18,
+                    label_fontsize=12,
                 )
-                _ = ax.set_xlabel("Play Count", fontsize=12)  # pyright: ignore[reportUnknownMemberType]
-                _ = ax.set_ylabel("Username", fontsize=12)  # pyright: ignore[reportUnknownMemberType]
 
                 # Add value labels on bars if enabled
                 annotate_enabled = self.get_config_value("ANNOTATE_TOP_10_USERS", False)
                 if annotate_enabled:
-                    max_count = float(cast(float, max(df["play_count"])))
-                    for i, (_, row) in enumerate(df.iterrows()):
-                        play_count = float(cast(float, row["play_count"]))
-                        self.add_bar_value_annotation(
-                            ax,
-                            x=play_count,
-                            y=i,
-                            value=int(play_count),
-                            ha="left",
-                            va="center",
-                            offset_x=max_count * 0.01,
-                        )
+                    # Get play counts with proper type handling
+                    play_counts: list[int | float] = []
+                    for user in top_users:
+                        count = user.get("play_count", 0)
+                        if isinstance(count, (int, float)):
+                            play_counts.append(count)
+                    max_count = max(play_counts) if play_counts else 1
+
+                    for i, user in enumerate(top_users):
+                        count = user.get("play_count", 0)
+                        if isinstance(count, (int, float)):
+                            play_count = float(count)
+                            self.add_bar_value_annotation(
+                                ax,
+                                x=play_count,
+                                y=i,
+                                value=int(play_count),
+                                ha="left",
+                                va="center",
+                                offset_x=max_count * 0.01,
+                            )
 
                 logger.info(f"Created top 10 users graph with {len(top_users)} users")
 
             else:
-                # Handle empty data case
-                _ = ax.text(  # pyright: ignore[reportUnknownMemberType]
-                    0.5,
-                    0.5,
-                    "No user data available\nfor the selected time period",
-                    ha="center",
-                    va="center",
-                    transform=ax.transAxes,
-                    fontsize=16,
+                # Handle empty data case using mixin utility
+                self.display_no_data_message(
+                    message="No user data available\nfor the selected time period"
                 )
-                _ = ax.set_title(self.get_title(), fontsize=18, fontweight="bold")  # pyright: ignore[reportUnknownMemberType]
+                # Set title for empty data case
+                self.setup_standard_title_and_axes(title=self.get_title())
                 logger.warning("Generated empty top 10 users graph due to no data")
 
-            # Step 8: Improve layout and save
-            if self.figure is not None:
-                self.figure.tight_layout()
-
-            # Save the figure using base class utility method
-            output_path = self.save_figure(graph_type="top_10_users", user_id=None)
-
-            logger.info(f"Top 10 users graph saved to: {output_path}")
+            # Step 6: Finalize and save using combined utility
+            output_path = self.finalize_and_save_figure(graph_type="top_10_users", user_id=None)
             return output_path
 
         except Exception as e:
