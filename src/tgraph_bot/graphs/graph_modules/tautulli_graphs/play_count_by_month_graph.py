@@ -17,6 +17,7 @@ from matplotlib.container import BarContainer
 
 from ..base_graph import BaseGraph
 from ..data_processor import data_processor
+from ..empty_data_handler import EmptyDataHandler
 from ..visualization_mixin import VisualizationMixin
 from ..utils import (
     aggregate_by_month,
@@ -140,11 +141,11 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
         series = response_data.get("series", [])
 
         if not isinstance(categories, list) or not isinstance(series, list):
-            self.display_no_data_message("No play data available\nfor the selected time period")
+            self._handle_empty_data_case()
             return
 
         if not categories or not series:
-            self.display_no_data_message("No play data available\nfor the selected time period")
+            self._handle_empty_data_case()
             return
 
         # Prepare data for plotting
@@ -199,7 +200,7 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
                     )
 
         if not plot_data:
-            self.display_no_data_message("No play data available\nfor the selected time period")
+            self._handle_empty_data_case()
             return
 
         # Create DataFrame for Seaborn
@@ -304,11 +305,11 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
         series_raw = response_data.get("series", [])
 
         if not isinstance(categories_raw, list) or not isinstance(series_raw, list):
-            self.display_no_data_message("No play data available\nfor the selected time period")
+            self._handle_empty_data_case()
             return
 
         if not categories_raw or not series_raw:
-            self.display_no_data_message("No play data available\nfor the selected time period")
+            self._handle_empty_data_case()
             return
 
         # Type-safe assignments after validation
@@ -357,7 +358,7 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
                 media_type_colors[media_type] = "#666666"
 
         if not media_type_data:
-            self.display_no_data_message("No play data available\nfor the selected time period")
+            self._handle_empty_data_case()
             return
 
         # Create data arrays for stacking
@@ -485,11 +486,11 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
         series = response_data.get("series", [])
 
         if not isinstance(categories, list) or not isinstance(series, list):
-            self.display_no_data_message("No play data available\nfor the selected time period")
+            self._handle_empty_data_case()
             return
 
         if not categories or not series:
-            self.display_no_data_message("No play data available\nfor the selected time period")
+            self._handle_empty_data_case()
             return
 
         # Combine all series data into totals for each month
@@ -521,7 +522,7 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
                     )  # external API data conversion
 
         if not month_totals or all(count == 0 for count in month_totals.values()):
-            self.display_no_data_message("No play data available\nfor the selected time period")
+            self._handle_empty_data_case()
             return
 
         # Convert to DataFrame for plotting
@@ -598,7 +599,7 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
         display_info = get_media_type_display_info()
 
         if not separated_data:
-            self.display_no_data_message("No play data available\nfor the selected time period")
+            self._handle_empty_data_case()
             return
 
         # Prepare data for plotting
@@ -631,7 +632,7 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
                 )
 
         if not plot_data:
-            self.display_no_data_message("No play data available\nfor the selected time period")
+            self._handle_empty_data_case()
             return
 
         # Create DataFrame for Seaborn
@@ -795,4 +796,17 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
                 f"Created combined monthly play count graph with {len(sorted_months)} months"
             )
         else:
-            self.display_no_data_message("No play data available\nfor the selected time period")
+            self._handle_empty_data_case()
+
+    def _handle_empty_data_case(self) -> None:
+        """
+        Handle the case where no data is available.
+
+        Uses the EmptyDataHandler utility to display a standardized empty data message.
+        """
+        empty_data_handler = EmptyDataHandler()
+        empty_data_handler.display_empty_data_message(
+            self.axes,
+            message="No play data available\nfor the selected time period",
+            log_message="Generated empty monthly play count graph due to no data"
+        )

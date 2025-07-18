@@ -16,6 +16,7 @@ from matplotlib.axes import Axes
 
 from ..base_graph import BaseGraph
 from ..data_processor import data_processor
+from ..empty_data_handler import EmptyDataHandler
 from ..visualization_mixin import VisualizationMixin
 from ..utils import (
     aggregate_by_date,
@@ -482,18 +483,13 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
         Args:
             ax: The matplotlib axes to display the message on
         """
-        _ = ax.text(  # pyright: ignore[reportUnknownMemberType]
-            0.5,
-            0.5,
-            "No play data available\nfor the selected time period",
-            ha="center",
-            va="center",
-            transform=ax.transAxes,
-            fontsize=16,
-            bbox=dict(boxstyle="round,pad=0.5", facecolor="lightgray", alpha=0.7),
+        empty_data_handler = EmptyDataHandler()
+        empty_data_handler.display_empty_data_message(
+            ax,
+            message="No play data available\nfor the selected time period",
+            set_title=self.get_title(),
+            log_message="Generated empty daily play count graph due to no data"
         )
-        _ = ax.set_title(self.get_title(), fontsize=18, fontweight="bold")  # pyright: ignore[reportUnknownMemberType]
-        logger.warning("Generated empty daily play count graph due to no data")
 
     def _add_peak_annotations(
         self,

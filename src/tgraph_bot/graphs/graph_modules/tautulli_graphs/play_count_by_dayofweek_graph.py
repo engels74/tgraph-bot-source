@@ -18,6 +18,7 @@ from matplotlib.container import BarContainer
 
 from ..base_graph import BaseGraph
 from ..data_processor import data_processor
+from ..empty_data_handler import EmptyDataHandler
 from ..visualization_mixin import VisualizationMixin
 from ..utils import (
     aggregate_by_day_of_week,
@@ -525,7 +526,9 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
         Args:
             ax: The matplotlib axes to display the message on
         """
-        self.handle_empty_data_with_message(
-            ax, "No play data available\nfor the selected time period"
+        empty_data_handler = EmptyDataHandler()
+        empty_data_handler.display_empty_data_message(
+            ax,
+            message="No play data available\nfor the selected time period",
+            log_message="Generated empty day of week graph due to no data"
         )
-        logger.warning("Generated empty day of week graph due to no data")
