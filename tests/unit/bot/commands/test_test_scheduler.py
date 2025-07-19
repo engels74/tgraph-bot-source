@@ -82,9 +82,9 @@ class TestTestSchedulerCog:
             test_scheduler_cog.tgraph_bot, "update_tracker", mock_update_tracker
         ):
             # Execute the command
-            _ = await test_scheduler_cog.test_scheduler.callback(
-                test_scheduler_cog, mock_interaction
-            )  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
+            _ = await test_scheduler_cog.test_scheduler.callback(  # pyright: ignore[reportUnknownVariableType]
+                test_scheduler_cog, mock_interaction  # pyright: ignore[reportCallIssue]
+            )
 
             # Verify force_update was called
             mock_update_tracker.force_update.assert_called_once()  # pyright: ignore[reportAny] # mock object typing
@@ -92,8 +92,8 @@ class TestTestSchedulerCog:
             # Verify interaction responses were sent
             mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
             assert (
-                mock_interaction.followup.send.call_count >= 2
-            )  # Status and completion messages  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
+                mock_interaction.followup.send.call_count >= 2  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
+            )  # Status and completion messages
 
     @pytest.mark.asyncio
     async def test_test_scheduler_force_update_failure(
@@ -129,9 +129,9 @@ class TestTestSchedulerCog:
             ) as mock_error_handler,
         ):
             # Execute the command
-            _ = await test_scheduler_cog.test_scheduler.callback(
-                test_scheduler_cog, mock_interaction
-            )  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
+            _ = await test_scheduler_cog.test_scheduler.callback(  # pyright: ignore[reportUnknownVariableType]
+                test_scheduler_cog, mock_interaction  # pyright: ignore[reportCallIssue]
+            )
 
             # Verify error handling was called
             mock_error_handler.assert_called_once()
@@ -155,9 +155,9 @@ class TestTestSchedulerCog:
             test_scheduler_cog, "check_cooldowns", return_value=(True, 300.0)
         ):
             # Execute the command
-            _ = await test_scheduler_cog.test_scheduler.callback(
-                test_scheduler_cog, mock_interaction
-            )  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
+            _ = await test_scheduler_cog.test_scheduler.callback(  # pyright: ignore[reportUnknownVariableType]
+                test_scheduler_cog, mock_interaction  # pyright: ignore[reportCallIssue]
+            )
 
             # Verify cooldown response was sent
             mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
@@ -191,9 +191,9 @@ class TestTestSchedulerCog:
             ) as mock_error_handler,
         ):
             # Execute the command
-            _ = await test_scheduler_cog.test_scheduler.callback(
-                test_scheduler_cog, mock_interaction
-            )  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
+            _ = await test_scheduler_cog.test_scheduler.callback(  # pyright: ignore[reportUnknownVariableType]
+                test_scheduler_cog, mock_interaction  # pyright: ignore[reportCallIssue]
+            )
 
             # Verify error handling was called
             mock_error_handler.assert_called_once()
@@ -225,9 +225,9 @@ class TestTestSchedulerCog:
             test_scheduler_cog.tgraph_bot, "update_tracker", mock_update_tracker
         ):
             # Execute the command
-            _ = await test_scheduler_cog.test_scheduler.callback(
-                test_scheduler_cog, mock_interaction
-            )  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
+            _ = await test_scheduler_cog.test_scheduler.callback(  # pyright: ignore[reportUnknownVariableType]
+                test_scheduler_cog, mock_interaction  # pyright: ignore[reportCallIssue]
+            )
 
             # Verify initial response embed
             mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
@@ -238,8 +238,8 @@ class TestTestSchedulerCog:
             assert "Scheduler Test Started" in initial_embed.title  # pyright: ignore[reportUnknownMemberType]
             assert (
                 "Testing the scheduled update functionality"
-                in initial_embed.description
-            )  # pyright: ignore[reportUnknownMemberType]
+                in initial_embed.description  # pyright: ignore[reportUnknownMemberType]
+            )
 
             # Verify followup messages were sent
             assert mock_interaction.followup.send.call_count >= 2  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
