@@ -160,12 +160,16 @@ class ConfigCog(BaseCommandCog):
                 if not hasattr(config, key):
                     error_embed = discord.Embed(
                         title=i18n.translate("❌ Configuration Key Not Found"),
-                        description=i18n.translate("The configuration key `{key}` does not exist.", key=key),
+                        description=i18n.translate(
+                            "The configuration key `{key}` does not exist.", key=key
+                        ),
                         color=discord.Color.red(),
                     )
                     _ = error_embed.add_field(
                         name=i18n.translate("Available Keys"),
-                        value=i18n.translate("Use `/config view` to see all available configuration keys."),
+                        value=i18n.translate(
+                            "Use `/config view` to see all available configuration keys."
+                        ),
                         inline=False,
                     )
                     _ = await interaction.response.send_message(
@@ -177,7 +181,9 @@ class ConfigCog(BaseCommandCog):
                 value: object = getattr(config, key)  # pyright: ignore[reportAny]
                 field_info = TGraphBotConfig.model_fields.get(key)
                 description = (
-                    field_info.description if field_info else i18n.translate("No description available")
+                    field_info.description
+                    if field_info
+                    else i18n.translate("No description available")
                 )
 
                 # Create embed for specific key
@@ -187,13 +193,20 @@ class ConfigCog(BaseCommandCog):
                     color=discord.Color.blue(),
                 )
                 _ = embed.add_field(
-                    name=i18n.translate("Current Value"), value=f"`{value}`", inline=True
+                    name=i18n.translate("Current Value"),
+                    value=f"`{value}`",
+                    inline=True,
                 )
                 _ = embed.add_field(
-                    name=i18n.translate("Type"), value=f"`{type(value).__name__}`", inline=True
+                    name=i18n.translate("Type"),
+                    value=f"`{type(value).__name__}`",
+                    inline=True,
                 )
                 _ = embed.set_footer(
-                    text=i18n.translate("Use `/config edit {key} <value>` to modify this setting", key=key)
+                    text=i18n.translate(
+                        "Use `/config edit {key} <value>` to modify this setting",
+                        key=key,
+                    )
                 )
                 _ = await interaction.response.send_message(embed=embed, ephemeral=True)
                 return
@@ -326,7 +339,11 @@ class ConfigCog(BaseCommandCog):
                 inline=False,
             )
 
-            _ = embed.set_footer(text=i18n.translate("Use `/config edit <key> <value>` to modify settings"))
+            _ = embed.set_footer(
+                text=i18n.translate(
+                    "Use `/config edit <key> <value>` to modify settings"
+                )
+            )
 
             _ = await interaction.response.send_message(embed=embed, ephemeral=True)
 
@@ -411,13 +428,19 @@ class ConfigCog(BaseCommandCog):
                 color=discord.Color.green(),
             )
             _ = success_embed.add_field(
-                name=i18n.translate("Previous Value"), value=str(current_value), inline=True
+                name=i18n.translate("Previous Value"),
+                value=str(current_value),
+                inline=True,
             )
             _ = success_embed.add_field(
-                name=i18n.translate("New Value"), value=str(converted_value), inline=True
+                name=i18n.translate("New Value"),
+                value=str(converted_value),
+                inline=True,
             )
             _ = success_embed.set_footer(
-                text=i18n.translate("Configuration changes require bot restart to take effect")
+                text=i18n.translate(
+                    "Configuration changes require bot restart to take effect"
+                )
             )
 
             _ = await interaction.response.send_message(

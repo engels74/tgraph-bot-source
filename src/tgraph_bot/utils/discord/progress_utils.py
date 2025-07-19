@@ -154,14 +154,21 @@ class ProgressCallbackManager:
 
             # Create updated embed
             embed = create_info_embed(
-                title=i18n.translate("{operation_name} Progress", operation_name=self.operation_name),
+                title=i18n.translate(
+                    "{operation_name} Progress", operation_name=self.operation_name
+                ),
                 description=f"**{message}**\n\n{progress_bar}",
             )
 
             # Add progress details
             _ = embed.add_field(
                 name=i18n.translate("Progress"),
-                value=i18n.translate("{current}/{total} steps ({progress_percent:.1f}%)", current=current, total=total, progress_percent=progress_percent),
+                value=i18n.translate(
+                    "{current}/{total} steps ({progress_percent:.1f}%)",
+                    current=current,
+                    total=total,
+                    progress_percent=progress_percent,
+                ),
                 inline=True,
             )
 
@@ -170,7 +177,9 @@ class ProgressCallbackManager:
                 elapsed = metadata["elapsed_time"]
                 if isinstance(elapsed, (int, float)):
                     _ = embed.add_field(
-                        name=i18n.translate("Elapsed Time"), value=f"{elapsed:.1f}s", inline=True
+                        name=i18n.translate("Elapsed Time"),
+                        value=f"{elapsed:.1f}s",
+                        inline=True,
                     )
 
             # Add estimated time remaining if available
@@ -178,7 +187,9 @@ class ProgressCallbackManager:
                 remaining = metadata["estimated_remaining"]
                 if isinstance(remaining, (int, float)):
                     _ = embed.add_field(
-                        name=i18n.translate("Est. Remaining"), value=f"{remaining:.1f}s", inline=True
+                        name=i18n.translate("Est. Remaining"),
+                        value=f"{remaining:.1f}s",
+                        inline=True,
                     )
 
             # Update the interaction - try to edit the original response

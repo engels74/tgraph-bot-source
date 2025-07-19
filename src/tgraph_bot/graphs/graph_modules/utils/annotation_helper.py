@@ -8,10 +8,10 @@ It eliminates DRY violations by providing reusable annotation functionality.
 
 import logging
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Protocol, cast, runtime_checkable
+from typing import Protocol, cast, runtime_checkable
 
-if TYPE_CHECKING:
-    import matplotlib.axes
+from matplotlib.axes import Axes
+from matplotlib.patches import Rectangle
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +84,7 @@ class AnnotationHelper:
 
     def annotate_bar_patches(
         self,
-        ax: object,  # matplotlib.axes.Axes
+        ax: Axes,
         config_key: str,
         offset_y: float = 1.0,
         ha: str = "center",
@@ -112,30 +112,33 @@ class AnnotationHelper:
             return
 
         try:
-            ax_typed: "matplotlib.axes.Axes" = ax  # pyright: ignore[reportAssignmentType]
-            for patch in ax_typed.patches:
-                # Most patches in bar charts are Rectangle patches with these methods
-                height = getattr(patch, 'get_height', lambda: None)()
-                if height and height > min_value_threshold:
-                    get_x = getattr(patch, 'get_x', lambda: 0)
-                    get_width = getattr(patch, 'get_width', lambda: 1)
-                    x_val = get_x() + get_width() / 2
-                    self._add_text_annotation(
-                        ax,
-                        x=float(x_val),
-                        y=float(height),
-                        value=int(height),
-                        ha=ha,
-                        va=va,
-                        offset_y=offset_y,
-                        fontweight=fontweight,
-                    )
+            for patch in ax.patches:
+                # Most bar chart patches are Rectangle instances with these methods
+                if (
+                    hasattr(patch, "get_height")
+                    and hasattr(patch, "get_x")
+                    and hasattr(patch, "get_width")
+                ):
+                    rect_patch = cast(Rectangle, patch)
+                    height = rect_patch.get_height()
+                    if height and height > min_value_threshold:
+                        x_val = rect_patch.get_x() + rect_patch.get_width() / 2
+                        self._add_text_annotation(
+                            ax,
+                            x=float(x_val),
+                            y=float(height),
+                            value=int(height),
+                            ha=ha,
+                            va=va,
+                            offset_y=offset_y,
+                            fontweight=fontweight,
+                        )
         except Exception as e:
             logger.warning(f"Failed to annotate bar patches: {e}")
 
     def annotate_horizontal_bar_patches(
         self,
-        ax: object,  # matplotlib.axes.Axes
+        ax: Axes,
         config_key: str,
         offset_x_ratio: float = 0.01,
         ha: str = "left",
@@ -165,38 +168,41 @@ class AnnotationHelper:
         try:
             # Calculate max width for offset positioning
             max_width = 0.0
-            ax_typed: "matplotlib.axes.Axes" = ax  # pyright: ignore[reportAssignmentType]
-            for patch in ax_typed.patches:
-                get_width = getattr(patch, 'get_width', lambda: 0)
-                width = get_width()
-                if width and width > max_width:
-                    max_width = float(width)  # pyright: ignore[reportAny]
+            for patch in ax.patches:
+                if hasattr(patch, "get_width"):
+                    rect_patch = cast(Rectangle, patch)
+                    width = rect_patch.get_width()
+                    if width and width > max_width:
+                        max_width = float(width)
 
             offset_x = max_width * offset_x_ratio
 
-            for patch in ax_typed.patches:
-                get_width = getattr(patch, 'get_width', lambda: 0)
-                width = get_width()
-                if width and width > min_value_threshold:
-                    get_y = getattr(patch, 'get_y', lambda: 0)
-                    get_height = getattr(patch, 'get_height', lambda: 1)
-                    y_val = get_y() + get_height() / 2
-                    self._add_text_annotation(
-                        ax,
-                        x=float(width),
-                        y=float(y_val),
-                        value=int(width),
-                        ha=ha,
-                        va=va,
-                        offset_x=offset_x,
-                        fontweight=fontweight,
-                    )
+            for patch in ax.patches:
+                if (
+                    hasattr(patch, "get_width")
+                    and hasattr(patch, "get_y")
+                    and hasattr(patch, "get_height")
+                ):
+                    rect_patch = cast(Rectangle, patch)
+                    width = rect_patch.get_width()
+                    if width and width > min_value_threshold:
+                        y_val = rect_patch.get_y() + rect_patch.get_height() / 2
+                        self._add_text_annotation(
+                            ax,
+                            x=float(width),
+                            y=float(y_val),
+                            value=int(width),
+                            ha=ha,
+                            va=va,
+                            offset_x=offset_x,
+                            fontweight=fontweight,
+                        )
         except Exception as e:
             logger.warning(f"Failed to annotate horizontal bar patches: {e}")
 
     def annotate_stacked_bar_segments(
         self,
-        ax: object,  # matplotlib.axes.Axes
+        ax: Axes,
         config_key: str,
         bar_containers: Sequence[tuple[object, str, object]],
         categories: Sequence[str],
@@ -229,10 +235,10 @@ class AnnotationHelper:
 
                 # Annotate each segment
                 for bars, media_type, values in bar_containers:
-                    # Avoid unused variable warnings  
+                    # Avoid unused variable warnings
                     _ = bars
                     _ = media_type
-                    if hasattr(values, '__getitem__'):
+                    if hasattr(values, "__getitem__"):
                         indexable_values = cast("Sequence[float]", values)
                         value = float(indexable_values[i])
                     else:
@@ -269,7 +275,7 @@ class AnnotationHelper:
 
     def annotate_peak_value(
         self,
-        ax: object,  # matplotlib.axes.Axes
+        ax: Axes,
         x: float,
         y: float,
         value: int | float,
@@ -296,8 +302,7 @@ class AnnotationHelper:
             return
 
         try:
-            ax_typed: "matplotlib.axes.Axes" = ax  # pyright: ignore[reportAssignmentType]
-            _ = ax_typed.annotate(  # pyright: ignore[reportUnknownMemberType]
+            _ = ax.annotate(
                 f"{label_prefix}: {value}",
                 xy=(x, y),
                 xytext=(offset_x, offset_y),
@@ -317,7 +322,7 @@ class AnnotationHelper:
 
     def _add_text_annotation(
         self,
-        ax: object,  # matplotlib.axes.Axes
+        ax: Axes,
         x: float,
         y: float,
         value: int | float,
@@ -346,10 +351,7 @@ class AnnotationHelper:
             fontsize: Font size (uses config default if None)
             fontweight: Font weight
         """
-        from matplotlib.axes import Axes
-
-        if not isinstance(ax, Axes):
-            return
+        # ax is already typed as Axes, no need for runtime check
 
         # Use config-based font size if not specified
         if fontsize is None:

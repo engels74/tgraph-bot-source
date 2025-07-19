@@ -122,7 +122,11 @@ def format_config_value(key: str, value: str | int | float | bool | None) -> str
 
     # Format boolean values
     if isinstance(value, bool):
-        return "✅ " + i18n.translate("Enabled") if value else "❌ " + i18n.translate("Disabled")
+        return (
+            "✅ " + i18n.translate("Enabled")
+            if value
+            else "❌ " + i18n.translate("Disabled")
+        )
 
     # Format None values
     if value is None:
@@ -208,9 +212,7 @@ def format_uptime(seconds: int) -> str:
     if minutes > 0:
         parts.append(i18n.ngettext("{n} minute", "{n} minutes", minutes))
     if remaining_seconds > 0 or not parts:
-        parts.append(
-            i18n.ngettext("{n} second", "{n} seconds", remaining_seconds)
-        )
+        parts.append(i18n.ngettext("{n} second", "{n} seconds", remaining_seconds))
 
     return ", ".join(parts)
 
@@ -580,10 +582,14 @@ def format_command_help(
     )
 
     if usage:
-        _ = embed.add_field(name=i18n.translate("Usage"), value=f"`{usage}`", inline=False)
+        _ = embed.add_field(
+            name=i18n.translate("Usage"), value=f"`{usage}`", inline=False
+        )
 
     if examples:
         example_text = "\n".join(f"`{example}`" for example in examples)
-        _ = embed.add_field(name=i18n.translate("Examples"), value=example_text, inline=False)
+        _ = embed.add_field(
+            name=i18n.translate("Examples"), value=example_text, inline=False
+        )
 
     return embed

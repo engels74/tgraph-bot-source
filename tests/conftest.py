@@ -26,6 +26,7 @@ from src.tgraph_bot.config.schema import TGraphBotConfig
 
 class AsyncTestContext(TypedDict):
     """Type definition for async test context dictionary."""
+
     background_tasks: set[asyncio.Task[object]]
     cleanup_tasks: list[Coroutine[object, object, object]]
     start_time: float
@@ -39,10 +40,10 @@ class AsyncTestContext(TypedDict):
 def invalid_config_dict() -> dict[str, object]:
     """
     Create an invalid configuration dictionary for testing error scenarios.
-    
+
     This fixture provides a configuration with various validation issues
     to test error handling and validation logic.
-    
+
     Returns:
         dict[str, object]: Configuration dictionary with validation issues
     """
@@ -61,10 +62,10 @@ def invalid_config_dict() -> dict[str, object]:
 def edge_case_config() -> TGraphBotConfig:
     """
     Create a configuration with edge case values for boundary testing.
-    
+
     This fixture provides a configuration with values at the boundaries
     of valid ranges to test edge case handling.
-    
+
     Returns:
         TGraphBotConfig: Configuration with edge case values
     """
@@ -74,13 +75,11 @@ def edge_case_config() -> TGraphBotConfig:
         TAUTULLI_URL="http://localhost",  # Minimal URL
         DISCORD_TOKEN="x" * 50,  # Minimal Discord token length
         CHANNEL_ID=1,  # Minimum valid Discord ID
-        
         # Edge case values
         UPDATE_DAYS=1,  # Minimum
         KEEP_DAYS=1,  # Minimum
         TIME_RANGE_DAYS=1,  # Minimum
         FIXED_UPDATE_TIME="00:00",  # Midnight
-        
         # All graphs disabled
         ENABLE_DAILY_PLAY_COUNT=False,
         ENABLE_PLAY_COUNT_BY_DAYOFWEEK=False,
@@ -88,7 +87,6 @@ def edge_case_config() -> TGraphBotConfig:
         ENABLE_TOP_10_PLATFORMS=False,
         ENABLE_TOP_10_USERS=False,
         ENABLE_PLAY_COUNT_BY_MONTH=False,
-        
         # Maximum cooldowns
         CONFIG_COOLDOWN_MINUTES=60,
         CONFIG_GLOBAL_COOLDOWN_SECONDS=300,
@@ -103,10 +101,10 @@ def edge_case_config() -> TGraphBotConfig:
 def maximum_config() -> TGraphBotConfig:
     """
     Create a configuration with maximum/extreme values for stress testing.
-    
+
     This fixture provides a configuration with values at the high end
     of valid ranges to test system behavior under maximum load.
-    
+
     Returns:
         TGraphBotConfig: Configuration with maximum values
     """
@@ -116,12 +114,10 @@ def maximum_config() -> TGraphBotConfig:
         TAUTULLI_URL="https://very-long-domain-name.example.com:8181/api/v2",
         DISCORD_TOKEN="x" * 100,  # Long Discord token
         CHANNEL_ID=999999999999999999,  # Large Discord ID
-        
         # Maximum reasonable values
         UPDATE_DAYS=30,  # Monthly updates
         KEEP_DAYS=365,  # Keep for a year
         TIME_RANGE_DAYS=365,  # Full year range
-        
         # All graphs enabled with annotations
         ENABLE_DAILY_PLAY_COUNT=True,
         ENABLE_PLAY_COUNT_BY_DAYOFWEEK=True,
@@ -129,14 +125,12 @@ def maximum_config() -> TGraphBotConfig:
         ENABLE_TOP_10_PLATFORMS=True,
         ENABLE_TOP_10_USERS=True,
         ENABLE_PLAY_COUNT_BY_MONTH=True,
-        
         ANNOTATE_DAILY_PLAY_COUNT=True,
         ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK=True,
         ANNOTATE_PLAY_COUNT_BY_HOUROFDAY=True,
         ANNOTATE_TOP_10_PLATFORMS=True,
         ANNOTATE_TOP_10_USERS=True,
         ANNOTATE_PLAY_COUNT_BY_MONTH=True,
-        
         # Maximum cooldowns
         CONFIG_COOLDOWN_MINUTES=60,
         CONFIG_GLOBAL_COOLDOWN_SECONDS=300,
@@ -152,7 +146,7 @@ def maximum_config() -> TGraphBotConfig:
 def mock_network_error() -> Exception:
     """
     Create a mock network error for testing error handling.
-    
+
     Returns:
         Exception: A network-related exception for testing
     """
@@ -163,7 +157,7 @@ def mock_network_error() -> Exception:
 def mock_api_error() -> Exception:
     """
     Create a mock API error for testing error handling.
-    
+
     Returns:
         Exception: An API-related exception for testing
     """
@@ -174,18 +168,20 @@ def mock_api_error() -> Exception:
 def mock_validation_error() -> Exception:
     """
     Create a mock validation error for testing error handling.
-    
+
     Returns:
         Exception: A validation-related exception for testing
     """
-    return ValueError("Invalid configuration value: CHANNEL_ID must be a positive integer")
+    return ValueError(
+        "Invalid configuration value: CHANNEL_ID must be a positive integer"
+    )
 
 
 @pytest.fixture
 def error_test_scenarios() -> list[tuple[str, Exception, str]]:
     """
     Provide a list of error scenarios for parameterized testing.
-    
+
     Returns:
         list[tuple[str, Exception, str]]: List of (name, exception, expected_pattern) tuples
     """
@@ -204,7 +200,7 @@ def error_test_scenarios() -> list[tuple[str, Exception, str]]:
 def basic_schedule_state_data() -> dict[str, object]:
     """
     Create basic schedule state data for testing.
-    
+
     Returns:
         dict[str, object]: Basic schedule state data
     """
@@ -223,7 +219,7 @@ def basic_schedule_state_data() -> dict[str, object]:
 def corrupted_schedule_state_data() -> str:
     """
     Create corrupted schedule state data for testing error recovery.
-    
+
     Returns:
         str: Corrupted JSON string
     """
@@ -234,7 +230,7 @@ def corrupted_schedule_state_data() -> str:
 def schedule_state_with_failures() -> dict[str, object]:
     """
     Create schedule state data with failure scenarios for testing.
-    
+
     Returns:
         dict[str, object]: Schedule state data with failures
     """
@@ -253,7 +249,7 @@ def schedule_state_with_failures() -> dict[str, object]:
 def schedule_config_data() -> dict[str, object]:
     """
     Create schedule configuration data for testing.
-    
+
     Returns:
         dict[str, object]: Schedule configuration data
     """
@@ -270,15 +266,11 @@ def schedule_config_data() -> dict[str, object]:
 def temp_config_file() -> Generator[Path, None, None]:
     """
     Create a temporary configuration file for testing.
-    
+
     Yields:
         Path: Path to the temporary configuration file
     """
-    with tempfile.NamedTemporaryFile(
-        mode='w', 
-        suffix='.yml', 
-        delete=False
-    ) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:
         config_content = """
 TAUTULLI_API_KEY: test_api_key
 TAUTULLI_URL: http://localhost:8181/api/v2
@@ -290,7 +282,7 @@ LANGUAGE: en
         _ = f.write(config_content)
         f.flush()
         temp_path = Path(f.name)
-    
+
     try:
         yield temp_path
     finally:
@@ -302,7 +294,7 @@ LANGUAGE: en
 def temp_data_directory() -> Generator[Path, None, None]:
     """
     Create a temporary data directory for testing.
-    
+
     Yields:
         Path: Path to the temporary data directory
     """
@@ -316,7 +308,7 @@ def temp_data_directory() -> Generator[Path, None, None]:
 def temp_graph_output_directory() -> Generator[Path, None, None]:
     """
     Create a temporary directory for graph output testing.
-    
+
     Yields:
         Path: Path to the temporary graph output directory
     """
@@ -330,15 +322,15 @@ def temp_graph_output_directory() -> Generator[Path, None, None]:
 def mock_state_file(temp_data_directory: Path) -> Path:
     """
     Create a mock state file in the temporary data directory.
-    
+
     Args:
         temp_data_directory: Temporary data directory fixture
-        
+
     Returns:
         Path: Path to the mock state file
     """
     state_file = temp_data_directory / "scheduler_state.json"
-    
+
     # Create a basic state file
     state_data = {
         "last_update": datetime.now().isoformat(),
@@ -346,10 +338,10 @@ def mock_state_file(temp_data_directory: Path) -> Path:
         "consecutive_failures": 0,
         "is_running": False,
     }
-    
-    with state_file.open('w') as f:
+
+    with state_file.open("w") as f:
         _ = json.dump(state_data, f, indent=2)
-    
+
     return state_file
 
 
@@ -357,13 +349,13 @@ def mock_state_file(temp_data_directory: Path) -> Path:
 def file_permission_scenarios() -> list[tuple[str, int]]:
     """
     Provide file permission scenarios for testing.
-    
+
     Returns:
         list[tuple[str, int]]: List of (scenario_name, permission_mode) tuples
     """
     return [
         ("read_only", 0o444),
-        ("write_only", 0o222), 
+        ("write_only", 0o222),
         ("no_permissions", 0o000),
         ("execute_only", 0o111),
         ("full_permissions", 0o777),
@@ -372,14 +364,15 @@ def file_permission_scenarios() -> list[tuple[str, int]]:
 
 # == EXISTING FIXTURES (Basic Configuration) ==
 
+
 @pytest.fixture
 def base_config() -> TGraphBotConfig:
     """
     Create a standard test configuration with commonly used values.
-    
+
     This fixture provides a balanced configuration suitable for most tests
     that need a realistic but controlled configuration environment.
-    
+
     Returns:
         TGraphBotConfig: A standard test configuration with typical values
     """
@@ -389,14 +382,12 @@ def base_config() -> TGraphBotConfig:
         TAUTULLI_URL="http://localhost:8181/api/v2",
         DISCORD_TOKEN="test_discord_token_1234567890",
         CHANNEL_ID=123456789012345678,
-        
         # Timing and Retention (common test values)
         UPDATE_DAYS=7,
         FIXED_UPDATE_TIME="XX:XX",
         KEEP_DAYS=7,
         TIME_RANGE_DAYS=30,
         LANGUAGE="en",
-        
         # Graph Options (balanced mix for testing)
         CENSOR_USERNAMES=True,
         ENABLE_GRAPH_GRID=False,
@@ -406,7 +397,6 @@ def base_config() -> TGraphBotConfig:
         ENABLE_TOP_10_PLATFORMS=True,
         ENABLE_TOP_10_USERS=True,
         ENABLE_PLAY_COUNT_BY_MONTH=True,
-        
         # Graph Colors (default values)
         TV_COLOR="#1f77b4",
         MOVIE_COLOR="#ff7f0e",
@@ -414,7 +404,6 @@ def base_config() -> TGraphBotConfig:
         ANNOTATION_COLOR="#ff0000",
         ANNOTATION_OUTLINE_COLOR="#000000",
         ENABLE_ANNOTATION_OUTLINE=True,
-        
         # Annotation Options (enabled for testing)
         ANNOTATE_DAILY_PLAY_COUNT=True,
         ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK=True,
@@ -422,7 +411,6 @@ def base_config() -> TGraphBotConfig:
         ANNOTATE_TOP_10_PLATFORMS=True,
         ANNOTATE_TOP_10_USERS=True,
         ANNOTATE_PLAY_COUNT_BY_MONTH=True,
-        
         # Command Cooldown Options (minimal for testing)
         CONFIG_COOLDOWN_MINUTES=0,
         CONFIG_GLOBAL_COOLDOWN_SECONDS=0,
@@ -437,12 +425,12 @@ def base_config() -> TGraphBotConfig:
 def minimal_config() -> TGraphBotConfig:
     """
     Create a minimal test configuration with only required fields.
-    
+
     This fixture provides the absolute minimum configuration needed
     for TGraphBotConfig validation. All optional fields use their
     default values. Ideal for testing core functionality without
     configuration complexity.
-    
+
     Returns:
         TGraphBotConfig: A minimal configuration with only required fields set
     """
@@ -460,12 +448,12 @@ def minimal_config() -> TGraphBotConfig:
 def comprehensive_config() -> TGraphBotConfig:
     """
     Create a comprehensive test configuration with all options explicitly set.
-    
+
     This fixture provides a complete configuration with all available
     options set to non-default values where appropriate. Useful for
     testing edge cases, full feature integration, and configuration
     validation scenarios.
-    
+
     Returns:
         TGraphBotConfig: A comprehensive configuration with all options set
     """
@@ -475,14 +463,12 @@ def comprehensive_config() -> TGraphBotConfig:
         TAUTULLI_URL="https://tautulli.example.com:8181/api/v2",
         DISCORD_TOKEN="test_discord_token_comprehensive_1234567890abcdef",
         CHANNEL_ID=987654321098765432,
-        
         # Timing and Retention (non-default values)
         UPDATE_DAYS=14,
         FIXED_UPDATE_TIME="02:30",
         KEEP_DAYS=30,
         TIME_RANGE_DAYS=90,
         LANGUAGE="es",
-        
         # Graph Options (mixed settings for comprehensive testing)
         CENSOR_USERNAMES=False,
         ENABLE_GRAPH_GRID=True,
@@ -492,7 +478,6 @@ def comprehensive_config() -> TGraphBotConfig:
         ENABLE_TOP_10_PLATFORMS=False,
         ENABLE_TOP_10_USERS=True,
         ENABLE_PLAY_COUNT_BY_MONTH=False,
-        
         # Graph Colors (custom colors for testing)
         TV_COLOR="#ff4444",
         MOVIE_COLOR="#44ff44",
@@ -500,7 +485,6 @@ def comprehensive_config() -> TGraphBotConfig:
         ANNOTATION_COLOR="#4444ff",
         ANNOTATION_OUTLINE_COLOR="#222222",
         ENABLE_ANNOTATION_OUTLINE=False,
-        
         # Annotation Options (mixed settings)
         ANNOTATE_DAILY_PLAY_COUNT=False,
         ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK=True,
@@ -508,7 +492,6 @@ def comprehensive_config() -> TGraphBotConfig:
         ANNOTATE_TOP_10_PLATFORMS=True,
         ANNOTATE_TOP_10_USERS=False,
         ANNOTATE_PLAY_COUNT_BY_MONTH=True,
-        
         # Command Cooldown Options (realistic values for testing)
         CONFIG_COOLDOWN_MINUTES=10,
         CONFIG_GLOBAL_COOLDOWN_SECONDS=30,
@@ -521,14 +504,15 @@ def comprehensive_config() -> TGraphBotConfig:
 
 # Async Testing Fixtures
 
+
 @pytest.fixture
 def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
     """
     Create an event loop for async tests.
-    
+
     This fixture ensures that each test gets a fresh event loop,
     preventing test interference and providing clean async test isolation.
-    
+
     Yields:
         asyncio.AbstractEventLoop: A new event loop for the test
     """
@@ -543,8 +527,10 @@ def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
             for task in pending_tasks:
                 _ = task.cancel()
             # Give tasks a chance to clean up
-            _ = loop.run_until_complete(asyncio.gather(*pending_tasks, return_exceptions=True))
-        
+            _ = loop.run_until_complete(
+                asyncio.gather(*pending_tasks, return_exceptions=True)
+            )
+
         # Close the loop
         loop.close()
 
@@ -553,10 +539,10 @@ def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
 async def async_test_context() -> AsyncGenerator[AsyncTestContext, None]:
     """
     Provide async test context with common utilities.
-    
+
     This fixture provides a context dictionary with utilities commonly
     needed in async tests, including task tracking and cleanup helpers.
-    
+
     Yields:
         AsyncTestContext: Context dictionary with async test utilities
     """
@@ -565,7 +551,7 @@ async def async_test_context() -> AsyncGenerator[AsyncTestContext, None]:
         "cleanup_tasks": [],
         "start_time": asyncio.get_event_loop().time(),
     }
-    
+
     try:
         yield context
     finally:
@@ -574,10 +560,12 @@ async def async_test_context() -> AsyncGenerator[AsyncTestContext, None]:
             for task in context["background_tasks"]:
                 if not task.done():
                     _ = task.cancel()
-            
+
             # Wait for cancellation to complete
-            _ = await asyncio.gather(*context["background_tasks"], return_exceptions=True)
-        
+            _ = await asyncio.gather(
+                *context["background_tasks"], return_exceptions=True
+            )
+
         # Run any cleanup tasks
         if context["cleanup_tasks"]:
             _ = await asyncio.gather(*context["cleanup_tasks"], return_exceptions=True)
@@ -587,11 +575,11 @@ async def async_test_context() -> AsyncGenerator[AsyncTestContext, None]:
 def async_timeout() -> float:
     """
     Provide default timeout for async test operations.
-    
+
     This fixture provides a consistent timeout value for async operations
     in tests, helping to prevent hanging tests while allowing sufficient
     time for operations to complete.
-    
+
     Returns:
         float: Default timeout in seconds (10.0)
     """

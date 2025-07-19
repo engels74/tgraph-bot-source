@@ -138,7 +138,7 @@ class TestDiscordFileCreation:
         test_file = tmp_path / "test.png"
         _ = test_file.write_bytes(b"test image data")
 
-        with patch('discord.File') as mock_discord_file:
+        with patch("discord.File") as mock_discord_file:
             mock_file_obj = MagicMock()
             mock_discord_file.return_value = mock_file_obj
 
@@ -158,7 +158,7 @@ class TestDiscordFileCreation:
         test_file = tmp_path / "test.png"
         _ = test_file.write_bytes(b"test image data")
 
-        with patch('discord.File') as mock_discord_file:
+        with patch("discord.File") as mock_discord_file:
             mock_file_obj = MagicMock()
             mock_discord_file.return_value = mock_file_obj
 
@@ -169,7 +169,7 @@ class TestDiscordFileCreation:
             call_args = mock_discord_file.call_args
             assert call_args is not None
             _, kwargs = call_args  # pyright: ignore[reportAny]
-            assert kwargs.get('filename') == "custom.png"  # pyright: ignore[reportAny]
+            assert kwargs.get("filename") == "custom.png"  # pyright: ignore[reportAny]
 
 
 class TestChannelUpload:
@@ -192,13 +192,14 @@ class TestChannelUpload:
         mock_channel.send.return_value = mock_message  # pyright: ignore[reportAny]
 
         # Mock Discord file creation
-        with patch('src.tgraph_bot.utils.discord.discord_file_utils.create_discord_file_safe') as mock_create_file:
+        with patch(
+            "src.tgraph_bot.utils.discord.discord_file_utils.create_discord_file_safe"
+        ) as mock_create_file:
             mock_files = [MagicMock(spec=discord.File) for _ in range(3)]
             mock_create_file.side_effect = mock_files
 
             result = await upload_files_to_channel(
-                channel=mock_channel,
-                file_paths=test_files
+                channel=mock_channel, file_paths=test_files
             )
 
             assert result.success is True
@@ -212,17 +213,16 @@ class TestChannelUpload:
         """Test upload with no files provided."""
         mock_channel = AsyncMock(spec=discord.TextChannel)
 
-        result = await upload_files_to_channel(
-            channel=mock_channel,
-            file_paths=[]
-        )
+        result = await upload_files_to_channel(channel=mock_channel, file_paths=[])
 
         assert result.success is False
         assert result.error_message is not None
         assert "No files provided" in result.error_message
 
     @pytest.mark.asyncio
-    async def test_upload_files_to_channel_validation_failure(self, tmp_path: Path) -> None:
+    async def test_upload_files_to_channel_validation_failure(
+        self, tmp_path: Path
+    ) -> None:
         """Test upload with file validation failures."""
         # Create invalid file (too large)
         large_file = tmp_path / "large.png"
@@ -231,8 +231,7 @@ class TestChannelUpload:
         mock_channel = AsyncMock(spec=discord.TextChannel)
 
         result = await upload_files_to_channel(
-            channel=mock_channel,
-            file_paths=[str(large_file)]
+            channel=mock_channel, file_paths=[str(large_file)]
         )
 
         assert result.success is False
@@ -246,14 +245,17 @@ class TestChannelUpload:
         _ = test_file.write_bytes(b"test image data")
 
         mock_channel = AsyncMock(spec=discord.TextChannel)
-        mock_channel.send.side_effect = discord.HTTPException(MagicMock(), "Upload failed")  # pyright: ignore[reportAny]
+        mock_channel.send.side_effect = discord.HTTPException(
+            MagicMock(), "Upload failed"
+        )  # pyright: ignore[reportAny]
 
-        with patch('src.tgraph_bot.utils.discord.discord_file_utils.create_discord_file_safe') as mock_create_file:
+        with patch(
+            "src.tgraph_bot.utils.discord.discord_file_utils.create_discord_file_safe"
+        ) as mock_create_file:
             mock_create_file.return_value = MagicMock(spec=discord.File)
 
             result = await upload_files_to_channel(
-                channel=mock_channel,
-                file_paths=[str(test_file)]
+                channel=mock_channel, file_paths=[str(test_file)]
             )
 
             assert result.success is False
@@ -275,12 +277,13 @@ class TestUserDMUpload:
         mock_message.id = 67890
         mock_user.send.return_value = mock_message  # pyright: ignore[reportAny]
 
-        with patch('src.tgraph_bot.utils.discord.discord_file_utils.create_discord_file_safe') as mock_create_file:
+        with patch(
+            "src.tgraph_bot.utils.discord.discord_file_utils.create_discord_file_safe"
+        ) as mock_create_file:
             mock_create_file.return_value = MagicMock(spec=discord.File)
 
             result = await upload_files_to_user_dm(
-                user=mock_user,
-                file_paths=[str(test_file)]
+                user=mock_user, file_paths=[str(test_file)]
             )
 
             assert result.success is True
@@ -301,13 +304,13 @@ class TestUserDMUpload:
 
         test_embed = discord.Embed(title="Test Embed")
 
-        with patch('src.tgraph_bot.utils.discord.discord_file_utils.create_discord_file_safe') as mock_create_file:
+        with patch(
+            "src.tgraph_bot.utils.discord.discord_file_utils.create_discord_file_safe"
+        ) as mock_create_file:
             mock_create_file.return_value = MagicMock(spec=discord.File)
 
             result = await upload_files_to_user_dm(
-                user=mock_user,
-                file_paths=[str(test_file)],
-                embed=test_embed
+                user=mock_user, file_paths=[str(test_file)], embed=test_embed
             )
 
             assert result.success is True
@@ -315,7 +318,7 @@ class TestUserDMUpload:
             call_args = mock_user.send.call_args  # pyright: ignore[reportAny]
             assert call_args is not None
             _, kwargs = call_args  # pyright: ignore[reportAny]
-            assert kwargs.get('embed') == test_embed  # pyright: ignore[reportAny]
+            assert kwargs.get("embed") == test_embed  # pyright: ignore[reportAny]
 
 
 class TestUtilityFunctions:
@@ -374,7 +377,7 @@ class TestTimestampHandling:
 
         test_dt = datetime(2025, 1, 15, 12, 30, 0, tzinfo=dt.timezone.utc)
 
-        with patch('discord.utils.format_dt') as mock_format_dt:
+        with patch("discord.utils.format_dt") as mock_format_dt:
             mock_format_dt.return_value = "<t:1737027000:R>"
 
             result = format_next_update_timestamp(test_dt)
@@ -385,7 +388,7 @@ class TestTimestampHandling:
             args, kwargs = call_args  # pyright: ignore[reportAny]
             assert len(args) == 1  # pyright: ignore[reportAny]
             assert args[0].tzinfo is not None  # pyright: ignore[reportAny] # Ensure timezone-aware
-            assert kwargs.get('style') == 'R'  # pyright: ignore[reportAny]
+            assert kwargs.get("style") == "R"  # pyright: ignore[reportAny]
             assert result == "<t:1737027000:R>"
 
     def test_format_next_update_timestamp_custom_style(self) -> None:
@@ -394,7 +397,7 @@ class TestTimestampHandling:
 
         test_dt = datetime(2025, 1, 15, 12, 30, 0, tzinfo=dt.timezone.utc)
 
-        with patch('discord.utils.format_dt') as mock_format_dt:
+        with patch("discord.utils.format_dt") as mock_format_dt:
             mock_format_dt.return_value = "<t:1737027000:F>"
 
             result = format_next_update_timestamp(test_dt, style="F")
@@ -403,14 +406,14 @@ class TestTimestampHandling:
             call_args = mock_format_dt.call_args
             assert call_args is not None
             _args, kwargs = call_args  # pyright: ignore[reportAny]
-            assert kwargs.get('style') == 'F'  # pyright: ignore[reportAny]
+            assert kwargs.get("style") == "F"  # pyright: ignore[reportAny]
             assert result == "<t:1737027000:F>"
 
     def test_format_next_update_timestamp_with_naive_datetime(self) -> None:
         """Test format_next_update_timestamp converts naive datetime to timezone-aware."""
         naive_dt = datetime(2025, 1, 15, 12, 30, 0)
 
-        with patch('discord.utils.format_dt') as mock_format_dt:
+        with patch("discord.utils.format_dt") as mock_format_dt:
             mock_format_dt.return_value = "<t:1737027000:R>"
 
             result = format_next_update_timestamp(naive_dt)
@@ -426,13 +429,14 @@ class TestTimestampHandling:
     def test_timestamp_style_literal_type(self) -> None:
         """Test that TimestampStyle literal type works correctly."""
         # Test all valid timestamp styles
-        valid_styles: list[TimestampStyle] = ['f', 'F', 'd', 'D', 't', 'T', 'R']
+        valid_styles: list[TimestampStyle] = ["f", "F", "d", "D", "t", "T", "R"]
 
         import datetime as dt
+
         test_dt = datetime(2025, 1, 15, 12, 30, 0, tzinfo=dt.timezone.utc)
 
         for style in valid_styles:
-            with patch('discord.utils.format_dt') as mock_format_dt:
+            with patch("discord.utils.format_dt") as mock_format_dt:
                 mock_format_dt.return_value = f"<t:1737027000:{style}>"
 
                 result = format_next_update_timestamp(test_dt, style=style)
@@ -441,7 +445,7 @@ class TestTimestampHandling:
                 call_args = mock_format_dt.call_args
                 assert call_args is not None
                 _args, kwargs = call_args  # pyright: ignore[reportAny]
-                assert kwargs.get('style') == style  # pyright: ignore[reportAny]
+                assert kwargs.get("style") == style  # pyright: ignore[reportAny]
                 assert result == f"<t:1737027000:{style}>"
 
 
@@ -451,7 +455,9 @@ class TestCalculateNextUpdateTime:
     def test_interval_based_update(self) -> None:
         """Test interval-based update calculation."""
         # Test with interval-based updates (XX:XX)
-        with patch('src.tgraph_bot.utils.discord.discord_file_utils.get_local_now') as mock_get_local_now:
+        with patch(
+            "src.tgraph_bot.utils.discord.discord_file_utils.get_local_now"
+        ) as mock_get_local_now:
             mock_now = datetime(2025, 1, 15, 12, 30, 0, tzinfo=get_local_timezone())
             mock_get_local_now.return_value = mock_now
 
@@ -464,13 +470,15 @@ class TestCalculateNextUpdateTime:
             # Should be exactly 7 days from the mocked current time
             expected = mock_now + timedelta(days=7)
             assert result == expected
-        
+
     def test_fixed_time_update_future_today_no_state(self) -> None:
         """Test fixed time update when time hasn't passed today and no scheduler state."""
         # Mock no state file exists and mock get_local_now
         with (
-            patch('pathlib.Path.exists', return_value=False),
-            patch('src.tgraph_bot.utils.discord.discord_file_utils.get_local_now') as mock_get_local_now
+            patch("pathlib.Path.exists", return_value=False),
+            patch(
+                "src.tgraph_bot.utils.discord.discord_file_utils.get_local_now"
+            ) as mock_get_local_now,
         ):
             # Use a fixed time for predictable testing
             mock_now = datetime(2025, 1, 15, 14, 30, 0, tzinfo=get_local_timezone())
@@ -488,20 +496,28 @@ class TestCalculateNextUpdateTime:
             # Should be tomorrow at 18:00 in local timezone (respects UPDATE_DAYS=1 on first run)
             expected = datetime(2025, 1, 16, 18, 0, 0, tzinfo=get_local_timezone())
             assert result == expected
-        
+
     def test_fixed_time_update_past_today_no_state(self) -> None:
         """Test fixed time update when time has already passed today and no scheduler state."""
         # Mock no state file exists and mock get_local_now
         with (
-            patch('src.tgraph_bot.utils.discord.discord_file_utils.get_path_config') as mock_get_path_config,
-            patch('src.tgraph_bot.utils.discord.discord_file_utils.get_local_now') as mock_get_local_now
+            patch(
+                "src.tgraph_bot.utils.discord.discord_file_utils.get_path_config"
+            ) as mock_get_path_config,
+            patch(
+                "src.tgraph_bot.utils.discord.discord_file_utils.get_local_now"
+            ) as mock_get_local_now,
         ):
             # Create a mock path config that returns a non-existent state file
             mock_state_file = Mock(spec=Path)
-            mock_state_file.exists = Mock(return_value=False)  # No state file (first launch)
+            mock_state_file.exists = Mock(
+                return_value=False
+            )  # No state file (first launch)
 
             mock_path_config = Mock()
-            mock_path_config.get_scheduler_state_path = Mock(return_value=mock_state_file)
+            mock_path_config.get_scheduler_state_path = Mock(
+                return_value=mock_state_file
+            )
             mock_get_path_config.return_value = mock_path_config
 
             # Mock the current time to be 15:30 (3:30 PM) in local timezone
@@ -523,7 +539,9 @@ class TestCalculateNextUpdateTime:
     def test_fixed_time_with_scheduler_state_respects_interval(self) -> None:
         """Test fixed time calculation respects scheduler state last_update and update_days."""
         # Create a scenario where fixed time has passed today, but we need to respect update_days interval
-        mock_now = datetime(2025, 6, 28, 15, 30, 0, tzinfo=get_local_timezone())  # 3:30 PM local time
+        mock_now = datetime(
+            2025, 6, 28, 15, 30, 0, tzinfo=get_local_timezone()
+        )  # 3:30 PM local time
 
         # Last update was yesterday at 14:30 (1 day and 1 hour ago)
         last_update = mock_now - timedelta(days=1, hours=1)
@@ -531,23 +549,29 @@ class TestCalculateNextUpdateTime:
         scheduler_state = {
             "state": {
                 "last_update": last_update.isoformat(),
-                "next_update": (mock_now + timedelta(days=1)).isoformat()
+                "next_update": (mock_now + timedelta(days=1)).isoformat(),
             }
         }
 
         mock_state_content = json.dumps(scheduler_state)
 
         with (
-            patch('src.tgraph_bot.utils.discord.discord_file_utils.get_path_config') as mock_get_path_config,
-            patch('builtins.open', mock_open(read_data=mock_state_content)),  # pyright: ignore[reportAny]
-            patch('src.tgraph_bot.utils.discord.discord_file_utils.get_local_now') as mock_get_local_now
+            patch(
+                "src.tgraph_bot.utils.discord.discord_file_utils.get_path_config"
+            ) as mock_get_path_config,
+            patch("builtins.open", mock_open(read_data=mock_state_content)),  # pyright: ignore[reportAny]
+            patch(
+                "src.tgraph_bot.utils.discord.discord_file_utils.get_local_now"
+            ) as mock_get_local_now,
         ):
             # Create a mock path config that returns an existing state file
             mock_state_file = Mock(spec=Path)
             mock_state_file.exists = Mock(return_value=True)  # State file exists
 
             mock_path_config = Mock()
-            mock_path_config.get_scheduler_state_path = Mock(return_value=mock_state_file)
+            mock_path_config.get_scheduler_state_path = Mock(
+                return_value=mock_state_file
+            )
             mock_get_path_config.return_value = mock_path_config
 
             # Mock get_local_now
@@ -592,7 +616,7 @@ class TestCalculateNextUpdateTime:
         scheduler_state = {
             "state": {
                 "last_update": last_update.isoformat(),
-                "next_update": next_update_datetime.isoformat()
+                "next_update": next_update_datetime.isoformat(),
             }
         }
 
@@ -604,11 +628,13 @@ class TestCalculateNextUpdateTime:
         state_dir.mkdir(exist_ok=True)
 
         # Create temporary state file
-        with state_file.open('w') as f:
+        with state_file.open("w") as f:
             json.dump(scheduler_state, f)
 
         try:
-            with patch('src.tgraph_bot.utils.discord.discord_file_utils.get_local_now') as mock_get_local_now:
+            with patch(
+                "src.tgraph_bot.utils.discord.discord_file_utils.get_local_now"
+            ) as mock_get_local_now:
                 mock_get_local_now.return_value = now
 
                 result = calculate_next_update_time(7, time_str)  # 7 day interval
@@ -637,9 +663,13 @@ class TestCalculateNextUpdateTime:
         """Test fixed time calculation with malformed scheduler state file."""
         # Mock malformed JSON in state file
         with (
-            patch('src.tgraph_bot.utils.discord.discord_file_utils.Path') as mock_path_class,
-            patch('builtins.open', mock_open(read_data="invalid json")),  # pyright: ignore[reportAny]
-            patch('src.tgraph_bot.utils.discord.discord_file_utils.get_local_now') as mock_get_local_now
+            patch(
+                "src.tgraph_bot.utils.discord.discord_file_utils.Path"
+            ) as mock_path_class,
+            patch("builtins.open", mock_open(read_data="invalid json")),  # pyright: ignore[reportAny]
+            patch(
+                "src.tgraph_bot.utils.discord.discord_file_utils.get_local_now"
+            ) as mock_get_local_now,
         ):
             # Create a properly typed mock Path instance
             mock_path_instance = Mock(spec=Path)
@@ -664,7 +694,9 @@ class TestCalculateNextUpdateTime:
 
     def test_fixed_time_with_missing_last_update_in_state(self) -> None:
         """Test fixed time calculation when scheduler state lacks last_update."""
-        mock_now = datetime(2025, 6, 28, 15, 30, 0, tzinfo=get_local_timezone())  # 3:30 PM local time
+        mock_now = datetime(
+            2025, 6, 28, 15, 30, 0, tzinfo=get_local_timezone()
+        )  # 3:30 PM local time
 
         scheduler_state = {
             "state": {
@@ -676,9 +708,13 @@ class TestCalculateNextUpdateTime:
         mock_state_content = json.dumps(scheduler_state)
 
         with (
-            patch('src.tgraph_bot.utils.discord.discord_file_utils.Path') as mock_path_class,
-            patch('builtins.open', mock_open(read_data=mock_state_content)),  # pyright: ignore[reportAny]
-            patch('src.tgraph_bot.utils.discord.discord_file_utils.get_local_now') as mock_get_local_now
+            patch(
+                "src.tgraph_bot.utils.discord.discord_file_utils.Path"
+            ) as mock_path_class,
+            patch("builtins.open", mock_open(read_data=mock_state_content)),  # pyright: ignore[reportAny]
+            patch(
+                "src.tgraph_bot.utils.discord.discord_file_utils.get_local_now"
+            ) as mock_get_local_now,
         ):
             # Create a properly typed mock Path instance
             mock_path_instance = Mock(spec=Path)
@@ -703,9 +739,13 @@ class TestCalculateNextUpdateTime:
     def test_fixed_time_with_file_read_error(self) -> None:
         """Test fixed time calculation when scheduler state file cannot be read."""
         with (
-            patch('src.tgraph_bot.utils.discord.discord_file_utils.Path') as mock_path_class,
-            patch('builtins.open', side_effect=IOError("Permission denied")),
-            patch('src.tgraph_bot.utils.discord.discord_file_utils.get_local_now') as mock_get_local_now
+            patch(
+                "src.tgraph_bot.utils.discord.discord_file_utils.Path"
+            ) as mock_path_class,
+            patch("builtins.open", side_effect=IOError("Permission denied")),
+            patch(
+                "src.tgraph_bot.utils.discord.discord_file_utils.get_local_now"
+            ) as mock_get_local_now,
         ):
             # Create a properly typed mock Path instance
             mock_path_instance = Mock(spec=Path)
@@ -751,6 +791,7 @@ class TestCalculateNextUpdateTime:
 
         # Test the basic logic directly (lines 121-127 in discord_file_utils.py)
         from datetime import time
+
         update_time = time(14, 0)  # 2:00 PM
 
         # This is the current basic logic from the function
@@ -769,14 +810,18 @@ class TestCalculateNextUpdateTime:
         print(f"DEBUG: Basic logic date: {next_update.date()}")
 
         # The bug: basic logic returns today's date when time hasn't passed
-        assert next_update.date() == mock_now.date(), "Basic logic should schedule for today when time hasn't passed"
+        assert next_update.date() == mock_now.date(), (
+            "Basic logic should schedule for today when time hasn't passed"
+        )
 
         # But with UPDATE_DAYS=2, we should get July 19th (current + 2 days)
         expected_with_update_days = mock_now.date() + timedelta(days=2)
         print(f"DEBUG: Expected with UPDATE_DAYS=2: {expected_with_update_days}")
 
         # This demonstrates the bug - basic logic ignores UPDATE_DAYS
-        assert next_update.date() != expected_with_update_days, "This demonstrates the bug: basic logic ignores UPDATE_DAYS"
+        assert next_update.date() != expected_with_update_days, (
+            "This demonstrates the bug: basic logic ignores UPDATE_DAYS"
+        )
 
     def test_first_launch_bug_reproduction(self) -> None:
         """
@@ -788,15 +833,23 @@ class TestCalculateNextUpdateTime:
         """
         # Simulate first launch scenario: no scheduler state file exists
         with (
-            patch('src.tgraph_bot.utils.discord.discord_file_utils.get_path_config') as mock_get_path_config,
-            patch('src.tgraph_bot.utils.discord.discord_file_utils.get_local_now') as mock_get_local_now
+            patch(
+                "src.tgraph_bot.utils.discord.discord_file_utils.get_path_config"
+            ) as mock_get_path_config,
+            patch(
+                "src.tgraph_bot.utils.discord.discord_file_utils.get_local_now"
+            ) as mock_get_local_now,
         ):
             # Create a mock path config that returns a non-existent state file
             mock_state_file = Mock(spec=Path)
-            mock_state_file.exists = Mock(return_value=False)  # No state file (first launch)
+            mock_state_file.exists = Mock(
+                return_value=False
+            )  # No state file (first launch)
 
             mock_path_config = Mock()
-            mock_path_config.get_scheduler_state_path = Mock(return_value=mock_state_file)
+            mock_path_config.get_scheduler_state_path = Mock(
+                return_value=mock_state_file
+            )
             mock_get_path_config.return_value = mock_path_config
 
             # Mock current time: July 17th, 2025 at 10:00 AM (before 14:00)
@@ -816,8 +869,11 @@ class TestCalculateNextUpdateTime:
 
             expected_date = mock_now.date() + timedelta(days=3)  # July 20th
             from datetime import time
+
             expected_time = time(14, 0)
-            expected_result = datetime.combine(expected_date, expected_time).replace(tzinfo=get_local_timezone())
+            expected_result = datetime.combine(expected_date, expected_time).replace(
+                tzinfo=get_local_timezone()
+            )
 
             # This should FAIL with the buggy implementation and PASS after the fix
             assert result == expected_result, (
@@ -842,20 +898,23 @@ class TestCalculateNextUpdateTime:
                 "is_running": True,
                 "consecutive_failures": 0,
                 "last_failure": None,
-                "last_error": None
+                "last_error": None,
             },
-            "config": {
-                "update_days": 1,
-                "fixed_update_time": "23:59"
-            },
+            "config": {"update_days": 1, "fixed_update_time": "23:59"},
             "version": "1.0",
-            "saved_at": "2025-07-17T20:24:41.214512+02:00"
+            "saved_at": "2025-07-17T20:24:41.214512+02:00",
         }
 
         with (
-            patch('src.tgraph_bot.utils.discord.discord_file_utils.get_path_config') as mock_get_path_config,
-            patch('src.tgraph_bot.utils.discord.discord_file_utils.get_local_now') as mock_get_local_now,
-            patch('builtins.open', mock_open(read_data=json.dumps(state_data))) as mock_file  # pyright: ignore[reportAny]
+            patch(
+                "src.tgraph_bot.utils.discord.discord_file_utils.get_path_config"
+            ) as mock_get_path_config,
+            patch(
+                "src.tgraph_bot.utils.discord.discord_file_utils.get_local_now"
+            ) as mock_get_local_now,
+            patch(
+                "builtins.open", mock_open(read_data=json.dumps(state_data))
+            ) as mock_file,  # pyright: ignore[reportAny]
         ):
             # Create a mock path config that returns an existing state file
             mock_state_file = Mock(spec=Path)
@@ -863,7 +922,9 @@ class TestCalculateNextUpdateTime:
             mock_state_file.open = mock_file
 
             mock_path_config = Mock()
-            mock_path_config.get_scheduler_state_path = Mock(return_value=mock_state_file)
+            mock_path_config.get_scheduler_state_path = Mock(
+                return_value=mock_state_file
+            )
             mock_get_path_config.return_value = mock_path_config
 
             # Mock current time: July 17th, 2025 at 20:24 (before 23:59)
@@ -880,8 +941,11 @@ class TestCalculateNextUpdateTime:
             # Expected: Should return July 18th at 23:59 (next day, respecting UPDATE_DAYS=1)
             expected_date = datetime(2025, 7, 18).date()  # July 18th (next day)
             from datetime import time
+
             expected_time = time(23, 59)
-            expected_result = datetime.combine(expected_date, expected_time).replace(tzinfo=get_local_timezone())
+            expected_result = datetime.combine(expected_date, expected_time).replace(
+                tzinfo=get_local_timezone()
+            )
 
             # This should match the scheduler state's next_update value
             print(f"DEBUG: Current time: {mock_now}")
@@ -901,15 +965,23 @@ class TestCalculateNextUpdateTime:
         """
         # Simulate the exact scenario: no state file exists (first launch)
         with (
-            patch('src.tgraph_bot.utils.discord.discord_file_utils.get_path_config') as mock_get_path_config,
-            patch('src.tgraph_bot.utils.discord.discord_file_utils.get_local_now') as mock_get_local_now
+            patch(
+                "src.tgraph_bot.utils.discord.discord_file_utils.get_path_config"
+            ) as mock_get_path_config,
+            patch(
+                "src.tgraph_bot.utils.discord.discord_file_utils.get_local_now"
+            ) as mock_get_local_now,
         ):
             # Create a mock path config that returns a non-existent state file
             mock_state_file = Mock(spec=Path)
-            mock_state_file.exists = Mock(return_value=False)  # No state file (first launch)
+            mock_state_file.exists = Mock(
+                return_value=False
+            )  # No state file (first launch)
 
             mock_path_config = Mock()
-            mock_path_config.get_scheduler_state_path = Mock(return_value=mock_state_file)
+            mock_path_config.get_scheduler_state_path = Mock(
+                return_value=mock_state_file
+            )
             mock_get_path_config.return_value = mock_path_config
 
             # Mock current time: July 17th, 2025 at 20:24 (before 23:59)
@@ -934,7 +1006,9 @@ class TestCalculateNextUpdateTime:
                 print("BUG REPRODUCED: Scheduled for same day instead of next day")
                 # This would be the bug - scheduling for same day when UPDATE_DAYS=1
                 # should schedule for next day
-                assert False, f"Bug reproduced: Got {result.date()} (same day) instead of next day"
+                assert False, (
+                    f"Bug reproduced: Got {result.date()} (same day) instead of next day"
+                )
             else:
                 print("CORRECT: Scheduled for next day")
                 expected_date = mock_now.date() + timedelta(days=1)
@@ -943,29 +1017,29 @@ class TestCalculateNextUpdateTime:
 
 class TestCreateGraphSpecificEmbed:
     """Test cases for graph-specific embed creation."""
-    
+
     def test_daily_play_count_embed(self) -> None:
         """Test embed creation for daily play count graph."""
         embed = create_graph_specific_embed("path/to/daily_play_count_20240115.png")
-        
+
         assert embed.title == "📈 Daily Play Count"
         assert embed.description is not None
         assert "number of plays per day" in embed.description
         assert embed.color == discord.Color.blue()
         # Verify the image is set to reference the attachment
         assert embed.image.url == "attachment://daily_play_count_20240115.png"
-        
+
     def test_play_count_by_dayofweek_embed(self) -> None:
         """Test embed creation for play count by day of week graph."""
         embed = create_graph_specific_embed("play_count_by_dayofweek.png")
-        
+
         assert embed.title == "📊 Play Count by Day of Week"
         assert embed.description is not None
         assert "play activity patterns" in embed.description
         assert embed.color == discord.Color.blue()
         # Verify the image is set to reference the attachment
         assert embed.image.url == "attachment://play_count_by_dayofweek.png"
-        
+
     def test_unknown_graph_type_embed(self) -> None:
         """Test embed creation for unknown graph types."""
         embed = create_graph_specific_embed("unknown_graph.png")
@@ -976,18 +1050,18 @@ class TestCreateGraphSpecificEmbed:
         assert embed.color == discord.Color.blue()
         # Verify the image is set to reference the attachment
         assert embed.image.url == "attachment://unknown_graph.png"
-        
+
     def test_embed_with_next_update_time(self) -> None:
         """Test embed creation with next update time included."""
         # Mock get_local_now to ensure predictable behavior
-        with patch('src.tgraph_bot.utils.discord.discord_file_utils.get_local_now') as mock_get_local_now:
+        with patch(
+            "src.tgraph_bot.utils.discord.discord_file_utils.get_local_now"
+        ) as mock_get_local_now:
             mock_now = datetime(2025, 1, 15, 12, 0, 0, tzinfo=get_local_timezone())
             mock_get_local_now.return_value = mock_now
 
             embed = create_graph_specific_embed(
-                "daily_play_count.png",
-                update_days=7,
-                fixed_update_time="14:00"
+                "daily_play_count.png", update_days=7, fixed_update_time="14:00"
             )
 
             assert embed.title == "📈 Daily Play Count"
@@ -995,38 +1069,40 @@ class TestCreateGraphSpecificEmbed:
             assert "Next update:" in embed.description
             # Should contain Discord timestamp format from discord.utils.format_dt
             # We can't easily test the exact content since it depends on current time
-            assert len(embed.description.split("\n")) >= 2  # Original + next update line
-        
+            assert (
+                len(embed.description.split("\n")) >= 2
+            )  # Original + next update line
+
     def test_embed_with_interval_update(self) -> None:
         """Test embed creation with interval-based updates."""
         # Mock get_local_now to ensure predictable behavior
-        with patch('src.tgraph_bot.utils.discord.discord_file_utils.get_local_now') as mock_get_local_now:
+        with patch(
+            "src.tgraph_bot.utils.discord.discord_file_utils.get_local_now"
+        ) as mock_get_local_now:
             mock_now = datetime(2025, 1, 15, 12, 0, 0, tzinfo=get_local_timezone())
             mock_get_local_now.return_value = mock_now
 
             embed = create_graph_specific_embed(
-                "daily_play_count.png",
-                update_days=3,
-                fixed_update_time="XX:XX"
+                "daily_play_count.png", update_days=3, fixed_update_time="XX:XX"
             )
 
             assert embed.description is not None
             assert "Next update:" in embed.description
-        
+
     def test_embed_without_update_config(self) -> None:
         """Test embed creation without update configuration."""
         embed = create_graph_specific_embed("daily_play_count.png")
-        
+
         assert embed.description is not None
         assert "Next update:" not in embed.description
-        
+
     def test_embed_with_invalid_update_config(self) -> None:
         """Test embed creation with invalid update configuration."""
         embed = create_graph_specific_embed(
-            "daily_play_count.png",
-            update_days=7,
-            fixed_update_time="invalid"
+            "daily_play_count.png", update_days=7, fixed_update_time="invalid"
         )
-        
+
         assert embed.description is not None
-        assert "Next update:" not in embed.description  # Should not add invalid timestamp
+        assert (
+            "Next update:" not in embed.description
+        )  # Should not add invalid timestamp

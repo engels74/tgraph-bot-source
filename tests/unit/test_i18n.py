@@ -23,10 +23,10 @@ class TestI18nModule:
         """Test setting up i18n with default English language."""
         # This should not raise an exception even if locale files don't exist
         i18n.setup_i18n()
-        
+
         # The translation function should be available
         assert callable(i18n._)
-        
+
         # Test that we can get the translation function
         translation_func = i18n.get_translation()
         assert callable(translation_func)
@@ -35,7 +35,7 @@ class TestI18nModule:
         """Test setting up i18n with a specific language."""
         # Test with a language that doesn't exist - should fallback gracefully
         i18n.setup_i18n("da")
-        
+
         # The translation function should still be available
         assert callable(i18n._)
 
@@ -69,22 +69,22 @@ class TestI18nModule:
         result = i18n.t("User {user} has {count} items", user="Bob", count=5)
         assert result == "User Bob has 5 items"
 
-    @patch('src.tgraph_bot.i18n.logger')
+    @patch("src.tgraph_bot.i18n.logger")
     def test_setup_i18n_with_exception(self, mock_logger: MagicMock) -> None:
         """Test setup_i18n handles exceptions gracefully."""
-        with patch('gettext.translation', side_effect=Exception("Test error")):
+        with patch("gettext.translation", side_effect=Exception("Test error")):
             i18n.setup_i18n("invalid")
-            
+
             # Should log a warning
             mock_logger.warning.assert_called()  # pyright: ignore[reportAny]
             mock_logger.info.assert_called_with("Using default English strings")  # pyright: ignore[reportAny]
 
-    @patch('src.tgraph_bot.i18n.logger')
+    @patch("src.tgraph_bot.i18n.logger")
     def test_translate_formatting_error_logging(self, mock_logger: MagicMock) -> None:
         """Test that formatting errors are logged properly."""
         # Test with invalid format string
         _ = i18n.translate("Hello, {invalid_key}", valid_key="value")
-        
+
         # Should log a warning about formatting error
         mock_logger.warning.assert_called()  # pyright: ignore[reportAny]
         assert "Translation formatting error" in str(mock_logger.warning.call_args)  # pyright: ignore[reportAny]
@@ -93,7 +93,7 @@ class TestI18nModule:
         """Test that get_translation returns a callable function."""
         translation_func = i18n.get_translation()
         assert callable(translation_func)
-        
+
         # Test that the returned function works
         result = translation_func("test")
         assert isinstance(result, str)
@@ -108,7 +108,7 @@ class TestI18nWithRealLocaleFiles:
         locale_dir = Path("locale")
         if locale_dir.exists():
             i18n.setup_i18n("en")
-            
+
             # Test translation of a known string from messages.po
             result = i18n.translate("Bot is online and ready!")
             assert isinstance(result, str)
@@ -119,7 +119,7 @@ class TestI18nWithRealLocaleFiles:
         """Test fallback behavior when translation files are missing."""
         # Test with a non-existent language
         i18n.setup_i18n("nonexistent")
-        
+
         # Should still work and return original strings
         result = i18n.translate("Test message")
         assert result == "Test message"
@@ -131,18 +131,18 @@ class TestI18nIntegration:
     def test_module_imports_correctly(self) -> None:
         """Test that the i18n module can be imported and used."""
         # Test that all expected functions are available
-        assert hasattr(i18n, 'setup_i18n')
-        assert hasattr(i18n, 'get_translation')
-        assert hasattr(i18n, 'translate')
-        assert hasattr(i18n, 't')
-        assert hasattr(i18n, '_')
-        assert hasattr(i18n, 'ngettext')
-        assert hasattr(i18n, 'nt')
-        assert hasattr(i18n, 'get_current_language')
-        assert hasattr(i18n, 'get_locale_directory')
-        assert hasattr(i18n, 'get_domain')
-        assert hasattr(i18n, 'install_translation')
-        assert hasattr(i18n, 'switch_language')
+        assert hasattr(i18n, "setup_i18n")
+        assert hasattr(i18n, "get_translation")
+        assert hasattr(i18n, "translate")
+        assert hasattr(i18n, "t")
+        assert hasattr(i18n, "_")
+        assert hasattr(i18n, "ngettext")
+        assert hasattr(i18n, "nt")
+        assert hasattr(i18n, "get_current_language")
+        assert hasattr(i18n, "get_locale_directory")
+        assert hasattr(i18n, "get_domain")
+        assert hasattr(i18n, "install_translation")
+        assert hasattr(i18n, "switch_language")
 
     def test_global_translation_function(self) -> None:
         """Test that the global _ function works correctly."""
@@ -221,7 +221,7 @@ class TestI18nEnhancedFeatures:
             "User {user} has {n} message",
             "User {user} has {n} messages",
             3,
-            user="Alice"
+            user="Alice",
         )
         assert result == "User Alice has 3 messages"
 
@@ -230,7 +230,7 @@ class TestI18nEnhancedFeatures:
         result = i18n.nt("You have {n} item", "You have {n} items", 2)
         assert result == "You have 2 items"
 
-    @patch('src.tgraph_bot.i18n.logger')
+    @patch("src.tgraph_bot.i18n.logger")
     def test_install_translation(self, mock_logger: MagicMock) -> None:
         """Test installing translation globally."""
         # This should not raise an exception

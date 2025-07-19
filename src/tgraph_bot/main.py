@@ -755,7 +755,7 @@ async def main() -> None:
     path_config.set_paths(
         config_file=parsed_args.config_file,
         data_folder=parsed_args.data_folder,
-        log_folder=parsed_args.log_folder
+        log_folder=parsed_args.log_folder,
     )
 
     # Setup logging after paths are configured

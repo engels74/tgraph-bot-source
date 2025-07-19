@@ -20,7 +20,7 @@ class TestGraphDimensionConfiguration:
             "CHANNEL_ID": 123456789012345678,
         }
         config = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
-        
+
         # Test default values match BaseGraph defaults
         assert config.GRAPH_WIDTH == 12
         assert config.GRAPH_HEIGHT == 8
@@ -38,7 +38,7 @@ class TestGraphDimensionConfiguration:
             "GRAPH_DPI": 150,
         }
         config = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
-        
+
         assert config.GRAPH_WIDTH == 16
         assert config.GRAPH_HEIGHT == 10
         assert config.GRAPH_DPI == 150
@@ -52,10 +52,10 @@ class TestGraphDimensionConfiguration:
             "CHANNEL_ID": 123456789012345678,
             "GRAPH_WIDTH": 5,  # Below minimum of 6
         }
-        
+
         with pytest.raises(ValidationError) as exc_info:
             _ = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
-        
+
         errors = exc_info.value.errors()
         assert any(error["loc"] == ("GRAPH_WIDTH",) for error in errors)
 
@@ -68,10 +68,10 @@ class TestGraphDimensionConfiguration:
             "CHANNEL_ID": 123456789012345678,
             "GRAPH_WIDTH": 25,  # Above maximum of 20
         }
-        
+
         with pytest.raises(ValidationError) as exc_info:
             _ = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
-        
+
         errors = exc_info.value.errors()
         assert any(error["loc"] == ("GRAPH_WIDTH",) for error in errors)
 
@@ -84,10 +84,10 @@ class TestGraphDimensionConfiguration:
             "CHANNEL_ID": 123456789012345678,
             "GRAPH_HEIGHT": 3,  # Below minimum of 4
         }
-        
+
         with pytest.raises(ValidationError) as exc_info:
             _ = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
-        
+
         errors = exc_info.value.errors()
         assert any(error["loc"] == ("GRAPH_HEIGHT",) for error in errors)
 
@@ -100,10 +100,10 @@ class TestGraphDimensionConfiguration:
             "CHANNEL_ID": 123456789012345678,
             "GRAPH_HEIGHT": 18,  # Above maximum of 16
         }
-        
+
         with pytest.raises(ValidationError) as exc_info:
             _ = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
-        
+
         errors = exc_info.value.errors()
         assert any(error["loc"] == ("GRAPH_HEIGHT",) for error in errors)
 
@@ -116,10 +116,10 @@ class TestGraphDimensionConfiguration:
             "CHANNEL_ID": 123456789012345678,
             "GRAPH_DPI": 60,  # Below minimum of 72
         }
-        
+
         with pytest.raises(ValidationError) as exc_info:
             _ = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
-        
+
         errors = exc_info.value.errors()
         assert any(error["loc"] == ("GRAPH_DPI",) for error in errors)
 
@@ -132,10 +132,10 @@ class TestGraphDimensionConfiguration:
             "CHANNEL_ID": 123456789012345678,
             "GRAPH_DPI": 350,  # Above maximum of 300
         }
-        
+
         with pytest.raises(ValidationError) as exc_info:
             _ = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
-        
+
         errors = exc_info.value.errors()
         assert any(error["loc"] == ("GRAPH_DPI",) for error in errors)
 
@@ -147,9 +147,9 @@ class TestGraphDimensionConfiguration:
             "TAUTULLI_URL": "http://localhost:8181/api/v2",
             "DISCORD_TOKEN": "test_discord_token",
             "CHANNEL_ID": 123456789012345678,
-            "GRAPH_WIDTH": 6,   # Minimum allowed
+            "GRAPH_WIDTH": 6,  # Minimum allowed
             "GRAPH_HEIGHT": 4,  # Minimum allowed
-            "GRAPH_DPI": 72,    # Minimum allowed
+            "GRAPH_DPI": 72,  # Minimum allowed
         }
         config_min = TGraphBotConfig(**config_data_min)  # pyright: ignore[reportArgumentType]
         assert config_min.GRAPH_WIDTH == 6
@@ -162,9 +162,9 @@ class TestGraphDimensionConfiguration:
             "TAUTULLI_URL": "http://localhost:8181/api/v2",
             "DISCORD_TOKEN": "test_discord_token",
             "CHANNEL_ID": 123456789012345678,
-            "GRAPH_WIDTH": 20,   # Maximum allowed
+            "GRAPH_WIDTH": 20,  # Maximum allowed
             "GRAPH_HEIGHT": 16,  # Maximum allowed
-            "GRAPH_DPI": 300,    # Maximum allowed
+            "GRAPH_DPI": 300,  # Maximum allowed
         }
         config_max = TGraphBotConfig(**config_data_max)  # pyright: ignore[reportArgumentType]
         assert config_max.GRAPH_WIDTH == 20
@@ -180,7 +180,7 @@ class TestGraphDimensionConfiguration:
             "CHANNEL_ID": 123456789012345678,
             "GRAPH_WIDTH": "12",  # String instead of int
         }
-        
+
         # Pydantic should coerce string to int if possible
         config = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
         assert config.GRAPH_WIDTH == 12
@@ -193,11 +193,11 @@ class TestGraphDimensionConfiguration:
             "TAUTULLI_URL": "http://localhost:8181/api/v2",
             "DISCORD_TOKEN": "test_discord_token",
             "CHANNEL_ID": 123456789012345678,
-            "GRAPH_WIDTH": 12.0,   # Whole float value
-            "GRAPH_HEIGHT": 8.0,   # Whole float value
-            "GRAPH_DPI": 100.0,    # Whole float value
+            "GRAPH_WIDTH": 12.0,  # Whole float value
+            "GRAPH_HEIGHT": 8.0,  # Whole float value
+            "GRAPH_DPI": 100.0,  # Whole float value
         }
-        
+
         config = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
         assert config.GRAPH_WIDTH == 12
         assert config.GRAPH_HEIGHT == 8
@@ -213,12 +213,12 @@ class TestGraphDimensionConfiguration:
             "TAUTULLI_URL": "http://localhost:8181/api/v2",
             "DISCORD_TOKEN": "test_discord_token",
             "CHANNEL_ID": 123456789012345678,
-            "GRAPH_WIDTH": 12.7,   # Fractional float value
+            "GRAPH_WIDTH": 12.7,  # Fractional float value
         }
-        
+
         with pytest.raises(ValidationError) as exc_info:
             _ = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
-        
+
         errors = exc_info.value.errors()
         assert any(error["loc"] == ("GRAPH_WIDTH",) for error in errors)
 
@@ -276,7 +276,7 @@ class TestGraphDimensionConfiguration:
             "GRAPH_BACKGROUND_COLOR": "#ffffff",
         }
         config = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
-        
+
         # Verify all values are set correctly
         assert config.GRAPH_WIDTH == 14
         assert config.GRAPH_HEIGHT == 10

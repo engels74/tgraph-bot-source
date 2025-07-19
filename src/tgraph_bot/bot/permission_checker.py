@@ -29,6 +29,7 @@ class BotProtocol(Protocol):
     @property
     def tree(self) -> discord.app_commands.CommandTree: ...
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -48,7 +49,10 @@ class PermissionChecker:
         "about": {"admin_required": False, "description": "Bot information"},
         "config": {"admin_required": True, "description": "Configuration management"},
         "my_stats": {"admin_required": False, "description": "Personal statistics"},
-        "update_graphs": {"admin_required": True, "description": "Manual graph generation"},
+        "update_graphs": {
+            "admin_required": True,
+            "description": "Manual graph generation",
+        },
         "test_scheduler": {"admin_required": True, "description": "Scheduler testing"},
         "uptime": {"admin_required": False, "description": "Bot uptime information"},
     }
@@ -124,8 +128,12 @@ class PermissionChecker:
                 # Handle rate limiting (HTTP 429)
                 if e.status == 429:
                     retry_after = 1.0  # Default retry delay
-                    if hasattr(e, 'response') and e.response and hasattr(e.response, 'headers'):
-                        retry_after_header = e.response.headers.get('Retry-After')
+                    if (
+                        hasattr(e, "response")
+                        and e.response
+                        and hasattr(e.response, "headers")
+                    ):
+                        retry_after_header = e.response.headers.get("Retry-After")
                         if retry_after_header:
                             try:
                                 retry_after = float(retry_after_header)
@@ -151,7 +159,9 @@ class PermissionChecker:
         # This should never be reached due to the raise statements above
         return []
 
-    async def get_slash_commands(self, guild: discord.Guild | None = None) -> list[app_commands.AppCommand]:
+    async def get_slash_commands(
+        self, guild: discord.Guild | None = None
+    ) -> list[app_commands.AppCommand]:
         """
         Get all slash commands for a guild or globally using Discord API.
 
@@ -171,7 +181,9 @@ class PermissionChecker:
 
             guild_context = f"guild {guild.name}" if guild else "global"
             if commands:
-                logger.debug(f"Found {len(commands)} registered commands for {guild_context}")
+                logger.debug(
+                    f"Found {len(commands)} registered commands for {guild_context}"
+                )
             else:
                 logger.debug(f"No registered commands found for {guild_context}")
 
@@ -179,18 +191,22 @@ class PermissionChecker:
 
         except discord.HTTPException as e:
             guild_context = f"guild {guild.name}" if guild else "global"
-            logger.warning(f"Failed to fetch commands from Discord API for {guild_context}: {e}")
+            logger.warning(
+                f"Failed to fetch commands from Discord API for {guild_context}: {e}"
+            )
             return []
 
         except Exception as e:
             guild_context = f"guild {guild.name}" if guild else "global"
             logger.error(
                 f"Unexpected error getting slash commands for {guild_context}: {e}",
-                exc_info=True
+                exc_info=True,
             )
             return []
 
-    def _analyze_command_permissions(self, command: app_commands.AppCommand) -> dict[str, str | bool]:
+    def _analyze_command_permissions(
+        self, command: app_commands.AppCommand
+    ) -> dict[str, str | bool]:
         """
         Analyze a command's permission configuration.
 
@@ -213,23 +229,30 @@ class PermissionChecker:
         expected = self.EXPECTED_COMMAND_PERMISSIONS.get(command.name, {})
         analysis["is_admin_command"] = bool(expected.get("admin_required", False))
 
-
         # Check default member permissions
         if command.default_member_permissions:
-            analysis["requires_manage_guild"] = command.default_member_permissions.manage_guild
+            analysis["requires_manage_guild"] = (
+                command.default_member_permissions.manage_guild
+            )
 
         # Security analysis for admin commands
         if analysis["is_admin_command"]:
             if not analysis["has_default_permissions"]:
                 analysis["security_warning"] = True
-                analysis["warning_message"] = "Admin command has no default permission restrictions"
+                analysis["warning_message"] = (
+                    "Admin command has no default permission restrictions"
+                )
             elif not analysis["requires_manage_guild"]:
                 analysis["security_warning"] = True
-                analysis["warning_message"] = "Admin command doesn't require Manage Server permission"
+                analysis["warning_message"] = (
+                    "Admin command doesn't require Manage Server permission"
+                )
 
         return analysis
 
-    async def _check_command_sync_status(self, guild: discord.Guild | None = None) -> dict[str, object]:
+    async def _check_command_sync_status(
+        self, guild: discord.Guild | None = None
+    ) -> dict[str, object]:
         """
         Check the sync status of commands to help with debugging.
 
@@ -259,7 +282,9 @@ class PermissionChecker:
 
             # Check API commands (what's registered with Discord)
             try:
-                api_commands = await self._fetch_commands_with_retry(guild, max_retries=1)
+                api_commands = await self._fetch_commands_with_retry(
+                    guild, max_retries=1
+                )
                 status["api_commands_count"] = len(api_commands)
                 status["api_command_names"] = [cmd.name for cmd in api_commands]
 
@@ -312,26 +337,26 @@ class PermissionChecker:
         # Fetch guild-specific permission overrides
         try:
             guild_permissions = await command.fetch_permissions(guild)
-            
+
             if guild_permissions and guild_permissions.permissions:
                 # Process permission overrides
                 role_overrides: list[str] = []
                 user_overrides: list[str] = []
                 channel_restrictions: list[str] = []
-                
+
                 for perm in guild_permissions.permissions:
                     if perm.type == discord.AppCommandPermissionType.role:
                         role = guild.get_role(perm.id)
                         if role:
                             status = "Allowed" if perm.permission else "Denied"
                             role_overrides.append(f"{role.name} ({status})")
-                    
+
                     elif perm.type == discord.AppCommandPermissionType.user:
                         member = guild.get_member(perm.id)
                         if member:
                             status = "Allowed" if perm.permission else "Denied"
                             user_overrides.append(f"{member.display_name} ({status})")
-                    
+
                     elif perm.type == discord.AppCommandPermissionType.channel:
                         channel = guild.get_channel(perm.id)
                         if channel:
@@ -341,7 +366,7 @@ class PermissionChecker:
                 # Update analysis with overrides
                 analysis["permission_overrides"] = role_overrides + user_overrides
                 analysis["channel_restrictions"] = channel_restrictions
-                
+
                 # Update accessible_by description to show Integration settings
                 if role_overrides or user_overrides:
                     # Show the actual server admin's Integration permission settings
@@ -350,28 +375,36 @@ class PermissionChecker:
                 elif guild_permissions.permissions:
                     # If permissions exist but no role/user overrides, might have channel-only restrictions
                     analysis["accessible_by"] = "Integration settings configured"
-                        
+
         except (discord.HTTPException, discord.Forbidden, discord.NotFound) as e:
             # Permission fetch failed - log debug info but continue with default analysis
-            logger.debug(f"Failed to fetch permissions for command {command.name} in {guild.name}: {e}")
+            logger.debug(
+                f"Failed to fetch permissions for command {command.name} in {guild.name}: {e}"
+            )
         except Exception as e:
             # Unexpected error - log but don't crash
-            logger.warning(f"Unexpected error fetching permissions for {command.name}: {e}")
+            logger.warning(
+                f"Unexpected error fetching permissions for {command.name}: {e}"
+            )
 
         return analysis
 
-    async def _analyze_integration_permissions(self, guild: discord.Guild, commands: list[app_commands.AppCommand] | None = None) -> dict[str, str]:
+    async def _analyze_integration_permissions(
+        self,
+        guild: discord.Guild,
+        commands: list[app_commands.AppCommand] | None = None,
+    ) -> dict[str, str]:
         """
         Analyze Discord Integration permissions that control global access to the bot.
-        
+
         This fetches the server admin's Integration settings that control:
         - Global "Roles & members" access to ALL bot commands
         - Global "Channels" restrictions for ALL bot commands
-        
+
         Args:
             guild: The Discord guild to analyze
             commands: Optional list of commands to use (avoids re-fetching)
-            
+
         Returns:
             Dictionary with integration permission analysis:
             - global_roles_access: Description of which roles can use the bot
@@ -381,73 +414,97 @@ class PermissionChecker:
             "global_roles_access": "Not configured (all members)",
             "global_channels_access": "None (all channels)",
         }
-        
+
         try:
             # Use provided commands or fetch them (optimization: prefer provided)
             if commands is None:
                 commands = await self.bot.tree.fetch_commands(guild=guild)
-            
+
             if commands:
                 # Check if there are any guild-level integration settings
                 # by looking at the first command's permissions as a proxy
                 first_command = commands[0]
                 try:
                     guild_permissions = await first_command.fetch_permissions(guild)
-                    
+
                     if guild_permissions and guild_permissions.permissions:
                         # Analyze if there are global-like restrictions
                         roles_mentioned: list[str] = []
                         channels_mentioned: list[str] = []
-                        
+
                         for perm in guild_permissions.permissions:
                             if perm.type == discord.AppCommandPermissionType.role:
                                 role = guild.get_role(perm.id)
                                 if role:
-                                    if perm.id == guild.default_role.id:  # @everyone role
+                                    if (
+                                        perm.id == guild.default_role.id
+                                    ):  # @everyone role
                                         if not perm.permission:
-                                            analysis["global_roles_access"] = "Restricted from @everyone"
+                                            analysis["global_roles_access"] = (
+                                                "Restricted from @everyone"
+                                            )
                                     else:
-                                        status = "Allowed" if perm.permission else "Denied"
-                                        roles_mentioned.append(f"{role.name} ({status})")
-                            
+                                        status = (
+                                            "Allowed" if perm.permission else "Denied"
+                                        )
+                                        roles_mentioned.append(
+                                            f"{role.name} ({status})"
+                                        )
+
                             elif perm.type == discord.AppCommandPermissionType.channel:
                                 channel = guild.get_channel(perm.id)
                                 if channel:
-                                    status = "Allowed" if perm.permission else "Restricted"
-                                    channels_mentioned.append(f"#{channel.name} ({status})")
-                        
+                                    status = (
+                                        "Allowed" if perm.permission else "Restricted"
+                                    )
+                                    channels_mentioned.append(
+                                        f"#{channel.name} ({status})"
+                                    )
+
                         # Build descriptions from found permissions
                         if roles_mentioned:
-                            analysis["global_roles_access"] = ", ".join(roles_mentioned[:3])  # Limit display
+                            analysis["global_roles_access"] = ", ".join(
+                                roles_mentioned[:3]
+                            )  # Limit display
                             if len(roles_mentioned) > 3:
-                                analysis["global_roles_access"] += f" (+{len(roles_mentioned) - 3} more)"
-                        
+                                analysis["global_roles_access"] += (
+                                    f" (+{len(roles_mentioned) - 3} more)"
+                                )
+
                         if channels_mentioned:
-                            analysis["global_channels_access"] = ", ".join(channels_mentioned[:2])  # Limit display
+                            analysis["global_channels_access"] = ", ".join(
+                                channels_mentioned[:2]
+                            )  # Limit display
                             if len(channels_mentioned) > 2:
-                                analysis["global_channels_access"] += f" (+{len(channels_mentioned) - 2} more)"
-                    
+                                analysis["global_channels_access"] += (
+                                    f" (+{len(channels_mentioned) - 2} more)"
+                                )
+
                 except (discord.HTTPException, discord.Forbidden, discord.NotFound):
                     # Permission fetch failed - use defaults
                     pass
-            
+
         except (discord.HTTPException, discord.Forbidden) as e:
             # Failed to access integration permissions
-            logger.debug(f"Failed to fetch integration permissions for {guild.name}: {e}")
+            logger.debug(
+                f"Failed to fetch integration permissions for {guild.name}: {e}"
+            )
             analysis["global_roles_access"] = "Unable to fetch (need Manage Server)"
             analysis["global_channels_access"] = "Unable to fetch (need Manage Server)"
         except Exception as e:
             # Unexpected error
-            logger.warning(f"Unexpected error fetching integration permissions for {guild.name}: {e}")
-        
+            logger.warning(
+                f"Unexpected error fetching integration permissions for {guild.name}: {e}"
+            )
+
         return analysis
 
     def _format_enhanced_permission_table(
-        self, 
-        guild: discord.Guild, 
+        self,
+        guild: discord.Guild,
         bot_permissions: dict[str, bool],
         enhanced_command_analyses: list[dict[str, str | list[str]]],
-        integration_analysis: dict[str, str] | None = None
+        integration_analysis: dict[str, str] | None = None,
     ) -> str:
         """
         Format enhanced permission information into a modern table matching the reference format.
@@ -474,14 +531,14 @@ class PermissionChecker:
         bot_header = " 🤖 Bot Permissions"
         lines.append(self._pad_line_to_width(bot_header, total_width))
         lines.append("├" + "─" * (total_width - 2) + "┤")
-        
+
         # Show detailed Discord permissions with status
         for perm_name, has_perm in bot_permissions.items():
             status_indicator = "✅ Granted" if has_perm else "❌ Missing"
             perm_display = perm_name.replace("_", " ").title()
             perm_row = f" {perm_display:<30} | {status_indicator:<45}"
             lines.append(self._pad_line_to_width(perm_row, total_width))
-        
+
         # Add visual separation between sections
         lines.append("├" + "─" * (total_width - 2) + "┤")
 
@@ -489,26 +546,32 @@ class PermissionChecker:
         integration_header = " ⚙️ Integration Access Control"
         lines.append(self._pad_line_to_width(integration_header, total_width))
         lines.append("├" + "─" * (total_width - 2) + "┤")
-        
+
         # Table headers for integration section
         table_header_row = f" {'Permission Entity':<30} | {'Status':<45}"
         lines.append(self._pad_line_to_width(table_header_row, total_width))
         lines.append("├" + "─" * (total_width - 2) + "┤")
-        
+
         # Use integration analysis if provided, otherwise use defaults
         if integration_analysis:
-            global_roles_desc = integration_analysis.get("global_roles_access", "Not configured (all members)")
-            global_channels_desc = integration_analysis.get("global_channels_access", "None (all channels)")
+            global_roles_desc = integration_analysis.get(
+                "global_roles_access", "Not configured (all members)"
+            )
+            global_channels_desc = integration_analysis.get(
+                "global_channels_access", "None (all channels)"
+            )
         else:
             global_roles_desc = "Not configured (all members)"
             global_channels_desc = "None (all channels)"
-        
+
         # Global role access
         global_access_row = f" {'Global Roles & Members':<30} | {global_roles_desc:<45}"
         lines.append(self._pad_line_to_width(global_access_row, total_width))
-        
+
         # Global channel restrictions
-        global_channels_row = f" {'Global Channel Restrictions':<30} | {global_channels_desc:<45}"
+        global_channels_row = (
+            f" {'Global Channel Restrictions':<30} | {global_channels_desc:<45}"
+        )
         lines.append(self._pad_line_to_width(global_channels_row, total_width))
         lines.append("├" + "─" * (total_width - 2) + "┤")
 
@@ -516,37 +579,43 @@ class PermissionChecker:
         cmd_header_row = f" {'Command':<30} | {'Accessible by':<45}"
         lines.append(self._pad_line_to_width(cmd_header_row, total_width))
         lines.append("├" + "─" * (total_width - 2) + "┤")
-        
+
         if not enhanced_command_analyses:
             no_cmd_row = f" {'No commands found':<30} | {'':<45}"
             lines.append(self._pad_line_to_width(no_cmd_row, total_width))
         else:
             # Sort commands alphabetically by name
-            sorted_analyses = sorted(enhanced_command_analyses, key=lambda x: str(x["name"]).lower())
+            sorted_analyses = sorted(
+                enhanced_command_analyses, key=lambda x: str(x["name"]).lower()
+            )
             for analysis in sorted_analyses:
                 name = str(analysis["name"])
                 accessible_by = str(analysis["accessible_by"])
-                
+
                 # Truncate accessible_by if too long
                 if len(accessible_by) > 45:
                     accessible_by = accessible_by[:42] + "..."
-                
+
                 cmd_row = f" /{name:<29} | {accessible_by:<45}"
                 lines.append(self._pad_line_to_width(cmd_row, total_width))
-                
+
                 # Add channel restriction info if present
                 channel_restrictions = analysis.get("channel_restrictions", [])
                 if isinstance(channel_restrictions, list) and channel_restrictions:
                     for restriction in channel_restrictions:
                         restriction_row = f" {'':<30} | {str(restriction):<45}"
-                        lines.append(self._pad_line_to_width(restriction_row, total_width))
+                        lines.append(
+                            self._pad_line_to_width(restriction_row, total_width)
+                        )
 
         # Close table
         lines.append("└" + "─" * (total_width - 2) + "┘")
 
         return "\n".join(lines)
 
-    def _build_bot_permissions_description(self, bot_permissions: dict[str, bool]) -> str:
+    def _build_bot_permissions_description(
+        self, bot_permissions: dict[str, bool]
+    ) -> str:
         """
         Build a concise description of bot permissions status.
 
@@ -556,8 +625,10 @@ class PermissionChecker:
         Returns:
             Human-readable description of bot permission status
         """
-        missing_perms = [perm for perm, has_perm in bot_permissions.items() if not has_perm]
-        
+        missing_perms = [
+            perm for perm, has_perm in bot_permissions.items() if not has_perm
+        ]
+
         if not missing_perms:
             return "All required permissions granted"
         elif len(missing_perms) <= 2:
@@ -581,7 +652,7 @@ class PermissionChecker:
         """
         width = 0
         for char in text:
-            if unicodedata.east_asian_width(char) in ('F', 'W'):
+            if unicodedata.east_asian_width(char) in ("F", "W"):
                 # Full-width or wide characters (like emojis) take 2 columns
                 width += 2
             elif unicodedata.combining(char):
@@ -628,7 +699,9 @@ class PermissionChecker:
                     break
             padded_content = truncated_content
             # Add any remaining padding needed
-            remaining_width = target_visual_width - self._calculate_visual_width(padded_content)
+            remaining_width = target_visual_width - self._calculate_visual_width(
+                padded_content
+            )
             padded_content += " " * remaining_width
         else:
             # Content fits - just add padding spaces
@@ -637,8 +710,12 @@ class PermissionChecker:
 
         return f"│{padded_content}│"
 
-    def _format_permission_table(self, guild: discord.Guild, bot_permissions: dict[str, bool],
-                                command_analyses: list[dict[str, str | bool]]) -> str:
+    def _format_permission_table(
+        self,
+        guild: discord.Guild,
+        bot_permissions: dict[str, bool],
+        command_analyses: list[dict[str, str | bool]],
+    ) -> str:
         """
         Format permission information into a modern table.
 
@@ -702,15 +779,19 @@ class PermissionChecker:
                 if has_warning and analysis["warning_message"]:
                     warning_msg = str(analysis["warning_message"])
                     # Truncate warning message to fit within table (leave room for prefix)
-                    max_warning_width = total_width - 10  # Account for border and prefix
+                    max_warning_width = (
+                        total_width - 10
+                    )  # Account for border and prefix
                     if len(warning_msg) > max_warning_width:
-                        warning_msg = warning_msg[:max_warning_width - 3] + "..."
+                        warning_msg = warning_msg[: max_warning_width - 3] + "..."
                     warning_content = f"   ⚠️  {warning_msg}"
                     lines.append(self._pad_line_to_width(warning_content, total_width))
 
         # Legend
         lines.append("├" + "─" * (total_width - 2) + "┤")
-        legend_content = " Legend: 🔒=Admin 🔓=User ✅=Has Perms ❌=No Perms 🛡️=Manage Server"
+        legend_content = (
+            " Legend: 🔒=Admin 🔓=User ✅=Has Perms ❌=No Perms 🛡️=Manage Server"
+        )
         lines.append(self._pad_line_to_width(legend_content, total_width))
         lines.append("└" + "─" * (total_width - 2) + "┘")
 
@@ -727,7 +808,7 @@ class PermissionChecker:
     ) -> None:
         """
         Log a comprehensive but concise summary of command registration status.
-        
+
         Args:
             guild_commands: Guild-specific commands from Discord API
             global_commands: Global commands from Discord API
@@ -739,7 +820,7 @@ class PermissionChecker:
         # Determine registration strategy and health
         has_global = len(global_commands) > 0
         has_guild = len(guild_commands) > 0
-        
+
         if has_global and not has_guild:
             strategy = "global commands (recommended)"
             is_healthy = global_local_count == global_api_count
@@ -748,7 +829,9 @@ class PermissionChecker:
             is_healthy = guild_local_count == guild_api_count
         elif has_global and has_guild:
             strategy = "mixed global + guild commands"
-            is_healthy = (global_local_count == global_api_count) and (guild_local_count == guild_api_count)
+            is_healthy = (global_local_count == global_api_count) and (
+                guild_local_count == guild_api_count
+            )
         else:
             strategy = "no commands"
             is_healthy = False
@@ -756,27 +839,43 @@ class PermissionChecker:
         # Log the summary
         if has_global or has_guild:
             status_emoji = "✅" if is_healthy else "⚠️"
-            
+
             logger.info(f"{status_emoji} Command registration strategy: {strategy}")
-            
+
             if has_global:
                 global_names = [cmd.name for cmd in global_commands]
-                sync_status = "synced" if global_local_count == global_api_count else "out of sync"
-                logger.info(f"   Global: {len(global_commands)} registered ({sync_status}) - {', '.join(sorted(global_names))}")
-            
+                sync_status = (
+                    "synced"
+                    if global_local_count == global_api_count
+                    else "out of sync"
+                )
+                logger.info(
+                    f"   Global: {len(global_commands)} registered ({sync_status}) - {', '.join(sorted(global_names))}"
+                )
+
             if has_guild:
                 guild_names = [cmd.name for cmd in guild_commands]
-                sync_status = "synced" if guild_local_count == guild_api_count else "out of sync"
-                logger.info(f"   Guild-specific: {len(guild_commands)} registered ({sync_status}) - {', '.join(sorted(guild_names))}")
-            
+                sync_status = (
+                    "synced" if guild_local_count == guild_api_count else "out of sync"
+                )
+                logger.info(
+                    f"   Guild-specific: {len(guild_commands)} registered ({sync_status}) - {', '.join(sorted(guild_names))}"
+                )
+
             # Note about sync status if there are issues
             if not is_healthy:
                 if has_global and global_local_count != global_api_count:
-                    logger.warning(f"   ⚠️  Global command sync issue: {global_local_count} local vs {global_api_count} registered")
+                    logger.warning(
+                        f"   ⚠️  Global command sync issue: {global_local_count} local vs {global_api_count} registered"
+                    )
                 if has_guild and guild_local_count != guild_api_count:
-                    logger.warning(f"   ⚠️  Guild command sync issue: {guild_local_count} local vs {guild_api_count} registered")
+                    logger.warning(
+                        f"   ⚠️  Guild command sync issue: {guild_local_count} local vs {guild_api_count} registered"
+                    )
         else:
-            logger.info("📋 Command registration: using global commands (0 guild-specific is normal)")
+            logger.info(
+                "📋 Command registration: using global commands (0 guild-specific is normal)"
+            )
 
     def _log_no_commands_found(
         self,
@@ -788,7 +887,7 @@ class PermissionChecker:
     ) -> None:
         """
         Log detailed diagnostics when no commands are found, with context about what might be wrong.
-        
+
         Args:
             guild: The Discord guild being analyzed
             guild_local_count: Number of guild-specific commands in local tree
@@ -796,26 +895,40 @@ class PermissionChecker:
             global_local_count: Number of global commands in local tree
             global_api_count: Number of global commands registered with Discord
         """
-        logger.warning(f"❌ No commands available in {guild.name} - this indicates a problem:")
-        
+        logger.warning(
+            f"❌ No commands available in {guild.name} - this indicates a problem:"
+        )
+
         # Analyze the specific issue
         total_local = guild_local_count + global_local_count
         total_api = guild_api_count + global_api_count
-        
+
         if total_local > 0 and total_api == 0:
-            logger.warning("   🔄 Commands exist locally but aren't registered with Discord")
-            logger.warning("   💡 Solution: Run command sync (bot may need restart or manual sync)")
+            logger.warning(
+                "   🔄 Commands exist locally but aren't registered with Discord"
+            )
+            logger.warning(
+                "   💡 Solution: Run command sync (bot may need restart or manual sync)"
+            )
         elif total_local == 0 and total_api == 0:
             logger.warning("   📋 No commands found locally or on Discord")
             logger.warning("   💡 Solution: Check that bot extensions loaded properly")
         elif total_local == 0 and total_api > 0:
-            logger.warning("   🔄 Commands registered with Discord but not found locally") 
-            logger.warning("   💡 Solution: Check that bot extensions are loading correctly")
+            logger.warning(
+                "   🔄 Commands registered with Discord but not found locally"
+            )
+            logger.warning(
+                "   💡 Solution: Check that bot extensions are loading correctly"
+            )
         else:
             logger.warning("   🤔 Inconsistent command state detected")
-            logger.warning(f"   📊 Local: guild={guild_local_count}, global={global_local_count}")
-            logger.warning(f"   📊 Discord: guild={guild_api_count}, global={global_api_count}")
-        
+            logger.warning(
+                f"   📊 Local: guild={guild_local_count}, global={global_local_count}"
+            )
+            logger.warning(
+                f"   📊 Discord: guild={guild_api_count}, global={global_api_count}"
+            )
+
         logger.warning("   🔧 Troubleshooting steps:")
         logger.warning("     1. Check bot permissions (Use Application Commands)")
         logger.warning("     2. Verify Discord API connectivity")
@@ -836,15 +949,15 @@ class PermissionChecker:
 
             # Fetch both guild and global commands concurrently to minimize API calls
             logger.info(f"Analyzing command registration status for {guild.name}...")
-            
+
             guild_commands_task = self.get_slash_commands(guild)
             global_commands_task = self.get_slash_commands(None)
-            
+
             # Run both command fetches concurrently
             guild_commands, global_commands = await asyncio.gather(
                 guild_commands_task, global_commands_task, return_exceptions=True
             )
-            
+
             # Handle potential exceptions from concurrent operations
             if isinstance(guild_commands, Exception):
                 logger.warning(f"Failed to fetch guild commands: {guild_commands}")
@@ -852,10 +965,12 @@ class PermissionChecker:
             if isinstance(global_commands, Exception):
                 logger.warning(f"Failed to fetch global commands: {global_commands}")
                 global_commands = []
-                
+
             # Ensure type safety for mypy
             guild_commands = guild_commands if isinstance(guild_commands, list) else []
-            global_commands = global_commands if isinstance(global_commands, list) else []
+            global_commands = (
+                global_commands if isinstance(global_commands, list) else []
+            )
 
             # Calculate sync information from the already-fetched data (no additional API calls)
             guild_local_count = len(self.bot.tree.get_commands(guild=guild))
@@ -865,8 +980,12 @@ class PermissionChecker:
 
             # Log comprehensive command registration summary
             self._log_command_registration_summary(
-                guild_commands, global_commands,
-                guild_local_count, guild_api_count, global_local_count, global_api_count
+                guild_commands,
+                global_commands,
+                guild_local_count,
+                guild_api_count,
+                global_local_count,
+                global_api_count,
             )
 
             # Combine both command lists (guild commands take precedence)
@@ -881,10 +1000,18 @@ class PermissionChecker:
 
             # Handle case where no commands are found
             if not commands:
-                self._log_no_commands_found(guild, guild_local_count, guild_api_count, global_local_count, global_api_count)
+                self._log_no_commands_found(
+                    guild,
+                    guild_local_count,
+                    guild_api_count,
+                    global_local_count,
+                    global_api_count,
+                )
             else:
                 command_names = [cmd.name for cmd in commands]
-                logger.info(f"✅ {len(commands)} commands available: {', '.join(sorted(command_names))}")
+                logger.info(
+                    f"✅ {len(commands)} commands available: {', '.join(sorted(command_names))}"
+                )
 
             # Analyze commands concurrently for better performance
             command_analyses: list[dict[str, str | bool]] = []
@@ -896,10 +1023,12 @@ class PermissionChecker:
                 self._analyze_enhanced_command_permissions(command, guild)
                 for command in commands
             ]
-            
+
             # Run enhanced analyses concurrently
-            enhanced_results = await asyncio.gather(*enhanced_analysis_tasks, return_exceptions=True)
-            
+            enhanced_results = await asyncio.gather(
+                *enhanced_analysis_tasks, return_exceptions=True
+            )
+
             for i, command in enumerate(commands):
                 # Run basic analysis (no API calls)
                 old_analysis = self._analyze_command_permissions(command)
@@ -908,7 +1037,9 @@ class PermissionChecker:
                 # Get enhanced analysis result
                 enhanced_result = enhanced_results[i]
                 if isinstance(enhanced_result, Exception):
-                    logger.debug(f"Failed enhanced analysis for {command.name}: {enhanced_result}")
+                    logger.debug(
+                        f"Failed enhanced analysis for {command.name}: {enhanced_result}"
+                    )
                     # Fallback to basic analysis data
                     enhanced_analysis: dict[str, str | list[str]] = {
                         "name": command.name,
@@ -919,14 +1050,16 @@ class PermissionChecker:
                 else:
                     # Type narrowing: we know it's not an Exception here
                     # Use explicit cast since type narrowing isn't working properly
-                    enhanced_analysis = cast(dict[str, str | list[str]], enhanced_result)
-                
+                    enhanced_analysis = cast(
+                        dict[str, str | list[str]], enhanced_result
+                    )
+
                 enhanced_command_analyses.append(enhanced_analysis)
 
                 # Check if this is an admin command and generate security warnings based on actual accessibility
                 expected = self.EXPECTED_COMMAND_PERMISSIONS.get(command.name, {})
                 is_admin_command = bool(expected.get("admin_required", False))
-                
+
                 if is_admin_command:
                     # Only check security if enhanced_analysis is valid (not an exception fallback)
                     if not isinstance(enhanced_result, Exception):
@@ -942,7 +1075,9 @@ class PermissionChecker:
                 try:
                     # Use guild commands for integration analysis, or combined commands if no guild-specific commands
                     analysis_commands = guild_commands if guild_commands else commands
-                    integration_analysis = await self._analyze_integration_permissions(guild, analysis_commands)
+                    integration_analysis = await self._analyze_integration_permissions(
+                        guild, analysis_commands
+                    )
                 except Exception as e:
                     logger.debug(f"Integration analysis failed: {e}")
                     integration_analysis = {
@@ -956,7 +1091,9 @@ class PermissionChecker:
                 }
 
             # Format and log the enhanced permission table
-            table = self._format_enhanced_permission_table(guild, bot_permissions, enhanced_command_analyses, integration_analysis)
+            table = self._format_enhanced_permission_table(
+                guild, bot_permissions, enhanced_command_analyses, integration_analysis
+            )
             logger.info(f"Permission status for {guild.name}:\n{table}")
 
             # Log security warnings separately
@@ -966,12 +1103,18 @@ class PermissionChecker:
                     logger.warning(f"  ⚠️  {warning}")
 
             # Log missing bot permissions
-            missing_bot_perms = [perm for perm, has_perm in bot_permissions.items() if not has_perm]
+            missing_bot_perms = [
+                perm for perm, has_perm in bot_permissions.items() if not has_perm
+            ]
             if missing_bot_perms:
-                logger.warning(f"Missing bot permissions in {guild.name}: {', '.join(missing_bot_perms)}")
+                logger.warning(
+                    f"Missing bot permissions in {guild.name}: {', '.join(missing_bot_perms)}"
+                )
 
         except Exception as e:
-            logger.error(f"Error checking permissions for {guild.name}: {e}", exc_info=True)
+            logger.error(
+                f"Error checking permissions for {guild.name}: {e}", exc_info=True
+            )
 
     async def log_permission_status(self) -> None:
         """

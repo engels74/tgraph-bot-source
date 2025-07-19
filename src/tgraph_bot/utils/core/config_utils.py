@@ -75,7 +75,9 @@ class ConfigurationHelper:
         else:
             raise ConfigurationError(
                 f"Configuration key '{key}' not found",
-                user_message=i18n.translate("Configuration setting `{key}` is not available.", key=key),
+                user_message=i18n.translate(
+                    "Configuration setting `{key}` is not available.", key=key
+                ),
             )
 
     def validate_discord_channel(
@@ -103,13 +105,19 @@ class ConfigurationHelper:
         if channel is None:
             raise ConfigurationError(
                 f"Could not find Discord channel with ID: {channel_id}",
-                user_message=i18n.translate("Could not find Discord channel with ID: {channel_id}. Please check the bot configuration.", channel_id=channel_id),
+                user_message=i18n.translate(
+                    "Could not find Discord channel with ID: {channel_id}. Please check the bot configuration.",
+                    channel_id=channel_id,
+                ),
             )
 
         if not isinstance(channel, discord.TextChannel):
             raise ConfigurationError(
                 f"Channel {channel_id} is not a text channel",
-                user_message=i18n.translate("Channel {channel_id} is not a text channel. Please configure a valid text channel.", channel_id=channel_id),
+                user_message=i18n.translate(
+                    "Channel {channel_id} is not a text channel. Please configure a valid text channel.",
+                    channel_id=channel_id,
+                ),
             )
 
         return channel

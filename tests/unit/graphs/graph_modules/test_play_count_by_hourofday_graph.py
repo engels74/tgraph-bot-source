@@ -3,7 +3,7 @@ Tests for PlayCountByHourOfDayGraph functionality.
 
 This module tests the PlayCountByHourOfDayGraph class including:
 - Graph generation
-- Data validation  
+- Data validation
 - Empty data handling
 - Hour-specific functionality
 """
@@ -40,20 +40,22 @@ class TestPlayCountByHourOfDayGraph:
             }
         }
 
-    def test_standard_graph_functionality(self, sample_hourofday_data: dict[str, object]) -> None:
+    def test_standard_graph_functionality(
+        self, sample_hourofday_data: dict[str, object]
+    ) -> None:
         """Test standard graph functionality using generic test utilities."""
         run_standard_graph_tests(
             PlayCountByHourOfDayGraph,
             sample_hourofday_data,
             "Play Count by Hour of Day (Last 30 days)",
-            expected_file_pattern="play_count_by_hourofday"
+            expected_file_pattern="play_count_by_hourofday",
         )
 
     def test_graph_initialization_with_config(self) -> None:
         """Test graph initialization with configuration."""
         config = create_test_config_minimal()
         config.TIME_RANGE_DAYS = 7
-        
+
         graph = PlayCountByHourOfDayGraph(config=config)
         assert graph.get_title() == "Play Count by Hour of Day (Last 7 days)"
 
@@ -69,11 +71,9 @@ class TestPlayCountByHourOfDayGraph:
             "Missing or invalid 'play_history' data",
             "Invalid play history data",
         ]
-        
+
         run_standard_graph_error_tests(
-            PlayCountByHourOfDayGraph,
-            invalid_data_samples,
-            expected_error_patterns
+            PlayCountByHourOfDayGraph, invalid_data_samples, expected_error_patterns
         )
 
     def test_hour_specific_configuration(self) -> None:
@@ -81,11 +81,11 @@ class TestPlayCountByHourOfDayGraph:
         config = create_test_config_minimal()
         config.TIME_RANGE_DAYS = 14
         config.ANNOTATE_PLAY_COUNT_BY_HOUROFDAY = True
-        
+
         graph = PlayCountByHourOfDayGraph(config=config)
-        
+
         # Test hour-specific title generation
         assert graph.get_title() == "Play Count by Hour of Day (Last 14 days)"
-        
+
         # Test hour-specific configuration access
         assert graph.get_config_value("ANNOTATE_PLAY_COUNT_BY_HOUROFDAY", False) is True

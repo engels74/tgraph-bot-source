@@ -144,7 +144,9 @@ class VisualizationMixin:
             bbox=dict(boxstyle="round,pad=0.5", facecolor="lightgray", alpha=alpha),
         )
 
-    def setup_figure_with_seaborn_grid(self: VisualizationProtocol) -> tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]:
+    def setup_figure_with_seaborn_grid(
+        self: VisualizationProtocol,
+    ) -> tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]:
         """
         Set up figure with grid-aware seaborn styling.
 
@@ -233,9 +235,9 @@ class VisualizationMixin:
             return
 
         for bar, value in zip(bars, values):
-            height = getattr(bar, 'get_height', lambda: 0)()
-            get_x = getattr(bar, 'get_x', lambda: 0)
-            get_width = getattr(bar, 'get_width', lambda: 1)
+            height = getattr(bar, "get_height", lambda: 0)()
+            get_x = getattr(bar, "get_x", lambda: 0)
+            get_width = getattr(bar, "get_width", lambda: 1)
             _ = self.axes.annotate(  # pyright: ignore[reportUnknownMemberType]
                 format_string.format(value),
                 xy=(get_x() + get_width() / 2, height),

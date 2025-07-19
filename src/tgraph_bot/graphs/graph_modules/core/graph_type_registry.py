@@ -50,15 +50,21 @@ class GraphTypeRegistry:
 
         # Import graph classes here to avoid circular imports
         from ..implementations.sample_graph import SampleGraph
-        from ..implementations.tautulli.daily_play_count_graph import DailyPlayCountGraph
+        from ..implementations.tautulli.daily_play_count_graph import (
+            DailyPlayCountGraph,
+        )
         from ..implementations.tautulli.play_count_by_dayofweek_graph import (
             PlayCountByDayOfWeekGraph,
         )
         from ..implementations.tautulli.play_count_by_hourofday_graph import (
             PlayCountByHourOfDayGraph,
         )
-        from ..implementations.tautulli.play_count_by_month_graph import PlayCountByMonthGraph
-        from ..implementations.tautulli.top_10_platforms_graph import Top10PlatformsGraph
+        from ..implementations.tautulli.play_count_by_month_graph import (
+            PlayCountByMonthGraph,
+        )
+        from ..implementations.tautulli.top_10_platforms_graph import (
+            Top10PlatformsGraph,
+        )
         from ..implementations.tautulli.top_10_users_graph import Top10UsersGraph
 
         # Register all graph types

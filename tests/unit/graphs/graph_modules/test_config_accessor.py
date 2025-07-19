@@ -9,7 +9,10 @@ import pytest
 
 from src.tgraph_bot.graphs.graph_modules import ConfigAccessor
 from src.tgraph_bot.utils.core.exceptions import ConfigurationError
-from tests.utils.graph_helpers import create_test_config_minimal, create_test_config_comprehensive
+from tests.utils.graph_helpers import (
+    create_test_config_minimal,
+    create_test_config_comprehensive,
+)
 
 
 class TestConfigAccessor:
@@ -67,7 +70,9 @@ class TestConfigAccessor:
         config = create_test_config_minimal()
         accessor = ConfigAccessor(config)
 
-        assert accessor.get_value("TAUTULLI_API_KEY", "default") == "test_api_key_minimal"
+        assert (
+            accessor.get_value("TAUTULLI_API_KEY", "default") == "test_api_key_minimal"
+        )
         assert accessor.get_value("NONEXISTENT_KEY", "default") == "default"
         assert accessor.get_value("NONEXISTENT_KEY", 123) == 123
 
@@ -76,14 +81,18 @@ class TestConfigAccessor:
         config_dict: dict[str, object] = {}
         accessor = ConfigAccessor(config_dict)
 
-        with pytest.raises(ConfigurationError, match="Configuration key 'MISSING_KEY' not found"):
-            accessor.get_value("MISSING_KEY")
+        with pytest.raises(
+            ConfigurationError, match="Configuration key 'MISSING_KEY' not found"
+        ):
+            _ = accessor.get_value("MISSING_KEY")
 
         config = create_test_config_minimal()
         accessor = ConfigAccessor(config)
 
-        with pytest.raises(ConfigurationError, match="Configuration key 'MISSING_KEY' not found"):
-            accessor.get_value("MISSING_KEY")
+        with pytest.raises(
+            ConfigurationError, match="Configuration key 'MISSING_KEY' not found"
+        ):
+            _ = accessor.get_value("MISSING_KEY")
 
     def test_get_bool_value_dict(self) -> None:
         """Test getting boolean values from dictionary configuration."""
@@ -130,7 +139,9 @@ class TestConfigAccessor:
 
         assert accessor.get_int_value("INT_VALUE", 0) == 42
         assert accessor.get_int_value("STRING_INT", 0) == 123
-        assert accessor.get_int_value("INVALID_STRING", 999) == 999  # Falls back to default
+        assert (
+            accessor.get_int_value("INVALID_STRING", 999) == 999
+        )  # Falls back to default
         assert accessor.get_int_value("NONE_VALUE", 888) == 888
         assert accessor.get_int_value("FLOAT_VALUE", 0) == 3  # Converts float to int
         assert accessor.get_int_value("MISSING_KEY", 777) == 777
@@ -140,9 +151,15 @@ class TestConfigAccessor:
         config = create_test_config_comprehensive()
         accessor = ConfigAccessor(config)
 
-        assert accessor.get_int_value("GRAPH_WIDTH", 0) == 12  # Default value from schema
-        assert accessor.get_int_value("GRAPH_HEIGHT", 0) == 8  # Default value from schema
-        assert accessor.get_int_value("GRAPH_DPI", 0) == 100  # Default value from schema
+        assert (
+            accessor.get_int_value("GRAPH_WIDTH", 0) == 12
+        )  # Default value from schema
+        assert (
+            accessor.get_int_value("GRAPH_HEIGHT", 0) == 8
+        )  # Default value from schema
+        assert (
+            accessor.get_int_value("GRAPH_DPI", 0) == 100
+        )  # Default value from schema
         assert accessor.get_int_value("MISSING_KEY", 555) == 555
 
     def test_get_graph_enable_value_dict(self) -> None:
@@ -156,7 +173,9 @@ class TestConfigAccessor:
         accessor = ConfigAccessor(config_dict)
 
         assert accessor.get_graph_enable_value("ENABLE_DAILY_PLAY_COUNT") is True
-        assert accessor.get_graph_enable_value("ENABLE_PLAY_COUNT_BY_DAYOFWEEK") is False
+        assert (
+            accessor.get_graph_enable_value("ENABLE_PLAY_COUNT_BY_DAYOFWEEK") is False
+        )
         assert accessor.get_graph_enable_value("ENABLE_TOP_10_USERS") is True
         assert accessor.get_graph_enable_value("ENABLE_TOP_10_PLATFORMS") is False
         assert accessor.get_graph_enable_value("ENABLE_SAMPLE_GRAPH", False) is False
@@ -173,7 +192,9 @@ class TestConfigAccessor:
         assert accessor.get_graph_enable_value("ENABLE_PLAY_COUNT_BY_MONTH") is True
         assert accessor.get_graph_enable_value("ENABLE_TOP_10_PLATFORMS") is True
         assert accessor.get_graph_enable_value("ENABLE_TOP_10_USERS") is True
-        assert accessor.get_graph_enable_value("ENABLE_SAMPLE_GRAPH") is False  # Not in schema
+        assert (
+            accessor.get_graph_enable_value("ENABLE_SAMPLE_GRAPH") is False
+        )  # Not in schema
 
     def test_get_graph_dimensions_dict(self) -> None:
         """Test getting graph dimensions from dictionary configuration."""
@@ -193,7 +214,11 @@ class TestConfigAccessor:
         accessor = ConfigAccessor(config)
 
         dimensions = accessor.get_graph_dimensions()
-        assert dimensions == {"width": 12, "height": 8, "dpi": 100}  # Default values from schema
+        assert dimensions == {
+            "width": 12,
+            "height": 8,
+            "dpi": 100,
+        }  # Default values from schema
 
     def test_get_graph_dimensions_with_defaults(self) -> None:
         """Test getting graph dimensions with default values."""
@@ -220,7 +245,9 @@ class TestConfigAccessor:
         config_dict: dict[str, object] = {"KEY1": "value1"}
         accessor = ConfigAccessor(config_dict)
 
-        with pytest.raises(ConfigurationError, match="Missing required configuration keys"):
+        with pytest.raises(
+            ConfigurationError, match="Missing required configuration keys"
+        ):
             accessor.validate_required_keys(["KEY1", "KEY2", "KEY3"])
 
     def test_get_all_graph_enable_keys_dict(self) -> None:
@@ -233,7 +260,7 @@ class TestConfigAccessor:
         accessor = ConfigAccessor(config_dict)
 
         enable_keys = accessor.get_all_graph_enable_keys()
-        
+
         # Check that all expected keys are present
         expected_keys = [
             "ENABLE_DAILY_PLAY_COUNT",
@@ -244,7 +271,7 @@ class TestConfigAccessor:
             "ENABLE_TOP_10_USERS",
             "ENABLE_SAMPLE_GRAPH",
         ]
-        
+
         assert set(enable_keys.keys()) == set(expected_keys)
         assert enable_keys["ENABLE_DAILY_PLAY_COUNT"] is True
         assert enable_keys["ENABLE_PLAY_COUNT_BY_DAYOFWEEK"] is False
@@ -257,7 +284,7 @@ class TestConfigAccessor:
         accessor = ConfigAccessor(config)
 
         enable_keys = accessor.get_all_graph_enable_keys()
-        
+
         # All should be True except ENABLE_SAMPLE_GRAPH
         for key, value in enable_keys.items():
             if key == "ENABLE_SAMPLE_GRAPH":

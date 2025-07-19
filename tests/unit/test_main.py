@@ -35,48 +35,62 @@ class TestTGraphBot:
     def test_init_with_config_manager(self, minimal_config: TGraphBotConfig) -> None:
         """Test TGraphBot initialization with ConfigManager."""
         config_manager = create_config_manager_with_config(minimal_config)
-        
+
         bot = TGraphBot(config_manager)
-        
+
         assert isinstance(bot, commands.Bot)
         assert bot.config_manager is config_manager
         assert bot.start_time == 0.0
         assert bot.command_prefix == "!"  # pyright: ignore[reportUnknownMemberType]
         assert bot.help_command is None
-        
+
         # Check intents
-        assert bot.intents.message_content is False  # Privileged intent not required for slash commands
+        assert (
+            bot.intents.message_content is False
+        )  # Privileged intent not required for slash commands
         assert bot.intents.guilds is True
 
     @pytest.mark.asyncio
     async def test_setup_hook_with_config(self, base_config: TGraphBotConfig) -> None:
         """Test setup_hook with valid configuration."""
         config_manager = create_config_manager_with_config(base_config)
-        
+
         bot = TGraphBot(config_manager)
-        
+
         # Mock the setup_i18n (synchronous), load_extensions (async), and tree.sync functions
-        async with async_mock_context("src.tgraph_bot.main.setup_i18n", new_callable=MagicMock) as mock_setup_i18n, \
-                   async_mock_context("src.tgraph_bot.main.load_extensions") as mock_load_extensions:
-            
+        async with (
+            async_mock_context(
+                "src.tgraph_bot.main.setup_i18n", new_callable=MagicMock
+            ) as mock_setup_i18n,
+            async_mock_context(
+                "src.tgraph_bot.main.load_extensions"
+            ) as mock_load_extensions,
+        ):
             # Mock the command tree sync
-            with patch.object(bot.tree, 'sync', new_callable=AsyncMock) as mock_sync, \
-                 patch.object(bot, 'setup_background_tasks', new_callable=AsyncMock) as mock_setup_tasks:
-                
+            with (
+                patch.object(bot.tree, "sync", new_callable=AsyncMock) as mock_sync,
+                patch.object(
+                    bot, "setup_background_tasks", new_callable=AsyncMock
+                ) as mock_setup_tasks,
+            ):
                 # Mock sync to return some synced commands
-                mock_sync.return_value = [MagicMock(), MagicMock(), MagicMock()]  # 3 synced commands
-                
+                mock_sync.return_value = [
+                    MagicMock(),
+                    MagicMock(),
+                    MagicMock(),
+                ]  # 3 synced commands
+
                 await bot.setup_hook()
-                
+
                 # Verify i18n setup was called with correct language
                 mock_setup_i18n.assert_called_once_with(base_config.LANGUAGE)
-                
+
                 # Verify extensions loading was called with bot instance
                 mock_load_extensions.assert_called_once_with(bot)
-                
+
                 # Verify command sync was called
                 mock_sync.assert_called_once()
-                
+
                 # Verify background tasks setup was called
                 mock_setup_tasks.assert_called_once()
 
@@ -87,44 +101,62 @@ class TestTGraphBot:
         bot = TGraphBot(config_manager)
 
         # Mock the setup_i18n (synchronous), load_extensions (async), and tree.sync functions
-        async with async_mock_context("src.tgraph_bot.main.setup_i18n", new_callable=MagicMock) as mock_setup_i18n, \
-                   async_mock_context("src.tgraph_bot.main.load_extensions") as mock_load_extensions:
-            
+        async with (
+            async_mock_context(
+                "src.tgraph_bot.main.setup_i18n", new_callable=MagicMock
+            ) as mock_setup_i18n,
+            async_mock_context(
+                "src.tgraph_bot.main.load_extensions"
+            ) as mock_load_extensions,
+        ):
             # Mock the command tree sync (shouldn't be called due to early failure)
-            with patch.object(bot.tree, 'sync', new_callable=AsyncMock) as mock_sync:
-
+            with patch.object(bot.tree, "sync", new_callable=AsyncMock) as mock_sync:
                 # Should raise RuntimeError when no config is available
-                with pytest.raises(RuntimeError, match="Bot setup failed: No configuration available"):
+                with pytest.raises(
+                    RuntimeError, match="Bot setup failed: No configuration available"
+                ):
                     await bot.setup_hook()
 
                 # Verify i18n setup and extensions loading were not called
                 mock_setup_i18n.assert_not_called()
                 mock_load_extensions.assert_not_called()
-                
+
                 # Verify command sync was not called due to early failure
                 mock_sync.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_setup_hook_command_sync_failure(self, base_config: TGraphBotConfig) -> None:
+    async def test_setup_hook_command_sync_failure(
+        self, base_config: TGraphBotConfig
+    ) -> None:
         """Test setup_hook when command sync fails but continues gracefully."""
         config_manager = create_config_manager_with_config(base_config)
-        
+
         bot = TGraphBot(config_manager)
-        
+
         # Mock the setup_i18n (synchronous) and load_extensions (async) functions
-        async with async_mock_context("src.tgraph_bot.main.setup_i18n", new_callable=MagicMock) as mock_setup_i18n, \
-                   async_mock_context("src.tgraph_bot.main.load_extensions") as mock_load_extensions:
-            
+        async with (
+            async_mock_context(
+                "src.tgraph_bot.main.setup_i18n", new_callable=MagicMock
+            ) as mock_setup_i18n,
+            async_mock_context(
+                "src.tgraph_bot.main.load_extensions"
+            ) as mock_load_extensions,
+        ):
             # Mock the command tree sync to fail
-            with patch.object(bot.tree, 'sync', new_callable=AsyncMock) as mock_sync, \
-                 patch.object(bot, 'setup_background_tasks', new_callable=AsyncMock) as mock_setup_tasks:
-                
+            with (
+                patch.object(bot.tree, "sync", new_callable=AsyncMock) as mock_sync,
+                patch.object(
+                    bot, "setup_background_tasks", new_callable=AsyncMock
+                ) as mock_setup_tasks,
+            ):
                 # Make sync raise an exception
-                mock_sync.side_effect = discord.HTTPException(response=MagicMock(), message="Sync failed")
-                
+                mock_sync.side_effect = discord.HTTPException(
+                    response=MagicMock(), message="Sync failed"
+                )
+
                 # Should complete successfully despite sync failure
                 await bot.setup_hook()
-                
+
                 # Verify other steps still completed
                 mock_setup_i18n.assert_called_once_with(base_config.LANGUAGE)
                 mock_load_extensions.assert_called_once_with(bot)
@@ -147,23 +179,26 @@ class TestTGraphBot:
 
         # Mock extension loading to return some failed extensions
         from src.tgraph_bot.bot.extensions import ExtensionStatus
+
         mock_results = [
             ExtensionStatus("bot.commands.about", True),
             ExtensionStatus("bot.commands.broken", False, "Import error"),
         ]
 
-        with patch("src.tgraph_bot.main.setup_i18n"), \
-             patch("src.tgraph_bot.main.load_extensions", return_value=mock_results):
-            
+        with (
+            patch("src.tgraph_bot.main.setup_i18n"),
+            patch("src.tgraph_bot.main.load_extensions", return_value=mock_results),
+        ):
             # Mock the command tree sync and background tasks
-            with patch.object(bot.tree, 'sync', new_callable=AsyncMock) as mock_sync, \
-                 patch.object(bot, 'setup_background_tasks', new_callable=AsyncMock):
-                
+            with (
+                patch.object(bot.tree, "sync", new_callable=AsyncMock) as mock_sync,
+                patch.object(bot, "setup_background_tasks", new_callable=AsyncMock),
+            ):
                 # Mock sync to return successful commands
                 mock_sync.return_value = [MagicMock()]  # 1 synced command
-                
+
                 await bot.setup_hook()
-                
+
                 # Should complete successfully even with some failed extensions
                 # Verify command sync was still called
                 mock_sync.assert_called_once()
@@ -180,10 +215,13 @@ class TestTGraphBot:
         mock_user.id = 123456789
 
         # Mock time.time to test start_time setting
-        with patch("time.time", return_value=1234567890.0), \
-             patch.object(type(bot), "user", new_callable=lambda: mock_user), \
-             patch.object(type(bot), "guilds", new_callable=lambda: [MagicMock(), MagicMock()]):
-
+        with (
+            patch("time.time", return_value=1234567890.0),
+            patch.object(type(bot), "user", new_callable=lambda: mock_user),
+            patch.object(
+                type(bot), "guilds", new_callable=lambda: [MagicMock(), MagicMock()]
+            ),
+        ):
             await bot.on_ready()
             assert bot.start_time == 1234567890.0
 
@@ -226,15 +264,21 @@ class TestTGraphBot:
         bot = TGraphBot(config_manager)
 
         # Verify required intents are enabled
-        assert bot.intents.message_content is False  # Privileged intent not required for slash commands
-        assert bot.intents.guilds is True, "Guilds intent required for server information"
+        assert (
+            bot.intents.message_content is False
+        )  # Privileged intent not required for slash commands
+        assert bot.intents.guilds is True, (
+            "Guilds intent required for server information"
+        )
 
         # Verify bot configuration
         assert bot.command_prefix == "!"  # pyright: ignore[reportUnknownMemberType]
         assert bot.help_command is None, "Custom help command should be used"
 
     @pytest.mark.asyncio
-    async def test_discord_bot_connection_setup(self, comprehensive_config: TGraphBotConfig) -> None:
+    async def test_discord_bot_connection_setup(
+        self, comprehensive_config: TGraphBotConfig
+    ) -> None:
         """Test that the bot is properly configured for Discord connection."""
         config_manager = create_config_manager_with_config(comprehensive_config)
 
@@ -242,10 +286,13 @@ class TestTGraphBot:
 
         # Verify bot is properly initialized for Discord connection
         assert isinstance(bot, commands.Bot), "Bot should be a discord.py Bot instance"
-        assert bot.config_manager is config_manager, "Config manager should be accessible"
+        assert bot.config_manager is config_manager, (
+            "Config manager should be accessible"
+        )
 
         # Verify async/await patterns are used in event handlers
         import inspect
+
         assert inspect.iscoroutinefunction(bot.on_ready), "on_ready should be async"
         assert inspect.iscoroutinefunction(bot.on_error), "on_error should be async"
         assert inspect.iscoroutinefunction(bot.close), "close should be async"
@@ -259,7 +306,7 @@ class TestTGraphBot:
 
         # Verify bot is configured to use Discord's permissions
         # (This is a structural test - specific permission testing would be in command tests)
-        assert hasattr(bot, 'tree'), "Bot should have application command tree"
+        assert hasattr(bot, "tree"), "Bot should have application command tree"
 
 
 class TestMainFunction:
@@ -274,13 +321,14 @@ class TestMainFunction:
         mock_args = ParsedArgs(
             config_file=Path("data/config/config.yml"),
             data_folder=Path("data"),
-            log_folder=Path("data/logs")
+            log_folder=Path("data/logs"),
         )
 
-        with patch("src.tgraph_bot.main.get_parsed_args", return_value=mock_args), \
-             patch("pathlib.Path.exists", return_value=False), \
-             patch("sys.exit") as mock_exit:
-
+        with (
+            patch("src.tgraph_bot.main.get_parsed_args", return_value=mock_args),
+            patch("pathlib.Path.exists", return_value=False),
+            patch("sys.exit") as mock_exit,
+        ):
             await main()
             # sys.exit should be called with 1, but we don't care how many times
             # since the function may call it multiple times in error handling
@@ -303,14 +351,17 @@ class TestMainFunction:
         mock_args = ParsedArgs(
             config_file=Path("data/config/config.yml"),
             data_folder=Path("data"),
-            log_folder=Path("data/logs")
+            log_folder=Path("data/logs"),
         )
 
-        with patch("src.tgraph_bot.main.get_parsed_args", return_value=mock_args), \
-             patch("pathlib.Path.exists", return_value=True), \
-             patch.object(ConfigManager, "load_config", return_value=mock_config):
-            
-            async with async_mock_context("src.tgraph_bot.main.TGraphBot.start") as mock_start:
+        with (
+            patch("src.tgraph_bot.main.get_parsed_args", return_value=mock_args),
+            patch("pathlib.Path.exists", return_value=True),
+            patch.object(ConfigManager, "load_config", return_value=mock_config),
+        ):
+            async with async_mock_context(
+                "src.tgraph_bot.main.TGraphBot.start"
+            ) as mock_start:
                 await main()
                 mock_start.assert_called_once_with("test_token")
 
@@ -330,16 +381,20 @@ class TestMainFunction:
         mock_args = ParsedArgs(
             config_file=Path("data/config/config.yml"),
             data_folder=Path("data"),
-            log_folder=Path("data/logs")
+            log_folder=Path("data/logs"),
         )
 
-        with patch("src.tgraph_bot.main.get_parsed_args", return_value=mock_args), \
-             patch("pathlib.Path.exists", return_value=True), \
-             patch.object(ConfigManager, "load_config", return_value=mock_config):
-            
-            async with async_mock_context("src.tgraph_bot.main.TGraphBot.start", side_effect=KeyboardInterrupt) as _mock_start, \
-                       async_mock_context("src.tgraph_bot.main.TGraphBot.close") as mock_close:
-                
+        with (
+            patch("src.tgraph_bot.main.get_parsed_args", return_value=mock_args),
+            patch("pathlib.Path.exists", return_value=True),
+            patch.object(ConfigManager, "load_config", return_value=mock_config),
+        ):
+            async with (
+                async_mock_context(
+                    "src.tgraph_bot.main.TGraphBot.start", side_effect=KeyboardInterrupt
+                ) as _mock_start,
+                async_mock_context("src.tgraph_bot.main.TGraphBot.close") as mock_close,
+            ):
                 await main()
                 mock_close.assert_called_once()
 
@@ -359,17 +414,22 @@ class TestMainFunction:
         mock_args = ParsedArgs(
             config_file=Path("data/config/config.yml"),
             data_folder=Path("data"),
-            log_folder=Path("data/logs")
+            log_folder=Path("data/logs"),
         )
 
-        with patch("src.tgraph_bot.main.get_parsed_args", return_value=mock_args), \
-             patch("pathlib.Path.exists", return_value=True), \
-             patch.object(ConfigManager, "load_config", return_value=mock_config), \
-             patch("sys.exit") as mock_exit:
-            
-            async with async_mock_context("src.tgraph_bot.main.TGraphBot.start", side_effect=Exception("Test error")) as _mock_start, \
-                       async_mock_context("src.tgraph_bot.main.TGraphBot.close") as mock_close:
-                
+        with (
+            patch("src.tgraph_bot.main.get_parsed_args", return_value=mock_args),
+            patch("pathlib.Path.exists", return_value=True),
+            patch.object(ConfigManager, "load_config", return_value=mock_config),
+            patch("sys.exit") as mock_exit,
+        ):
+            async with (
+                async_mock_context(
+                    "src.tgraph_bot.main.TGraphBot.start",
+                    side_effect=Exception("Test error"),
+                ) as _mock_start,
+                async_mock_context("src.tgraph_bot.main.TGraphBot.close") as mock_close,
+            ):
                 await main()
                 mock_close.assert_called_once()
                 mock_exit.assert_called_once_with(1)
@@ -394,9 +454,9 @@ class TestEnhancedErrorHandling(AsyncTestBase):
         bot = TGraphBot(config_manager)
 
         # Verify background task management attributes
-        assert hasattr(bot, '_background_tasks')
-        assert hasattr(bot, '_shutdown_event')
-        assert hasattr(bot, '_is_shutting_down')
+        assert hasattr(bot, "_background_tasks")
+        assert hasattr(bot, "_shutdown_event")
+        assert hasattr(bot, "_is_shutting_down")
         assert isinstance(bot._background_tasks, set)  # pyright: ignore[reportPrivateUsage]
         assert isinstance(bot._shutdown_event, asyncio.Event)  # pyright: ignore[reportPrivateUsage]
         assert bot._is_shutting_down is False  # pyright: ignore[reportPrivateUsage]
@@ -409,7 +469,9 @@ class TestEnhancedErrorHandling(AsyncTestBase):
         bot = TGraphBot(config_manager)
 
         # Test with no configuration
-        with pytest.raises(RuntimeError, match="Bot setup failed: No configuration available"):
+        with pytest.raises(
+            RuntimeError, match="Bot setup failed: No configuration available"
+        ):
             await bot.setup_hook()
 
     @pytest.mark.asyncio
@@ -466,7 +528,9 @@ class TestEnhancedErrorHandling(AsyncTestBase):
 
         _ = bot.create_background_task(dummy_task(), "test_task")
 
-        async with async_mock_context("discord.ext.commands.Bot.close") as mock_parent_close:
+        async with async_mock_context(
+            "discord.ext.commands.Bot.close"
+        ) as mock_parent_close:
             await bot.close()
 
             # Verify shutdown state
@@ -481,7 +545,9 @@ class TestEnhancedErrorHandling(AsyncTestBase):
         config_manager = ConfigManager()
         bot = TGraphBot(config_manager)
 
-        async with async_mock_context("discord.ext.commands.Bot.close") as mock_parent_close:
+        async with async_mock_context(
+            "discord.ext.commands.Bot.close"
+        ) as mock_parent_close:
             # First call
             await bot.close()
             assert mock_parent_close.call_count == 1
@@ -506,10 +572,11 @@ class TestEnhancedErrorHandling(AsyncTestBase):
         def mock_empty_guilds() -> list[discord.Guild]:
             return []
 
-        with patch.object(type(bot), "user", new_callable=lambda: mock_user), \
-             patch.object(type(bot), "guilds", new_callable=mock_empty_guilds), \
-             patch.object(bot, "close", new_callable=AsyncMock) as mock_close:
-
+        with (
+            patch.object(type(bot), "user", new_callable=lambda: mock_user),
+            patch.object(type(bot), "guilds", new_callable=mock_empty_guilds),
+            patch.object(bot, "close", new_callable=AsyncMock) as mock_close,
+        ):
             await bot.on_ready()
             mock_close.assert_called_once()
 
@@ -520,7 +587,9 @@ class TestEnhancedErrorHandling(AsyncTestBase):
         bot = TGraphBot(config_manager)
 
         # Should handle errors without raising exceptions
-        await bot.on_error("test_event", "arg1", "arg2", kwarg1="value1", kwarg2="value2")
+        await bot.on_error(
+            "test_event", "arg1", "arg2", kwarg1="value1", kwarg2="value2"
+        )
 
     @pytest.mark.asyncio
     async def test_on_disconnect_and_resumed(self) -> None:
@@ -547,7 +616,7 @@ class TestLoggingSetup:
             path_config.set_paths(
                 config_file=Path(temp_dir) / "data" / "config" / "config.yml",
                 data_folder=Path(temp_dir) / "data",
-                log_folder=logs_dir
+                log_folder=logs_dir,
             )
 
             setup_logging()
@@ -616,7 +685,7 @@ class TestSignalHandling:
         """Test signal handler function behavior."""
         config_manager = ConfigManager()
         bot = TGraphBot(config_manager)
-        
+
         # Mock bot.close as an async function
         bot.close = AsyncMock()
 
@@ -624,9 +693,10 @@ class TestSignalHandling:
         mock_loop = MagicMock()
         mock_loop.is_running.return_value = True  # pyright: ignore[reportAny]
 
-        with patch("signal.signal") as mock_signal, \
-             patch("asyncio.get_event_loop", return_value=mock_loop):
-
+        with (
+            patch("signal.signal") as mock_signal,
+            patch("asyncio.get_event_loop", return_value=mock_loop),
+        ):
             setup_signal_handlers(bot)
 
             # Get the signal handler function
@@ -651,19 +721,23 @@ class TestMainFunctionEnhancements:
         mock_args = ParsedArgs(
             config_file=Path("data/config/config.yml"),
             data_folder=Path("data"),
-            log_folder=Path("data/logs")
+            log_folder=Path("data/logs"),
         )
 
-        with patch("src.tgraph_bot.main.get_parsed_args", return_value=mock_args), \
-             patch("src.tgraph_bot.main.setup_logging") as mock_setup_logging, \
-             patch("pathlib.Path.exists", return_value=False), \
-             patch("sys.exit"):
-
+        with (
+            patch("src.tgraph_bot.main.get_parsed_args", return_value=mock_args),
+            patch("src.tgraph_bot.main.setup_logging") as mock_setup_logging,
+            patch("pathlib.Path.exists", return_value=False),
+            patch("sys.exit"),
+        ):
             # Mock UpdateTracker to prevent background task issues
             mock_update_tracker = MagicMock()
             mock_update_tracker.stop_scheduler = AsyncMock()
-            
-            with patch("src.tgraph_bot.bot.update_tracker.UpdateTracker", return_value=mock_update_tracker):
+
+            with patch(
+                "src.tgraph_bot.bot.update_tracker.UpdateTracker",
+                return_value=mock_update_tracker,
+            ):
                 # Create a proper mock for TGraphBot with async close method
                 mock_bot_class = MagicMock()
                 mock_bot_instance = MagicMock()
@@ -673,7 +747,7 @@ class TestMainFunctionEnhancements:
                 mock_bot_instance.is_shutting_down = mock_is_shutting_down
                 mock_bot_instance.update_tracker = mock_update_tracker
                 mock_bot_class.return_value = mock_bot_instance
-                
+
                 with patch("src.tgraph_bot.main.TGraphBot", mock_bot_class):
                     await main()
                     mock_setup_logging.assert_called_once()
@@ -694,15 +768,16 @@ class TestMainFunctionEnhancements:
         mock_args = ParsedArgs(
             config_file=Path("data/config/config.yml"),
             data_folder=Path("data"),
-            log_folder=Path("data/logs")
+            log_folder=Path("data/logs"),
         )
 
-        with patch("src.tgraph_bot.main.get_parsed_args", return_value=mock_args), \
-             patch("src.tgraph_bot.main.setup_logging"), \
-             patch("pathlib.Path.exists", return_value=True), \
-             patch.object(ConfigManager, "load_config", return_value=mock_config), \
-             patch("src.tgraph_bot.main.setup_signal_handlers") as mock_setup_signals:
-
+        with (
+            patch("src.tgraph_bot.main.get_parsed_args", return_value=mock_args),
+            patch("src.tgraph_bot.main.setup_logging"),
+            patch("pathlib.Path.exists", return_value=True),
+            patch.object(ConfigManager, "load_config", return_value=mock_config),
+            patch("src.tgraph_bot.main.setup_signal_handlers") as mock_setup_signals,
+        ):
             # Create a proper mock for TGraphBot with async methods
             mock_bot_class = MagicMock()
             mock_bot_instance = MagicMock()
@@ -712,7 +787,7 @@ class TestMainFunctionEnhancements:
             mock_is_shutting_down = MagicMock(return_value=False)
             mock_bot_instance.is_shutting_down = mock_is_shutting_down
             mock_bot_class.return_value = mock_bot_instance
-            
+
             with patch("src.tgraph_bot.main.TGraphBot", mock_bot_class):
                 await main()
                 mock_setup_signals.assert_called_once()
@@ -736,18 +811,23 @@ class TestMainFunctionEnhancements:
         mock_args = ParsedArgs(
             config_file=Path("data/config/config.yml"),
             data_folder=Path("data"),
-            log_folder=Path("data/logs")
+            log_folder=Path("data/logs"),
         )
 
-        with patch("src.tgraph_bot.main.get_parsed_args", return_value=mock_args), \
-             patch("src.tgraph_bot.main.setup_logging"), \
-             patch("pathlib.Path.exists", return_value=True), \
-             patch.object(ConfigManager, "load_config", return_value=mock_config), \
-             patch("src.tgraph_bot.main.setup_signal_handlers"), \
-             patch.object(TGraphBot, "start", new_callable=AsyncMock,
-                         side_effect=discord.LoginFailure("Invalid token")), \
-             patch("sys.exit") as mock_exit:
-
+        with (
+            patch("src.tgraph_bot.main.get_parsed_args", return_value=mock_args),
+            patch("src.tgraph_bot.main.setup_logging"),
+            patch("pathlib.Path.exists", return_value=True),
+            patch.object(ConfigManager, "load_config", return_value=mock_config),
+            patch("src.tgraph_bot.main.setup_signal_handlers"),
+            patch.object(
+                TGraphBot,
+                "start",
+                new_callable=AsyncMock,
+                side_effect=discord.LoginFailure("Invalid token"),
+            ),
+            patch("sys.exit") as mock_exit,
+        ):
             await main()
             mock_exit.assert_called_once_with(1)
 
@@ -768,18 +848,23 @@ class TestMainFunctionEnhancements:
         mock_args = ParsedArgs(
             config_file=Path("data/config/config.yml"),
             data_folder=Path("data"),
-            log_folder=Path("data/logs")
+            log_folder=Path("data/logs"),
         )
 
-        with patch("src.tgraph_bot.main.get_parsed_args", return_value=mock_args), \
-             patch("src.tgraph_bot.main.setup_logging"), \
-             patch("pathlib.Path.exists", return_value=True), \
-             patch.object(ConfigManager, "load_config", return_value=mock_config), \
-             patch("src.tgraph_bot.main.setup_signal_handlers"), \
-             patch.object(TGraphBot, "start", new_callable=AsyncMock,
-                         side_effect=discord.HTTPException(MagicMock(), "API Error")), \
-             patch("sys.exit") as mock_exit:
-
+        with (
+            patch("src.tgraph_bot.main.get_parsed_args", return_value=mock_args),
+            patch("src.tgraph_bot.main.setup_logging"),
+            patch("pathlib.Path.exists", return_value=True),
+            patch.object(ConfigManager, "load_config", return_value=mock_config),
+            patch("src.tgraph_bot.main.setup_signal_handlers"),
+            patch.object(
+                TGraphBot,
+                "start",
+                new_callable=AsyncMock,
+                side_effect=discord.HTTPException(MagicMock(), "API Error"),
+            ),
+            patch("sys.exit") as mock_exit,
+        ):
             await main()
             mock_exit.assert_called_once_with(1)
 
@@ -793,16 +878,21 @@ class TestMainFunctionEnhancements:
             CHANNEL_ID=123456789,
         )
 
-        with patch("src.tgraph_bot.main.setup_logging"), \
-             patch("pathlib.Path.exists", return_value=True), \
-             patch.object(ConfigManager, "load_config", return_value=mock_config), \
-             patch("src.tgraph_bot.main.setup_signal_handlers"), \
-             patch.object(TGraphBot, "start", new_callable=AsyncMock,
-                         side_effect=Exception("Test error")), \
-             patch.object(TGraphBot, "close", new_callable=AsyncMock) as mock_close, \
-             patch.object(TGraphBot, "is_shutting_down", return_value=False), \
-             patch("sys.exit"):
-
+        with (
+            patch("src.tgraph_bot.main.setup_logging"),
+            patch("pathlib.Path.exists", return_value=True),
+            patch.object(ConfigManager, "load_config", return_value=mock_config),
+            patch("src.tgraph_bot.main.setup_signal_handlers"),
+            patch.object(
+                TGraphBot,
+                "start",
+                new_callable=AsyncMock,
+                side_effect=Exception("Test error"),
+            ),
+            patch.object(TGraphBot, "close", new_callable=AsyncMock) as mock_close,
+            patch.object(TGraphBot, "is_shutting_down", return_value=False),
+            patch("sys.exit"),
+        ):
             await main()
             # Bot should be closed in finally block
             mock_close.assert_called()
@@ -822,158 +912,220 @@ class TestAutomatedGraphUpdate(AsyncTestBase):
         super().teardown_method()
 
     @pytest.mark.asyncio
-    async def test_automated_graph_update_success(self, base_config: TGraphBotConfig) -> None:
+    async def test_automated_graph_update_success(
+        self, base_config: TGraphBotConfig
+    ) -> None:
         """Test successful automated graph update with new 3-step process."""
         config_manager = create_config_manager_with_config(base_config)
         bot = TGraphBot(config_manager)
-        
+
         # Create mock TextChannel - proper Discord mock
         mock_channel = MagicMock(spec=discord.TextChannel)
         mock_channel.name = "test-channel"
-        
+
         # Mock bot user
         mock_user = MagicMock()
         mock_user.id = 123456789
-        
-        with patch.object(bot, 'get_channel', return_value=mock_channel), \
-             patch.object(type(bot), 'user', new_callable=lambda: mock_user), \
-             patch.object(bot, '_cleanup_bot_messages', new_callable=AsyncMock) as mock_cleanup, \
-             patch('src.tgraph_bot.graphs.graph_manager.GraphManager') as mock_graph_manager_class, \
-             patch.object(bot, '_post_graphs_to_channel', new_callable=AsyncMock, return_value=3) as mock_post:
-            
+
+        with (
+            patch.object(bot, "get_channel", return_value=mock_channel),
+            patch.object(type(bot), "user", new_callable=lambda: mock_user),
+            patch.object(
+                bot, "_cleanup_bot_messages", new_callable=AsyncMock
+            ) as mock_cleanup,
+            patch(
+                "src.tgraph_bot.graphs.graph_manager.GraphManager"
+            ) as mock_graph_manager_class,
+            patch.object(
+                bot, "_post_graphs_to_channel", new_callable=AsyncMock, return_value=3
+            ) as mock_post,
+        ):
             # Setup GraphManager mock
             mock_graph_manager = AsyncMock()
-            mock_graph_manager.generate_all_graphs.return_value = ['graph1.png', 'graph2.png', 'graph3.png']  # pyright: ignore[reportAny]
-            mock_graph_manager_class.return_value.__aenter__.return_value = mock_graph_manager  # pyright: ignore[reportAny]
+            mock_graph_manager.generate_all_graphs.return_value = [
+                "graph1.png",
+                "graph2.png",
+                "graph3.png",
+            ]  # pyright: ignore[reportAny]
+            mock_graph_manager_class.return_value.__aenter__.return_value = (
+                mock_graph_manager  # pyright: ignore[reportAny]
+            )
             mock_graph_manager_class.return_value.__aexit__.return_value = None  # pyright: ignore[reportAny]
-            
+
             # Testing protected method _automated_graph_update is intentional - it's a key internal method
             await bot._automated_graph_update()  # pyright: ignore[reportPrivateUsage]
-            
+
             # Verify the 3-step process: Cleanup → Generate → Post
             mock_cleanup.assert_called_once_with(mock_channel)
             mock_graph_manager.generate_all_graphs.assert_called_once_with(  # pyright: ignore[reportAny]
-                max_retries=3,
-                timeout_seconds=300.0
+                max_retries=3, timeout_seconds=300.0
             )
-            mock_post.assert_called_once_with(mock_channel, ['graph1.png', 'graph2.png', 'graph3.png'])
+            mock_post.assert_called_once_with(
+                mock_channel, ["graph1.png", "graph2.png", "graph3.png"]
+            )
 
     @pytest.mark.asyncio
-    async def test_automated_graph_update_channel_not_found(self, base_config: TGraphBotConfig) -> None:
+    async def test_automated_graph_update_channel_not_found(
+        self, base_config: TGraphBotConfig
+    ) -> None:
         """Test automated graph update when channel is not found."""
         config_manager = create_config_manager_with_config(base_config)
         bot = TGraphBot(config_manager)
-        
-        with patch.object(bot, 'get_channel', return_value=None), \
-             patch.object(bot, '_cleanup_bot_messages', new_callable=AsyncMock) as mock_cleanup, \
-             patch('src.tgraph_bot.graphs.graph_manager.GraphManager') as mock_graph_manager_class:
-            
+
+        with (
+            patch.object(bot, "get_channel", return_value=None),
+            patch.object(
+                bot, "_cleanup_bot_messages", new_callable=AsyncMock
+            ) as mock_cleanup,
+            patch(
+                "src.tgraph_bot.graphs.graph_manager.GraphManager"
+            ) as mock_graph_manager_class,
+        ):
             # Testing protected method _automated_graph_update is intentional - it's a key internal method
             await bot._automated_graph_update()  # pyright: ignore[reportPrivateUsage]
-            
+
             # Should not proceed with cleanup or graph generation
             mock_cleanup.assert_not_called()
             mock_graph_manager_class.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_automated_graph_update_wrong_channel_type(self, base_config: TGraphBotConfig) -> None:
+    async def test_automated_graph_update_wrong_channel_type(
+        self, base_config: TGraphBotConfig
+    ) -> None:
         """Test automated graph update when channel is not a text channel."""
         config_manager = create_config_manager_with_config(base_config)
         bot = TGraphBot(config_manager)
-        
+
         # Create a voice channel mock (not a TextChannel)
         mock_channel = MagicMock(spec=discord.VoiceChannel)
         mock_channel.name = "voice-channel"
-        
-        with patch.object(bot, 'get_channel', return_value=mock_channel), \
-             patch.object(bot, '_cleanup_bot_messages', new_callable=AsyncMock) as mock_cleanup:
-            
+
+        with (
+            patch.object(bot, "get_channel", return_value=mock_channel),
+            patch.object(
+                bot, "_cleanup_bot_messages", new_callable=AsyncMock
+            ) as mock_cleanup,
+        ):
             # Testing protected method _automated_graph_update is intentional - it's a key internal method
             await bot._automated_graph_update()  # pyright: ignore[reportPrivateUsage]
-            
+
             # Should not proceed with cleanup or graph generation
             mock_cleanup.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_automated_graph_update_cleanup_error(self, base_config: TGraphBotConfig) -> None:
+    async def test_automated_graph_update_cleanup_error(
+        self, base_config: TGraphBotConfig
+    ) -> None:
         """Test automated graph update when cleanup fails."""
         config_manager = create_config_manager_with_config(base_config)
         bot = TGraphBot(config_manager)
-        
+
         mock_channel = MagicMock(spec=discord.TextChannel)
         mock_channel.name = "test-channel"
         mock_user = MagicMock()
         mock_user.id = 123456789
-        
-        with patch.object(bot, 'get_channel', return_value=mock_channel), \
-             patch.object(type(bot), 'user', new_callable=lambda: mock_user), \
-             patch.object(bot, '_cleanup_bot_messages', new_callable=AsyncMock, side_effect=Exception("Cleanup failed")) as mock_cleanup:
-            
+
+        with (
+            patch.object(bot, "get_channel", return_value=mock_channel),
+            patch.object(type(bot), "user", new_callable=lambda: mock_user),
+            patch.object(
+                bot,
+                "_cleanup_bot_messages",
+                new_callable=AsyncMock,
+                side_effect=Exception("Cleanup failed"),
+            ) as mock_cleanup,
+        ):
             # Should raise the cleanup error
             with pytest.raises(Exception, match="Cleanup failed"):
                 # Testing protected method _automated_graph_update is intentional - it's a key internal method
                 await bot._automated_graph_update()  # pyright: ignore[reportPrivateUsage]
-            
+
             mock_cleanup.assert_called_once_with(mock_channel)
 
     @pytest.mark.asyncio
-    async def test_automated_graph_update_no_graphs_generated(self, base_config: TGraphBotConfig) -> None:
+    async def test_automated_graph_update_no_graphs_generated(
+        self, base_config: TGraphBotConfig
+    ) -> None:
         """Test automated graph update when no graphs are generated."""
         config_manager = create_config_manager_with_config(base_config)
         bot = TGraphBot(config_manager)
-        
+
         mock_channel = MagicMock(spec=discord.TextChannel)
         mock_channel.name = "test-channel"
         mock_user = MagicMock()
         mock_user.id = 123456789
-        
-        with patch.object(bot, 'get_channel', return_value=mock_channel), \
-             patch.object(type(bot), 'user', new_callable=lambda: mock_user), \
-             patch.object(bot, '_cleanup_bot_messages', new_callable=AsyncMock) as mock_cleanup, \
-             patch('src.tgraph_bot.graphs.graph_manager.GraphManager') as mock_graph_manager_class, \
-             patch.object(bot, '_post_graphs_to_channel', new_callable=AsyncMock) as mock_post:
-            
+
+        with (
+            patch.object(bot, "get_channel", return_value=mock_channel),
+            patch.object(type(bot), "user", new_callable=lambda: mock_user),
+            patch.object(
+                bot, "_cleanup_bot_messages", new_callable=AsyncMock
+            ) as mock_cleanup,
+            patch(
+                "src.tgraph_bot.graphs.graph_manager.GraphManager"
+            ) as mock_graph_manager_class,
+            patch.object(
+                bot, "_post_graphs_to_channel", new_callable=AsyncMock
+            ) as mock_post,
+        ):
             # Setup GraphManager mock to return empty list
             mock_graph_manager = AsyncMock()
             mock_graph_manager.generate_all_graphs = AsyncMock(return_value=[])
-            mock_graph_manager_class.return_value.__aenter__ = AsyncMock(return_value=mock_graph_manager)  # pyright: ignore[reportAny]
-            mock_graph_manager_class.return_value.__aexit__ = AsyncMock(return_value=None)  # pyright: ignore[reportAny]
-            
+            mock_graph_manager_class.return_value.__aenter__ = AsyncMock(
+                return_value=mock_graph_manager
+            )  # pyright: ignore[reportAny]
+            mock_graph_manager_class.return_value.__aexit__ = AsyncMock(
+                return_value=None
+            )  # pyright: ignore[reportAny]
+
             # Testing protected method _automated_graph_update is intentional - it's a key internal method
             await bot._automated_graph_update()  # pyright: ignore[reportPrivateUsage]
-            
+
             # Should cleanup and attempt generation, but not post
             mock_cleanup.assert_called_once_with(mock_channel)
             mock_graph_manager.generate_all_graphs.assert_called_once()  # pyright: ignore[reportAny]
             mock_post.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_automated_graph_update_graph_generation_error(self, base_config: TGraphBotConfig) -> None:
+    async def test_automated_graph_update_graph_generation_error(
+        self, base_config: TGraphBotConfig
+    ) -> None:
         """Test automated graph update when graph generation fails."""
         config_manager = create_config_manager_with_config(base_config)
         bot = TGraphBot(config_manager)
-        
+
         mock_channel = MagicMock(spec=discord.TextChannel)
         mock_channel.name = "test-channel"
         mock_user = MagicMock()
         mock_user.id = 123456789
-        
-        with patch.object(bot, 'get_channel', return_value=mock_channel), \
-             patch.object(type(bot), 'user', new_callable=lambda: mock_user), \
-             patch.object(bot, '_cleanup_bot_messages', new_callable=AsyncMock) as mock_cleanup, \
-             patch('src.tgraph_bot.graphs.graph_manager.GraphManager') as mock_graph_manager_class:
-            
+
+        with (
+            patch.object(bot, "get_channel", return_value=mock_channel),
+            patch.object(type(bot), "user", new_callable=lambda: mock_user),
+            patch.object(
+                bot, "_cleanup_bot_messages", new_callable=AsyncMock
+            ) as mock_cleanup,
+            patch(
+                "src.tgraph_bot.graphs.graph_manager.GraphManager"
+            ) as mock_graph_manager_class,
+        ):
             # Setup GraphManager mock to raise exception
             mock_graph_manager = AsyncMock()
-            mock_graph_manager.generate_all_graphs = AsyncMock(side_effect=Exception("Graph generation failed"))
-            mock_graph_manager_class.return_value.__aenter__ = AsyncMock(return_value=mock_graph_manager)  # pyright: ignore[reportAny]
-            mock_graph_manager_class.return_value.__aexit__ = AsyncMock(return_value=None)  # pyright: ignore[reportAny]
-            
+            mock_graph_manager.generate_all_graphs = AsyncMock(
+                side_effect=Exception("Graph generation failed")
+            )
+            mock_graph_manager_class.return_value.__aenter__ = AsyncMock(
+                return_value=mock_graph_manager
+            )  # pyright: ignore[reportAny]
+            mock_graph_manager_class.return_value.__aexit__ = AsyncMock(
+                return_value=None
+            )  # pyright: ignore[reportAny]
+
             # Should raise the graph generation error
             with pytest.raises(Exception, match="Graph generation failed"):
                 # Testing protected method _automated_graph_update is intentional - it's a key internal method
                 await bot._automated_graph_update()  # pyright: ignore[reportPrivateUsage]
-            
+
             # Should have cleaned up first
             mock_cleanup.assert_called_once_with(mock_channel)
 
@@ -996,47 +1148,55 @@ class TestCleanupBotMessages(AsyncTestBase):
         """Test successful cleanup of bot messages."""
         config_manager = ConfigManager()
         bot = TGraphBot(config_manager)
-        
+
         # Create mock channel and messages
         mock_channel = MagicMock()
         mock_channel.name = "test-channel"
-        
+
         # Create mock bot user
         mock_bot_user = MagicMock()
         mock_bot_user.id = 123456789
-        
+
         # Create mock guild and permissions
         mock_guild_member = MagicMock()
         mock_guild_member.permissions_for.return_value.manage_messages = True  # pyright: ignore[reportAny]
         mock_channel.guild.me = mock_guild_member  # pyright: ignore[reportAny]
-        
+
         # Create mock messages - some from bot, some from users
         mock_bot_message1 = MagicMock()
-        mock_bot_message1.author.id = 123456789  # Bot's message  # pyright: ignore[reportAny]
+        mock_bot_message1.author.id = (
+            123456789  # Bot's message  # pyright: ignore[reportAny]
+        )
         mock_bot_message1.id = "msg1"
         mock_bot_message1.delete = AsyncMock()
-        
+
         mock_bot_message2 = MagicMock()
-        mock_bot_message2.author.id = 123456789  # Bot's message  # pyright: ignore[reportAny]
+        mock_bot_message2.author.id = (
+            123456789  # Bot's message  # pyright: ignore[reportAny]
+        )
         mock_bot_message2.id = "msg2"
         mock_bot_message2.delete = AsyncMock()
-        
+
         mock_user_message = MagicMock()
-        mock_user_message.author.id = 987654321  # User's message  # pyright: ignore[reportAny]
+        mock_user_message.author.id = (
+            987654321  # User's message  # pyright: ignore[reportAny]
+        )
         mock_user_message.id = "user_msg"
         mock_user_message.delete = AsyncMock()
-        
+
         # Mock the async iterator for channel history
-        async def mock_history(*args: object, **kwargs: object) -> AsyncIterator[MagicMock]:  # pyright: ignore[reportUnusedParameter]
+        async def mock_history(
+            *args: object, **kwargs: object
+        ) -> AsyncIterator[MagicMock]:  # pyright: ignore[reportUnusedParameter]
             for message in [mock_bot_message1, mock_user_message, mock_bot_message2]:
                 yield message
-        
+
         mock_channel.history = mock_history
-        
-        with patch.object(type(bot), 'user', new_callable=lambda: mock_bot_user):
+
+        with patch.object(type(bot), "user", new_callable=lambda: mock_bot_user):
             # Testing protected method _cleanup_bot_messages is intentional - it's a key internal method
             await bot._cleanup_bot_messages(mock_channel)  # pyright: ignore[reportPrivateUsage]
-            
+
             # Should only delete bot's messages
             mock_bot_message1.delete.assert_called_once()  # pyright: ignore[reportAny]
             mock_bot_message2.delete.assert_called_once()  # pyright: ignore[reportAny]
@@ -1047,34 +1207,36 @@ class TestCleanupBotMessages(AsyncTestBase):
         """Test cleanup when bot lacks manage messages permission."""
         config_manager = ConfigManager()
         bot = TGraphBot(config_manager)
-        
+
         mock_channel = MagicMock()
         mock_channel.name = "test-channel"
-        
+
         mock_bot_user = MagicMock()
         mock_bot_user.id = 123456789
-        
+
         # Mock guild member without manage_messages permission
         mock_guild_member = MagicMock()
         mock_guild_member.permissions_for.return_value.manage_messages = False  # pyright: ignore[reportAny]
         mock_channel.guild.me = mock_guild_member  # pyright: ignore[reportAny]
-        
+
         # Create mock bot message
         mock_bot_message = MagicMock()
         mock_bot_message.author.id = 123456789  # pyright: ignore[reportAny]
         mock_bot_message.id = "msg1"
         mock_bot_message.delete = AsyncMock()
-        
-        async def mock_history(*args: object, **kwargs: object) -> AsyncIterator[MagicMock]:  # pyright: ignore[reportUnusedParameter]
+
+        async def mock_history(
+            *args: object, **kwargs: object
+        ) -> AsyncIterator[MagicMock]:  # pyright: ignore[reportUnusedParameter]
             for message in [mock_bot_message]:
                 yield message
-        
+
         mock_channel.history = mock_history
-        
-        with patch.object(type(bot), 'user', new_callable=lambda: mock_bot_user):
+
+        with patch.object(type(bot), "user", new_callable=lambda: mock_bot_user):
             # Testing protected method _cleanup_bot_messages is intentional - it's a key internal method
             await bot._cleanup_bot_messages(mock_channel)  # pyright: ignore[reportPrivateUsage]
-            
+
             # Should still attempt to delete bot's own messages
             mock_bot_message.delete.assert_called_once()  # pyright: ignore[reportAny]
 
@@ -1083,34 +1245,38 @@ class TestCleanupBotMessages(AsyncTestBase):
         """Test cleanup when delete operation is forbidden."""
         config_manager = ConfigManager()
         bot = TGraphBot(config_manager)
-        
+
         mock_channel = MagicMock()
         mock_channel.name = "test-channel"
-        
+
         mock_bot_user = MagicMock()
         mock_bot_user.id = 123456789
-        
+
         mock_guild_member = MagicMock()
         mock_guild_member.permissions_for.return_value.manage_messages = True  # pyright: ignore[reportAny]
         mock_channel.guild.me = mock_guild_member  # pyright: ignore[reportAny]
-        
+
         # Create mock bot message that raises Forbidden when deleted
         mock_bot_message = MagicMock()
         mock_bot_message.author.id = 123456789  # pyright: ignore[reportAny]
         mock_bot_message.id = "msg1"
-        mock_bot_message.delete = AsyncMock(side_effect=discord.Forbidden(response=MagicMock(), message="Forbidden"))
-        
-        async def mock_history(*args: object, **kwargs: object) -> AsyncIterator[MagicMock]:  # pyright: ignore[reportUnusedParameter]
+        mock_bot_message.delete = AsyncMock(
+            side_effect=discord.Forbidden(response=MagicMock(), message="Forbidden")
+        )
+
+        async def mock_history(
+            *args: object, **kwargs: object
+        ) -> AsyncIterator[MagicMock]:  # pyright: ignore[reportUnusedParameter]
             for message in [mock_bot_message]:
                 yield message
-        
+
         mock_channel.history = mock_history
-        
-        with patch.object(type(bot), 'user', new_callable=lambda: mock_bot_user):
+
+        with patch.object(type(bot), "user", new_callable=lambda: mock_bot_user):
             # Should not raise exception, just log warning
             # Testing protected method _cleanup_bot_messages is intentional - it's a key internal method
             await bot._cleanup_bot_messages(mock_channel)  # pyright: ignore[reportPrivateUsage]
-            
+
             mock_bot_message.delete.assert_called_once()  # pyright: ignore[reportAny]
 
     @pytest.mark.asyncio
@@ -1118,40 +1284,45 @@ class TestCleanupBotMessages(AsyncTestBase):
         """Test cleanup with rate limiting (429 error)."""
         config_manager = ConfigManager()
         bot = TGraphBot(config_manager)
-        
+
         mock_channel = MagicMock()
         mock_channel.name = "test-channel"
-        
+
         mock_bot_user = MagicMock()
         mock_bot_user.id = 123456789
-        
+
         mock_guild_member = MagicMock()
         mock_guild_member.permissions_for.return_value.manage_messages = True  # pyright: ignore[reportAny]
         mock_channel.guild.me = mock_guild_member  # pyright: ignore[reportAny]
-        
+
         # Create mock bot message that raises rate limit error
-        mock_rate_limit_error = discord.HTTPException(response=MagicMock(), message="Rate limited")
+        mock_rate_limit_error = discord.HTTPException(
+            response=MagicMock(), message="Rate limited"
+        )
         mock_rate_limit_error.status = 429
         # Add retry_after attribute to the mock
-        setattr(mock_rate_limit_error, 'retry_after', 2.0)
-        
+        setattr(mock_rate_limit_error, "retry_after", 2.0)
+
         mock_bot_message = MagicMock()
         mock_bot_message.author.id = 123456789  # pyright: ignore[reportAny]
         mock_bot_message.id = "msg1"
         mock_bot_message.delete = AsyncMock(side_effect=mock_rate_limit_error)
-        
-        async def mock_history(*args: object, **kwargs: object) -> AsyncIterator[MagicMock]:  # pyright: ignore[reportUnusedParameter]
+
+        async def mock_history(
+            *args: object, **kwargs: object
+        ) -> AsyncIterator[MagicMock]:  # pyright: ignore[reportUnusedParameter]
             for message in [mock_bot_message]:
                 yield message
-        
+
         mock_channel.history = mock_history
-        
-        with patch.object(type(bot), 'user', new_callable=lambda: mock_bot_user), \
-             patch('asyncio.sleep', new_callable=AsyncMock) as mock_sleep:
-            
+
+        with (
+            patch.object(type(bot), "user", new_callable=lambda: mock_bot_user),
+            patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep,
+        ):
             # Testing protected method _cleanup_bot_messages is intentional - it's a key internal method
             await bot._cleanup_bot_messages(mock_channel)  # pyright: ignore[reportPrivateUsage]
-            
+
             mock_bot_message.delete.assert_called_once()  # pyright: ignore[reportAny]
             # Should sleep for retry_after duration
             mock_sleep.assert_called_with(2.0)
@@ -1161,17 +1332,17 @@ class TestCleanupBotMessages(AsyncTestBase):
         """Test cleanup when message is already deleted (NotFound error)."""
         config_manager = ConfigManager()
         bot = TGraphBot(config_manager)
-        
+
         mock_channel = MagicMock()
         mock_channel.name = "test-channel"
-        
+
         mock_bot_user = MagicMock()
         mock_bot_user.id = 123456789
-        
+
         mock_guild_member = MagicMock()
         mock_guild_member.permissions_for.return_value.manage_messages = True  # pyright: ignore[reportAny]
         mock_channel.guild.me = mock_guild_member  # pyright: ignore[reportAny]
-        
+
         # Create mock bot message that raises NotFound when deleted
         mock_bot_message = MagicMock()
         mock_bot_message.author.id = 123456789  # pyright: ignore[reportAny]
@@ -1179,16 +1350,20 @@ class TestCleanupBotMessages(AsyncTestBase):
 
         # Create AsyncMock that properly raises NotFound
         delete_mock = AsyncMock()
-        delete_mock.side_effect = discord.NotFound(response=MagicMock(), message="Not found")
+        delete_mock.side_effect = discord.NotFound(
+            response=MagicMock(), message="Not found"
+        )
         mock_bot_message.delete = delete_mock
-        
-        async def mock_history(*args: object, **kwargs: object) -> AsyncIterator[MagicMock]:  # pyright: ignore[reportUnusedParameter]
+
+        async def mock_history(
+            *args: object, **kwargs: object
+        ) -> AsyncIterator[MagicMock]:  # pyright: ignore[reportUnusedParameter]
             for message in [mock_bot_message]:
                 yield message
-        
+
         mock_channel.history = mock_history
-        
-        with patch.object(type(bot), 'user', new_callable=lambda: mock_bot_user):
+
+        with patch.object(type(bot), "user", new_callable=lambda: mock_bot_user):
             # Should not raise exception for NotFound
             # Testing protected method _cleanup_bot_messages is intentional - it's a key internal method
             await bot._cleanup_bot_messages(mock_channel)  # pyright: ignore[reportPrivateUsage]
@@ -1201,17 +1376,17 @@ class TestCleanupBotMessages(AsyncTestBase):
         """Test cleanup with automatic rate limit protection."""
         config_manager = ConfigManager()
         bot = TGraphBot(config_manager)
-        
+
         mock_channel = MagicMock()
         mock_channel.name = "test-channel"
-        
+
         mock_bot_user = MagicMock()
         mock_bot_user.id = 123456789
-        
+
         mock_guild_member = MagicMock()
         mock_guild_member.permissions_for.return_value.manage_messages = True  # pyright: ignore[reportAny]
         mock_channel.guild.me = mock_guild_member  # pyright: ignore[reportAny]
-        
+
         # Create multiple bot messages to test rate limiting
         mock_messages: list[MagicMock] = []
         for i in range(7):  # More than 5 to trigger rate limit protection
@@ -1220,23 +1395,26 @@ class TestCleanupBotMessages(AsyncTestBase):
             mock_message.id = f"msg{i}"
             mock_message.delete = AsyncMock()
             mock_messages.append(mock_message)
-        
-        async def mock_history(*args: object, **kwargs: object) -> AsyncIterator[MagicMock]:  # pyright: ignore[reportUnusedParameter]
+
+        async def mock_history(
+            *args: object, **kwargs: object
+        ) -> AsyncIterator[MagicMock]:  # pyright: ignore[reportUnusedParameter]
             for message in mock_messages:
                 yield message
-        
+
         mock_channel.history = mock_history
-        
-        with patch.object(type(bot), 'user', new_callable=lambda: mock_bot_user), \
-             patch('asyncio.sleep', new_callable=AsyncMock) as mock_sleep:
-            
+
+        with (
+            patch.object(type(bot), "user", new_callable=lambda: mock_bot_user),
+            patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep,
+        ):
             # Testing protected method _cleanup_bot_messages is intentional - it's a key internal method
             await bot._cleanup_bot_messages(mock_channel)  # pyright: ignore[reportPrivateUsage]
-            
+
             # All messages should be deleted
             for mock_message in mock_messages:
                 mock_message.delete.assert_called_once()  # pyright: ignore[reportAny]
-            
+
             # Should sleep after every 5 deletions (rate limit protection)
             mock_sleep.assert_called_with(1.0)
 
@@ -1245,17 +1423,17 @@ class TestCleanupBotMessages(AsyncTestBase):
         """Test cleanup when a general exception occurs."""
         config_manager = ConfigManager()
         bot = TGraphBot(config_manager)
-        
+
         mock_channel = MagicMock()
         mock_channel.name = "test-channel"
-        
+
         mock_bot_user = MagicMock()
         mock_bot_user.id = 123456789
-        
+
         # Mock history to raise an exception
         mock_channel.history = MagicMock(side_effect=Exception("Database error"))
-        
-        with patch.object(type(bot), 'user', new_callable=lambda: mock_bot_user):
+
+        with patch.object(type(bot), "user", new_callable=lambda: mock_bot_user):
             # Should raise the general exception
             with pytest.raises(Exception, match="Database error"):
                 # Testing protected method _cleanup_bot_messages is intentional - it's a key internal method

@@ -122,6 +122,7 @@ class StartupSequence:
         # Discord API can take several seconds to propagate command changes
         logger.debug("Waiting for Discord API to process synced commands...")
         import asyncio
+
         await asyncio.sleep(5.0)
 
         permission_checker = PermissionChecker(self.bot)
@@ -335,6 +336,7 @@ class StartupSequence:
             # Get current time as the baseline for scheduling
             # Convert UTC time to local timezone to ensure consistency with scheduler state
             from tgraph_bot.bot.update_tracker import get_local_timezone
+
             current_time = discord.utils.utcnow().astimezone(get_local_timezone())
 
             update_tracker = self.bot.update_tracker

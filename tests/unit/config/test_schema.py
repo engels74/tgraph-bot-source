@@ -20,7 +20,7 @@ class TestTGraphBotConfig:
             "CHANNEL_ID": 123456789012345678,
         }
         config = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
-        
+
         assert config.TAUTULLI_API_KEY == "test_api_key"
         assert config.TAUTULLI_URL == "http://localhost:8181/api/v2"
         assert config.DISCORD_TOKEN == "test_discord_token"
@@ -68,7 +68,7 @@ class TestTGraphBotConfig:
             "MY_STATS_GLOBAL_COOLDOWN_SECONDS": 60,
         }
         config = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
-        
+
         assert config.UPDATE_DAYS == 14
         assert config.FIXED_UPDATE_TIME == "12:30"
         assert config.CENSOR_USERNAMES is False
@@ -84,7 +84,7 @@ class TestTGraphBotConfig:
             "CHANNEL_ID": 123456789012345678,
         }
         config = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
-        
+
         # Test some default values from PRD
         assert config.UPDATE_DAYS == 7
         assert config.FIXED_UPDATE_TIME == "XX:XX"
@@ -101,11 +101,18 @@ class TestTGraphBotConfig:
         """Test that missing required fields raise ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
             _ = TGraphBotConfig()  # pyright: ignore[reportCallIssue]
-        
+
         errors = exc_info.value.errors()
-        required_fields = {"TAUTULLI_API_KEY", "TAUTULLI_URL", "DISCORD_TOKEN", "CHANNEL_ID"}
-        error_fields = {error["loc"][0] for error in errors if error["type"] == "missing"}
-        
+        required_fields = {
+            "TAUTULLI_API_KEY",
+            "TAUTULLI_URL",
+            "DISCORD_TOKEN",
+            "CHANNEL_ID",
+        }
+        error_fields = {
+            error["loc"][0] for error in errors if error["type"] == "missing"
+        }
+
         assert required_fields.issubset(error_fields)
 
     def test_invalid_color_format(self) -> None:
@@ -117,10 +124,10 @@ class TestTGraphBotConfig:
             "CHANNEL_ID": 123456789012345678,
             "TV_COLOR": "invalid_color",
         }
-        
+
         with pytest.raises(ValidationError) as exc_info:
             _ = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
-        
+
         errors = exc_info.value.errors()
         assert any(error["loc"] == ("TV_COLOR",) for error in errors)
 
@@ -133,7 +140,7 @@ class TestTGraphBotConfig:
             "CHANNEL_ID": 123456789012345678,
             "FIXED_UPDATE_TIME": "25:99",  # Invalid time
         }
-        
+
         with pytest.raises(ValidationError):
             _ = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
 
@@ -146,7 +153,7 @@ class TestTGraphBotConfig:
             "CHANNEL_ID": 123456789012345678,
             "UPDATE_DAYS": -1,  # Should be positive
         }
-        
+
         with pytest.raises(ValidationError):
             _ = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
 
@@ -158,7 +165,7 @@ class TestTGraphBotConfig:
             "DISCORD_TOKEN": "test_discord_token",
             "CHANNEL_ID": "not_an_integer",
         }
-        
+
         with pytest.raises(ValidationError):
             _ = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
 
@@ -174,7 +181,7 @@ class TestTGraphBotConfig:
         }
         config_enabled = TGraphBotConfig(**config_data_enabled)  # pyright: ignore[reportArgumentType]
         assert config_enabled.ENABLE_STACKED_BAR_CHARTS is True
-        
+
         # Test with stacked bar charts disabled
         config_data_disabled = {
             "TAUTULLI_API_KEY": "test_api_key",
@@ -185,7 +192,7 @@ class TestTGraphBotConfig:
         }
         config_disabled = TGraphBotConfig(**config_data_disabled)  # pyright: ignore[reportArgumentType]
         assert config_disabled.ENABLE_STACKED_BAR_CHARTS is False
-        
+
         # Test default value (should be True)
         config_data_default = {
             "TAUTULLI_API_KEY": "test_api_key",

@@ -17,7 +17,7 @@ Core test utilities for configuration and file management:
 - `create_temp_directory()`: Context manager for temporary directories
 - `create_mock_discord_bot()`: Create standardized mock Discord bot instances
 - `create_mock_user()`: Create mock Discord user objects
-- `create_mock_guild()`: Create mock Discord guild objects  
+- `create_mock_guild()`: Create mock Discord guild objects
 - `create_mock_interaction()`: Create mock Discord interaction objects
 
 ### async_helpers.py
@@ -89,7 +89,7 @@ with matplotlib_cleanup():
 
 The test utilities themselves are tested in:
 - `tests/unit/utils/test_test_helpers.py`
-- `tests/unit/utils/test_async_helpers.py`  
+- `tests/unit/utils/test_async_helpers.py`
 - `tests/unit/utils/test_graph_helpers.py`
 
 This ensures the utilities are reliable and behave correctly.
@@ -130,20 +130,18 @@ from .graph_helpers import (
 __all__ = [
     # Core utilities
     "create_config_manager_with_config",
-    "create_temp_config_file", 
+    "create_temp_config_file",
     "create_temp_directory",
     "create_mock_discord_bot",
     "create_mock_user",
     "create_mock_guild",
     "create_mock_interaction",
-    
     # Async utilities
     "AsyncTestBase",
     "async_mock_context",
     "async_discord_bot_context",
     "assert_raises_async",
     "wait_for_condition",
-    
     # Graph utilities
     "create_test_config_minimal",
     "create_memory_test_graph",

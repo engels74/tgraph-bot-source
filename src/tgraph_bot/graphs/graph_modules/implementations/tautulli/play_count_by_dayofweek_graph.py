@@ -11,6 +11,7 @@ from collections.abc import Mapping
 from typing import TYPE_CHECKING, override
 
 import numpy as np
+from numpy.typing import NDArray
 import pandas as pd
 import seaborn as sns
 from matplotlib.axes import Axes
@@ -330,7 +331,9 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
 
         # Prepare data for each media type
         bottom = np.zeros(len(day_order))
-        bars_data: list[tuple[str, np.ndarray, str]] = []  # (media_type, values, color)  # pyright: ignore[reportMissingTypeArgument]
+        bars_data: list[
+            tuple[str, NDArray[np.int64], str]
+        ] = []  # (media_type, values, color)
 
         for media_type in ordered_media_types:
             values = np.array(
@@ -340,7 +343,7 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
             bars_data.append((media_type, values, color))
 
         # Create stacked bars
-        bar_containers: list[tuple[BarContainer, str, np.ndarray]] = []  # pyright: ignore[reportMissingTypeArgument]
+        bar_containers: list[tuple[BarContainer, str, NDArray[np.int64]]] = []
         for media_type, values, color in bars_data:
             # Get display name for legend
             if media_type in display_info:

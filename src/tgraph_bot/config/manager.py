@@ -603,4 +603,3 @@ MY_STATS_GLOBAL_COOLDOWN_SECONDS: 60
         with self._config_lock:
             if callback in self._change_callbacks:
                 self._change_callbacks.remove(callback)
-

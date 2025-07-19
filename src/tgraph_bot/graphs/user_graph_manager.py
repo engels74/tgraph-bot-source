@@ -535,14 +535,18 @@ class UserGraphManager:
             # Create embed for the personal statistics
             embed = discord.Embed(
                 title=i18n.translate("📊 Your Personal Plex Statistics"),
-                description=i18n.translate("Here are your personalized viewing statistics!"),
+                description=i18n.translate(
+                    "Here are your personalized viewing statistics!"
+                ),
                 color=discord.Color.blue(),
             )
 
             # Add metadata about the graphs
             _ = embed.add_field(
                 name=i18n.translate("Generated Graphs"),
-                value=i18n.translate("{count} graphs generated", count=len(graph_files)),
+                value=i18n.translate(
+                    "{count} graphs generated", count=len(graph_files)
+                ),
                 inline=True,
             )
             _ = embed.add_field(
@@ -574,17 +578,22 @@ class UserGraphManager:
                 try:
                     error_embed = discord.Embed(
                         title=i18n.translate("📊 Personal Statistics - Upload Issue"),
-                        description=i18n.translate("Your statistics were generated but couldn't be uploaded."),
+                        description=i18n.translate(
+                            "Your statistics were generated but couldn't be uploaded."
+                        ),
                         color=discord.Color.orange(),
                     )
                     _ = error_embed.add_field(
                         name=i18n.translate("Issue Details"),
-                        value=upload_result.error_message or i18n.translate("Unknown upload error occurred"),
+                        value=upload_result.error_message
+                        or i18n.translate("Unknown upload error occurred"),
                         inline=False,
                     )
                     _ = error_embed.add_field(
                         name=i18n.translate("Next Steps"),
-                        value=i18n.translate("Please try the command again or contact support if the issue persists."),
+                        value=i18n.translate(
+                            "Please try the command again or contact support if the issue persists."
+                        ),
                         inline=False,
                     )
                     _ = await user.send(embed=error_embed)  # pyright: ignore[reportAny]

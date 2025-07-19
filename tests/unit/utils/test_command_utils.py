@@ -39,7 +39,7 @@ class TestEmbedCreation:
     def test_create_error_embed_default(self) -> None:
         """Test error embed creation with default values."""
         embed = create_error_embed()
-        
+
         assert embed.title == "Error"
         assert embed.description == "An error occurred"
         assert embed.color == discord.Color.red()
@@ -50,9 +50,9 @@ class TestEmbedCreation:
         embed = create_error_embed(
             title="Custom Error",
             description="Something went wrong",
-            color=discord.Color.orange()
+            color=discord.Color.orange(),
         )
-        
+
         assert embed.title == "Custom Error"
         assert embed.description == "Something went wrong"
         assert embed.color == discord.Color.orange()
@@ -60,7 +60,7 @@ class TestEmbedCreation:
     def test_create_success_embed_default(self) -> None:
         """Test success embed creation with default values."""
         embed = create_success_embed()
-        
+
         assert embed.title == "Success"
         assert embed.description == "Operation completed successfully"
         assert embed.color == discord.Color.green()
@@ -69,7 +69,7 @@ class TestEmbedCreation:
     def test_create_info_embed_default(self) -> None:
         """Test info embed creation with default values."""
         embed = create_info_embed()
-        
+
         assert embed.title == "Information"
         assert embed.description == ""
         assert embed.color == discord.Color.blue()
@@ -78,7 +78,7 @@ class TestEmbedCreation:
     def test_create_progress_embed(self) -> None:
         """Test progress embed creation."""
         embed = create_progress_embed("Processing", 50, 100, "Working on it...")
-        
+
         assert embed.title == "Processing"
         assert embed.description == "Working on it..."
         assert embed.color == discord.Color.blue()
@@ -90,7 +90,7 @@ class TestEmbedCreation:
     def test_create_cooldown_embed(self) -> None:
         """Test cooldown embed creation."""
         embed = create_cooldown_embed("test_command", 120.5)
-        
+
         assert embed.title == "Command on Cooldown"
         description = embed.description
         assert description is not None
@@ -109,9 +109,9 @@ class TestValidationFunctions:
             "test@example.com",
             "user.name@domain.org",
             "user+tag@example.co.uk",
-            "123@test.io"
+            "123@test.io",
         ]
-        
+
         for email in valid_emails:
             assert validate_email(email), f"Email {email} should be valid"
 
@@ -123,16 +123,16 @@ class TestValidationFunctions:
             "test@",
             "test.example.com",
             "test@.com",
-            ""
+            "",
         ]
-        
+
         for email in invalid_emails:
             assert not validate_email(email), f"Email {email} should be invalid"
 
     def test_validate_channel_id_valid(self) -> None:
         """Test channel ID validation with valid IDs."""
         valid_ids = ["123456789012345678", "987654321098765432"]
-        
+
         for channel_id in valid_ids:
             result = validate_channel_id(channel_id)
             assert result is not None
@@ -141,7 +141,7 @@ class TestValidationFunctions:
     def test_validate_channel_id_invalid(self) -> None:
         """Test channel ID validation with invalid IDs."""
         invalid_ids = ["abc", "123", "", "-123", "0"]
-        
+
         for channel_id in invalid_ids:
             result = validate_channel_id(channel_id)
             assert result is None
@@ -162,14 +162,14 @@ class TestValidationFunctions:
     def test_validate_color_hex_valid(self) -> None:
         """Test hex color validation with valid colors."""
         valid_colors = ["#FF0000", "FF0000", "#00FF00", "0000FF", "#FFFFFF"]
-        
+
         for color in valid_colors:
             assert validate_color_hex(color), f"Color {color} should be valid"
 
     def test_validate_color_hex_invalid(self) -> None:
         """Test hex color validation with invalid colors."""
         invalid_colors = ["#GG0000", "FF00", "#FF00000", "red", "", "#"]
-        
+
         for color in invalid_colors:
             assert not validate_color_hex(color), f"Color {color} should be invalid"
 
@@ -251,62 +251,66 @@ class TestInteractionUtilities:
         return cast(discord.Interaction, interaction)
 
     @pytest.mark.asyncio
-    async def test_safe_interaction_response_initial(self, mock_interaction: discord.Interaction) -> None:
+    async def test_safe_interaction_response_initial(
+        self, mock_interaction: discord.Interaction
+    ) -> None:
         """Test safe interaction response with initial response."""
         embed = create_info_embed("Test", "Test message")
-        
+
         result = await safe_interaction_response(
-            interaction=mock_interaction,
-            embed=embed,
-            ephemeral=True
+            interaction=mock_interaction, embed=embed, ephemeral=True
         )
-        
+
         assert result is True
         mock_response = cast(MagicMock, mock_interaction.response)
         mock_send_message = cast(AsyncMock, mock_response.send_message)
         mock_send_message.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_safe_interaction_response_followup(self, mock_interaction: discord.Interaction) -> None:
+    async def test_safe_interaction_response_followup(
+        self, mock_interaction: discord.Interaction
+    ) -> None:
         """Test safe interaction response with followup."""
         mock_response = cast(MagicMock, mock_interaction.response)
         mock_is_done = cast(MagicMock, mock_response.is_done)
         mock_is_done.return_value = True
-        
+
         result = await safe_interaction_response(
-            interaction=mock_interaction,
-            content="Test message",
-            ephemeral=False
+            interaction=mock_interaction, content="Test message", ephemeral=False
         )
-        
+
         assert result is True
         mock_followup = cast(AsyncMock, mock_interaction.followup)
         mock_send = cast(AsyncMock, mock_followup.send)
         mock_send.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_send_error_response(self, mock_interaction: discord.Interaction) -> None:
+    async def test_send_error_response(
+        self, mock_interaction: discord.Interaction
+    ) -> None:
         """Test sending error response."""
         result = await send_error_response(
             interaction=mock_interaction,
             title="Test Error",
-            description="Test description"
+            description="Test description",
         )
-        
+
         assert result is True
         mock_response = cast(MagicMock, mock_interaction.response)
         mock_send_message = cast(AsyncMock, mock_response.send_message)
         mock_send_message.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_send_success_response(self, mock_interaction: discord.Interaction) -> None:
+    async def test_send_success_response(
+        self, mock_interaction: discord.Interaction
+    ) -> None:
         """Test sending success response."""
         result = await send_success_response(
             interaction=mock_interaction,
             title="Test Success",
-            description="Test description"
+            description="Test description",
         )
-        
+
         assert result is True
         mock_response = cast(MagicMock, mock_interaction.response)
         mock_send_message = cast(AsyncMock, mock_response.send_message)
@@ -320,7 +324,7 @@ class TestPermissionUtilities:
         """Test permission check with no guild."""
         interaction = MagicMock(spec=discord.Interaction)
         interaction.guild = None
-        
+
         result = check_manage_guild_permission(interaction)
         assert result is False
 
@@ -333,7 +337,7 @@ class TestPermissionUtilities:
         mock_user = MagicMock()
         mock_user.id = 123456789
         interaction.user = mock_user
-        
+
         result = check_manage_guild_permission(interaction)
         assert result is True
 
@@ -349,7 +353,7 @@ class TestPermissionUtilities:
         mock_permissions.manage_guild = True
         mock_user.guild_permissions = mock_permissions
         interaction.user = mock_user
-        
+
         result = check_manage_guild_permission(interaction)
         assert result is True
 
@@ -359,9 +363,9 @@ class TestPermissionUtilities:
             command_name="test",
             description="Test command",
             usage="/test <arg>",
-            examples=["/test example1", "/test example2"]
+            examples=["/test example1", "/test example2"],
         )
-        
+
         assert embed.title == "Command: /test"
         assert embed.description == "Test command"
         assert len(embed.fields) == 2  # Usage and Examples

@@ -35,7 +35,7 @@ from src.tgraph_bot.graphs.graph_modules.types.constants import (
 
 class TestDaysOfWeek:
     """Test cases for days of week constants."""
-    
+
     def test_day_constants(self) -> None:
         """Test that day constants are properly defined."""
         assert DAYS_OF_WEEK.MONDAY == "Monday"
@@ -45,20 +45,28 @@ class TestDaysOfWeek:
         assert DAYS_OF_WEEK.FRIDAY == "Friday"
         assert DAYS_OF_WEEK.SATURDAY == "Saturday"
         assert DAYS_OF_WEEK.SUNDAY == "Sunday"
-    
+
     def test_get_ordered_list(self) -> None:
         """Test getting ordered list of days."""
         ordered_days = DAYS_OF_WEEK.get_ordered_list()
-        expected = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        expected = [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday",
+        ]
         assert ordered_days == expected
         assert len(ordered_days) == 7
-    
+
     def test_get_weekend_days(self) -> None:
         """Test getting weekend days."""
         weekend_days = DAYS_OF_WEEK.get_weekend_days()
         assert weekend_days == ["Saturday", "Sunday"]
         assert len(weekend_days) == 2
-    
+
     def test_get_weekday_days(self) -> None:
         """Test getting weekday days."""
         weekday_days = DAYS_OF_WEEK.get_weekday_days()
@@ -69,7 +77,7 @@ class TestDaysOfWeek:
 
 class TestDateTimeFormats:
     """Test cases for date/time format constants."""
-    
+
     def test_format_constants(self) -> None:
         """Test that format constants are properly defined."""
         assert DATETIME_FORMATS.DATE_FORMAT == "%Y-%m-%d"
@@ -83,7 +91,7 @@ class TestDateTimeFormats:
 
 class TestMediaTypes:
     """Test cases for media type constants."""
-    
+
     def test_media_type_constants(self) -> None:
         """Test that media type constants are properly defined."""
         assert MEDIA_TYPES.MOVIE == "movie"
@@ -92,20 +100,20 @@ class TestMediaTypes:
         assert MEDIA_TYPES.MUSIC == "music"
         assert MEDIA_TYPES.OTHER == "other"
         assert MEDIA_TYPES.UNKNOWN == "unknown"
-    
+
     def test_get_all_types(self) -> None:
         """Test getting all media types."""
         all_types = MEDIA_TYPES.get_all_types()
         expected = ["movie", "tv", "episode", "music", "other", "unknown"]
         assert all_types == expected
         assert len(all_types) == 6
-    
+
     def test_get_primary_types(self) -> None:
         """Test getting primary media types."""
         primary_types = MEDIA_TYPES.get_primary_types()
         assert primary_types == ["movie", "tv"]
         assert len(primary_types) == 2
-    
+
     def test_display_names(self) -> None:
         """Test media type display names."""
         assert MEDIA_TYPE_DISPLAY_NAMES.MOVIE == "Movies"
@@ -114,18 +122,24 @@ class TestMediaTypes:
         assert MEDIA_TYPE_DISPLAY_NAMES.MUSIC == "Music"
         assert MEDIA_TYPE_DISPLAY_NAMES.OTHER == "Other"
         assert MEDIA_TYPE_DISPLAY_NAMES.UNKNOWN == "Unknown"
-    
+
     def test_aliases(self) -> None:
         """Test media type aliases."""
         assert MEDIA_TYPE_ALIASES.MOVIE_ALIASES == ["movie", "film", "cinema"]
         assert MEDIA_TYPE_ALIASES.TV_ALIASES == ["tv", "episode", "show", "series"]
-        assert MEDIA_TYPE_ALIASES.MUSIC_ALIASES == ["music", "track", "album", "artist", "song"]
+        assert MEDIA_TYPE_ALIASES.MUSIC_ALIASES == [
+            "music",
+            "track",
+            "album",
+            "artist",
+            "song",
+        ]
         assert MEDIA_TYPE_ALIASES.OTHER_ALIASES == ["other", "unknown"]
 
 
 class TestGraphTypes:
     """Test cases for graph type constants."""
-    
+
     def test_graph_type_constants(self) -> None:
         """Test that graph type constants are properly defined."""
         assert GRAPH_TYPES.DAILY_PLAY_COUNT == "daily_play_count"
@@ -135,7 +149,7 @@ class TestGraphTypes:
         assert GRAPH_TYPES.TOP_10_PLATFORMS == "top_10_platforms"
         assert GRAPH_TYPES.TOP_10_USERS == "top_10_users"
         assert GRAPH_TYPES.SAMPLE_GRAPH == "sample_graph"
-    
+
     def test_get_all_types(self) -> None:
         """Test getting all graph types."""
         all_types = GRAPH_TYPES.get_all_types()
@@ -150,7 +164,7 @@ class TestGraphTypes:
         ]
         assert all_types == expected
         assert len(all_types) == 7
-    
+
     def test_get_tautulli_types(self) -> None:
         """Test getting Tautulli-specific graph types."""
         tautulli_types = GRAPH_TYPES.get_tautulli_types()
@@ -165,7 +179,7 @@ class TestGraphTypes:
         assert tautulli_types == expected
         assert len(tautulli_types) == 6
         assert "sample_graph" not in tautulli_types
-    
+
     def test_graph_titles(self) -> None:
         """Test graph title constants."""
         assert GRAPH_TITLES.DAILY_PLAY_COUNT == "Daily Play Count"
@@ -179,7 +193,7 @@ class TestGraphTypes:
 
 class TestDefaultColors:
     """Test cases for default color constants."""
-    
+
     def test_primary_colors(self) -> None:
         """Test primary color constants."""
         assert DEFAULT_COLORS.TV_COLOR == "#1f77b4"
@@ -187,24 +201,24 @@ class TestDefaultColors:
         assert DEFAULT_COLORS.MUSIC_COLOR == "#2ca02c"
         assert DEFAULT_COLORS.OTHER_COLOR == "#d62728"
         assert DEFAULT_COLORS.UNKNOWN_COLOR == "#666666"
-    
+
     def test_background_colors(self) -> None:
         """Test background color constants."""
         assert DEFAULT_COLORS.GRAPH_BACKGROUND == "#ffffff"
         assert DEFAULT_COLORS.FIGURE_BACKGROUND == "#ffffff"
-    
+
     def test_annotation_colors(self) -> None:
         """Test annotation color constants."""
         assert DEFAULT_COLORS.ANNOTATION_COLOR == "#ff0000"
         assert DEFAULT_COLORS.ANNOTATION_OUTLINE == "#000000"
         assert DEFAULT_COLORS.PEAK_ANNOTATION == "#ffcc00"
         assert DEFAULT_COLORS.PEAK_ANNOTATION_TEXT == "#000000"
-    
+
     def test_grid_and_axis_colors(self) -> None:
         """Test grid and axis color constants."""
         assert DEFAULT_COLORS.GRID_COLOR == "#cccccc"
         assert DEFAULT_COLORS.AXIS_COLOR == "#333333"
-    
+
     def test_get_media_type_colors(self) -> None:
         """Test getting media type color mapping."""
         color_mapping = DEFAULT_COLORS.get_media_type_colors()
@@ -221,14 +235,14 @@ class TestDefaultColors:
 
 class TestColorPalettes:
     """Test cases for color palette constants."""
-    
+
     def test_seaborn_default_palette(self) -> None:
         """Test Seaborn default color palette."""
         palette = COLOR_PALETTES.SEABORN_DEFAULT
         expected = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b"]
         assert palette == expected
         assert len(palette) == 6
-    
+
     def test_named_palettes(self) -> None:
         """Test named color palettes."""
         assert COLOR_PALETTES.VIRIDIS == "viridis"
@@ -239,16 +253,22 @@ class TestColorPalettes:
 
 class TestConfigKeys:
     """Test cases for configuration key constants."""
-    
+
     def test_enable_disable_keys(self) -> None:
         """Test graph enable/disable configuration keys."""
         assert CONFIG_KEYS.ENABLE_DAILY_PLAY_COUNT == "ENABLE_DAILY_PLAY_COUNT"
-        assert CONFIG_KEYS.ENABLE_PLAY_COUNT_BY_DAYOFWEEK == "ENABLE_PLAY_COUNT_BY_DAYOFWEEK"
-        assert CONFIG_KEYS.ENABLE_PLAY_COUNT_BY_HOUROFDAY == "ENABLE_PLAY_COUNT_BY_HOUROFDAY"
+        assert (
+            CONFIG_KEYS.ENABLE_PLAY_COUNT_BY_DAYOFWEEK
+            == "ENABLE_PLAY_COUNT_BY_DAYOFWEEK"
+        )
+        assert (
+            CONFIG_KEYS.ENABLE_PLAY_COUNT_BY_HOUROFDAY
+            == "ENABLE_PLAY_COUNT_BY_HOUROFDAY"
+        )
         assert CONFIG_KEYS.ENABLE_PLAY_COUNT_BY_MONTH == "ENABLE_PLAY_COUNT_BY_MONTH"
         assert CONFIG_KEYS.ENABLE_TOP_10_PLATFORMS == "ENABLE_TOP_10_PLATFORMS"
         assert CONFIG_KEYS.ENABLE_TOP_10_USERS == "ENABLE_TOP_10_USERS"
-    
+
     def test_color_configuration_keys(self) -> None:
         """Test color configuration keys."""
         assert CONFIG_KEYS.TV_COLOR == "TV_COLOR"
@@ -258,29 +278,39 @@ class TestConfigKeys:
         assert CONFIG_KEYS.ANNOTATION_OUTLINE_COLOR == "ANNOTATION_OUTLINE_COLOR"
         assert CONFIG_KEYS.PEAK_ANNOTATION_COLOR == "PEAK_ANNOTATION_COLOR"
         assert CONFIG_KEYS.PEAK_ANNOTATION_TEXT_COLOR == "PEAK_ANNOTATION_TEXT_COLOR"
-    
+
     def test_annotation_keys(self) -> None:
         """Test annotation configuration keys."""
         assert CONFIG_KEYS.ANNOTATE_DAILY_PLAY_COUNT == "ANNOTATE_DAILY_PLAY_COUNT"
-        assert CONFIG_KEYS.ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK == "ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK"
-        assert CONFIG_KEYS.ANNOTATE_PLAY_COUNT_BY_HOUROFDAY == "ANNOTATE_PLAY_COUNT_BY_HOUROFDAY"
-        assert CONFIG_KEYS.ANNOTATE_PLAY_COUNT_BY_MONTH == "ANNOTATE_PLAY_COUNT_BY_MONTH"
+        assert (
+            CONFIG_KEYS.ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK
+            == "ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK"
+        )
+        assert (
+            CONFIG_KEYS.ANNOTATE_PLAY_COUNT_BY_HOUROFDAY
+            == "ANNOTATE_PLAY_COUNT_BY_HOUROFDAY"
+        )
+        assert (
+            CONFIG_KEYS.ANNOTATE_PLAY_COUNT_BY_MONTH == "ANNOTATE_PLAY_COUNT_BY_MONTH"
+        )
         assert CONFIG_KEYS.ANNOTATE_TOP_10_PLATFORMS == "ANNOTATE_TOP_10_PLATFORMS"
         assert CONFIG_KEYS.ANNOTATE_TOP_10_USERS == "ANNOTATE_TOP_10_USERS"
-    
+
     def test_other_configuration_keys(self) -> None:
         """Test other configuration keys."""
         assert CONFIG_KEYS.TIME_RANGE_DAYS == "TIME_RANGE_DAYS"
         assert CONFIG_KEYS.TIME_RANGE_MONTHS == "TIME_RANGE_MONTHS"
         assert CONFIG_KEYS.ENABLE_GRAPH_GRID == "ENABLE_GRAPH_GRID"
         assert CONFIG_KEYS.ENABLE_STACKED_BAR_CHARTS == "ENABLE_STACKED_BAR_CHARTS"
-        assert CONFIG_KEYS.ENABLE_MEDIA_TYPE_SEPARATION == "ENABLE_MEDIA_TYPE_SEPARATION"
+        assert (
+            CONFIG_KEYS.ENABLE_MEDIA_TYPE_SEPARATION == "ENABLE_MEDIA_TYPE_SEPARATION"
+        )
         assert CONFIG_KEYS.CENSOR_USERNAMES == "CENSOR_USERNAMES"
 
 
 class TestFileConstants:
     """Test cases for file and path constants."""
-    
+
     def test_file_extensions(self) -> None:
         """Test file extension constants."""
         assert FILE_EXTENSIONS.PNG == ".png"
@@ -288,14 +318,14 @@ class TestFileConstants:
         assert FILE_EXTENSIONS.JPEG == ".jpeg"
         assert FILE_EXTENSIONS.SVG == ".svg"
         assert FILE_EXTENSIONS.PDF == ".pdf"
-    
+
     def test_get_image_extensions(self) -> None:
         """Test getting image extensions."""
         image_extensions = FILE_EXTENSIONS.get_image_extensions()
         expected = [".png", ".jpg", ".jpeg", ".svg"]
         assert image_extensions == expected
         assert len(image_extensions) == 4
-    
+
     def test_file_formats(self) -> None:
         """Test file format constants."""
         assert FILE_FORMATS.PNG == "png"
@@ -303,7 +333,7 @@ class TestFileConstants:
         assert FILE_FORMATS.JPEG == "jpeg"
         assert FILE_FORMATS.SVG == "svg"
         assert FILE_FORMATS.PDF == "pdf"
-    
+
     def test_path_patterns(self) -> None:
         """Test path pattern constants."""
         assert PATH_PATTERNS.INVALID_FILENAME_CHARS == r'[<>:"/\\|?*]'
@@ -401,7 +431,15 @@ class TestLocalizationFunctions:
         """Test getting localized day names."""
         # Default locale (English)
         day_names = get_localized_day_names()
-        expected = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        expected = [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday",
+        ]
         assert day_names == expected
 
         # Explicit English locale

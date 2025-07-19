@@ -156,16 +156,24 @@ def calculate_next_update_time(
                         next_update_str = state_data["state"]["next_update"]  # pyright: ignore[reportAny]
                         if next_update_str and isinstance(next_update_str, str):
                             try:
-                                scheduler_next_update = datetime.fromisoformat(next_update_str)
+                                scheduler_next_update = datetime.fromisoformat(
+                                    next_update_str
+                                )
 
                                 # Ensure scheduler_next_update is timezone-aware and in local timezone
                                 if scheduler_next_update.tzinfo is None:
-                                    scheduler_next_update = scheduler_next_update.replace(
-                                        tzinfo=get_local_timezone()
+                                    scheduler_next_update = (
+                                        scheduler_next_update.replace(
+                                            tzinfo=get_local_timezone()
+                                        )
                                     )
                                 else:
                                     # Convert to local timezone to ensure consistent ZoneInfo type
-                                    scheduler_next_update = scheduler_next_update.astimezone(get_local_timezone())
+                                    scheduler_next_update = (
+                                        scheduler_next_update.astimezone(
+                                            get_local_timezone()
+                                        )
+                                    )
 
                                 # Use the scheduler's next_update if it's in the future
                                 if scheduler_next_update > current_time:
@@ -176,7 +184,11 @@ def calculate_next_update_time(
                                 pass
 
                     # Fallback: calculate from last_update if next_update wasn't usable
-                    if not scheduler_state_loaded and "state" in state_data and "last_update" in state_data["state"]:
+                    if (
+                        not scheduler_state_loaded
+                        and "state" in state_data
+                        and "last_update" in state_data["state"]
+                    ):
                         last_update_str = state_data["state"]["last_update"]  # pyright: ignore[reportAny]
                         if last_update_str and isinstance(last_update_str, str):
                             last_update = datetime.fromisoformat(last_update_str)
@@ -188,7 +200,9 @@ def calculate_next_update_time(
                                 )
                             else:
                                 # Convert to local timezone to ensure consistent ZoneInfo type
-                                last_update = last_update.astimezone(get_local_timezone())
+                                last_update = last_update.astimezone(
+                                    get_local_timezone()
+                                )
 
                             # Respect the update_days interval if we have a last update
                             min_next_update = last_update + timedelta(days=update_days)

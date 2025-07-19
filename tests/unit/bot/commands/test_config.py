@@ -15,7 +15,11 @@ from discord.ext import commands
 from src.tgraph_bot.bot.commands.config import ConfigCog
 from src.tgraph_bot.config.schema import TGraphBotConfig
 from src.tgraph_bot.main import TGraphBot
-from tests.utils.test_helpers import create_config_manager_with_config, create_mock_interaction, create_temp_config_file
+from tests.utils.test_helpers import (
+    create_config_manager_with_config,
+    create_mock_interaction,
+    create_temp_config_file,
+)
 
 
 class TestConfigCog:
@@ -33,8 +37,6 @@ class TestConfigCog:
         """Create a ConfigCog instance for testing."""
         return ConfigCog(mock_bot)
 
-
-
     def test_init(self, mock_bot: TGraphBot) -> None:
         """Test ConfigCog initialization."""
         cog = ConfigCog(mock_bot)
@@ -43,7 +45,9 @@ class TestConfigCog:
 
     def test_tgraph_bot_property_with_wrong_bot_type(self) -> None:
         """Test tgraph_bot property with wrong bot type."""
-        regular_bot = commands.Bot(command_prefix="!", intents=discord.Intents.default())
+        regular_bot = commands.Bot(
+            command_prefix="!", intents=discord.Intents.default()
+        )
 
         # The ConfigCog constructor will fail when trying to access tgraph_bot
         with pytest.raises(TypeError, match="Expected TGraphBot instance"):
@@ -97,18 +101,13 @@ class TestConfigCog:
             _ = config_cog._convert_config_value("not_a_float", float)  # pyright: ignore[reportPrivateUsage]
 
     @pytest.mark.asyncio
-    async def test_config_view_success(
-        self,
-        config_cog: ConfigCog
-    ) -> None:
+    async def test_config_view_success(self, config_cog: ConfigCog) -> None:
         """Test successful configuration viewing."""
         # Create mock interaction using standardized utility
         mock_interaction = create_mock_interaction(
-            command_name="config_view",
-            user_id=123456,
-            username="TestUser"
+            command_name="config_view", user_id=123456, username="TestUser"
         )
-        
+
         # Call the method directly using the callback (no key parameter)
         _ = await config_cog.config_view.callback(config_cog, mock_interaction, None)  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
 
@@ -117,134 +116,150 @@ class TestConfigCog:
 
         # Get the embed from the call
         call_args = mock_interaction.response.send_message.call_args  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue,reportUnknownVariableType]
-        embed: discord.Embed = call_args[1]['embed']  # pyright: ignore[reportUnknownVariableType]
+        embed: discord.Embed = call_args[1]["embed"]  # pyright: ignore[reportUnknownVariableType]
 
         assert embed.title == "🔧 Bot Configuration"  # pyright: ignore[reportUnknownMemberType]
         assert embed.color == discord.Color.blue()  # pyright: ignore[reportUnknownMemberType]
-        assert len(embed.fields) >= 3  # Should have multiple fields  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+        assert (
+            len(embed.fields) >= 3
+        )  # Should have multiple fields  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
 
     @pytest.mark.asyncio
-    async def test_config_view_error(
-        self,
-        config_cog: ConfigCog
-    ) -> None:
+    async def test_config_view_error(self, config_cog: ConfigCog) -> None:
         """Test configuration viewing with error."""
         # Create mock interaction using standardized utility
         mock_interaction = create_mock_interaction(
-            command_name="config_view",
-            user_id=123456,
-            username="TestUser"
+            command_name="config_view", user_id=123456, username="TestUser"
         )
-        
+
         # Mock the config manager to raise an exception
-        with patch.object(config_cog.tgraph_bot.config_manager, 'get_current_config', side_effect=RuntimeError("Test error")), \
-             patch('src.tgraph_bot.utils.command_utils.safe_interaction_response') as mock_safe_response:
-            _ = await config_cog.config_view.callback(config_cog, mock_interaction, None)  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
+        with (
+            patch.object(
+                config_cog.tgraph_bot.config_manager,
+                "get_current_config",
+                side_effect=RuntimeError("Test error"),
+            ),
+            patch(
+                "src.tgraph_bot.utils.command_utils.safe_interaction_response"
+            ) as mock_safe_response,
+        ):
+            _ = await config_cog.config_view.callback(
+                config_cog, mock_interaction, None
+            )  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
 
         # Verify error response was sent through the new error handling system
         mock_safe_response.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_config_edit_invalid_setting(
-        self,
-        config_cog: ConfigCog
-    ) -> None:
+    async def test_config_edit_invalid_setting(self, config_cog: ConfigCog) -> None:
         """Test configuration editing with invalid setting."""
         # Create mock interaction using standardized utility
         mock_interaction = create_mock_interaction(
-            command_name="config_edit",
-            user_id=123456,
-            username="TestUser"
+            command_name="config_edit", user_id=123456, username="TestUser"
         )
-        
-        with patch('src.tgraph_bot.utils.command_utils.safe_interaction_response') as mock_safe_response:
-            _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "INVALID_SETTING", "value")  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
+
+        with patch(
+            "src.tgraph_bot.utils.command_utils.safe_interaction_response"
+        ) as mock_safe_response:
+            _ = await config_cog.config_edit.callback(
+                config_cog, mock_interaction, "INVALID_SETTING", "value"
+            )  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
 
         # Verify error response was sent through the new error handling system
         mock_safe_response.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_config_edit_invalid_value(
-        self,
-        config_cog: ConfigCog
-    ) -> None:
+    async def test_config_edit_invalid_value(self, config_cog: ConfigCog) -> None:
         """Test configuration editing with invalid value."""
         # Create mock interaction using standardized utility
         mock_interaction = create_mock_interaction(
-            command_name="config_edit",
-            user_id=123456,
-            username="TestUser"
+            command_name="config_edit", user_id=123456, username="TestUser"
         )
-        
-        with patch('src.tgraph_bot.utils.command_utils.safe_interaction_response') as mock_safe_response:
-            _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "UPDATE_DAYS", "not_a_number")  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
+
+        with patch(
+            "src.tgraph_bot.utils.command_utils.safe_interaction_response"
+        ) as mock_safe_response:
+            _ = await config_cog.config_edit.callback(
+                config_cog, mock_interaction, "UPDATE_DAYS", "not_a_number"
+            )  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
 
         # Verify error response was sent through the new error handling system
         mock_safe_response.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_config_edit_validation_error(
-        self,
-        config_cog: ConfigCog
-    ) -> None:
+    async def test_config_edit_validation_error(self, config_cog: ConfigCog) -> None:
         """Test configuration editing with validation error."""
         # Create mock interaction using standardized utility
         mock_interaction = create_mock_interaction(
-            command_name="config_edit",
-            user_id=123456,
-            username="TestUser"
+            command_name="config_edit", user_id=123456, username="TestUser"
         )
-        
+
         # Try to set UPDATE_DAYS to an invalid value (outside range)
-        with patch('src.tgraph_bot.utils.command_utils.safe_interaction_response') as mock_safe_response:
-            _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "UPDATE_DAYS", "999")  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
+        with patch(
+            "src.tgraph_bot.utils.command_utils.safe_interaction_response"
+        ) as mock_safe_response:
+            _ = await config_cog.config_edit.callback(
+                config_cog, mock_interaction, "UPDATE_DAYS", "999"
+            )  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
 
         # Verify error response was sent through the new error handling system
         mock_safe_response.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_config_edit_no_config_file(
-        self,
-        config_cog: ConfigCog
-    ) -> None:
+    async def test_config_edit_no_config_file(self, config_cog: ConfigCog) -> None:
         """Test configuration editing when no config file path is available."""
         # Create mock interaction using standardized utility
         mock_interaction = create_mock_interaction(
-            command_name="config_edit",
-            user_id=123456,
-            username="TestUser"
+            command_name="config_edit", user_id=123456, username="TestUser"
         )
-        
+
         # Mock the config manager's config_file_path to be None
-        with patch.object(config_cog.tgraph_bot.config_manager, 'config_file_path', None), \
-             patch('src.tgraph_bot.utils.discord.command_utils.safe_interaction_response') as mock_safe_response:
-            _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "UPDATE_DAYS", "14")  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
+        with (
+            patch.object(
+                config_cog.tgraph_bot.config_manager, "config_file_path", None
+            ),
+            patch(
+                "src.tgraph_bot.utils.discord.command_utils.safe_interaction_response"
+            ) as mock_safe_response,
+        ):
+            _ = await config_cog.config_edit.callback(
+                config_cog, mock_interaction, "UPDATE_DAYS", "14"
+            )  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
 
         # Verify error response was sent through the new error handling system
         mock_safe_response.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_config_edit_success(
-        self,
-        config_cog: ConfigCog,
-        base_config: TGraphBotConfig
+        self, config_cog: ConfigCog, base_config: TGraphBotConfig
     ) -> None:
         """Test successful configuration editing."""
         # Create mock interaction using standardized utility
         mock_interaction = create_mock_interaction(
-            command_name="config_edit",
-            user_id=123456,
-            username="TestUser"
+            command_name="config_edit", user_id=123456, username="TestUser"
         )
-        
+
         # Create a temporary config file using centralized utility
         with create_temp_config_file() as config_path:
             # Mock the config manager's config_file_path
-            with patch.object(config_cog.tgraph_bot.config_manager, 'config_file_path', config_path), \
-                 patch.object(config_cog.tgraph_bot.config_manager, 'get_current_config', return_value=base_config), \
-                 patch('src.tgraph_bot.config.manager.ConfigManager.save_config') as mock_save:
-
-                _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "UPDATE_DAYS", "14")  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
+            with (
+                patch.object(
+                    config_cog.tgraph_bot.config_manager,
+                    "config_file_path",
+                    config_path,
+                ),
+                patch.object(
+                    config_cog.tgraph_bot.config_manager,
+                    "get_current_config",
+                    return_value=base_config,
+                ),
+                patch(
+                    "src.tgraph_bot.config.manager.ConfigManager.save_config"
+                ) as mock_save,
+            ):
+                _ = await config_cog.config_edit.callback(
+                    config_cog, mock_interaction, "UPDATE_DAYS", "14"
+                )  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
 
                 # Verify save was called
                 mock_save.assert_called_once()
@@ -253,95 +268,91 @@ class TestConfigCog:
                 mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
 
     @pytest.mark.asyncio
-    async def test_config_edit_save_error(
-        self,
-        config_cog: ConfigCog
-    ) -> None:
+    async def test_config_edit_save_error(self, config_cog: ConfigCog) -> None:
         """Test configuration editing when save operation fails."""
         # Create mock interaction using standardized utility
         mock_interaction = create_mock_interaction(
-            command_name="config_edit",
-            user_id=123456,
-            username="TestUser"
+            command_name="config_edit", user_id=123456, username="TestUser"
         )
 
         # Create a temporary config file using centralized utility
         with create_temp_config_file() as config_path:
             # Mock the config manager's config_file_path and save to raise an exception
-            with patch.object(config_cog.tgraph_bot.config_manager, 'config_file_path', config_path), \
-                 patch('src.tgraph_bot.config.manager.ConfigManager.save_config', side_effect=OSError("Save failed")), \
-                 patch('src.tgraph_bot.utils.discord.command_utils.safe_interaction_response') as mock_safe_response:
-
-                _ = await config_cog.config_edit.callback(config_cog, mock_interaction, "UPDATE_DAYS", "14")  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
+            with (
+                patch.object(
+                    config_cog.tgraph_bot.config_manager,
+                    "config_file_path",
+                    config_path,
+                ),
+                patch(
+                    "src.tgraph_bot.config.manager.ConfigManager.save_config",
+                    side_effect=OSError("Save failed"),
+                ),
+                patch(
+                    "src.tgraph_bot.utils.discord.command_utils.safe_interaction_response"
+                ) as mock_safe_response,
+            ):
+                _ = await config_cog.config_edit.callback(
+                    config_cog, mock_interaction, "UPDATE_DAYS", "14"
+                )  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
 
                 # Verify error response was sent through the new error handling system
                 mock_safe_response.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_config_view_with_specific_key(
-        self,
-        config_cog: ConfigCog
-    ) -> None:
+    async def test_config_view_with_specific_key(self, config_cog: ConfigCog) -> None:
         """Test configuration viewing with specific key."""
         # Create mock interaction using standardized utility
         mock_interaction = create_mock_interaction(
-            command_name="config_view",
-            user_id=123456,
-            username="TestUser"
+            command_name="config_view", user_id=123456, username="TestUser"
         )
 
         # Test viewing a specific key
-        _ = await config_cog.config_view.callback(config_cog, mock_interaction, "UPDATE_DAYS")  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
+        _ = await config_cog.config_view.callback(
+            config_cog, mock_interaction, "UPDATE_DAYS"
+        )  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
 
         # Verify response was sent
         mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
 
         # Get the embed that was sent
         call_args = mock_interaction.response.send_message.call_args  # pyright: ignore[reportAttributeAccessIssue,reportUnknownVariableType,reportUnknownMemberType]
-        embed = call_args[1]['embed']  # pyright: ignore[reportUnknownVariableType]
+        embed = call_args[1]["embed"]  # pyright: ignore[reportUnknownVariableType]
 
         # Verify the embed contains the specific key information
         assert "UPDATE_DAYS" in embed.title  # pyright: ignore[reportUnknownMemberType]
         assert embed.fields[0].name == "Current Value"  # pyright: ignore[reportUnknownMemberType]
 
     @pytest.mark.asyncio
-    async def test_config_view_with_invalid_key(
-        self,
-        config_cog: ConfigCog
-    ) -> None:
+    async def test_config_view_with_invalid_key(self, config_cog: ConfigCog) -> None:
         """Test configuration viewing with invalid key."""
         # Create mock interaction using standardized utility
         mock_interaction = create_mock_interaction(
-            command_name="config_view",
-            user_id=123456,
-            username="TestUser"
+            command_name="config_view", user_id=123456, username="TestUser"
         )
 
         # Test viewing an invalid key
-        _ = await config_cog.config_view.callback(config_cog, mock_interaction, "INVALID_KEY")  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
+        _ = await config_cog.config_view.callback(
+            config_cog, mock_interaction, "INVALID_KEY"
+        )  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
 
         # Verify response was sent
         mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
 
         # Get the embed that was sent
         call_args = mock_interaction.response.send_message.call_args  # pyright: ignore[reportAttributeAccessIssue,reportUnknownVariableType,reportUnknownMemberType]
-        embed = call_args[1]['embed']  # pyright: ignore[reportUnknownVariableType]
+        embed = call_args[1]["embed"]  # pyright: ignore[reportUnknownVariableType]
 
         # Verify the embed shows an error
         assert "Configuration Key Not Found" in embed.title  # pyright: ignore[reportUnknownMemberType]
         assert "INVALID_KEY" in embed.description  # pyright: ignore[reportUnknownMemberType]
 
     @pytest.mark.asyncio
-    async def test_config_key_autocomplete(
-        self,
-        config_cog: ConfigCog
-    ) -> None:
+    async def test_config_key_autocomplete(self, config_cog: ConfigCog) -> None:
         """Test configuration key autocomplete functionality."""
         # Create mock interaction
         mock_interaction = create_mock_interaction(
-            command_name="config_autocomplete",
-            user_id=123456,
-            username="TestUser"
+            command_name="config_autocomplete", user_id=123456, username="TestUser"
         )
 
         # Test autocomplete with no input

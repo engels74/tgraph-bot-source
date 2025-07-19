@@ -115,7 +115,9 @@ class MyStatsCog(BaseCommandCog):
             if not email or "@" not in email or "." not in email or len(email) < 5:
                 raise ValidationError(
                     f"Invalid email format: {email}",
-                    user_message=i18n.translate("Please provide a valid email address (e.g., user@example.com)."),
+                    user_message=i18n.translate(
+                        "Please provide a valid email address (e.g., user@example.com)."
+                    ),
                 )
 
             # Acknowledge the command with informative message
@@ -196,12 +198,16 @@ class MyStatsCog(BaseCommandCog):
                     )
                     _ = error_embed.add_field(
                         name=i18n.translate("Possible Causes"),
-                        value=i18n.translate("• Email not found in Plex server\n• Insufficient data for graphs\n• Temporary server issue"),
+                        value=i18n.translate(
+                            "• Email not found in Plex server\n• Insufficient data for graphs\n• Temporary server issue"
+                        ),
                         inline=False,
                     )
                     _ = error_embed.add_field(
                         name=i18n.translate("Suggested Actions"),
-                        value=i18n.translate("• Verify your email is correct\n• Ensure you have Plex activity\n• Try again in a few minutes"),
+                        value=i18n.translate(
+                            "• Verify your email is correct\n• Ensure you have Plex activity\n• Try again in a few minutes"
+                        ),
                         inline=False,
                     )
 
