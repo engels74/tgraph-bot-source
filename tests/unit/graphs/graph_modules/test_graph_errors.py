@@ -21,9 +21,11 @@ from src.tgraph_bot.graphs.graph_modules.core.graph_errors import (
     ERROR_MESSAGES,
     create_standardized_error_message,
 )
-from src.tgraph_bot.utils.core.error_handler import (
+from src.tgraph_bot.utils.core.exceptions import (
     ErrorCategory,
     ErrorSeverity,
+)
+from src.tgraph_bot.utils.core.error_handler import (
     ErrorContext,
 )
 

@@ -340,8 +340,8 @@ class VisualizationMixin:
 
     def setup_time_series_axes(
         self: VisualizationProtocol,
-        xlabel: str = "Date",
-        ylabel: str = "Count",
+        xlabel: str | None = "Date",
+        ylabel: str | None = "Count",
         date_format: str = "%Y-%m-%d",
         rotation: int = 45,
     ) -> None:
@@ -362,21 +362,20 @@ class VisualizationMixin:
             return
 
         # Apply standard title and axes setup
-        if self.axes is not None:
-            # Set title
-            display_title = self.get_title()
-            _ = self.axes.set_title(  # pyright: ignore[reportUnknownMemberType]
-                display_title, fontsize=18, fontweight="bold", pad=20
-            )
+        # Set title
+        display_title = self.get_title()
+        _ = self.axes.set_title(  # pyright: ignore[reportUnknownMemberType]
+            display_title, fontsize=18, fontweight="bold", pad=20
+        )
 
-            # Set axis labels
-            if xlabel is not None:
-                _ = self.axes.set_xlabel(xlabel, fontsize=12)  # pyright: ignore[reportUnknownMemberType]
-            if ylabel is not None:
-                _ = self.axes.set_ylabel(ylabel, fontsize=12)  # pyright: ignore[reportUnknownMemberType]
+        # Set axis labels
+        if xlabel is not None:
+            _ = self.axes.set_xlabel(xlabel, fontsize=12)  # pyright: ignore[reportUnknownMemberType]
+        if ylabel is not None:
+            _ = self.axes.set_ylabel(ylabel, fontsize=12)  # pyright: ignore[reportUnknownMemberType]
 
-            # Configure tick parameters
-            self.axes.tick_params(axis="x", rotation=rotation)
+        # Configure tick parameters
+        self.axes.tick_params(axis="x", rotation=rotation)
 
         # Format x-axis dates if matplotlib dates are being used
         try:

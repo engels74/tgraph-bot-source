@@ -209,7 +209,7 @@ class TestExtractMonthlyPlaysData:
         with pytest.raises(
             ValueError, match="Invalid monthly plays data: Missing required key: series"
         ):
-            processor.extract_monthly_plays_data(data)
+            _ = processor.extract_monthly_plays_data(data)
 
 
 class TestProcessDataSafely:
@@ -264,7 +264,7 @@ class TestProcessDataSafely:
         with pytest.raises(
             ValueError, match="Failed to process test: Processing failed"
         ):
-            processor.process_data_safely(
+            _ = processor.process_data_safely(
                 data=data, processor_func=mock_processor, context="test"
             )
 
@@ -355,7 +355,7 @@ class TestExtractAndProcessPlayHistory:
         with pytest.raises(
             ValueError, match="Invalid play history data: Missing required key: data"
         ):
-            processor.extract_and_process_play_history(data)
+            _ = processor.extract_and_process_play_history(data)
 
     @patch(
         "src.tgraph_bot.graphs.graph_modules.data.data_processor.process_play_history_data"
@@ -412,7 +412,7 @@ class TestExtractAndProcessMonthlyPlays:
             ValueError,
             match="Invalid monthly plays data: Missing required key: categories",
         ):
-            processor.extract_and_process_monthly_plays(data)
+            _ = processor.extract_and_process_monthly_plays(data)
 
 
 class TestSafeExtractWithFallback:
@@ -460,7 +460,7 @@ class TestSafeExtractWithFallback:
         with pytest.raises(
             ValueError, match="Invalid test data: Missing required key: data"
         ):
-            processor.safe_extract_with_fallback(
+            _ = processor.safe_extract_with_fallback(
                 data=data,
                 data_key="play_history",
                 required_keys=["data"],
@@ -621,4 +621,4 @@ class TestIntegrationScenarios:
         with pytest.raises(
             ValueError, match="Invalid play history data: Missing required key: data"
         ):
-            processor.extract_and_process_play_history(data)
+            _ = processor.extract_and_process_play_history(data)

@@ -8,10 +8,6 @@ the codebase without creating import cycles.
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING, Any
-
-if TYPE_CHECKING:
-    pass
 
 
 class ErrorSeverity(Enum):
@@ -45,14 +41,14 @@ class TGraphBotError(Exception):
         category: ErrorCategory = ErrorCategory.UNKNOWN,
         severity: ErrorSeverity = ErrorSeverity.MEDIUM,
         user_message: str | None = None,
-        context: Any = None,
+        context: object | None = None,
         recoverable: bool = True,
     ) -> None:
         super().__init__(message)
         self.category: ErrorCategory = category
         self.severity: ErrorSeverity = severity
         self.user_message: str = user_message or message
-        self.context: Any = context
+        self.context: object | None = context
         self.recoverable: bool = recoverable
 
 
@@ -63,7 +59,7 @@ class NetworkError(TGraphBotError):
         self,
         message: str,
         user_message: str | None = None,
-        context: Any = None,
+        context: object | None = None,
         recoverable: bool = True,
     ) -> None:
         super().__init__(
@@ -83,7 +79,7 @@ class APIError(TGraphBotError):
         self,
         message: str,
         user_message: str | None = None,
-        context: Any = None,
+        context: object | None = None,
         recoverable: bool = True,
     ) -> None:
         super().__init__(
@@ -103,7 +99,7 @@ class ValidationError(TGraphBotError):
         self,
         message: str,
         user_message: str | None = None,
-        context: Any = None,
+        context: object | None = None,
     ) -> None:
         super().__init__(
             message,
@@ -122,7 +118,7 @@ class ConfigurationError(TGraphBotError):
         self,
         message: str,
         user_message: str | None = None,
-        context: Any = None,
+        context: object | None = None,
     ) -> None:
         super().__init__(
             message,

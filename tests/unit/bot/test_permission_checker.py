@@ -500,8 +500,8 @@ class TestPermissionChecker:
 
             # Mock enhanced analysis to return "Accessible to all members" for all admin commands
             async def mock_enhanced_analysis(
-                command: MagicMock, guild: MagicMock
-            ) -> dict[str, str | list[str]]:  # pyright: ignore[reportUnusedParameter]
+                command: MagicMock, _guild: MagicMock
+            ) -> dict[str, str | list[str]]:
                 command_name: str = command.name  # pyright: ignore[reportAny]
                 return {
                     "name": command_name,

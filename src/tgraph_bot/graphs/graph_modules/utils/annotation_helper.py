@@ -8,10 +8,10 @@ It eliminates DRY violations by providing reusable annotation functionality.
 
 import logging
 from collections.abc import Sequence
-from typing import Any, Protocol, cast, runtime_checkable
+from typing import Protocol, cast, runtime_checkable
 
 from matplotlib.axes import Axes
-from matplotlib.patches import Patch, Rectangle
+from matplotlib.patches import Rectangle
 
 logger = logging.getLogger(__name__)
 

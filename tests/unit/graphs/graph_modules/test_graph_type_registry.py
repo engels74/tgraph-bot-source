@@ -87,7 +87,7 @@ class TestGraphTypeRegistry:
         registry = GraphTypeRegistry()
 
         with pytest.raises(ValueError, match="Unknown graph type: invalid_type"):
-            registry.get_graph_class("invalid_type")
+            _ = registry.get_graph_class("invalid_type")
 
     def test_get_enable_key_valid_types(self) -> None:
         """Test getting enable keys for valid type names."""
@@ -102,7 +102,7 @@ class TestGraphTypeRegistry:
         registry = GraphTypeRegistry()
 
         with pytest.raises(ValueError, match="Unknown graph type: invalid_type"):
-            registry.get_enable_key("invalid_type")
+            _ = registry.get_enable_key("invalid_type")
 
     def test_get_type_name_from_class(self) -> None:
         """Test getting type name from graph class."""
@@ -132,7 +132,7 @@ class TestGraphTypeRegistry:
             pass
 
         with pytest.raises(ValueError, match="Unknown graph class"):
-            registry.get_type_name_from_class(FakeGraphClass)  # pyright: ignore[reportArgumentType]
+            _ = registry.get_type_name_from_class(FakeGraphClass)  # pyright: ignore[reportArgumentType]
 
     def test_get_default_enabled(self) -> None:
         """Test getting default enabled status for graph types."""
@@ -150,7 +150,7 @@ class TestGraphTypeRegistry:
         registry = GraphTypeRegistry()
 
         with pytest.raises(ValueError, match="Unknown graph type: invalid_type"):
-            registry.get_default_enabled("invalid_type")
+            _ = registry.get_default_enabled("invalid_type")
 
     def test_get_type_info(self) -> None:
         """Test getting complete type information."""
@@ -168,7 +168,7 @@ class TestGraphTypeRegistry:
         registry = GraphTypeRegistry()
 
         with pytest.raises(ValueError, match="Unknown graph type: invalid_type"):
-            registry.get_type_info("invalid_type")
+            _ = registry.get_type_info("invalid_type")
 
     def test_get_all_type_info(self) -> None:
         """Test getting information about all graph types."""
@@ -237,7 +237,7 @@ class TestGraphTypeRegistry:
         type_names = ["daily_play_count", "invalid_type", "top_10_users"]
 
         with pytest.raises(ValueError, match="Unknown graph type: invalid_type"):
-            registry.get_classes_for_types(type_names)
+            _ = registry.get_classes_for_types(type_names)
 
     def test_get_classes_for_empty_list(self) -> None:
         """Test getting classes for empty list returns empty list."""

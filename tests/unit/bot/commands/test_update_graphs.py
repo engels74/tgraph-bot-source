@@ -267,8 +267,8 @@ class TestUpdateGraphsCog:
 
         # Mock the async iterator for channel history
         async def mock_history(
-            *args: object, **kwargs: object
-        ) -> AsyncIterator[MagicMock]:  # pyright: ignore[reportUnusedParameter]
+            *_args: object, **_kwargs: object
+        ) -> AsyncIterator[MagicMock]:
             for message in [mock_bot_message1, mock_user_message, mock_bot_message2]:
                 yield message
 
@@ -307,8 +307,8 @@ class TestUpdateGraphsCog:
         mock_bot_message.delete = AsyncMock()
 
         async def mock_history(
-            *args: object, **kwargs: object
-        ) -> AsyncIterator[MagicMock]:  # pyright: ignore[reportUnusedParameter]
+            *_args: object, **_kwargs: object
+        ) -> AsyncIterator[MagicMock]:
             for message in [mock_bot_message]:
                 yield message
 
@@ -346,8 +346,8 @@ class TestUpdateGraphsCog:
         )
 
         async def mock_history(
-            *args: object, **kwargs: object
-        ) -> AsyncIterator[MagicMock]:  # pyright: ignore[reportUnusedParameter]
+            *_args: object, **_kwargs: object
+        ) -> AsyncIterator[MagicMock]:
             for message in [mock_bot_message]:
                 yield message
 
@@ -390,8 +390,8 @@ class TestUpdateGraphsCog:
         mock_bot_message.delete = AsyncMock(side_effect=mock_rate_limit_error)
 
         async def mock_history(
-            *args: object, **kwargs: object
-        ) -> AsyncIterator[MagicMock]:  # pyright: ignore[reportUnusedParameter]
+            *_args: object, **_kwargs: object
+        ) -> AsyncIterator[MagicMock]:
             yield mock_bot_message
 
         mock_channel.history = mock_history
@@ -435,8 +435,8 @@ class TestUpdateGraphsCog:
         )
 
         async def mock_history(
-            *args: object, **kwargs: object
-        ) -> AsyncIterator[MagicMock]:  # pyright: ignore[reportUnusedParameter]
+            *_args: object, **_kwargs: object
+        ) -> AsyncIterator[MagicMock]:
             for message in [mock_bot_message]:
                 yield message
 
@@ -475,8 +475,8 @@ class TestUpdateGraphsCog:
             mock_messages.append(mock_message)
 
         async def mock_history(
-            *args: object, **kwargs: object
-        ) -> AsyncIterator[MagicMock]:  # pyright: ignore[reportUnusedParameter]
+            *_args: object, **_kwargs: object
+        ) -> AsyncIterator[MagicMock]:
             for message in mock_messages:
                 yield message
 
