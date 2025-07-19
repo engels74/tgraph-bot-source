@@ -10,8 +10,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from src.tgraph_bot.graphs.graph_modules.media_type_processor import (
-    MediaTypeProcessor,
+from src.tgraph_bot.graphs.graph_modules import MediaTypeProcessor
+from src.tgraph_bot.graphs.graph_modules.data.media_type_processor import (
     MediaTypeInfo,
     MediaTypeDisplayInfo,
 )

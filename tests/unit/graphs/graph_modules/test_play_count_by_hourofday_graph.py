@@ -10,7 +10,7 @@ This module tests the PlayCountByHourOfDayGraph class including:
 
 import pytest
 
-from src.tgraph_bot.graphs.graph_modules.tautulli_graphs.play_count_by_hourofday_graph import PlayCountByHourOfDayGraph
+from src.tgraph_bot.graphs.graph_modules import PlayCountByHourOfDayGraph
 from tests.utils.graph_helpers import (
     create_test_config_minimal,
     run_standard_graph_tests,

@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING
 from typing_extensions import override
 
 from src.tgraph_bot.config.schema import TGraphBotConfig
-from src.tgraph_bot.graphs.graph_modules.graph_type_registry import GraphTypeRegistry
+from src.tgraph_bot.graphs.graph_modules.core.graph_type_registry import GraphTypeRegistry
 from tests.utils.graph_helpers import (
     create_test_config_minimal,
     create_graph_factory_with_config,
@@ -300,7 +300,7 @@ class TestGraphCustomizationValidation:
             # Test with invalid color format - should fall back to defaults
             # This tests the color validation in the BaseGraph class
             with pytest.raises(ValueError, match="Invalid background color format"):
-                from src.tgraph_bot.graphs.graph_modules.base_graph import BaseGraph
+                from src.tgraph_bot.graphs.graph_modules.core.base_graph import BaseGraph
                 # Create a mock graph class to test invalid color handling
                 class TestGraph(BaseGraph):
                     @override

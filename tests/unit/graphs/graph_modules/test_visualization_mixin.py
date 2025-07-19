@@ -18,7 +18,7 @@ import pytest
 import matplotlib.axes
 import matplotlib.pyplot as plt
 
-from src.tgraph_bot.graphs.graph_modules.visualization_mixin import VisualizationMixin
+from src.tgraph_bot.graphs.graph_modules import VisualizationMixin
 from tests.utils.graph_helpers import matplotlib_cleanup
 
 
@@ -124,7 +124,7 @@ class TestVisualizationMixin:
             graph = MockGraphWithVisualization()
             # Don't setup figure, so axes remains None
             
-            with patch('src.tgraph_bot.graphs.graph_modules.visualization_mixin.logger') as mock_logger:
+            with patch('src.tgraph_bot.graphs.graph_modules.visualization.visualization_mixin.logger') as mock_logger:
                 graph.setup_standard_title_and_axes()
                 mock_logger.warning.assert_called_once_with("Cannot setup title and axes: axes is None")
 
@@ -182,7 +182,7 @@ class TestVisualizationMixin:
             graph = MockGraphWithVisualization()
             # Don't setup figure, so axes remains None
             
-            with patch('src.tgraph_bot.graphs.graph_modules.visualization_mixin.logger') as mock_logger:
+            with patch('src.tgraph_bot.graphs.graph_modules.visualization.visualization_mixin.logger') as mock_logger:
                 graph.display_no_data_message()
                 mock_logger.warning.assert_called_once_with("Cannot display no data message: axes is None")
 
@@ -224,7 +224,7 @@ class TestVisualizationMixin:
             graph = MockGraphWithVisualization()
             # Don't setup figure, so figure remains None
             
-            with patch('src.tgraph_bot.graphs.graph_modules.visualization_mixin.logger') as mock_logger:
+            with patch('src.tgraph_bot.graphs.graph_modules.visualization.visualization_mixin.logger') as mock_logger:
                 graph.finalize_plot_layout()
                 mock_logger.warning.assert_called_once_with("Cannot finalize layout: figure is None or not available")
 
@@ -247,7 +247,7 @@ class TestVisualizationMixin:
             graph = MockGraphWithVisualization()
             # Don't setup figure, so axes remains None
             
-            with patch('src.tgraph_bot.graphs.graph_modules.visualization_mixin.logger') as mock_logger:
+            with patch('src.tgraph_bot.graphs.graph_modules.visualization.visualization_mixin.logger') as mock_logger:
                 graph.configure_standard_grid()
                 mock_logger.warning.assert_called_once_with("Cannot configure grid: axes is None")
 
@@ -293,7 +293,7 @@ class TestVisualizationMixin:
             graph = MockGraphWithVisualization()
             # Don't setup figure, so axes remains None
             
-            with patch('src.tgraph_bot.graphs.graph_modules.visualization_mixin.logger') as mock_logger:
+            with patch('src.tgraph_bot.graphs.graph_modules.visualization.visualization_mixin.logger') as mock_logger:
                 graph.setup_bar_chart_annotations([], [])
                 mock_logger.warning.assert_called_once_with("Cannot setup bar annotations: axes is None")
 
@@ -334,7 +334,7 @@ class TestVisualizationMixin:
             graph = MockGraphWithVisualization()
             # Don't setup figure, so axes remains None
             
-            with patch('src.tgraph_bot.graphs.graph_modules.visualization_mixin.logger') as mock_logger:
+            with patch('src.tgraph_bot.graphs.graph_modules.visualization.visualization_mixin.logger') as mock_logger:
                 graph.configure_tick_parameters()
                 mock_logger.warning.assert_called_once_with("Cannot configure tick parameters: axes is None")
 
@@ -364,7 +364,7 @@ class TestVisualizationMixin:
             graph = MockGraphWithVisualization()
             # Don't setup figure, so axes remains None
             
-            with patch('src.tgraph_bot.graphs.graph_modules.visualization_mixin.logger') as mock_logger:
+            with patch('src.tgraph_bot.graphs.graph_modules.visualization.visualization_mixin.logger') as mock_logger:
                 graph.setup_legend_with_standard_config()
                 mock_logger.warning.assert_called_once_with("Cannot setup legend: axes is None")
 
@@ -398,7 +398,7 @@ class TestVisualizationMixin:
             graph = MockGraphWithVisualization()
             # Don't setup figure, so axes remains None
             
-            with patch('src.tgraph_bot.graphs.graph_modules.visualization_mixin.logger') as mock_logger:
+            with patch('src.tgraph_bot.graphs.graph_modules.visualization.visualization_mixin.logger') as mock_logger:
                 graph.clear_axes_for_empty_data()
                 mock_logger.warning.assert_called_once_with("Cannot clear axes: axes is None")
 
@@ -440,7 +440,7 @@ class TestVisualizationMixin:
             graph = MockGraphWithVisualization()
             # Don't setup figure, so axes remains None
             
-            with patch('src.tgraph_bot.graphs.graph_modules.visualization_mixin.logger') as mock_logger:
+            with patch('src.tgraph_bot.graphs.graph_modules.visualization.visualization_mixin.logger') as mock_logger:
                 graph.setup_time_series_axes()
                 mock_logger.warning.assert_called_once_with("Cannot setup time series axes: axes is None")
 
@@ -456,7 +456,7 @@ class TestVisualizationMixin:
                  patch.object(graph.axes, 'set_ylabel') as mock_set_ylabel, \
                  patch.object(graph.axes, 'tick_params') as mock_tick_params, \
                  patch('matplotlib.dates.DateFormatter', side_effect=ImportError("No module")) as mock_date_formatter, \
-                 patch('src.tgraph_bot.graphs.graph_modules.visualization_mixin.logger') as mock_logger:
+                 patch('src.tgraph_bot.graphs.graph_modules.visualization.visualization_mixin.logger') as mock_logger:
                 
                 graph.setup_time_series_axes()
                 

@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, Mock, patch
 import httpx
 import pytest
 
-from src.tgraph_bot.graphs.graph_modules.data_fetcher import DataFetcher
+from src.tgraph_bot.graphs.graph_modules import DataFetcher
 
 
 class TestDataFetcher:

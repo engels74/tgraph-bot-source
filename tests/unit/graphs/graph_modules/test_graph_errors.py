@@ -10,12 +10,14 @@ from __future__ import annotations
 
 from unittest.mock import patch, Mock
 
-from src.tgraph_bot.graphs.graph_modules.graph_errors import (
+from src.tgraph_bot.graphs.graph_modules import (
     GraphError,
     GraphDataError,
     GraphConfigurationError,
     GraphGenerationError,
     GraphValidationError,
+)
+from src.tgraph_bot.graphs.graph_modules.core.graph_errors import (
     ERROR_MESSAGES,
     create_standardized_error_message,
 )
@@ -82,7 +84,7 @@ class TestGraphDataError:
         assert error.expected_keys is None
         assert error.received_keys is None
     
-    @patch('src.tgraph_bot.graphs.graph_modules.graph_errors.translate')
+    @patch('src.tgraph_bot.graphs.graph_modules.core.graph_errors.translate')
     def test_auto_generated_user_message_with_context(self, mock_translate: Mock) -> None:
         """Test auto-generated user message with data context."""
         mock_translate.return_value = "Translated message"
@@ -98,7 +100,7 @@ class TestGraphDataError:
         assert error.data_context == "play_history"
         assert error.graph_type == "daily_play_count"
     
-    @patch('src.tgraph_bot.graphs.graph_modules.graph_errors.translate')
+    @patch('src.tgraph_bot.graphs.graph_modules.core.graph_errors.translate')
     def test_auto_generated_user_message_without_context(self, mock_translate: Mock) -> None:
         """Test auto-generated user message without data context."""
         mock_translate.return_value = "Generic translated message"
@@ -141,7 +143,7 @@ class TestGraphConfigurationError:
         assert error.config_value is None
         assert error.expected_type is None
     
-    @patch('src.tgraph_bot.graphs.graph_modules.graph_errors.translate')
+    @patch('src.tgraph_bot.graphs.graph_modules.core.graph_errors.translate')
     def test_auto_generated_user_message_with_key(self, mock_translate: Mock) -> None:
         """Test auto-generated user message with config key."""
         mock_translate.return_value = "Config key error message"
@@ -159,7 +161,7 @@ class TestGraphConfigurationError:
         assert error.config_value == "invalid"
         assert error.expected_type == "int"
     
-    @patch('src.tgraph_bot.graphs.graph_modules.graph_errors.translate')
+    @patch('src.tgraph_bot.graphs.graph_modules.core.graph_errors.translate')
     def test_auto_generated_user_message_without_key(self, mock_translate: Mock) -> None:
         """Test auto-generated user message without config key."""
         mock_translate.return_value = "Generic config error message"
@@ -185,7 +187,7 @@ class TestGraphGenerationError:
         assert error.generation_stage is None
         assert error.output_path is None
     
-    @patch('src.tgraph_bot.graphs.graph_modules.graph_errors.translate')
+    @patch('src.tgraph_bot.graphs.graph_modules.core.graph_errors.translate')
     def test_auto_generated_user_message_with_graph_type(self, mock_translate: Mock) -> None:
         """Test auto-generated user message with graph type."""
         mock_translate.return_value = "Graph generation error message"
@@ -203,7 +205,7 @@ class TestGraphGenerationError:
         assert error.generation_stage == "rendering"
         assert error.output_path == "/tmp/graph.png"
     
-    @patch('src.tgraph_bot.graphs.graph_modules.graph_errors.translate')
+    @patch('src.tgraph_bot.graphs.graph_modules.core.graph_errors.translate')
     def test_auto_generated_user_message_without_graph_type(self, mock_translate: Mock) -> None:
         """Test auto-generated user message without graph type."""
         mock_translate.return_value = "Generic generation error message"
@@ -230,7 +232,7 @@ class TestGraphValidationError:
         assert error.expected_value is None
         assert error.actual_value is None
     
-    @patch('src.tgraph_bot.graphs.graph_modules.graph_errors.translate')
+    @patch('src.tgraph_bot.graphs.graph_modules.core.graph_errors.translate')
     def test_auto_generated_user_message(self, mock_translate: Mock) -> None:
         """Test auto-generated user message."""
         mock_translate.return_value = "Validation error message"
@@ -303,7 +305,7 @@ class TestErrorMessageTemplates:
         
         assert message == "Unknown error occurred"
     
-    @patch('src.tgraph_bot.graphs.graph_modules.graph_errors.logger')
+    @patch('src.tgraph_bot.graphs.graph_modules.core.graph_errors.logger')
     def test_create_standardized_error_message_format_error(self, mock_logger: Mock) -> None:
         """Test error message creation with format error."""
         message = create_standardized_error_message(

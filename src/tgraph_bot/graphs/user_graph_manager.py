@@ -14,13 +14,13 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Callable
 
 from .. import i18n
-from .graph_modules.data_fetcher import DataFetcher
-from .graph_modules.graph_factory import GraphFactory
-from .graph_modules.utils import cleanup_old_files, get_current_graph_storage_path
+from .graph_modules.data.data_fetcher import DataFetcher
+from .graph_modules.core.graph_factory import GraphFactory
+from .graph_modules.utils.utils import cleanup_old_files, get_current_graph_storage_path
 
 # Import shared classes from graph_manager and progress tracker utility
 from .graph_manager import GraphGenerationError, ResourceCleanupError
-from .graph_modules.progress_tracker import ProgressTracker
+from .graph_modules.utils.progress_tracker import ProgressTracker
 
 if TYPE_CHECKING:
     from ..config.manager import ConfigManager

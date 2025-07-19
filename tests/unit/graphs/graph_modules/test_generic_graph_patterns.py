@@ -23,8 +23,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.tgraph_bot.graphs.graph_modules.base_graph import BaseGraph
-from src.tgraph_bot.graphs.graph_modules.graph_errors import (
+from src.tgraph_bot.graphs.graph_modules import (
+    BaseGraph,
     GraphGenerationError,
 )
 from tests.utils.graph_helpers import (
@@ -51,7 +51,7 @@ class GenericTestGraph(BaseGraph):
         width: int = 12,
         height: int = 8,
         dpi: int = 100,
-        background_color: str = "#ffffff",
+        background_color: str | None = None,
         should_fail: bool = False,
         fail_on_generate: bool = False,
         fail_on_setup: bool = False,
@@ -310,15 +310,16 @@ class TestGenericGraphPatterns:
         assert isinstance(title, str)
         assert len(title) > 0
     
-    @patch('src.tgraph_bot.graphs.graph_modules.utils.apply_modern_seaborn_styling')
+    @patch('src.tgraph_bot.graphs.graph_modules.core.base_graph.apply_modern_seaborn_styling')
     def test_styling_application_patterns(self, mock_styling: MagicMock) -> None:
         """Test that graphs consistently apply styling."""
         with matplotlib_cleanup():
             graph = GenericTestGraph()
-            
-            # Test that styling is applied during setup
+
+            # Test that styling is applied during seaborn style setup
             _ = graph.setup_figure()
-            
+            graph.apply_seaborn_style()
+
             # Verify styling function was called
             mock_styling.assert_called_once()
     

@@ -9,7 +9,7 @@ import pytest
 from collections.abc import Mapping
 from unittest.mock import Mock, patch
 
-from src.tgraph_bot.graphs.graph_modules.data_processor import DataProcessor, data_processor
+from src.tgraph_bot.graphs.graph_modules import DataProcessor, data_processor
 
 
 class TestDataProcessor:
@@ -271,34 +271,34 @@ class TestProcessDataSafely:
 class TestProcessPlayHistorySafely:
     """Test cases for process_play_history_safely method."""
     
-    @patch('src.tgraph_bot.graphs.graph_modules.data_processor.process_play_history_data')
+    @patch('src.tgraph_bot.graphs.graph_modules.data.data_processor.process_play_history_data')
     def test_successful_play_history_processing(self, mock_process: Mock) -> None:
         """Test successful play history data processing."""
         processor = DataProcessor()
-        
+
         # Mock the process_play_history_data function
-        mock_records = [{"user": "test", "date": "2023-01-01"}]
+        mock_records = [{"user": "test", "date": "1672531200"}]  # Unix timestamp for 2023-01-01
         mock_process.return_value = mock_records
-        
-        data = {"data": [{"user": "test", "date": "2023-01-01"}]}
-        
+
+        data = {"data": [{"user": "test", "date": 1672531200}]}  # Unix timestamp for 2023-01-01
+
         result = processor.process_play_history_safely(data)
-        
+
         assert result == mock_records
         mock_process.assert_called_once_with(data)
-    
-    @patch('src.tgraph_bot.graphs.graph_modules.data_processor.process_play_history_data')
+
+    @patch('src.tgraph_bot.graphs.graph_modules.data.data_processor.process_play_history_data')
     def test_play_history_processing_failure(self, mock_process: Mock) -> None:
         """Test play history processing failure returns empty list."""
         processor = DataProcessor()
-        
+
         # Mock the process_play_history_data function to raise an exception
         mock_process.side_effect = ValueError("Processing failed")
-        
-        data = {"data": [{"user": "test", "date": "2023-01-01"}]}
-        
+
+        data = {"data": [{"user": "test", "date": 1672531200}]}  # Unix timestamp for 2023-01-01
+
         result = processor.process_play_history_safely(data)
-        
+
         assert result == []
         mock_process.assert_called_once_with(data)
 
@@ -306,52 +306,52 @@ class TestProcessPlayHistorySafely:
 class TestExtractAndProcessPlayHistory:
     """Test cases for extract_and_process_play_history method."""
     
-    @patch('src.tgraph_bot.graphs.graph_modules.data_processor.process_play_history_data')
+    @patch('src.tgraph_bot.graphs.graph_modules.data.data_processor.process_play_history_data')
     def test_successful_extract_and_process(self, mock_process: Mock) -> None:
         """Test successful extraction and processing of play history data."""
         processor = DataProcessor()
-        
+
         # Mock the process_play_history_data function
-        mock_records = [{"user": "test", "date": "2023-01-01"}]
+        mock_records = [{"user": "test", "date": "1672531200"}]  # Unix timestamp for 2023-01-01
         mock_process.return_value = mock_records
-        
+
         data = {
             "play_history": {
-                "data": [{"user": "test", "date": "2023-01-01"}]
+                "data": [{"user": "test", "date": 1672531200}]  # Unix timestamp for 2023-01-01
             }
         }
-        
+
         validated_data, processed_records = processor.extract_and_process_play_history(data)
-        
+
         assert validated_data == data["play_history"]
         assert processed_records == mock_records
         mock_process.assert_called_once_with(data["play_history"])
-    
+
     def test_extract_and_process_extraction_failure(self) -> None:
         """Test extract and process fails when extraction fails."""
         processor = DataProcessor()
-        
+
         data = {"other_data": "present"}  # Missing play_history
-        
+
         with pytest.raises(ValueError, match="Invalid play history data: Missing required key: data"):
             processor.extract_and_process_play_history(data)
-    
-    @patch('src.tgraph_bot.graphs.graph_modules.data_processor.process_play_history_data')
+
+    @patch('src.tgraph_bot.graphs.graph_modules.data.data_processor.process_play_history_data')
     def test_extract_and_process_processing_failure(self, mock_process: Mock) -> None:
         """Test extract and process with processing failure."""
         processor = DataProcessor()
-        
+
         # Mock the process_play_history_data function to raise an exception
         mock_process.side_effect = ValueError("Processing failed")
-        
+
         data = {
             "play_history": {
-                "data": [{"user": "test", "date": "2023-01-01"}]
+                "data": [{"user": "test", "date": 1672531200}]  # Unix timestamp for 2023-01-01
             }
         }
-        
+
         validated_data, processed_records = processor.extract_and_process_play_history(data)
-        
+
         assert validated_data == data["play_history"]
         assert processed_records == []  # Should return empty list on processing failure
         mock_process.assert_called_once_with(data["play_history"])
@@ -502,15 +502,15 @@ class TestValidateExtractedData:
 class TestIntegrationScenarios:
     """Integration test scenarios for DataProcessor."""
     
-    @patch('src.tgraph_bot.graphs.graph_modules.data_processor.process_play_history_data')
+    @patch('src.tgraph_bot.graphs.graph_modules.data.data_processor.process_play_history_data')
     def test_complete_workflow_play_history(self, mock_process: Mock) -> None:
         """Test complete workflow for play history data processing."""
         processor = DataProcessor()
-        
+
         # Mock the process_play_history_data function
-        mock_records = [{"user": "test", "date": "2023-01-01"}]
+        mock_records = [{"user": "test", "date": "1672531200"}]  # Unix timestamp for 2023-01-01
         mock_process.return_value = mock_records
-        
+
         # Complete API response structure
         api_response = {
             "response": {
@@ -518,8 +518,8 @@ class TestIntegrationScenarios:
                 "data": {
                     "play_history": {
                         "data": [
-                            {"user": "test", "date": "2023-01-01"},
-                            {"user": "test2", "date": "2023-01-02"}
+                            {"user": "test", "date": 1672531200},  # Unix timestamp for 2023-01-01
+                            {"user": "test2", "date": 1672617600}  # Unix timestamp for 2023-01-02
                         ],
                         "recordsFiltered": 2,
                         "recordsTotal": 2

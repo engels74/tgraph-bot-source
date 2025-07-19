@@ -24,8 +24,8 @@ import matplotlib.pyplot as plt
 import psutil
 
 if TYPE_CHECKING:
-    from src.tgraph_bot.graphs.graph_modules.base_graph import BaseGraph
-    from src.tgraph_bot.graphs.graph_modules.graph_factory import GraphFactory
+    from src.tgraph_bot.graphs.graph_modules.core.base_graph import BaseGraph
+    from src.tgraph_bot.graphs.graph_modules.core.graph_factory import GraphFactory
     from src.tgraph_bot.config.schema import TGraphBotConfig
 
 
@@ -219,7 +219,7 @@ def create_graph_factory_with_config(config: TGraphBotConfig) -> GraphFactory:
         >>> assert factory.config is config
     """
     try:
-        from src.tgraph_bot.graphs.graph_modules.graph_factory import GraphFactory
+        from src.tgraph_bot.graphs.graph_modules.core.graph_factory import GraphFactory
     except ImportError as e:
         msg = f"Failed to import GraphFactory: {e}"
         raise ImportError(msg) from e
@@ -239,7 +239,7 @@ class TestGraph(ABC):
         background_color: str = "#ffffff",
     ) -> None:
         """Initialize test graph with default parameters."""
-        from src.tgraph_bot.graphs.graph_modules.base_graph import BaseGraph
+        from src.tgraph_bot.graphs.graph_modules.core.base_graph import BaseGraph
         
         # Create a concrete implementation for testing
         class ConcreteTestGraph(BaseGraph):

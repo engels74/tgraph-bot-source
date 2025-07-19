@@ -12,21 +12,23 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.tgraph_bot.graphs.graph_modules.utils import (
+from src.tgraph_bot.graphs.graph_modules import (
     apply_modern_seaborn_styling,
     cleanup_old_files,
     censor_username,
     ensure_graph_directory,
-    format_date,
-    format_duration,
     generate_graph_filename,
     get_current_graph_storage_path,
+    process_play_history_data,
+    validate_graph_data,
+)
+from src.tgraph_bot.graphs.graph_modules.utils.utils import (
+    format_date,
+    format_duration,
     get_date_range,
     parse_date,
-    process_play_history_data,
     sanitize_filename,
     validate_color,
-    validate_graph_data,
 )
 
 
@@ -64,7 +66,7 @@ class TestDateUtilities:
         with pytest.raises(ValueError):
             _ = parse_date("invalid-date")
     
-    @patch('src.tgraph_bot.graphs.graph_modules.utils.datetime')
+    @patch('src.tgraph_bot.graphs.graph_modules.utils.utils.datetime')
     def test_get_date_range(self, mock_datetime: MagicMock) -> None:
         """Test getting date range."""
         # Mock current time
@@ -91,7 +93,7 @@ class TestDirectoryUtilities:
     def test_ensure_graph_directory_default_path(self) -> None:
         """Test ensuring graph directory with default path."""
         with tempfile.TemporaryDirectory() as _temp_dir:
-            with patch('src.tgraph_bot.graphs.graph_modules.utils.Path') as mock_path:
+            with patch('src.tgraph_bot.graphs.graph_modules.utils.utils.Path') as mock_path:
                 mock_path_instance = MagicMock()
                 mock_path.return_value = mock_path_instance
 

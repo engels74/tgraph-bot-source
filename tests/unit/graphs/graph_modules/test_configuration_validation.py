@@ -22,9 +22,12 @@ from typing import TYPE_CHECKING, override
 import pytest
 
 from src.tgraph_bot.config.schema import TGraphBotConfig
-from src.tgraph_bot.graphs.graph_modules.base_graph import BaseGraph
-from src.tgraph_bot.graphs.graph_modules.config_accessor import ConfigAccessor
-from src.tgraph_bot.graphs.graph_modules.graph_factory import GraphFactory
+from src.tgraph_bot.graphs.graph_modules import (
+    BaseGraph,
+    ConfigAccessor,
+    GraphFactory,
+)
+from src.tgraph_bot.utils.core.error_handler import ConfigurationError
 from tests.utils.graph_helpers import (
     create_test_config_comprehensive,
     create_test_config_minimal,
@@ -108,20 +111,20 @@ class TestConfigurationValidation:
         config = create_test_config_comprehensive()
         
         # Test direct access
-        assert config.TV_COLOR == "#2E86AB"
-        assert config.MOVIE_COLOR == "#A23B72"
+        assert config.TV_COLOR == "#2e86ab"
+        assert config.MOVIE_COLOR == "#a23b72"
         assert config.ENABLE_DAILY_PLAY_COUNT is True
-        
+
         # Test through ConfigAccessor
         accessor = ConfigAccessor(config)
-        assert accessor.get_value("TV_COLOR") == "#2E86AB"
-        assert accessor.get_value("MOVIE_COLOR") == "#A23B72"
+        assert accessor.get_value("TV_COLOR") == "#2e86ab"
+        assert accessor.get_value("MOVIE_COLOR") == "#a23b72"
         assert accessor.get_value("ENABLE_DAILY_PLAY_COUNT") is True
         
         # Test through BaseGraph
         graph = ConfigTestGraph(config=config)
-        assert graph.get_config_value("TV_COLOR") == "#2E86AB"
-        assert graph.get_config_value("MOVIE_COLOR") == "#A23B72"
+        assert graph.get_config_value("TV_COLOR") == "#2e86ab"
+        assert graph.get_config_value("MOVIE_COLOR") == "#a23b72"
         assert graph.get_config_value("ENABLE_DAILY_PLAY_COUNT") is True
     
     def test_configuration_inheritance_patterns(self) -> None:
@@ -185,11 +188,11 @@ class TestConfigurationValidation:
         """Test error handling in configuration access."""
         config = create_test_config_minimal()
         accessor = ConfigAccessor(config)
-        
+
         # Test accessing non-existent configuration key
-        with pytest.raises(AttributeError):
+        with pytest.raises(ConfigurationError):
             _ = accessor.get_value("NON_EXISTENT_KEY")
-        
+
         # Test getting default for non-existent key
         default_value = accessor.get_value("NON_EXISTENT_KEY", default="default")
         assert default_value == "default"
@@ -263,8 +266,8 @@ class TestConfigurationValidation:
         annotation_color = graph.get_annotation_color()
         annotation_outline_color = graph.get_annotation_outline_color()
         
-        assert annotation_color == "#C73E1D"
-        assert annotation_outline_color == "#FFFFFF"
+        assert annotation_color == "#c73e1d"
+        assert annotation_outline_color == "#ffffff"
         
         # Test annotation enable/disable settings
         assert graph.is_annotation_outline_enabled() is True
@@ -285,8 +288,8 @@ class TestConfigurationValidation:
         # Test media type processor configuration
         processor = graph.media_type_processor
         assert processor is not None
-        assert processor.get_color_for_type("tv") == "#2E86AB"
-        assert processor.get_color_for_type("movie") == "#A23B72"
+        assert processor.get_color_for_type("tv") == "#2e86ab"
+        assert processor.get_color_for_type("movie") == "#a23b72"
         
         # Test stacked bar chart setting
         assert config.ENABLE_STACKED_BAR_CHARTS is True
@@ -294,18 +297,18 @@ class TestConfigurationValidation:
     def test_graph_customization_configuration_validation(self) -> None:
         """Test validation of graph customization configuration."""
         config = create_test_config_comprehensive()
-        
+
         # Test grid and background settings
         assert config.ENABLE_GRAPH_GRID is True
-        assert config.GRAPH_BACKGROUND_COLOR == "#F8F9FA"
-        
+        assert config.GRAPH_BACKGROUND_COLOR == "#f8f9fa"  # Colors are normalized to lowercase
+
         # Test user privacy settings
         assert config.CENSOR_USERNAMES is True
-        
+
         # Test that these settings are accessible through graphs
         graph = ConfigTestGraph(config=config)
         background_color = graph.background_color
-        assert background_color == "#F8F9FA"
+        assert background_color == "#f8f9fa"  # Colors are normalized to lowercase
     
     def test_color_configuration_patterns(self) -> None:
         """Test color configuration patterns."""

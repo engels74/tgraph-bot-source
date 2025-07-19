@@ -11,14 +11,16 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from src.tgraph_bot.graphs.graph_modules.progress_tracker import (
-    DEFAULT_CONFIG,
-    DETAILED_CONFIG,
-    SILENT_CONFIG,
+from src.tgraph_bot.graphs.graph_modules import (
     BaseProgressTracker,
     ProgressTracker,
     ProgressTrackerConfig,
     SimpleProgressTracker,
+)
+from src.tgraph_bot.graphs.graph_modules.utils.progress_tracker import (
+    DEFAULT_CONFIG,
+    DETAILED_CONFIG,
+    SILENT_CONFIG,
 )
 
 

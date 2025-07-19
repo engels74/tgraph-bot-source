@@ -7,11 +7,11 @@ mappings between graph type names, enable keys, and graph classes.
 
 import pytest
 
-from src.tgraph_bot.graphs.graph_modules.graph_type_registry import (
+from src.tgraph_bot.graphs.graph_modules import (
     GraphTypeRegistry,
-    GraphTypeInfo,
     get_graph_type_registry,
 )
+from src.tgraph_bot.graphs.graph_modules.core.graph_type_registry import GraphTypeInfo
 
 
 class TestGraphTypeRegistry:
@@ -66,9 +66,9 @@ class TestGraphTypeRegistry:
 
     def test_get_graph_class_valid_types(self) -> None:
         """Test getting graph classes for valid type names."""
-        from src.tgraph_bot.graphs.graph_modules.tautulli_graphs.daily_play_count_graph import DailyPlayCountGraph
-        from src.tgraph_bot.graphs.graph_modules.tautulli_graphs.top_10_users_graph import Top10UsersGraph
-        from src.tgraph_bot.graphs.graph_modules.sample_graph import SampleGraph
+        from src.tgraph_bot.graphs.graph_modules.implementations.tautulli.daily_play_count_graph import DailyPlayCountGraph
+        from src.tgraph_bot.graphs.graph_modules.implementations.tautulli.top_10_users_graph import Top10UsersGraph
+        from src.tgraph_bot.graphs.graph_modules.implementations.sample_graph import SampleGraph
         
         registry = GraphTypeRegistry()
         
@@ -100,9 +100,9 @@ class TestGraphTypeRegistry:
 
     def test_get_type_name_from_class(self) -> None:
         """Test getting type name from graph class."""
-        from src.tgraph_bot.graphs.graph_modules.tautulli_graphs.daily_play_count_graph import DailyPlayCountGraph
-        from src.tgraph_bot.graphs.graph_modules.tautulli_graphs.top_10_users_graph import Top10UsersGraph
-        from src.tgraph_bot.graphs.graph_modules.sample_graph import SampleGraph
+        from src.tgraph_bot.graphs.graph_modules.implementations.tautulli.daily_play_count_graph import DailyPlayCountGraph
+        from src.tgraph_bot.graphs.graph_modules.implementations.tautulli.top_10_users_graph import Top10UsersGraph
+        from src.tgraph_bot.graphs.graph_modules.implementations.sample_graph import SampleGraph
         
         registry = GraphTypeRegistry()
         
@@ -196,9 +196,9 @@ class TestGraphTypeRegistry:
 
     def test_get_classes_for_types(self) -> None:
         """Test getting graph classes for a list of type names."""
-        from src.tgraph_bot.graphs.graph_modules.tautulli_graphs.daily_play_count_graph import DailyPlayCountGraph
-        from src.tgraph_bot.graphs.graph_modules.tautulli_graphs.top_10_users_graph import Top10UsersGraph
-        from src.tgraph_bot.graphs.graph_modules.sample_graph import SampleGraph
+        from src.tgraph_bot.graphs.graph_modules.implementations.tautulli.daily_play_count_graph import DailyPlayCountGraph
+        from src.tgraph_bot.graphs.graph_modules.implementations.tautulli.top_10_users_graph import Top10UsersGraph
+        from src.tgraph_bot.graphs.graph_modules.implementations.sample_graph import SampleGraph
         
         registry = GraphTypeRegistry()
         

@@ -16,7 +16,7 @@ import psutil
 import pytest
 import matplotlib.pyplot as plt
 
-from src.tgraph_bot.graphs.graph_modules.base_graph import BaseGraph
+from src.tgraph_bot.graphs.graph_modules.core.base_graph import BaseGraph
 # Use centralized test utilities
 from tests.utils.graph_helpers import (
     create_test_config_minimal,

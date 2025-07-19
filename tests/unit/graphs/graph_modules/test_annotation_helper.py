@@ -10,10 +10,8 @@ import pytest
 from unittest.mock import Mock, MagicMock, patch
 from typing import Any
 
-from src.tgraph_bot.graphs.graph_modules.annotation_helper import (
-    AnnotationHelper,
-    AnnotationProtocol,
-)
+from src.tgraph_bot.graphs.graph_modules import AnnotationHelper
+from src.tgraph_bot.graphs.graph_modules.utils.annotation_helper import AnnotationProtocol
 
 
 class MockGraph:
@@ -94,7 +92,7 @@ class TestAnnotationHelper:
         # Should handle empty patches gracefully
         assert len(self.mock_ax.patches) == 0
     
-    @patch('src.tgraph_bot.graphs.graph_modules.annotation_helper.logger')
+    @patch('src.tgraph_bot.graphs.graph_modules.utils.annotation_helper.logger')
     def test_annotate_bar_patches_with_valid_patches(self, mock_logger: Mock) -> None:
         """Test bar patch annotation with valid patches."""
         self.mock_graph.config_values["TEST_ANNOTATION"] = True
@@ -139,7 +137,7 @@ class TestAnnotationHelper:
         
         assert not self.mock_ax.patches.called
     
-    @patch('src.tgraph_bot.graphs.graph_modules.annotation_helper.logger')
+    @patch('src.tgraph_bot.graphs.graph_modules.utils.annotation_helper.logger')
     def test_annotate_horizontal_bar_patches_enabled(self, mock_logger: Mock) -> None:
         """Test horizontal bar annotation with valid patches."""
         self.mock_graph.config_values["TEST_ANNOTATION"] = True
@@ -179,7 +177,7 @@ class TestAnnotationHelper:
         # Should return early without processing
         assert True  # Test passes if no exception
     
-    @patch('src.tgraph_bot.graphs.graph_modules.annotation_helper.logger')
+    @patch('src.tgraph_bot.graphs.graph_modules.utils.annotation_helper.logger')
     def test_annotate_stacked_bar_segments_enabled(self, mock_logger: Mock) -> None:
         """Test stacked bar annotation with valid data."""
         self.mock_graph.config_values["TEST_ANNOTATION"] = True
@@ -307,7 +305,7 @@ class TestAnnotationHelper:
         call_args = mock_ax_instance.text.call_args[0]  # type: ignore[reportAny]
         assert call_args[2] == "42.5"  # Should keep decimal
     
-    @patch('src.tgraph_bot.graphs.graph_modules.annotation_helper.logger')
+    @patch('src.tgraph_bot.graphs.graph_modules.utils.annotation_helper.logger')
     def test_error_handling_in_methods(self, mock_logger: Mock) -> None:
         """Test error handling in annotation methods."""
         # Test with patches that raise exceptions

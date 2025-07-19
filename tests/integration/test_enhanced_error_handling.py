@@ -15,7 +15,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from src.tgraph_bot.graphs.graph_manager import GraphManager, GraphGenerationError
-from src.tgraph_bot.graphs.graph_modules.progress_tracker import ProgressTracker
+from src.tgraph_bot.graphs.graph_modules.utils.progress_tracker import ProgressTracker
 from src.tgraph_bot.graphs.user_graph_manager import UserGraphManager
 
 

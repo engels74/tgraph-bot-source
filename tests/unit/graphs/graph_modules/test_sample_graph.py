@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from src.tgraph_bot.graphs.graph_modules.sample_graph import SampleGraph
+from src.tgraph_bot.graphs.graph_modules import SampleGraph
 from tests.utils.graph_helpers import assert_graph_properties, assert_graph_cleanup
 
 

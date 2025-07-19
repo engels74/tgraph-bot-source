@@ -12,7 +12,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.tgraph_bot.graphs.graph_modules.empty_data_handler import EmptyDataHandler
+from src.tgraph_bot.graphs.graph_modules import EmptyDataHandler
 
 
 class TestEmptyDataHandler:
@@ -88,13 +88,13 @@ class TestEmptyDataHandler:
         """Test empty data message display when axes is None."""
         handler = EmptyDataHandler()
         
-        with patch('src.tgraph_bot.graphs.graph_modules.empty_data_handler.logger') as mock_logger:
+        with patch('src.tgraph_bot.graphs.graph_modules.data.empty_data_handler.logger') as mock_logger:
             handler.display_empty_data_message(None)
             mock_logger.warning.assert_called_once_with(
                 "Cannot display empty data message: axes is None"
             )
     
-    @patch('src.tgraph_bot.graphs.graph_modules.empty_data_handler.logger')
+    @patch('src.tgraph_bot.graphs.graph_modules.data.empty_data_handler.logger')
     def test_display_empty_data_message_logging(self, mock_logger: MagicMock) -> None:
         """Test logging behavior for empty data message display."""
         handler = EmptyDataHandler()
@@ -121,7 +121,7 @@ class TestEmptyDataHandler:
         handler.display_empty_data_message(mock_ax, log_warning=False)
         mock_logger.warning.assert_not_called()
     
-    @patch('src.tgraph_bot.graphs.graph_modules.empty_data_handler.translate')
+    @patch('src.tgraph_bot.graphs.graph_modules.data.empty_data_handler.translate')
     def test_display_localized_empty_data_message_success(self, mock_translate: MagicMock) -> None:
         """Test localized empty data message display with successful translation."""
         handler = EmptyDataHandler()
@@ -153,8 +153,8 @@ class TestEmptyDataHandler:
             bbox=dict(boxstyle="round,pad=0.5", facecolor="lightgray", alpha=0.7)
         )
     
-    @patch('src.tgraph_bot.graphs.graph_modules.empty_data_handler.translate')
-    @patch('src.tgraph_bot.graphs.graph_modules.empty_data_handler.logger')
+    @patch('src.tgraph_bot.graphs.graph_modules.data.empty_data_handler.translate')
+    @patch('src.tgraph_bot.graphs.graph_modules.data.empty_data_handler.logger')
     def test_display_localized_empty_data_message_translation_failure(
         self, mock_logger: MagicMock, mock_translate: MagicMock
     ) -> None:
@@ -233,7 +233,7 @@ class TestEmptyDataHandler:
         """Test clearing axes when axes is None."""
         handler = EmptyDataHandler()
         
-        with patch('src.tgraph_bot.graphs.graph_modules.empty_data_handler.logger') as mock_logger:
+        with patch('src.tgraph_bot.graphs.graph_modules.data.empty_data_handler.logger') as mock_logger:
             handler.clear_axes_for_empty_data(None)
             mock_logger.warning.assert_called_once_with(
                 "Cannot clear axes: axes is None"

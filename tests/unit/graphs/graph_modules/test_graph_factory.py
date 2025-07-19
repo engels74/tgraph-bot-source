@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from src.tgraph_bot.graphs.graph_modules.graph_factory import GraphFactory
+from src.tgraph_bot.graphs.graph_modules import GraphFactory
 from src.tgraph_bot.config.schema import TGraphBotConfig
 
 
@@ -127,9 +127,9 @@ class TestGraphFactory:
 
     def test_create_graph_by_type_returns_correct_types(self) -> None:
         """Test that create_graph_by_type returns the correct graph class instances."""
-        from src.tgraph_bot.graphs.graph_modules.tautulli_graphs.daily_play_count_graph import DailyPlayCountGraph
-        from src.tgraph_bot.graphs.graph_modules.tautulli_graphs.play_count_by_dayofweek_graph import PlayCountByDayOfWeekGraph
-        from src.tgraph_bot.graphs.graph_modules.tautulli_graphs.top_10_users_graph import Top10UsersGraph
+        from src.tgraph_bot.graphs.graph_modules.implementations.tautulli.daily_play_count_graph import DailyPlayCountGraph
+        from src.tgraph_bot.graphs.graph_modules.implementations.tautulli.play_count_by_dayofweek_graph import PlayCountByDayOfWeekGraph
+        from src.tgraph_bot.graphs.graph_modules.implementations.tautulli.top_10_users_graph import Top10UsersGraph
 
         factory = GraphFactory({})
 
@@ -328,7 +328,7 @@ class TestGraphFactory:
 
     def test_end_to_end_sample_graph_workflow(self) -> None:
         """Test complete workflow: factory -> graph -> generation."""
-        from src.tgraph_bot.graphs.graph_modules.sample_graph import SampleGraph
+        from src.tgraph_bot.graphs.graph_modules.implementations.sample_graph import SampleGraph
 
         config: dict[str, object] = {"ENABLE_SAMPLE_GRAPH": True}
         factory = GraphFactory(config)

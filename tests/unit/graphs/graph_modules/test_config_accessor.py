@@ -7,7 +7,7 @@ both dict and TGraphBotConfig objects for graph modules.
 
 import pytest
 
-from src.tgraph_bot.graphs.graph_modules.config_accessor import ConfigAccessor
+from src.tgraph_bot.graphs.graph_modules import ConfigAccessor
 from src.tgraph_bot.utils.core.error_handler import ConfigurationError
 from tests.utils.graph_helpers import create_test_config_minimal, create_test_config_comprehensive
 

@@ -421,7 +421,7 @@ class TestBaseGraph:
         graph = ConcreteGraph()
         
         # Mock the process_play_history_data function
-        with patch('src.tgraph_bot.graphs.graph_modules.base_graph.process_play_history_data') as mock_process:
+        with patch('src.tgraph_bot.graphs.graph_modules.core.base_graph.process_play_history_data') as mock_process:
             mock_process.return_value = [
                 {"date": "2023-01-01", "user": "test_user", "platform": "Web", "media_type": "tv", "duration": 3600},
                 {"date": "2023-01-02", "user": "test_user2", "platform": "Mobile", "media_type": "movie", "duration": 7200},
@@ -439,7 +439,7 @@ class TestBaseGraph:
         graph = ConcreteGraph()
         
         # Mock the process_play_history_data function to raise an error
-        with patch('src.tgraph_bot.graphs.graph_modules.base_graph.process_play_history_data') as mock_process:
+        with patch('src.tgraph_bot.graphs.graph_modules.core.base_graph.process_play_history_data') as mock_process:
             mock_process.side_effect = ValueError("Processing failed")
             
             play_history_data = {"data": [{"mock": "data"}]}

@@ -22,7 +22,7 @@ from src.tgraph_bot.graphs.graph_manager import GraphManager
 from src.tgraph_bot.graphs.user_graph_manager import UserGraphManager
 from src.tgraph_bot.config.manager import ConfigManager
 from src.tgraph_bot.config.schema import TGraphBotConfig
-from src.tgraph_bot.graphs.graph_modules.progress_tracker import ProgressTracker
+from src.tgraph_bot.graphs.graph_modules.utils.progress_tracker import ProgressTracker
 from tests.utils.test_helpers import create_config_manager_with_config
 from tests.utils.async_helpers import AsyncTestBase, async_timeout_test, wait_for_condition
 
