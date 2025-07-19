@@ -108,8 +108,8 @@ class TestConfigCog:
             command_name="config_view", user_id=123456, username="TestUser"
         )
 
-        # Call the method directly using the callback (no key parameter)
-        _ = await config_cog.config_view.callback(config_cog, mock_interaction, None)  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
+        # Call the method using the callback (need to pass cog as first argument)
+        _ = await config_cog.config_view.callback(config_cog, mock_interaction, key=None)
 
         # Verify interaction response was called
         mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
@@ -143,9 +143,7 @@ class TestConfigCog:
                 "src.tgraph_bot.utils.command_utils.safe_interaction_response"
             ) as mock_safe_response,
         ):
-            _ = await config_cog.config_view.callback(
-                config_cog, mock_interaction, None
-            )  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
+            _ = await config_cog.config_view.callback(config_cog, mock_interaction, key=None)
 
         # Verify error response was sent through the new error handling system
         mock_safe_response.assert_called_once()
@@ -162,8 +160,8 @@ class TestConfigCog:
             "src.tgraph_bot.utils.command_utils.safe_interaction_response"
         ) as mock_safe_response:
             _ = await config_cog.config_edit.callback(
-                config_cog, mock_interaction, "INVALID_SETTING", "value"
-            )  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
+                config_cog, mock_interaction, key="INVALID_SETTING", value="value"
+            )
 
         # Verify error response was sent through the new error handling system
         mock_safe_response.assert_called_once()
@@ -180,8 +178,8 @@ class TestConfigCog:
             "src.tgraph_bot.utils.command_utils.safe_interaction_response"
         ) as mock_safe_response:
             _ = await config_cog.config_edit.callback(
-                config_cog, mock_interaction, "UPDATE_DAYS", "not_a_number"
-            )  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
+                config_cog, mock_interaction, key="UPDATE_DAYS", value="not_a_number"
+            )
 
         # Verify error response was sent through the new error handling system
         mock_safe_response.assert_called_once()
@@ -199,8 +197,8 @@ class TestConfigCog:
             "src.tgraph_bot.utils.command_utils.safe_interaction_response"
         ) as mock_safe_response:
             _ = await config_cog.config_edit.callback(
-                config_cog, mock_interaction, "UPDATE_DAYS", "999"
-            )  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
+                config_cog, mock_interaction, key="UPDATE_DAYS", value="999"
+            )
 
         # Verify error response was sent through the new error handling system
         mock_safe_response.assert_called_once()
@@ -223,8 +221,8 @@ class TestConfigCog:
             ) as mock_safe_response,
         ):
             _ = await config_cog.config_edit.callback(
-                config_cog, mock_interaction, "UPDATE_DAYS", "14"
-            )  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
+                config_cog, mock_interaction, key="UPDATE_DAYS", value="14"
+            )
 
         # Verify error response was sent through the new error handling system
         mock_safe_response.assert_called_once()
@@ -258,8 +256,8 @@ class TestConfigCog:
                 ) as mock_save,
             ):
                 _ = await config_cog.config_edit.callback(
-                    config_cog, mock_interaction, "UPDATE_DAYS", "14"
-                )  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
+                    config_cog, mock_interaction, key="UPDATE_DAYS", value="14"
+                )
 
                 # Verify save was called
                 mock_save.assert_called_once()
@@ -293,8 +291,8 @@ class TestConfigCog:
                 ) as mock_safe_response,
             ):
                 _ = await config_cog.config_edit.callback(
-                    config_cog, mock_interaction, "UPDATE_DAYS", "14"
-                )  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
+                    config_cog, mock_interaction, key="UPDATE_DAYS", value="14"
+                )
 
                 # Verify error response was sent through the new error handling system
                 mock_safe_response.assert_called_once()
@@ -309,8 +307,8 @@ class TestConfigCog:
 
         # Test viewing a specific key
         _ = await config_cog.config_view.callback(
-            config_cog, mock_interaction, "UPDATE_DAYS"
-        )  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
+            config_cog, mock_interaction, key="UPDATE_DAYS"
+        )
 
         # Verify response was sent
         mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
@@ -333,8 +331,8 @@ class TestConfigCog:
 
         # Test viewing an invalid key
         _ = await config_cog.config_view.callback(
-            config_cog, mock_interaction, "INVALID_KEY"
-        )  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
+            config_cog, mock_interaction, key="INVALID_KEY"
+        )
 
         # Verify response was sent
         mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]

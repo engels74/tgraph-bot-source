@@ -8,10 +8,10 @@ It eliminates DRY violations by providing reusable annotation functionality.
 
 import logging
 from collections.abc import Sequence
-from typing import Protocol, cast, runtime_checkable
+from typing import Any, Protocol, cast, runtime_checkable
 
 from matplotlib.axes import Axes
-from matplotlib.patches import Rectangle
+from matplotlib.patches import Patch, Rectangle
 
 logger = logging.getLogger(__name__)
 
@@ -112,12 +112,12 @@ class AnnotationHelper:
             return
 
         try:
-            for patch in ax.patches:
+            for patch in ax.patches:  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType] # matplotlib patches not typed
                 # Most bar chart patches are Rectangle instances with these methods
                 if (
-                    hasattr(patch, "get_height")
-                    and hasattr(patch, "get_x")
-                    and hasattr(patch, "get_width")
+                    hasattr(patch, "get_height")  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch typing
+                    and hasattr(patch, "get_x")  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch typing
+                    and hasattr(patch, "get_width")  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch typing
                 ):
                     rect_patch = cast(Rectangle, patch)
                     height = rect_patch.get_height()
@@ -168,8 +168,8 @@ class AnnotationHelper:
         try:
             # Calculate max width for offset positioning
             max_width = 0.0
-            for patch in ax.patches:
-                if hasattr(patch, "get_width"):
+            for patch in ax.patches:  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType] # matplotlib patches not typed
+                if hasattr(patch, "get_width"):  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch typing
                     rect_patch = cast(Rectangle, patch)
                     width = rect_patch.get_width()
                     if width and width > max_width:
@@ -177,11 +177,11 @@ class AnnotationHelper:
 
             offset_x = max_width * offset_x_ratio
 
-            for patch in ax.patches:
+            for patch in ax.patches:  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType] # matplotlib patches not typed
                 if (
-                    hasattr(patch, "get_width")
-                    and hasattr(patch, "get_y")
-                    and hasattr(patch, "get_height")
+                    hasattr(patch, "get_width")  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch typing
+                    and hasattr(patch, "get_y")  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch typing
+                    and hasattr(patch, "get_height")  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch typing
                 ):
                     rect_patch = cast(Rectangle, patch)
                     width = rect_patch.get_width()
@@ -302,7 +302,7 @@ class AnnotationHelper:
             return
 
         try:
-            _ = ax.annotate(
+            _ = ax.annotate(  # pyright: ignore[reportUnknownMemberType] # matplotlib annotate typing
                 f"{label_prefix}: {value}",
                 xy=(x, y),
                 xytext=(offset_x, offset_y),

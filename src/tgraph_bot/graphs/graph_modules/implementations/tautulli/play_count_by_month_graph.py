@@ -531,10 +531,10 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
             # Get all bar patches and annotate them
             for patch in ax.patches:  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType] # matplotlib patches collection
                 if (
-                    hasattr(patch, "get_height")
-                    and hasattr(patch, "get_x")
-                    and hasattr(patch, "get_width")
-                ):  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch attributes
+                    hasattr(patch, "get_height")  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch typing
+                    and hasattr(patch, "get_x")  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch typing
+                    and hasattr(patch, "get_width")  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch typing
+                ):
                     rect_patch = cast(Rectangle, patch)
                     height = rect_patch.get_height()
                     if height and height > 0:  # Only annotate non-zero values
@@ -681,10 +681,10 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
             # Get all bar patches and annotate them
             for patch in ax.patches:  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType] # matplotlib patches collection
                 if (
-                    hasattr(patch, "get_height")
-                    and hasattr(patch, "get_x")
-                    and hasattr(patch, "get_width")
-                ):  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch attributes
+                    hasattr(patch, "get_height")  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch typing
+                    and hasattr(patch, "get_x")  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch typing
+                    and hasattr(patch, "get_width")  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch typing
+                ):
                     rect_patch = cast(Rectangle, patch)
                     height = rect_patch.get_height()
                     if height and height > 0:  # Only annotate non-zero values
