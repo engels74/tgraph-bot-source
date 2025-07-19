@@ -170,7 +170,7 @@ class AnnotationHelper:
                 get_width = getattr(patch, 'get_width', lambda: 0)
                 width = get_width()
                 if width and width > max_width:
-                    max_width = float(width)
+                    max_width = float(width)  # pyright: ignore[reportAny]
 
             offset_x = max_width * offset_x_ratio
 
@@ -297,7 +297,7 @@ class AnnotationHelper:
 
         try:
             ax_typed: "matplotlib.axes.Axes" = ax  # pyright: ignore[reportAssignmentType]
-            ax_typed.annotate(
+            _ = ax_typed.annotate(  # pyright: ignore[reportUnknownMemberType]
                 f"{label_prefix}: {value}",
                 xy=(x, y),
                 xytext=(offset_x, offset_y),
@@ -369,7 +369,7 @@ class AnnotationHelper:
             # Add text with outline for better readability
             from matplotlib import patheffects
 
-            _ = ax.text(  # type: ignore[reportAttributeAccessIssue]
+            _ = ax.text(  # pyright: ignore[reportUnknownMemberType]
                 actual_x,
                 actual_y,
                 text,
@@ -388,7 +388,7 @@ class AnnotationHelper:
             )
         else:
             # Add text without outline
-            _ = ax.text(  # type: ignore[reportAttributeAccessIssue]
+            _ = ax.text(  # pyright: ignore[reportUnknownMemberType]
                 actual_x,
                 actual_y,
                 text,

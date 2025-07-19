@@ -122,7 +122,7 @@ class SampleGraph(BaseGraph, VisualizationMixin):
         # Step 4: Create the visualization
         try:
             # Create a simple line plot with markers
-            _ = axes.plot(x_values, y_values, marker="o", linewidth=2, markersize=6)
+            _ = axes.plot(x_values, y_values, marker="o", linewidth=2, markersize=6)  # pyright: ignore[reportUnknownMemberType] # matplotlib method overloads
 
             # Set title and axis labels using mixin utility
             title = custom_title if custom_title else self.get_title()

@@ -219,7 +219,7 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
 
         colors: list[str] = [color_mapping[mt] for mt in unique_media_types_list]
 
-        _ = sns.barplot(
+        _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
             data=df,
             x="day",
             y="count",
@@ -330,7 +330,7 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
 
         # Prepare data for each media type
         bottom = np.zeros(len(day_order))
-        bars_data: list[tuple[str, np.ndarray, str]] = []  # (media_type, values, color)
+        bars_data: list[tuple[str, np.ndarray, str]] = []  # (media_type, values, color)  # pyright: ignore[reportMissingTypeArgument]
 
         for media_type in ordered_media_types:
             values = np.array(
@@ -340,7 +340,7 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
             bars_data.append((media_type, values, color))
 
         # Create stacked bars
-        bar_containers: list[tuple[BarContainer, str, np.ndarray]] = []
+        bar_containers: list[tuple[BarContainer, str, np.ndarray]] = []  # pyright: ignore[reportMissingTypeArgument]
         for media_type, values, color in bars_data:
             # Get display name for legend
             if media_type in display_info:
@@ -366,8 +366,8 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
         _ = ax.set_xlabel("Day of Week", fontsize=14, fontweight="bold")  # pyright: ignore[reportUnknownMemberType]
         _ = ax.set_ylabel("Play Count", fontsize=14, fontweight="bold")  # pyright: ignore[reportUnknownMemberType]
         _ = ax.set_title(self.get_title(), fontsize=18, fontweight="bold", pad=20)  # pyright: ignore[reportUnknownMemberType]
-        _ = ax.set_xticks(x)  # pyright: ignore[reportUnknownMemberType]
-        _ = ax.set_xticklabels(day_order)  # pyright: ignore[reportUnknownMemberType]
+        _ = ax.set_xticks(x)  # pyright: ignore[reportAny] # matplotlib method returns Any
+        _ = ax.set_xticklabels(day_order)  # pyright: ignore[reportAny] # matplotlib method returns Any
 
         # Add legend
         _ = ax.legend(  # pyright: ignore[reportUnknownMemberType]
@@ -440,7 +440,7 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
             df = pd.DataFrame({"day": days, "count": counts})
 
             # Create bar plot with modern styling
-            _ = sns.barplot(
+            _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
                 data=df,
                 x="day",
                 y="count",

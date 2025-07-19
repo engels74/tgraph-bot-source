@@ -156,17 +156,17 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
             selected_indices.append(num_dates - 1)
 
         # Set the tick positions to align perfectly with data points
-        _ = ax.set_xticks([i for i in selected_indices])  # pyright: ignore[reportUnknownMemberType] # matplotlib method
+        ax.set_xticks([i for i in selected_indices])  # pyright: ignore[reportAny] # matplotlib method returns Any
 
         # Set the tick labels using the selected dates
         selected_dates = [sorted_dates[i] for i in selected_indices]
-        selected_date_objects = [pd.to_datetime(date) for date in selected_dates]
+        selected_date_objects = [pd.to_datetime(date) for date in selected_dates]  # pyright: ignore[reportUnknownMemberType] # pandas method overloads
 
         # Format the labels
         formatted_labels = [
             date_obj.strftime(date_format) for date_obj in selected_date_objects
         ]
-        _ = ax.set_xticklabels(formatted_labels)  # pyright: ignore[reportUnknownMemberType]
+        ax.set_xticklabels(formatted_labels)  # pyright: ignore[reportAny] # matplotlib method returns Any
 
         # Rotate labels for better readability
         _ = ax.tick_params(axis="x", rotation=45)  # pyright: ignore[reportUnknownMemberType]

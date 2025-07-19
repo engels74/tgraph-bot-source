@@ -137,7 +137,7 @@ class PlayCountByHourOfDayGraph(BaseGraph, VisualizationMixin):
             df = pd.DataFrame({"hour": hours, "play_count": counts})
 
             # Create bar plot
-            _ = sns.barplot(
+            _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
                 data=df,
                 x="hour",
                 y="play_count",
@@ -155,8 +155,8 @@ class PlayCountByHourOfDayGraph(BaseGraph, VisualizationMixin):
             _ = ax.set_ylabel("Play Count", fontsize=12)  # pyright: ignore[reportUnknownMemberType]
 
             # Set x-axis ticks to show all hours
-            _ = ax.set_xticks(range(0, 24, 2))  # pyright: ignore[reportUnknownMemberType]
-            _ = ax.set_xticklabels([f"{h:02d}:00" for h in range(0, 24, 2)])  # pyright: ignore[reportUnknownMemberType]
+            _ = ax.set_xticks(range(0, 24, 2))  # pyright: ignore[reportAny] # matplotlib method returns Any
+            _ = ax.set_xticklabels([f"{h:02d}:00" for h in range(0, 24, 2)])  # pyright: ignore[reportAny] # matplotlib method returns Any
 
             # Add bar value annotations if enabled
             self.annotation_helper.annotate_bar_patches(

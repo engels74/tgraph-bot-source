@@ -81,7 +81,7 @@ class TestVisualizationMixin:
         """Test standard title and axes setup with default parameters."""
         with matplotlib_cleanup():
             graph = MockGraphWithVisualization()
-            graph.setup_figure()
+            _ = graph.setup_figure()
             
             # Test with default title
             graph.setup_standard_title_and_axes()
@@ -97,7 +97,7 @@ class TestVisualizationMixin:
         """Test standard title and axes setup with custom parameters."""
         with matplotlib_cleanup():
             graph = MockGraphWithVisualization()
-            graph.setup_figure()
+            _ = graph.setup_figure()
             
             # Test with custom values
             graph.setup_standard_title_and_axes(
@@ -128,13 +128,13 @@ class TestVisualizationMixin:
             
             with patch('src.tgraph_bot.graphs.graph_modules.visualization.visualization_mixin.logger') as mock_logger:
                 graph.setup_standard_title_and_axes()
-                mock_logger.warning.assert_called_once_with("Cannot setup title and axes: axes is None")
+                mock_logger.warning.assert_called_once_with  # pyright: ignore[reportAny] # mock object("Cannot setup title and axes: axes is None")
 
     def test_display_no_data_message_with_defaults(self) -> None:
         """Test empty data message display with default parameters."""
         with matplotlib_cleanup():
             graph = MockGraphWithVisualization()
-            graph.setup_figure()
+            _ = graph.setup_figure()
             
             # Mock the text method to verify it was called
             assert graph.axes is not None
@@ -157,7 +157,7 @@ class TestVisualizationMixin:
         """Test empty data message display with custom parameters."""
         with matplotlib_cleanup():
             graph = MockGraphWithVisualization()
-            graph.setup_figure()
+            _ = graph.setup_figure()
             
             # Mock the text method to verify it was called
             assert graph.axes is not None
@@ -188,7 +188,7 @@ class TestVisualizationMixin:
             
             with patch('src.tgraph_bot.graphs.graph_modules.visualization.visualization_mixin.logger') as mock_logger:
                 graph.display_no_data_message()
-                mock_logger.warning.assert_called_once_with("Cannot display no data message: axes is None")
+                mock_logger.warning.assert_called_once_with  # pyright: ignore[reportAny] # mock object("Cannot display no data message: axes is None")
 
     def test_setup_figure_with_seaborn_grid(self) -> None:
         """Test combined figure setup with seaborn grid styling."""
@@ -213,7 +213,7 @@ class TestVisualizationMixin:
         """Test plot layout finalization with valid figure."""
         with matplotlib_cleanup():
             graph = MockGraphWithVisualization()
-            graph.setup_figure()
+            _ = graph.setup_figure()
             
             # Mock tight_layout to verify it was called
             with patch.object(graph.figure, 'tight_layout') as mock_tight_layout:
@@ -230,13 +230,13 @@ class TestVisualizationMixin:
             
             with patch('src.tgraph_bot.graphs.graph_modules.visualization.visualization_mixin.logger') as mock_logger:
                 graph.finalize_plot_layout()
-                mock_logger.warning.assert_called_once_with("Cannot finalize layout: figure is None or not available")
+                mock_logger.warning.assert_called_once_with  # pyright: ignore[reportAny] # mock object("Cannot finalize layout: figure is None or not available")
 
     def test_configure_standard_grid(self) -> None:
         """Test standard grid configuration."""
         with matplotlib_cleanup():
             graph = MockGraphWithVisualization()
-            graph.setup_figure()
+            _ = graph.setup_figure()
             
             # Mock the grid method to verify it was called
             with patch.object(graph.axes, 'grid') as mock_grid:
@@ -253,22 +253,22 @@ class TestVisualizationMixin:
             
             with patch('src.tgraph_bot.graphs.graph_modules.visualization.visualization_mixin.logger') as mock_logger:
                 graph.configure_standard_grid()
-                mock_logger.warning.assert_called_once_with("Cannot configure grid: axes is None")
+                mock_logger.warning.assert_called_once_with  # pyright: ignore[reportAny] # mock object("Cannot configure grid: axes is None")
 
     def test_setup_bar_chart_annotations(self) -> None:
         """Test bar chart annotation setup."""
         with matplotlib_cleanup():
             graph = MockGraphWithVisualization()
-            graph.setup_figure()
+            _ = graph.setup_figure()
             
             # Create mock bars
             mock_bars = [MagicMock(), MagicMock()]
-            mock_bars[0].get_height.return_value = 10
-            mock_bars[0].get_x.return_value = 0
-            mock_bars[0].get_width.return_value = 1
-            mock_bars[1].get_height.return_value = 20
-            mock_bars[1].get_x.return_value = 1
-            mock_bars[1].get_width.return_value = 1
+            mock_bars[0].get_height.return_value = 10  # pyright: ignore[reportAny] # mock object
+            mock_bars[0].get_x.return_value = 0  # pyright: ignore[reportAny] # mock object
+            mock_bars[0].get_width.return_value = 1  # pyright: ignore[reportAny] # mock object
+            mock_bars[1].get_height.return_value = 20  # pyright: ignore[reportAny] # mock object
+            mock_bars[1].get_x.return_value = 1  # pyright: ignore[reportAny] # mock object
+            mock_bars[1].get_width.return_value = 1  # pyright: ignore[reportAny] # mock object
             
             values = [10.0, 20.0]
             
@@ -299,7 +299,7 @@ class TestVisualizationMixin:
             
             with patch('src.tgraph_bot.graphs.graph_modules.visualization.visualization_mixin.logger') as mock_logger:
                 graph.setup_bar_chart_annotations([], [])
-                mock_logger.warning.assert_called_once_with("Cannot setup bar annotations: axes is None")
+                mock_logger.warning.assert_called_once_with  # pyright: ignore[reportAny] # mock object("Cannot setup bar annotations: axes is None")
 
     def test_apply_seaborn_palette(self) -> None:
         """Test seaborn palette application."""
@@ -323,7 +323,7 @@ class TestVisualizationMixin:
         """Test tick parameter configuration."""
         with matplotlib_cleanup():
             graph = MockGraphWithVisualization()
-            graph.setup_figure()
+            _ = graph.setup_figure()
             
             # Mock the tick_params method
             with patch.object(graph.axes, 'tick_params') as mock_tick_params:
@@ -340,13 +340,13 @@ class TestVisualizationMixin:
             
             with patch('src.tgraph_bot.graphs.graph_modules.visualization.visualization_mixin.logger') as mock_logger:
                 graph.configure_tick_parameters()
-                mock_logger.warning.assert_called_once_with("Cannot configure tick parameters: axes is None")
+                mock_logger.warning.assert_called_once_with  # pyright: ignore[reportAny] # mock object("Cannot configure tick parameters: axes is None")
 
     def test_setup_legend_with_standard_config(self) -> None:
         """Test legend setup with standard configuration."""
         with matplotlib_cleanup():
             graph = MockGraphWithVisualization()
-            graph.setup_figure()
+            _ = graph.setup_figure()
             
             # Mock the legend method
             with patch.object(graph.axes, 'legend') as mock_legend:
@@ -370,13 +370,13 @@ class TestVisualizationMixin:
             
             with patch('src.tgraph_bot.graphs.graph_modules.visualization.visualization_mixin.logger') as mock_logger:
                 graph.setup_legend_with_standard_config()
-                mock_logger.warning.assert_called_once_with("Cannot setup legend: axes is None")
+                mock_logger.warning.assert_called_once_with  # pyright: ignore[reportAny] # mock object("Cannot setup legend: axes is None")
 
     def test_clear_axes_for_empty_data(self) -> None:
         """Test axes clearing for empty data display."""
         with matplotlib_cleanup():
             graph = MockGraphWithVisualization()
-            graph.setup_figure()
+            _ = graph.setup_figure()
             
             # Mock the axes methods
             with patch.object(graph.axes, 'clear') as mock_clear, \
@@ -404,13 +404,13 @@ class TestVisualizationMixin:
             
             with patch('src.tgraph_bot.graphs.graph_modules.visualization.visualization_mixin.logger') as mock_logger:
                 graph.clear_axes_for_empty_data()
-                mock_logger.warning.assert_called_once_with("Cannot clear axes: axes is None")
+                mock_logger.warning.assert_called_once_with  # pyright: ignore[reportAny] # mock object("Cannot clear axes: axes is None")
 
     def test_setup_time_series_axes(self) -> None:
         """Test time series axes setup."""
         with matplotlib_cleanup():
             graph = MockGraphWithVisualization()
-            graph.setup_figure()
+            _ = graph.setup_figure()
             
             # Mock the required matplotlib methods
             with patch.object(graph.axes, 'set_title') as mock_set_title, \
@@ -446,13 +446,13 @@ class TestVisualizationMixin:
             
             with patch('src.tgraph_bot.graphs.graph_modules.visualization.visualization_mixin.logger') as mock_logger:
                 graph.setup_time_series_axes()
-                mock_logger.warning.assert_called_once_with("Cannot setup time series axes: axes is None")
+                mock_logger.warning.assert_called_once_with  # pyright: ignore[reportAny] # mock object("Cannot setup time series axes: axes is None")
 
     def test_setup_time_series_axes_without_matplotlib_dates(self) -> None:
         """Test time series axes setup when matplotlib.dates is not available."""
         with matplotlib_cleanup():
             graph = MockGraphWithVisualization()
-            graph.setup_figure()
+            _ = graph.setup_figure()
             
             # Mock the required matplotlib methods and import error
             with patch.object(graph.axes, 'set_title') as mock_set_title, \
@@ -470,7 +470,7 @@ class TestVisualizationMixin:
                 mock_set_ylabel.assert_called_once_with("Count", fontsize=12)
                 mock_tick_params.assert_called_once_with(axis="x", rotation=45)
                 mock_date_formatter.assert_called_once_with("%Y-%m-%d")
-                mock_logger.warning.assert_called_once_with("matplotlib.dates not available for date formatting")
+                mock_logger.warning.assert_called_once_with  # pyright: ignore[reportAny] # mock object("matplotlib.dates not available for date formatting")
             
             graph.cleanup()
 
@@ -483,7 +483,7 @@ class TestVisualizationMixin:
                  patch('seaborn.set_palette') as mock_set_palette:
                 
                 # Setup figure and configure multiple aspects
-                figure, axes = graph.setup_figure_with_seaborn_grid()
+                _, _ = graph.setup_figure_with_seaborn_grid()
                 graph.apply_seaborn_palette("viridis")
                 graph.setup_standard_title_and_axes(
                     title="Integration Test",

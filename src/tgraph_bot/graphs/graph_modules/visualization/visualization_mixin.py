@@ -8,7 +8,7 @@ and common visualization patterns into reusable methods.
 """
 
 import logging
-from typing import TYPE_CHECKING, Any, Literal, Protocol
+from typing import TYPE_CHECKING, Literal, Protocol
 from collections.abc import Sequence
 
 import matplotlib.axes
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 class VisualizationProtocol(Protocol):
     """Protocol defining the interface required by VisualizationMixin."""
 
-    config: "TGraphBotConfig | dict[str, Any] | None"
+    config: "TGraphBotConfig | dict[str, object] | None"
     axes: matplotlib.axes.Axes | None
     figure: matplotlib.figure.Figure | None
 
@@ -99,7 +99,7 @@ class VisualizationMixin:
 
         # Set title
         display_title = title if title is not None else self.get_title()
-        _ = self.axes.set_title(
+        _ = self.axes.set_title(  # pyright: ignore[reportUnknownMemberType]
             display_title,
             fontsize=title_fontsize,
             fontweight="bold",
@@ -108,9 +108,9 @@ class VisualizationMixin:
 
         # Set axis labels if provided
         if xlabel is not None:
-            _ = self.axes.set_xlabel(xlabel, fontsize=label_fontsize)
+            _ = self.axes.set_xlabel(xlabel, fontsize=label_fontsize)  # pyright: ignore[reportUnknownMemberType]
         if ylabel is not None:
-            _ = self.axes.set_ylabel(ylabel, fontsize=label_fontsize)
+            _ = self.axes.set_ylabel(ylabel, fontsize=label_fontsize)  # pyright: ignore[reportUnknownMemberType]
 
     def display_no_data_message(
         self: VisualizationProtocol,
@@ -133,7 +133,7 @@ class VisualizationMixin:
             logger.warning("Cannot display no data message: axes is None")
             return
 
-        _ = self.axes.text(
+        _ = self.axes.text(  # pyright: ignore[reportUnknownMemberType]
             0.5,
             0.5,
             message,
@@ -236,7 +236,7 @@ class VisualizationMixin:
             height = getattr(bar, 'get_height', lambda: 0)()
             get_x = getattr(bar, 'get_x', lambda: 0)
             get_width = getattr(bar, 'get_width', lambda: 1)
-            _ = self.axes.annotate(
+            _ = self.axes.annotate(  # pyright: ignore[reportUnknownMemberType]
                 format_string.format(value),
                 xy=(get_x() + get_width() / 2, height),
                 xytext=(0, 3),  # 3 points vertical offset
@@ -309,7 +309,7 @@ class VisualizationMixin:
             logger.warning("Cannot setup legend: axes is None")
             return
 
-        _ = self.axes.legend(
+        _ = self.axes.legend(  # pyright: ignore[reportUnknownMemberType]
             loc=location,
             fontsize=fontsize,
             frameon=frameon,
@@ -333,8 +333,8 @@ class VisualizationMixin:
         self.axes.clear()
         _ = self.axes.set_xlim(0, 1)
         _ = self.axes.set_ylim(0, 1)
-        _ = self.axes.set_xticks([])
-        _ = self.axes.set_yticks([])
+        _ = self.axes.set_xticks([])  # pyright: ignore[reportAny] # matplotlib method returns Any
+        _ = self.axes.set_yticks([])  # pyright: ignore[reportAny] # matplotlib method returns Any
 
     def setup_time_series_axes(
         self: VisualizationProtocol,
@@ -363,15 +363,15 @@ class VisualizationMixin:
         if self.axes is not None:
             # Set title
             display_title = self.get_title()
-            _ = self.axes.set_title(
+            _ = self.axes.set_title(  # pyright: ignore[reportUnknownMemberType]
                 display_title, fontsize=18, fontweight="bold", pad=20
             )
 
             # Set axis labels
             if xlabel is not None:
-                _ = self.axes.set_xlabel(xlabel, fontsize=12)
+                _ = self.axes.set_xlabel(xlabel, fontsize=12)  # pyright: ignore[reportUnknownMemberType]
             if ylabel is not None:
-                _ = self.axes.set_ylabel(ylabel, fontsize=12)
+                _ = self.axes.set_ylabel(ylabel, fontsize=12)  # pyright: ignore[reportUnknownMemberType]
 
             # Configure tick parameters
             self.axes.tick_params(axis="x", rotation=rotation)

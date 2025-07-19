@@ -195,7 +195,7 @@ class BaseGraph(ABC):
                 self.media_type_processor.get_color_for_type(media_type)
                 for media_type in preferred_order
             ]
-            sns.set_palette(custom_palette)
+            sns.set_palette(custom_palette)  # pyright: ignore[reportUnknownMemberType]
 
     def create_separated_legend(
         self, ax: "Axes", media_types_present: list[str]
@@ -571,7 +571,7 @@ class BaseGraph(ABC):
         if self.figure is not None:
             try:
                 # Close the specific figure to free memory
-                plt.close(self.figure)
+                plt.close(self.figure)  # pyright: ignore[reportUnknownMemberType]
                 logger.debug(f"Closed matplotlib figure for {self.__class__.__name__}")
             except Exception as e:
                 logger.warning(f"Error closing figure: {e}")
@@ -597,7 +597,7 @@ class BaseGraph(ABC):
         useful when generating multiple graphs in sequence.
         """
         try:
-            plt.close("all")
+            plt.close("all")  # pyright: ignore[reportUnknownMemberType]
             logger.debug("Closed all matplotlib figures")
         except Exception as e:
             logger.warning(f"Error during bulk figure cleanup: {e}")
@@ -790,8 +790,8 @@ class BaseGraph(ABC):
         )
 
         # Remove axes decorations
-        _ = ax.set_xticks([])  # pyright: ignore[reportUnknownMemberType]
-        _ = ax.set_yticks([])  # pyright: ignore[reportUnknownMemberType]
+        ax.set_xticks([])  # pyright: ignore[reportAny] # matplotlib method returns Any
+        ax.set_yticks([])  # pyright: ignore[reportAny] # matplotlib method returns Any
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
         ax.spines["bottom"].set_visible(False)

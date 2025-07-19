@@ -239,7 +239,7 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
         colors: list[str] = [color_mapping[mt] for mt in unique_media_types_list]
 
         # Create grouped bar plot with proper spacing
-        _ = sns.barplot(
+        _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
             data=df,
             x="month",
             y="count",
@@ -375,7 +375,7 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
 
         # Create stacked bars
         bottom = np.zeros(len(categories))
-        bar_containers: list[tuple[BarContainer, str, np.ndarray]] = []
+        bar_containers: list[tuple[BarContainer, str, np.ndarray]] = []  # pyright: ignore[reportMissingTypeArgument]
 
         for media_type in ordered_media_types:
             values = np.array(media_type_data[media_type])
@@ -405,8 +405,8 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
         _ = ax.set_xlabel("Month", fontsize=14, fontweight="bold")  # pyright: ignore[reportUnknownMemberType]
         _ = ax.set_ylabel("Play Count", fontsize=14, fontweight="bold")  # pyright: ignore[reportUnknownMemberType]
         _ = ax.set_title(self.get_title(), fontsize=18, fontweight="bold", pad=20)  # pyright: ignore[reportUnknownMemberType]
-        _ = ax.set_xticks(x)  # pyright: ignore[reportUnknownMemberType]
-        _ = ax.set_xticklabels(categories, rotation=45, ha="right")  # pyright: ignore[reportUnknownMemberType] # matplotlib complex type signature
+        _ = ax.set_xticks(x)  # pyright: ignore[reportAny] # matplotlib method returns Any
+        _ = ax.set_xticklabels(categories, rotation=45, ha="right")  # pyright: ignore[reportAny] # matplotlib method returns Any
 
         # Adjust tick parameters
         ax.tick_params(axis="x", labelsize=12)  # pyright: ignore[reportUnknownMemberType]
@@ -501,7 +501,7 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
         )
 
         # Create bar plot with modern styling
-        _ = sns.barplot(
+        _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
             data=df,
             x="month",
             y="count",
@@ -635,7 +635,7 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
         df = df.sort_values("month_sort")
 
         # Create grouped bar plot
-        _ = sns.barplot(
+        _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
             data=df,
             x="month",
             y="count",
@@ -717,7 +717,7 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
             df = pd.DataFrame(sorted_months, columns=["month", "count"])
 
             # Create bar plot with modern styling
-            _ = sns.barplot(
+            _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
                 data=df,
                 x="month",
                 y="count",

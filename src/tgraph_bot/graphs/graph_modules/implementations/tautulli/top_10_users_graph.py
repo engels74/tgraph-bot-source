@@ -113,7 +113,7 @@ class Top10UsersGraph(BaseGraph, VisualizationMixin):
                 df = pd.DataFrame(top_users)
 
                 # Create horizontal bar plot
-                _ = sns.barplot(
+                _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
                     data=df,
                     x="play_count",
                     y="username",

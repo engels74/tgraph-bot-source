@@ -108,7 +108,7 @@ class Top10PlatformsGraph(BaseGraph, VisualizationMixin):
 
                 # Create horizontal bar plot using Seaborn
                 color = self.get_tv_color()
-                _ = sns.barplot(
+                _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
                     data=df,
                     x="play_count",
                     y="platform",
