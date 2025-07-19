@@ -168,18 +168,18 @@ class TestEmptyDataHandler:
         )
 
         # Verify translation failure was logged (should be called twice - once for translation failure, once for empty data)
-        assert mock_logger.warning.call_count == 2  # pyright: ignore[reportUnknownMemberType]
+        assert mock_logger.warning.call_count == 2
 
         # Check that the first call was for translation failure
-        first_call = mock_logger.warning.call_args_list[0][0][0]  # pyright: ignore[reportUnknownMemberType]
-        assert "Failed to translate message key 'test_message_key'" in first_call  # pyright: ignore[reportUnknownArgumentType]
+        first_call = mock_logger.warning.call_args_list[0][0][0]
+        assert "Failed to translate message key 'test_message_key'" in first_call
 
         # Verify fallback message was used
-        mock_ax.text.assert_called_once_with(  # pyright: ignore[reportUnknownMemberType]
+        mock_ax.text.assert_called_once_with(
             0.5, 0.5,
             "No data available\nfor the selected time period",
             ha="center", va="center",
-            transform=mock_ax.transAxes,  # pyright: ignore[reportUnknownMemberType]
+            transform=mock_ax.transAxes,
             fontsize=16,
             fontweight="bold",
             bbox=dict(boxstyle="round,pad=0.5", facecolor="lightgray", alpha=0.7)

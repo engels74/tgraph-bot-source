@@ -8,7 +8,7 @@ It eliminates DRY violations by providing reusable annotation functionality.
 
 import logging
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Protocol, cast, runtime_checkable
 
 if TYPE_CHECKING:
     import matplotlib.axes
@@ -115,10 +115,10 @@ class AnnotationHelper:
             ax_typed: "matplotlib.axes.Axes" = ax  # pyright: ignore[reportAssignmentType]
             for patch in ax_typed.patches:
                 # Most patches in bar charts are Rectangle patches with these methods
-                height = getattr(patch, 'get_height', lambda: None)()  # pyright: ignore[reportUnknownMemberType]
+                height = getattr(patch, 'get_height', lambda: None)()
                 if height and height > min_value_threshold:
-                    get_x = getattr(patch, 'get_x', lambda: 0)  # pyright: ignore[reportUnknownMemberType]
-                    get_width = getattr(patch, 'get_width', lambda: 1)  # pyright: ignore[reportUnknownMemberType]
+                    get_x = getattr(patch, 'get_x', lambda: 0)
+                    get_width = getattr(patch, 'get_width', lambda: 1)
                     x_val = get_x() + get_width() / 2
                     self._add_text_annotation(
                         ax,
@@ -167,7 +167,7 @@ class AnnotationHelper:
             max_width = 0.0
             ax_typed: "matplotlib.axes.Axes" = ax  # pyright: ignore[reportAssignmentType]
             for patch in ax_typed.patches:
-                get_width = getattr(patch, 'get_width', lambda: 0)  # pyright: ignore[reportUnknownMemberType]
+                get_width = getattr(patch, 'get_width', lambda: 0)
                 width = get_width()
                 if width and width > max_width:
                     max_width = float(width)
@@ -175,11 +175,11 @@ class AnnotationHelper:
             offset_x = max_width * offset_x_ratio
 
             for patch in ax_typed.patches:
-                get_width = getattr(patch, 'get_width', lambda: 0)  # pyright: ignore[reportUnknownMemberType]
+                get_width = getattr(patch, 'get_width', lambda: 0)
                 width = get_width()
                 if width and width > min_value_threshold:
-                    get_y = getattr(patch, 'get_y', lambda: 0)  # pyright: ignore[reportUnknownMemberType]
-                    get_height = getattr(patch, 'get_height', lambda: 1)  # pyright: ignore[reportUnknownMemberType]
+                    get_y = getattr(patch, 'get_y', lambda: 0)
+                    get_height = getattr(patch, 'get_height', lambda: 1)
                     y_val = get_y() + get_height() / 2
                     self._add_text_annotation(
                         ax,
@@ -232,7 +232,11 @@ class AnnotationHelper:
                     # Avoid unused variable warnings  
                     _ = bars
                     _ = media_type
-                    value = float(values[i] if hasattr(values, '__getitem__') else 0)  # pyright: ignore[reportArgumentType]
+                    if hasattr(values, '__getitem__'):
+                        indexable_values = cast("Sequence[float]", values)
+                        value = float(indexable_values[i])
+                    else:
+                        value = 0.0
                     if value > 0:
                         # Position annotation in the middle of this segment
                         self._add_text_annotation(

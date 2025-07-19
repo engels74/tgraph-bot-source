@@ -137,6 +137,7 @@ class TestVisualizationMixin:
             graph.setup_figure()
             
             # Mock the text method to verify it was called
+            assert graph.axes is not None
             with patch.object(graph.axes, 'text') as mock_text:
                 graph.display_no_data_message()
                 
@@ -159,6 +160,7 @@ class TestVisualizationMixin:
             graph.setup_figure()
             
             # Mock the text method to verify it was called
+            assert graph.axes is not None
             with patch.object(graph.axes, 'text') as mock_text:
                 graph.display_no_data_message(
                     message="Custom message",

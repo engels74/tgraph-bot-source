@@ -7,7 +7,7 @@ type safety.
 """
 
 from unittest.mock import Mock, patch
-from typing import Any
+from typing import Any, final
 
 from src.tgraph_bot.graphs.graph_modules import AnnotationHelper
 from src.tgraph_bot.graphs.graph_modules.utils.annotation_helper import AnnotationProtocol
@@ -51,8 +51,15 @@ class MockGraph:
         return self.peak_annotations_enabled
 
 
+@final
 class TestAnnotationHelper:
     """Test cases for AnnotationHelper utility."""
+    
+    def __init__(self) -> None:
+        """Initialize test class."""
+        self.mock_graph: MockGraph
+        self.helper: AnnotationHelper
+        self.mock_ax: Mock
     
     def setup_method(self) -> None:
         """Set up test fixtures."""

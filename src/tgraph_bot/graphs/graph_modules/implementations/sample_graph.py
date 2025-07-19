@@ -11,8 +11,7 @@ from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, cast, override
 
 if TYPE_CHECKING:
-    import matplotlib.axes
-    import matplotlib.figure
+    pass
 
 from ..core.base_graph import BaseGraph
 from ..visualization.visualization_mixin import VisualizationMixin
@@ -115,8 +114,6 @@ class SampleGraph(BaseGraph, VisualizationMixin):
         user_id = data.get("user_id")
 
         # Step 2: Setup figure with styling using combined utility
-        _: "matplotlib.figure.Figure"
-        axes: "matplotlib.axes.Axes"
         _, axes = self.setup_figure_with_seaborn_grid()
 
         # Step 3: Apply seaborn palette

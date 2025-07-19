@@ -9,8 +9,10 @@ and common visualization patterns into reusable methods.
 
 import logging
 from typing import TYPE_CHECKING, Any, Literal, Protocol
+from collections.abc import Sequence
 
 import matplotlib.axes
+import matplotlib.figure
 import seaborn as sns
 
 if TYPE_CHECKING:
@@ -24,7 +26,7 @@ class VisualizationProtocol(Protocol):
 
     config: "TGraphBotConfig | dict[str, Any] | None"
     axes: matplotlib.axes.Axes | None
-    figure: Any
+    figure: matplotlib.figure.Figure | None
 
     def get_grid_enabled(self) -> bool:
         """Check if grid should be enabled for this graph."""
@@ -34,7 +36,7 @@ class VisualizationProtocol(Protocol):
         """Get the title for this graph."""
         ...
 
-    def setup_figure(self) -> tuple[Any, Any]:
+    def setup_figure(self) -> tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]:
         """Set up matplotlib figure and axes."""
         ...
 
@@ -142,7 +144,7 @@ class VisualizationMixin:
             bbox=dict(boxstyle="round,pad=0.5", facecolor="lightgray", alpha=alpha),
         )
 
-    def setup_figure_with_seaborn_grid(self: VisualizationProtocol) -> tuple[Any, Any]:
+    def setup_figure_with_seaborn_grid(self: VisualizationProtocol) -> tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]:
         """
         Set up figure with grid-aware seaborn styling.
 
@@ -203,7 +205,7 @@ class VisualizationMixin:
 
     def setup_bar_chart_annotations(
         self: VisualizationProtocol,
-        bars: Any,
+        bars: Sequence[object],
         values: list[float],
         format_string: str = "{:.0f}",
         fontsize: int = 10,
@@ -231,10 +233,12 @@ class VisualizationMixin:
             return
 
         for bar, value in zip(bars, values):
-            height = bar.get_height()
+            height = getattr(bar, 'get_height', lambda: 0)()
+            get_x = getattr(bar, 'get_x', lambda: 0)
+            get_width = getattr(bar, 'get_width', lambda: 1)
             _ = self.axes.annotate(
                 format_string.format(value),
-                xy=(bar.get_x() + bar.get_width() / 2, height),
+                xy=(get_x() + get_width() / 2, height),
                 xytext=(0, 3),  # 3 points vertical offset
                 textcoords="offset points",
                 ha=ha,
