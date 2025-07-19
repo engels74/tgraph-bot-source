@@ -22,9 +22,8 @@ import time
 from collections.abc import Mapping
 from pathlib import Path
 from typing import TYPE_CHECKING, override
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
-import psutil
 
 from src.tgraph_bot.graphs.graph_modules import (
     BaseGraph,

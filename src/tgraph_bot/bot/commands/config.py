@@ -18,7 +18,7 @@ from ...config.manager import ConfigManager
 from ...config.schema import TGraphBotConfig
 from ...utils.discord.base_command_cog import BaseCommandCog
 from ...utils.core.config_utils import ConfigurationHelper
-from ...utils.core.error_handler import (
+from ...utils.core.exceptions import (
     ValidationError as TGraphValidationError,
     ConfigurationError,
 )

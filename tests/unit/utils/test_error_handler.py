@@ -8,15 +8,17 @@ from unittest.mock import Mock, patch
 
 import discord
 
-from src.tgraph_bot.utils.core.error_handler import (
+from src.tgraph_bot.utils.core.exceptions import (
     ErrorSeverity,
     ErrorCategory,
-    ErrorContext,
     TGraphBotError,
     NetworkError,
     APIError,
     ValidationError,
     ConfigurationError,
+)
+from src.tgraph_bot.utils.core.error_handler import (
+    ErrorContext,
     ErrorTracker,
     classify_exception,
     create_user_friendly_message,

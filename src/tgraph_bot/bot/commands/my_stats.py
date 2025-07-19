@@ -33,7 +33,7 @@ from ...utils.discord.command_utils import (
     create_cooldown_embed,
 )
 from ...utils.core.config_utils import ConfigurationHelper
-from ...utils.core.error_handler import ValidationError
+from ...utils.core.exceptions import ValidationError
 
 if TYPE_CHECKING:
     pass

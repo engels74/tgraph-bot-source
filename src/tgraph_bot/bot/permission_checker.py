@@ -471,7 +471,7 @@ class PermissionChecker:
         lines.append("├" + "─" * (total_width - 2) + "┤")
 
         # Bot Permissions section (detailed list of Discord permissions)
-        bot_header = f" 🤖 Bot Permissions"
+        bot_header = " 🤖 Bot Permissions"
         lines.append(self._pad_line_to_width(bot_header, total_width))
         lines.append("├" + "─" * (total_width - 2) + "┤")
         
@@ -486,7 +486,7 @@ class PermissionChecker:
         lines.append("├" + "─" * (total_width - 2) + "┤")
 
         # Integration Access Control section with proper headers
-        integration_header = f" ⚙️ Integration Access Control"
+        integration_header = " ⚙️ Integration Access Control"
         lines.append(self._pad_line_to_width(integration_header, total_width))
         lines.append("├" + "─" * (total_width - 2) + "┤")
         

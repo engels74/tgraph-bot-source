@@ -11,7 +11,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, TypeVar, final, overload
 
-from ....utils.core.error_handler import ConfigurationError
+from ....utils.core.exceptions import ConfigurationError
 
 if TYPE_CHECKING:
     from ....config.schema import TGraphBotConfig

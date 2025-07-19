@@ -9,7 +9,6 @@ and SimpleProgressTracker implementations is preserved and working correctly.
 import time
 from unittest.mock import MagicMock
 
-import pytest
 
 from src.tgraph_bot.graphs.graph_modules import (
     BaseProgressTracker,
@@ -419,7 +418,7 @@ class TestProgressTrackerIntegration:
         """Test that timing measurements are reasonably accurate."""
         tracker = ProgressTracker()
         
-        start_time = time.time()
+        time.time()
         time.sleep(0.01)  # Small delay
         tracker.update("Test", 1, 1)
         

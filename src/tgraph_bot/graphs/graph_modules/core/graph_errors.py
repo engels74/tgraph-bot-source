@@ -42,12 +42,12 @@ import logging
 from typing import TYPE_CHECKING, final
 
 from ....i18n import translate
-from ....utils.core.error_handler import (
+from ....utils.core.exceptions import (
     ErrorCategory,
-    ErrorContext,
     ErrorSeverity,
     TGraphBotError,
 )
+from ....utils.core.error_handler import ErrorContext
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

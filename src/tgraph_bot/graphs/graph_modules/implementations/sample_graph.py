@@ -10,6 +10,10 @@ import logging
 from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, cast, override
 
+if TYPE_CHECKING:
+    import matplotlib.axes
+    import matplotlib.figure
+
 from ..core.base_graph import BaseGraph
 from ..visualization.visualization_mixin import VisualizationMixin
 
@@ -111,7 +115,9 @@ class SampleGraph(BaseGraph, VisualizationMixin):
         user_id = data.get("user_id")
 
         # Step 2: Setup figure with styling using combined utility
-        figure, axes = self.setup_figure_with_seaborn_grid()
+        _: "matplotlib.figure.Figure"
+        axes: "matplotlib.axes.Axes"
+        _, axes = self.setup_figure_with_seaborn_grid()
 
         # Step 3: Apply seaborn palette
         self.apply_seaborn_palette("husl")
@@ -119,7 +125,7 @@ class SampleGraph(BaseGraph, VisualizationMixin):
         # Step 4: Create the visualization
         try:
             # Create a simple line plot with markers
-            _ = axes.plot(x_values, y_values, marker="o", linewidth=2, markersize=6)  # pyright: ignore[reportUnknownMemberType]
+            _ = axes.plot(x_values, y_values, marker="o", linewidth=2, markersize=6)
 
             # Set title and axis labels using mixin utility
             title = custom_title if custom_title else self.get_title()

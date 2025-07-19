@@ -444,7 +444,7 @@ def validate_day_of_week(day: object) -> bool:
 # =============================================================================
 
 
-def get_localized_day_names(locale: str = "en") -> list[str]:  # noqa: ARG001
+def get_localized_day_names(locale: str = "en") -> list[str]:  # pyright: ignore[reportUnusedParameter]
     """
     Get localized day names for the specified locale.
 
@@ -463,7 +463,7 @@ def get_localized_day_names(locale: str = "en") -> list[str]:  # noqa: ARG001
     return DAYS_OF_WEEK.get_ordered_list()
 
 
-def get_localized_media_type_names(locale: str = "en") -> dict[str, str]:  # noqa: ARG001
+def get_localized_media_type_names(locale: str = "en") -> dict[str, str]:  # pyright: ignore[reportUnusedParameter]
     """
     Get localized media type display names for the specified locale.
 
@@ -489,7 +489,7 @@ def get_localized_media_type_names(locale: str = "en") -> dict[str, str]:  # noq
     }
 
 
-def get_localized_graph_titles(locale: str = "en") -> dict[str, str]:  # noqa: ARG001
+def get_localized_graph_titles(locale: str = "en") -> dict[str, str]:  # pyright: ignore[reportUnusedParameter]
     """
     Get localized graph titles for the specified locale.
 

@@ -11,10 +11,12 @@ This module tests the VisualizationMixin functionality including:
 - Time series axis setup
 """
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from src.tgraph_bot.config.schema import TGraphBotConfig
 from unittest.mock import MagicMock, patch
 
-import pytest
 import matplotlib.axes
 import matplotlib.pyplot as plt
 
@@ -25,13 +27,13 @@ from tests.utils.graph_helpers import matplotlib_cleanup
 class MockGraphWithVisualization(VisualizationMixin):
     """Mock graph class that implements VisualizationMixin for testing."""
 
-    def __init__(self, config: dict[str, Any] | None = None, grid_enabled: bool = True):
+    def __init__(self, config: "TGraphBotConfig | dict[str, Any] | None" = None, grid_enabled: bool = True):
         """Initialize mock graph with optional configuration."""
-        self.config = config
+        self.config: "TGraphBotConfig | dict[str, Any] | None" = config
         self.figure: Any | None = None
         self.axes: matplotlib.axes.Axes | None = None
-        self._grid_enabled = grid_enabled
-        self._title = "Test Graph"
+        self._grid_enabled: bool = grid_enabled
+        self._title: str = "Test Graph"
 
     def get_grid_enabled(self) -> bool:
         """Return grid enabled status."""
@@ -266,7 +268,7 @@ class TestVisualizationMixin:
             mock_bars[1].get_x.return_value = 1
             mock_bars[1].get_width.return_value = 1
             
-            values = [10, 20]
+            values = [10.0, 20.0]
             
             # Mock the annotate method
             with patch.object(graph.axes, 'annotate') as mock_annotate:

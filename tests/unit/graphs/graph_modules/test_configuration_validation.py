@@ -27,7 +27,7 @@ from src.tgraph_bot.graphs.graph_modules import (
     ConfigAccessor,
     GraphFactory,
 )
-from src.tgraph_bot.utils.core.error_handler import ConfigurationError
+from src.tgraph_bot.utils.core.exceptions import ConfigurationError
 from tests.utils.graph_helpers import (
     create_test_config_comprehensive,
     create_test_config_minimal,

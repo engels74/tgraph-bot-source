@@ -6,8 +6,7 @@ patterns from graph implementations, ensuring proper functionality and
 type safety.
 """
 
-import pytest
-from unittest.mock import Mock, MagicMock, patch
+from unittest.mock import Mock, patch
 from typing import Any
 
 from src.tgraph_bot.graphs.graph_modules import AnnotationHelper
@@ -233,8 +232,8 @@ class TestAnnotationHelper:
         from matplotlib.axes import Axes
         mock_ax_instance = Mock(spec=Axes)
 
-        with patch('matplotlib.patheffects.Stroke') as mock_stroke:
-            with patch('matplotlib.patheffects.Normal') as mock_normal:
+        with patch('matplotlib.patheffects.Stroke'):
+            with patch('matplotlib.patheffects.Normal'):
                 self.helper._add_text_annotation(
                     mock_ax_instance,
                     x=1.0,

@@ -8,7 +8,10 @@ It eliminates DRY violations by providing reusable annotation functionality.
 
 import logging
 from collections.abc import Sequence
-from typing import Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
+
+if TYPE_CHECKING:
+    import matplotlib.axes
 
 logger = logging.getLogger(__name__)
 
@@ -109,15 +112,19 @@ class AnnotationHelper:
             return
 
         try:
-            for patch in ax.patches:  # type: ignore[reportAttributeAccessIssue]
-                height = patch.get_height()  # type: ignore[reportAttributeAccessIssue]
+            ax_typed: "matplotlib.axes.Axes" = ax  # pyright: ignore[reportAssignmentType]
+            for patch in ax_typed.patches:
+                # Most patches in bar charts are Rectangle patches with these methods
+                height = getattr(patch, 'get_height', lambda: None)()  # pyright: ignore[reportUnknownMemberType]
                 if height and height > min_value_threshold:
-                    x_val = patch.get_x() + patch.get_width() / 2  # type: ignore[reportAttributeAccessIssue]
+                    get_x = getattr(patch, 'get_x', lambda: 0)  # pyright: ignore[reportUnknownMemberType]
+                    get_width = getattr(patch, 'get_width', lambda: 1)  # pyright: ignore[reportUnknownMemberType]
+                    x_val = get_x() + get_width() / 2
                     self._add_text_annotation(
                         ax,
-                        x=float(x_val),  # type: ignore[reportArgumentType]
-                        y=float(height),  # type: ignore[reportArgumentType]
-                        value=int(height),  # type: ignore[reportArgumentType]
+                        x=float(x_val),
+                        y=float(height),
+                        value=int(height),
                         ha=ha,
                         va=va,
                         offset_y=offset_y,
@@ -158,22 +165,27 @@ class AnnotationHelper:
         try:
             # Calculate max width for offset positioning
             max_width = 0.0
-            for patch in ax.patches:  # type: ignore[reportAttributeAccessIssue]
-                width = patch.get_width()  # type: ignore[reportAttributeAccessIssue]
+            ax_typed: "matplotlib.axes.Axes" = ax  # pyright: ignore[reportAssignmentType]
+            for patch in ax_typed.patches:
+                get_width = getattr(patch, 'get_width', lambda: 0)  # pyright: ignore[reportUnknownMemberType]
+                width = get_width()
                 if width and width > max_width:
-                    max_width = float(width)  # type: ignore[reportArgumentType]
+                    max_width = float(width)
 
             offset_x = max_width * offset_x_ratio
 
-            for patch in ax.patches:  # type: ignore[reportAttributeAccessIssue]
-                width = patch.get_width()  # type: ignore[reportAttributeAccessIssue]
+            for patch in ax_typed.patches:
+                get_width = getattr(patch, 'get_width', lambda: 0)  # pyright: ignore[reportUnknownMemberType]
+                width = get_width()
                 if width and width > min_value_threshold:
-                    y_val = patch.get_y() + patch.get_height() / 2  # type: ignore[reportAttributeAccessIssue]
+                    get_y = getattr(patch, 'get_y', lambda: 0)  # pyright: ignore[reportUnknownMemberType]
+                    get_height = getattr(patch, 'get_height', lambda: 1)  # pyright: ignore[reportUnknownMemberType]
+                    y_val = get_y() + get_height() / 2
                     self._add_text_annotation(
                         ax,
-                        x=float(width),  # type: ignore[reportArgumentType]
-                        y=float(y_val),  # type: ignore[reportArgumentType]
-                        value=int(width),  # type: ignore[reportArgumentType]
+                        x=float(width),
+                        y=float(y_val),
+                        value=int(width),
                         ha=ha,
                         va=va,
                         offset_x=offset_x,
@@ -217,7 +229,10 @@ class AnnotationHelper:
 
                 # Annotate each segment
                 for bars, media_type, values in bar_containers:
-                    value = float(values[i])  # type: ignore[reportArgumentType,reportIndexIssue]
+                    # Avoid unused variable warnings  
+                    _ = bars
+                    _ = media_type
+                    value = float(values[i] if hasattr(values, '__getitem__') else 0)  # pyright: ignore[reportArgumentType]
                     if value > 0:
                         # Position annotation in the middle of this segment
                         self._add_text_annotation(
@@ -277,7 +292,8 @@ class AnnotationHelper:
             return
 
         try:
-            ax.annotate(  # type: ignore[reportAttributeAccessIssue]
+            ax_typed: "matplotlib.axes.Axes" = ax  # pyright: ignore[reportAssignmentType]
+            ax_typed.annotate(
                 f"{label_prefix}: {value}",
                 xy=(x, y),
                 xytext=(offset_x, offset_y),

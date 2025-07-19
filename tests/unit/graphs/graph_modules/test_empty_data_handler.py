@@ -10,7 +10,6 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-import pytest
 
 from src.tgraph_bot.graphs.graph_modules import EmptyDataHandler
 

@@ -40,7 +40,8 @@ from ...utils.discord.discord_file_utils import (
     create_discord_file_safe,
     create_graph_specific_embed,
 )
-from ...utils.core.error_handler import APIError, NetworkError, error_handler
+from ...utils.core.exceptions import APIError, NetworkError
+from ...utils.core.error_handler import error_handler
 from ...utils.discord.progress_utils import ProgressCallbackManager
 
 if TYPE_CHECKING:
