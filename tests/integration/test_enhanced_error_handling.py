@@ -106,9 +106,9 @@ class TestGraphManagerErrorHandling:
             # Mock successful data fetch
             test_data = {"play_history": {"data": []}}  # pyright: ignore[reportUnknownVariableType]
             mock_data_fetcher.get_play_history.return_value = test_data["play_history"]  # pyright: ignore[reportAny]
-            mock_data_fetcher.get_plays_per_month.return_value = {
+            mock_data_fetcher.get_plays_per_month.return_value = {  # pyright: ignore[reportAny]
                 "monthly_data": "test"
-            }  # pyright: ignore[reportAny]
+            }
 
             # Mock successful graph generation
             test_files = ["test1.png", "test2.png"]
@@ -153,13 +153,13 @@ class TestGraphManagerErrorHandling:
             # Mock data fetch
             test_data = {"play_history": {"data": []}}  # pyright: ignore[reportUnknownVariableType]
             mock_data_fetcher.get_play_history.return_value = test_data["play_history"]  # pyright: ignore[reportAny]
-            mock_data_fetcher.get_plays_per_month.return_value = {
+            mock_data_fetcher.get_plays_per_month.return_value = {  # pyright: ignore[reportAny]
                 "monthly_data": "test"
-            }  # pyright: ignore[reportAny]
+            }
 
             # Mock slow graph generation
             def slow_generation(
-                data: dict[str, object], tracker: object = None  # noqa: ARG001
+                _data: dict[str, object], _tracker: object = None
             ) -> list[str]:
                 time.sleep(2.0)  # Simulate slow operation
                 return ["test.png"]
@@ -189,9 +189,9 @@ class TestGraphManagerErrorHandling:
             progress_tracker = ProgressTracker()
 
             with pytest.raises(GraphGenerationError):
-                _ = await graph_manager._fetch_graph_data_with_retry(
+                _ = await graph_manager._fetch_graph_data_with_retry(  # pyright: ignore[reportPrivateUsage]
                     30, 2, progress_tracker
-                )  # pyright: ignore[reportPrivateUsage]
+                )
 
             # Check that errors were tracked
             assert len(progress_tracker.errors) > 0
@@ -253,9 +253,9 @@ class TestUserGraphManagerErrorHandling:
                 "user_info": {"name": "Test User"},
             }
             mock_data_fetcher.find_user_by_email.return_value = {"user_id": 123}  # pyright: ignore[reportAny]
-            mock_data_fetcher.get_play_history.return_value = test_user_data[
+            mock_data_fetcher.get_play_history.return_value = test_user_data[  # pyright: ignore[reportAny]
                 "play_history"
-            ]  # pyright: ignore[reportAny]
+            ]
 
             # Mock successful graph generation
             test_files = ["user_test1.png", "user_test2.png"]

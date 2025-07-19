@@ -135,9 +135,9 @@ class TestGraphManagerArchitecture:
                             result = await graph_manager.generate_all_graphs()
 
                         # Verify data fetching was called
-                        mock_data_fetcher.get_play_history.assert_called_once_with(
+                        mock_data_fetcher.get_play_history.assert_called_once_with(  # pyright: ignore[reportAny]
                             time_range=30
-                        )  # pyright: ignore[reportAny]
+                        )
 
                         # Verify asyncio.to_thread was used for graph generation
                         mock_to_thread.assert_called_once()

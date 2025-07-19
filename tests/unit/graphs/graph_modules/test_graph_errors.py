@@ -323,7 +323,7 @@ class TestErrorMessageTemplates:
         )
 
         # Should log warning and return fallback message
-        mock_logger.warning.assert_called_once()
+        mock_logger.warning.assert_called_once()  # pyright: ignore[reportAny]
         assert "Error in missing_data" in message
 
     def test_all_templates_format_correctly(self) -> None:

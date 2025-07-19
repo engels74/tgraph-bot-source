@@ -933,10 +933,10 @@ def apply_modern_seaborn_styling() -> None:
 
     # Set modern color palette
     colors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b"]
-    sns.set_palette(colors)
+    sns.set_palette(colors)  # pyright: ignore[reportUnknownMemberType]
 
     # Configure matplotlib parameters for better appearance
-    plt.rcParams.update(
+    plt.rcParams.update(  # pyright: ignore[reportUnknownMemberType]
         {
             "font.size": 11,
             "axes.titlesize": 16,

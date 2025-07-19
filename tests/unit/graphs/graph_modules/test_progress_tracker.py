@@ -153,11 +153,13 @@ class TestBaseProgressTracker:
         config = ProgressTrackerConfig(max_errors=2)
 
         class ConcreteTracker(BaseProgressTracker):
+            @override
             def update(
                 self, message: str, current: int, total: int, **kwargs: object
             ) -> None:
                 pass
 
+            @override
             def get_summary(self) -> dict[str, object]:
                 return self._get_base_summary()
 
@@ -174,12 +176,17 @@ class TestBaseProgressTracker:
         """Test base summary generation."""
 
         class ConcreteTracker(BaseProgressTracker):
+            current_step: int
+            total_steps: int
+
+            @override
             def update(
                 self, message: str, current: int, total: int, **kwargs: object
             ) -> None:
                 self.current_step = current
                 self.total_steps = total
 
+            @override
             def get_summary(self) -> dict[str, object]:
                 return self._get_base_summary()
 
@@ -233,7 +240,7 @@ class TestProgressTracker:
         callback.assert_called_once()
 
         # Verify callback arguments
-        args, kwargs = callback.call_args
+        args, _kwargs = callback.call_args  # pyright: ignore[reportAny]
         assert args[0] == "Test message"
         assert args[1] == 1
         assert args[2] == 3
@@ -280,8 +287,8 @@ class TestProgressTracker:
         tracker.update("Test", 1, 2, custom_data="test")
 
         # Verify metadata content
-        args, _ = callback.call_args
-        metadata = args[3]
+        args, _ = callback.call_args  # pyright: ignore[reportAny]
+        metadata = args[3]  # pyright: ignore[reportAny]
 
         assert "elapsed_time" in metadata
         assert "errors" in metadata

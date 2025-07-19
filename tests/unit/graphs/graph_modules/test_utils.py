@@ -102,9 +102,9 @@ class TestDirectoryUtilities:
                 _ = ensure_graph_directory()
 
                 mock_path.assert_called_once_with("graphs")
-                mock_path_instance.mkdir.assert_called_once_with(
+                mock_path_instance.mkdir.assert_called_once_with(  # pyright: ignore[reportAny]
                     parents=True, exist_ok=True
-                )  # pyright: ignore[reportAny]
+                )
 
     def test_ensure_graph_directory_custom_path(self) -> None:
         """Test ensuring graph directory with custom path."""

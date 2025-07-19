@@ -173,9 +173,9 @@ class TestEnhancedUpdateTracker:
 
         assert update_tracker._is_started  # pyright: ignore[reportPrivateUsage]
         assert (
-            update_tracker._task_manager.get_task_status("update_scheduler")
+            update_tracker._task_manager.get_task_status("update_scheduler")  # pyright: ignore[reportPrivateUsage]
             == TaskStatus.RUNNING
-        )  # pyright: ignore[reportPrivateUsage]
+        )
 
         # Test stop
         await update_tracker.stop_scheduler()
@@ -231,9 +231,9 @@ class TestEnhancedUpdateTracker:
         assert update_tracker._config is not None  # pyright: ignore[reportPrivateUsage]
         assert update_tracker._config.update_days == original_config.update_days  # pyright: ignore[reportPrivateUsage]
         assert (
-            update_tracker._config.fixed_update_time
+            update_tracker._config.fixed_update_time  # pyright: ignore[reportPrivateUsage]
             == original_config.fixed_update_time
-        )  # pyright: ignore[reportPrivateUsage]
+        )
 
     @pytest.mark.asyncio
     async def test_callback_execution(self, update_tracker: UpdateTracker) -> None:
@@ -345,8 +345,8 @@ async def test_scheduler_health_updates_during_long_waits() -> None:
 
             while (
                 elapsed < total_wait_seconds
-                and not tracker._task_manager._shutdown_event.is_set()
-            ):  # pyright: ignore[reportPrivateUsage]
+                and not tracker._task_manager._shutdown_event.is_set()  # pyright: ignore[reportPrivateUsage]
+            ):
                 remaining = total_wait_seconds - elapsed
                 chunk_duration = min(health_update_interval, remaining)
 

@@ -22,8 +22,8 @@ class TestGraphFactory:
         config: dict[str, object] = {"ENABLE_DAILY_PLAY_COUNT": True}
         factory = GraphFactory(config)
         assert factory.config == config
-        assert factory._config_accessor is not None
-        assert factory._graph_registry is not None
+        assert factory._config_accessor is not None  # pyright: ignore[reportPrivateUsage]
+        assert factory._graph_registry is not None  # pyright: ignore[reportPrivateUsage]
 
     def test_factory_initialization_with_tgraphbot_config(self) -> None:
         """Test GraphFactory initialization with TGraphBotConfig object."""
@@ -36,8 +36,8 @@ class TestGraphFactory:
         )
         factory = GraphFactory(config)
         assert factory.config == config
-        assert factory._config_accessor is not None
-        assert factory._graph_registry is not None
+        assert factory._config_accessor is not None  # pyright: ignore[reportPrivateUsage]
+        assert factory._graph_registry is not None  # pyright: ignore[reportPrivateUsage]
 
     def test_create_enabled_graphs_empty_config(self) -> None:
         """Test creating graphs with empty configuration."""
@@ -236,7 +236,7 @@ class TestGraphFactory:
         factory = GraphFactory(config)
 
         # Access private method for testing
-        dimensions = factory._get_graph_dimensions()
+        dimensions = factory._get_graph_dimensions()  # pyright: ignore[reportPrivateUsage]
 
         assert dimensions["width"] == 15
         assert dimensions["height"] == 10
@@ -248,7 +248,7 @@ class TestGraphFactory:
         factory = GraphFactory(config)
 
         # Access private method for testing
-        dimensions = factory._get_graph_dimensions()
+        dimensions = factory._get_graph_dimensions()  # pyright: ignore[reportPrivateUsage]
 
         # Should use default values from ConfigAccessor
         assert "width" in dimensions

@@ -536,8 +536,8 @@ class TestPermissionChecker:
                         warning_calls = [
                             call
                             for call in mock_logger.warning.call_args_list  # pyright: ignore[reportAny]
-                            if "Security warnings" in str(call)
-                        ]  # pyright: ignore[reportAny]
+                            if "Security warnings" in str(call)  # pyright: ignore[reportAny]
+                        ]
                         assert len(warning_calls) >= 1
 
                         # Check that all three admin commands generated warnings
@@ -639,8 +639,8 @@ class TestPermissionChecker:
             info_calls = [
                 call
                 for call in mock_logger.info.call_args_list  # pyright: ignore[reportAny]
-                if "Checking permissions across" in str(call)
-            ]  # pyright: ignore[reportAny]
+                if "Checking permissions across" in str(call)  # pyright: ignore[reportAny]
+            ]
             assert len(info_calls) == 1
             assert "2 guild(s)" in str(info_calls[0])  # pyright: ignore[reportAny]
 
@@ -856,9 +856,9 @@ class TestPermissionChecker:
         # Mock no permission overrides
         command.fetch_permissions = AsyncMock(return_value=None)
 
-        result = await self.permission_checker._analyze_enhanced_command_permissions(
+        result = await self.permission_checker._analyze_enhanced_command_permissions(  # pyright: ignore[reportPrivateUsage]
             command, self.mock_guild
-        )  # pyright: ignore[reportPrivateUsage]
+        )
 
         assert result["name"] == "about"
         assert result["accessible_by"] == "Accessible to all members"
@@ -877,9 +877,9 @@ class TestPermissionChecker:
         # Mock no Integration permission overrides from server admin
         command.fetch_permissions = AsyncMock(return_value=None)
 
-        result = await self.permission_checker._analyze_enhanced_command_permissions(
+        result = await self.permission_checker._analyze_enhanced_command_permissions(  # pyright: ignore[reportPrivateUsage]
             command, self.mock_guild
-        )  # pyright: ignore[reportPrivateUsage]
+        )
 
         assert result["name"] == "config"
         # Should show Integration settings, not bot developer's default permissions
@@ -913,9 +913,9 @@ class TestPermissionChecker:
         mock_role.id = 123456789
         self.mock_guild.get_role = MagicMock(return_value=mock_role)
 
-        result = await self.permission_checker._analyze_enhanced_command_permissions(
+        result = await self.permission_checker._analyze_enhanced_command_permissions(  # pyright: ignore[reportPrivateUsage]
             command, self.mock_guild
-        )  # pyright: ignore[reportPrivateUsage]
+        )
 
         assert result["name"] == "update_graphs"
         assert len(result["permission_overrides"]) == 1
@@ -945,9 +945,9 @@ class TestPermissionChecker:
         mock_member.id = 987654321
         self.mock_guild.get_member = MagicMock(return_value=mock_member)
 
-        result = await self.permission_checker._analyze_enhanced_command_permissions(
+        result = await self.permission_checker._analyze_enhanced_command_permissions(  # pyright: ignore[reportPrivateUsage]
             command, self.mock_guild
-        )  # pyright: ignore[reportPrivateUsage]
+        )
 
         assert result["name"] == "my_stats"
         assert len(result["permission_overrides"]) == 1
@@ -977,9 +977,9 @@ class TestPermissionChecker:
         mock_channel.id = 555666777
         self.mock_guild.get_channel = MagicMock(return_value=mock_channel)
 
-        result = await self.permission_checker._analyze_enhanced_command_permissions(
+        result = await self.permission_checker._analyze_enhanced_command_permissions(  # pyright: ignore[reportPrivateUsage]
             command, self.mock_guild
-        )  # pyright: ignore[reportPrivateUsage]
+        )
 
         assert result["name"] == "uptime"
         assert len(result["channel_restrictions"]) == 1
@@ -996,9 +996,9 @@ class TestPermissionChecker:
             side_effect=discord.HTTPException(MagicMock(status=403), "Forbidden")
         )
 
-        result = await self.permission_checker._analyze_enhanced_command_permissions(
+        result = await self.permission_checker._analyze_enhanced_command_permissions(  # pyright: ignore[reportPrivateUsage]
             command, self.mock_guild
-        )  # pyright: ignore[reportPrivateUsage]
+        )
 
         assert result["name"] == "test_command"
         assert result["accessible_by"] == "Accessible to all members"
@@ -1116,9 +1116,9 @@ class TestPermissionChecker:
         # Mock empty command list
         self.mock_bot.tree.fetch_commands = AsyncMock(return_value=[])  # pyright: ignore[reportAny]
 
-        result = await self.permission_checker._analyze_integration_permissions(
+        result = await self.permission_checker._analyze_integration_permissions(  # pyright: ignore[reportPrivateUsage]
             self.mock_guild
-        )  # pyright: ignore[reportPrivateUsage]
+        )
 
         assert result["global_roles_access"] == "Not configured (all members)"
         assert result["global_channels_access"] == "None (all channels)"
@@ -1155,9 +1155,9 @@ class TestPermissionChecker:
         # Mock fetch_commands to return our test command
         self.mock_bot.tree.fetch_commands = AsyncMock(return_value=[mock_command])  # pyright: ignore[reportAny]
 
-        result = await self.permission_checker._analyze_integration_permissions(
+        result = await self.permission_checker._analyze_integration_permissions(  # pyright: ignore[reportPrivateUsage]
             self.mock_guild
-        )  # pyright: ignore[reportPrivateUsage]
+        )
 
         assert result["global_roles_access"] == "Restricted from @everyone"
         assert "#bot-commands (Allowed)" in result["global_channels_access"]
@@ -1165,13 +1165,13 @@ class TestPermissionChecker:
     async def test_analyze_integration_permissions_fetch_error(self) -> None:
         """Test integration permissions analysis when Discord API fails."""
         # Mock API failure
-        self.mock_bot.tree.fetch_commands = AsyncMock(
+        self.mock_bot.tree.fetch_commands = AsyncMock(  # pyright: ignore[reportAny]
             side_effect=discord.Forbidden(MagicMock(status=403), "Forbidden")
-        )  # pyright: ignore[reportAny]
+        )
 
-        result = await self.permission_checker._analyze_integration_permissions(
+        result = await self.permission_checker._analyze_integration_permissions(  # pyright: ignore[reportPrivateUsage]
             self.mock_guild
-        )  # pyright: ignore[reportPrivateUsage]
+        )
 
         assert result["global_roles_access"] == "Unable to fetch (need Manage Server)"
         assert (

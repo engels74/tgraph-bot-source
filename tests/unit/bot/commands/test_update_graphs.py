@@ -102,13 +102,13 @@ class TestUpdateGraphsCog:
         ):
             # Setup GraphManager mock
             mock_graph_manager = AsyncMock()
-            mock_graph_manager.generate_all_graphs.return_value = [
+            mock_graph_manager.generate_all_graphs.return_value = [  # pyright: ignore[reportAny]
                 "graph1.png",
                 "graph2.png",
                 "graph3.png",
-            ]  # pyright: ignore[reportAny]
-            mock_graph_manager_class.return_value.__aenter__.return_value = (
-                mock_graph_manager  # pyright: ignore[reportAny]
+            ]
+            mock_graph_manager_class.return_value.__aenter__.return_value = (  # pyright: ignore[reportAny]
+                mock_graph_manager
             )
             mock_graph_manager_class.return_value.__aexit__.return_value = None  # pyright: ignore[reportAny]
 
@@ -207,8 +207,8 @@ class TestUpdateGraphsCog:
             # Setup GraphManager mock to return empty list
             mock_graph_manager = AsyncMock()
             mock_graph_manager.generate_all_graphs.return_value = []  # pyright: ignore[reportAny]
-            mock_graph_manager_class.return_value.__aenter__.return_value = (
-                mock_graph_manager  # pyright: ignore[reportAny]
+            mock_graph_manager_class.return_value.__aenter__.return_value = (  # pyright: ignore[reportAny]
+                mock_graph_manager
             )
             mock_graph_manager_class.return_value.__aexit__.return_value = None  # pyright: ignore[reportAny]
 
@@ -245,22 +245,22 @@ class TestUpdateGraphsCog:
 
         # Create mock messages - some from bot, some from users
         mock_bot_message1 = MagicMock()
-        mock_bot_message1.author.id = (
-            123456789  # Bot's message  # pyright: ignore[reportAny]
+        mock_bot_message1.author.id = (  # pyright: ignore[reportAny]
+            123456789  # Bot's message
         )
         mock_bot_message1.id = "msg1"
         mock_bot_message1.delete = AsyncMock()
 
         mock_bot_message2 = MagicMock()
-        mock_bot_message2.author.id = (
-            123456789  # Bot's message  # pyright: ignore[reportAny]
+        mock_bot_message2.author.id = (  # pyright: ignore[reportAny]
+            123456789  # Bot's message
         )
         mock_bot_message2.id = "msg2"
         mock_bot_message2.delete = AsyncMock()
 
         mock_user_message = MagicMock()
-        mock_user_message.author.id = (
-            987654321  # User's message  # pyright: ignore[reportAny]
+        mock_user_message.author.id = (  # pyright: ignore[reportAny]
+            987654321  # User's message
         )
         mock_user_message.id = "user_msg"
         mock_user_message.delete = AsyncMock()
@@ -558,13 +558,13 @@ class TestUpdateGraphsCog:
         ):
             # Setup GraphManager mock with 3 graphs but only 2 post successfully
             mock_graph_manager = AsyncMock()
-            mock_graph_manager.generate_all_graphs.return_value = [
+            mock_graph_manager.generate_all_graphs.return_value = [  # pyright: ignore[reportAny]
                 "graph1.png",
                 "graph2.png",
                 "graph3.png",
-            ]  # pyright: ignore[reportAny]
-            mock_graph_manager_class.return_value.__aenter__.return_value = (
-                mock_graph_manager  # pyright: ignore[reportAny]
+            ]
+            mock_graph_manager_class.return_value.__aenter__.return_value = (  # pyright: ignore[reportAny]
+                mock_graph_manager
             )
             mock_graph_manager_class.return_value.__aexit__.return_value = None  # pyright: ignore[reportAny]
 

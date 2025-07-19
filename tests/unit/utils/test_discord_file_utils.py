@@ -245,9 +245,9 @@ class TestChannelUpload:
         _ = test_file.write_bytes(b"test image data")
 
         mock_channel = AsyncMock(spec=discord.TextChannel)
-        mock_channel.send.side_effect = discord.HTTPException(
+        mock_channel.send.side_effect = discord.HTTPException(  # pyright: ignore[reportAny]
             MagicMock(), "Upload failed"
-        )  # pyright: ignore[reportAny]
+        )
 
         with patch(
             "src.tgraph_bot.utils.discord.discord_file_utils.create_discord_file_safe"
@@ -913,7 +913,7 @@ class TestCalculateNextUpdateTime:
                 "src.tgraph_bot.utils.discord.discord_file_utils.get_local_now"
             ) as mock_get_local_now,
             patch(
-                "builtins.open", mock_open(read_data=json.dumps(state_data))
+                "builtins.open", mock_open(read_data=json.dumps(state_data))  # pyright: ignore[reportAny]
             ) as mock_file,  # pyright: ignore[reportAny]
         ):
             # Create a mock path config that returns an existing state file

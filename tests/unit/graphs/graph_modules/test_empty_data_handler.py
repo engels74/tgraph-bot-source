@@ -30,23 +30,23 @@ class TestEmptyDataHandler:
         handler.display_empty_data_message(mock_ax)
 
         # Verify text was called with correct default parameters
-        mock_ax.text.assert_called_once_with(
+        mock_ax.text.assert_called_once_with(  # pyright: ignore[reportAny]
             0.5,
             0.5,
             "No data available\nfor the selected time period",
             ha="center",
             va="center",
-            transform=mock_ax.transAxes,
+            transform=mock_ax.transAxes,  # pyright: ignore[reportAny]
             fontsize=16,
             fontweight="bold",
             bbox=dict(boxstyle="round,pad=0.5", facecolor="lightgray", alpha=0.7),
         )
 
         # Verify title was not set (default behavior)
-        mock_ax.set_title.assert_not_called()
+        mock_ax.set_title.assert_not_called()  # pyright: ignore[reportAny]
 
         # Verify axes was not cleared (default behavior)
-        mock_ax.clear.assert_not_called()
+        mock_ax.clear.assert_not_called()  # pyright: ignore[reportAny]
 
     def test_display_empty_data_message_with_custom_parameters(self) -> None:
         """Test empty data message display with custom parameters."""
@@ -67,25 +67,25 @@ class TestEmptyDataHandler:
         )
 
         # Verify text was called with custom parameters
-        mock_ax.text.assert_called_once_with(
+        mock_ax.text.assert_called_once_with(  # pyright: ignore[reportAny]
             0.5,
             0.5,
             "Custom empty message",
             ha="center",
             va="center",
-            transform=mock_ax.transAxes,
+            transform=mock_ax.transAxes,  # pyright: ignore[reportAny]
             fontsize=20,
             fontweight="normal",
             bbox=dict(boxstyle="square,pad=1.0", facecolor="red", alpha=0.5),
         )
 
         # Verify title was set
-        mock_ax.set_title.assert_called_once_with(
+        mock_ax.set_title.assert_called_once_with(  # pyright: ignore[reportAny]
             "Custom Title", fontsize=18, fontweight="bold"
         )
 
         # Verify axes was cleared
-        mock_ax.clear.assert_called_once()
+        mock_ax.clear.assert_called_once()  # pyright: ignore[reportAny]
 
     def test_display_empty_data_message_with_none_axes(self) -> None:
         """Test empty data message display when axes is None."""
@@ -95,7 +95,7 @@ class TestEmptyDataHandler:
             "src.tgraph_bot.graphs.graph_modules.data.empty_data_handler.logger"
         ) as mock_logger:
             handler.display_empty_data_message(None)
-            mock_logger.warning.assert_called_once_with(
+            mock_logger.warning.assert_called_once_with(  # pyright: ignore[reportAny]
                 "Cannot display empty data message: axes is None"
             )
 
@@ -107,21 +107,21 @@ class TestEmptyDataHandler:
 
         # Test default logging
         handler.display_empty_data_message(mock_ax)
-        mock_logger.warning.assert_called_once()
+        mock_logger.warning.assert_called_once()  # pyright: ignore[reportAny]
 
         # Reset mock
         mock_logger.reset_mock()
 
         # Test custom log message
         handler.display_empty_data_message(mock_ax, log_message="Custom log message")
-        mock_logger.warning.assert_called_once_with("Custom log message")
+        mock_logger.warning.assert_called_once_with("Custom log message")  # pyright: ignore[reportAny]
 
         # Reset mock
         mock_logger.reset_mock()
 
         # Test disabled logging
         handler.display_empty_data_message(mock_ax, log_warning=False)
-        mock_logger.warning.assert_not_called()
+        mock_logger.warning.assert_not_called()  # pyright: ignore[reportAny]
 
     @patch("src.tgraph_bot.graphs.graph_modules.data.empty_data_handler.translate")
     def test_display_localized_empty_data_message_success(
@@ -142,13 +142,13 @@ class TestEmptyDataHandler:
         )
 
         # Verify text was called with translated message
-        mock_ax.text.assert_called_once_with(
+        mock_ax.text.assert_called_once_with(  # pyright: ignore[reportAny]
             0.5,
             0.5,
             "Translated message",
             ha="center",
             va="center",
-            transform=mock_ax.transAxes,
+            transform=mock_ax.transAxes,  # pyright: ignore[reportAny]
             fontsize=16,
             fontweight="bold",
             bbox=dict(boxstyle="round,pad=0.5", facecolor="lightgray", alpha=0.7),
@@ -167,20 +167,20 @@ class TestEmptyDataHandler:
         handler.display_localized_empty_data_message(mock_ax, "test_message_key")
 
         # Verify translation failure was logged (should be called twice - once for translation failure, once for empty data)
-        assert mock_logger.warning.call_count == 2
+        assert mock_logger.warning.call_count == 2  # pyright: ignore[reportAny]
 
         # Check that the first call was for translation failure
-        first_call = mock_logger.warning.call_args_list[0][0][0]
+        first_call = mock_logger.warning.call_args_list[0][0][0]  # pyright: ignore[reportAny]
         assert "Failed to translate message key 'test_message_key'" in first_call
 
         # Verify fallback message was used
-        mock_ax.text.assert_called_once_with(
+        mock_ax.text.assert_called_once_with(  # pyright: ignore[reportAny]
             0.5,
             0.5,
             "No data available\nfor the selected time period",
             ha="center",
             va="center",
-            transform=mock_ax.transAxes,
+            transform=mock_ax.transAxes,  # pyright: ignore[reportAny]
             fontsize=16,
             fontweight="bold",
             bbox=dict(boxstyle="round,pad=0.5", facecolor="lightgray", alpha=0.7),
@@ -223,11 +223,11 @@ class TestEmptyDataHandler:
         handler.clear_axes_for_empty_data(mock_ax)
 
         # Verify all clearing operations were called
-        mock_ax.clear.assert_called_once()
-        mock_ax.set_xlim.assert_called_once_with(0, 1)
-        mock_ax.set_ylim.assert_called_once_with(0, 1)
-        mock_ax.set_xticks.assert_called_once_with([])
-        mock_ax.set_yticks.assert_called_once_with([])
+        mock_ax.clear.assert_called_once()  # pyright: ignore[reportAny]
+        mock_ax.set_xlim.assert_called_once_with(0, 1)  # pyright: ignore[reportAny]
+        mock_ax.set_ylim.assert_called_once_with(0, 1)  # pyright: ignore[reportAny]
+        mock_ax.set_xticks.assert_called_once_with([])  # pyright: ignore[reportAny]
+        mock_ax.set_yticks.assert_called_once_with([])  # pyright: ignore[reportAny]
 
     def test_clear_axes_for_empty_data_with_none_axes(self) -> None:
         """Test clearing axes when axes is None."""
@@ -237,7 +237,7 @@ class TestEmptyDataHandler:
             "src.tgraph_bot.graphs.graph_modules.data.empty_data_handler.logger"
         ) as mock_logger:
             handler.clear_axes_for_empty_data(None)
-            mock_logger.warning.assert_called_once_with(
+            mock_logger.warning.assert_called_once_with(  # pyright: ignore[reportAny]
                 "Cannot clear axes: axes is None"
             )
 

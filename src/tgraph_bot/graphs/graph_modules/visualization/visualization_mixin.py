@@ -203,7 +203,7 @@ class VisualizationMixin:
             logger.warning("Cannot configure grid: axes is None")
             return
 
-        self.axes.grid(True, alpha=alpha)
+        self.axes.grid(True, alpha=alpha)  # pyright: ignore[reportUnknownMemberType]
 
     def setup_bar_chart_annotations(
         self: VisualizationProtocol,
@@ -259,7 +259,7 @@ class VisualizationMixin:
         Args:
             palette: Seaborn palette name to apply
         """
-        sns.set_palette(palette)
+        sns.set_palette(palette)  # pyright: ignore[reportUnknownMemberType]
 
     def configure_tick_parameters(
         self: VisualizationProtocol,
@@ -282,7 +282,7 @@ class VisualizationMixin:
             logger.warning("Cannot configure tick parameters: axes is None")
             return
 
-        self.axes.tick_params(axis=axis, labelsize=labelsize, rotation=rotation)
+        self.axes.tick_params(axis=axis, labelsize=labelsize, rotation=rotation)  # pyright: ignore[reportUnknownMemberType]
 
     def setup_legend_with_standard_config(
         self: VisualizationProtocol,
@@ -375,12 +375,12 @@ class VisualizationMixin:
             _ = self.axes.set_ylabel(ylabel, fontsize=12)  # pyright: ignore[reportUnknownMemberType]
 
         # Configure tick parameters
-        self.axes.tick_params(axis="x", rotation=rotation)
+        self.axes.tick_params(axis="x", rotation=rotation)  # pyright: ignore[reportUnknownMemberType]
 
         # Format x-axis dates if matplotlib dates are being used
         try:
             import matplotlib.dates as mdates
 
-            self.axes.xaxis.set_major_formatter(mdates.DateFormatter(date_format))
+            self.axes.xaxis.set_major_formatter(mdates.DateFormatter(date_format))  # pyright: ignore[reportUnknownMemberType]
         except ImportError:
             logger.warning("matplotlib.dates not available for date formatting")

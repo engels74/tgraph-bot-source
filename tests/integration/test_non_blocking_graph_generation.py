@@ -107,9 +107,9 @@ class TestNonBlockingGraphGeneration(AsyncTestBase):
 
             # Mock data fetching to return our test data
             mock_data_fetcher.get_play_history.return_value = mock_graph_data  # pyright: ignore[reportAny]
-            mock_data_fetcher.get_plays_per_month.return_value = {
+            mock_data_fetcher.get_plays_per_month.return_value = {  # pyright: ignore[reportAny]
                 "monthly_data": "test"
-            }  # pyright: ignore[reportAny]
+            }
 
             # Mock graph generation to simulate CPU-intensive work
             def simulate_heavy_cpu_work(
@@ -212,9 +212,9 @@ class TestNonBlockingGraphGeneration(AsyncTestBase):
                 manager._graph_factory = mock_graph_factory  # pyright: ignore[reportPrivateUsage]
 
                 mock_data_fetcher.get_play_history.return_value = mock_graph_data  # pyright: ignore[reportAny]
-                mock_data_fetcher.get_plays_per_month.return_value = {
+                mock_data_fetcher.get_plays_per_month.return_value = {  # pyright: ignore[reportAny]
                     "monthly_data": "test"
-                }  # pyright: ignore[reportAny]
+                }
 
                 async with manager:
                     result = await manager.generate_all_graphs()
@@ -457,9 +457,9 @@ class TestNonBlockingGraphGeneration(AsyncTestBase):
             graph_manager._graph_factory = mock_graph_factory  # pyright: ignore[reportPrivateUsage]
 
             mock_data_fetcher.get_play_history.return_value = mock_graph_data  # pyright: ignore[reportAny]
-            mock_data_fetcher.get_plays_per_month.return_value = {
+            mock_data_fetcher.get_plays_per_month.return_value = {  # pyright: ignore[reportAny]
                 "monthly_data": "test"
-            }  # pyright: ignore[reportAny]
+            }
 
             def simulate_slow_work(
                 _data: dict[str, object],
@@ -506,9 +506,9 @@ class TestNonBlockingGraphGeneration(AsyncTestBase):
             graph_manager._graph_factory = mock_graph_factory  # pyright: ignore[reportPrivateUsage]
 
             mock_data_fetcher.get_play_history.return_value = mock_graph_data  # pyright: ignore[reportAny]
-            mock_data_fetcher.get_plays_per_month.return_value = {
+            mock_data_fetcher.get_plays_per_month.return_value = {  # pyright: ignore[reportAny]
                 "monthly_data": "test"
-            }  # pyright: ignore[reportAny]
+            }
 
             def simulate_memory_intensive_work(
                 _data: dict[str, object],
@@ -574,9 +574,9 @@ class TestNonBlockingGraphGeneration(AsyncTestBase):
             graph_manager._graph_factory = mock_graph_factory  # pyright: ignore[reportPrivateUsage]
 
             mock_data_fetcher.get_play_history.return_value = mock_graph_data  # pyright: ignore[reportAny]
-            mock_data_fetcher.get_plays_per_month.return_value = {
+            mock_data_fetcher.get_plays_per_month.return_value = {  # pyright: ignore[reportAny]
                 "monthly_data": "test"
-            }  # pyright: ignore[reportAny]
+            }
 
             def simulate_error_work(
                 _data: dict[str, object],
@@ -657,9 +657,9 @@ class TestNonBlockingGraphGeneration(AsyncTestBase):
             graph_manager._graph_factory = mock_graph_factory  # pyright: ignore[reportPrivateUsage]
 
             mock_data_fetcher.get_play_history.return_value = mock_graph_data  # pyright: ignore[reportAny]
-            mock_data_fetcher.get_plays_per_month.return_value = {
+            mock_data_fetcher.get_plays_per_month.return_value = {  # pyright: ignore[reportAny]
                 "monthly_data": "test"
-            }  # pyright: ignore[reportAny]
+            }
 
             def simulate_tracked_work(
                 _data: dict[str, object],

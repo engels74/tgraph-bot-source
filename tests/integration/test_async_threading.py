@@ -47,7 +47,7 @@ class TestAsyncThreading:
 
             # Mock the data fetching
             mock_data_fetcher.get_play_history.return_value = {"data": []}  # pyright: ignore[reportAny]
-            mock_data_fetcher.get_plays_per_month.return_value = {
+            mock_data_fetcher.get_plays_per_month.return_value = {  # pyright: ignore[reportAny]
                 "monthly_data": "test"
             }
 
@@ -168,9 +168,9 @@ class TestAsyncThreading:
         with patch("asyncio.to_thread") as mock_to_thread:
             # Create an awaitable future with the result
             future = asyncio.Future()  # pyright: ignore[reportUnknownVariableType]
-            future.set_result(
+            future.set_result(  # pyright: ignore[reportUnknownMemberType]
                 5
-            )  # Mock return value for cleanup_old_files  # pyright: ignore[reportUnknownMemberType]
+            )  # Mock return value for cleanup_old_files
             mock_to_thread.return_value = future
 
             _ = await graph_manager.cleanup_old_graphs()
@@ -205,9 +205,9 @@ class TestAsyncThreading:
             graph_manager._graph_factory = mock_graph_factory  # pyright: ignore[reportPrivateUsage]
 
             mock_data_fetcher.get_play_history.return_value = {"data": []}  # pyright: ignore[reportAny]
-            mock_data_fetcher.get_plays_per_month.return_value = {
+            mock_data_fetcher.get_plays_per_month.return_value = {  # pyright: ignore[reportAny]
                 "monthly_data": "test"
-            }  # pyright: ignore[reportAny]
+            }
 
             # Create a counter to verify the event loop is responsive
             counter = 0

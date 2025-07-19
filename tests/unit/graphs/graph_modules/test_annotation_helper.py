@@ -93,7 +93,7 @@ class TestAnnotationHelper:
         self.helper.annotate_bar_patches(self.mock_ax, "TEST_ANNOTATION")
 
         # Should not access patches when disabled
-        assert not self.mock_ax.patches.called
+        assert not self.mock_ax.patches.called  # pyright: ignore[reportAny]
 
     def test_annotate_bar_patches_enabled_no_patches(self) -> None:
         """Test bar patch annotation with no patches."""
@@ -103,23 +103,23 @@ class TestAnnotationHelper:
         self.helper.annotate_bar_patches(self.mock_ax, "TEST_ANNOTATION")
 
         # Should handle empty patches gracefully
-        assert len(self.mock_ax.patches) == 0
+        assert len(self.mock_ax.patches) == 0  # pyright: ignore[reportAny]
 
     @patch("src.tgraph_bot.graphs.graph_modules.utils.annotation_helper.logger")
-    def test_annotate_bar_patches_with_valid_patches(self, mock_logger: Mock) -> None:
+    def test_annotate_bar_patches_with_valid_patches(self, _mock_logger: Mock) -> None:
         """Test bar patch annotation with valid patches."""
         self.mock_graph.config_values["TEST_ANNOTATION"] = True
 
         # Create mock patches
         mock_patch1 = Mock()
-        mock_patch1.get_height.return_value = 10.0
-        mock_patch1.get_x.return_value = 0.0
-        mock_patch1.get_width.return_value = 1.0
+        mock_patch1.get_height.return_value = 10.0  # pyright: ignore[reportAny]
+        mock_patch1.get_x.return_value = 0.0  # pyright: ignore[reportAny]
+        mock_patch1.get_width.return_value = 1.0  # pyright: ignore[reportAny]
 
         mock_patch2 = Mock()
-        mock_patch2.get_height.return_value = 0.0  # Should be skipped
-        mock_patch2.get_x.return_value = 1.0
-        mock_patch2.get_width.return_value = 1.0
+        mock_patch2.get_height.return_value = 0.0  # Should be skipped  # pyright: ignore[reportAny]
+        mock_patch2.get_x.return_value = 1.0  # pyright: ignore[reportAny]
+        mock_patch2.get_width.return_value = 1.0  # pyright: ignore[reportAny]
 
         self.mock_ax.patches = [mock_patch1, mock_patch2]
 
@@ -146,18 +146,18 @@ class TestAnnotationHelper:
 
         self.helper.annotate_horizontal_bar_patches(self.mock_ax, "TEST_ANNOTATION")
 
-        assert not self.mock_ax.patches.called
+        assert not self.mock_ax.patches.called  # pyright: ignore[reportAny]
 
     @patch("src.tgraph_bot.graphs.graph_modules.utils.annotation_helper.logger")
-    def test_annotate_horizontal_bar_patches_enabled(self, mock_logger: Mock) -> None:
+    def test_annotate_horizontal_bar_patches_enabled(self, _mock_logger: Mock) -> None:
         """Test horizontal bar annotation with valid patches."""
         self.mock_graph.config_values["TEST_ANNOTATION"] = True
 
         # Create mock patches
         mock_patch = Mock()
-        mock_patch.get_width.return_value = 20.0
-        mock_patch.get_y.return_value = 0.0
-        mock_patch.get_height.return_value = 1.0
+        mock_patch.get_width.return_value = 20.0  # pyright: ignore[reportAny]
+        mock_patch.get_y.return_value = 0.0  # pyright: ignore[reportAny]
+        mock_patch.get_height.return_value = 1.0  # pyright: ignore[reportAny]
 
         self.mock_ax.patches = [mock_patch]
 
@@ -189,7 +189,7 @@ class TestAnnotationHelper:
         assert True  # Test passes if no exception
 
     @patch("src.tgraph_bot.graphs.graph_modules.utils.annotation_helper.logger")
-    def test_annotate_stacked_bar_segments_enabled(self, mock_logger: Mock) -> None:
+    def test_annotate_stacked_bar_segments_enabled(self, _mock_logger: Mock) -> None:
         """Test stacked bar annotation with valid data."""
         self.mock_graph.config_values["TEST_ANNOTATION"] = True
 
@@ -219,7 +219,7 @@ class TestAnnotationHelper:
         self.helper.annotate_peak_value(self.mock_ax, x=5.0, y=10.0, value=100)
 
         # Should not call annotate when disabled
-        assert not self.mock_ax.annotate.called
+        assert not self.mock_ax.annotate.called  # pyright: ignore[reportAny]
 
     def test_annotate_peak_value_enabled(self) -> None:
         """Test peak annotation when enabled."""
@@ -229,8 +229,8 @@ class TestAnnotationHelper:
             self.mock_ax, x=5.0, y=10.0, value=100, label_prefix="Max"
         )
 
-        self.mock_ax.annotate.assert_called_once()
-        call_args = self.mock_ax.annotate.call_args
+        self.mock_ax.annotate.assert_called_once()  # pyright: ignore[reportAny]
+        call_args = self.mock_ax.annotate.call_args  # pyright: ignore[reportAny]
         assert call_args[0][0] == "Max: 100"
         assert call_args[1]["xy"] == (5.0, 10.0)
 
@@ -245,7 +245,7 @@ class TestAnnotationHelper:
 
         with patch("matplotlib.patheffects.Stroke"):
             with patch("matplotlib.patheffects.Normal"):
-                self.helper._add_text_annotation(
+                self.helper._add_text_annotation(  # pyright: ignore[reportPrivateUsage]
                     mock_ax_instance,
                     x=1.0,
                     y=2.0,
@@ -253,8 +253,8 @@ class TestAnnotationHelper:
                     fontsize=12,
                 )
 
-                mock_ax_instance.text.assert_called_once()
-                call_kwargs = mock_ax_instance.text.call_args[1]
+                mock_ax_instance.text.assert_called_once()  # pyright: ignore[reportAny]
+                call_kwargs = mock_ax_instance.text.call_args[1]  # pyright: ignore[reportAny]
                 assert call_kwargs["color"] == "white"
                 assert "path_effects" in call_kwargs
 
@@ -267,7 +267,7 @@ class TestAnnotationHelper:
 
         mock_ax_instance = Mock(spec=Axes)
 
-        self.helper._add_text_annotation(
+        self.helper._add_text_annotation(  # pyright: ignore[reportPrivateUsage]
             mock_ax_instance,
             x=1.0,
             y=2.0,
@@ -275,8 +275,8 @@ class TestAnnotationHelper:
             fontsize=12,
         )
 
-        mock_ax_instance.text.assert_called_once()
-        call_kwargs = mock_ax_instance.text.call_args[1]
+        mock_ax_instance.text.assert_called_once()  # pyright: ignore[reportAny]
+        call_kwargs = mock_ax_instance.text.call_args[1]  # pyright: ignore[reportAny]
         assert call_kwargs["color"] == "black"
         assert "path_effects" not in call_kwargs
 
@@ -285,7 +285,7 @@ class TestAnnotationHelper:
         invalid_ax = "not_an_axes"
 
         # Should handle gracefully without error
-        self.helper._add_text_annotation(
+        self.helper._add_text_annotation(  # pyright: ignore[reportPrivateUsage]
             invalid_ax,  # pyright: ignore[reportArgumentType] # testing invalid input
             x=1.0,
             y=2.0,
@@ -303,17 +303,17 @@ class TestAnnotationHelper:
         mock_ax_instance = Mock(spec=Axes)
 
         # Test integer float
-        self.helper._add_text_annotation(mock_ax_instance, x=1.0, y=2.0, value=42.0)
+        self.helper._add_text_annotation(mock_ax_instance, x=1.0, y=2.0, value=42.0)  # pyright: ignore[reportPrivateUsage]
 
-        call_args = mock_ax_instance.text.call_args[0]  # type: ignore[reportAny]
+        call_args = mock_ax_instance.text.call_args[0]  # type: ignore[reportAny]  # pyright: ignore[reportAny]
         assert call_args[2] == "42"  # Should format as integer
 
         mock_ax_instance.reset_mock()
 
         # Test non-integer float
-        self.helper._add_text_annotation(mock_ax_instance, x=1.0, y=2.0, value=42.5)
+        self.helper._add_text_annotation(mock_ax_instance, x=1.0, y=2.0, value=42.5)  # pyright: ignore[reportPrivateUsage]
 
-        call_args = mock_ax_instance.text.call_args[0]  # type: ignore[reportAny]
+        call_args = mock_ax_instance.text.call_args[0]  # type: ignore[reportAny]  # pyright: ignore[reportAny]
         assert call_args[2] == "42.5"  # Should keep decimal
 
     @patch("src.tgraph_bot.graphs.graph_modules.utils.annotation_helper.logger")
@@ -321,7 +321,7 @@ class TestAnnotationHelper:
         """Test error handling in annotation methods."""
         # Test with patches that raise exceptions
         mock_patch = Mock()
-        mock_patch.get_height.side_effect = Exception("Test error")
+        mock_patch.get_height.side_effect = Exception("Test error")  # pyright: ignore[reportAny]
         self.mock_ax.patches = [mock_patch]
 
         self.mock_graph.config_values["TEST_ANNOTATION"] = True
@@ -330,5 +330,5 @@ class TestAnnotationHelper:
         self.helper.annotate_bar_patches(self.mock_ax, "TEST_ANNOTATION")
 
         # Should log warning
-        mock_logger.warning.assert_called_once()
-        assert "Failed to annotate bar patches" in str(mock_logger.warning.call_args)
+        mock_logger.warning.assert_called_once()  # pyright: ignore[reportAny]
+        assert "Failed to annotate bar patches" in str(mock_logger.warning.call_args)  # pyright: ignore[reportAny]

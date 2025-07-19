@@ -86,9 +86,9 @@ class TestBaseGraph:
         assert axes is graph.axes
 
         # Verify figure properties
-        assert figure.get_figwidth() == 12
-        assert figure.get_figheight() == 8
-        assert figure.dpi == 100
+        assert figure.get_figwidth() == 12  # pyright: ignore[reportUnknownMemberType]
+        assert figure.get_figheight() == 8  # pyright: ignore[reportUnknownMemberType]
+        assert figure.dpi == 100  # pyright: ignore[reportAny]
 
         # Clean up
         graph.cleanup()
@@ -381,9 +381,9 @@ class TestBaseGraph:
         assert isinstance(result, dict)
         assert "data" in result
         assert isinstance(result["data"], list)
-        data_list = result["data"]
+        data_list = result["data"]  # pyright: ignore[reportUnknownVariableType]
         assert isinstance(data_list, list)
-        assert len(data_list) == 2
+        assert len(data_list) == 2  # pyright: ignore[reportUnknownArgumentType]
 
     def test_extract_and_validate_play_history_data_missing_play_history(self) -> None:
         """Test extraction with missing play_history key."""
@@ -595,7 +595,7 @@ class TestBaseGraph:
         graph = ConcreteGraph(config=config)
 
         # Test ConfigAccessor is properly initialized
-        assert graph._config_accessor is not None
+        assert graph._config_accessor is not None  # pyright: ignore[reportPrivateUsage]
 
         # Test config value retrieval through BaseGraph methods
         assert graph.get_media_type_separation_enabled() is True
@@ -604,7 +604,7 @@ class TestBaseGraph:
     def test_config_accessor_none_when_no_config(self) -> None:
         """Test ConfigAccessor is None when no config provided."""
         graph = ConcreteGraph()
-        assert graph._config_accessor is None
+        assert graph._config_accessor is None  # pyright: ignore[reportPrivateUsage]
 
         # Should use defaults when no config available
         assert graph.get_media_type_separation_enabled() is True  # default
@@ -621,12 +621,12 @@ class TestBaseGraph:
         graph = ConcreteGraph(config=config)
 
         # Initially None
-        assert graph._media_type_processor is None
+        assert graph._media_type_processor is None  # pyright: ignore[reportPrivateUsage]
 
         # Access property triggers lazy initialization
         processor = graph.media_type_processor
         assert processor is not None
-        assert graph._media_type_processor is processor
+        assert graph._media_type_processor is processor  # pyright: ignore[reportPrivateUsage]
 
         # Subsequent access returns same instance
         processor2 = graph.media_type_processor

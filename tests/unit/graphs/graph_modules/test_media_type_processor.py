@@ -67,7 +67,7 @@ class TestMediaTypeProcessor:
         processor = MediaTypeProcessor()
 
         assert processor.config_accessor is None
-        assert len(processor._media_types) > 0
+        assert len(processor._media_types) > 0  # pyright: ignore[reportPrivateUsage]
 
     def test_processor_creation_with_config(self) -> None:
         """Test MediaTypeProcessor creation with configuration."""
@@ -75,7 +75,7 @@ class TestMediaTypeProcessor:
         processor = MediaTypeProcessor(config_accessor=mock_config)
 
         assert processor.config_accessor is mock_config
-        assert len(processor._media_types) > 0
+        assert len(processor._media_types) > 0  # pyright: ignore[reportPrivateUsage]
 
     def test_classify_media_type_movie(self) -> None:
         """Test media type classification for movies."""
@@ -126,10 +126,13 @@ class TestMediaTypeProcessor:
     def test_get_display_info_with_config_override(self) -> None:
         """Test getting display info with configuration color override."""
         mock_config = MagicMock()
-        mock_config.get_value.side_effect = lambda key, default: {
-            "TV_COLOR": "#custom_tv",
-            "MOVIE_COLOR": "#custom_movie",
-        }.get(key, default)
+        def mock_get_value(key: str, default: str) -> str:
+            return {
+                "TV_COLOR": "#custom_tv",
+                "MOVIE_COLOR": "#custom_movie",
+            }.get(key, default)
+
+        mock_config.get_value.side_effect = mock_get_value  # pyright: ignore[reportAny]
 
         processor = MediaTypeProcessor(config_accessor=mock_config)
 
@@ -161,10 +164,13 @@ class TestMediaTypeProcessor:
     def test_get_color_for_type_with_config_override(self) -> None:
         """Test getting color for media type with configuration override."""
         mock_config = MagicMock()
-        mock_config.get_value.side_effect = lambda key, default: {
-            "TV_COLOR": "#custom_tv",
-            "MOVIE_COLOR": "#custom_movie",
-        }.get(key, default)
+        def mock_get_value_2(key: str, default: str) -> str:
+            return {
+                "TV_COLOR": "#custom_tv",
+                "MOVIE_COLOR": "#custom_movie",
+            }.get(key, default)
+
+        mock_config.get_value.side_effect = mock_get_value_2  # pyright: ignore[reportAny]
 
         processor = MediaTypeProcessor(config_accessor=mock_config)
 
