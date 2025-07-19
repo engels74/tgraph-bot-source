@@ -7,6 +7,7 @@ and SimpleProgressTracker implementations is preserved and working correctly.
 """
 
 import time
+from typing import override
 from unittest.mock import MagicMock
 
 
@@ -78,12 +79,17 @@ class TestBaseProgressTracker:
 
         # Create a concrete implementation for testing
         class ConcreteTracker(BaseProgressTracker):
+            current_step: int
+            total_steps: int
+
+            @override
             def update(
                 self, message: str, current: int, total: int, **kwargs: object
             ) -> None:
                 self.current_step = current
                 self.total_steps = total
 
+            @override
             def get_summary(self) -> dict[str, object]:
                 return self._get_base_summary()
 
@@ -100,11 +106,13 @@ class TestBaseProgressTracker:
         """Test error tracking functionality."""
 
         class ConcreteTracker(BaseProgressTracker):
+            @override
             def update(
                 self, message: str, current: int, total: int, **kwargs: object
             ) -> None:
                 pass
 
+            @override
             def get_summary(self) -> dict[str, object]:
                 return self._get_base_summary()
 
@@ -121,11 +129,13 @@ class TestBaseProgressTracker:
         """Test warning tracking functionality."""
 
         class ConcreteTracker(BaseProgressTracker):
+            @override
             def update(
                 self, message: str, current: int, total: int, **kwargs: object
             ) -> None:
                 pass
 
+            @override
             def get_summary(self) -> dict[str, object]:
                 return self._get_base_summary()
 
@@ -244,8 +254,12 @@ class TestProgressTracker:
         """Test that callback errors are handled gracefully."""
 
         def failing_callback(
-            message: str, current: int, total: int, metadata: dict[str, object]
+            message: str,  # noqa: ARG001
+            current: int,  # noqa: ARG001
+            total: int,  # noqa: ARG001
+            metadata: dict[str, object],  # noqa: ARG001
         ) -> None:
+            _ = message, current, total, metadata  # Acknowledge unused parameters
             raise ValueError("Callback failed")
 
         tracker = ProgressTracker(failing_callback)
@@ -266,7 +280,7 @@ class TestProgressTracker:
         tracker.update("Test", 1, 2, custom_data="test")
 
         # Verify metadata content
-        args, kwargs = callback.call_args
+        args, _ = callback.call_args
         metadata = args[3]
 
         assert "elapsed_time" in metadata

@@ -113,9 +113,9 @@ class TestUpdateGraphsCog:
             mock_graph_manager_class.return_value.__aexit__.return_value = None  # pyright: ignore[reportAny]
 
             # Execute the command
-            _ = await update_graphs_cog.update_graphs.callback(
-                update_graphs_cog, mock_interaction
-            )  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
+            _ = await update_graphs_cog.update_graphs.callback(  # pyright: ignore[reportUnknownVariableType]
+                update_graphs_cog, mock_interaction  # pyright: ignore[reportCallIssue]
+            )
 
             # Verify the cleanup → generate → post sequence
             mock_cleanup.assert_called_once_with(mock_channel)
@@ -159,9 +159,9 @@ class TestUpdateGraphsCog:
             ) as mock_error_handler,
         ):
             # Execute the command
-            _ = await update_graphs_cog.update_graphs.callback(
-                update_graphs_cog, mock_interaction
-            )  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
+            _ = await update_graphs_cog.update_graphs.callback(  # pyright: ignore[reportUnknownVariableType]
+                update_graphs_cog, mock_interaction  # pyright: ignore[reportCallIssue]
+            )
 
             # Verify cleanup was attempted
             mock_cleanup.assert_called_once_with(mock_channel)
@@ -213,9 +213,9 @@ class TestUpdateGraphsCog:
             mock_graph_manager_class.return_value.__aexit__.return_value = None  # pyright: ignore[reportAny]
 
             # Execute the command
-            _ = await update_graphs_cog.update_graphs.callback(
-                update_graphs_cog, mock_interaction
-            )  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
+            _ = await update_graphs_cog.update_graphs.callback(  # pyright: ignore[reportUnknownVariableType]
+                update_graphs_cog, mock_interaction  # pyright: ignore[reportCallIssue]
+            )
 
             # Verify cleanup was performed and generation attempted, but not posting
             mock_cleanup.assert_called_once_with(mock_channel)
@@ -513,9 +513,9 @@ class TestUpdateGraphsCog:
         with patch.object(
             update_graphs_cog, "check_cooldowns", return_value=(True, 30.0)
         ):
-            _ = await update_graphs_cog.update_graphs.callback(
-                update_graphs_cog, mock_interaction
-            )  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
+            _ = await update_graphs_cog.update_graphs.callback(  # pyright: ignore[reportUnknownVariableType]
+                update_graphs_cog, mock_interaction  # pyright: ignore[reportCallIssue]
+            )
 
             # Should send cooldown message and return early
             mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
@@ -569,9 +569,9 @@ class TestUpdateGraphsCog:
             mock_graph_manager_class.return_value.__aexit__.return_value = None  # pyright: ignore[reportAny]
 
             # Execute the command
-            _ = await update_graphs_cog.update_graphs.callback(
-                update_graphs_cog, mock_interaction
-            )  # pyright: ignore[reportCallIssue,reportUnknownVariableType]
+            _ = await update_graphs_cog.update_graphs.callback(  # pyright: ignore[reportUnknownVariableType]
+                update_graphs_cog, mock_interaction  # pyright: ignore[reportCallIssue]
+            )
 
             # Verify partial success warning was sent
             assert mock_interaction.followup.send.call_count >= 1  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]

@@ -159,8 +159,8 @@ class TestGraphManagerErrorHandling:
 
             # Mock slow graph generation
             def slow_generation(
-                data: dict[str, object], tracker: object = None
-            ) -> list[str]:  # pyright: ignore[reportUnusedParameter]
+                data: dict[str, object], tracker: object = None  # noqa: ARG001
+            ) -> list[str]:
                 time.sleep(2.0)  # Simulate slow operation
                 return ["test.png"]
 

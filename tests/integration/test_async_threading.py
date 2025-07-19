@@ -49,7 +49,7 @@ class TestAsyncThreading:
             mock_data_fetcher.get_play_history.return_value = {"data": []}  # pyright: ignore[reportAny]
             mock_data_fetcher.get_plays_per_month.return_value = {
                 "monthly_data": "test"
-            }  # pyright: ignore[reportAny]
+            }
 
             # Mock the synchronous graph generation method
             def mock_sync_generation(

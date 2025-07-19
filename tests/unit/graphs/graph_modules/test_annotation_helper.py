@@ -7,7 +7,7 @@ type safety.
 """
 
 from unittest.mock import Mock, patch
-from typing import Any, final
+from typing import final
 
 from src.tgraph_bot.graphs.graph_modules import AnnotationHelper
 from src.tgraph_bot.graphs.graph_modules.utils.annotation_helper import (
@@ -15,11 +15,20 @@ from src.tgraph_bot.graphs.graph_modules.utils.annotation_helper import (
 )
 
 
+@final
 class MockGraph:
     """Mock graph class implementing AnnotationProtocol for testing."""
 
+    annotation_font_size: int
+    annotation_color: str
+    annotation_outline_color: str
+    annotation_outline_enabled: bool
+    peak_annotation_color: str
+    peak_annotation_text_color: str
+    peak_annotations_enabled: bool
+
     def __init__(self) -> None:
-        self.config_values: dict[str, Any] = {}
+        self.config_values: dict[str, object] = {}
         self.annotation_font_size = 10
         self.annotation_color = "black"
         self.annotation_outline_color = "white"
@@ -28,7 +37,7 @@ class MockGraph:
         self.peak_annotation_text_color = "black"
         self.peak_annotations_enabled = False
 
-    def get_config_value(self, key: str, default: Any = None) -> Any:
+    def get_config_value(self, key: str, default: object = None) -> object:
         return self.config_values.get(key, default)
 
     def get_annotation_font_size(self) -> int:
@@ -277,10 +286,10 @@ class TestAnnotationHelper:
 
         # Should handle gracefully without error
         self.helper._add_text_annotation(
-            invalid_ax,
+            invalid_ax,  # pyright: ignore[reportArgumentType] # testing invalid input
             x=1.0,
             y=2.0,
-            value=42,  # type: ignore # testing invalid input
+            value=42,
         )
 
         # Test passes if no exception is raised
