@@ -21,6 +21,7 @@ import logging
 import time
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable
+from collections.abc import Mapping
 
 from .graph_modules.data.data_fetcher import DataFetcher
 from .graph_modules.core.graph_factory import GraphFactory
@@ -251,7 +252,7 @@ class GraphManager:
             )
 
             # Fetch monthly play data using the native Tautulli endpoint (for monthly graphs)
-            monthly_plays: dict[
+            monthly_plays: Mapping[
                 str, object
             ] = await self._data_fetcher.get_plays_per_month(
                 time_range_months=time_range_months
