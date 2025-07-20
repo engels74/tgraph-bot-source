@@ -788,5 +788,4 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
         empty_data_handler.display_empty_data_message(
             self.axes,
             message="No play data available\nfor the selected time period",
-            log_message="Generated empty monthly play count graph due to no data",
         )
