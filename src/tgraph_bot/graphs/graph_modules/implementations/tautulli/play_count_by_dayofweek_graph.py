@@ -480,5 +480,4 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
         empty_data_handler.display_empty_data_message(
             ax,
             message="No play data available\nfor the selected time period",
-            log_message="Generated empty day of week graph due to no data",
         )

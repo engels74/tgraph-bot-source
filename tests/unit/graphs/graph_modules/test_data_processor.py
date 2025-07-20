@@ -226,7 +226,7 @@ class TestProcessDataSafely:
         data = {"test": "data"}
 
         result = processor.process_data_safely(
-            data=data, processor_func=mock_processor, context="test"
+            data=data, processing_function=mock_processor, context="test"
         )
 
         assert result == ["processed_item"]
@@ -244,8 +244,7 @@ class TestProcessDataSafely:
 
         result = processor.process_data_safely(
             data=data,
-            processor_func=mock_processor,
-            fallback_value=fallback,
+            processing_function=mock_processor,
             context="test",
         )
 
@@ -265,7 +264,7 @@ class TestProcessDataSafely:
             ValueError, match="Failed to process test: Processing failed"
         ):
             _ = processor.process_data_safely(
-                data=data, processor_func=mock_processor, context="test"
+                data=data, processing_function=mock_processor, context="test"
             )
 
 

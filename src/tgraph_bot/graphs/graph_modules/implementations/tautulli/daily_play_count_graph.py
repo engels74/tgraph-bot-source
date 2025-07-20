@@ -473,8 +473,8 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
         empty_data_handler.display_empty_data_message(
             ax,
             message="No play data available\nfor the selected time period",
-            set_title=self.get_title(),
-            log_message="Generated empty daily play count graph due to no data",
+            set_title=True,
+            title=self.get_title(),
         )
 
     def _add_peak_annotations(

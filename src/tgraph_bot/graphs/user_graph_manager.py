@@ -222,6 +222,8 @@ class UserGraphManager:
                 raise ValueError(f"User ID not found for email: {user_email}")
 
             # Convert user_id to int safely
+            if not isinstance(user_id, (int, str)):
+                raise ValueError(f"Invalid user_id type: {type(user_id)}")
             user_id_int = int(user_id)
 
             # Fetch play history data for the specific user

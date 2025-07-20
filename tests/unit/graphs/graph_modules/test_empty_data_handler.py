@@ -58,12 +58,9 @@ class TestEmptyDataHandler:
             message="Custom empty message",
             fontsize=20,
             fontweight="normal",
-            alpha=0.5,
-            facecolor="red",
-            boxstyle="square,pad=1.0",
             clear_axes=True,
-            set_title="Custom Title",
-            log_warning=False,
+            set_title=True,
+            title="Custom Title",
         )
 
         # Verify text was called with custom parameters
@@ -76,13 +73,15 @@ class TestEmptyDataHandler:
             transform=mock_ax.transAxes,  # pyright: ignore[reportAny]
             fontsize=20,
             fontweight="normal",
-            bbox=dict(boxstyle="square,pad=1.0", facecolor="red", alpha=0.5),
+            bbox=dict(
+                boxstyle=handler.DEFAULT_BOXSTYLE, 
+                facecolor=handler.DEFAULT_FACECOLOR, 
+                alpha=handler.DEFAULT_ALPHA
+            ),
         )
 
         # Verify title was set
-        mock_ax.set_title.assert_called_once_with(  # pyright: ignore[reportAny]
-            "Custom Title", fontsize=18, fontweight="bold"
-        )
+        mock_ax.set_title.assert_called_once_with("Custom Title")  # pyright: ignore[reportAny]
 
         # Verify axes was cleared
         mock_ax.clear.assert_called_once()  # pyright: ignore[reportAny]
@@ -105,21 +104,21 @@ class TestEmptyDataHandler:
         handler = EmptyDataHandler()
         mock_ax = MagicMock()
 
-        # Test default logging
+        # Test default logging (info message)
         handler.display_empty_data_message(mock_ax)
-        mock_logger.warning.assert_called_once()  # pyright: ignore[reportAny]
-
-        # Reset mock
-        mock_logger.reset_mock()
-
-        # Test custom log message
-        handler.display_empty_data_message(mock_ax, log_message="Custom log message")
-        mock_logger.warning.assert_called_once_with("Custom log message")  # pyright: ignore[reportAny]
+        mock_logger.info.assert_called_once()  # pyright: ignore[reportAny]
 
         # Reset mock
         mock_logger.reset_mock()
 
         # Test disabled logging
+        handler.display_empty_data_message(mock_ax, log_message=False)
+        mock_logger.info.assert_not_called()  # pyright: ignore[reportAny]
+
+        # Reset mock
+        mock_logger.reset_mock()
+
+        # Test warning disabled
         handler.display_empty_data_message(mock_ax, log_warning=False)
         mock_logger.warning.assert_not_called()  # pyright: ignore[reportAny]
 

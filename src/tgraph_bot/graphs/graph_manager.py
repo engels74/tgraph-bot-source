@@ -246,7 +246,7 @@ class GraphManager:
 
         try:
             # Fetch play history data for all users (used by most graphs)
-            play_history: dict[str, object] = await self._data_fetcher.get_play_history(
+            play_history = await self._data_fetcher.get_play_history(
                 time_range=time_range_days
             )
 
