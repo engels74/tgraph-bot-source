@@ -345,7 +345,7 @@ class TestDataFetcher:
             # Result should contain all 2500 records
             result_data = result["data"]
             assert isinstance(result_data, list)
-            assert len(result_data) == 2500  # pyright: ignore[reportUnknownArgumentType] # list length is known
+            assert len(result_data) == 2500
             assert result["recordsFiltered"] == 2500
             assert result["recordsTotal"] == 2500
 
@@ -372,7 +372,7 @@ class TestDataFetcher:
             # Result should contain all 500 records
             result_data = result["data"]
             assert isinstance(result_data, list)
-            assert len(result_data) == 500  # pyright: ignore[reportUnknownArgumentType] # list length is known
+            assert len(result_data) == 500
             assert result["recordsFiltered"] == 500
             assert result["recordsTotal"] == 500
 
@@ -403,7 +403,7 @@ class TestDataFetcher:
             # Result should contain data
             result_data = result["data"]
             assert isinstance(result_data, list)
-            assert len(result_data) >= 500  # pyright: ignore[reportUnknownArgumentType] # list length is known
+            assert len(result_data) >= 500
 
     @pytest.mark.asyncio
     async def test_get_user_stats(
