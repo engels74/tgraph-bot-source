@@ -85,7 +85,8 @@ class TestUpdateGraphsCog:
 
             # Execute the command
             _ = await update_graphs_cog.update_graphs.callback(  # pyright: ignore[reportUnknownVariableType]
-                update_graphs_cog, mock_interaction  # pyright: ignore[reportCallIssue]
+                update_graphs_cog,
+                mock_interaction,  # pyright: ignore[reportCallIssue]
             )
 
             # Verify the cleanup → generate → post sequence
@@ -130,7 +131,8 @@ class TestUpdateGraphsCog:
         ):
             # Execute the command
             _ = await update_graphs_cog.update_graphs.callback(  # pyright: ignore[reportUnknownVariableType]
-                update_graphs_cog, mock_interaction  # pyright: ignore[reportCallIssue]
+                update_graphs_cog,
+                mock_interaction,  # pyright: ignore[reportCallIssue]
             )
 
             # Verify cleanup was attempted
@@ -183,7 +185,8 @@ class TestUpdateGraphsCog:
 
             # Execute the command
             _ = await update_graphs_cog.update_graphs.callback(  # pyright: ignore[reportUnknownVariableType]
-                update_graphs_cog, mock_interaction  # pyright: ignore[reportCallIssue]
+                update_graphs_cog,
+                mock_interaction,  # pyright: ignore[reportCallIssue]
             )
 
             # Verify cleanup was performed and generation attempted, but not posting
@@ -461,7 +464,8 @@ class TestUpdateGraphsCog:
             update_graphs_cog, "check_cooldowns", return_value=(True, 30.0)
         ):
             _ = await update_graphs_cog.update_graphs.callback(  # pyright: ignore[reportUnknownVariableType]
-                update_graphs_cog, mock_interaction  # pyright: ignore[reportCallIssue]
+                update_graphs_cog,
+                mock_interaction,  # pyright: ignore[reportCallIssue]
             )
 
             # Should send cooldown message and return early
@@ -516,7 +520,8 @@ class TestUpdateGraphsCog:
 
             # Execute the command
             _ = await update_graphs_cog.update_graphs.callback(  # pyright: ignore[reportUnknownVariableType]
-                update_graphs_cog, mock_interaction  # pyright: ignore[reportCallIssue]
+                update_graphs_cog,
+                mock_interaction,  # pyright: ignore[reportCallIssue]
             )
 
             # Verify partial success warning was sent

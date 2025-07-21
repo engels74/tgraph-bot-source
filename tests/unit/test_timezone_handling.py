@@ -493,7 +493,7 @@ class TestLocalTimezoneHandling:
         # Verify the time values are equivalent to what we expect
         # The UTC time converted to local should be the same moment in time
         utc_offset = converted_time.utcoffset()
-        
+
         # If local timezone has an offset from UTC, wall clock times should differ
         # If local timezone IS UTC (offset = 0), then wall clock times will be the same
         if utc_offset and utc_offset.total_seconds() != 0:
@@ -505,7 +505,7 @@ class TestLocalTimezoneHandling:
             assert state.last_update.replace(tzinfo=None) == utc_time.replace(
                 tzinfo=None
             )  # Same wall clock time when local timezone is UTC
-            
+
         # Regardless of timezone, these should be the same moment in time
         assert (
             state.last_update.astimezone(timezone.utc) == utc_time

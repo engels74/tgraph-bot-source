@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from .data_fetcher import PlayHistoryData
     from ..utils.utils import ProcessedRecords
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 logger = logging.getLogger(__name__)
 
@@ -32,31 +32,35 @@ class DataProcessor:
     ) -> Mapping[str, object]:
         """
         Extract and validate data from a nested dictionary.
-        
+
         Args:
             data: The data dictionary to extract from
             data_key: The key to extract data from
             required_keys: List of required keys in the extracted data
             context: Context string for error messages
-            
+
         Returns:
             The extracted and validated data
-            
+
         Raises:
             ValueError: If data validation fails
         """
         if data_key not in data:
             raise ValueError(f"Missing '{data_key}' in {context}")
-            
+
         extracted_data = data[data_key]
         if not isinstance(extracted_data, dict):
-            raise ValueError(f"Invalid format for '{data_key}' in {context}: expected dict")
-            
+            raise ValueError(
+                f"Invalid format for '{data_key}' in {context}: expected dict"
+            )
+
         if required_keys:
             for key in required_keys:
                 if key not in extracted_data:
-                    raise ValueError(f"Missing required key '{key}' in {data_key} for {context}")
-                    
+                    raise ValueError(
+                        f"Missing required key '{key}' in {data_key} for {context}"
+                    )
+
         return cast(Mapping[str, object], extracted_data)
 
     def validate_list_data(
@@ -67,32 +71,34 @@ class DataProcessor:
     ) -> Sequence[Mapping[str, object]]:
         """
         Validate that data is a list and meets minimum length requirements.
-        
+
         Args:
             data: The data to validate
             context: Context string for error messages
             min_length: Minimum required length
-            
+
         Returns:
             The validated list
-            
+
         Raises:
             ValueError: If validation fails
         """
         if not isinstance(data, list):
             raise ValueError(f"Invalid data format for {context}: expected list")
-            
+
         # Type-safe operations after validation
         data_list = cast(list[object], data)
         if len(data_list) < min_length:
-            raise ValueError(f"Insufficient data for {context}: got {len(data_list)}, expected at least {min_length}")
+            raise ValueError(
+                f"Insufficient data for {context}: got {len(data_list)}, expected at least {min_length}"
+            )
 
         # Validate that all items are dictionaries
         validated_items: list[Mapping[str, object]] = []
         for item in data_list:
             if isinstance(item, dict):
                 validated_items.append(cast(Mapping[str, object], item))
-        
+
         return validated_items
 
     def validate_dict_data(
@@ -103,26 +109,26 @@ class DataProcessor:
     ) -> Mapping[str, object]:
         """
         Validate that data is a dictionary and has required keys.
-        
+
         Args:
             data: The data to validate
             required_keys: List of required keys
             context: Context string for error messages
-            
+
         Returns:
             The validated dictionary
-            
+
         Raises:
             ValueError: If validation fails
         """
         if not isinstance(data, dict):
             raise ValueError(f"Invalid data format for {context}: expected dict")
-            
+
         if required_keys:
             for key in required_keys:
                 if key not in data:
                     raise ValueError(f"Missing required key '{key}' in {context}")
-                    
+
         return cast(Mapping[str, object], data)
 
     def safe_get_nested(
@@ -133,12 +139,12 @@ class DataProcessor:
     ) -> object:
         """
         Safely extract nested data using a list of keys.
-        
+
         Args:
             data: The data dictionary
             keys: List of keys to traverse
             default: Default value if any key is missing
-            
+
         Returns:
             The extracted value or default
         """
@@ -157,17 +163,15 @@ class DataProcessor:
     ) -> Mapping[str, object]:
         """
         Extract monthly plays data from API response.
-        
+
         Args:
             data: API response data
-            
+
         Returns:
             Extracted monthly plays data
         """
         return self.extract_and_validate_data(
-            data, 
-            "monthly_plays", 
-            context="monthly plays data extraction"
+            data, "monthly_plays", context="monthly plays data extraction"
         )
 
     def extract_and_process_play_history(
@@ -175,24 +179,22 @@ class DataProcessor:
     ) -> tuple[Sequence[Mapping[str, object]], ProcessedRecords]:
         """
         Extract and process play history data from API response.
-        
+
         Args:
             data: API response data or PlayHistoryData
-            
+
         Returns:
             Tuple of (raw_records, processed_records)
         """
-        if hasattr(data, 'data'):  # PlayHistoryData type
+        if hasattr(data, "data"):  # PlayHistoryData type
             data_dict = cast(dict[str, object], data)
-            if 'data' in data_dict:
-                raw_data = data_dict['data']
+            if "data" in data_dict:
+                raw_data = data_dict["data"]
                 if isinstance(raw_data, list):
                     # Cast to list[object] after validation
                     list_data = cast(list[object], raw_data)
                     records = self.validate_list_data(
-                        list_data,
-                        context="play history records",
-                        min_length=0
+                        list_data, context="play history records", min_length=0
                     )
                 else:
                     records = []
@@ -202,31 +204,37 @@ class DataProcessor:
             data_mapping = cast(Mapping[str, object], data)
             if "data" not in data_mapping:
                 # Check for alternative data structures that Tautulli API might return
-                possible_keys = ["response", "result", "play_history", "history", "records"]
+                possible_keys = [
+                    "response",
+                    "result",
+                    "play_history",
+                    "history",
+                    "records",
+                ]
                 found_key = None
                 for key in possible_keys:
                     if key in data_mapping:
                         found_key = key
                         break
-                
+
                 if found_key:
                     logger.warning(f"'data' key not found, using '{found_key}' instead")
                     raw_data = data_mapping[found_key]
                 else:
                     # If no data is found, return empty records instead of raising an error
-                    logger.warning("No data found in API response, returning empty records")
+                    logger.warning(
+                        "No data found in API response, returning empty records"
+                    )
                     records = []
                     raw_data = []
             else:
                 raw_data = data_mapping["data"]
-            
+
             if raw_data and isinstance(raw_data, list):
                 # Cast to list[object] after validation
                 list_data = cast(list[object], raw_data)
                 records = self.validate_list_data(
-                    list_data,
-                    context="play history records",
-                    min_length=0
+                    list_data, context="play history records", min_length=0
                 )
             elif raw_data and not isinstance(raw_data, list):
                 # If raw_data is a dict, try to extract a list from it
@@ -236,28 +244,34 @@ class DataProcessor:
                         if list_key in raw_data:
                             nested_data: object = raw_data[list_key]  # pyright: ignore[reportUnknownVariableType]
                             if isinstance(nested_data, list):
-                                logger.info(f"Found list data nested under '{list_key}' key")
+                                logger.info(
+                                    f"Found list data nested under '{list_key}' key"
+                                )
                                 list_data = cast(list[object], nested_data)
                                 records = self.validate_list_data(
                                     list_data,
                                     context="play history records",
-                                    min_length=0
+                                    min_length=0,
                                 )
                                 break
                     else:
                         # No valid list found in nested structure
-                        logger.warning("No list data found in nested structure, returning empty records")
+                        logger.warning(
+                            "No list data found in nested structure, returning empty records"
+                        )
                         records = []
                 else:
                     # raw_data is neither list nor dict
-                    raise ValueError("Invalid format for data in play history extraction: expected list or dict containing list")
+                    raise ValueError(
+                        "Invalid format for data in play history extraction: expected list or dict containing list"
+                    )
             else:
                 # Empty or None data
                 records = []
-        
+
         # Process raw records into properly typed ProcessedPlayRecord objects
         from ..utils.utils import process_play_history_data
-        
+
         # Convert records back to dict format for the utility function
         record_dicts: list[dict[str, object]] = []
         for record in records:  # pyright: ignore[reportUnknownVariableType] # validated sequence
@@ -279,12 +293,12 @@ class DataProcessor:
     ) -> tuple[bool, str]:
         """
         Validate extracted data and return validation status.
-        
+
         Args:
             data: The data to validate
             required_keys: List of required keys
             context: Context string for error messages
-            
+
         Returns:
             Tuple of (is_valid, error_message)
         """
@@ -292,17 +306,20 @@ class DataProcessor:
             _ = self.validate_dict_data(data, required_keys, context)
             return True, ""
         except ValueError as e:
-            return False, f"Invalid {context} data: {str(e).replace(f'Invalid data format for {context}: expected dict', 'Missing required key').replace('Missing required key ', 'Missing required key: ')}"
+            return (
+                False,
+                f"Invalid {context} data: {str(e).replace(f'Invalid data format for {context}: expected dict', 'Missing required key').replace('Missing required key ', 'Missing required key: ')}",
+            )
 
     def extract_and_process_monthly_plays(
         self, data: Mapping[str, object]
     ) -> tuple[Mapping[str, object], Mapping[str, object]]:
         """
         Extract and process monthly plays data from API response.
-        
+
         Args:
             data: API response data
-            
+
         Returns:
             Tuple of (validated_data, processed_data)
         """
@@ -311,12 +328,14 @@ class DataProcessor:
                 data,
                 "monthly_plays",
                 required_keys=["categories", "series"],
-                context="monthly plays extraction"
+                context="monthly plays extraction",
             )
             # For now, processed data is the same as validated data
             return validated_data, validated_data
         except ValueError as e:
-            raise ValueError(f"Invalid monthly plays data: {str(e).replace('Missing required key ', 'Missing required key: ')}")
+            raise ValueError(
+                f"Invalid monthly plays data: {str(e).replace('Missing required key ', 'Missing required key: ')}"
+            )
 
     def safe_extract_with_fallback(
         self,
@@ -328,19 +347,21 @@ class DataProcessor:
     ) -> Mapping[str, object]:
         """
         Extract data with fallback support if extraction fails.
-        
+
         Args:
             data: The data dictionary to extract from
             data_key: The key to extract data from
             required_keys: List of required keys in the extracted data
             fallback_data: Fallback data to use if extraction fails
             context: Context string for error messages
-            
+
         Returns:
             The extracted data or fallback data
         """
         try:
-            return self.extract_and_validate_data(data, data_key, required_keys, context)
+            return self.extract_and_validate_data(
+                data, data_key, required_keys, context
+            )
         except ValueError:
             if fallback_data is not None:
                 return fallback_data
@@ -351,17 +372,15 @@ class DataProcessor:
     ) -> Mapping[str, object]:
         """
         Extract play history data from API response.
-        
+
         Args:
             data: API response data
-            
+
         Returns:
             Extracted play history data
         """
         return self.extract_and_validate_data(
-            data,
-            "play_history",
-            context="play history data extraction"
+            data, "play_history", context="play history data extraction"
         )
 
     def process_data_safely(
@@ -373,13 +392,13 @@ class DataProcessor:
     ) -> object:
         """
         Process data safely with error handling.
-        
+
         Args:
             data: Data to process
             processing_function: Function to use for processing
             context: Context string for error messages
             **kwargs: Additional arguments for processing function
-            
+
         Returns:
             Processed data
         """
@@ -393,10 +412,10 @@ class DataProcessor:
     ) -> tuple[Sequence[Mapping[str, object]], ProcessedRecords]:
         """
         Process play history data safely with error handling.
-        
+
         Args:
             data: Play history data to process
-            
+
         Returns:
             Tuple of (raw_records, processed_records)
         """

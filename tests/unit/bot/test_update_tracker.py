@@ -11,7 +11,7 @@ This module consolidates all update tracker tests including:
 
 Consolidated from:
 - test_update_tracker_config.py
-- test_update_tracker_enhanced.py  
+- test_update_tracker_enhanced.py
 - test_update_tracker_error_handling.py
 - test_update_tracker_fixed_time_fix.py
 """
@@ -32,7 +32,6 @@ from src.tgraph_bot.bot.update_tracker import (
     ErrorClassifier,
     CircuitBreaker,
     CircuitState,
-
     get_local_timezone,
 )
 from tests.utils.test_helpers import create_mock_discord_bot
@@ -498,7 +497,9 @@ class TestCircuitBreaker:
 
     def test_circuit_breaker_half_open_transition(self) -> None:
         """Test circuit breaker half-open state transition."""
-        config = RetryConfig(failure_threshold=2, recovery_timeout=0.1)  # 0.1 second timeout
+        config = RetryConfig(
+            failure_threshold=2, recovery_timeout=0.1
+        )  # 0.1 second timeout
         breaker = CircuitBreaker(config)
 
         # Open the circuit
@@ -508,6 +509,7 @@ class TestCircuitBreaker:
 
         # Wait for recovery timeout
         import time
+
         time.sleep(0.2)
 
         # Should transition to half-open on next request

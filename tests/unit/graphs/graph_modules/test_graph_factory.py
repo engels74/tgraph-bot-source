@@ -25,7 +25,9 @@ class TestGraphFactory:
         assert factory._config_accessor is not None  # pyright: ignore[reportPrivateUsage]
         assert factory._graph_registry is not None  # pyright: ignore[reportPrivateUsage]
 
-    def test_factory_initialization_with_tgraphbot_config(self, base_config: TGraphBotConfig) -> None:
+    def test_factory_initialization_with_tgraphbot_config(
+        self, base_config: TGraphBotConfig
+    ) -> None:
         """Test GraphFactory initialization with TGraphBotConfig object."""
         factory = GraphFactory(base_config)
         assert factory.config == base_config

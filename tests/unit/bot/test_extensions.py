@@ -17,8 +17,6 @@ from src.tgraph_bot.bot.extensions import (
     unload_extensions,
     unload_extension_safe,
     reload_extension,
-    reload_all_extensions,
-    get_extension_info,
     get_loaded_extensions,
     get_failed_extensions,
 )
@@ -339,55 +337,6 @@ class TestExtensionFunctions:
         assert status.loaded is False
         assert status.error is not None
         assert "Extension not loaded, cannot reload" in status.error
-
-    @pytest.mark.asyncio
-    async def test_reload_all_extensions(self) -> None:
-        """Test reloading all loaded extensions."""
-        mock_bot = AsyncMock(spec=commands.Bot)
-
-        with (
-            patch(
-                "src.tgraph_bot.bot.extensions._extension_manager.get_loaded_extensions"
-            ) as mock_get_loaded,
-            patch("src.tgraph_bot.bot.extensions.reload_extension") as mock_reload,
-        ):
-            mock_get_loaded.return_value = ["ext1", "ext2"]
-            mock_reload.side_effect = [
-                ExtensionStatus("ext1", True),
-                ExtensionStatus("ext2", True),
-            ]
-
-            results = await reload_all_extensions(mock_bot)
-
-            assert len(results) == 2
-            assert all(status.loaded for status in results)
-            assert mock_reload.call_count == 2
-
-    def test_get_extension_info(self) -> None:
-        """Test getting extension information."""
-        with (
-            patch(
-                "src.tgraph_bot.bot.extensions._extension_manager.discover_extensions"
-            ) as mock_discover,
-            patch(
-                "src.tgraph_bot.bot.extensions._extension_manager.is_extension_loaded"
-            ) as mock_is_loaded,
-            patch(
-                "src.tgraph_bot.bot.extensions._extension_manager.get_extension_error"
-            ) as mock_get_error,
-        ):
-            mock_discover.return_value = ["ext1", "ext2", "ext3"]
-            mock_is_loaded.side_effect = [True, False, False]
-            mock_get_error.side_effect = [None, "Error message", None]
-
-            info = get_extension_info()
-
-            assert info["ext1"]["loaded"] is True
-            assert info["ext1"]["status"] == "loaded"
-            assert info["ext2"]["loaded"] is False
-            assert info["ext2"]["status"] == "failed"
-            assert info["ext3"]["loaded"] is False
-            assert info["ext3"]["status"] == "not_loaded"
 
     def test_get_loaded_extensions_function(self) -> None:
         """Test get_loaded_extensions function."""

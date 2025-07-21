@@ -913,7 +913,8 @@ class TestCalculateNextUpdateTime:
                 "src.tgraph_bot.utils.discord.discord_file_utils.get_local_now"
             ) as mock_get_local_now,
             patch(
-                "builtins.open", mock_open(read_data=json.dumps(state_data))  # pyright: ignore[reportAny]
+                "builtins.open",
+                mock_open(read_data=json.dumps(state_data)),  # pyright: ignore[reportAny]
             ) as mock_file,  # pyright: ignore[reportAny]
         ):
             # Create a mock path config that returns an existing state file
@@ -938,7 +939,7 @@ class TestCalculateNextUpdateTime:
             assert result is not None
             assert result.tzinfo is not None
 
-            # Expected: Should return July 18th at 23:59 in the scheduler's timezone, 
+            # Expected: Should return July 18th at 23:59 in the scheduler's timezone,
             # converted to local timezone. The scheduler state shows "2025-07-18T23:59:00+02:00"
             # which should be converted to the system's local timezone (UTC).
             # 23:59 UTC+2 = 21:59 UTC

@@ -287,60 +287,6 @@ async def reload_extension(bot: commands.Bot, extension_name: str) -> ExtensionS
         return ExtensionStatus(extension_name, False, error_msg)
 
 
-async def reload_all_extensions(bot: commands.Bot) -> list[ExtensionStatus]:
-    """
-    Reload all currently loaded extensions.
-
-    Args:
-        bot: The Discord bot instance
-
-    Returns:
-        List of ExtensionStatus for each extension
-    """
-    loaded_extensions = _extension_manager.get_loaded_extensions()
-    results: list[ExtensionStatus] = []
-
-    logger.info(f"Reloading {len(loaded_extensions)} extensions...")
-
-    for extension in loaded_extensions:
-        status = await reload_extension(bot, extension)
-        results.append(status)
-
-    reloaded_count = sum(1 for status in results if status.loaded)
-    failed_count = len(results) - reloaded_count
-
-    logger.info(
-        f"Extension reloading complete: {reloaded_count} reloaded, {failed_count} failed"
-    )
-
-    return results
-
-
-def get_extension_info() -> dict[str, dict[str, str | bool]]:
-    """
-    Get information about all extensions.
-
-    Returns:
-        Dictionary with extension information
-    """
-    info: dict[str, dict[str, str | bool]] = {}
-
-    # Get all discovered extensions
-    all_extensions = _extension_manager.discover_extensions()
-
-    for extension in all_extensions:
-        is_loaded = _extension_manager.is_extension_loaded(extension)
-        error = _extension_manager.get_extension_error(extension)
-
-        info[extension] = {
-            "loaded": is_loaded,
-            "error": error or "",
-            "status": "loaded" if is_loaded else ("failed" if error else "not_loaded"),
-        }
-
-    return info
-
-
 def get_loaded_extensions() -> list[str]:
     """
     Get list of currently loaded extensions.

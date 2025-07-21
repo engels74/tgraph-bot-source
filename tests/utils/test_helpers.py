@@ -650,7 +650,9 @@ def assert_graph_output_valid(
                 f"Graph filename should contain '{expected_filename_pattern}': {output_path}"
             )
     else:
-        assert not output_file.exists(), f"Graph output file should not exist: {output_path}"
+        assert not output_file.exists(), (
+            f"Graph output file should not exist: {output_path}"
+        )
 
 
 def assert_file_cleanup_successful(file_path: str | Path) -> None:
@@ -771,7 +773,10 @@ def assert_mock_called_with_pattern(
 
         if called_with_kwargs is not None:
             from typing import cast
-            actual_kwargs = cast(dict[str, object], last_call.kwargs if last_call else {})
+
+            actual_kwargs = cast(
+                dict[str, object], last_call.kwargs if last_call else {}
+            )
             assert actual_kwargs == called_with_kwargs, (
                 f"Expected kwargs {called_with_kwargs}, got {actual_kwargs}"
             )

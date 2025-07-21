@@ -31,7 +31,9 @@ if TYPE_CHECKING:
 class TestGraphCustomizationValidation:
     """Test cases for validating all graph customization options."""
 
-    def test_color_customization_validation(self, comprehensive_config: TGraphBotConfig) -> None:
+    def test_color_customization_validation(
+        self, comprehensive_config: TGraphBotConfig
+    ) -> None:
         """Test that all color customization options work correctly."""
         with matplotlib_cleanup():
             # Use comprehensive config which has custom colors set
@@ -240,10 +242,11 @@ class TestGraphCustomizationValidation:
             finally:
                 graph.cleanup()
 
-    def test_comprehensive_customization_integration(self, comprehensive_config: TGraphBotConfig) -> None:
+    def test_comprehensive_customization_integration(
+        self, comprehensive_config: TGraphBotConfig
+    ) -> None:
         """Test all customization options working together."""
         with matplotlib_cleanup():
-
             factory = create_graph_factory_with_config(comprehensive_config)
 
             # Verify only enabled graphs are created

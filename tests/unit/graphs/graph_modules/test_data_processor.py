@@ -56,9 +56,7 @@ class TestExtractAndValidateData:
 
         data = {"other_data": "present"}
 
-        with pytest.raises(
-            ValueError, match="Missing 'play_history' in test"
-        ):
+        with pytest.raises(ValueError, match="Missing 'play_history' in test"):
             _ = processor.extract_and_validate_data(
                 data=data,
                 data_key="play_history",
@@ -163,7 +161,7 @@ class TestExtractPlayHistoryData:
         }
 
         result = processor.extract_play_history_data(data)
-        
+
         # Should successfully extract even without "data" key
         assert result == data["play_history"]
         assert "result" in result
@@ -208,7 +206,7 @@ class TestExtractMonthlyPlaysData:
         }
 
         result = processor.extract_monthly_plays_data(data)
-        
+
         # Should successfully extract even without "series" key
         assert result == data["monthly_plays"]
         assert "categories" in result
@@ -260,9 +258,7 @@ class TestProcessDataSafely:
 
         data = {"test": "data"}
 
-        with pytest.raises(
-            ValueError, match="Error in test: Processing failed"
-        ):
+        with pytest.raises(ValueError, match="Error in test: Processing failed"):
             _ = processor.process_data_safely(
                 data=data, processing_function=mock_processor, context="test"
             )
@@ -271,9 +267,7 @@ class TestProcessDataSafely:
 class TestProcessPlayHistorySafely:
     """Test cases for process_play_history_safely method."""
 
-    @patch(
-        "src.tgraph_bot.graphs.graph_modules.utils.utils.process_play_history_data"
-    )
+    @patch("src.tgraph_bot.graphs.graph_modules.utils.utils.process_play_history_data")
     def test_successful_play_history_processing(self, mock_process: Mock) -> None:
         """Test successful play history data processing."""
         processor = DataProcessor()
@@ -294,9 +288,7 @@ class TestProcessPlayHistorySafely:
         assert len(raw_records) == 1
         mock_process.assert_called_once()
 
-    @patch(
-        "src.tgraph_bot.graphs.graph_modules.utils.utils.process_play_history_data"
-    )
+    @patch("src.tgraph_bot.graphs.graph_modules.utils.utils.process_play_history_data")
     def test_play_history_processing_failure(self, mock_process: Mock) -> None:
         """Test play history processing failure raises ValueError."""
         processor = DataProcessor()
@@ -308,16 +300,16 @@ class TestProcessPlayHistorySafely:
             "data": [{"user": "test", "date": 1672531200}]
         }  # Unix timestamp for 2023-01-01
 
-        with pytest.raises(ValueError, match="Error processing play history: Processing failed"):
+        with pytest.raises(
+            ValueError, match="Error processing play history: Processing failed"
+        ):
             _ = processor.process_play_history_safely(data)
 
 
 class TestExtractAndProcessPlayHistory:
     """Test cases for extract_and_process_play_history method."""
 
-    @patch(
-        "src.tgraph_bot.graphs.graph_modules.utils.utils.process_play_history_data"
-    )
+    @patch("src.tgraph_bot.graphs.graph_modules.utils.utils.process_play_history_data")
     def test_successful_extract_and_process(self, mock_process: Mock) -> None:
         """Test successful extraction and processing of play history data."""
         processor = DataProcessor()
@@ -349,15 +341,15 @@ class TestExtractAndProcessPlayHistory:
         data = {"other_data": "present"}  # Missing expected data key
 
         # Should return empty records instead of raising an exception
-        raw_records, processed_records = processor.extract_and_process_play_history(data)
-        
+        raw_records, processed_records = processor.extract_and_process_play_history(
+            data
+        )
+
         # Expect empty data due to fallback behavior
         assert len(raw_records) == 0
         assert len(processed_records) == 0
 
-    @patch(
-        "src.tgraph_bot.graphs.graph_modules.utils.utils.process_play_history_data"
-    )
+    @patch("src.tgraph_bot.graphs.graph_modules.utils.utils.process_play_history_data")
     def test_extract_and_process_processing_failure(self, mock_process: Mock) -> None:
         """Test extract and process with processing failure."""
         processor = DataProcessor()
@@ -449,9 +441,7 @@ class TestSafeExtractWithFallback:
 
         data = {"other_data": "present"}  # Missing play_history
 
-        with pytest.raises(
-            ValueError, match="Missing 'play_history' in test"
-        ):
+        with pytest.raises(ValueError, match="Missing 'play_history' in test"):
             _ = processor.safe_extract_with_fallback(
                 data=data,
                 data_key="play_history",
@@ -509,9 +499,7 @@ class TestValidateExtractedData:
 class TestIntegrationScenarios:
     """Integration test scenarios for DataProcessor."""
 
-    @patch(
-        "src.tgraph_bot.graphs.graph_modules.utils.utils.process_play_history_data"
-    )
+    @patch("src.tgraph_bot.graphs.graph_modules.utils.utils.process_play_history_data")
     def test_complete_workflow_play_history(self, mock_process: Mock) -> None:
         """Test complete workflow for play history data processing."""
         processor = DataProcessor()
@@ -597,8 +585,10 @@ class TestIntegrationScenarios:
         assert isinstance(data, dict)
 
         # Should handle gracefully and return empty records due to fallback behavior
-        raw_records, processed_records = processor.extract_and_process_play_history(data)
-        
+        raw_records, processed_records = processor.extract_and_process_play_history(
+            data
+        )
+
         # Expect empty data due to fallback behavior
         assert len(raw_records) == 0
         assert len(processed_records) == 0

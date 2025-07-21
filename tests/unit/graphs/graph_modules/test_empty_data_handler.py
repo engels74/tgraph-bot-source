@@ -74,9 +74,9 @@ class TestEmptyDataHandler:
             fontsize=20,
             fontweight="normal",
             bbox=dict(
-                boxstyle=handler.DEFAULT_BOXSTYLE, 
-                facecolor=handler.DEFAULT_FACECOLOR, 
-                alpha=handler.DEFAULT_ALPHA
+                boxstyle=handler.DEFAULT_BOXSTYLE,
+                facecolor=handler.DEFAULT_FACECOLOR,
+                alpha=handler.DEFAULT_ALPHA,
             ),
         )
 
@@ -122,16 +122,12 @@ class TestEmptyDataHandler:
         handler.display_empty_data_message(mock_ax, log_warning=False)
         mock_logger.warning.assert_not_called()  # pyright: ignore[reportAny]
 
-    def test_display_localized_empty_data_message_success(
-        self
-    ) -> None:
+    def test_display_localized_empty_data_message_success(self) -> None:
         """Test localized empty data message display with successful message key mapping."""
         handler = EmptyDataHandler()
         mock_ax = MagicMock()
 
-        handler.display_localized_empty_data_message(
-            mock_ax, "platform"
-        )
+        handler.display_localized_empty_data_message(mock_ax, "platform")
 
         # Verify text was called with platform message
         mock_ax.text.assert_called_once_with(  # pyright: ignore[reportAny]
@@ -146,9 +142,7 @@ class TestEmptyDataHandler:
             bbox=dict(boxstyle="round,pad=0.5", facecolor="lightgray", alpha=0.7),
         )
 
-    def test_display_localized_empty_data_message_translation_failure(
-        self
-    ) -> None:
+    def test_display_localized_empty_data_message_translation_failure(self) -> None:
         """Test localized empty data message display when unknown message key is used."""
         handler = EmptyDataHandler()
         mock_ax = MagicMock()
@@ -186,7 +180,17 @@ class TestEmptyDataHandler:
         assert message == "No platform data available"
 
         # Test default fallback for unknown types
-        unknown_types = ["play_data", "daily", "monthly", "hourly", "dayofweek", "user_data", "users", "platform_data", "platforms"]
+        unknown_types = [
+            "play_data",
+            "daily",
+            "monthly",
+            "hourly",
+            "dayofweek",
+            "user_data",
+            "users",
+            "platform_data",
+            "platforms",
+        ]
         for graph_type in unknown_types:
             message = handler.get_standard_empty_message(graph_type)
             assert message == "No data available\nfor the selected time period"
@@ -209,7 +213,7 @@ class TestEmptyDataHandler:
         mock_ax.clear.assert_called_once()  # pyright: ignore[reportAny]
         mock_ax.set_xticks.assert_called_once_with([])  # pyright: ignore[reportAny]
         mock_ax.set_yticks.assert_called_once_with([])  # pyright: ignore[reportAny]
-        
+
         # Verify spines were made invisible
         mock_ax.spines.__getitem__.assert_any_call("top")  # pyright: ignore[reportAny]
         mock_ax.spines.__getitem__.assert_any_call("right")  # pyright: ignore[reportAny]

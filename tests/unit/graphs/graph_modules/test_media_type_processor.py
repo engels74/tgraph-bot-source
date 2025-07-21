@@ -126,6 +126,7 @@ class TestMediaTypeProcessor:
     def test_get_display_info_with_config_override(self) -> None:
         """Test getting display info with configuration (ignores config overrides in current implementation)."""
         mock_config = MagicMock()
+
         def mock_get_value(key: str, default: str) -> str:
             return {
                 "TV_COLOR": "#custom_tv",
@@ -166,6 +167,7 @@ class TestMediaTypeProcessor:
     def test_get_color_for_type_with_config_override(self) -> None:
         """Test getting color for media type with configuration (ignores config overrides in current implementation)."""
         mock_config = MagicMock()
+
         def mock_get_value_2(key: str, default: str) -> str:
             return {
                 "TV_COLOR": "#custom_tv",
@@ -215,7 +217,7 @@ class TestMediaTypeProcessor:
         assert processor.is_valid_media_type("movie") is True
         assert processor.is_valid_media_type("tv") is True
         assert processor.is_valid_media_type("music") is True
-        
+
         # Current implementation treats "other" as invalid since classify_media_type != "other" logic
         assert processor.is_valid_media_type("other") is False
         assert processor.is_valid_media_type("invalid") is False

@@ -59,7 +59,9 @@ class ErrorContext:
         self.additional_context: dict[str, object] = additional_context or {}
         # Try to use system timezone, fallback to UTC
         try:
-            self.timestamp: datetime = datetime.now(ZoneInfo("UTC"))  # Use UTC as fallback for consistent behavior
+            self.timestamp: datetime = datetime.now(
+                ZoneInfo("UTC")
+            )  # Use UTC as fallback for consistent behavior
         except Exception:
             self.timestamp = datetime.now()
 
@@ -458,32 +460,3 @@ async def log_performance_metrics(
             logger.info(f"Operation completed: {metrics}")
     else:
         logger.error(f"Operation failed: {metrics}")
-
-
-class PerformanceMonitor:
-    """Context manager for monitoring operation performance."""
-
-    def __init__(
-        self, operation_name: str, additional_metrics: dict[str, object] | None = None
-    ) -> None:
-        self.operation_name: str = operation_name
-        self.additional_metrics: dict[str, object] = additional_metrics or {}
-        self.start_time: float = 0.0
-        self.success: bool = False
-
-    async def __aenter__(self) -> "PerformanceMonitor":
-        self.start_time = asyncio.get_event_loop().time()
-        return self
-
-    async def __aexit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: object,
-    ) -> None:
-        duration = asyncio.get_event_loop().time() - self.start_time
-        self.success = exc_type is None
-
-        await log_performance_metrics(
-            self.operation_name, duration, self.success, self.additional_metrics
-        )

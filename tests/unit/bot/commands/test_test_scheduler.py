@@ -60,7 +60,8 @@ class TestTestSchedulerCog:
         ):
             # Execute the command
             _ = await test_scheduler_cog.test_scheduler.callback(  # pyright: ignore[reportUnknownVariableType]
-                test_scheduler_cog, mock_interaction  # pyright: ignore[reportCallIssue]
+                test_scheduler_cog,
+                mock_interaction,  # pyright: ignore[reportCallIssue]
             )
 
             # Verify force_update was called
@@ -107,7 +108,8 @@ class TestTestSchedulerCog:
         ):
             # Execute the command
             _ = await test_scheduler_cog.test_scheduler.callback(  # pyright: ignore[reportUnknownVariableType]
-                test_scheduler_cog, mock_interaction  # pyright: ignore[reportCallIssue]
+                test_scheduler_cog,
+                mock_interaction,  # pyright: ignore[reportCallIssue]
             )
 
             # Verify error handling was called
@@ -133,7 +135,8 @@ class TestTestSchedulerCog:
         ):
             # Execute the command
             _ = await test_scheduler_cog.test_scheduler.callback(  # pyright: ignore[reportUnknownVariableType]
-                test_scheduler_cog, mock_interaction  # pyright: ignore[reportCallIssue]
+                test_scheduler_cog,
+                mock_interaction,  # pyright: ignore[reportCallIssue]
             )
 
             # Verify cooldown response was sent
@@ -169,7 +172,8 @@ class TestTestSchedulerCog:
         ):
             # Execute the command
             _ = await test_scheduler_cog.test_scheduler.callback(  # pyright: ignore[reportUnknownVariableType]
-                test_scheduler_cog, mock_interaction  # pyright: ignore[reportCallIssue]
+                test_scheduler_cog,
+                mock_interaction,  # pyright: ignore[reportCallIssue]
             )
 
             # Verify error handling was called
@@ -203,7 +207,8 @@ class TestTestSchedulerCog:
         ):
             # Execute the command
             _ = await test_scheduler_cog.test_scheduler.callback(  # pyright: ignore[reportUnknownVariableType]
-                test_scheduler_cog, mock_interaction  # pyright: ignore[reportCallIssue]
+                test_scheduler_cog,
+                mock_interaction,  # pyright: ignore[reportCallIssue]
             )
 
             # Verify initial response embed

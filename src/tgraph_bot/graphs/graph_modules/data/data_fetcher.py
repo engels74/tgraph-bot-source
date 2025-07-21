@@ -18,22 +18,29 @@ import httpx
 if TYPE_CHECKING:
     from types import TracebackType
 
+
 # Type definitions for API structures
 class TautulliAPIResponse(TypedDict, total=False):
     """Tautulli API response structure."""
+
     response: "TautulliResponse"
+
 
 class TautulliResponse(TypedDict, total=False):
     """Tautulli response object structure."""
+
     result: str
     message: str
     data: dict[str, object] | list[dict[str, object]] | object
 
+
 class PlayHistoryData(TypedDict):
     """Play history data structure."""
+
     data: list[Mapping[str, object]]
     recordsFiltered: int
     recordsTotal: int
+
 
 # Type aliases for improved readability
 APIParams: TypeAlias = dict[str, str | int | float | bool]
@@ -68,10 +75,10 @@ class DataFetcher:
         return self
 
     async def __aexit__(
-        self, 
-        exc_type: type[BaseException] | None, 
-        exc_val: BaseException | None, 
-        exc_tb: TracebackType | None
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
     ) -> None:
         """Exit async context and cleanup HTTP client."""
         if self._client is not None:
@@ -88,7 +95,9 @@ class DataFetcher:
     ) -> APIResponseMapping:
         """Make HTTP request to Tautulli API with retry logic."""
         if self._client is None:
-            raise RuntimeError("DataFetcher not initialized. Use as async context manager.")
+            raise RuntimeError(
+                "DataFetcher not initialized. Use as async context manager."
+            )
 
         # Check cache first
         cache_key = self._get_cache_key(command, params)
@@ -118,18 +127,25 @@ class DataFetcher:
 
                 response_obj = response_data.get("response")
                 if not isinstance(response_obj, dict):
-                    raise ValueError("Invalid API response format: missing response object")
+                    raise ValueError(
+                        "Invalid API response format: missing response object"
+                    )
 
                 # Cast to dict after validation
                 response_dict = cast(dict[str, object], response_obj)
                 if response_dict.get("result") == "error":
                     message_raw = response_dict.get("message", "Unknown API error")
-                    message = message_raw if isinstance(message_raw, str) else "Unknown API error"
+                    message = (
+                        message_raw
+                        if isinstance(message_raw, str)
+                        else "Unknown API error"
+                    )
                     raise ValueError(f"API error: {message}")
 
                 result_raw = response_dict.get("data", {})
                 result: APIResponseMapping = (
-                    cast(APIResponseMapping, result_raw) if isinstance(result_raw, dict)
+                    cast(APIResponseMapping, result_raw)
+                    if isinstance(result_raw, dict)
                     else cast(APIResponseMapping, {})
                 )
 
@@ -139,12 +155,12 @@ class DataFetcher:
 
             except httpx.TimeoutException:
                 if attempt < self.max_retries:
-                    wait_time = 2.0 ** attempt
+                    wait_time = 2.0**attempt
                     logger.warning(
                         "Request timeout (attempt %d/%d), retrying in %.1fs...",
                         attempt + 1,
                         self.max_retries + 1,
-                        wait_time
+                        wait_time,
                     )
                     await asyncio.sleep(wait_time)
                 else:
@@ -203,9 +219,13 @@ class DataFetcher:
             recordsTotal=total_records,
         )
 
-    async def get_plays_per_month(self, time_range_months: int = 12) -> Mapping[str, object]:
+    async def get_plays_per_month(
+        self, time_range_months: int = 12
+    ) -> Mapping[str, object]:
         """Fetch monthly play statistics."""
-        return await self._make_request("get_plays_per_month", {"time_range": time_range_months})
+        return await self._make_request(
+            "get_plays_per_month", {"time_range": time_range_months}
+        )
 
     async def get_user_stats(self, user_id: int) -> Mapping[str, object]:
         """Fetch user statistics."""

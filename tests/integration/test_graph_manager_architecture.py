@@ -139,7 +139,9 @@ class TestGraphManagerArchitecture:
                         assert result == ["graph1.png", "graph2.png"]
 
     @pytest.mark.asyncio
-    async def test_error_handling_architecture(self, minimal_config: TGraphBotConfig) -> None:
+    async def test_error_handling_architecture(
+        self, minimal_config: TGraphBotConfig
+    ) -> None:
         """Test error handling in the GraphManager architecture."""
         config_manager = create_config_manager_with_config(minimal_config)
 

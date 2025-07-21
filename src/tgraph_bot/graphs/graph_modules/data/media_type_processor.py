@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 @dataclass
 class MediaTypeInfo:
     """Information about a media type."""
-    
+
     type_name: str
     display_name: str
     default_color: str
@@ -29,7 +29,7 @@ class MediaTypeInfo:
 @dataclass
 class MediaTypeDisplayInfo:
     """Display information for a media type."""
-    
+
     display_name: str
     color: str
 
@@ -78,53 +78,53 @@ class MediaTypeProcessor:
     def classify_media_type(self, media_type: str) -> str:
         """
         Classify a media type string into a standard category.
-        
+
         Args:
             media_type: Media type string to classify
-            
+
         Returns:
             Classified media type ("movie", "tv", "music", "other")
         """
         if not media_type:
             return "other"
-            
+
         media_type_lower = media_type.lower().strip()
-        
+
         # Check direct matches first
         if media_type_lower in self._media_types:
             return media_type_lower
-            
+
         # Check aliases
         for type_name, info in self._media_types.items():
             if media_type_lower in [alias.lower() for alias in info.aliases]:
                 return type_name
-                
+
         return "other"
 
     def _get_configured_color(self, media_type: str, default_color: str) -> str:
         """
         Get configured color for media type, falling back to default.
-        
+
         Args:
             media_type: The classified media type
             default_color: Default color if no config available
-            
+
         Returns:
             Color hex string from config or default
         """
         if self.config_accessor is None:
             return default_color
-            
+
         # Map media types to configuration keys
         config_key_map = {
             "tv": "TV_COLOR",
             "movie": "MOVIE_COLOR",
         }
-        
+
         config_key = config_key_map.get(media_type)
         if config_key is None:
             return default_color
-            
+
         try:
             configured_color = self.config_accessor.get_value(config_key, default_color)
             return str(configured_color)
@@ -134,19 +134,19 @@ class MediaTypeProcessor:
     def get_display_info(self, media_type: str) -> MediaTypeDisplayInfo:
         """
         Get display information for a media type.
-        
+
         Args:
             media_type: Media type to get display info for
-            
+
         Returns:
             MediaTypeDisplayInfo with display name and color
         """
         classified_type = self.classify_media_type(media_type)
         info = self._media_types.get(classified_type, self._media_types["other"])
-        
+
         # Use configuration color if available, otherwise use default
         color = self._get_configured_color(classified_type, info.default_color)
-        
+
         return MediaTypeDisplayInfo(
             display_name=info.display_name,
             color=color,
@@ -155,10 +155,10 @@ class MediaTypeProcessor:
     def get_color_for_type(self, media_type: str) -> str:
         """
         Get the color for a media type.
-        
+
         Args:
             media_type: Media type to get color for
-            
+
         Returns:
             Color hex string
         """
@@ -167,10 +167,10 @@ class MediaTypeProcessor:
     def is_valid_media_type(self, media_type: str) -> bool:
         """
         Check if a media type is valid (known).
-        
+
         Args:
             media_type: Media type to validate
-            
+
         Returns:
             True if valid, False otherwise
         """
@@ -181,23 +181,23 @@ class MediaTypeProcessor:
     ) -> Sequence[Mapping[str, object]]:
         """
         Filter records by media type.
-        
+
         Args:
             records: List of records to filter
             media_type: Media type(s) to filter by (single string or list of strings)
-            
+
         Returns:
             Filtered list of records
         """
         if not records:
             return []
-            
+
         # Normalize media_type to a list
         if isinstance(media_type, str):
             target_types = [media_type]
         else:
             target_types = media_type
-            
+
         filtered_records: list[Mapping[str, object]] = []
         for record in records:
             if isinstance(record, dict):
@@ -206,13 +206,13 @@ class MediaTypeProcessor:
                     classified_type = self.classify_media_type(record_media_type)
                     if classified_type in target_types:
                         filtered_records.append(record)
-                        
+
         return filtered_records
 
     def get_preferred_order(self) -> list[str]:
         """
         Get the preferred display order for media types.
-        
+
         Returns:
             List of media type names in preferred order
         """
@@ -221,7 +221,7 @@ class MediaTypeProcessor:
     def get_all_display_names(self) -> dict[str, str]:
         """
         Get all media type display names.
-        
+
         Returns:
             Dictionary mapping type names to display names
         """
@@ -233,7 +233,7 @@ class MediaTypeProcessor:
     def get_all_colors(self) -> dict[str, str]:
         """
         Get all media type colors.
-        
+
         Returns:
             Dictionary mapping type names to colors
         """
@@ -245,7 +245,7 @@ class MediaTypeProcessor:
     def get_all_display_info(self) -> dict[str, dict[str, str]]:
         """
         Get all media type display information.
-        
+
         Returns:
             Dictionary mapping type names to display info dict
         """
@@ -260,7 +260,7 @@ class MediaTypeProcessor:
     def get_supported_types(self) -> list[str]:
         """
         Get list of all supported media types.
-        
+
         Returns:
             List of supported media type names
         """

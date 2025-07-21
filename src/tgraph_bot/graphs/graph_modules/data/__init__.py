@@ -16,7 +16,7 @@ from .media_type_processor import (
 
 __all__ = [
     "DataFetcher",
-    "DataProcessor", 
+    "DataProcessor",
     "data_processor",
     "EmptyDataHandler",
     "MediaTypeProcessor",

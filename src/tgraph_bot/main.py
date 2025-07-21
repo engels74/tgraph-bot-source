@@ -18,7 +18,8 @@ from typing import override
 
 # Configure matplotlib backend before any imports that use matplotlib
 import matplotlib
-matplotlib.use('Agg')  # Use non-GUI backend for threading compatibility
+
+matplotlib.use("Agg")  # Use non-GUI backend for threading compatibility
 
 import discord
 from discord.ext import commands

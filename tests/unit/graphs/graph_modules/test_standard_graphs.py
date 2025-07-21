@@ -41,13 +41,13 @@ class TestStandardGraphs:
         return {
             "data": [
                 {"date": 1704100200, "media_type": "movie"},  # 2024-01-01 08:30:00 UTC
-                {"date": 1704121700, "media_type": "tv"},     # 2024-01-01 14:15:00 UTC
+                {"date": 1704121700, "media_type": "tv"},  # 2024-01-01 14:15:00 UTC
                 {"date": 1704143100, "media_type": "movie"},  # 2024-01-01 20:45:00 UTC
-                {"date": 1704187200, "media_type": "tv"},     # 2024-01-02 09:00:00 UTC
+                {"date": 1704187200, "media_type": "tv"},  # 2024-01-02 09:00:00 UTC
                 {"date": 1704210600, "media_type": "movie"},  # 2024-01-02 15:30:00 UTC
-                {"date": 1704230400, "media_type": "tv"},     # 2024-01-02 21:00:00 UTC
+                {"date": 1704230400, "media_type": "tv"},  # 2024-01-02 21:00:00 UTC
                 {"date": 1704274500, "media_type": "movie"},  # 2024-01-03 10:15:00 UTC
-                {"date": 1704297300, "media_type": "tv"},     # 2024-01-03 16:45:00 UTC
+                {"date": 1704297300, "media_type": "tv"},  # 2024-01-03 16:45:00 UTC
                 {"date": 1704320200, "media_type": "movie"},  # 2024-01-03 22:30:00 UTC
             ]
         }
@@ -55,10 +55,7 @@ class TestStandardGraphs:
     @pytest.fixture
     def sample_graph_data(self) -> dict[str, object]:
         """Sample data for sample graph testing."""
-        return {
-            "x_values": [1, 2, 3, 4, 5],
-            "y_values": [10, 20, 30, 40, 50]
-        }
+        return {"x_values": [1, 2, 3, 4, 5], "y_values": [10, 20, 30, 40, 50]}
 
     @pytest.mark.parametrize(
         "graph_class,sample_data_fixture,expected_title,expected_file_pattern",
@@ -111,14 +108,14 @@ class TestStandardGraphs:
         for invalid_data in invalid_data_samples:
             with matplotlib_cleanup():
                 graph: BaseGraph = graph_class()
-                
+
                 # Should not raise exception - graceful fallback behavior
                 output_path: str = graph.generate(invalid_data)
-                
+
                 # Verify file was created (empty graph)
                 output_file: Path = Path(output_path)
                 assert output_file.exists()
-                
+
                 # Clean up
                 output_file.unlink(missing_ok=True)
 
@@ -179,7 +176,7 @@ class TestStandardGraphs:
         setattr(config, config_attribute, config_value)
 
         graph = graph_class(config=config)
-        
+
         # Test configuration access
         actual_value = graph.get_config_value(config_attribute, not config_value)
         assert actual_value == config_value
@@ -196,7 +193,7 @@ class TestSampleGraphSpecific:
         # Test data for SampleGraph
         sample_graph_data = {
             "x_values": [1, 2, 3, 4, 5],
-            "y_values": [10, 20, 30, 40, 50]
+            "y_values": [10, 20, 30, 40, 50],
         }
 
         # Test 1: Basic initialization
@@ -269,7 +266,7 @@ class TestSpecificGraphBehaviors:
     def test_sample_graph_custom_parameters(self) -> None:
         """Test SampleGraph with custom initialization parameters."""
         graph = SampleGraph(width=12, height=8, dpi=150, background_color="#f0f0f0")
-        
+
         assert graph.width == 12
         assert graph.height == 8
         assert graph.dpi == 150
@@ -303,7 +300,7 @@ class TestSpecificGraphBehaviors:
         # Verify structure
         assert "x_values" in sample_data
         assert "y_values" in sample_data
-        
+
         # Verify data types and lengths
         assert isinstance(sample_data["x_values"], list)
         assert isinstance(sample_data["y_values"], list)
