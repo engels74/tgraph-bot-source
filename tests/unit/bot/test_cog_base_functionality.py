@@ -46,7 +46,7 @@ class TestCogBaseInitialization:
     ) -> None:
         """Test standard cog initialization using consolidated utility."""
         # Use the consolidated test utility
-        _ = assert_cog_initialization(cog_class, mock_bot, expected_attributes=expected_attributes)
+        cog_instance: object = assert_cog_initialization(cog_class, mock_bot, expected_attributes=expected_attributes)  # pyright: ignore[reportUnknownVariableType]
         
         # Additional verification for UpdateGraphsCog since it has more attributes
         if cog_class is UpdateGraphsCog:

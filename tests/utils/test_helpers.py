@@ -546,7 +546,8 @@ def create_mock_channel(
         for perm_name, perm_value in default_permissions.items():
             setattr(mock_permissions, perm_name, perm_value)
 
-        mock_guild_member.permissions_for.return_value = mock_permissions
+        permissions_for = mock_guild_member.permissions_for  # pyright: ignore[reportAny]
+        permissions_for.return_value = mock_permissions
         mock_guild.me = mock_guild_member
     else:
         mock_channel.guild = None
@@ -701,7 +702,7 @@ def assert_config_values_match(
         ... })
     """
     for attr_name, expected_value in expected_values.items():
-        actual_value: object = getattr(actual_config, attr_name)
+        actual_value: object = getattr(actual_config, attr_name)  # pyright: ignore[reportAny]
         assert actual_value == expected_value, (
             f"Config attribute {attr_name}: expected {expected_value}, got {actual_value}"
         )

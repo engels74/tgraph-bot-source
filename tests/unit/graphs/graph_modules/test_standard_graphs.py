@@ -19,6 +19,7 @@ from src.tgraph_bot.graphs.graph_modules import (
     PlayCountByHourOfDayGraph,
     SampleGraph,
 )
+from src.tgraph_bot.graphs.graph_modules.core.base_graph import BaseGraph
 from tests.utils.graph_helpers import (
     create_test_config_minimal,
     run_standard_graph_tests,
@@ -79,7 +80,7 @@ class TestStandardGraphs:
     ) -> None:
         """Test standard graph functionality using generic test utilities."""
         # Get the sample data from the fixture
-        sample_data = request.getfixturevalue(sample_data_fixture)
+        sample_data: dict[str, object] = request.getfixturevalue(sample_data_fixture)  # pyright: ignore[reportAny]
 
         run_standard_graph_tests(
             graph_class,
@@ -136,7 +137,7 @@ class TestStandardGraphs:
     )
     def test_configuration_based_titles(
         self,
-        graph_class: type,
+        graph_class: type[BaseGraph],
         config_attribute: str,
         config_value: object,
         expected_title: str,
@@ -165,7 +166,7 @@ class TestStandardGraphs:
     )
     def test_configuration_access(
         self,
-        graph_class: type,
+        graph_class: type[BaseGraph],
         config_attribute: str,
         config_value: object,
     ) -> None:
@@ -223,7 +224,7 @@ class TestSampleGraphSpecific:
         from tests.utils.graph_helpers import matplotlib_cleanup
         import pytest
 
-        invalid_data_samples = [
+        invalid_data_samples: list[dict[str, object]] = [
             {"invalid_key": "invalid_value"},
             {"x_values": [1, 2, 3], "y_values": [10, 20, 30, 40, 50]},
             {"x_values": [], "y_values": []},
@@ -287,7 +288,7 @@ class TestSpecificGraphBehaviors:
         assert graph.validate_data(invalid_data) is False
 
         # Test empty values
-        invalid_data = {"x_values": [], "y_values": []}
+        invalid_data: dict[str, object] = {"x_values": [], "y_values": []}
         assert graph.validate_data(invalid_data) is False
 
     def test_sample_graph_sample_data_structure(self) -> None:
@@ -302,5 +303,7 @@ class TestSpecificGraphBehaviors:
         # Verify data types and lengths
         assert isinstance(sample_data["x_values"], list)
         assert isinstance(sample_data["y_values"], list)
-        assert len(sample_data["x_values"]) == len(sample_data["y_values"])
-        assert len(sample_data["x_values"]) > 0
+        x_values: list[object] = sample_data["x_values"]  # pyright: ignore[reportUnknownVariableType]
+        y_values: list[object] = sample_data["y_values"]  # pyright: ignore[reportUnknownVariableType]
+        assert len(x_values) == len(y_values)
+        assert len(x_values) > 0
