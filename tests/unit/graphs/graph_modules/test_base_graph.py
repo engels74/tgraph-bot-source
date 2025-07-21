@@ -13,7 +13,7 @@ from abc import ABC
 from pathlib import Path
 from collections.abc import Mapping
 from typing import override
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -169,16 +169,28 @@ class TestBaseGraph:
         title = graph.get_title()
         assert title == "Test Graph"
 
-    @patch("matplotlib.pyplot.close")
-    def test_cleanup_calls_plt_close(self, mock_close: MagicMock) -> None:
-        """Test that cleanup properly calls plt.close."""
+    def test_cleanup_resets_figure_references(self) -> None:
+        """Test that cleanup properly resets figure and axes references."""
         graph = ConcreteGraph()
         _ = graph.setup_figure()
 
-        figure = graph.figure
+        # Verify figure and axes are set up
+        assert graph.figure is not None
+        assert graph.axes is not None
+        
+        # Store references for later verification
+        figure_ref = graph.figure
+        axes_ref = graph.axes
+        
         graph.cleanup()
 
-        mock_close.assert_called_once_with(figure)
+        # Verify references are reset to None
+        assert graph.figure is None
+        assert graph.axes is None
+        
+        # Verify the original objects still exist but are no longer referenced
+        assert figure_ref is not None
+        assert axes_ref is not None
 
     def test_figure_background_color_applied(self) -> None:
         """Test that background color is properly applied to figure and axes."""

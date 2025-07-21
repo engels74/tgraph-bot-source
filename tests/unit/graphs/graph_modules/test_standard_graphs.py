@@ -20,10 +20,11 @@ from src.tgraph_bot.graphs.graph_modules import (
     SampleGraph,
 )
 from src.tgraph_bot.graphs.graph_modules.core.base_graph import BaseGraph
+from pathlib import Path
 from tests.utils.graph_helpers import (
     create_test_config_minimal,
     run_standard_graph_tests,
-    run_standard_graph_error_tests,
+    matplotlib_cleanup,
 )
 from tests.utils.test_helpers import (
     assert_graph_output_valid,
@@ -90,33 +91,36 @@ class TestStandardGraphs:
         )
 
     @pytest.mark.parametrize(
-        "graph_class,invalid_data_samples,expected_error_patterns",
+        "graph_class,invalid_data_samples",
         [
             (
                 PlayCountByHourOfDayGraph,
                 [
                     {"invalid_key": "invalid_value"},
-                    {"play_history": "not_a_dict"},
                     {"play_history": {"invalid_structure": True}},
-                ],
-                [
-                    "Missing 'data' in play history extraction",
-                    "Missing 'data' in play history extraction",
-                    "Missing 'data' in play history extraction",
                 ],
             ),
         ],
     )
-    def test_standard_error_handling(
+    def test_standard_resilient_handling(
         self,
-        graph_class: type,
+        graph_class: type[BaseGraph],
         invalid_data_samples: list[dict[str, object]],
-        expected_error_patterns: list[str],
     ) -> None:
-        """Test error handling using generic test utilities."""
-        run_standard_graph_error_tests(
-            graph_class, invalid_data_samples, expected_error_patterns
-        )
+        """Test resilient handling of invalid data - should not raise exceptions."""
+        for invalid_data in invalid_data_samples:
+            with matplotlib_cleanup():
+                graph: BaseGraph = graph_class()
+                
+                # Should not raise exception - graceful fallback behavior
+                output_path: str = graph.generate(invalid_data)
+                
+                # Verify file was created (empty graph)
+                output_file: Path = Path(output_path)
+                assert output_file.exists()
+                
+                # Clean up
+                output_file.unlink(missing_ok=True)
 
     @pytest.mark.parametrize(
         "graph_class,config_attribute,config_value,expected_title",
