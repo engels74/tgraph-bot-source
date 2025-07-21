@@ -43,7 +43,7 @@ def get_local_timezone() -> ZoneInfo:
         # Fall back to getting the key from datetime for macOS/Windows
         local_tz = datetime.now().astimezone().tzinfo
         if hasattr(local_tz, 'key'):
-            key = getattr(local_tz, 'key')
+            key = getattr(local_tz, 'key')  # pyright: ignore[reportAny] # timezone key from system
             if isinstance(key, str):
                 return ZoneInfo(key)
         # Final fallback: use UTC

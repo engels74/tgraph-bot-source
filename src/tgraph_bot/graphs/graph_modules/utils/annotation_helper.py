@@ -351,52 +351,53 @@ class AnnotationHelper:
             fontsize: Font size (uses config default if None)
             fontweight: Font weight
         """
-        # ax is already typed as Axes, no need for runtime check
+        try:
+            # Use config-based font size if not specified
+            if fontsize is None:
+                fontsize = self.graph.get_annotation_font_size()
 
-        # Use config-based font size if not specified
-        if fontsize is None:
-            fontsize = self.graph.get_annotation_font_size()
+            # Format the value for display
+            if isinstance(value, float) and value.is_integer():
+                text = str(int(value))
+            else:
+                text = str(value)
 
-        # Format the value for display
-        if isinstance(value, float) and value.is_integer():
-            text = str(int(value))
-        else:
-            text = str(value)
+            # Calculate actual position with offsets
+            actual_x = x + offset_x
+            actual_y = y + offset_y
 
-        # Calculate actual position with offsets
-        actual_x = x + offset_x
-        actual_y = y + offset_y
+            if self.graph.is_annotation_outline_enabled():
+                # Add text with outline for better readability
+                from matplotlib import patheffects
 
-        if self.graph.is_annotation_outline_enabled():
-            # Add text with outline for better readability
-            from matplotlib import patheffects
-
-            _ = ax.text(  # pyright: ignore[reportUnknownMemberType]
-                actual_x,
-                actual_y,
-                text,
-                ha=ha,
-                va=va,
-                fontsize=fontsize,
-                fontweight=fontweight,
-                color="white",
-                path_effects=[
-                    patheffects.Stroke(
-                        linewidth=3,
-                        foreground=self.graph.get_annotation_outline_color(),
-                    ),
-                    patheffects.Normal(),
-                ],
-            )
-        else:
-            # Add text without outline
-            _ = ax.text(  # pyright: ignore[reportUnknownMemberType]
-                actual_x,
-                actual_y,
-                text,
-                ha=ha,
-                va=va,
-                fontsize=fontsize,
-                fontweight=fontweight,
-                color=self.graph.get_annotation_color(),
-            )
+                _ = ax.text(  # pyright: ignore[reportUnknownMemberType]
+                    actual_x,
+                    actual_y,
+                    text,
+                    ha=ha,
+                    va=va,
+                    fontsize=fontsize,
+                    fontweight=fontweight,
+                    color="white",
+                    path_effects=[
+                        patheffects.Stroke(
+                            linewidth=3,
+                            foreground=self.graph.get_annotation_outline_color(),
+                        ),
+                        patheffects.Normal(),
+                    ],
+                )
+            else:
+                # Add text without outline
+                _ = ax.text(  # pyright: ignore[reportUnknownMemberType]
+                    actual_x,
+                    actual_y,
+                    text,
+                    ha=ha,
+                    va=va,
+                    fontsize=fontsize,
+                    fontweight=fontweight,
+                    color=self.graph.get_annotation_color(),
+                )
+        except Exception as e:
+            logger.warning(f"Failed to add text annotation: {e}")

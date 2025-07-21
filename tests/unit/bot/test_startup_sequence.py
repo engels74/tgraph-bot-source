@@ -107,7 +107,7 @@ class TestStartupSequence:
 
         # Mock history method with proper typing
         async def mock_history(
-            limit: int | None = None,
+            limit: int | None = None,  # pyright: ignore[reportUnusedParameter] # required for discord.py API compatibility
         ) -> AsyncGenerator[MagicMock, None]:
             for msg in [bot_message, other_message]:
                 yield msg
@@ -182,7 +182,7 @@ class TestStartupSequence:
 
         # Mock history with proper typing
         async def mock_history(
-            limit: int | None = None,
+            limit: int | None = None,  # pyright: ignore[reportUnusedParameter] # required for discord.py API compatibility
         ) -> AsyncGenerator[MagicMock, None]:
             yield bot_message
 

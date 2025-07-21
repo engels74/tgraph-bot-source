@@ -328,8 +328,8 @@ class TestDataFetcher:
             # Verify that all calls were made with the expected command
             calls = mock_make_request.call_args_list
             for call in calls:
-                command = call[0][0]
-                params = call[0][1]
+                command = call[0][0]  # pyright: ignore[reportAny] # mock call args from unittest.mock
+                params = call[0][1]  # pyright: ignore[reportAny] # mock call args from unittest.mock
                 assert command == "get_history"
                 assert params["length"] == 1000
                 assert params["time_range"] == 90
