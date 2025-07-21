@@ -292,7 +292,7 @@ class DataProcessor:
             _ = self.validate_dict_data(data, required_keys, context)
             return True, ""
         except ValueError as e:
-            return False, f"Invalid {context} data: {str(e).replace(f'Invalid data format for {context}: expected dict', 'Missing required key').replace(f'Missing required key ', 'Missing required key: ')}"
+            return False, f"Invalid {context} data: {str(e).replace(f'Invalid data format for {context}: expected dict', 'Missing required key').replace('Missing required key ', 'Missing required key: ')}"
 
     def extract_and_process_monthly_plays(
         self, data: Mapping[str, object]
