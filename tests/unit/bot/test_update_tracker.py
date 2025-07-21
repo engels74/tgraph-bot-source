@@ -18,7 +18,7 @@ Consolidated from:
 
 import pytest
 from datetime import datetime, time, timedelta
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock
 
 from discord.ext import commands
 
@@ -32,7 +32,7 @@ from src.tgraph_bot.bot.update_tracker import (
     ErrorClassifier,
     CircuitBreaker,
     CircuitState,
-    ErrorMetrics,
+
     get_local_timezone,
 )
 from tests.utils.test_helpers import create_mock_discord_bot

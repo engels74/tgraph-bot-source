@@ -54,14 +54,15 @@ class TestGraphCustomizationValidation:
                 )
                 config_obj: TGraphBotConfig = graph.config
 
-                assert config_obj.TV_COLOR == "#ff0000"
-                assert config_obj.MOVIE_COLOR == "#00ff00"
-                assert config_obj.GRAPH_BACKGROUND_COLOR == "#f0f0f0"
-                assert config_obj.ANNOTATION_COLOR == "#0000ff"
-                assert config_obj.ANNOTATION_OUTLINE_COLOR == "#ffffff"
+                # Check the actual colors from comprehensive_config fixture
+                assert config_obj.TV_COLOR == "#ff4444"
+                assert config_obj.MOVIE_COLOR == "#44ff44"
+                assert config_obj.GRAPH_BACKGROUND_COLOR == "#f8f8f8"
+                assert config_obj.ANNOTATION_COLOR == "#4444ff"
+                assert config_obj.ANNOTATION_OUTLINE_COLOR == "#222222"
 
                 # Verify graph can be instantiated with custom colors
-                assert graph.background_color == "#f0f0f0"
+                assert graph.background_color == "#f8f8f8"
 
                 # Cleanup
                 graph.cleanup()
@@ -248,10 +249,14 @@ class TestGraphCustomizationValidation:
             # Verify only enabled graphs are created
             enabled_types = factory.get_enabled_graph_types()
 
-            # Should have daily_play_count and top_10_users, but not hourofday
+            # Based on comprehensive_config: daily_play_count=True, top_10_users=True, hourofday=True
+            # dayofweek=False, platforms=False, month=False
             assert "daily_play_count" in enabled_types
             assert "top_10_users" in enabled_types
-            assert "play_count_by_hourofday" not in enabled_types
+            assert "play_count_by_hourofday" in enabled_types
+            assert "play_count_by_dayofweek" not in enabled_types
+            assert "top_10_platforms" not in enabled_types
+            assert "play_count_by_month" not in enabled_types
 
             # Test each enabled graph with all settings
             for graph_type in enabled_types:
@@ -268,7 +273,8 @@ class TestGraphCustomizationValidation:
                     assert config_obj.TV_COLOR == "#ff4444"
                     assert config_obj.MOVIE_COLOR == "#44ff44"
                     assert config_obj.ENABLE_GRAPH_GRID is True
-                    assert config_obj.CENSOR_USERNAMES is True
+                    # comprehensive_config has CENSOR_USERNAMES=False
+                    assert config_obj.CENSOR_USERNAMES is False
                 finally:
                     graph.cleanup()
 

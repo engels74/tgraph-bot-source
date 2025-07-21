@@ -262,9 +262,9 @@ class TestUpdateGraphsCog:
             await update_graphs_cog._cleanup_bot_messages(mock_channel)  # pyright: ignore[reportPrivateUsage]
 
             # Should only delete bot's messages
-            mock_bot_message1.delete.assert_called_once()  # pyright: ignore[reportAny]
-            mock_bot_message2.delete.assert_called_once()  # pyright: ignore[reportAny]
-            mock_user_message.delete.assert_not_called()  # pyright: ignore[reportAny]
+            mock_bot_message1.delete.assert_called_once()  # pyright: ignore[reportAttributeAccessIssue]
+            mock_bot_message2.delete.assert_called_once()  # pyright: ignore[reportAttributeAccessIssue]
+            mock_user_message.delete.assert_not_called()  # pyright: ignore[reportAttributeAccessIssue]
 
     @pytest.mark.asyncio
     async def test_cleanup_bot_messages_no_manage_permissions(
@@ -297,7 +297,7 @@ class TestUpdateGraphsCog:
             await update_graphs_cog._cleanup_bot_messages(mock_channel)  # pyright: ignore[reportPrivateUsage]
 
             # Should still attempt to delete bot's own messages
-            mock_bot_message.delete.assert_called_once()  # pyright: ignore[reportAny]
+            mock_bot_message.delete.assert_called_once()  # pyright: ignore[reportAttributeAccessIssue]
 
     @pytest.mark.asyncio
     async def test_cleanup_bot_messages_forbidden_error(
