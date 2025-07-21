@@ -25,17 +25,10 @@ class TestGraphFactory:
         assert factory._config_accessor is not None  # pyright: ignore[reportPrivateUsage]
         assert factory._graph_registry is not None  # pyright: ignore[reportPrivateUsage]
 
-    def test_factory_initialization_with_tgraphbot_config(self) -> None:
+    def test_factory_initialization_with_tgraphbot_config(self, base_config: TGraphBotConfig) -> None:
         """Test GraphFactory initialization with TGraphBotConfig object."""
-        config = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token",
-            CHANNEL_ID=123456789,
-            ENABLE_DAILY_PLAY_COUNT=True,
-        )
-        factory = GraphFactory(config)
-        assert factory.config == config
+        factory = GraphFactory(base_config)
+        assert factory.config == base_config
         assert factory._config_accessor is not None  # pyright: ignore[reportPrivateUsage]
         assert factory._graph_registry is not None  # pyright: ignore[reportPrivateUsage]
 

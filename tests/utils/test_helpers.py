@@ -475,3 +475,302 @@ def create_mock_interaction(
     mock_interaction.followup = mock_followup
 
     return cast(discord.Interaction, mock_interaction)
+
+
+def create_mock_channel(
+    *,
+    channel_id: int = 333444555666777888,
+    name: str = "test-channel",
+    channel_type: object | None = None,
+    guild_id: int | None = 111222333444555666,
+    permissions: dict[str, bool] | None = None,
+) -> discord.TextChannel:
+    """
+    Create a mock Discord text channel with configurable attributes.
+
+    This utility function creates a standardized mock Discord text channel instance
+    that can be used across tests to avoid repetitive mock setup code.
+
+    Args:
+        channel_id: The channel ID (default: 333444555666777888)
+        name: The channel name (default: "test-channel")
+        channel_type: The channel type (default: discord.ChannelType.text)
+        guild_id: The guild ID (default: 111222333444555666, None for DM)
+        permissions: Dict of permission names to boolean values for bot permissions
+
+    Returns:
+        discord.TextChannel: A configured mock Discord text channel with the specified attributes
+
+    Example:
+        >>> channel = create_mock_channel(name="general", channel_id=123456)
+        >>> assert channel.name == "general"
+        >>> assert channel.id == 123456
+    """
+    if channel_id <= 0:
+        msg = "channel_id must be a positive integer"
+        raise ValueError(msg)
+
+    try:
+        import discord
+        from unittest.mock import MagicMock
+    except ImportError as e:
+        msg = f"Required dependencies not available: {e}"
+        raise ImportError(msg) from e
+
+    # Create mock channel
+    mock_channel = MagicMock(spec=discord.TextChannel)
+    mock_channel.id = channel_id
+    mock_channel.name = name
+    mock_channel.type = channel_type or discord.ChannelType.text
+
+    # Set up guild if provided
+    if guild_id is not None:
+        mock_guild = MagicMock()
+        mock_guild.id = guild_id
+        mock_channel.guild = mock_guild
+
+        # Set up bot permissions
+        mock_guild_member = MagicMock()
+        default_permissions = {
+            "manage_messages": True,
+            "send_messages": True,
+            "read_messages": True,
+            "embed_links": True,
+            "attach_files": True,
+        }
+        if permissions:
+            default_permissions.update(permissions)
+
+        # Create permissions object
+        mock_permissions = MagicMock()
+        for perm_name, perm_value in default_permissions.items():
+            setattr(mock_permissions, perm_name, perm_value)
+
+        mock_guild_member.permissions_for.return_value = mock_permissions
+        mock_guild.me = mock_guild_member
+    else:
+        mock_channel.guild = None
+
+    return mock_channel
+
+
+def create_mock_message(
+    *,
+    message_id: str | int = "123456789",
+    author_id: int = 987654321,
+    author_name: str = "TestUser",
+    content: str = "Test message",
+    is_bot: bool = False,
+) -> discord.Message:
+    """
+    Create a mock Discord message with configurable attributes.
+
+    This utility function creates a standardized mock Discord message instance
+    that can be used across tests to avoid repetitive mock setup code.
+
+    Args:
+        message_id: The message ID (default: "123456789")
+        author_id: The author's user ID (default: 987654321)
+        author_name: The author's username (default: "TestUser")
+        content: The message content (default: "Test message")
+        is_bot: Whether the author is a bot (default: False)
+
+    Returns:
+        discord.Message: A configured mock Discord message with the specified attributes
+
+    Example:
+        >>> message = create_mock_message(content="Hello world", author_name="Alice")
+        >>> assert message.content == "Hello world"
+        >>> assert message.author.name == "Alice"
+    """
+    try:
+        import discord
+        from unittest.mock import MagicMock, AsyncMock
+    except ImportError as e:
+        msg = f"Required dependencies not available: {e}"
+        raise ImportError(msg) from e
+
+    # Create mock message
+    mock_message = MagicMock(spec=discord.Message)
+    mock_message.id = message_id
+    mock_message.content = content
+
+    # Create mock author
+    mock_author = MagicMock(spec=discord.User)
+    mock_author.id = author_id
+    mock_author.name = author_name
+    mock_author.bot = is_bot
+    mock_message.author = mock_author
+
+    # Add async delete method
+    mock_message.delete = AsyncMock()
+
+    return mock_message
+
+
+def assert_graph_output_valid(
+    output_path: str,
+    *,
+    expected_extension: str = ".png",
+    expected_filename_pattern: str | None = None,
+    should_exist: bool = True,
+) -> None:
+    """
+    Assert that graph output meets standard validation criteria.
+
+    This utility function consolidates common graph output validation patterns
+    to reduce repetitive assertion code across tests.
+
+    Args:
+        output_path: The path to the generated graph file
+        expected_extension: Expected file extension (default: ".png")
+        expected_filename_pattern: Optional pattern that should be in filename
+        should_exist: Whether the file should exist (default: True)
+
+    Raises:
+        AssertionError: If any validation criteria are not met
+
+    Example:
+        >>> output_path = graph.generate(data)
+        >>> assert_graph_output_valid(output_path, expected_filename_pattern="daily_play_count")
+    """
+    from pathlib import Path
+
+    output_file = Path(output_path)
+
+    if should_exist:
+        assert output_file.exists(), f"Graph output file should exist: {output_path}"
+        assert output_path.endswith(expected_extension), (
+            f"Graph output should have {expected_extension} extension: {output_path}"
+        )
+
+        if expected_filename_pattern:
+            assert expected_filename_pattern in output_path, (
+                f"Graph filename should contain '{expected_filename_pattern}': {output_path}"
+            )
+    else:
+        assert not output_file.exists(), f"Graph output file should not exist: {output_path}"
+
+
+def assert_file_cleanup_successful(file_path: str | Path) -> None:
+    """
+    Assert that file cleanup was successful.
+
+    This utility function provides a standard way to verify that test files
+    have been properly cleaned up after test execution.
+
+    Args:
+        file_path: Path to the file that should be cleaned up
+
+    Raises:
+        AssertionError: If the file still exists after cleanup
+
+    Example:
+        >>> output_path = graph.generate(data)
+        >>> Path(output_path).unlink(missing_ok=True)
+        >>> assert_file_cleanup_successful(output_path)
+    """
+    from pathlib import Path
+
+    file_obj = Path(file_path)
+    assert not file_obj.exists(), f"File should be cleaned up: {file_path}"
+
+
+def assert_config_values_match(
+    actual_config: object,
+    expected_values: dict[str, object],
+) -> None:
+    """
+    Assert that configuration object has expected attribute values.
+
+    This utility function consolidates configuration validation patterns
+    to reduce repetitive assertion code across configuration tests.
+
+    Args:
+        actual_config: The configuration object to validate
+        expected_values: Dictionary of attribute names to expected values
+
+    Raises:
+        AssertionError: If any configuration values don't match expectations
+
+    Example:
+        >>> config = TGraphBotConfig(TAUTULLI_API_KEY="test_key", ...)
+        >>> assert_config_values_match(config, {
+        ...     "TAUTULLI_API_KEY": "test_key",
+        ...     "UPDATE_DAYS": 7,
+        ... })
+    """
+    for attr_name, expected_value in expected_values.items():
+        actual_value: object = getattr(actual_config, attr_name)
+        assert actual_value == expected_value, (
+            f"Config attribute {attr_name}: expected {expected_value}, got {actual_value}"
+        )
+
+
+def assert_mock_called_with_pattern(
+    mock_obj: object,
+    *,
+    call_count: int | None = None,
+    called_with_args: tuple[object, ...] | None = None,
+    called_with_kwargs: dict[str, object] | None = None,
+    not_called: bool = False,
+) -> None:
+    """
+    Assert that mock object was called according to specified patterns.
+
+    This utility function consolidates common mock verification patterns
+    to reduce repetitive assertion code across tests.
+
+    Args:
+        mock_obj: The mock object to verify
+        call_count: Expected number of calls (None to skip check)
+        called_with_args: Expected positional arguments for last call
+        called_with_kwargs: Expected keyword arguments for last call
+        not_called: Whether the mock should not have been called
+
+    Raises:
+        AssertionError: If mock call patterns don't match expectations
+
+    Example:
+        >>> mock_func = MagicMock()
+        >>> mock_func("arg1", key="value")
+        >>> assert_mock_called_with_pattern(
+        ...     mock_func,
+        ...     call_count=1,
+        ...     called_with_args=("arg1",),
+        ...     called_with_kwargs={"key": "value"}
+        ... )
+    """
+    from unittest.mock import MagicMock
+
+    if not isinstance(mock_obj, MagicMock):
+        msg = f"Expected MagicMock object, got {type(mock_obj)}"
+        raise TypeError(msg)
+
+    if not_called:
+        assert not mock_obj.called, "Mock should not have been called"
+        return
+
+    if call_count is not None:
+        assert mock_obj.call_count == call_count, (
+            f"Expected {call_count} calls, got {mock_obj.call_count}"
+        )
+
+    if called_with_args is not None or called_with_kwargs is not None:
+        if not mock_obj.called:
+            msg = "Mock was not called, cannot verify call arguments"
+            raise AssertionError(msg)
+
+        last_call = mock_obj.call_args
+        if called_with_args is not None:
+            actual_args = last_call.args if last_call else ()
+            assert actual_args == called_with_args, (
+                f"Expected args {called_with_args}, got {actual_args}"
+            )
+
+        if called_with_kwargs is not None:
+            from typing import cast
+            actual_kwargs = cast(dict[str, object], last_call.kwargs if last_call else {})
+            assert actual_kwargs == called_with_kwargs, (
+                f"Expected kwargs {called_with_kwargs}, got {actual_kwargs}"
+            )

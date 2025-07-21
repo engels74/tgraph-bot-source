@@ -31,20 +31,11 @@ if TYPE_CHECKING:
 class TestGraphCustomizationValidation:
     """Test cases for validating all graph customization options."""
 
-    def test_color_customization_validation(self) -> None:
+    def test_color_customization_validation(self, comprehensive_config: TGraphBotConfig) -> None:
         """Test that all color customization options work correctly."""
         with matplotlib_cleanup():
-            config = TGraphBotConfig(
-                TAUTULLI_API_KEY="test_api_key_here",
-                TAUTULLI_URL="http://localhost:8181/api/v2",
-                DISCORD_TOKEN="test_discord_token_1234567890",
-                CHANNEL_ID=123456789,
-                TV_COLOR="#ff0000",
-                MOVIE_COLOR="#00ff00",
-                GRAPH_BACKGROUND_COLOR="#f0f0f0",
-                ANNOTATION_COLOR="#0000ff",
-                ANNOTATION_OUTLINE_COLOR="#ffffff",
-            )
+            # Use comprehensive config which has custom colors set
+            config = comprehensive_config
 
             factory = create_graph_factory_with_config(config)
 
@@ -248,32 +239,9 @@ class TestGraphCustomizationValidation:
             finally:
                 graph.cleanup()
 
-    def test_comprehensive_customization_integration(self) -> None:
+    def test_comprehensive_customization_integration(self, comprehensive_config: TGraphBotConfig) -> None:
         """Test all customization options working together."""
         with matplotlib_cleanup():
-            comprehensive_config = TGraphBotConfig(
-                TAUTULLI_API_KEY="test_api_key_here",
-                TAUTULLI_URL="http://localhost:8181/api/v2",
-                DISCORD_TOKEN="test_discord_token_1234567890",
-                CHANNEL_ID=123456789,
-                # Colors
-                TV_COLOR="#ff4444",
-                MOVIE_COLOR="#44ff44",
-                GRAPH_BACKGROUND_COLOR="#f8f8f8",
-                ANNOTATION_COLOR="#4444ff",
-                ANNOTATION_OUTLINE_COLOR="#222222",
-                # Feature toggles
-                ENABLE_DAILY_PLAY_COUNT=True,
-                ENABLE_TOP_10_USERS=True,
-                ENABLE_PLAY_COUNT_BY_HOUROFDAY=False,
-                # Settings
-                ENABLE_GRAPH_GRID=True,
-                CENSOR_USERNAMES=True,
-                ENABLE_ANNOTATION_OUTLINE=True,
-                # Annotations
-                ANNOTATE_DAILY_PLAY_COUNT=True,
-                ANNOTATE_TOP_10_USERS=False,
-            )
 
             factory = create_graph_factory_with_config(comprehensive_config)
 

@@ -18,6 +18,8 @@ from src.tgraph_bot.main import TGraphBot
 from tests.utils.test_helpers import (
     create_config_manager_with_config,
     create_mock_interaction,
+    create_mock_channel,
+    create_mock_message,
 )
 
 
@@ -77,8 +79,7 @@ class TestUpdateGraphsCog:
         )
 
         # Create mock channel
-        mock_channel = MagicMock(spec=discord.TextChannel)
-        mock_channel.name = "test-channel"
+        mock_channel = create_mock_channel(name="test-channel")
 
         with (
             patch.object(
@@ -139,8 +140,7 @@ class TestUpdateGraphsCog:
         )
 
         # Create mock channel
-        mock_channel = MagicMock(spec=discord.TextChannel)
-        mock_channel.name = "test-channel"
+        mock_channel = create_mock_channel(name="test-channel")
 
         with (
             patch.object(
@@ -184,8 +184,7 @@ class TestUpdateGraphsCog:
         )
 
         # Create mock channel
-        mock_channel = MagicMock(spec=discord.TextChannel)
-        mock_channel.name = "test-channel"
+        mock_channel = create_mock_channel(name="test-channel")
 
         with (
             patch.object(
@@ -231,44 +230,27 @@ class TestUpdateGraphsCog:
     ) -> None:
         """Test successful cleanup of bot messages."""
         # Create mock channel
-        mock_channel = MagicMock(spec=discord.TextChannel)
-        mock_channel.name = "test-channel"
-
-        # Create mock guild and permissions
-        mock_guild_member = MagicMock()
-        mock_guild_member.permissions_for.return_value.manage_messages = True  # pyright: ignore[reportAny]
-        mock_channel.guild.me = mock_guild_member  # pyright: ignore[reportAny]
+        mock_channel = create_mock_channel(name="test-channel")
 
         # Create mock bot user
         mock_bot_user = MagicMock()
         mock_bot_user.id = 123456789
 
         # Create mock messages - some from bot, some from users
-        mock_bot_message1 = MagicMock()
-        mock_bot_message1.author.id = (  # pyright: ignore[reportAny]
-            123456789  # Bot's message
+        mock_bot_message1 = create_mock_message(
+            message_id="msg1", author_id=123456789, is_bot=True
         )
-        mock_bot_message1.id = "msg1"
-        mock_bot_message1.delete = AsyncMock()
-
-        mock_bot_message2 = MagicMock()
-        mock_bot_message2.author.id = (  # pyright: ignore[reportAny]
-            123456789  # Bot's message
+        mock_bot_message2 = create_mock_message(
+            message_id="msg2", author_id=123456789, is_bot=True
         )
-        mock_bot_message2.id = "msg2"
-        mock_bot_message2.delete = AsyncMock()
-
-        mock_user_message = MagicMock()
-        mock_user_message.author.id = (  # pyright: ignore[reportAny]
-            987654321  # User's message
+        mock_user_message = create_mock_message(
+            message_id="user_msg", author_id=987654321, is_bot=False
         )
-        mock_user_message.id = "user_msg"
-        mock_user_message.delete = AsyncMock()
 
         # Mock the async iterator for channel history
         async def mock_history(
             *_args: object, **_kwargs: object
-        ) -> AsyncIterator[MagicMock]:
+        ) -> AsyncIterator[discord.Message]:
             for message in [mock_bot_message1, mock_user_message, mock_bot_message2]:
                 yield message
 
@@ -289,26 +271,21 @@ class TestUpdateGraphsCog:
         self, update_graphs_cog: UpdateGraphsCog
     ) -> None:
         """Test cleanup when bot lacks manage messages permission."""
-        mock_channel = MagicMock(spec=discord.TextChannel)
-        mock_channel.name = "test-channel"
+        mock_channel = create_mock_channel(
+            name="test-channel", permissions={"manage_messages": False}
+        )
 
         mock_bot_user = MagicMock()
         mock_bot_user.id = 123456789
 
-        # Mock guild member without manage_messages permission
-        mock_guild_member = MagicMock()
-        mock_guild_member.permissions_for.return_value.manage_messages = False  # pyright: ignore[reportAny]
-        mock_channel.guild.me = mock_guild_member  # pyright: ignore[reportAny]
-
         # Create mock bot message
-        mock_bot_message = MagicMock()
-        mock_bot_message.author.id = 123456789  # pyright: ignore[reportAny]
-        mock_bot_message.id = "msg1"
-        mock_bot_message.delete = AsyncMock()
+        mock_bot_message = create_mock_message(
+            message_id="msg1", author_id=123456789, is_bot=True
+        )
 
         async def mock_history(
             *_args: object, **_kwargs: object
-        ) -> AsyncIterator[MagicMock]:
+        ) -> AsyncIterator[discord.Message]:
             for message in [mock_bot_message]:
                 yield message
 
@@ -533,8 +510,7 @@ class TestUpdateGraphsCog:
         )
 
         # Create mock channel
-        mock_channel = MagicMock(spec=discord.TextChannel)
-        mock_channel.name = "test-channel"
+        mock_channel = create_mock_channel(name="test-channel")
 
         with (
             patch.object(

@@ -18,16 +18,9 @@ from tests.utils.test_helpers import create_config_manager_with_config
 class TestGraphManagerArchitecture:
     """Test cases for GraphManager architecture."""
 
-    def test_init_with_config_manager(self) -> None:
+    def test_init_with_config_manager(self, minimal_config: TGraphBotConfig) -> None:
         """Test GraphManager initialization with ConfigManager."""
-        # Create a mock config using utility
-        mock_config = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_token",
-            CHANNEL_ID=123456789,
-        )
-        config_manager = create_config_manager_with_config(mock_config)
+        config_manager = create_config_manager_with_config(minimal_config)
 
         graph_manager = GraphManager(config_manager)
 
@@ -146,16 +139,9 @@ class TestGraphManagerArchitecture:
                         assert result == ["graph1.png", "graph2.png"]
 
     @pytest.mark.asyncio
-    async def test_error_handling_architecture(self) -> None:
+    async def test_error_handling_architecture(self, minimal_config: TGraphBotConfig) -> None:
         """Test error handling in the GraphManager architecture."""
-        # Create a mock config using utility
-        mock_config = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_token",
-            CHANNEL_ID=123456789,
-        )
-        config_manager = create_config_manager_with_config(mock_config)
+        config_manager = create_config_manager_with_config(minimal_config)
 
         graph_manager = GraphManager(config_manager)
 
