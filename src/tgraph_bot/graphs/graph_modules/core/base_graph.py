@@ -591,7 +591,7 @@ class BaseGraph(ABC):
             # Use non-interactive cleanup methods that are thread-safe
             if hasattr(plt, 'get_fignums') and plt.get_fignums():
                 # Close all figures instead of clearing current figure
-                plt.close('all')
+                plt.close('all')  # pyright: ignore[reportUnknownMemberType]
         except Exception as e:
             logger.debug(f"Minor cleanup warning: {e}")
 

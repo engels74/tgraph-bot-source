@@ -234,7 +234,7 @@ class DataProcessor:
                     # Try common keys that might contain the actual list data
                     for list_key in ["data", "records", "history", "play_history"]:
                         if list_key in raw_data:
-                            nested_data = raw_data[list_key]
+                            nested_data: object = raw_data[list_key]  # pyright: ignore[reportUnknownVariableType]
                             if isinstance(nested_data, list):
                                 logger.info(f"Found list data nested under '{list_key}' key")
                                 list_data = cast(list[object], nested_data)
