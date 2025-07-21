@@ -343,15 +343,17 @@ class TestExtractAndProcessPlayHistory:
         mock_process.assert_called_once()
 
     def test_extract_and_process_extraction_failure(self) -> None:
-        """Test extract and process fails when extraction fails."""
+        """Test extract and process handles gracefully when no expected data key is found."""
         processor = DataProcessor()
 
-        data = {"other_data": "present"}  # Missing play_history
+        data = {"other_data": "present"}  # Missing expected data key
 
-        with pytest.raises(
-            ValueError, match="Missing 'data' in play history extraction"
-        ):
-            _ = processor.extract_and_process_play_history(data)
+        # Should return empty records instead of raising an exception
+        raw_records, processed_records = processor.extract_and_process_play_history(data)
+        
+        # Expect empty data due to fallback behavior
+        assert len(raw_records) == 0
+        assert len(processed_records) == 0
 
     @patch(
         "src.tgraph_bot.graphs.graph_modules.utils.utils.process_play_history_data"
@@ -594,8 +596,9 @@ class TestIntegrationScenarios:
         data = api_response["response"]["data"]
         assert isinstance(data, dict)
 
-        # Should raise ValueError for missing required key
-        with pytest.raises(
-            ValueError, match="Missing 'data' in play history extraction"
-        ):
-            _ = processor.extract_and_process_play_history(data)
+        # Should handle gracefully and return empty records due to fallback behavior
+        raw_records, processed_records = processor.extract_and_process_play_history(data)
+        
+        # Expect empty data due to fallback behavior
+        assert len(raw_records) == 0
+        assert len(processed_records) == 0

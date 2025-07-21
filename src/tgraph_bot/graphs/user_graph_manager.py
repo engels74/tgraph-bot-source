@@ -232,7 +232,7 @@ class UserGraphManager:
             )
 
             user_data: dict[str, object] = {
-                "play_history": play_history,
+                "data": play_history,
                 "time_range_days": time_range_days,
                 "user_email": user_email,
                 "user_id": user_id,
@@ -316,13 +316,13 @@ class UserGraphManager:
         """
         try:
             # Check for required keys
-            required_keys = ["play_history", "user_email", "user_id", "user_info"]
+            required_keys = ["data", "user_email", "user_id", "user_info"]
             for key in required_keys:
                 if key not in data:
                     progress_tracker.add_error(f"Missing '{key}' in user data")
                     return False
 
-            play_history = data["play_history"]
+            play_history = data["data"]
             user_email = data["user_email"]
 
             # Check if play_history has data

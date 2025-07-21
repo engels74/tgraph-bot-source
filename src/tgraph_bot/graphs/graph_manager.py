@@ -259,7 +259,7 @@ class GraphManager:
             )
 
             data: dict[str, object] = {
-                "play_history": play_history,
+                "data": play_history,
                 "monthly_plays": monthly_plays,
                 "time_range_days": time_range_days,
                 "time_range_months": time_range_months,
@@ -335,15 +335,15 @@ class GraphManager:
         """
         try:
             # Check for required keys
-            if "play_history" not in data:
-                progress_tracker.add_error("Missing 'play_history' in data")
+            if "data" not in data:
+                progress_tracker.add_error("Missing 'data' in data")
                 return False
 
             if "monthly_plays" not in data:
                 progress_tracker.add_error("Missing 'monthly_plays' in data")
                 return False
 
-            play_history = data["play_history"]
+            play_history = data["data"]
             monthly_plays = data["monthly_plays"]
 
             # Check if play_history has data
