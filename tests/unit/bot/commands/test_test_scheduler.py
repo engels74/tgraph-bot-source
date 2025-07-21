@@ -3,21 +3,20 @@ Tests for test scheduler command functionality.
 
 This module tests the /test_scheduler command including success cases,
 error handling, and proper integration with the UpdateTracker system.
+
+Note: Basic initialization and type validation tests have been consolidated
+in tests.unit.bot.test_cog_base_functionality to eliminate redundancy.
 """
 
-from unittest.mock import AsyncMock, patch, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
-import discord
 import pytest
-from discord.ext import commands
 
 from src.tgraph_bot.bot.commands.test_scheduler import SchedulerTestCog
 from src.tgraph_bot.config.schema import TGraphBotConfig
 from src.tgraph_bot.main import TGraphBot
-from tests.utils.test_helpers import (
-    create_config_manager_with_config,
-    create_mock_interaction,
-)
+from tests.utils.cog_helpers import create_mock_bot_with_config
+from tests.utils.test_helpers import create_mock_interaction
 
 
 class TestTestSchedulerCog:
@@ -26,34 +25,12 @@ class TestTestSchedulerCog:
     @pytest.fixture
     def mock_bot(self, base_config: TGraphBotConfig) -> TGraphBot:
         """Create a mock TGraphBot instance."""
-        config_manager = create_config_manager_with_config(base_config)
-        bot = TGraphBot(config_manager)
-        return bot
+        return create_mock_bot_with_config(base_config)
 
     @pytest.fixture
     def test_scheduler_cog(self, mock_bot: TGraphBot) -> SchedulerTestCog:
         """Create a SchedulerTestCog instance for testing."""
         return SchedulerTestCog(mock_bot)
-
-    def test_init(self, mock_bot: TGraphBot) -> None:
-        """Test SchedulerTestCog initialization."""
-        cog = SchedulerTestCog(mock_bot)
-        assert cog.bot is mock_bot
-        assert isinstance(cog.tgraph_bot, TGraphBot)
-        assert cog.cooldown_config is not None
-
-    def test_tgraph_bot_property_with_wrong_bot_type(self) -> None:
-        """Test tgraph_bot property with wrong bot type."""
-        regular_bot = commands.Bot(
-            command_prefix="!", intents=discord.Intents.default()
-        )
-
-        # Create the cog (this should succeed)
-        cog = SchedulerTestCog(regular_bot)
-
-        # Accessing tgraph_bot property should raise TypeError
-        with pytest.raises(TypeError, match="Expected TGraphBot instance"):
-            _ = cog.tgraph_bot
 
     @pytest.mark.asyncio
     async def test_test_scheduler_success(

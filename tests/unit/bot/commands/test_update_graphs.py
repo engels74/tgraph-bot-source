@@ -3,22 +3,24 @@ Tests for update graphs command functionality.
 
 This module tests the /update_graphs command including cleanup functionality,
 graph generation, error handling, and proper integration with Discord channels.
+
+Note: Basic initialization and type validation tests have been consolidated
+in tests.unit.bot.test_cog_base_functionality to eliminate redundancy.
 """
 
-from unittest.mock import AsyncMock, patch, MagicMock
 from collections.abc import AsyncIterator
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import discord
 import pytest
-from discord.ext import commands
 
 from src.tgraph_bot.bot.commands.update_graphs import UpdateGraphsCog
 from src.tgraph_bot.config.schema import TGraphBotConfig
 from src.tgraph_bot.main import TGraphBot
+from tests.utils.cog_helpers import create_mock_bot_with_config
 from tests.utils.test_helpers import (
-    create_config_manager_with_config,
-    create_mock_interaction,
     create_mock_channel,
+    create_mock_interaction,
     create_mock_message,
 )
 
@@ -29,44 +31,12 @@ class TestUpdateGraphsCog:
     @pytest.fixture
     def mock_bot(self, base_config: TGraphBotConfig) -> TGraphBot:
         """Create a mock TGraphBot instance."""
-        config_manager = create_config_manager_with_config(base_config)
-        bot = TGraphBot(config_manager)
-        return bot
+        return create_mock_bot_with_config(base_config)
 
     @pytest.fixture
     def update_graphs_cog(self, mock_bot: TGraphBot) -> UpdateGraphsCog:
         """Create an UpdateGraphsCog instance for testing."""
         return UpdateGraphsCog(mock_bot)
-
-    def test_init(self, mock_bot: TGraphBot) -> None:
-        """Test UpdateGraphsCog initialization."""
-        cog = UpdateGraphsCog(mock_bot)
-        assert cog.bot is mock_bot
-        assert isinstance(cog.tgraph_bot, TGraphBot)
-        assert cog.cooldown_config is not None
-        assert hasattr(cog, "config_helper")
-
-    def test_tgraph_bot_property_with_wrong_bot_type(self) -> None:
-        """Test tgraph_bot property with wrong bot type."""
-        regular_bot = commands.Bot(
-            command_prefix="!", intents=discord.Intents.default()
-        )
-
-        def mock_init(self: UpdateGraphsCog, bot: commands.Bot) -> None:
-            """Mock initialization that just sets the bot attribute."""
-            setattr(self, "bot", bot)
-
-        # Mock the initialization to avoid accessing tgraph_bot during __init__
-        with (
-            patch("src.tgraph_bot.bot.commands.update_graphs.ConfigurationHelper"),
-            patch.object(UpdateGraphsCog, "__init__", mock_init),
-        ):
-            # Create the cog (this should succeed)
-            cog = UpdateGraphsCog(regular_bot)
-
-            # Accessing tgraph_bot property should raise TypeError
-            with pytest.raises(TypeError, match="Expected TGraphBot instance"):
-                cog.tgraph_bot  # Don't assign to _ to avoid type warning
 
     @pytest.mark.asyncio
     async def test_update_graphs_success_with_cleanup(

@@ -3,20 +3,21 @@ Tests for configuration command functionality.
 
 This module tests the /config command group including /config view and /config edit
 commands with proper validation, error handling, and Discord integration.
+
+Note: Basic initialization and type validation tests have been consolidated
+in tests.unit.bot.test_cog_base_functionality to eliminate redundancy.
 """
 
 from unittest.mock import patch
 
 import discord
 import pytest
-from discord.ext import commands
-
 
 from src.tgraph_bot.bot.commands.config import ConfigCog
 from src.tgraph_bot.config.schema import TGraphBotConfig
 from src.tgraph_bot.main import TGraphBot
+from tests.utils.cog_helpers import create_mock_bot_with_config
 from tests.utils.test_helpers import (
-    create_config_manager_with_config,
     create_mock_interaction,
     create_temp_config_file,
 )
@@ -28,30 +29,12 @@ class TestConfigCog:
     @pytest.fixture
     def mock_bot(self, base_config: TGraphBotConfig) -> TGraphBot:
         """Create a mock TGraphBot instance."""
-        config_manager = create_config_manager_with_config(base_config)
-        bot = TGraphBot(config_manager)
-        return bot
+        return create_mock_bot_with_config(base_config)
 
     @pytest.fixture
     def config_cog(self, mock_bot: TGraphBot) -> ConfigCog:
         """Create a ConfigCog instance for testing."""
         return ConfigCog(mock_bot)
-
-    def test_init(self, mock_bot: TGraphBot) -> None:
-        """Test ConfigCog initialization."""
-        cog = ConfigCog(mock_bot)
-        assert cog.bot is mock_bot
-        assert isinstance(cog.tgraph_bot, TGraphBot)
-
-    def test_tgraph_bot_property_with_wrong_bot_type(self) -> None:
-        """Test tgraph_bot property with wrong bot type."""
-        regular_bot = commands.Bot(
-            command_prefix="!", intents=discord.Intents.default()
-        )
-
-        # The ConfigCog constructor will fail when trying to access tgraph_bot
-        with pytest.raises(TypeError, match="Expected TGraphBot instance"):
-            _ = ConfigCog(regular_bot)
 
     def test_convert_config_value_string(self, config_cog: ConfigCog) -> None:
         """Test string value conversion."""

@@ -644,3 +644,73 @@ def test_file_operations(temp_config_file, temp_data_directory):
     # Test file system operations with cleanup
 ```
 """
+
+
+# == EXPANDED ERROR TESTING FIXTURES (DRY Improvement) ==
+
+@pytest.fixture
+def common_error_scenarios() -> list[tuple[str, type[Exception], str]]:
+    """
+    Common error scenarios for parameterized testing.
+    
+    This fixture consolidates common error patterns across the test suite,
+    reducing redundancy in error testing setups.
+    
+    Returns:
+        List of tuples containing (scenario_name, exception_type, error_pattern)
+    """
+    return [
+        ("type_error_bot", TypeError, "Expected TGraphBot instance"),
+        ("type_error_config", TypeError, "Expected.*Config.*instance"),
+        ("value_error_invalid", ValueError, "Invalid value"),
+        ("value_error_range", ValueError, "out of range"),
+        ("validation_error_missing", Exception, "Field required"),
+        ("validation_error_type", Exception, "Input should be"),
+        ("file_not_found", FileNotFoundError, "No such file"),
+        ("permission_denied", PermissionError, "Permission denied"),
+        ("connection_error", ConnectionError, "Failed to connect"),
+        ("timeout_error", TimeoutError, "Timed out"),
+    ]
+
+
+@pytest.fixture
+def config_validation_scenarios() -> list[tuple[str, dict[str, object], str]]:
+    """
+    Configuration validation error scenarios.
+    
+    Provides standardized invalid configuration scenarios for testing
+    configuration validation across different components.
+    
+    Returns:
+        List of tuples containing (scenario_name, invalid_config_data, expected_error_pattern)
+    """
+    return [
+        ("missing_api_key", {"DISCORD_TOKEN": "test", "CHANNEL_ID": 123}, "TAUTULLI_API_KEY.*required"),
+        ("missing_token", {"TAUTULLI_API_KEY": "test", "CHANNEL_ID": 123}, "DISCORD_TOKEN.*required"),
+        ("invalid_url", {"TAUTULLI_URL": "not-a-url", "TAUTULLI_API_KEY": "test", "DISCORD_TOKEN": "test", "CHANNEL_ID": 123}, "Invalid URL"),
+        ("negative_days", {"UPDATE_DAYS": -1, "TAUTULLI_API_KEY": "test", "DISCORD_TOKEN": "test", "CHANNEL_ID": 123}, "greater than 0"),
+        ("invalid_time", {"FIXED_UPDATE_TIME": "25:99", "TAUTULLI_API_KEY": "test", "DISCORD_TOKEN": "test", "CHANNEL_ID": 123}, "Invalid time format"),
+        ("invalid_color", {"TV_COLOR": "not-a-color", "TAUTULLI_API_KEY": "test", "DISCORD_TOKEN": "test", "CHANNEL_ID": 123}, "Invalid color"),
+        ("negative_cooldown", {"CONFIG_COOLDOWN_MINUTES": -5, "TAUTULLI_API_KEY": "test", "DISCORD_TOKEN": "test", "CHANNEL_ID": 123}, "greater than or equal to 0"),
+    ]
+
+
+@pytest.fixture  
+def mock_error_scenarios() -> list[tuple[str, Exception, str]]:
+    """
+    Mock-related error scenarios for testing error handling.
+    
+    Provides standardized mock exception scenarios for testing
+    error handling patterns across different components.
+    
+    Returns:
+        List of tuples containing (scenario_name, exception_instance, expected_log_pattern)
+    """
+    return [
+        ("network_timeout", ConnectionError("Connection timed out"), "Connection.*timed out"),
+        ("api_error", RuntimeError("API returned error 500"), "API.*error.*500"),
+        ("json_decode", ValueError("Invalid JSON"), "Invalid JSON"),
+        ("file_permission", PermissionError("Permission denied writing file"), "Permission denied"),
+        ("memory_error", MemoryError("Out of memory"), "Out of memory"),
+        ("runtime_error", RuntimeError("User interrupted"), "User interrupted"),
+    ]
