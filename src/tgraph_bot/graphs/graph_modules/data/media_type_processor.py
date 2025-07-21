@@ -101,6 +101,36 @@ class MediaTypeProcessor:
                 
         return "other"
 
+    def _get_configured_color(self, media_type: str, default_color: str) -> str:
+        """
+        Get configured color for media type, falling back to default.
+        
+        Args:
+            media_type: The classified media type
+            default_color: Default color if no config available
+            
+        Returns:
+            Color hex string from config or default
+        """
+        if self.config_accessor is None:
+            return default_color
+            
+        # Map media types to configuration keys
+        config_key_map = {
+            "tv": "TV_COLOR",
+            "movie": "MOVIE_COLOR",
+        }
+        
+        config_key = config_key_map.get(media_type)
+        if config_key is None:
+            return default_color
+            
+        try:
+            configured_color = self.config_accessor.get_value(config_key, default_color)
+            return str(configured_color)
+        except Exception:
+            return default_color
+
     def get_display_info(self, media_type: str) -> MediaTypeDisplayInfo:
         """
         Get display information for a media type.
@@ -114,9 +144,12 @@ class MediaTypeProcessor:
         classified_type = self.classify_media_type(media_type)
         info = self._media_types.get(classified_type, self._media_types["other"])
         
+        # Use configuration color if available, otherwise use default
+        color = self._get_configured_color(classified_type, info.default_color)
+        
         return MediaTypeDisplayInfo(
             display_name=info.display_name,
-            color=info.default_color,
+            color=color,
         )
 
     def get_color_for_type(self, media_type: str) -> str:

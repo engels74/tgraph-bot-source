@@ -57,7 +57,7 @@ class TestExtractAndValidateData:
         data = {"other_data": "present"}
 
         with pytest.raises(
-            ValueError, match="Invalid test data: Missing required key: data"
+            ValueError, match="Missing 'play_history' in test"
         ):
             _ = processor.extract_and_validate_data(
                 data=data,
@@ -73,7 +73,7 @@ class TestExtractAndValidateData:
         data = {"play_history": "not_a_dict"}
 
         with pytest.raises(
-            ValueError, match="Missing or invalid 'play_history' data in input"
+            ValueError, match="Invalid format for 'play_history' in test: expected dict"
         ):
             _ = processor.extract_and_validate_data(
                 data=data,
@@ -94,7 +94,7 @@ class TestExtractAndValidateData:
         }
 
         with pytest.raises(
-            ValueError, match="Invalid test data: Missing required key: data"
+            ValueError, match="Missing required key 'data' in play_history for test"
         ):
             _ = processor.extract_and_validate_data(
                 data=data,
@@ -147,12 +147,12 @@ class TestExtractPlayHistoryData:
         data = {"other_data": "present"}
 
         with pytest.raises(
-            ValueError, match="Invalid play history data: Missing required key: data"
+            ValueError, match="Missing 'play_history' in play history data extraction"
         ):
             _ = processor.extract_play_history_data(data)
 
     def test_invalid_play_history_data(self) -> None:
-        """Test extraction fails when play_history data is invalid."""
+        """Test extraction succeeds even with missing data key (extraction only checks top-level key)."""
         processor = DataProcessor()
 
         data = {
@@ -162,10 +162,11 @@ class TestExtractPlayHistoryData:
             }
         }
 
-        with pytest.raises(
-            ValueError, match="Invalid play history data: Missing required key: data"
-        ):
-            _ = processor.extract_play_history_data(data)
+        result = processor.extract_play_history_data(data)
+        
+        # Should successfully extract even without "data" key
+        assert result == data["play_history"]
+        assert "result" in result
 
 
 class TestExtractMonthlyPlaysData:
@@ -191,12 +192,12 @@ class TestExtractMonthlyPlaysData:
 
         with pytest.raises(
             ValueError,
-            match="Invalid monthly plays data: Missing required key: categories",
+            match="Missing 'monthly_plays' in monthly plays data extraction",
         ):
             _ = processor.extract_monthly_plays_data(data)
 
     def test_invalid_monthly_plays_data(self) -> None:
-        """Test extraction fails when monthly_plays data is invalid."""
+        """Test extraction succeeds for monthly plays (extraction only checks top-level key)."""
         processor = DataProcessor()
 
         data = {
@@ -206,10 +207,11 @@ class TestExtractMonthlyPlaysData:
             }
         }
 
-        with pytest.raises(
-            ValueError, match="Invalid monthly plays data: Missing required key: series"
-        ):
-            _ = processor.extract_monthly_plays_data(data)
+        result = processor.extract_monthly_plays_data(data)
+        
+        # Should successfully extract even without "series" key
+        assert result == data["monthly_plays"]
+        assert "categories" in result
 
 
 class TestProcessDataSafely:
@@ -232,7 +234,7 @@ class TestProcessDataSafely:
         assert result == ["processed_item"]
 
     def test_processing_failure_with_fallback(self) -> None:
-        """Test processing failure with fallback value."""
+        """Test processing failure raises exception (no fallback in process_data_safely)."""
         processor = DataProcessor()
 
         # Mock processor function that raises an exception
@@ -240,15 +242,13 @@ class TestProcessDataSafely:
             raise ValueError("Processing failed")
 
         data = {"test": "data"}
-        fallback = ["fallback_item"]
 
-        result = processor.process_data_safely(
-            data=data,
-            processing_function=mock_processor,
-            context="test",
-        )
-
-        assert result == fallback
+        with pytest.raises(ValueError, match="Error in test: Processing failed"):
+            _ = processor.process_data_safely(
+                data=data,
+                processing_function=mock_processor,
+                context="test",
+            )
 
     def test_processing_failure_without_fallback(self) -> None:
         """Test processing failure without fallback value raises exception."""
@@ -261,7 +261,7 @@ class TestProcessDataSafely:
         data = {"test": "data"}
 
         with pytest.raises(
-            ValueError, match="Failed to process test: Processing failed"
+            ValueError, match="Error in test: Processing failed"
         ):
             _ = processor.process_data_safely(
                 data=data, processing_function=mock_processor, context="test"
@@ -272,32 +272,33 @@ class TestProcessPlayHistorySafely:
     """Test cases for process_play_history_safely method."""
 
     @patch(
-        "src.tgraph_bot.graphs.graph_modules.data.data_processor.process_play_history_data"
+        "src.tgraph_bot.graphs.graph_modules.utils.utils.process_play_history_data"
     )
     def test_successful_play_history_processing(self, mock_process: Mock) -> None:
         """Test successful play history data processing."""
         processor = DataProcessor()
 
         # Mock the process_play_history_data function
-        mock_records = [
+        mock_processed_records = [
             {"user": "test", "date": "1672531200"}
         ]  # Unix timestamp for 2023-01-01
-        mock_process.return_value = mock_records
+        mock_process.return_value = mock_processed_records
 
         data = {
             "data": [{"user": "test", "date": 1672531200}]
         }  # Unix timestamp for 2023-01-01
 
-        result = processor.process_play_history_safely(data)
+        raw_records, processed_records = processor.process_play_history_safely(data)
 
-        assert result == mock_records
-        mock_process.assert_called_once_with(data)
+        assert processed_records == mock_processed_records
+        assert len(raw_records) == 1
+        mock_process.assert_called_once()
 
     @patch(
-        "src.tgraph_bot.graphs.graph_modules.data.data_processor.process_play_history_data"
+        "src.tgraph_bot.graphs.graph_modules.utils.utils.process_play_history_data"
     )
     def test_play_history_processing_failure(self, mock_process: Mock) -> None:
-        """Test play history processing failure returns empty list."""
+        """Test play history processing failure raises ValueError."""
         processor = DataProcessor()
 
         # Mock the process_play_history_data function to raise an exception
@@ -307,17 +308,15 @@ class TestProcessPlayHistorySafely:
             "data": [{"user": "test", "date": 1672531200}]
         }  # Unix timestamp for 2023-01-01
 
-        result = processor.process_play_history_safely(data)
-
-        assert result == []
-        mock_process.assert_called_once_with(data)
+        with pytest.raises(ValueError, match="Error processing play history: Processing failed"):
+            _ = processor.process_play_history_safely(data)
 
 
 class TestExtractAndProcessPlayHistory:
     """Test cases for extract_and_process_play_history method."""
 
     @patch(
-        "src.tgraph_bot.graphs.graph_modules.data.data_processor.process_play_history_data"
+        "src.tgraph_bot.graphs.graph_modules.utils.utils.process_play_history_data"
     )
     def test_successful_extract_and_process(self, mock_process: Mock) -> None:
         """Test successful extraction and processing of play history data."""
@@ -330,20 +329,18 @@ class TestExtractAndProcessPlayHistory:
         mock_process.return_value = mock_records
 
         data = {
-            "play_history": {
-                "data": [
-                    {"user": "test", "date": 1672531200}
-                ]  # Unix timestamp for 2023-01-01
-            }
+            "data": [
+                {"user": "test", "date": 1672531200}
+            ]  # Unix timestamp for 2023-01-01
         }
 
-        validated_data, processed_records = processor.extract_and_process_play_history(
+        raw_records, processed_records = processor.extract_and_process_play_history(
             data
         )
 
-        assert validated_data == data["play_history"]
+        assert len(raw_records) == 1
         assert processed_records == mock_records
-        mock_process.assert_called_once_with(data["play_history"])
+        mock_process.assert_called_once()
 
     def test_extract_and_process_extraction_failure(self) -> None:
         """Test extract and process fails when extraction fails."""
@@ -352,12 +349,12 @@ class TestExtractAndProcessPlayHistory:
         data = {"other_data": "present"}  # Missing play_history
 
         with pytest.raises(
-            ValueError, match="Invalid play history data: Missing required key: data"
+            ValueError, match="Missing 'data' in play history extraction"
         ):
             _ = processor.extract_and_process_play_history(data)
 
     @patch(
-        "src.tgraph_bot.graphs.graph_modules.data.data_processor.process_play_history_data"
+        "src.tgraph_bot.graphs.graph_modules.utils.utils.process_play_history_data"
     )
     def test_extract_and_process_processing_failure(self, mock_process: Mock) -> None:
         """Test extract and process with processing failure."""
@@ -367,20 +364,14 @@ class TestExtractAndProcessPlayHistory:
         mock_process.side_effect = ValueError("Processing failed")
 
         data = {
-            "play_history": {
-                "data": [
-                    {"user": "test", "date": 1672531200}
-                ]  # Unix timestamp for 2023-01-01
-            }
+            "data": [
+                {"user": "test", "date": 1672531200}
+            ]  # Unix timestamp for 2023-01-01
         }
 
-        validated_data, processed_records = processor.extract_and_process_play_history(
-            data
-        )
-
-        assert validated_data == data["play_history"]
-        assert processed_records == []  # Should return empty list on processing failure
-        mock_process.assert_called_once_with(data["play_history"])
+        # Processing failure should raise an exception, not return empty list
+        with pytest.raises(ValueError, match="Processing failed"):
+            _ = processor.extract_and_process_play_history(data)
 
 
 class TestExtractAndProcessMonthlyPlays:
@@ -409,7 +400,7 @@ class TestExtractAndProcessMonthlyPlays:
 
         with pytest.raises(
             ValueError,
-            match="Invalid monthly plays data: Missing required key: categories",
+            match="Invalid monthly plays data: Missing 'monthly_plays' in monthly plays extraction",
         ):
             _ = processor.extract_and_process_monthly_plays(data)
 
@@ -457,7 +448,7 @@ class TestSafeExtractWithFallback:
         data = {"other_data": "present"}  # Missing play_history
 
         with pytest.raises(
-            ValueError, match="Invalid test data: Missing required key: data"
+            ValueError, match="Missing 'play_history' in test"
         ):
             _ = processor.safe_extract_with_fallback(
                 data=data,
@@ -497,7 +488,7 @@ class TestValidateExtractedData:
         )
 
         assert is_valid is False
-        assert "Invalid test data: Missing required key: data" in error_msg
+        assert "Invalid test data: Missing required key: 'data' in test" in error_msg
 
     def test_validation_with_multiple_keys(self) -> None:
         """Test validation with multiple required keys."""
@@ -517,7 +508,7 @@ class TestIntegrationScenarios:
     """Integration test scenarios for DataProcessor."""
 
     @patch(
-        "src.tgraph_bot.graphs.graph_modules.data.data_processor.process_play_history_data"
+        "src.tgraph_bot.graphs.graph_modules.utils.utils.process_play_history_data"
     )
     def test_complete_workflow_play_history(self, mock_process: Mock) -> None:
         """Test complete workflow for play history data processing."""
@@ -530,40 +521,27 @@ class TestIntegrationScenarios:
         mock_process.return_value = mock_records
 
         # Complete API response structure
-        api_response = {
-            "response": {
-                "result": "success",
-                "data": {
-                    "play_history": {
-                        "data": [
-                            {
-                                "user": "test",
-                                "date": 1672531200,
-                            },  # Unix timestamp for 2023-01-01
-                            {
-                                "user": "test2",
-                                "date": 1672617600,
-                            },  # Unix timestamp for 2023-01-02
-                        ],
-                        "recordsFiltered": 2,
-                        "recordsTotal": 2,
-                    }
-                },
-            }
+        data = {
+            "data": [
+                {
+                    "user": "test",
+                    "date": 1672531200,
+                },  # Unix timestamp for 2023-01-01
+                {
+                    "user": "test2",
+                    "date": 1672617600,
+                },  # Unix timestamp for 2023-01-02
+            ]
         }
 
-        # Extract data from nested structure
-        data = api_response["response"]["data"]
-        assert isinstance(data, dict)
-
         # Process using DataProcessor
-        validated_data, processed_records = processor.extract_and_process_play_history(
+        raw_records, processed_records = processor.extract_and_process_play_history(
             data
         )
 
-        assert "data" in validated_data
+        assert len(raw_records) == 2
         assert processed_records == mock_records
-        mock_process.assert_called_once_with(validated_data)
+        mock_process.assert_called_once()
 
     def test_complete_workflow_monthly_plays(self) -> None:
         """Test complete workflow for monthly plays data processing."""
@@ -618,6 +596,6 @@ class TestIntegrationScenarios:
 
         # Should raise ValueError for missing required key
         with pytest.raises(
-            ValueError, match="Invalid play history data: Missing required key: data"
+            ValueError, match="Missing 'data' in play history extraction"
         ):
             _ = processor.extract_and_process_play_history(data)

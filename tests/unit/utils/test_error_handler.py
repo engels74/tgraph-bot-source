@@ -258,7 +258,7 @@ class TestErrorHandling:
         error = ValueError("Test error")
         context = ErrorContext(user_id=123, command_name="test")
 
-        with patch("src.tgraph_bot.utils.error_handler.logger") as mock_logger:
+        with patch("src.tgraph_bot.utils.core.error_handler.logger") as mock_logger:
             log_error_with_context(error, context)
 
             # Should log at info level for low severity validation error

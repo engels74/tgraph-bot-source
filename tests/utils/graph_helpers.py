@@ -645,7 +645,7 @@ def run_standard_graph_tests(
     # Test 4: Empty data handling
     with matplotlib_cleanup():
         graph = graph_class(config=config) if config else graph_class()
-        empty_data: dict[str, object] = {"play_history": {"data": []}}
+        empty_data: dict[str, object] = {"data": []}
 
         output_path = graph.generate(empty_data)
 

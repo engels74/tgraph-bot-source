@@ -107,7 +107,7 @@ class TestStartupSequence:
 
         # Mock history method with proper typing
         async def mock_history(
-            _limit: int | None = None,
+            limit: int | None = None,
         ) -> AsyncGenerator[MagicMock, None]:
             for msg in [bot_message, other_message]:
                 yield msg
@@ -182,7 +182,7 @@ class TestStartupSequence:
 
         # Mock history with proper typing
         async def mock_history(
-            _limit: int | None = None,
+            limit: int | None = None,
         ) -> AsyncGenerator[MagicMock, None]:
             yield bot_message
 
@@ -193,8 +193,9 @@ class TestStartupSequence:
         # Run cleanup
         await startup_sequence.cleanup_previous_messages()
 
-        # Should handle the rate limit gracefully
+        # Should handle the rate limit gracefully and still complete cleanup
         bot_message.delete.assert_called()  # pyright: ignore[reportAny]
+        assert startup_sequence.cleanup_completed is True
 
     @pytest.mark.asyncio
     async def test_post_initial_graphs_success(

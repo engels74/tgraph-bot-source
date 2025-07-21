@@ -938,11 +938,16 @@ class TestCalculateNextUpdateTime:
             assert result is not None
             assert result.tzinfo is not None
 
-            # Expected: Should return July 18th at 23:59 (next day, respecting UPDATE_DAYS=1)
+            # Expected: Should return July 18th at 23:59 in the scheduler's timezone, 
+            # converted to local timezone. The scheduler state shows "2025-07-18T23:59:00+02:00"
+            # which should be converted to the system's local timezone (UTC).
+            # 23:59 UTC+2 = 21:59 UTC
             expected_date = datetime(2025, 7, 18).date()  # July 18th (next day)
             from datetime import time
 
-            expected_time = time(23, 59)
+            # The scheduler state has time in UTC+2, but get_local_timezone() returns UTC,
+            # so we expect the conversion: 23:59 UTC+2 -> 21:59 UTC
+            expected_time = time(21, 59)  # Converted from 23:59 UTC+2 to UTC
             expected_result = datetime.combine(expected_date, expected_time).replace(
                 tzinfo=get_local_timezone()
             )

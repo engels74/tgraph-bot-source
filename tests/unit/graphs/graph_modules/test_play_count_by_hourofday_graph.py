@@ -25,19 +25,17 @@ class TestPlayCountByHourOfDayGraph:
     def sample_hourofday_data(self) -> dict[str, object]:
         """Sample data for hour of day graph testing."""
         return {
-            "play_history": {
-                "data": [
-                    {"date": "2024-01-01 08:30:00", "media_type": "movie"},
-                    {"date": "2024-01-01 14:15:00", "media_type": "tv"},
-                    {"date": "2024-01-01 20:45:00", "media_type": "movie"},
-                    {"date": "2024-01-02 09:00:00", "media_type": "tv"},
-                    {"date": "2024-01-02 15:30:00", "media_type": "movie"},
-                    {"date": "2024-01-02 21:00:00", "media_type": "tv"},
-                    {"date": "2024-01-03 10:15:00", "media_type": "movie"},
-                    {"date": "2024-01-03 16:45:00", "media_type": "tv"},
-                    {"date": "2024-01-03 22:30:00", "media_type": "movie"},
-                ]
-            }
+            "data": [
+                {"date": 1704100200, "media_type": "movie"},  # 2024-01-01 08:30:00 UTC
+                {"date": 1704121700, "media_type": "tv"},     # 2024-01-01 14:15:00 UTC
+                {"date": 1704143100, "media_type": "movie"},  # 2024-01-01 20:45:00 UTC
+                {"date": 1704187200, "media_type": "tv"},     # 2024-01-02 09:00:00 UTC
+                {"date": 1704210600, "media_type": "movie"},  # 2024-01-02 15:30:00 UTC
+                {"date": 1704230400, "media_type": "tv"},     # 2024-01-02 21:00:00 UTC
+                {"date": 1704274500, "media_type": "movie"},  # 2024-01-03 10:15:00 UTC
+                {"date": 1704297300, "media_type": "tv"},     # 2024-01-03 16:45:00 UTC
+                {"date": 1704320200, "media_type": "movie"},  # 2024-01-03 22:30:00 UTC
+            ]
         }
 
     def test_standard_graph_functionality(
@@ -67,9 +65,9 @@ class TestPlayCountByHourOfDayGraph:
             {"play_history": {"invalid_structure": True}},
         ]
         expected_error_patterns = [
-            "Invalid play history data",
-            "Missing or invalid 'play_history' data",
-            "Invalid play history data",
+            "Missing 'data' in play history extraction",
+            "Missing 'data' in play history extraction",
+            "Missing 'data' in play history extraction",
         ]
 
         run_standard_graph_error_tests(

@@ -57,7 +57,11 @@ class ErrorContext:
         self.channel_id: int | None = channel_id
         self.command_name: str | None = command_name
         self.additional_context: dict[str, object] = additional_context or {}
-        self.timestamp: datetime = datetime.now(ZoneInfo("localtime"))
+        # Try to use system timezone, fallback to UTC
+        try:
+            self.timestamp: datetime = datetime.now(ZoneInfo("UTC"))  # Use UTC as fallback for consistent behavior
+        except Exception:
+            self.timestamp = datetime.now()
 
     def to_dict(self) -> dict[str, object]:
         """Convert context to dictionary for logging."""

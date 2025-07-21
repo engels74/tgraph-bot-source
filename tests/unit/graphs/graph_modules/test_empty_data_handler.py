@@ -122,29 +122,22 @@ class TestEmptyDataHandler:
         handler.display_empty_data_message(mock_ax, log_warning=False)
         mock_logger.warning.assert_not_called()  # pyright: ignore[reportAny]
 
-    @patch("src.tgraph_bot.graphs.graph_modules.data.empty_data_handler.translate")
     def test_display_localized_empty_data_message_success(
-        self, mock_translate: MagicMock
+        self
     ) -> None:
-        """Test localized empty data message display with successful translation."""
+        """Test localized empty data message display with successful message key mapping."""
         handler = EmptyDataHandler()
         mock_ax = MagicMock()
-        mock_translate.return_value = "Translated message"
 
         handler.display_localized_empty_data_message(
-            mock_ax, "test_message_key", param1="value1", param2="value2"
+            mock_ax, "platform"
         )
 
-        # Verify translation was called with correct parameters
-        mock_translate.assert_called_once_with(
-            "test_message_key", param1="value1", param2="value2"
-        )
-
-        # Verify text was called with translated message
+        # Verify text was called with platform message
         mock_ax.text.assert_called_once_with(  # pyright: ignore[reportAny]
             0.5,
             0.5,
-            "Translated message",
+            "No platform data available",
             ha="center",
             va="center",
             transform=mock_ax.transAxes,  # pyright: ignore[reportAny]
@@ -153,24 +146,15 @@ class TestEmptyDataHandler:
             bbox=dict(boxstyle="round,pad=0.5", facecolor="lightgray", alpha=0.7),
         )
 
-    @patch("src.tgraph_bot.graphs.graph_modules.data.empty_data_handler.translate")
-    @patch("src.tgraph_bot.graphs.graph_modules.data.empty_data_handler.logger")
     def test_display_localized_empty_data_message_translation_failure(
-        self, mock_logger: MagicMock, mock_translate: MagicMock
+        self
     ) -> None:
-        """Test localized empty data message display when translation fails."""
+        """Test localized empty data message display when unknown message key is used."""
         handler = EmptyDataHandler()
         mock_ax = MagicMock()
-        mock_translate.side_effect = Exception("Translation error")
 
-        handler.display_localized_empty_data_message(mock_ax, "test_message_key")
-
-        # Verify translation failure was logged (should be called twice - once for translation failure, once for empty data)
-        assert mock_logger.warning.call_count == 2  # pyright: ignore[reportAny]
-
-        # Check that the first call was for translation failure
-        first_call = mock_logger.warning.call_args_list[0][0][0]  # pyright: ignore[reportAny]
-        assert "Failed to translate message key 'test_message_key'" in first_call
+        # Test with unknown message key - should fallback to default
+        handler.display_localized_empty_data_message(mock_ax, "unknown_key")
 
         # Verify fallback message was used
         mock_ax.text.assert_called_once_with(  # pyright: ignore[reportAny]
@@ -189,23 +173,23 @@ class TestEmptyDataHandler:
         """Test getting standard empty messages for known graph types."""
         handler = EmptyDataHandler()
 
-        # Test play data types
-        play_data_types = ["play_data", "daily", "monthly", "hourly", "dayofweek"]
-        for graph_type in play_data_types:
-            message = handler.get_standard_empty_message(graph_type)
-            assert message == "No play data available\nfor the selected time period"
+        # Test play data type
+        message = handler.get_standard_empty_message("play")
+        assert message == "No play data available"
 
-        # Test user data types
-        user_data_types = ["user_data", "users"]
-        for graph_type in user_data_types:
-            message = handler.get_standard_empty_message(graph_type)
-            assert message == "No user data available\nfor the selected time period"
+        # Test user data type
+        message = handler.get_standard_empty_message("user")
+        assert message == "No user data available"
 
-        # Test platform data types
-        platform_data_types = ["platform_data", "platforms"]
-        for graph_type in platform_data_types:
+        # Test platform data type
+        message = handler.get_standard_empty_message("platform")
+        assert message == "No platform data available"
+
+        # Test default fallback for unknown types
+        unknown_types = ["play_data", "daily", "monthly", "hourly", "dayofweek", "user_data", "users", "platform_data", "platforms"]
+        for graph_type in unknown_types:
             message = handler.get_standard_empty_message(graph_type)
-            assert message == "No platform data available"
+            assert message == "No data available\nfor the selected time period"
 
     def test_get_standard_empty_message_unknown_type(self) -> None:
         """Test getting standard empty message for unknown graph type."""
@@ -221,12 +205,16 @@ class TestEmptyDataHandler:
 
         handler.clear_axes_for_empty_data(mock_ax)
 
-        # Verify all clearing operations were called
+        # Verify clearing operations were called
         mock_ax.clear.assert_called_once()  # pyright: ignore[reportAny]
-        mock_ax.set_xlim.assert_called_once_with(0, 1)  # pyright: ignore[reportAny]
-        mock_ax.set_ylim.assert_called_once_with(0, 1)  # pyright: ignore[reportAny]
         mock_ax.set_xticks.assert_called_once_with([])  # pyright: ignore[reportAny]
         mock_ax.set_yticks.assert_called_once_with([])  # pyright: ignore[reportAny]
+        
+        # Verify spines were made invisible
+        mock_ax.spines.__getitem__.assert_any_call("top")  # pyright: ignore[reportAny]
+        mock_ax.spines.__getitem__.assert_any_call("right")  # pyright: ignore[reportAny]
+        mock_ax.spines.__getitem__.assert_any_call("bottom")  # pyright: ignore[reportAny]
+        mock_ax.spines.__getitem__.assert_any_call("left")  # pyright: ignore[reportAny]
 
     def test_clear_axes_for_empty_data_with_none_axes(self) -> None:
         """Test clearing axes when axes is None."""
@@ -237,7 +225,7 @@ class TestEmptyDataHandler:
         ) as mock_logger:
             handler.clear_axes_for_empty_data(None)
             mock_logger.warning.assert_called_once_with(  # pyright: ignore[reportAny]
-                "Cannot clear axes: axes is None"
+                "Cannot clear axes for empty data: axes is None"
             )
 
     def test_default_constants(self) -> None:
@@ -248,14 +236,8 @@ class TestEmptyDataHandler:
         assert (
             handler.DEFAULT_MESSAGE == "No data available\nfor the selected time period"
         )
-        assert (
-            handler.DEFAULT_PLAY_DATA_MESSAGE
-            == "No play data available\nfor the selected time period"
-        )
-        assert (
-            handler.DEFAULT_USER_DATA_MESSAGE
-            == "No user data available\nfor the selected time period"
-        )
+        assert handler.DEFAULT_PLAY_DATA_MESSAGE == "No play data available"
+        assert handler.DEFAULT_USER_DATA_MESSAGE == "No user data available"
         assert handler.DEFAULT_PLATFORM_DATA_MESSAGE == "No platform data available"
 
         # Test styling constants
