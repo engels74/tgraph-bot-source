@@ -14,6 +14,11 @@ from pathlib import Path
 from types import TracebackType
 from typing import TYPE_CHECKING
 
+# Ensure matplotlib uses non-GUI backend for thread safety
+import matplotlib
+if matplotlib.get_backend() != 'Agg':
+    matplotlib.use('Agg')
+
 import matplotlib.figure
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
@@ -583,8 +588,10 @@ class BaseGraph(ABC):
         # Additional cleanup: clear any remaining matplotlib state
         try:
             # Force garbage collection of any remaining matplotlib objects
-            plt.clf()  # Clear current figure
-            plt.cla()  # Clear current axes
+            # Use non-interactive cleanup methods that are thread-safe
+            if hasattr(plt, 'get_fignums') and plt.get_fignums():
+                # Close all figures instead of clearing current figure
+                plt.close('all')
         except Exception as e:
             logger.debug(f"Minor cleanup warning: {e}")
 

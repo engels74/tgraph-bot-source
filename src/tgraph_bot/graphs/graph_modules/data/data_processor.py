@@ -201,9 +201,26 @@ class DataProcessor:
         else:  # Regular dict
             data_mapping = cast(Mapping[str, object], data)
             if "data" not in data_mapping:
-                raise ValueError("Missing 'data' in play history extraction")
-            raw_data = data_mapping["data"]
-            if isinstance(raw_data, list):
+                # Check for alternative data structures that Tautulli API might return
+                possible_keys = ["response", "result", "play_history", "history", "records"]
+                found_key = None
+                for key in possible_keys:
+                    if key in data_mapping:
+                        found_key = key
+                        break
+                
+                if found_key:
+                    logger.warning(f"'data' key not found, using '{found_key}' instead")
+                    raw_data = data_mapping[found_key]
+                else:
+                    # If no data is found, return empty records instead of raising an error
+                    logger.warning("No data found in API response, returning empty records")
+                    records = []
+                    raw_data = []
+            else:
+                raw_data = data_mapping["data"]
+            
+            if raw_data and isinstance(raw_data, list):
                 # Cast to list[object] after validation
                 list_data = cast(list[object], raw_data)
                 records = self.validate_list_data(
@@ -211,8 +228,11 @@ class DataProcessor:
                     context="play history records",
                     min_length=0
                 )
+            elif raw_data and not isinstance(raw_data, list):
+                raise ValueError("Invalid format for data in play history extraction: expected list")
             else:
-                raise ValueError("Invalid format for 'data' in play history extraction: expected list")
+                # Empty or None data
+                records = []
         
         # Process raw records into properly typed ProcessedPlayRecord objects
         from ..utils.utils import process_play_history_data
