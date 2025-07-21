@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING
 from collections.abc import Callable, Awaitable
 from dataclasses import dataclass, field, asdict
 from enum import Enum
-from zoneinfo import ZoneInfo
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 # import discord  # Not directly used, but needed for type checking contexts
 from ..utils.cli.paths import get_path_config
@@ -35,8 +35,19 @@ def get_local_timezone() -> ZoneInfo:
     Returns:
         ZoneInfo object representing the local timezone
     """
-    # Use the system's local timezone
-    return ZoneInfo("localtime")
+    # Use the system's local timezone - cross-platform approach
+    try:
+        # Try "localtime" first (works on Linux/WSL)
+        return ZoneInfo("localtime")
+    except ZoneInfoNotFoundError:
+        # Fall back to getting the key from datetime for macOS/Windows
+        local_tz = datetime.now().astimezone().tzinfo
+        if hasattr(local_tz, 'key'):
+            key = getattr(local_tz, 'key')
+            if isinstance(key, str):
+                return ZoneInfo(key)
+        # Final fallback: use UTC
+        return ZoneInfo("UTC")
 
 
 def get_local_now() -> datetime:

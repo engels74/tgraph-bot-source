@@ -166,7 +166,7 @@ class DataProcessor:
         """
         return self.extract_and_validate_data(
             data, 
-            "data", 
+            "monthly_plays", 
             context="monthly plays data extraction"
         )
 
@@ -319,7 +319,7 @@ class DataProcessor:
         """
         return self.extract_and_validate_data(
             data,
-            "data",
+            "play_history",
             context="play history data extraction"
         )
 

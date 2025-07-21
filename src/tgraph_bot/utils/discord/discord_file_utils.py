@@ -9,7 +9,7 @@ import logging
 from datetime import datetime, time, timedelta
 from pathlib import Path
 from typing import NamedTuple, Literal
-from zoneinfo import ZoneInfo
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import discord
 
@@ -35,8 +35,19 @@ def get_local_timezone() -> ZoneInfo:
     Returns:
         ZoneInfo object representing the local timezone
     """
-    # Use the system's local timezone
-    return ZoneInfo("localtime")
+    # Use the system's local timezone - cross-platform approach
+    try:
+        # Try "localtime" first (works on Linux/WSL)
+        return ZoneInfo("localtime")
+    except ZoneInfoNotFoundError:
+        # Fall back to getting the key from datetime for macOS/Windows
+        local_tz = datetime.now().astimezone().tzinfo
+        if hasattr(local_tz, 'key'):
+            key = getattr(local_tz, 'key')
+            if isinstance(key, str):
+                return ZoneInfo(key)
+        # Final fallback: use UTC
+        return ZoneInfo("UTC")
 
 
 def get_local_now() -> datetime:
