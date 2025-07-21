@@ -183,7 +183,7 @@ node_modules/
 
 # TGraph Bot Specific
 config.yml
-data/
+/data/
 docs/
 
 # Task files
