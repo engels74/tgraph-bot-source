@@ -229,7 +229,28 @@ class DataProcessor:
                     min_length=0
                 )
             elif raw_data and not isinstance(raw_data, list):
-                raise ValueError("Invalid format for data in play history extraction: expected list")
+                # If raw_data is a dict, try to extract a list from it
+                if isinstance(raw_data, dict):
+                    # Try common keys that might contain the actual list data
+                    for list_key in ["data", "records", "history", "play_history"]:
+                        if list_key in raw_data:
+                            nested_data = raw_data[list_key]
+                            if isinstance(nested_data, list):
+                                logger.info(f"Found list data nested under '{list_key}' key")
+                                list_data = cast(list[object], nested_data)
+                                records = self.validate_list_data(
+                                    list_data,
+                                    context="play history records",
+                                    min_length=0
+                                )
+                                break
+                    else:
+                        # No valid list found in nested structure
+                        logger.warning("No list data found in nested structure, returning empty records")
+                        records = []
+                else:
+                    # raw_data is neither list nor dict
+                    raise ValueError("Invalid format for data in play history extraction: expected list or dict containing list")
             else:
                 # Empty or None data
                 records = []
