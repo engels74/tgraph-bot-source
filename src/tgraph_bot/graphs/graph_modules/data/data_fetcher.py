@@ -11,6 +11,7 @@ import asyncio
 import datetime
 import hashlib
 import logging
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, TypedDict, cast, TypeAlias
 from collections.abc import Mapping
 
@@ -239,10 +240,14 @@ class DataFetcher:
         length = 1000
         total_records = 0
 
+        # Calculate start date for API-level filtering
+        start_date = (datetime.now() - timedelta(days=time_range)).strftime("%Y-%m-%d")
+
         params: APIParams = {
             "length": length,
             "start": start,
             "time_range": time_range,
+            "start_date": start_date,
         }
         if user_id is not None:
             params["user_id"] = user_id
@@ -274,8 +279,8 @@ class DataFetcher:
             if isinstance(records_filtered_raw, int):
                 total_records = records_filtered_raw
 
-            # Stop if we got less than a full page or intelligent stopping for small time ranges
-            if page_items_count < length or (time_range <= 7 and len(all_data) >= 500):
+            # Stop if we got less than a full page (natural pagination end)
+            if page_items_count < length:
                 break
 
             start += length
