@@ -55,10 +55,10 @@ logger = logging.getLogger(__name__)
 def calculate_buffer_size(time_range_days: int) -> int:
     """
     Calculate conservative buffer size based on time range.
-    
+
     Args:
         time_range_days: The configured time range in days
-        
+
     Returns:
         Buffer size in days using conservative strategy
     """
@@ -73,30 +73,32 @@ def calculate_buffer_size(time_range_days: int) -> int:
 def should_use_date_filtering(use_date_filtering: bool = True) -> bool:
     """
     Determine if date filtering should be used.
-    
+
     Args:
         use_date_filtering: Whether to enable date filtering (defaults to True)
-        
+
     Returns:
         True if date filtering should be used, False otherwise
     """
     return use_date_filtering
 
 
-def calculate_api_date_filter(time_range_days: int, buffer_days: int | None = None) -> str:
+def calculate_api_date_filter(
+    time_range_days: int, buffer_days: int | None = None
+) -> str:
     """
     Calculate the 'after' date for Tautulli API filtering with safety buffer.
-    
+
     Args:
         time_range_days: The desired time range in days
         buffer_days: Optional buffer size (calculated automatically if not provided)
-        
+
     Returns:
         Date string in "YYYY-MM-DD" format for use in API 'after' parameter
     """
     if buffer_days is None:
         buffer_days = calculate_buffer_size(time_range_days)
-    
+
     total_days = time_range_days + buffer_days
     after_date = datetime.date.today() - datetime.timedelta(days=total_days)
     return after_date.strftime("%Y-%m-%d")
@@ -221,16 +223,19 @@ class DataFetcher:
         raise RuntimeError("Maximum retries exceeded")
 
     async def get_play_history(
-        self, time_range: int, user_id: int | None = None, use_date_filtering: bool = True
+        self,
+        time_range: int,
+        user_id: int | None = None,
+        use_date_filtering: bool = True,
     ) -> PlayHistoryData:
         """
         Fetch play history with pagination support and optional date filtering.
-        
+
         Args:
             time_range: Time range parameter for Tautulli API (legacy, kept for compatibility)
             user_id: Optional user ID to filter by
             use_date_filtering: Whether to use API-level date filtering with buffer (default: True)
-            
+
         Returns:
             PlayHistoryData with fetched records and metadata
         """
@@ -246,12 +251,14 @@ class DataFetcher:
         }
         if user_id is not None:
             params["user_id"] = user_id
-            
+
         # Add date filtering with safety buffer if enabled
         if should_use_date_filtering(use_date_filtering):
             after_date = calculate_api_date_filter(time_range)
             params["after"] = after_date
-            logger.debug(f"Using API date filtering: after={after_date} (time_range={time_range} days + buffer)")
+            logger.debug(
+                f"Using API date filtering: after={after_date} (time_range={time_range} days + buffer)"
+            )
 
         while True:
             params["start"] = start

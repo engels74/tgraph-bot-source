@@ -29,33 +29,38 @@ class TestDailyPlayCountGraphRefactoring:
         """Test current wrapper method behavior (to be eliminated)."""
         config = create_test_config_minimal()
         config.TIME_RANGE_DAYS = 60
-        
+
         graph = DailyPlayCountGraph(config=config)
-        
+
         # Test that the wrapper method exists and works
-        if hasattr(graph, '_get_time_range_days_from_config'):
-            result = graph._get_time_range_days_from_config()  # pyright: ignore[reportPrivateUsage]
-            assert result == 60
-        
+        result: int | None = None
+        if hasattr(graph, "_get_time_range_days_from_config"):
+            method = getattr(graph, "_get_time_range_days_from_config")  # pyright: ignore[reportAny]
+            if callable(method):  # pyright: ignore[reportAny]
+                method_result = method()
+                # Ensure the result is the expected type
+                if isinstance(method_result, int):
+                    result = method_result
+
         # Test that the base method also works
         base_result = graph.get_time_range_days_from_config()
         assert base_result == 60
-        
+
         # They should return the same value
-        if hasattr(graph, '_get_time_range_days_from_config'):
+        if result is not None:
             assert result == base_result
 
     def test_time_range_days_direct_base_method_usage(self) -> None:
         """Test that base method can be used directly (post-refactoring behavior)."""
         config = create_test_config_minimal()
         config.TIME_RANGE_DAYS = 90
-        
+
         graph = DailyPlayCountGraph(config=config)
-        
+
         # Test direct usage of base method
         result = graph.get_time_range_days_from_config()
         assert result == 90
-        
+
         # Test with default value
         graph_no_config = DailyPlayCountGraph()
         default_result = graph_no_config.get_time_range_days_from_config()
@@ -65,190 +70,225 @@ class TestDailyPlayCountGraphRefactoring:
         """Test current empty data handling behavior (to be standardized)."""
         with matplotlib_cleanup():
             graph = DailyPlayCountGraph()
-            
+
             # Setup figure for testing
             _, ax = graph.setup_figure_with_styling()
-            
+
             # Test current empty data handling method
-            if hasattr(graph, '_handle_empty_data_case'):
+            if hasattr(graph, "_handle_empty_data_case"):
                 # Should not raise exception
                 graph._handle_empty_data_case(ax)  # pyright: ignore[reportPrivateUsage]
-            
+
             # Test that base method also works
             graph.handle_empty_data_with_message(ax, "Test empty message")
-            
+
             graph.cleanup()
 
     def test_empty_data_handling_standardized_behavior(self) -> None:
         """Test standardized empty data handling behavior (post-refactoring)."""
         with matplotlib_cleanup():
             graph = DailyPlayCountGraph()
-            
+
             # Setup figure for testing
             _, ax = graph.setup_figure_with_styling()
-            
+
             # Test standardized empty data handling using base method
             graph.handle_empty_data_with_message(ax)
-            
+
             # Test with custom message
-            graph.handle_empty_data_with_message(ax, "No data available for the selected time range.")
-            
+            graph.handle_empty_data_with_message(
+                ax, "No data available for the selected time range."
+            )
+
             graph.cleanup()
 
     def test_constructor_annotation_helper_initialization(self) -> None:
         """Test that annotation_helper is properly initialized in constructor."""
         graph = DailyPlayCountGraph()
-        
+
         # Should have annotation_helper initialized
-        assert hasattr(graph, 'annotation_helper')
+        assert hasattr(graph, "annotation_helper")
         assert graph.annotation_helper is not None
-        
+
         # Should be the correct type
-        from src.tgraph_bot.graphs.graph_modules.utils.annotation_helper import AnnotationHelper
+        from src.tgraph_bot.graphs.graph_modules.utils.annotation_helper import (
+            AnnotationHelper,
+        )
+
         assert isinstance(graph.annotation_helper, AnnotationHelper)
 
     def test_generate_method_uses_base_methods_directly(self) -> None:
         """Test that generate method uses base methods directly after refactoring."""
         with matplotlib_cleanup():
             graph = DailyPlayCountGraph()
-            
+
             # Mock data for testing
             test_data = {
                 "play_history": {
                     "data": [
                         {"date": 1704067200, "media_type": "movie"},  # 2024-01-01
-                        {"date": 1704153600, "media_type": "tv"},     # 2024-01-02
+                        {"date": 1704153600, "media_type": "tv"},  # 2024-01-02
                     ]
                 }
             }
-            
+
             # Test that generate method works (integration test)
             try:
                 output_path = graph.generate(test_data)
-                
+
                 # Should create a valid output file
                 from pathlib import Path
+
                 assert Path(output_path).exists()
-                assert output_path.endswith('.png')
-                
+                assert output_path.endswith(".png")
+
                 # Clean up
                 Path(output_path).unlink(missing_ok=True)
-                
+
             except Exception as e:
                 # If generation fails, it should be due to data processing, not method calls
                 # This is acceptable for this test
-                assert "time range" not in str(e).lower() or "wrapper" not in str(e).lower()
+                assert (
+                    "time range" not in str(e).lower()
+                    or "wrapper" not in str(e).lower()
+                )
 
     def test_refactoring_maintains_functionality(self) -> None:
         """Test that refactoring maintains all original functionality."""
         config = create_test_config_minimal()
         config.TIME_RANGE_DAYS = 14
-        
+
         graph = DailyPlayCountGraph(config=config)
-        
+
         # Test title generation
         title = graph.get_title()
         assert "Daily Play Count" in title
         assert "14 days" in title
-        
+
         # Test configuration access
         time_range = graph.get_time_range_days_from_config()
         assert time_range == 14
-        
-        # Test that all required methods exist
-        assert hasattr(graph, 'generate')
-        assert hasattr(graph, 'get_title')
-        assert hasattr(graph, 'setup_figure_with_styling')
-        assert hasattr(graph, 'finalize_and_save_figure')
-        assert hasattr(graph, 'handle_empty_data_with_message')
 
-    @patch('src.tgraph_bot.graphs.graph_modules.implementations.tautulli.daily_play_count_graph.logger')
-    def test_refactoring_maintains_logging(self, mock_logger: MagicMock) -> None:
+        # Test that all required methods exist
+        assert hasattr(graph, "generate")
+        assert hasattr(graph, "get_title")
+        assert hasattr(graph, "setup_figure_with_styling")
+        assert hasattr(graph, "finalize_and_save_figure")
+        assert hasattr(graph, "handle_empty_data_with_message")
+
+    @patch(
+        "src.tgraph_bot.graphs.graph_modules.implementations.tautulli.daily_play_count_graph.logger"
+    )
+    def test_refactoring_maintains_logging(self, _mock_logger: MagicMock) -> None:
         """Test that refactoring maintains proper logging behavior."""
         graph = DailyPlayCountGraph()
-        
+
         # Test that time range configuration is logged properly
         time_range = graph.get_time_range_days_from_config()
         assert time_range == 30  # default value
-        
+
         # The logging should happen in the generate method when it's called
         # This test ensures the refactoring doesn't break logging patterns
 
     def test_no_unnecessary_method_delegation(self) -> None:
         """Test that there are no unnecessary method delegations after refactoring."""
         graph = DailyPlayCountGraph()
-        
+
         # After refactoring, there should be no private wrapper methods
         # that simply delegate to base class methods
-        
+
         # Check that _get_time_range_days_from_config doesn't exist or
         # if it exists, it's not just a simple delegation
-        if hasattr(graph, '_get_time_range_days_from_config'):
+        if hasattr(graph, "_get_time_range_days_from_config"):
             # If the method still exists, it should do more than just delegate
             import inspect
-            method = getattr(graph, '_get_time_range_days_from_config')
-            source = inspect.getsource(method)
-            
-            # Should not be a simple one-line delegation
-            lines = [line.strip() for line in source.split('\n') if line.strip() and not line.strip().startswith('#')]
-            # Filter out docstring lines
-            code_lines = [line for line in lines if not line.startswith('"""') and not line.startswith("'''")]
-            
-            # If it's just a wrapper, it should have been eliminated
-            if len(code_lines) <= 3:  # def, return, and maybe pass
-                pytest.fail("Wrapper method still exists and appears to be unnecessary delegation")
+
+            method = getattr(graph, "_get_time_range_days_from_config")  # pyright: ignore[reportAny]
+            if callable(method):  # pyright: ignore[reportAny]
+                source = inspect.getsource(method)
+
+                # Should not be a simple one-line delegation
+                lines = [
+                    line.strip()
+                    for line in source.split("\n")
+                    if line.strip() and not line.strip().startswith("#")
+                ]
+                # Filter out docstring lines
+                code_lines = [
+                    line
+                    for line in lines
+                    if not line.startswith('"""') and not line.startswith("'''")
+                ]
+
+                # If it's just a wrapper, it should have been eliminated
+                if len(code_lines) <= 3:  # def, return, and maybe pass
+                    pytest.fail(
+                        "Wrapper method still exists and appears to be unnecessary delegation"
+                    )
 
     def test_consistent_empty_data_handling_across_methods(self) -> None:
         """Test that empty data handling is consistent across all methods."""
         with matplotlib_cleanup():
             graph = DailyPlayCountGraph()
-            
+
             # Setup figure
             _, ax = graph.setup_figure_with_styling()
-            
+
             # Test that all empty data handling uses the same base method
             # This ensures consistency after refactoring
-            
+
             # Mock the base method to verify it's being called
-            with patch.object(graph, 'handle_empty_data_with_message') as mock_handle:
+            with patch.object(graph, "handle_empty_data_with_message") as mock_handle:
                 # If the graph has custom empty data methods, they should call the base method
-                if hasattr(graph, '_handle_empty_data_case'):
+                if hasattr(graph, "_handle_empty_data_case"):
                     graph._handle_empty_data_case(ax)  # pyright: ignore[reportPrivateUsage]
                     # Should have called the base method
                     mock_handle.assert_called()
-            
+
             graph.cleanup()
 
     def test_empty_data_handling_standardization_phase2(self) -> None:
         """Test Phase 2: Empty data handling standardization."""
         with matplotlib_cleanup():
             graph = DailyPlayCountGraph()
-            
+
             # Setup figure
             _, ax = graph.setup_figure_with_styling()
-            
+
             # After Phase 2 refactoring, all empty data handling should use base method
             # Test direct usage of base method
-            graph.handle_empty_data_with_message(ax, "No data available for the selected time range.")
-            
+            graph.handle_empty_data_with_message(
+                ax, "No data available for the selected time range."
+            )
+
             # Test that custom methods (if they exist) delegate to base method
-            if hasattr(graph, '_handle_empty_data_case'):
-                with patch.object(graph, 'handle_empty_data_with_message') as mock_base:
+            if hasattr(graph, "_handle_empty_data_case"):
+                with patch.object(graph, "handle_empty_data_with_message") as mock_base:
                     graph._handle_empty_data_case(ax)  # pyright: ignore[reportPrivateUsage]
                     # Should call the base method
                     mock_base.assert_called_once()
-            
+
             graph.cleanup()
 
     def test_constructor_pattern_consistency_phase3(self) -> None:
         """Test Phase 3: Constructor pattern consistency."""
         # Test that all graphs have consistent annotation_helper initialization
-        from src.tgraph_bot.graphs.graph_modules.implementations.tautulli.top_10_users_graph import Top10UsersGraph
-        from src.tgraph_bot.graphs.graph_modules.implementations.tautulli.play_count_by_dayofweek_graph import PlayCountByDayOfWeekGraph
-        from src.tgraph_bot.graphs.graph_modules.implementations.tautulli.play_count_by_hourofday_graph import PlayCountByHourOfDayGraph
-        from src.tgraph_bot.graphs.graph_modules.implementations.tautulli.play_count_by_month_graph import PlayCountByMonthGraph
-        from src.tgraph_bot.graphs.graph_modules.implementations.tautulli.top_10_platforms_graph import Top10PlatformsGraph
-        
+        from src.tgraph_bot.graphs.graph_modules.implementations.tautulli.top_10_users_graph import (
+            Top10UsersGraph,
+        )
+        from src.tgraph_bot.graphs.graph_modules.implementations.tautulli.play_count_by_dayofweek_graph import (
+            PlayCountByDayOfWeekGraph,
+        )
+        from src.tgraph_bot.graphs.graph_modules.implementations.tautulli.play_count_by_hourofday_graph import (
+            PlayCountByHourOfDayGraph,
+        )
+        from src.tgraph_bot.graphs.graph_modules.implementations.tautulli.play_count_by_month_graph import (
+            PlayCountByMonthGraph,
+        )
+        from src.tgraph_bot.graphs.graph_modules.implementations.tautulli.top_10_platforms_graph import (
+            Top10PlatformsGraph,
+        )
+
         graph_classes = [
             DailyPlayCountGraph,
             PlayCountByDayOfWeekGraph,
@@ -257,14 +297,23 @@ class TestDailyPlayCountGraphRefactoring:
             Top10PlatformsGraph,
             Top10UsersGraph,
         ]
-        
+
         for graph_class in graph_classes:
             graph = graph_class()
-            
+
             # After Phase 3, all graphs should have annotation_helper initialized
-            assert hasattr(graph, 'annotation_helper'), f"{graph_class.__name__} missing annotation_helper"
-            assert graph.annotation_helper is not None, f"{graph_class.__name__} annotation_helper is None"
-            
+            assert hasattr(graph, "annotation_helper"), (
+                f"{graph_class.__name__} missing annotation_helper"
+            )
+            assert graph.annotation_helper is not None, (
+                f"{graph_class.__name__} annotation_helper is None"
+            )
+
             # Should be the correct type
-            from src.tgraph_bot.graphs.graph_modules.utils.annotation_helper import AnnotationHelper
-            assert isinstance(graph.annotation_helper, AnnotationHelper), f"{graph_class.__name__} annotation_helper wrong type"
+            from src.tgraph_bot.graphs.graph_modules.utils.annotation_helper import (
+                AnnotationHelper,
+            )
+
+            assert isinstance(graph.annotation_helper, AnnotationHelper), (
+                f"{graph_class.__name__} annotation_helper wrong type"
+            )

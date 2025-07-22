@@ -450,34 +450,38 @@ class TestDateCalculationUtils:
 
     def test_calculate_api_date_filter_basic(self) -> None:
         """Test basic date calculation with buffer."""
-        from src.tgraph_bot.graphs.graph_modules.data.data_fetcher import calculate_api_date_filter
-        
+        from src.tgraph_bot.graphs.graph_modules.data.data_fetcher import (
+            calculate_api_date_filter,
+        )
+
         # Test with explicit buffer - should work without mocking since we provide explicit buffer
         result = calculate_api_date_filter(time_range_days=30, buffer_days=7)
         # Result should be a valid date string format
         assert len(result) == 10  # YYYY-MM-DD format
         assert result.count("-") == 2
-        
+
         # Parse the result and verify it's roughly correct (37 days ago)
         result_date = datetime.datetime.strptime(result, "%Y-%m-%d").date()
         today = datetime.date.today()
         expected_date = today - datetime.timedelta(days=37)
-        
+
         # Allow for some variance in case test runs at midnight boundary
         assert abs((result_date - expected_date).days) <= 1
 
     def test_calculate_api_date_filter_different_ranges(self) -> None:
         """Test date calculation with different time ranges."""
-        from src.tgraph_bot.graphs.graph_modules.data.data_fetcher import calculate_api_date_filter
-        
+        from src.tgraph_bot.graphs.graph_modules.data.data_fetcher import (
+            calculate_api_date_filter,
+        )
+
         # Test small range
         result_small = calculate_api_date_filter(time_range_days=7, buffer_days=7)
         assert len(result_small) == 10  # YYYY-MM-DD format
-        
+
         # Test large range
         result_large = calculate_api_date_filter(time_range_days=365, buffer_days=30)
         assert len(result_large) == 10  # YYYY-MM-DD format
-        
+
         # Verify that larger ranges produce earlier dates
         date_small = datetime.datetime.strptime(result_small, "%Y-%m-%d").date()
         date_large = datetime.datetime.strptime(result_large, "%Y-%m-%d").date()
@@ -485,12 +489,14 @@ class TestDateCalculationUtils:
 
     def test_calculate_api_date_filter_edge_cases(self) -> None:
         """Test date calculation edge cases."""
-        from src.tgraph_bot.graphs.graph_modules.data.data_fetcher import calculate_api_date_filter
-        
+        from src.tgraph_bot.graphs.graph_modules.data.data_fetcher import (
+            calculate_api_date_filter,
+        )
+
         # Test minimum values
         result = calculate_api_date_filter(time_range_days=1, buffer_days=1)
         assert len(result) == 10  # YYYY-MM-DD format
-        
+
         # Verify it's 2 days ago
         result_date = datetime.datetime.strptime(result, "%Y-%m-%d").date()
         today = datetime.date.today()
@@ -499,11 +505,13 @@ class TestDateCalculationUtils:
 
     def test_calculate_api_date_filter_zero_buffer(self) -> None:
         """Test date calculation with zero buffer."""
-        from src.tgraph_bot.graphs.graph_modules.data.data_fetcher import calculate_api_date_filter
-        
+        from src.tgraph_bot.graphs.graph_modules.data.data_fetcher import (
+            calculate_api_date_filter,
+        )
+
         result = calculate_api_date_filter(time_range_days=30, buffer_days=0)
         assert len(result) == 10  # YYYY-MM-DD format
-        
+
         # Verify it's 30 days ago
         result_date = datetime.datetime.strptime(result, "%Y-%m-%d").date()
         today = datetime.date.today()
@@ -512,18 +520,20 @@ class TestDateCalculationUtils:
 
     def test_calculate_buffer_size_conservative_strategy(self) -> None:
         """Test conservative buffer size calculation."""
-        from src.tgraph_bot.graphs.graph_modules.data.data_fetcher import calculate_buffer_size
-        
+        from src.tgraph_bot.graphs.graph_modules.data.data_fetcher import (
+            calculate_buffer_size,
+        )
+
         # Small ranges get 7-day buffer
         assert calculate_buffer_size(1) == 7
         assert calculate_buffer_size(15) == 7
         assert calculate_buffer_size(30) == 7
-        
+
         # Medium ranges get 14-day buffer
         assert calculate_buffer_size(31) == 14
         assert calculate_buffer_size(60) == 14
         assert calculate_buffer_size(90) == 14
-        
+
         # Large ranges get 30-day buffer
         assert calculate_buffer_size(91) == 30
         assert calculate_buffer_size(180) == 30
@@ -531,8 +541,10 @@ class TestDateCalculationUtils:
 
     def test_should_use_date_filtering_logic(self) -> None:
         """Test logic for when to enable date filtering."""
-        from src.tgraph_bot.graphs.graph_modules.data.data_fetcher import should_use_date_filtering
-        
+        from src.tgraph_bot.graphs.graph_modules.data.data_fetcher import (
+            should_use_date_filtering,
+        )
+
         # Always enable date filtering unless explicitly disabled
         assert should_use_date_filtering(use_date_filtering=True) is True
         assert should_use_date_filtering(use_date_filtering=False) is False
@@ -547,32 +559,32 @@ class TestDateCalculationUtils:
             timeout=30.0,
             max_retries=3,
         )
-        
+
         mock_response_data = {
             "recordsFiltered": 100,
             "recordsTotal": 100,
             "data": [{"id": 1, "date": "2024-01-01", "plays": 25}],
         }
 
-        with patch.object(data_fetcher, "_make_request", return_value=mock_response_data) as mock_make_request:
+        with patch.object(
+            data_fetcher, "_make_request", return_value=mock_response_data
+        ) as mock_make_request:
             async with data_fetcher:
                 result = await data_fetcher.get_play_history(
-                    time_range=30, 
-                    user_id=1, 
-                    use_date_filtering=True
+                    time_range=30, user_id=1, use_date_filtering=True
                 )
 
             # Verify the call includes date filtering parameters
             first_call = mock_make_request.call_args_list[0]
             assert first_call[0][0] == "get_history"
             params: dict[str, object] = first_call[0][1]  # pyright: ignore[reportAny]
-            
+
             # Should include existing parameters
             assert params["length"] == 1000
             assert params["start"] == 0
             assert params["time_range"] == 30
             assert params["user_id"] == 1
-            
+
             # Should include date filtering parameter
             assert "after" in params
             # Verify it's a valid date format
@@ -594,32 +606,32 @@ class TestDateCalculationUtils:
             timeout=30.0,
             max_retries=3,
         )
-        
+
         mock_response_data = {
             "recordsFiltered": 100,
             "recordsTotal": 100,
             "data": [{"id": 1, "date": "2024-01-01", "plays": 25}],
         }
 
-        with patch.object(data_fetcher, "_make_request", return_value=mock_response_data) as mock_make_request:
+        with patch.object(
+            data_fetcher, "_make_request", return_value=mock_response_data
+        ) as mock_make_request:
             async with data_fetcher:
                 _ = await data_fetcher.get_play_history(
-                    time_range=30, 
-                    user_id=1, 
-                    use_date_filtering=False
+                    time_range=30, user_id=1, use_date_filtering=False
                 )
 
             # Verify the call does NOT include date filtering parameters
             first_call = mock_make_request.call_args_list[0]
             assert first_call[0][0] == "get_history"
             params: dict[str, object] = first_call[0][1]  # pyright: ignore[reportAny]
-            
+
             # Should include existing parameters
             assert params["length"] == 1000
             assert params["start"] == 0
             assert params["time_range"] == 30
             assert params["user_id"] == 1
-            
+
             # Should NOT include date filtering parameter
             assert "after" not in params
 
@@ -632,14 +644,16 @@ class TestDateCalculationUtils:
             timeout=30.0,
             max_retries=3,
         )
-        
+
         mock_response_data = {
             "recordsFiltered": 50,
             "recordsTotal": 50,
             "data": [{"id": 1, "date": "2024-01-01", "plays": 25}],
         }
 
-        with patch.object(data_fetcher, "_make_request", return_value=mock_response_data) as mock_make_request:
+        with patch.object(
+            data_fetcher, "_make_request", return_value=mock_response_data
+        ) as mock_make_request:
             async with data_fetcher:
                 # Don't specify use_date_filtering - should default to True
                 _ = await data_fetcher.get_play_history(time_range=90)
@@ -662,17 +676,21 @@ class TestDateCalculationUtils:
             timeout=30.0,
             max_retries=3,
         )
-        
+
         mock_response_data = {
             "recordsFiltered": 25,
             "recordsTotal": 25,
             "data": [{"id": 1, "date": "2024-01-01", "plays": 25}],
         }
 
-        with patch.object(data_fetcher, "_make_request", return_value=mock_response_data) as mock_make_request:
+        with patch.object(
+            data_fetcher, "_make_request", return_value=mock_response_data
+        ) as mock_make_request:
             async with data_fetcher:
                 # Test small range (should get 7-day buffer)
-                _ = await data_fetcher.get_play_history(time_range=7, use_date_filtering=True)
+                _ = await data_fetcher.get_play_history(
+                    time_range=7, use_date_filtering=True
+                )
                 small_call = mock_make_request.call_args_list[0]
                 small_params: dict[str, object] = small_call[0][1]  # pyright: ignore[reportAny]
                 small_after = small_params["after"]
@@ -681,12 +699,14 @@ class TestDateCalculationUtils:
                 mock_make_request.reset_mock()
 
                 # Test large range (should get 30-day buffer)
-                _ = await data_fetcher.get_play_history(time_range=365, use_date_filtering=True)
+                _ = await data_fetcher.get_play_history(
+                    time_range=365, use_date_filtering=True
+                )
                 large_call = mock_make_request.call_args_list[0]
                 large_params: dict[str, object] = large_call[0][1]  # pyright: ignore[reportAny]
                 large_after = large_params["after"]
                 assert isinstance(large_after, str)
-                
+
                 # Large range should produce an earlier date than small range
                 small_date = datetime.datetime.strptime(small_after, "%Y-%m-%d").date()
                 large_date = datetime.datetime.strptime(large_after, "%Y-%m-%d").date()
@@ -701,14 +721,16 @@ class TestDateCalculationUtils:
             timeout=30.0,
             max_retries=3,
         )
-        
+
         mock_response_data = {
             "recordsFiltered": 100,
             "recordsTotal": 100,
             "data": [{"id": 1, "date": "2024-01-01", "plays": 25}],
         }
 
-        with patch.object(data_fetcher, "_make_request", return_value=mock_response_data) as mock_make_request:
+        with patch.object(
+            data_fetcher, "_make_request", return_value=mock_response_data
+        ) as mock_make_request:
             async with data_fetcher:
                 # Call exactly like existing code
                 result = await data_fetcher.get_play_history(time_range=30, user_id=1)
@@ -721,7 +743,7 @@ class TestDateCalculationUtils:
             after_value = params["after"]
             assert isinstance(after_value, str)
             assert len(after_value) == 10  # YYYY-MM-DD
-            
+
             # Should maintain all existing behavior
             assert params["time_range"] == 30
             assert params["user_id"] == 1
@@ -740,18 +762,20 @@ class TestIntegrationDateFiltering:
             timeout=30.0,
             max_retries=3,
         )
-        
+
         # Mock a typical API response for a 30-day period
         mock_response_data = {
             "recordsFiltered": 250,
             "recordsTotal": 10000,  # Much larger total (demonstrates filtering effect)
             "data": [
-                {"id": i, "date": 1640995200 + i*86400, "user": "test_user"} 
+                {"id": i, "date": 1640995200 + i * 86400, "user": "test_user"}
                 for i in range(250)
             ],
         }
 
-        with patch.object(data_fetcher, "_make_request", return_value=mock_response_data) as mock_make_request:
+        with patch.object(
+            data_fetcher, "_make_request", return_value=mock_response_data
+        ) as mock_make_request:
             async with data_fetcher:
                 # Test with date filtering enabled (default)
                 result = await data_fetcher.get_play_history(time_range=30)
@@ -759,7 +783,7 @@ class TestIntegrationDateFiltering:
             # Verify API call was made with date filtering
             first_call = mock_make_request.call_args_list[0]
             params: dict[str, object] = first_call[0][1]  # pyright: ignore[reportAny]
-            
+
             # Should include both traditional and new parameters
             assert params["time_range"] == 30  # Legacy parameter preserved
             assert "after" in params  # New date filtering parameter
@@ -769,7 +793,9 @@ class TestIntegrationDateFiltering:
 
             # Result should include the API response data
             assert result["recordsFiltered"] == 250
-            assert result["recordsTotal"] == 250  # DataFetcher sets recordsTotal = recordsFiltered
+            assert (
+                result["recordsTotal"] == 250
+            )  # DataFetcher sets recordsTotal = recordsFiltered
             assert len(result["data"]) == 250
 
     @pytest.mark.asyncio
@@ -781,29 +807,38 @@ class TestIntegrationDateFiltering:
             timeout=30.0,
             max_retries=3,
         )
-        
-        from src.tgraph_bot.graphs.graph_modules.data.data_fetcher import PlayHistoryData
-        mock_response: PlayHistoryData = {"recordsFiltered": 50, "recordsTotal": 50, "data": []}
 
-        with patch.object(data_fetcher, "_make_request", return_value=mock_response) as mock_make_request:
+        from src.tgraph_bot.graphs.graph_modules.data.data_fetcher import (
+            PlayHistoryData,
+        )
+
+        mock_response: PlayHistoryData = {
+            "recordsFiltered": 50,
+            "recordsTotal": 50,
+            "data": [],
+        }
+
+        with patch.object(
+            data_fetcher, "_make_request", return_value=mock_response
+        ) as mock_make_request:
             async with data_fetcher:
                 # Test small range (7 + 7 = 14 days buffer)
                 _ = await data_fetcher.get_play_history(time_range=15)
                 small_call = mock_make_request.call_args_list[0]
                 small_after: str = small_call[0][1]["after"]  # pyright: ignore[reportAny]
-                
+
                 mock_make_request.reset_mock()
-                
-                # Test large range (365 + 30 = 395 days buffer)  
+
+                # Test large range (365 + 30 = 395 days buffer)
                 _ = await data_fetcher.get_play_history(time_range=365)
                 large_call = mock_make_request.call_args_list[0]
                 large_after: str = large_call[0][1]["after"]  # pyright: ignore[reportAny]
-                
+
                 # Verify large range produces significantly earlier date
                 small_date = datetime.datetime.strptime(small_after, "%Y-%m-%d").date()
                 large_date = datetime.datetime.strptime(large_after, "%Y-%m-%d").date()
                 days_difference = (small_date - large_date).days
-                
+
                 # Expected difference: (15+7) vs (365+30) = 22 vs 395 = 373 days difference
                 assert days_difference > 300  # Allow some margin for timing
 
@@ -816,14 +851,16 @@ class TestIntegrationDateFiltering:
             timeout=30.0,
             max_retries=3,
         )
-        
+
         mock_response = {
             "recordsFiltered": 100,
             "recordsTotal": 100,
             "data": [{"id": 1, "plays": 5}],
         }
 
-        with patch.object(data_fetcher, "_make_request", return_value=mock_response) as mock_make_request:
+        with patch.object(
+            data_fetcher, "_make_request", return_value=mock_response
+        ) as mock_make_request:
             async with data_fetcher:
                 # Call using exact same pattern as existing production code
                 result = await data_fetcher.get_play_history(time_range=30, user_id=12)
@@ -831,15 +868,15 @@ class TestIntegrationDateFiltering:
             # Verify all existing behavior is preserved
             call_args = mock_make_request.call_args_list[0]
             params: dict[str, object] = call_args[0][1]  # pyright: ignore[reportAny]
-            
+
             assert params["time_range"] == 30  # Original parameter still works
-            assert params["user_id"] == 12     # User filtering still works
-            assert params["length"] == 1000    # Pagination still works
-            assert params["start"] == 0        # Pagination offset still works
-            
+            assert params["user_id"] == 12  # User filtering still works
+            assert params["length"] == 1000  # Pagination still works
+            assert params["start"] == 0  # Pagination offset still works
+
             # New feature is transparently added
             assert "after" in params
-            
+
             # Results have same structure
             assert "data" in result
             assert result["recordsFiltered"] == 100

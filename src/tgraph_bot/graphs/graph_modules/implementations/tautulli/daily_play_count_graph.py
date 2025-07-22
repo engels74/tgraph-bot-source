@@ -103,8 +103,6 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
         )
         return filtered_records
 
-
-
     def _setup_aligned_date_axis(
         self, ax: Axes, sorted_dates: list[str], num_dates: int
     ) -> None:
