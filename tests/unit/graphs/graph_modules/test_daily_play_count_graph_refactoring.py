@@ -76,7 +76,9 @@ class TestDailyPlayCountGraphRefactoring:
 
             # Test that the standardized empty data handling method works
             # The custom _handle_empty_data_case method has been removed in favor of base method
-            graph.handle_empty_data_with_message(ax, "No data available for current configuration.")
+            graph.handle_empty_data_with_message(
+                ax, "No data available for current configuration."
+            )
 
             # Test that base method also works
             graph.handle_empty_data_with_message(ax, "Test empty message")
@@ -262,7 +264,9 @@ class TestDailyPlayCountGraphRefactoring:
             # Verify that after Phase 2 refactoring, only the base method is used
             # Custom _handle_empty_data_case methods have been eliminated
             with patch.object(graph, "handle_empty_data_with_message") as mock_base:
-                graph.handle_empty_data_with_message(ax, "Standardized empty data message")
+                graph.handle_empty_data_with_message(
+                    ax, "Standardized empty data message"
+                )
                 # Should call the base method directly
                 mock_base.assert_called_once()
 

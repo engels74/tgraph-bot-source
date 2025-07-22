@@ -571,9 +571,8 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
 
             # Get display info for this media type
             label, color = self.get_media_type_display_info(media_type)
-            
-            for month, count in media_data.items():
 
+            for month, count in media_data.items():
                 plot_data.append(
                     {
                         "month": month,
@@ -731,4 +730,3 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
                 self.handle_empty_data_with_message(
                     self.axes, "No data available for the selected time range."
                 )
-

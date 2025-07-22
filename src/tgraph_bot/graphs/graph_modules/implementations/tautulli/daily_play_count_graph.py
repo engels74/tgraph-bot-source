@@ -432,7 +432,6 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
                 ax, "No data available for the selected time range."
             )
 
-
     def _add_peak_annotations(
         self,
         ax: Axes,

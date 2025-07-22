@@ -201,20 +201,20 @@ class TestEmptyDataStandardization:
         with matplotlib_cleanup():
             # After refactoring, all graphs should use the base method directly
             # This test verifies that the wrapper methods have been eliminated
-            
+
             graphs = [
                 DailyPlayCountGraph(),
-                PlayCountByDayOfWeekGraph(), 
+                PlayCountByDayOfWeekGraph(),
                 PlayCountByHourOfDayGraph(),
                 PlayCountByMonthGraph(),
             ]
-            
+
             for graph in graphs:
                 # After standardization, custom empty data methods should not exist
                 assert not hasattr(graph, "_handle_empty_data_case"), (
                     f"{graph.__class__.__name__} still has custom empty data method"
                 )
-                
+
                 # All graphs should have access to the base method
                 assert hasattr(graph, "handle_empty_data_with_message"), (
                     f"{graph.__class__.__name__} missing base empty data method"
@@ -234,7 +234,7 @@ class TestEmptyDataStandardization:
             assert not hasattr(graph, "_handle_empty_data_case"), (
                 f"{graph.__class__.__name__} still has duplicate empty data logic"
             )
-            
+
             # All graphs should use the base method directly
             assert hasattr(graph, "handle_empty_data_with_message"), (
                 f"{graph.__class__.__name__} missing base empty data method"

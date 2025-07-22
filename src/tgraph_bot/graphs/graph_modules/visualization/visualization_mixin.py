@@ -31,11 +31,11 @@ class VisualizationProtocol(Protocol):
     def get_grid_enabled(self) -> bool:
         """Check if grid should be enabled for this graph."""
         ...
-    
+
     def get_tv_color(self) -> str:
         """Get the configured TV color."""
         ...
-        
+
     def get_movie_color(self) -> str:
         """Get the configured movie color."""
         ...
@@ -160,7 +160,9 @@ class VisualizationMixin:
         if ylabel is not None:
             _ = ax.set_ylabel(ylabel, fontsize=label_fontsize, fontweight="bold")  # pyright: ignore[reportUnknownMemberType]
 
-    def get_media_type_display_info(self: VisualizationProtocol, media_type: str) -> tuple[str, str]:
+    def get_media_type_display_info(
+        self: VisualizationProtocol, media_type: str
+    ) -> tuple[str, str]:
         """
         Get standardized display name and color for a media type.
 
@@ -174,9 +176,9 @@ class VisualizationMixin:
             Tuple of (display_name, color) for the media type
         """
         from ..utils.utils import get_media_type_display_info
-        
+
         display_info = get_media_type_display_info()
-        
+
         if media_type in display_info:
             label = display_info[media_type]["display_name"]
             color = display_info[media_type]["color"]
@@ -186,7 +188,7 @@ class VisualizationMixin:
                 color = self.get_tv_color()
             elif media_type == "movie":
                 color = self.get_movie_color()
-                
+
             return label, color
         else:
             # Fallback for unknown media types

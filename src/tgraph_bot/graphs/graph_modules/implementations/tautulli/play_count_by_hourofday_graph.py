@@ -171,4 +171,3 @@ class PlayCountByHourOfDayGraph(BaseGraph, VisualizationMixin):
                 ax, "No data available for the selected time range."
             )
             logger.warning("Generated empty hour of day graph due to no data")
-

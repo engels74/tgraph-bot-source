@@ -434,7 +434,9 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
             )
 
             # Customize the plot
-            self.setup_title_and_axes_with_ax(ax, xlabel="Day of Week", ylabel="Play Count")
+            self.setup_title_and_axes_with_ax(
+                ax, xlabel="Day of Week", ylabel="Play Count"
+            )
 
             # Add bar value annotations if enabled
             self.annotation_helper.annotate_bar_patches(
@@ -449,4 +451,3 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
             self.handle_empty_data_with_message(
                 ax, "No data available for the selected time range."
             )
-
