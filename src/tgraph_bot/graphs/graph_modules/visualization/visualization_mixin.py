@@ -31,6 +31,14 @@ class VisualizationProtocol(Protocol):
     def get_grid_enabled(self) -> bool:
         """Check if grid should be enabled for this graph."""
         ...
+    
+    def get_tv_color(self) -> str:
+        """Get the configured TV color."""
+        ...
+        
+    def get_movie_color(self) -> str:
+        """Get the configured movie color."""
+        ...
 
     def get_title(self) -> str:
         """Get the title for this graph."""
@@ -111,6 +119,78 @@ class VisualizationMixin:
             _ = self.axes.set_xlabel(xlabel, fontsize=label_fontsize)  # pyright: ignore[reportUnknownMemberType]
         if ylabel is not None:
             _ = self.axes.set_ylabel(ylabel, fontsize=label_fontsize)  # pyright: ignore[reportUnknownMemberType]
+
+    def setup_title_and_axes_with_ax(
+        self: VisualizationProtocol,
+        ax: matplotlib.axes.Axes,
+        title: str | None = None,
+        xlabel: str | None = None,
+        ylabel: str | None = None,
+        title_fontsize: int = 18,
+        label_fontsize: int = 14,
+        title_pad: int = 20,
+    ) -> None:
+        """
+        Set up standard title and axis labels with consistent formatting on a specific axes.
+
+        This method applies the same formatting as setup_standard_title_and_axes
+        but works with a provided axes object instead of self.axes.
+
+        Args:
+            ax: The matplotlib axes to configure
+            title: Graph title (uses get_title() if None)
+            xlabel: X-axis label (optional)
+            ylabel: Y-axis label (optional)
+            title_fontsize: Font size for the title
+            label_fontsize: Font size for axis labels
+            title_pad: Padding for the title
+        """
+        # Set title
+        display_title = title if title is not None else self.get_title()
+        _ = ax.set_title(  # pyright: ignore[reportUnknownMemberType]
+            display_title,
+            fontsize=title_fontsize,
+            fontweight="bold",
+            pad=title_pad,
+        )
+
+        # Set axis labels if provided
+        if xlabel is not None:
+            _ = ax.set_xlabel(xlabel, fontsize=label_fontsize, fontweight="bold")  # pyright: ignore[reportUnknownMemberType]
+        if ylabel is not None:
+            _ = ax.set_ylabel(ylabel, fontsize=label_fontsize, fontweight="bold")  # pyright: ignore[reportUnknownMemberType]
+
+    def get_media_type_display_info(self: VisualizationProtocol, media_type: str) -> tuple[str, str]:
+        """
+        Get standardized display name and color for a media type.
+
+        This method consolidates the common pattern of getting media type display
+        information with config overrides for TV and movie colors.
+
+        Args:
+            media_type: The media type to get info for (e.g., "tv", "movie")
+
+        Returns:
+            Tuple of (display_name, color) for the media type
+        """
+        from ..utils.utils import get_media_type_display_info
+        
+        display_info = get_media_type_display_info()
+        
+        if media_type in display_info:
+            label = display_info[media_type]["display_name"]
+            color = display_info[media_type]["color"]
+
+            # Override with config colors if available
+            if media_type == "tv":
+                color = self.get_tv_color()
+            elif media_type == "movie":
+                color = self.get_movie_color()
+                
+            return label, color
+        else:
+            # Fallback for unknown media types
+            return media_type.title(), "#666666"
 
     def display_no_data_message(
         self: VisualizationProtocol,

@@ -234,9 +234,7 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
         )
 
         # Customize the plot
-        _ = ax.set_title(self.get_title(), fontsize=18, fontweight="bold", pad=20)  # pyright: ignore[reportUnknownMemberType]
-        _ = ax.set_xlabel("Day of Week", fontsize=14, fontweight="bold")  # pyright: ignore[reportUnknownMemberType]
-        _ = ax.set_ylabel("Play Count", fontsize=14, fontweight="bold")  # pyright: ignore[reportUnknownMemberType]
+        self.setup_title_and_axes_with_ax(ax, xlabel="Day of Week", ylabel="Play Count")
 
         # Enhance legend
         _ = ax.legend(  # pyright: ignore[reportUnknownMemberType]
@@ -373,9 +371,7 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
             bottom += values
 
         # Set labels and title
-        _ = ax.set_xlabel("Day of Week", fontsize=14, fontweight="bold")  # pyright: ignore[reportUnknownMemberType]
-        _ = ax.set_ylabel("Play Count", fontsize=14, fontweight="bold")  # pyright: ignore[reportUnknownMemberType]
-        _ = ax.set_title(self.get_title(), fontsize=18, fontweight="bold", pad=20)  # pyright: ignore[reportUnknownMemberType]
+        self.setup_title_and_axes_with_ax(ax, xlabel="Day of Week", ylabel="Play Count")
         _ = ax.set_xticks(x)  # pyright: ignore[reportAny] # matplotlib method returns Any
         _ = ax.set_xticklabels(day_order)  # pyright: ignore[reportAny] # matplotlib method returns Any
 
@@ -460,9 +456,7 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
             )
 
             # Customize the plot
-            _ = ax.set_title(self.get_title(), fontsize=18, fontweight="bold", pad=20)  # pyright: ignore[reportUnknownMemberType]
-            _ = ax.set_xlabel("Day of Week", fontsize=14, fontweight="bold")  # pyright: ignore[reportUnknownMemberType]
-            _ = ax.set_ylabel("Play Count", fontsize=14, fontweight="bold")  # pyright: ignore[reportUnknownMemberType]
+            self.setup_title_and_axes_with_ax(ax, xlabel="Day of Week", ylabel="Play Count")
 
             # Add bar value annotations if enabled
             self.annotation_helper.annotate_bar_patches(

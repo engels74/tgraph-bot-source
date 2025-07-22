@@ -21,7 +21,6 @@ from ...utils.utils import (
     ProcessedRecords,
     aggregate_by_date,
     aggregate_by_date_separated,
-    get_media_type_display_info,
     handle_empty_data,
 )
 from ...visualization.visualization_mixin import VisualizationMixin
@@ -246,7 +245,6 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
         separated_data = aggregate_by_date_separated(
             processed_records, fill_missing_dates=True, time_range_days=time_range_days
         )
-        display_info = get_media_type_display_info()
 
         if not separated_data:
             self.handle_empty_data_with_message(
@@ -282,18 +280,7 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
                 continue
 
             # Get display information
-            if media_type in display_info:
-                label = display_info[media_type]["display_name"]
-                color = display_info[media_type]["color"]
-
-                # Override with config colors if available
-                if media_type == "tv":
-                    color = self.get_tv_color()
-                elif media_type == "movie":
-                    color = self.get_movie_color()
-            else:
-                label = media_type.title()
-                color = "#666666"  # Default gray for unknown types
+            label, color = self.get_media_type_display_info(media_type)
 
             # Create the plot using numerical x-axis for better control
             import numpy as np
@@ -322,9 +309,7 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
             return
 
         # Customize the plot
-        _ = ax.set_title(self.get_title(), fontsize=18, fontweight="bold", pad=20)  # pyright: ignore[reportUnknownMemberType]
-        _ = ax.set_xlabel("Date", fontsize=14, fontweight="bold")  # pyright: ignore[reportUnknownMemberType]
-        _ = ax.set_ylabel("Play Count", fontsize=14, fontweight="bold")  # pyright: ignore[reportUnknownMemberType]
+        self.setup_title_and_axes_with_ax(ax, xlabel="Date", ylabel="Play Count")
 
         # Setup aligned date axis
         num_dates = len(sorted_dates)
@@ -423,9 +408,7 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
             )
 
             # Customize the plot
-            _ = ax.set_title(self.get_title(), fontsize=18, fontweight="bold", pad=20)  # pyright: ignore[reportUnknownMemberType]
-            _ = ax.set_xlabel("Date", fontsize=14, fontweight="bold")  # pyright: ignore[reportUnknownMemberType]
-            _ = ax.set_ylabel("Play Count", fontsize=14, fontweight="bold")  # pyright: ignore[reportUnknownMemberType]
+            self.setup_title_and_axes_with_ax(ax, xlabel="Date", ylabel="Play Count")
 
             # Setup aligned date axis
             num_dates = len(sorted_dates)
@@ -475,8 +458,6 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
             separated_data: Dictionary of separated media type data
             sorted_dates: List of sorted date strings
         """
-        display_info = get_media_type_display_info()
-
         for media_type, media_data in separated_data.items():
             if not media_data:
                 continue
@@ -490,9 +471,7 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
                 max_idx = counts.index(max_count)
 
                 # Get label for this media type
-                label = display_info.get(media_type, {}).get(
-                    "display_name", media_type.title()
-                )
+                label, _ = self.get_media_type_display_info(media_type)
 
                 self.annotation_helper.annotate_peak_value(
                     ax,

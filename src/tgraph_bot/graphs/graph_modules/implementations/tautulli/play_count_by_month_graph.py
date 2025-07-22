@@ -24,7 +24,6 @@ from ...utils.utils import (
     ProcessedRecords,
     aggregate_by_month,
     aggregate_by_month_separated,
-    get_media_type_display_info,
 )
 from ...visualization.visualization_mixin import VisualizationMixin
 
@@ -163,7 +162,6 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
 
         # Prepare data for plotting
         plot_data: list[dict[str, str | int]] = []
-        display_info = get_media_type_display_info()
 
         # series comes from external Tautulli API - runtime type checking required
         for series_item in series:  # pyright: ignore[reportUnknownVariableType] # external API data
@@ -183,15 +181,8 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
             media_type = "tv" if series_name.lower() in ["tv", "tv series"] else "movie"
 
             # Get display info
-            if media_type in display_info:
-                label = display_info[media_type]["display_name"]
-                color = display_info[media_type]["color"]
-
-                # Override with config colors if available
-                if media_type == "tv":
-                    color = self.get_tv_color()
-                elif media_type == "movie":
-                    color = self.get_movie_color()
+            if media_type in ["tv", "movie"]:
+                label, color = self.get_media_type_display_info(media_type)
             else:
                 label = series_name
                 color = "#666666"
@@ -263,10 +254,8 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
             linewidth=0.7,
         )
 
-        # Customize the plot - matplotlib methods lack complete type stubs
-        _ = ax.set_title(self.get_title(), fontsize=18, fontweight="bold", pad=20)  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
-        _ = ax.set_xlabel("Month", fontsize=14, fontweight="bold")  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
-        _ = ax.set_ylabel("Play Count", fontsize=14, fontweight="bold")  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+        # Customize the plot
+        self.setup_title_and_axes_with_ax(ax, xlabel="Month", ylabel="Play Count")
 
         # Enhance legend
         _ = ax.legend(  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
@@ -330,7 +319,6 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
         # Prepare data for stacked bars
         media_type_data: dict[str, list[int]] = {}
         media_type_colors: dict[str, str] = {}
-        display_info = get_media_type_display_info()
 
         # Process series data from API
         for series_item in series:
@@ -359,14 +347,8 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
             media_type_data[media_type] = values_list
 
             # Get colors for media types
-            if media_type == "tv":
-                media_type_colors[media_type] = self.get_tv_color()
-            elif media_type == "movie":
-                media_type_colors[media_type] = self.get_movie_color()
-            elif media_type in display_info:
-                media_type_colors[media_type] = display_info[media_type]["color"]
-            else:
-                media_type_colors[media_type] = "#666666"
+            _, color = self.get_media_type_display_info(media_type)
+            media_type_colors[media_type] = color
 
         if not media_type_data:
             if self.axes is not None:
@@ -403,10 +385,7 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
             color = media_type_colors[media_type]
 
             # Get display name for legend
-            if media_type in display_info:
-                label = display_info[media_type]["display_name"]
-            else:
-                label = media_type.title()
+            label, _ = self.get_media_type_display_info(media_type)
 
             bars = ax.bar(  # pyright: ignore[reportUnknownMemberType] # matplotlib complex type signature
                 x,
@@ -423,9 +402,7 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
             bottom += values
 
         # Set labels and title
-        _ = ax.set_xlabel("Month", fontsize=14, fontweight="bold")  # pyright: ignore[reportUnknownMemberType]
-        _ = ax.set_ylabel("Play Count", fontsize=14, fontweight="bold")  # pyright: ignore[reportUnknownMemberType]
-        _ = ax.set_title(self.get_title(), fontsize=18, fontweight="bold", pad=20)  # pyright: ignore[reportUnknownMemberType]
+        self.setup_title_and_axes_with_ax(ax, xlabel="Month", ylabel="Play Count")
         _ = ax.set_xticks(x)  # pyright: ignore[reportAny] # matplotlib method returns Any
         _ = ax.set_xticklabels(categories, rotation=45, ha="right")  # pyright: ignore[reportAny] # matplotlib method returns Any
 
@@ -542,10 +519,8 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
             linewidth=0.7,
         )
 
-        # Customize the plot - matplotlib methods lack complete type stubs
-        _ = ax.set_title(self.get_title(), fontsize=18, fontweight="bold", pad=20)  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
-        _ = ax.set_xlabel("Month", fontsize=14, fontweight="bold")  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
-        _ = ax.set_ylabel("Play Count", fontsize=14, fontweight="bold")  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+        # Customize the plot
+        self.setup_title_and_axes_with_ax(ax, xlabel="Month", ylabel="Play Count")
 
         # Rotate x-axis labels for better readability
         ax.tick_params(axis="x", rotation=45, labelsize=12)  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
@@ -596,7 +571,6 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
         """
         # Aggregate data by month with media type separation
         separated_data = aggregate_by_month_separated(processed_records)
-        display_info = get_media_type_display_info()
 
         if not separated_data:
             if self.axes is not None:
@@ -611,19 +585,10 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
             if not media_data or all(count == 0 for count in media_data.values()):
                 continue
 
+            # Get display info for this media type
+            label, color = self.get_media_type_display_info(media_type)
+            
             for month, count in media_data.items():
-                if media_type in display_info:
-                    label = display_info[media_type]["display_name"]
-                    color = display_info[media_type]["color"]
-
-                    # Override with config colors if available
-                    if media_type == "tv":
-                        color = self.get_tv_color()
-                    elif media_type == "movie":
-                        color = self.get_movie_color()
-                else:
-                    label = media_type.title()
-                    color = "#666666"
 
                 plot_data.append(
                     {
@@ -688,9 +653,7 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
         )
 
         # Customize the plot
-        _ = ax.set_title(self.get_title(), fontsize=18, fontweight="bold", pad=20)  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
-        _ = ax.set_xlabel("Month", fontsize=14, fontweight="bold")  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
-        _ = ax.set_ylabel("Play Count", fontsize=14, fontweight="bold")  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+        self.setup_title_and_axes_with_ax(ax, xlabel="Month", ylabel="Play Count")
 
         # Enhance legend
         _ = ax.legend(  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
@@ -774,10 +737,8 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
                 alpha=0.8,
             )
 
-            # Customize the plot - matplotlib methods lack complete type stubs
-            _ = ax.set_title(self.get_title(), fontsize=18, fontweight="bold", pad=20)  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
-            _ = ax.set_xlabel("Month", fontsize=14, fontweight="bold")  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
-            _ = ax.set_ylabel("Play Count", fontsize=14, fontweight="bold")  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
+            # Customize the plot
+            self.setup_title_and_axes_with_ax(ax, xlabel="Month", ylabel="Play Count")
 
             # Rotate x-axis labels for better readability
             ax.tick_params(axis="x", rotation=45, labelsize=12)  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete

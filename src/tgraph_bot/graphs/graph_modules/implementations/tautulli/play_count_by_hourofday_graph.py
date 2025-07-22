@@ -148,11 +148,9 @@ class PlayCountByHourOfDayGraph(BaseGraph, VisualizationMixin):
             )
 
             # Customize the plot
-            _ = ax.set_title(  # pyright: ignore[reportUnknownMemberType]
-                self.get_title(), fontsize=18, fontweight="bold", pad=20
+            self.setup_title_and_axes_with_ax(
+                ax, xlabel="Hour of Day", ylabel="Play Count", label_fontsize=12
             )
-            _ = ax.set_xlabel("Hour of Day", fontsize=12)  # pyright: ignore[reportUnknownMemberType]
-            _ = ax.set_ylabel("Play Count", fontsize=12)  # pyright: ignore[reportUnknownMemberType]
 
             # Set x-axis ticks to show all hours
             _ = ax.set_xticks(range(0, 24, 2))  # pyright: ignore[reportAny] # matplotlib method returns Any
