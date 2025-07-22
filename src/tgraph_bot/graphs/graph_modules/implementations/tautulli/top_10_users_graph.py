@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, override
 import pandas as pd
 import seaborn as sns
 
+from ...utils.annotation_helper import AnnotationHelper
 from ...core.base_graph import BaseGraph
 from ...data.data_processor import data_processor
 from ...utils.utils import (
@@ -53,6 +54,7 @@ class Top10UsersGraph(BaseGraph, VisualizationMixin):
             dpi=dpi,
             background_color=background_color,
         )
+        self.annotation_helper: AnnotationHelper = AnnotationHelper(self)
 
     @override
     def get_title(self) -> str:

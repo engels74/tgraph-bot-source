@@ -572,6 +572,26 @@ class TestBaseGraph:
         result = graph.get_time_range_months_from_config()
         assert result == 24
 
+    def test_time_range_days_method_consistency(self) -> None:
+        """Test that time range days methods are consistent and don't have unnecessary wrappers."""
+        config = TGraphBotConfig(
+            TAUTULLI_API_KEY="test_api_key",
+            TAUTULLI_URL="http://localhost:8181/api/v2",
+            DISCORD_TOKEN="test_discord_token",
+            CHANNEL_ID=123456789,
+            TIME_RANGE_DAYS=45,
+        )
+        graph = ConcreteGraph(config=config)
+
+        # Test that the base method works correctly
+        result = graph.get_time_range_days_from_config()
+        assert result == 45
+
+        # Test that the method handles invalid values correctly
+        graph_invalid = ConcreteGraph(config={"TIME_RANGE_DAYS": "invalid"})
+        result_invalid = graph_invalid.get_time_range_days_from_config()
+        assert result_invalid == 30  # Should return default
+
     def test_handle_empty_data_with_message(self) -> None:
         """Test empty data handling with custom message."""
         graph = ConcreteGraph()

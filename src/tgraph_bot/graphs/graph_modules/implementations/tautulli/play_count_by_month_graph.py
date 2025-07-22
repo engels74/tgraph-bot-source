@@ -20,7 +20,6 @@ from matplotlib.patches import Rectangle
 from ...utils.annotation_helper import AnnotationHelper
 from ...core.base_graph import BaseGraph
 from ...data.data_processor import data_processor
-from ...data.empty_data_handler import EmptyDataHandler
 from ...utils.utils import (
     ProcessedRecords,
     aggregate_by_month,
@@ -782,10 +781,9 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
         """
         Handle the case where no data is available.
 
-        Uses the EmptyDataHandler utility to display a standardized empty data message.
+        Uses the BaseGraph method to display a standardized empty data message.
         """
-        empty_data_handler = EmptyDataHandler()
-        empty_data_handler.display_empty_data_message(
-            self.axes,
-            message="No play data available\nfor the selected time period",
-        )
+        if self.axes is not None:
+            self.handle_empty_data_with_message(
+                self.axes, "No data available for the selected time range."
+            )

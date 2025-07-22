@@ -17,7 +17,6 @@ from matplotlib.axes import Axes
 from ...utils.annotation_helper import AnnotationHelper
 from ...core.base_graph import BaseGraph
 from ...data.data_processor import data_processor
-from ...data.empty_data_handler import EmptyDataHandler
 from ...utils.utils import (
     ProcessedRecords,
     aggregate_by_date,
@@ -104,14 +103,7 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
         )
         return filtered_records
 
-    def _get_time_range_days_from_config(self) -> int:
-        """
-        Extract the TIME_RANGE_DAYS value from the graph's configuration.
 
-        Returns:
-            Number of days for the time range from config, defaults to 30 if not found
-        """
-        return self.get_time_range_days_from_config()
 
     def _setup_aligned_date_axis(
         self, ax: Axes, sorted_dates: list[str], num_dates: int
@@ -197,7 +189,7 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
             _, processed_records = data_processor.extract_and_process_play_history(data)
 
             # Step 2: Extract time range configuration
-            time_range_days = self._get_time_range_days_from_config()
+            time_range_days = self.get_time_range_days_from_config()
             logger.info(f"Using TIME_RANGE_DAYS configuration: {time_range_days} days")
 
             # Step 3: Filter records to respect TIME_RANGE_DAYS configuration
@@ -250,7 +242,7 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
             processed_records: List of processed play history records
         """
         # Get time range configuration for consistent date filling
-        time_range_days = self._get_time_range_days_from_config()
+        time_range_days = self.get_time_range_days_from_config()
 
         # Aggregate data by date with media type separation, filling missing dates
         separated_data = aggregate_by_date_separated(
@@ -384,7 +376,7 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
         """
         # Use traditional aggregation method with date filling
         if processed_records:
-            time_range_days = self._get_time_range_days_from_config()
+            time_range_days = self.get_time_range_days_from_config()
             daily_counts = aggregate_by_date(
                 processed_records,
                 fill_missing_dates=True,
@@ -469,12 +461,8 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
         Args:
             ax: The matplotlib axes to display the message on
         """
-        empty_data_handler = EmptyDataHandler()
-        empty_data_handler.display_empty_data_message(
-            ax,
-            message="No play data available\nfor the selected time period",
-            set_title=True,
-            title=self.get_title(),
+        self.handle_empty_data_with_message(
+            ax, "No data available for the selected time range."
         )
 
     def _add_peak_annotations(

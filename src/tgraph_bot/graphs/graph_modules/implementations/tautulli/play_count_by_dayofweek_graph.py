@@ -20,7 +20,6 @@ from matplotlib.container import BarContainer
 from ...utils.annotation_helper import AnnotationHelper
 from ...core.base_graph import BaseGraph
 from ...data.data_processor import data_processor
-from ...data.empty_data_handler import EmptyDataHandler
 from ...utils.utils import (
     ProcessedRecords,
     aggregate_by_day_of_week,
@@ -476,8 +475,6 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
         Args:
             ax: The matplotlib axes to display the message on
         """
-        empty_data_handler = EmptyDataHandler()
-        empty_data_handler.display_empty_data_message(
-            ax,
-            message="No play data available\nfor the selected time period",
+        self.handle_empty_data_with_message(
+            ax, "No data available for the selected time range."
         )
