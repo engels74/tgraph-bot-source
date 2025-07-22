@@ -7,7 +7,7 @@ by month, supporting both combined and separated media type visualization.
 
 import logging
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, cast, override
+from typing import TYPE_CHECKING, override
 
 import numpy as np
 from numpy.typing import NDArray
@@ -15,7 +15,6 @@ import pandas as pd
 import seaborn as sns
 from matplotlib.axes import Axes
 from matplotlib.container import BarContainer
-from matplotlib.patches import Rectangle
 
 from ...utils.annotation_helper import AnnotationHelper
 from ...core.base_graph import BaseGraph
@@ -527,29 +526,14 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
         ax.tick_params(axis="y", labelsize=12)  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
 
         # Add bar value annotations if enabled
-        annotate_enabled = self.get_config_value("ANNOTATE_PLAY_COUNT_BY_MONTH", False)
-        if annotate_enabled:
-            # Get all bar patches and annotate them
-            for patch in ax.patches:  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType] # matplotlib patches collection
-                if (
-                    hasattr(patch, "get_height")  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch typing
-                    and hasattr(patch, "get_x")  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch typing
-                    and hasattr(patch, "get_width")  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch typing
-                ):
-                    rect_patch = cast(Rectangle, patch)
-                    height = rect_patch.get_height()
-                    if height and height > 0:  # Only annotate non-zero values
-                        x_val = rect_patch.get_x() + rect_patch.get_width() / 2
-                        self.add_bar_value_annotation(
-                            ax,
-                            x=float(x_val),
-                            y=float(height),
-                            value=int(height),
-                            ha="center",
-                            va="bottom",
-                            offset_y=2,
-                            fontweight="bold",
-                        )
+        self.annotation_helper.annotate_bar_patches(
+            ax=ax,
+            config_key="ANNOTATE_PLAY_COUNT_BY_MONTH",
+            ha="center",
+            va="bottom",
+            offset_y=2,
+            fontweight="bold",
+        )
 
         logger.info(
             f"Created combined monthly play count graph with {len(month_totals)} months"
@@ -671,29 +655,14 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
         ax.tick_params(axis="y", labelsize=12)  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
 
         # Add bar value annotations if enabled
-        annotate_enabled = self.get_config_value("ANNOTATE_PLAY_COUNT_BY_MONTH", False)
-        if annotate_enabled:
-            # Get all bar patches and annotate them
-            for patch in ax.patches:  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType] # matplotlib patches collection
-                if (
-                    hasattr(patch, "get_height")  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch typing
-                    and hasattr(patch, "get_x")  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch typing
-                    and hasattr(patch, "get_width")  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch typing
-                ):
-                    rect_patch = cast(Rectangle, patch)
-                    height = rect_patch.get_height()
-                    if height and height > 0:  # Only annotate non-zero values
-                        x_val = rect_patch.get_x() + rect_patch.get_width() / 2
-                        self.add_bar_value_annotation(
-                            ax,
-                            x=float(x_val),
-                            y=float(height),
-                            value=int(height),
-                            ha="center",
-                            va="bottom",
-                            offset_y=2,
-                            fontweight="bold",
-                        )
+        self.annotation_helper.annotate_bar_patches(
+            ax=ax,
+            config_key="ANNOTATE_PLAY_COUNT_BY_MONTH",
+            ha="center",
+            va="bottom",
+            offset_y=2,
+            fontweight="bold",
+        )
 
         logger.info(
             f"Created separated monthly play count graph with {len(unique_media_types_list)} media types"
@@ -745,25 +714,14 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
             ax.tick_params(axis="y", labelsize=12)  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
 
             # Add bar value annotations if enabled
-            annotate_enabled = self.get_config_value(
-                "ANNOTATE_PLAY_COUNT_BY_MONTH", False
+            self.annotation_helper.annotate_bar_patches(
+                ax=ax,
+                config_key="ANNOTATE_PLAY_COUNT_BY_MONTH",
+                ha="center",
+                va="bottom",
+                offset_y=2,
+                fontweight="bold",
             )
-            if annotate_enabled:
-                # Get all bar patches and annotate them
-                for patch in ax.patches:  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType] # matplotlib patches collection
-                    height = patch.get_height()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType] # matplotlib patch attributes
-                    if height and height > 0:  # Only annotate non-zero values
-                        x_val = patch.get_x() + patch.get_width() / 2  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType] # matplotlib patch attributes
-                        self.add_bar_value_annotation(
-                            ax,
-                            x=float(x_val),  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch result
-                            y=float(height),  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch result
-                            value=int(height),  # pyright: ignore[reportUnknownArgumentType] # matplotlib patch result
-                            ha="center",
-                            va="bottom",
-                            offset_y=2,
-                            fontweight="bold",
-                        )
 
             logger.info(
                 f"Created combined monthly play count graph with {len(sorted_months)} months"

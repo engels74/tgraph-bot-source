@@ -326,24 +326,13 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
         )
 
         # Add bar value annotations if enabled
-        annotate_enabled = self.get_config_value("ANNOTATE_DAILY_PLAY_COUNT", False)
-        if annotate_enabled:
-            # Add value annotations for each data point
-            for media_type, media_data in separated_data.items():
-                if not media_data or all(count == 0 for count in media_data.values()):
-                    continue
-                for i, date in enumerate(sorted_dates):
-                    count_value = media_data.get(date, 0)
-                    if count_value > 0:
-                        self.add_bar_value_annotation(
-                            ax,
-                            x=float(i),
-                            y=float(count_value),
-                            value=count_value,
-                            ha="center",
-                            va="bottom",
-                            offset_y=2,
-                        )
+        self.annotation_helper.annotate_bar_patches(
+            ax=ax,
+            config_key="ANNOTATE_DAILY_PLAY_COUNT",
+            ha="center",
+            va="bottom",
+            offset_y=2,
+        )
 
         # Add peak annotations if enabled (separate feature)
         if self.is_peak_annotations_enabled():

@@ -24,7 +24,6 @@ from ...utils.utils import (
     ProcessedRecords,
     aggregate_by_day_of_week,
     aggregate_by_day_of_week_separated,
-    get_media_type_display_info,
 )
 from ...visualization.visualization_mixin import VisualizationMixin
 
@@ -141,7 +140,6 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
         """
         # Aggregate data by day of week with media type separation
         separated_data = aggregate_by_day_of_week_separated(processed_records)
-        display_info = get_media_type_display_info()
 
         if not separated_data:
             self.handle_empty_data_with_message(
@@ -168,18 +166,8 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
 
             for day in day_order:
                 count = media_data.get(day, 0)
-                if media_type in display_info:
-                    label = display_info[media_type]["display_name"]
-                    color = display_info[media_type]["color"]
-
-                    # Override with config colors if available
-                    if media_type == "tv":
-                        color = self.get_tv_color()
-                    elif media_type == "movie":
-                        color = self.get_movie_color()
-                else:
-                    label = media_type.title()
-                    color = "#666666"
+                # Use consolidated media type display info method
+                label, color = self.get_media_type_display_info(media_type)
 
                 plot_data.append(
                     {"day": day, "count": count, "media_type": label, "color": color}
@@ -271,7 +259,6 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
         """
         # Aggregate data by day of week with media type separation
         separated_data = aggregate_by_day_of_week_separated(processed_records)
-        display_info = get_media_type_display_info()
 
         if not separated_data:
             self.handle_empty_data_with_message(
@@ -299,15 +286,9 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
             if media_data and any(count > 0 for count in media_data.values()):
                 media_types_present.append(media_type)
 
-                # Get colors for media types
-                if media_type == "tv":
-                    media_type_colors[media_type] = self.get_tv_color()
-                elif media_type == "movie":
-                    media_type_colors[media_type] = self.get_movie_color()
-                elif media_type in display_info:
-                    media_type_colors[media_type] = display_info[media_type]["color"]
-                else:
-                    media_type_colors[media_type] = "#666666"
+                # Use consolidated media type display info method
+                _, color = self.get_media_type_display_info(media_type)
+                media_type_colors[media_type] = color
 
         if not media_types_present:
             self.handle_empty_data_with_message(
@@ -350,11 +331,8 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
         # Create stacked bars
         bar_containers: list[tuple[BarContainer, str, NDArray[np.int64]]] = []
         for media_type, values, color in bars_data:
-            # Get display name for legend
-            if media_type in display_info:
-                label = display_info[media_type]["display_name"]
-            else:
-                label = media_type.title()
+            # Get display name for legend using consolidated method
+            label, _ = self.get_media_type_display_info(media_type)
 
             bars = ax.bar(  # pyright: ignore[reportUnknownMemberType] # matplotlib complex type signature
                 x,

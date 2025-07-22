@@ -74,10 +74,9 @@ class TestDailyPlayCountGraphRefactoring:
             # Setup figure for testing
             _, ax = graph.setup_figure_with_styling()
 
-            # Test current empty data handling method
-            if hasattr(graph, "_handle_empty_data_case"):
-                # Should not raise exception
-                graph._handle_empty_data_case(ax)  # pyright: ignore[reportPrivateUsage]
+            # Test that the standardized empty data handling method works
+            # The custom _handle_empty_data_case method has been removed in favor of base method
+            graph.handle_empty_data_with_message(ax, "No data available for current configuration.")
 
             # Test that base method also works
             graph.handle_empty_data_with_message(ax, "Test empty message")
@@ -237,13 +236,12 @@ class TestDailyPlayCountGraphRefactoring:
             # Test that all empty data handling uses the same base method
             # This ensures consistency after refactoring
 
-            # Mock the base method to verify it's being called
+            # Verify that the standardized base method is used directly
+            # The custom _handle_empty_data_case method has been removed as part of DRY refactoring
             with patch.object(graph, "handle_empty_data_with_message") as mock_handle:
-                # If the graph has custom empty data methods, they should call the base method
-                if hasattr(graph, "_handle_empty_data_case"):
-                    graph._handle_empty_data_case(ax)  # pyright: ignore[reportPrivateUsage]
-                    # Should have called the base method
-                    mock_handle.assert_called()
+                graph.handle_empty_data_with_message(ax, "Test message")
+                # Should have called the base method directly
+                mock_handle.assert_called_once()
 
             graph.cleanup()
 
@@ -261,12 +259,12 @@ class TestDailyPlayCountGraphRefactoring:
                 ax, "No data available for the selected time range."
             )
 
-            # Test that custom methods (if they exist) delegate to base method
-            if hasattr(graph, "_handle_empty_data_case"):
-                with patch.object(graph, "handle_empty_data_with_message") as mock_base:
-                    graph._handle_empty_data_case(ax)  # pyright: ignore[reportPrivateUsage]
-                    # Should call the base method
-                    mock_base.assert_called_once()
+            # Verify that after Phase 2 refactoring, only the base method is used
+            # Custom _handle_empty_data_case methods have been eliminated
+            with patch.object(graph, "handle_empty_data_with_message") as mock_base:
+                graph.handle_empty_data_with_message(ax, "Standardized empty data message")
+                # Should call the base method directly
+                mock_base.assert_called_once()
 
             graph.cleanup()
 

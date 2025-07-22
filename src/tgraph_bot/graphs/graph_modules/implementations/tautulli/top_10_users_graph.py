@@ -136,29 +136,14 @@ class Top10UsersGraph(BaseGraph, VisualizationMixin):
                 )
 
                 # Add value labels on bars if enabled
-                annotate_enabled = self.get_config_value("ANNOTATE_TOP_10_USERS", False)
-                if annotate_enabled:
-                    # Get play counts with proper type handling
-                    play_counts: list[int | float] = []
-                    for user in top_users:
-                        count = user.get("play_count", 0)
-                        if isinstance(count, (int, float)):
-                            play_counts.append(count)
-                    max_count = max(play_counts) if play_counts else 1
-
-                    for i, user in enumerate(top_users):
-                        count = user.get("play_count", 0)
-                        if isinstance(count, (int, float)):
-                            play_count = float(count)
-                            self.add_bar_value_annotation(
-                                ax,
-                                x=play_count,
-                                y=i,
-                                value=int(play_count),
-                                ha="left",
-                                va="center",
-                                offset_x=max_count * 0.01,
-                            )
+                self.annotation_helper.annotate_horizontal_bar_patches(
+                    ax=ax,
+                    config_key="ANNOTATE_TOP_10_USERS",
+                    offset_x_ratio=0.01,
+                    ha="left",
+                    va="center",
+                    fontweight="normal",
+                )
 
                 logger.info(f"Created top 10 users graph with {len(top_users)} users")
 

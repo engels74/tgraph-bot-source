@@ -49,6 +49,14 @@ class MockGraphWithVisualization(VisualizationMixin):
         """Return graph title."""
         return self._title
 
+    def get_tv_color(self) -> str:
+        """Return TV color for testing."""
+        return "#1f77b4"  # Default TV color
+
+    def get_movie_color(self) -> str:
+        """Return movie color for testing."""
+        return "#ff7f0e"  # Default movie color
+
     def setup_figure(self) -> tuple[Figure, Axes]:
         """Set up matplotlib figure and axes."""
         self.figure, self.axes = plt.subplots(figsize=(10, 6))  # pyright: ignore[reportUnknownMemberType] # matplotlib subplots typing
