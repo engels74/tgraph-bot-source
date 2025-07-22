@@ -450,10 +450,10 @@ class TestDateCalculationUtils:
 
     def test_calculate_api_date_filter_basic(self) -> None:
         """Test basic date calculation with buffer."""
-        from src.tgraph_bot.graphs.graph_modules.data.data_fetcher import _calculate_api_date_filter
+        from src.tgraph_bot.graphs.graph_modules.data.data_fetcher import calculate_api_date_filter
         
         # Test with explicit buffer - should work without mocking since we provide explicit buffer
-        result = _calculate_api_date_filter(time_range_days=30, buffer_days=7)
+        result = calculate_api_date_filter(time_range_days=30, buffer_days=7)
         # Result should be a valid date string format
         assert len(result) == 10  # YYYY-MM-DD format
         assert result.count("-") == 2
@@ -468,14 +468,14 @@ class TestDateCalculationUtils:
 
     def test_calculate_api_date_filter_different_ranges(self) -> None:
         """Test date calculation with different time ranges."""
-        from src.tgraph_bot.graphs.graph_modules.data.data_fetcher import _calculate_api_date_filter
+        from src.tgraph_bot.graphs.graph_modules.data.data_fetcher import calculate_api_date_filter
         
         # Test small range
-        result_small = _calculate_api_date_filter(time_range_days=7, buffer_days=7)
+        result_small = calculate_api_date_filter(time_range_days=7, buffer_days=7)
         assert len(result_small) == 10  # YYYY-MM-DD format
         
         # Test large range
-        result_large = _calculate_api_date_filter(time_range_days=365, buffer_days=30)
+        result_large = calculate_api_date_filter(time_range_days=365, buffer_days=30)
         assert len(result_large) == 10  # YYYY-MM-DD format
         
         # Verify that larger ranges produce earlier dates
@@ -485,10 +485,10 @@ class TestDateCalculationUtils:
 
     def test_calculate_api_date_filter_edge_cases(self) -> None:
         """Test date calculation edge cases."""
-        from src.tgraph_bot.graphs.graph_modules.data.data_fetcher import _calculate_api_date_filter
+        from src.tgraph_bot.graphs.graph_modules.data.data_fetcher import calculate_api_date_filter
         
         # Test minimum values
-        result = _calculate_api_date_filter(time_range_days=1, buffer_days=1)
+        result = calculate_api_date_filter(time_range_days=1, buffer_days=1)
         assert len(result) == 10  # YYYY-MM-DD format
         
         # Verify it's 2 days ago
@@ -499,9 +499,9 @@ class TestDateCalculationUtils:
 
     def test_calculate_api_date_filter_zero_buffer(self) -> None:
         """Test date calculation with zero buffer."""
-        from src.tgraph_bot.graphs.graph_modules.data.data_fetcher import _calculate_api_date_filter
+        from src.tgraph_bot.graphs.graph_modules.data.data_fetcher import calculate_api_date_filter
         
-        result = _calculate_api_date_filter(time_range_days=30, buffer_days=0)
+        result = calculate_api_date_filter(time_range_days=30, buffer_days=0)
         assert len(result) == 10  # YYYY-MM-DD format
         
         # Verify it's 30 days ago
@@ -512,31 +512,31 @@ class TestDateCalculationUtils:
 
     def test_calculate_buffer_size_conservative_strategy(self) -> None:
         """Test conservative buffer size calculation."""
-        from src.tgraph_bot.graphs.graph_modules.data.data_fetcher import _calculate_buffer_size
+        from src.tgraph_bot.graphs.graph_modules.data.data_fetcher import calculate_buffer_size
         
         # Small ranges get 7-day buffer
-        assert _calculate_buffer_size(1) == 7
-        assert _calculate_buffer_size(15) == 7
-        assert _calculate_buffer_size(30) == 7
+        assert calculate_buffer_size(1) == 7
+        assert calculate_buffer_size(15) == 7
+        assert calculate_buffer_size(30) == 7
         
         # Medium ranges get 14-day buffer
-        assert _calculate_buffer_size(31) == 14
-        assert _calculate_buffer_size(60) == 14
-        assert _calculate_buffer_size(90) == 14
+        assert calculate_buffer_size(31) == 14
+        assert calculate_buffer_size(60) == 14
+        assert calculate_buffer_size(90) == 14
         
         # Large ranges get 30-day buffer
-        assert _calculate_buffer_size(91) == 30
-        assert _calculate_buffer_size(180) == 30
-        assert _calculate_buffer_size(365) == 30
+        assert calculate_buffer_size(91) == 30
+        assert calculate_buffer_size(180) == 30
+        assert calculate_buffer_size(365) == 30
 
     def test_should_use_date_filtering_logic(self) -> None:
         """Test logic for when to enable date filtering."""
-        from src.tgraph_bot.graphs.graph_modules.data.data_fetcher import _should_use_date_filtering
+        from src.tgraph_bot.graphs.graph_modules.data.data_fetcher import should_use_date_filtering
         
         # Always enable date filtering unless explicitly disabled
-        assert _should_use_date_filtering(use_date_filtering=True) is True
-        assert _should_use_date_filtering(use_date_filtering=False) is False
-        assert _should_use_date_filtering() is True  # Default True
+        assert should_use_date_filtering(use_date_filtering=True) is True
+        assert should_use_date_filtering(use_date_filtering=False) is False
+        assert should_use_date_filtering() is True  # Default True
 
     @pytest.mark.asyncio
     async def test_get_play_history_with_date_filtering_enabled(self) -> None:
@@ -782,7 +782,8 @@ class TestIntegrationDateFiltering:
             max_retries=3,
         )
         
-        mock_response = {"recordsFiltered": 50, "recordsTotal": 50, "data": []}
+        from src.tgraph_bot.graphs.graph_modules.data.data_fetcher import PlayHistoryData
+        mock_response: PlayHistoryData = {"recordsFiltered": 50, "recordsTotal": 50, "data": []}
 
         with patch.object(data_fetcher, "_make_request", return_value=mock_response) as mock_make_request:
             async with data_fetcher:

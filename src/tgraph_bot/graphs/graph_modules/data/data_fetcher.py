@@ -52,7 +52,7 @@ APIResponseItem: TypeAlias = object  # Type for items in API response lists
 logger = logging.getLogger(__name__)
 
 
-def _calculate_buffer_size(time_range_days: int) -> int:
+def calculate_buffer_size(time_range_days: int) -> int:
     """
     Calculate conservative buffer size based on time range.
     
@@ -70,7 +70,7 @@ def _calculate_buffer_size(time_range_days: int) -> int:
         return 30  # Large ranges get 30-day buffer
 
 
-def _should_use_date_filtering(use_date_filtering: bool = True) -> bool:
+def should_use_date_filtering(use_date_filtering: bool = True) -> bool:
     """
     Determine if date filtering should be used.
     
@@ -83,7 +83,7 @@ def _should_use_date_filtering(use_date_filtering: bool = True) -> bool:
     return use_date_filtering
 
 
-def _calculate_api_date_filter(time_range_days: int, buffer_days: int | None = None) -> str:
+def calculate_api_date_filter(time_range_days: int, buffer_days: int | None = None) -> str:
     """
     Calculate the 'after' date for Tautulli API filtering with safety buffer.
     
@@ -95,7 +95,7 @@ def _calculate_api_date_filter(time_range_days: int, buffer_days: int | None = N
         Date string in "YYYY-MM-DD" format for use in API 'after' parameter
     """
     if buffer_days is None:
-        buffer_days = _calculate_buffer_size(time_range_days)
+        buffer_days = calculate_buffer_size(time_range_days)
     
     total_days = time_range_days + buffer_days
     after_date = datetime.date.today() - datetime.timedelta(days=total_days)
@@ -248,8 +248,8 @@ class DataFetcher:
             params["user_id"] = user_id
             
         # Add date filtering with safety buffer if enabled
-        if _should_use_date_filtering(use_date_filtering):
-            after_date = _calculate_api_date_filter(time_range)
+        if should_use_date_filtering(use_date_filtering):
+            after_date = calculate_api_date_filter(time_range)
             params["after"] = after_date
             logger.debug(f"Using API date filtering: after={after_date} (time_range={time_range} days + buffer)")
 
