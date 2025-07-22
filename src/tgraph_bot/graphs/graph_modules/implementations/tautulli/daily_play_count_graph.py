@@ -249,7 +249,9 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
         display_info = get_media_type_display_info()
 
         if not separated_data:
-            self._handle_empty_data_case(ax)
+            self.handle_empty_data_with_message(
+                ax, "No data available for the selected time range."
+            )
             return
 
         # Prepare data for plotting
@@ -258,7 +260,9 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
             all_dates.update(media_type_data.keys())
 
         if not all_dates:
-            self._handle_empty_data_case(ax)
+            self.handle_empty_data_with_message(
+                ax, "No data available for the selected time range."
+            )
             return
 
         # Sort dates for proper timeline
@@ -312,7 +316,9 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
             media_types_plotted.append(media_type)
 
         if not media_types_plotted:
-            self._handle_empty_data_case(ax)
+            self.handle_empty_data_with_message(
+                ax, "No data available for the selected time range."
+            )
             return
 
         # Customize the plot
@@ -450,18 +456,10 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
             )
 
         else:
-            self._handle_empty_data_case(ax)
+            self.handle_empty_data_with_message(
+                ax, "No data available for the selected time range."
+            )
 
-    def _handle_empty_data_case(self, ax: Axes) -> None:
-        """
-        Handle the case where no data is available.
-
-        Args:
-            ax: The matplotlib axes to display the message on
-        """
-        self.handle_empty_data_with_message(
-            ax, "No data available for the selected time range."
-        )
 
     def _add_peak_annotations(
         self,

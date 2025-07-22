@@ -144,7 +144,9 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
         display_info = get_media_type_display_info()
 
         if not separated_data:
-            self._handle_empty_data_case(ax)
+            self.handle_empty_data_with_message(
+                ax, "No data available for the selected time range."
+            )
             return
 
         # Define day order for consistent display
@@ -184,7 +186,9 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
                 )
 
         if not plot_data:
-            self._handle_empty_data_case(ax)
+            self.handle_empty_data_with_message(
+                ax, "No data available for the selected time range."
+            )
             return
 
         # Create DataFrame for Seaborn
@@ -272,7 +276,9 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
         display_info = get_media_type_display_info()
 
         if not separated_data:
-            self._handle_empty_data_case(ax)
+            self.handle_empty_data_with_message(
+                ax, "No data available for the selected time range."
+            )
             return
 
         # Define day order for consistent display
@@ -306,7 +312,9 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
                     media_type_colors[media_type] = "#666666"
 
         if not media_types_present:
-            self._handle_empty_data_case(ax)
+            self.handle_empty_data_with_message(
+                ax, "No data available for the selected time range."
+            )
             return
 
         # Create data arrays for stacking
@@ -466,15 +474,7 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
 
             logger.info(f"Created combined day of week graph with {len(days)} days")
         else:
-            self._handle_empty_data_case(ax)
+            self.handle_empty_data_with_message(
+                ax, "No data available for the selected time range."
+            )
 
-    def _handle_empty_data_case(self, ax: Axes) -> None:
-        """
-        Handle the case where no data is available.
-
-        Args:
-            ax: The matplotlib axes to display the message on
-        """
-        self.handle_empty_data_with_message(
-            ax, "No data available for the selected time range."
-        )

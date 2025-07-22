@@ -169,16 +169,8 @@ class PlayCountByHourOfDayGraph(BaseGraph, VisualizationMixin):
             logger.info("Created hour of day graph with data for 24 hours")
 
         else:
-            self._handle_empty_data_case(ax)
+            self.handle_empty_data_with_message(
+                ax, "No data available for the selected time range."
+            )
+            logger.warning("Generated empty hour of day graph due to no data")
 
-    def _handle_empty_data_case(self, ax: Axes) -> None:
-        """
-        Handle the case where no data is available.
-
-        Args:
-            ax: The matplotlib axes to display the message on
-        """
-        self.handle_empty_data_with_message(
-            ax, "No data available for the selected time range."
-        )
-        logger.warning("Generated empty hour of day graph due to no data")

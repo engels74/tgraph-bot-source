@@ -7,7 +7,6 @@ to use the BaseGraph.handle_empty_data_with_message() method consistently.
 
 from __future__ import annotations
 
-from unittest.mock import patch
 
 import pytest
 
@@ -32,10 +31,10 @@ class TestEmptyDataStandardization:
     @pytest.mark.parametrize(
         "graph_class,expected_method_exists",
         [
-            (DailyPlayCountGraph, True),
-            (PlayCountByDayOfWeekGraph, True),
-            (PlayCountByHourOfDayGraph, True),
-            (PlayCountByMonthGraph, True),
+            (DailyPlayCountGraph, False),  # After refactoring: methods removed
+            (PlayCountByDayOfWeekGraph, False),  # After refactoring: methods removed
+            (PlayCountByHourOfDayGraph, False),  # After refactoring: methods removed
+            (PlayCountByMonthGraph, False),  # After refactoring: methods removed
         ],
     )
     def test_current_empty_data_method_existence(
@@ -48,7 +47,7 @@ class TestEmptyDataStandardization:
         ],
         expected_method_exists: bool,
     ) -> None:
-        """Test that graphs currently have custom empty data methods (before standardization)."""
+        """Test that graphs no longer have custom empty data methods (after standardization)."""
         graph = graph_class()
 
         # Check if custom empty data method exists
@@ -198,53 +197,28 @@ class TestEmptyDataStandardization:
                 graph.cleanup()
 
     def test_custom_methods_delegate_to_base_after_standardization(self) -> None:
-        """Test that custom methods delegate to base method after standardization."""
+        """Test that all classes now use base method directly (no custom wrapper methods)."""
         with matplotlib_cleanup():
-            # Test DailyPlayCountGraph - takes ax parameter
-            daily_graph = DailyPlayCountGraph()
-            if hasattr(daily_graph, "_handle_empty_data_case"):
-                _, ax = daily_graph.setup_figure_with_styling()
-                with patch.object(
-                    daily_graph, "handle_empty_data_with_message"
-                ) as mock_base:
-                    daily_graph._handle_empty_data_case(ax)  # pyright: ignore[reportPrivateUsage]
-                    mock_base.assert_called()
-                daily_graph.cleanup()
-
-            # Test PlayCountByDayOfWeekGraph - takes ax parameter
-            dayofweek_graph = PlayCountByDayOfWeekGraph()
-            if hasattr(dayofweek_graph, "_handle_empty_data_case"):
-                _, ax = dayofweek_graph.setup_figure_with_styling()
-                with patch.object(
-                    dayofweek_graph, "handle_empty_data_with_message"
-                ) as mock_base:
-                    dayofweek_graph._handle_empty_data_case(ax)  # pyright: ignore[reportPrivateUsage]
-                    mock_base.assert_called()
-                dayofweek_graph.cleanup()
-
-            # Test PlayCountByHourOfDayGraph - takes ax parameter
-            hourofday_graph = PlayCountByHourOfDayGraph()
-            if hasattr(hourofday_graph, "_handle_empty_data_case"):
-                _, ax = hourofday_graph.setup_figure_with_styling()
-                with patch.object(
-                    hourofday_graph, "handle_empty_data_with_message"
-                ) as mock_base:
-                    hourofday_graph._handle_empty_data_case(ax)  # pyright: ignore[reportPrivateUsage]
-                    mock_base.assert_called()
-                hourofday_graph.cleanup()
-
-            # Test PlayCountByMonthGraph - no ax parameter
-            month_graph = PlayCountByMonthGraph()
-            if hasattr(month_graph, "_handle_empty_data_case"):
-                _, ax = month_graph.setup_figure_with_styling()
-                if hasattr(month_graph, "axes"):
-                    month_graph.axes = ax
-                with patch.object(
-                    month_graph, "handle_empty_data_with_message"
-                ) as mock_base:
-                    month_graph._handle_empty_data_case()  # pyright: ignore[reportPrivateUsage]
-                    mock_base.assert_called()
-                month_graph.cleanup()
+            # After refactoring, all graphs should use the base method directly
+            # This test verifies that the wrapper methods have been eliminated
+            
+            graphs = [
+                DailyPlayCountGraph(),
+                PlayCountByDayOfWeekGraph(), 
+                PlayCountByHourOfDayGraph(),
+                PlayCountByMonthGraph(),
+            ]
+            
+            for graph in graphs:
+                # After standardization, custom empty data methods should not exist
+                assert not hasattr(graph, "_handle_empty_data_case"), (
+                    f"{graph.__class__.__name__} still has custom empty data method"
+                )
+                
+                # All graphs should have access to the base method
+                assert hasattr(graph, "handle_empty_data_with_message"), (
+                    f"{graph.__class__.__name__} missing base empty data method"
+                )
 
     def test_no_duplicate_empty_data_logic_after_standardization(self) -> None:
         """Test that there's no duplicate empty data logic after standardization."""
@@ -256,34 +230,16 @@ class TestEmptyDataStandardization:
         ]
 
         for graph in graphs:
-            # After standardization, custom methods should be simple delegations
-            # or eliminated entirely
-            if hasattr(graph, "_handle_empty_data_case"):
-                import inspect
-
-                method = getattr(graph, "_handle_empty_data_case")  # pyright: ignore[reportAny]
-                source = inspect.getsource(method)  # pyright: ignore[reportAny]
-
-                # Should contain a call to the base method
-                assert (
-                    "handle_empty_data_with_message" in source
-                    or "EmptyDataHandler" in source
-                )
-
-                # Should not contain complex logic (after standardization)
-                lines = [line.strip() for line in source.split("\n") if line.strip()]
-                # Filter out comments and docstrings
-                code_lines = [
-                    line
-                    for line in lines
-                    if not line.startswith("#")
-                    and not line.startswith('"""')
-                    and not line.startswith("'''")
-                    and "def " not in line
-                    and "Args:" not in line
-                    and "Returns:" not in line
-                ]
-
-                # After standardization, should be simple delegation
-                # Allow for some flexibility in implementation
-                assert len(code_lines) <= 10  # Should be relatively simple
+            # After standardization, custom methods should be eliminated entirely
+            assert not hasattr(graph, "_handle_empty_data_case"), (
+                f"{graph.__class__.__name__} still has duplicate empty data logic"
+            )
+            
+            # All graphs should use the base method directly
+            assert hasattr(graph, "handle_empty_data_with_message"), (
+                f"{graph.__class__.__name__} missing base empty data method"
+            )
+            base_method = graph.handle_empty_data_with_message
+            assert callable(base_method), (
+                f"{graph.__class__.__name__} base method not callable"
+            )

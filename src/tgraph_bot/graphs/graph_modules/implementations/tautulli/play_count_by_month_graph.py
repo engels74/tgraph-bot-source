@@ -148,11 +148,17 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
         series = response_data.get("series", [])
 
         if not isinstance(categories, list) or not isinstance(series, list):
-            self._handle_empty_data_case()
+            if self.axes is not None:
+                self.handle_empty_data_with_message(
+                    self.axes, "No data available for the selected time range."
+                )
             return
 
         if not categories or not series:
-            self._handle_empty_data_case()
+            if self.axes is not None:
+                self.handle_empty_data_with_message(
+                    self.axes, "No data available for the selected time range."
+                )
             return
 
         # Prepare data for plotting
@@ -207,7 +213,10 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
                     )
 
         if not plot_data:
-            self._handle_empty_data_case()
+            if self.axes is not None:
+                self.handle_empty_data_with_message(
+                    self.axes, "No data available for the selected time range."
+                )
             return
 
         # Create DataFrame for Seaborn
@@ -301,11 +310,17 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
         series_raw = response_data.get("series", [])
 
         if not isinstance(categories_raw, list) or not isinstance(series_raw, list):
-            self._handle_empty_data_case()
+            if self.axes is not None:
+                self.handle_empty_data_with_message(
+                    self.axes, "No data available for the selected time range."
+                )
             return
 
         if not categories_raw or not series_raw:
-            self._handle_empty_data_case()
+            if self.axes is not None:
+                self.handle_empty_data_with_message(
+                    self.axes, "No data available for the selected time range."
+                )
             return
 
         # Type-safe assignments after validation
@@ -354,7 +369,10 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
                 media_type_colors[media_type] = "#666666"
 
         if not media_type_data:
-            self._handle_empty_data_case()
+            if self.axes is not None:
+                self.handle_empty_data_with_message(
+                    self.axes, "No data available for the selected time range."
+                )
             return
 
         # Create data arrays for stacking
@@ -455,11 +473,17 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
         series = response_data.get("series", [])
 
         if not isinstance(categories, list) or not isinstance(series, list):
-            self._handle_empty_data_case()
+            if self.axes is not None:
+                self.handle_empty_data_with_message(
+                    self.axes, "No data available for the selected time range."
+                )
             return
 
         if not categories or not series:
-            self._handle_empty_data_case()
+            if self.axes is not None:
+                self.handle_empty_data_with_message(
+                    self.axes, "No data available for the selected time range."
+                )
             return
 
         # Combine all series data into totals for each month
@@ -491,7 +515,10 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
                     )  # external API data conversion
 
         if not month_totals or all(count == 0 for count in month_totals.values()):
-            self._handle_empty_data_case()
+            if self.axes is not None:
+                self.handle_empty_data_with_message(
+                    self.axes, "No data available for the selected time range."
+                )
             return
 
         # Convert to DataFrame for plotting
@@ -572,7 +599,10 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
         display_info = get_media_type_display_info()
 
         if not separated_data:
-            self._handle_empty_data_case()
+            if self.axes is not None:
+                self.handle_empty_data_with_message(
+                    self.axes, "No data available for the selected time range."
+                )
             return
 
         # Prepare data for plotting
@@ -605,7 +635,10 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
                 )
 
         if not plot_data:
-            self._handle_empty_data_case()
+            if self.axes is not None:
+                self.handle_empty_data_with_message(
+                    self.axes, "No data available for the selected time range."
+                )
             return
 
         # Create DataFrame for Seaborn
@@ -775,15 +808,8 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
                 f"Created combined monthly play count graph with {len(sorted_months)} months"
             )
         else:
-            self._handle_empty_data_case()
+            if self.axes is not None:
+                self.handle_empty_data_with_message(
+                    self.axes, "No data available for the selected time range."
+                )
 
-    def _handle_empty_data_case(self) -> None:
-        """
-        Handle the case where no data is available.
-
-        Uses the BaseGraph method to display a standardized empty data message.
-        """
-        if self.axes is not None:
-            self.handle_empty_data_with_message(
-                self.axes, "No data available for the selected time range."
-            )
