@@ -9,8 +9,6 @@ import logging
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, override
 
-import pandas as pd
-import seaborn as sns
 from matplotlib.axes import Axes
 
 from ...utils.annotation_helper import AnnotationHelper
@@ -130,21 +128,18 @@ class PlayCountByHourOfDayGraph(BaseGraph, VisualizationMixin):
 
         # Create visualization
         if any(count > 0 for count in hourly_counts.values()):
-            # Convert to pandas DataFrame for easier plotting
+            # Create data arrays for matplotlib bar plot
             hours = list(range(24))
             counts = [hourly_counts.get(hour, 0) for hour in hours]
 
-            df = pd.DataFrame({"hour": hours, "play_count": counts})
-
-            # Create bar plot
-            _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
-                data=df,
-                x="hour",
-                y="play_count",
-                hue="hour",
-                ax=ax,
-                palette="viridis",
-                legend=False,
+            # Use matplotlib directly to avoid seaborn categorical conversion issues
+            _ = ax.bar(  # pyright: ignore[reportUnknownMemberType] # matplotlib complex type signature
+                hours,
+                counts,
+                color="#2E86AB",
+                alpha=0.8,
+                edgecolor="white",
+                linewidth=0.5,
             )
 
             # Customize the plot
@@ -152,9 +147,11 @@ class PlayCountByHourOfDayGraph(BaseGraph, VisualizationMixin):
                 ax, xlabel="Hour of Day", ylabel="Play Count", label_fontsize=12
             )
 
-            # Set x-axis ticks to show all hours
-            _ = ax.set_xticks(range(0, 24, 2))  # pyright: ignore[reportAny] # matplotlib method returns Any
-            _ = ax.set_xticklabels([f"{h:02d}:00" for h in range(0, 24, 2)])  # pyright: ignore[reportAny] # matplotlib method returns Any
+            # Set x-axis ticks to show all hours with proper numeric positions
+            tick_positions = list(range(0, 24, 2))
+            tick_labels = [f"{h:02d}:00" for h in range(0, 24, 2)]
+            _ = ax.set_xticks(tick_positions)  # pyright: ignore[reportAny] # matplotlib method returns Any
+            _ = ax.set_xticklabels(tick_labels)  # pyright: ignore[reportAny] # matplotlib method returns Any
 
             # Add bar value annotations if enabled
             self.annotation_helper.annotate_bar_patches(
