@@ -9,6 +9,8 @@ import logging
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, override
 
+import pandas as pd
+import seaborn as sns
 from matplotlib.axes import Axes
 
 from ...utils.annotation_helper import AnnotationHelper
@@ -128,18 +130,30 @@ class PlayCountByHourOfDayGraph(BaseGraph, VisualizationMixin):
 
         # Create visualization
         if any(count > 0 for count in hourly_counts.values()):
-            # Create data arrays for matplotlib bar plot
+            # Create properly typed DataFrame to avoid categorical conversion warning
             hours = list(range(24))
             counts = [hourly_counts.get(hour, 0) for hour in hours]
 
-            # Use matplotlib directly to avoid seaborn categorical conversion issues
-            _ = ax.bar(  # pyright: ignore[reportUnknownMemberType] # matplotlib complex type signature
-                hours,
-                counts,
-                color="#2E86AB",
-                alpha=0.8,
-                edgecolor="white",
-                linewidth=0.5,
+            # Create DataFrame with explicit numeric types
+            df = pd.DataFrame(
+                {
+                    "hour": hours,  # Keep as int, not string
+                    "count": counts,
+                }
+            )
+
+            # Ensure numeric dtypes to prevent seaborn categorical warning
+            df["hour"] = df["hour"].astype(int)
+            df["count"] = df["count"].astype(int)
+
+            # Use seaborn with viridis palette and no legend
+            _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
+                data=df, 
+                x="hour", 
+                y="count", 
+                palette="viridis", 
+                legend=False, 
+                ax=ax
             )
 
             # Customize the plot
