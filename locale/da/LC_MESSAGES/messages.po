@@ -241,11 +241,11 @@ msgstr "Fejlede i at oprette Discord fil for: {file_path}"
 
 #: src/tgraph_bot/graphs/graph_modules/core/graph_errors.py:262
 msgid "Failed to generate the requested graph. This may be a temporary issue - please try again."
-msgstr ""
+msgstr "Fejlede i at generere den anmodede graf. Dette kan være et midlertidigt problem - prøv venligst igen."
 
 #: src/tgraph_bot/graphs/graph_modules/core/graph_errors.py:257
 msgid "Failed to generate the {graph_type} graph. This may be a temporary issue - please try again."
-msgstr ""
+msgstr "Fejlede i at generere {graph_type} grafen. Dette kan være et midlertidigt problem - prøv venligst igen."
 
 #: src/tgraph_bot/utils/discord/discord_file_utils.py:408
 msgid "File does not exist: {file_path}"
@@ -659,7 +659,7 @@ msgstr "Konfigurationsnøglen `{key}` eksisterer ikke."
 
 #: src/tgraph_bot/graphs/graph_modules/core/graph_errors.py:198
 msgid "The configuration setting '{config_key}' is invalid or missing. Please check your configuration and try again."
-msgstr ""
+msgstr "Konfigurationsindstillingen '{config_key}' er ugyldig eller mangler. Kontroller venligst din konfiguration og prøv igen."
 
 #: src/tgraph_bot/bot/commands/config.py:358
 msgid "The configuration setting to modify"
@@ -667,7 +667,7 @@ msgstr "Konfigurationsindstillingen der skal ændres"
 
 #: src/tgraph_bot/graphs/graph_modules/core/graph_errors.py:144
 msgid "The data provided for graph generation is invalid. Please check your data source and try again."
-msgstr ""
+msgstr "De angivne data til grafgenerering er ugyldige. Kontroller venligst din datakilde og prøv igen."
 
 #: src/tgraph_bot/utils/core/error_handler.py:196
 msgid "The external service is temporarily unavailable. Please try again later."
@@ -675,7 +675,7 @@ msgstr "Den eksterne tjeneste er midlertidigt utilgængelig. Prøv venligst igen
 
 #: src/tgraph_bot/graphs/graph_modules/core/graph_errors.py:314
 msgid "The generated graph failed validation checks. Please try generating the graph again."
-msgstr ""
+msgstr "Den genererede graf fejlede valideringskontroller. Prøv venligst at generere grafen igen."
 
 #: src/tgraph_bot/bot/commands/config.py:359
 msgid "The new value for the setting"
@@ -703,11 +703,11 @@ msgstr "{command_name} kommandoen er i øjeblikket på cooldown."
 
 #: src/tgraph_bot/graphs/graph_modules/core/graph_errors.py:139
 msgid "The {data_context} data provided is invalid or incomplete. Please check your data source and try again."
-msgstr ""
+msgstr "De angivne {data_context} data er ugyldige eller ufuldstændige. Kontroller venligst din datakilde og prøv igen."
 
 #: src/tgraph_bot/graphs/graph_modules/core/graph_errors.py:203
 msgid "There is an issue with the graph configuration. Please check your settings and try again."
-msgstr ""
+msgstr "Der er et problem med grafkonfigurationen. Kontroller venligst dine indstillinger og prøv igen."
 
 #: src/tgraph_bot/bot/commands/test_scheduler.py:231
 msgid "There may be an issue with:\n• Tautulli API connectivity\n• Discord channel permissions\n• Graph generation process\n• Bot configuration"

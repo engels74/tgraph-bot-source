@@ -58,8 +58,8 @@ def validate_weblate_config(config_path: Path | None = None) -> bool:
         # Validate components
         components = [
             section
-            for section in config.sections()  # pyright: ignore[reportAny]
-            if section.startswith("component ")  # pyright: ignore[reportAny]
+            for section in config.sections()
+            if section.startswith("component ")
         ]
 
         if not components:
@@ -69,8 +69,8 @@ def validate_weblate_config(config_path: Path | None = None) -> bool:
         logger.info(f"Found {len(components)} component(s)")
 
         all_valid = True
-        for component_section in components:  # pyright: ignore[reportAny]
-            component_name = component_section.replace('component "', "").replace(  # pyright: ignore[reportAny]
+        for component_section in components:
+            component_name = component_section.replace('component "', "").replace(
                 '"', ""
             )
             logger.info(f"Validating component: {component_name}")

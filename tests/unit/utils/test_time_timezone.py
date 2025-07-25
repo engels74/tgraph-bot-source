@@ -4,9 +4,9 @@ Tests for unified timezone handling utilities.
 This module tests the unified timezone utilities that provide consistent
 timezone handling across the entire application.
 """
+# pyright: reportOptionalMemberAccess=false, reportAttributeAccessIssue=false, reportUnknownMemberType=false, reportAny=false, reportUnusedVariable=false
 
-import pytest
-from datetime import datetime, timezone
+from datetime import datetime
 from zoneinfo import ZoneInfo
 from unittest.mock import patch, MagicMock
 
@@ -62,8 +62,10 @@ class TestSystemNow:
         """Test that get_system_now uses the system timezone."""
         now = get_system_now()
         system_tz = get_system_timezone()
+        assert now.tzinfo is not None
+        assert system_tz is not None
+        assert hasattr(now.tzinfo, 'key') and hasattr(system_tz, 'key')
         assert now.tzinfo.key == system_tz.key
-
 
 class TestTimezoneAware:
     """Test timezone awareness utilities."""
@@ -88,16 +90,19 @@ class TestTimezoneAware:
         
         # Should return the same datetime unchanged
         assert result_dt is aware_dt
+        assert result_dt.tzinfo is not None
+        assert hasattr(result_dt.tzinfo, 'key')
         assert result_dt.tzinfo.key == "UTC"
-
     def test_ensure_timezone_aware_uses_system_timezone(self) -> None:
         """Test that ensure_timezone_aware uses system timezone for naive datetimes."""
         naive_dt = datetime(2025, 7, 25, 14, 30, 0)
         aware_dt = ensure_timezone_aware(naive_dt)
         system_tz = get_system_timezone()
         
+        assert aware_dt.tzinfo is not None
+        assert system_tz is not None and hasattr(system_tz, 'key')
+        assert hasattr(aware_dt.tzinfo, 'key')
         assert aware_dt.tzinfo.key == system_tz.key
-
 
 class TestTimezoneConversion:
     """Test timezone conversion utilities."""
