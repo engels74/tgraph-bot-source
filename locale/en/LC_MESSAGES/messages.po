@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TGraph Bot 1.0.0\n"
 "Report-Msgid-Bugs-To: https://github.com/engels74/tgraph-bot-source/issues\n"
-"POT-Creation-Date: 2025-07-23 23:48\n"
-"PO-Revision-Date: 2025-07-23 23:48\n"
+"POT-Creation-Date: 2025-07-25 22:42\n"
+"PO-Revision-Date: 2025-07-25 22:42\n"
 "Last-Translator: engels74 <141435164+engels74@users.noreply.github.com>\n"
 "Language-Team: English <https://hosted.weblate.org/projects/tgraph-bot/tgraph-bot/en/\n"
 "Language: en\n"
@@ -60,7 +60,7 @@ msgstr "Available Keys"
 msgid "Background"
 msgstr "Background"
 
-#: src/tgraph_bot/bot/commands/uptime.py:71
+#: src/tgraph_bot/bot/commands/uptime.py:73
 msgid "Bot Uptime"
 msgstr "Bot Uptime"
 
@@ -72,7 +72,7 @@ msgstr "Bot Uptime"
 msgid "Bot is online and ready!"
 msgstr "Bot is online and ready!"
 
-#: src/tgraph_bot/bot/commands/update_graphs.py:385
+#: src/tgraph_bot/bot/commands/update_graphs.py:391
 msgid "Bot lacks permission to post in the configured channel."
 msgstr "Bot lacks permission to post in the configured channel."
 
@@ -96,7 +96,7 @@ msgstr "Check Logs"
 msgid "Check Your DMs"
 msgstr "Check Your DMs"
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:238
+#: src/tgraph_bot/bot/commands/test_scheduler.py:253
 msgid "Check the bot logs for detailed error information and verify your configuration settings."
 msgstr "Check the bot logs for detailed error information and verify your configuration settings."
 
@@ -120,7 +120,7 @@ msgstr "Config command global cooldown"
 msgid "Config command per-user cooldown"
 msgstr "Config command per-user cooldown"
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:142
+#: src/tgraph_bot/bot/commands/test_scheduler.py:143
 msgid "Configuration"
 msgstr "Configuration"
 
@@ -144,7 +144,7 @@ msgstr "Current Value"
 msgid "Current bot configuration settings"
 msgstr "Current bot configuration settings"
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:139
+#: src/tgraph_bot/bot/commands/test_scheduler.py:140
 msgid "Current scheduler configuration and state"
 msgstr "Current scheduler configuration and state"
 
@@ -168,11 +168,11 @@ msgstr "Direct Message (DM)"
 msgid "Disabled"
 msgstr "Disabled"
 
-#: src/tgraph_bot/bot/commands/update_graphs.py:405
+#: src/tgraph_bot/bot/commands/update_graphs.py:411
 msgid "Discord API error occurred while posting graphs."
 msgstr "Discord API error occurred while posting graphs."
 
-#: src/tgraph_bot/bot/commands/update_graphs.py:398
+#: src/tgraph_bot/bot/commands/update_graphs.py:404
 msgid "Discord rate limit reached. Please try again later."
 msgstr "Discord rate limit reached. Please try again later."
 
@@ -180,7 +180,7 @@ msgstr "Discord rate limit reached. Please try again later."
 msgid "Display information about the bot"
 msgstr "Display information about the bot"
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:303
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:117
 msgid "Displays play activity patterns across different days of the week."
 msgstr "Displays play activity patterns across different days of the week."
 
@@ -213,7 +213,7 @@ msgstr "Enabled"
 msgid "Error"
 msgstr "Error"
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:225
+#: src/tgraph_bot/bot/commands/test_scheduler.py:240
 msgid "Error Details"
 msgstr "Error Details"
 
@@ -234,8 +234,8 @@ msgstr "Estimated Time"
 msgid "Examples"
 msgstr "Examples"
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:564
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:657
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:380
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:473
 msgid "Failed to create Discord file for: {file_path}"
 msgstr "Failed to create Discord file for: {file_path}"
 
@@ -247,15 +247,15 @@ msgstr "Failed to generate the requested graph. This may be a temporary issue - 
 msgid "Failed to generate the {graph_type} graph. This may be a temporary issue - please try again."
 msgstr "Failed to generate the {graph_type} graph. This may be a temporary issue - please try again."
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:408
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:224
 msgid "File does not exist: {file_path}"
 msgstr "File does not exist: {file_path}"
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:429
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:245
 msgid "File is empty: {file_path}"
 msgstr "File is empty: {file_path}"
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:446
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:262
 msgid "File too large: {actual_mb:.1f}MB exceeds {limit_mb:.0f}MB limit"
 msgstr "File too large: {actual_mb:.1f}MB exceeds {limit_mb:.0f}MB limit"
 
@@ -361,15 +361,15 @@ msgstr "Manually trigger server-wide graph generation and posting"
 msgid "Media Type Separation"
 msgstr "Media Type Separation"
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:315
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:129
 msgid "Monthly play activity trends over time."
 msgstr "Monthly play activity trends over time."
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:325
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:139
 msgid "Most active users in the selected time period."
 msgstr "Most active users in the selected time period."
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:319
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:133
 msgid "Most popular platforms used for media consumption."
 msgstr "Most popular platforms used for media consumption."
 
@@ -385,7 +385,7 @@ msgstr "My stats command global cooldown"
 msgid "My stats command per-user cooldown"
 msgstr "My stats command per-user cooldown"
 
-#: src/tgraph_bot/bot/commands/update_graphs.py:426
+#: src/tgraph_bot/bot/commands/update_graphs.py:432
 msgid "Network error occurred while posting graphs."
 msgstr "Network error occurred while posting graphs."
 
@@ -394,7 +394,7 @@ msgid "New Value"
 msgstr "New Value"
 
 #: src/tgraph_bot/graphs/user_graph_manager.py:595
-#: src/tgraph_bot/bot/commands/test_scheduler.py:237
+#: src/tgraph_bot/bot/commands/test_scheduler.py:252
 msgid "Next Steps"
 msgstr "Next Steps"
 
@@ -420,8 +420,8 @@ msgstr "No content provided"
 msgid "No description available"
 msgstr "No description available"
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:545
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:638
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:361
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:454
 msgid "No files provided for upload"
 msgstr "No files provided for upload"
 
@@ -433,8 +433,8 @@ msgstr "No graph files were created. This may be due to insufficient data or con
 msgid "No graphs enabled"
 msgstr "No graphs enabled"
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:585
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:678
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:401
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:494
 msgid "No valid files to upload. Errors: {errors}"
 msgstr "No valid files to upload. Errors: {errors}"
 
@@ -455,7 +455,7 @@ msgstr "Optional: View a specific configuration setting"
 msgid "Partial Success"
 msgstr "Partial Success"
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:417
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:233
 msgid "Path is not a file: {file_path}"
 msgstr "Path is not a file: {file_path}"
 
@@ -498,7 +498,7 @@ msgstr "Possible Causes"
 msgid "Posted Successfully"
 msgstr "Posted Successfully"
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:138
+#: src/tgraph_bot/bot/commands/test_scheduler.py:139
 msgid "Pre-Test Status"
 msgstr "Pre-Test Status"
 
@@ -527,31 +527,31 @@ msgstr "Reason"
 msgid "Retry After"
 msgstr "Retry After"
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:153
+#: src/tgraph_bot/bot/commands/test_scheduler.py:161
 msgid "Scheduled Times"
 msgstr "Scheduled Times"
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:175
+#: src/tgraph_bot/bot/commands/test_scheduler.py:183
 msgid "Scheduler Test Completed Successfully"
 msgstr "Scheduler Test Completed Successfully"
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:219
+#: src/tgraph_bot/bot/commands/test_scheduler.py:234
 msgid "Scheduler Test Failed"
 msgstr "Scheduler Test Failed"
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:106
+#: src/tgraph_bot/bot/commands/test_scheduler.py:107
 msgid "Scheduler Test Started"
 msgstr "Scheduler Test Started"
 
-#: src/tgraph_bot/bot/commands/uptime.py:37
+#: src/tgraph_bot/bot/commands/uptime.py:39
 msgid "Show bot uptime"
 msgstr "Show bot uptime"
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:297
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:111
 msgid "Shows the number of plays per day over the selected time period."
 msgstr "Shows the number of plays per day over the selected time period."
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:309
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:123
 msgid "Shows when users are most active throughout the day."
 msgstr "Shows when users are most active throughout the day."
 
@@ -559,15 +559,15 @@ msgstr "Shows when users are most active throughout the day."
 msgid "Some files may have failed to upload"
 msgstr "Some files may have failed to upload"
 
-#: src/tgraph_bot/bot/commands/uptime.py:79
+#: src/tgraph_bot/bot/commands/uptime.py:85
 msgid "Started"
 msgstr "Started"
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:191
+#: src/tgraph_bot/bot/commands/test_scheduler.py:206
 msgid "State Updates"
 msgstr "State Updates"
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:340
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:154
 msgid "Statistical visualization of Plex activity data."
 msgstr "Statistical visualization of Plex activity data."
 
@@ -612,7 +612,7 @@ msgstr "TGraph Bot - Bringing Tautulli stats to Discord"
 msgid "TGraph Bot - Tautulli Discord Graph Generator"
 msgstr "TGraph Bot - Tautulli Discord Graph Generator"
 
-#: src/tgraph_bot/bot/commands/uptime.py:84
+#: src/tgraph_bot/bot/commands/uptime.py:90
 msgid "TGraph Bot is running smoothly!"
 msgstr "TGraph Bot is running smoothly!"
 
@@ -624,11 +624,11 @@ msgstr "TV Color"
 msgid "Tautulli URL"
 msgstr "Tautulli URL"
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:110
+#: src/tgraph_bot/bot/commands/test_scheduler.py:111
 msgid "Test Method"
 msgstr "Test Method"
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:182
+#: src/tgraph_bot/bot/commands/test_scheduler.py:190
 msgid "Test Results"
 msgstr "Test Results"
 
@@ -641,11 +641,11 @@ msgstr "Test message"
 msgid "Test string"
 msgstr "Test string"
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:69
+#: src/tgraph_bot/bot/commands/test_scheduler.py:70
 msgid "Test the scheduled update functionality immediately"
 msgstr "Test the scheduled update functionality immediately"
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:107
+#: src/tgraph_bot/bot/commands/test_scheduler.py:108
 msgid "Testing the scheduled update functionality..."
 msgstr "Testing the scheduled update functionality..."
 
@@ -685,15 +685,15 @@ msgstr "The new value for the setting"
 msgid "The provided input is invalid. Please check your parameters and try again."
 msgstr "The provided input is invalid. Please check your parameters and try again."
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:176
+#: src/tgraph_bot/bot/commands/test_scheduler.py:184
 msgid "The scheduled update routine executed successfully!"
 msgstr "The scheduled update routine executed successfully!"
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:220
+#: src/tgraph_bot/bot/commands/test_scheduler.py:235
 msgid "The scheduled update test encountered an error"
 msgstr "The scheduled update test encountered an error"
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:201
+#: src/tgraph_bot/bot/commands/test_scheduler.py:216
 msgid "The scheduler will work correctly at the configured time. All timing calculations and update workflows are functioning properly."
 msgstr "The scheduler will work correctly at the configured time. All timing calculations and update workflows are functioning properly."
 
@@ -709,7 +709,7 @@ msgstr "The {data_context} data provided is invalid or incomplete. Please check 
 msgid "There is an issue with the graph configuration. Please check your settings and try again."
 msgstr "There is an issue with the graph configuration. Please check your settings and try again."
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:231
+#: src/tgraph_bot/bot/commands/test_scheduler.py:246
 msgid "There may be an issue with:\n• Tautulli API connectivity\n• Discord channel permissions\n• Graph generation process\n• Bot configuration"
 msgstr "There may be an issue with:\n• Tautulli API connectivity\n• Discord channel permissions\n• Graph generation process\n• Bot configuration"
 
@@ -763,7 +763,7 @@ msgstr "Unable to generate your personal statistics."
 msgid "Unknown upload error occurred"
 msgstr "Unknown upload error occurred"
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:460
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:276
 msgid "Unsupported file format: {file_format}. Supported: {supported_formats}"
 msgstr "Unsupported file format: {file_format}. Supported: {supported_formats}"
 
@@ -779,7 +779,7 @@ msgstr "Update graphs command global cooldown"
 msgid "Update graphs command per-user cooldown"
 msgstr "Update graphs command per-user cooldown"
 
-#: src/tgraph_bot/bot/commands/uptime.py:75
+#: src/tgraph_bot/bot/commands/uptime.py:77
 msgid "Uptime"
 msgstr "Uptime"
 
@@ -811,7 +811,7 @@ msgstr "User {user} has {n} message"
 msgid "User {user} has {n} messages"
 msgstr "User {user} has {n} messages"
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:111
+#: src/tgraph_bot/bot/commands/test_scheduler.py:112
 msgid "Using UpdateTracker.force_update() - same as scheduler"
 msgstr "Using UpdateTracker.force_update() - same as scheduler"
 
@@ -827,15 +827,15 @@ msgstr "View current bot configuration"
 msgid "View or edit bot configuration"
 msgstr "View or edit bot configuration"
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:200
+#: src/tgraph_bot/bot/commands/test_scheduler.py:215
 msgid "What This Confirms"
 msgstr "What This Confirms"
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:230
+#: src/tgraph_bot/bot/commands/test_scheduler.py:245
 msgid "What This Means"
 msgstr "What This Means"
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:117
+#: src/tgraph_bot/bot/commands/test_scheduler.py:118
 msgid "What This Tests"
 msgstr "What This Tests"
 
@@ -890,7 +890,7 @@ msgstr "Your statistics were generated but couldn't be uploaded."
 msgid "personal statistics"
 msgstr "personal statistics"
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:93
+#: src/tgraph_bot/bot/commands/test_scheduler.py:94
 msgid "test scheduler"
 msgstr "test scheduler"
 
@@ -919,42 +919,42 @@ msgid "{current}/{total} steps ({progress_percent:.1f}%)"
 msgstr "{current}/{total} steps ({progress_percent:.1f}%)"
 
 #: src/tgraph_bot/utils/discord/command_utils.py:209
-#: src/tgraph_bot/bot/commands/uptime.py:60
+#: src/tgraph_bot/bot/commands/uptime.py:62
 msgid "{n} day"
 msgstr "{n} day"
 
 #: src/tgraph_bot/utils/discord/command_utils.py:209
-#: src/tgraph_bot/bot/commands/uptime.py:60
+#: src/tgraph_bot/bot/commands/uptime.py:62
 msgid "{n} days"
 msgstr "{n} days"
 
 #: src/tgraph_bot/utils/discord/command_utils.py:211
-#: src/tgraph_bot/bot/commands/uptime.py:62
+#: src/tgraph_bot/bot/commands/uptime.py:64
 msgid "{n} hour"
 msgstr "{n} hour"
 
 #: src/tgraph_bot/utils/discord/command_utils.py:211
-#: src/tgraph_bot/bot/commands/uptime.py:62
+#: src/tgraph_bot/bot/commands/uptime.py:64
 msgid "{n} hours"
 msgstr "{n} hours"
 
 #: src/tgraph_bot/utils/discord/command_utils.py:213
-#: src/tgraph_bot/bot/commands/uptime.py:64
+#: src/tgraph_bot/bot/commands/uptime.py:66
 msgid "{n} minute"
 msgstr "{n} minute"
 
 #: src/tgraph_bot/utils/discord/command_utils.py:213
-#: src/tgraph_bot/bot/commands/uptime.py:64
+#: src/tgraph_bot/bot/commands/uptime.py:66
 msgid "{n} minutes"
 msgstr "{n} minutes"
 
 #: src/tgraph_bot/utils/discord/command_utils.py:215
-#: src/tgraph_bot/bot/commands/uptime.py:66
+#: src/tgraph_bot/bot/commands/uptime.py:68
 msgid "{n} second"
 msgstr "{n} second"
 
 #: src/tgraph_bot/utils/discord/command_utils.py:215
-#: src/tgraph_bot/bot/commands/uptime.py:66
+#: src/tgraph_bot/bot/commands/uptime.py:68
 msgid "{n} seconds"
 msgstr "{n} seconds"
 
@@ -978,7 +978,7 @@ msgstr "{time:.1f} seconds"
 msgid "• Email not found in Plex server\n• Insufficient data for graphs\n• Temporary server issue"
 msgstr "• Email not found in Plex server\n• Insufficient data for graphs\n• Temporary server issue"
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:118
+#: src/tgraph_bot/bot/commands/test_scheduler.py:119
 msgid "• UPDATE_DAYS configuration\n• FIXED_UPDATE_TIME configuration\n• Complete graph generation workflow\n• Error handling and retry logic\n• Scheduler state updates"
 msgstr "• UPDATE_DAYS configuration\n• FIXED_UPDATE_TIME configuration\n• Complete graph generation workflow\n• Error handling and retry logic\n• Scheduler state updates"
 
@@ -1002,7 +1002,7 @@ msgstr "⚙️ Graph Options"
 msgid "✅ Configuration Updated"
 msgstr "✅ Configuration Updated"
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:183
+#: src/tgraph_bot/bot/commands/test_scheduler.py:191
 msgid "✅ UPDATE_DAYS interval calculation working\n✅ FIXED_UPDATE_TIME scheduling working\n✅ Graph generation and posting successful\n✅ Scheduler state updated correctly"
 msgstr "✅ UPDATE_DAYS interval calculation working\n✅ FIXED_UPDATE_TIME scheduling working\n✅ Graph generation and posting successful\n✅ Scheduler state updated correctly"
 
@@ -1018,19 +1018,19 @@ msgstr "🎨 Colors"
 msgid "🏔️ Peak Annotations"
 msgstr "🏔️ Peak Annotations"
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:324
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:138
 msgid "👥 Top 10 Users"
 msgstr "👥 Top 10 Users"
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:318
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:132
 msgid "💻 Top 10 Platforms"
 msgstr "💻 Top 10 Platforms"
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:314
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:128
 msgid "📅 Play Count by Month"
 msgstr "📅 Play Count by Month"
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:296
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:110
 msgid "📈 Daily Play Count"
 msgstr "📈 Daily Play Count"
 
@@ -1038,7 +1038,7 @@ msgstr "📈 Daily Play Count"
 msgid "📊 Enabled Graphs"
 msgstr "📊 Enabled Graphs"
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:339
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:153
 msgid "📊 Graph"
 msgstr "📊 Graph"
 
@@ -1046,7 +1046,7 @@ msgstr "📊 Graph"
 msgid "📊 Personal Statistics - Upload Issue"
 msgstr "📊 Personal Statistics - Upload Issue"
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:302
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:116
 msgid "📊 Play Count by Day of Week"
 msgstr "📊 Play Count by Day of Week"
 
@@ -1074,7 +1074,7 @@ msgstr "🔧 Bot Configuration"
 msgid "🔧 Configuration: {key}"
 msgstr "🔧 Configuration: {key}"
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:308
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:122
 msgid "🕐 Play Count by Hour of Day"
 msgstr "🕐 Play Count by Hour of Day"
 
