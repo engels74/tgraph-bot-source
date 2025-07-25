@@ -335,9 +335,9 @@ class StartupSequence:
 
             # Get current time as the baseline for scheduling
             # Convert UTC time to local timezone to ensure consistency with scheduler state
-            from tgraph_bot.bot.update_tracker import get_local_timezone
+            from tgraph_bot.utils.time import get_system_timezone
 
-            current_time = discord.utils.utcnow().astimezone(get_local_timezone())
+            current_time = discord.utils.utcnow().astimezone(get_system_timezone())
 
             update_tracker = self.bot.update_tracker
 

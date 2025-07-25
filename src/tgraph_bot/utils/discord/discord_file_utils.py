@@ -6,14 +6,13 @@ including file size limits, format validation, and error handling for graph imag
 """
 
 import logging
-from datetime import datetime, time, timedelta
+from datetime import datetime
 from pathlib import Path
 from typing import NamedTuple, Literal
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import discord
 
-from ..cli.paths import get_path_config
+from ..time import format_for_discord
 
 logger = logging.getLogger(__name__)
 
@@ -28,54 +27,8 @@ SUPPORTED_IMAGE_FORMATS = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
 TimestampStyle = Literal["f", "F", "d", "D", "t", "T", "R"]
 
 
-def get_local_timezone() -> ZoneInfo:
-    """
-    Get the system's local timezone.
-
-    Returns:
-        ZoneInfo object representing the local timezone
-    """
-    # Use the system's local timezone - cross-platform approach
-    try:
-        # Try "localtime" first (works on Linux/WSL)
-        return ZoneInfo("localtime")
-    except ZoneInfoNotFoundError:
-        # Fall back to getting the key from datetime for macOS/Windows
-        local_tz = datetime.now().astimezone().tzinfo
-        if hasattr(local_tz, "key"):
-            key = getattr(local_tz, "key")  # pyright: ignore[reportAny] # timezone key from system
-            if isinstance(key, str):
-                return ZoneInfo(key)
-        # Final fallback: use UTC
-        return ZoneInfo("UTC")
-
-
-def get_local_now() -> datetime:
-    """
-    Get the current local datetime (timezone-aware).
-
-    Returns:
-        Current datetime in the system's local timezone
-    """
-    return datetime.now(get_local_timezone())
-
-
-def ensure_timezone_aware(dt: datetime) -> datetime:
-    """
-    Ensure a datetime object is timezone-aware.
-
-    Uses the system's local timezone for consistent scheduling.
-
-    Args:
-        dt: Datetime object that may be naive or timezone-aware
-
-    Returns:
-        Timezone-aware datetime object (local timezone)
-    """
-    if dt.tzinfo is None:
-        # If naive, assume it's in local timezone
-        return dt.replace(tzinfo=get_local_timezone())
-    return dt
+# Timezone and time functions are now imported from utils.time
+# get_system_timezone, get_system_now, ensure_timezone_aware
 
 
 def format_next_update_timestamp(
@@ -91,11 +44,8 @@ def format_next_update_timestamp(
     Returns:
         Formatted Discord timestamp string
     """
-    # Ensure timezone-aware datetime
-    next_update = ensure_timezone_aware(next_update)
-
-    # Use discord.py's format_dt function for consistent formatting
-    return discord.utils.format_dt(next_update, style=style)
+    # Use the unified Discord formatting function
+    return format_for_discord(next_update, style=style)
 
 
 def calculate_next_update_time(
@@ -104,8 +54,7 @@ def calculate_next_update_time(
     """
     Calculate the next scheduled update time based on configuration.
 
-    This function now matches the scheduler logic exactly, including respecting
-    the update_days interval from the last update when available.
+    This function is now a simple wrapper around the unified scheduling system.
 
     Args:
         update_days: Number of days between updates
@@ -115,155 +64,9 @@ def calculate_next_update_time(
         Next update datetime, or None if calculation fails
     """
     try:
-        # Use local timezone for consistent scheduling
-        current_time = get_local_now()
-
-        # Handle interval-based updates
-        if fixed_update_time == "XX:XX":
-            return current_time + timedelta(days=update_days)
-
-        # Handle fixed time updates
-        try:
-            hour, minute = map(int, fixed_update_time.split(":"))
-            update_time = time(hour, minute)
-        except (ValueError, AttributeError):
-            return None
-
-        # Calculate next occurrence of the fixed time (timezone-aware)
-        next_update = datetime.combine(current_time.date(), update_time)
-        next_update = next_update.replace(tzinfo=get_local_timezone())
-
-        # If time has passed today, schedule for tomorrow
-        if next_update <= current_time:
-            next_update += timedelta(days=1)
-
-        # For UPDATE_DAYS > 1, ensure we respect the minimum interval from current time
-        # This matches the scheduler logic for first launch
-        if update_days > 1:
-            min_next_update = current_time + timedelta(days=update_days)
-            if next_update < min_next_update:
-                # Find the next occurrence of fixed time on or after the minimum date
-                next_update = datetime.combine(min_next_update.date(), update_time)
-                next_update = next_update.replace(tzinfo=get_local_timezone())
-
-        # Try to load scheduler state to respect update_days interval from last update
-        # This matches the scheduler logic in bot/update_tracker.py
-        scheduler_state_loaded = False
-        try:
-            import json
-
-            # Try to find the scheduler state file using PathConfig
-            path_config = get_path_config()
-            state_file = path_config.get_scheduler_state_path()
-            # Only try to read the file if it actually exists
-            if state_file.exists():
-                try:
-                    with state_file.open("r") as f:
-                        state_data = json.load(f)  # pyright: ignore[reportAny]
-
-                    # First, try to use the next_update value directly from scheduler state
-                    # This is the most accurate approach since the scheduler has already calculated it
-                    if "state" in state_data and "next_update" in state_data["state"]:
-                        next_update_str = state_data["state"]["next_update"]  # pyright: ignore[reportAny]
-                        if next_update_str and isinstance(next_update_str, str):
-                            try:
-                                scheduler_next_update = datetime.fromisoformat(
-                                    next_update_str
-                                )
-
-                                # Ensure scheduler_next_update is timezone-aware and in local timezone
-                                if scheduler_next_update.tzinfo is None:
-                                    scheduler_next_update = (
-                                        scheduler_next_update.replace(
-                                            tzinfo=get_local_timezone()
-                                        )
-                                    )
-                                else:
-                                    # Convert to local timezone to ensure consistent ZoneInfo type
-                                    scheduler_next_update = (
-                                        scheduler_next_update.astimezone(
-                                            get_local_timezone()
-                                        )
-                                    )
-
-                                # Use the scheduler's next_update if it's in the future
-                                if scheduler_next_update > current_time:
-                                    next_update = scheduler_next_update
-                                    scheduler_state_loaded = True
-                            except (ValueError, TypeError):
-                                # If parsing fails, fall back to calculation from last_update
-                                pass
-
-                    # Fallback: calculate from last_update if next_update wasn't usable
-                    if (
-                        not scheduler_state_loaded
-                        and "state" in state_data
-                        and "last_update" in state_data["state"]
-                    ):
-                        last_update_str = state_data["state"]["last_update"]  # pyright: ignore[reportAny]
-                        if last_update_str and isinstance(last_update_str, str):
-                            last_update = datetime.fromisoformat(last_update_str)
-
-                            # Ensure last_update is timezone-aware and in local timezone
-                            if last_update.tzinfo is None:
-                                last_update = last_update.replace(
-                                    tzinfo=get_local_timezone()
-                                )
-                            else:
-                                # Convert to local timezone to ensure consistent ZoneInfo type
-                                last_update = last_update.astimezone(
-                                    get_local_timezone()
-                                )
-
-                            # Respect the update_days interval if we have a last update
-                            min_next_update = last_update + timedelta(days=update_days)
-                            if next_update < min_next_update:
-                                # Calculate how many days we need to add to meet the minimum interval
-                                # We need to find the next occurrence of update_time that is >= min_next_update
-                                candidate_date = min_next_update.date()
-                                candidate_update = datetime.combine(
-                                    candidate_date, update_time
-                                )
-                                # Ensure candidate_update is timezone-aware
-                                candidate_update = candidate_update.replace(
-                                    tzinfo=get_local_timezone()
-                                )
-
-                                # If the time on min_next_update date has already passed in min_next_update,
-                                # move to the next day
-                                if candidate_update < min_next_update:
-                                    candidate_update += timedelta(days=1)
-
-                                next_update = candidate_update
-                                scheduler_state_loaded = True
-
-                except (
-                    OSError,
-                    json.JSONDecodeError,
-                    KeyError,
-                    ValueError,
-                ) as file_error:
-                    # If we can't read or parse the state file, continue with the basic logic
-                    logger.debug(
-                        f"Could not load scheduler state for next update calculation: {file_error}"
-                    )
-        except Exception as e:
-            # If any other error occurs, continue with the basic logic
-            logger.debug(
-                f"Could not load scheduler state for next update calculation: {e}"
-            )
-
-        # Special case for UPDATE_DAYS=1 on first launch (no scheduler state)
-        # This matches the scheduler behavior: always add UPDATE_DAYS to current time on first run
-        # regardless of whether the fixed time has passed today
-        if not scheduler_state_loaded and update_days == 1:
-            # On first launch, scheduler always adds UPDATE_DAYS to current time
-            min_next_update = current_time + timedelta(days=1)
-            next_update = datetime.combine(min_next_update.date(), update_time)
-            next_update = next_update.replace(tzinfo=get_local_timezone())
-
-        return next_update
-
+        # Use the unified scheduling function from utils.time
+        from ..time import calculate_next_update_time as unified_calculate
+        return unified_calculate(update_days, fixed_update_time)
     except Exception:
         return None
 

@@ -22,14 +22,14 @@ from tgraph_bot.bot.update_tracker import (
     RecoveryManager,
     SchedulingConfig,
     UpdateTracker,
-    get_local_timezone,
-    get_local_now,
 )
 from tgraph_bot.utils.discord.discord_file_utils import (
-    get_local_timezone as utils_get_local_timezone,
-    get_local_now as utils_get_local_now,
     calculate_next_update_time,
     format_next_update_timestamp,
+)
+from tgraph_bot.utils.time import (
+    get_system_timezone,
+    get_system_now,
     ensure_timezone_aware,
 )
 
@@ -106,10 +106,10 @@ class TestTimezoneHandling:
         async def dummy_task() -> None:
             await asyncio.sleep(0.1)
 
-        # Mock get_local_now to return a known timezone-aware datetime
-        with patch("tgraph_bot.bot.update_tracker.get_local_now") as mock_local_now:
-            base_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=get_local_timezone())
-            mock_local_now.return_value = base_time
+        # Mock get_system_now to return a known timezone-aware datetime
+        with patch("tgraph_bot.bot.update_tracker.get_system_now") as mock_system_now:
+            base_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=get_system_timezone())
+            mock_system_now.return_value = base_time
 
             # Add task - this should set task health to timezone-aware datetime
             manager.add_task(task_name, dummy_task)
@@ -125,7 +125,7 @@ class TestTimezoneHandling:
 
             # Test health check with timezone-aware current time
             future_time = base_time + timedelta(minutes=10)
-            mock_local_now.return_value = future_time
+            mock_system_now.return_value = future_time
 
             # This should not raise a timezone error
             is_healthy = manager.is_healthy()
@@ -133,7 +133,7 @@ class TestTimezoneHandling:
 
             # Test with recent time (should be healthy)
             recent_time = base_time + timedelta(minutes=1)
-            mock_local_now.return_value = recent_time
+            mock_system_now.return_value = recent_time
 
             is_healthy = manager.is_healthy()
             assert is_healthy  # Should be healthy
@@ -268,35 +268,19 @@ class TestTimezoneHandling:
 class TestLocalTimezoneHandling:
     """Test local timezone handling functions."""
 
-    def test_get_local_timezone(self) -> None:
-        """Test that get_local_timezone returns system local timezone."""
-        # Test update_tracker version
-        tz = get_local_timezone()
+    def test_get_system_timezone(self) -> None:
+        """Test that get_system_timezone returns system local timezone."""
+        # Test unified timezone function
+        tz = get_system_timezone()
         assert tz is not None
         assert isinstance(tz, ZoneInfo)
 
-        # Test utils version
-        utils_tz = utils_get_local_timezone()
-        assert utils_tz is not None
-        assert isinstance(utils_tz, ZoneInfo)
-
-        # Both should return equivalent timezone
-        assert str(tz) == str(utils_tz)
-
-    def test_get_local_now(self) -> None:
-        """Test that get_local_now returns timezone-aware local datetime."""
-        # Test update_tracker version
-        now = get_local_now()
+    def test_get_system_now(self) -> None:
+        """Test that get_system_now returns timezone-aware datetime."""
+        # Test unified time function
+        now = get_system_now()
         assert now.tzinfo is not None
         assert isinstance(now.tzinfo, ZoneInfo)
-
-        # Test utils version
-        utils_now = utils_get_local_now()
-        assert utils_now.tzinfo is not None
-        assert isinstance(utils_now.tzinfo, ZoneInfo)
-
-        # Both should have same timezone
-        assert str(now.tzinfo) == str(utils_now.tzinfo)
 
     def test_ensure_timezone_aware_with_naive_datetime(self) -> None:
         """Test ensure_timezone_aware converts naive datetime to local timezone."""
@@ -332,7 +316,7 @@ class TestLocalTimezoneHandling:
         # Should be in the future
         from datetime import datetime
 
-        current_time = datetime.now(get_local_timezone())
+        current_time = datetime.now(get_system_timezone())
         assert next_update > current_time
         # Should have zero seconds (fixed time precision)
         assert next_update.second == 0
@@ -346,14 +330,14 @@ class TestLocalTimezoneHandling:
         assert isinstance(next_update.tzinfo, ZoneInfo)
 
         # Should be approximately 2 days from now
-        now = get_local_now()
+        now = get_system_now()
         diff = next_update - now
         assert 1.9 <= diff.total_seconds() / 86400 <= 2.1  # Between 1.9 and 2.1 days
 
     def test_format_next_update_timestamp(self) -> None:
         """Test format_next_update_timestamp creates Discord timestamp."""
         # Create a fixed datetime in local timezone
-        dt = datetime(2025, 7, 18, 23, 59, 0, tzinfo=get_local_timezone())
+        dt = datetime(2025, 7, 18, 23, 59, 0, tzinfo=get_system_timezone())
 
         # Test default style (relative)
         timestamp = format_next_update_timestamp(dt)
