@@ -75,6 +75,7 @@ def create_graph_specific_embed(
     graph_file_path: str,
     update_days: int | None = None,
     fixed_update_time: str | None = None,
+    next_update_time: datetime | None = None,
 ) -> discord.Embed:
     """
     Create a graph-specific embed based on the graph filename.
@@ -83,6 +84,7 @@ def create_graph_specific_embed(
         graph_file_path: Path to the graph file
         update_days: Number of days between updates (for showing next update time)
         fixed_update_time: Fixed time for updates or "XX:XX" for interval-based
+        next_update_time: Actual scheduled next update time (overrides calculation)
 
     Returns:
         Discord embed with graph-specific title and description
@@ -153,16 +155,18 @@ def create_graph_specific_embed(
     # Set the image to reference the attachment - this integrates the image within the embed
     _ = embed.set_image(url=f"attachment://{file_path.name}")
 
-    # Add next update time if configuration is provided
-    if update_days is not None and fixed_update_time is not None:
+    # Add next update time if provided or can be calculated from config
+    next_update = next_update_time
+    if next_update is None and update_days is not None and fixed_update_time is not None:
         next_update = calculate_next_update_time(update_days, fixed_update_time)
-        if next_update:
-            # Use the optimized timestamp formatting function
-            timestamp_str = format_next_update_timestamp(next_update)
-            current_description = embed.description or ""
-            embed.description = (
-                current_description + f"\n\nNext update: {timestamp_str}"
-            )
+    
+    if next_update:
+        # Use the optimized timestamp formatting function
+        timestamp_str = format_next_update_timestamp(next_update)
+        current_description = embed.description or ""
+        embed.description = (
+            current_description + f"\n\nNext update: {timestamp_str}"
+        )
 
     return embed
 

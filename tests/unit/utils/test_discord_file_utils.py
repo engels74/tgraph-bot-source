@@ -1111,3 +1111,21 @@ class TestCreateGraphSpecificEmbed:
         assert (
             "Next update:" not in embed.description
         )  # Should not add invalid timestamp
+
+    def test_embed_with_explicit_next_update_time(self) -> None:
+        """Test embed creation with explicitly provided next update time."""
+        # Create a specific next update time
+        next_update = datetime(2025, 7, 26, 23, 59, 0, tzinfo=get_system_timezone())
+        
+        embed = create_graph_specific_embed(
+            "daily_play_count.png", 
+            update_days=1, 
+            fixed_update_time="23:59",
+            next_update_time=next_update
+        )
+
+        assert embed.description is not None
+        assert "Next update:" in embed.description
+        # Verify it contains the Discord timestamp format
+        assert "<t:" in embed.description
+        assert ":F>" in embed.description

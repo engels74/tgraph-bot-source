@@ -507,7 +507,7 @@ class TGraphBot(commands.Bot):
 
         success_count = 0
 
-        # Get config values for next update time calculation
+        # Get config values and actual next update time from scheduler
         try:
             config = self.config_manager.get_current_config()
             update_days = config.UPDATE_DAYS
@@ -516,6 +516,9 @@ class TGraphBot(commands.Bot):
             # If we can't get config, just use None values
             update_days = None
             fixed_update_time = None
+        
+        # Get the actual scheduled next update time from the update tracker
+        next_update_time = self.update_tracker.get_next_update_time()
 
         for graph_file in graph_files:
             try:
@@ -542,9 +545,9 @@ class TGraphBot(commands.Bot):
                     )
                     continue
 
-                # Create graph-specific embed with scheduling info
+                # Create graph-specific embed with actual scheduled next update time
                 embed = create_graph_specific_embed(
-                    graph_file, update_days, fixed_update_time
+                    graph_file, update_days, fixed_update_time, next_update_time
                 )
 
                 # Post individual message with graph and its specific embed
