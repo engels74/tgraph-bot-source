@@ -20,7 +20,7 @@ from enum import Enum
 
 # import discord  # Not directly used, but needed for type checking contexts
 from ..utils.cli.paths import get_path_config
-from ..utils.time import get_system_now, ensure_timezone_aware
+from ..utils.time import get_system_now, ensure_timezone_aware, TimestampCalculator
 
 if TYPE_CHECKING:
     from discord.ext import commands
@@ -1346,10 +1346,14 @@ class UpdateSchedule:
         """
         self.config: SchedulingConfig = config
         self.state: ScheduleState = state
+        self._calculator: TimestampCalculator = TimestampCalculator()
 
     def calculate_next_update(self, current_time: datetime) -> datetime:
         """
         Calculate the next update time based on configuration and state.
+
+        This method now uses the centralized TimestampCalculator to ensure
+        consistency with Discord embed displays.
 
         Args:
             current_time: Current datetime for calculation reference
@@ -1357,110 +1361,14 @@ class UpdateSchedule:
         Returns:
             Next scheduled update datetime (timezone-aware)
         """
-        # Ensure current_time is timezone-aware using system timezone
-        current_time = ensure_timezone_aware(current_time)
-
-        if self.config.is_fixed_time_based():
-            return self._calculate_fixed_time_update(current_time)
-        else:
-            return self._calculate_interval_update(current_time)
-
-    def _calculate_interval_update(self, current_time: datetime) -> datetime:
-        """Calculate next update for interval-based scheduling."""
-        # Ensure current_time is timezone-aware using system timezone
-        current_time = ensure_timezone_aware(current_time)
-
-        if self.state.last_update:
-            last_update = ensure_timezone_aware(self.state.last_update)
-            return last_update + timedelta(days=self.config.update_days)
-        else:
-            # First run - schedule for next interval
-            return current_time + timedelta(days=self.config.update_days)
-
-    def _calculate_fixed_time_update(self, current_time: datetime) -> datetime:
-        """
-        Calculate next update for fixed time scheduling.
-
-        Modern Python 3.13 implementation with consistent UPDATE_DAYS behavior.
-        Always respects the update_days interval regardless of state history.
-
-        Args:
-            current_time: Current datetime for calculation reference
-
-        Returns:
-            Next scheduled update datetime that respects both fixed time and interval
-
-        Raises:
-            ValueError: If fixed time configuration is invalid
-        """
-        fixed_time = self.config.get_fixed_time()
-        if fixed_time is None:
-            # Fallback to interval if fixed time is invalid
-            return self._calculate_interval_update(current_time)
-
-        # Calculate the minimum next update time based on UPDATE_DAYS
-        min_next_update = self._calculate_minimum_next_update(current_time)
-
-        # Find the next occurrence of fixed time that respects the interval
-        next_update = self._find_next_fixed_time_occurrence(
-            start_date=min_next_update.date(), fixed_time=fixed_time
+        # Use centralized calculator for consistency
+        return self._calculator.calculate_next_update(
+            update_days=self.config.update_days,
+            fixed_update_time=self.config.fixed_update_time,
+            last_update=self.state.last_update,
+            current_time=current_time,
         )
 
-        # Validate the calculated time
-        if next_update <= current_time:
-            msg = (
-                f"Calculated next update {next_update} is not in the future "
-                f"(current time: {current_time})"
-            )
-            raise ValueError(msg)
-
-        return next_update
-
-    def _calculate_minimum_next_update(self, current_time: datetime) -> datetime:
-        """
-        Calculate the minimum next update time based on UPDATE_DAYS configuration.
-
-        This ensures consistent behavior whether it's the first run or subsequent runs.
-
-        Args:
-            current_time: Current datetime for calculation reference
-
-        Returns:
-            Minimum datetime for the next update (timezone-aware)
-        """
-        # Ensure current_time is timezone-aware using system timezone
-        current_time = ensure_timezone_aware(current_time)
-
-        if self.state.last_update is None:
-            # First run: add UPDATE_DAYS to current time
-            return current_time + timedelta(days=self.config.update_days)
-        else:
-            # Ensure last_update is timezone-aware for consistent calculations
-            last_update = ensure_timezone_aware(self.state.last_update)
-
-            # Subsequent runs: add UPDATE_DAYS to last update
-            return last_update + timedelta(days=self.config.update_days)
-
-    def _find_next_fixed_time_occurrence(
-        self, start_date: date, fixed_time: time
-    ) -> datetime:
-        """
-        Find the next occurrence of fixed time on or after the start date.
-
-        Args:
-            start_date: Earliest date to consider
-            fixed_time: Time of day for the update
-
-        Returns:
-            Next datetime combining start_date (or later) with fixed_time (timezone-aware)
-        """
-        # Create timezone-aware datetime using system timezone
-        result = datetime.combine(start_date, fixed_time)
-
-        # Ensure the result is timezone-aware
-        result = ensure_timezone_aware(result)
-
-        return result
 
     def is_valid_schedule_time(
         self, schedule_time: datetime, current_time: datetime
@@ -1496,8 +1404,12 @@ class UpdateSchedule:
         Returns:
             Time remaining until next update
         """
-        next_update = self.calculate_next_update(current_time)
-        return next_update - current_time
+        return self._calculator.calculate_time_until_next_update(
+            update_days=self.config.update_days,
+            fixed_update_time=self.config.fixed_update_time,
+            last_update=self.state.last_update,
+            current_time=current_time,
+        )
 
     def should_skip_update(self, current_time: datetime) -> bool:
         """

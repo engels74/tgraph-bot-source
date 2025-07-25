@@ -115,27 +115,30 @@ def calculate_next_fixed_time(
         return next_update
     else:
         # No last update - calculate from current time
-        # Calculate the next occurrence of the fixed time
-        next_update = datetime.combine(current_time.date(), fixed_time)
-        next_update = next_update.replace(tzinfo=get_system_timezone())
+        if update_days == 1:
+            # Special case for UPDATE_DAYS=1: next occurrence of fixed time,
+            # but if it already passed today, schedule for tomorrow
+            next_update = datetime.combine(current_time.date(), fixed_time)
+            next_update = next_update.replace(tzinfo=get_system_timezone())
 
-        # If the time has already passed today, move to tomorrow
-        if next_update <= current_time:
-            next_update = next_update + timedelta(days=1)
+            # If the time has already passed today, move to tomorrow
+            if next_update <= current_time:
+                next_update = next_update + timedelta(days=1)
 
-        # For update_days > 1, ensure we respect the minimum interval from current time
-        if update_days > 1:
+            return next_update
+        else:
+            # For UPDATE_DAYS > 1, ensure we respect the minimum interval from current time
             min_next_update = current_time + timedelta(days=update_days)
+            
+            # Find the next occurrence of fixed time on or after the minimum date
+            next_update = datetime.combine(min_next_update.date(), fixed_time)
+            next_update = next_update.replace(tzinfo=get_system_timezone())
+
+            # If the time has already passed on the minimum date, move to the next day
             if next_update < min_next_update:
-                # Find the next occurrence of fixed time on or after the minimum date
-                next_update = datetime.combine(min_next_update.date(), fixed_time)
-                next_update = next_update.replace(tzinfo=get_system_timezone())
+                next_update = next_update + timedelta(days=1)
 
-                # If the time has already passed on the minimum date, move to the next day
-                if next_update < min_next_update:
-                    next_update = next_update + timedelta(days=1)
-
-        return next_update
+            return next_update
 
 
 def calculate_next_interval_time(

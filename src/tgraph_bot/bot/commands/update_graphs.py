@@ -333,7 +333,7 @@ class UpdateGraphsCog(BaseCommandCog):
 
         success_count = 0
 
-        # Get config values for next update time calculation
+        # Get config values and actual next update time from scheduler
         try:
             config = self.get_current_config()
             update_days = config.UPDATE_DAYS
@@ -344,6 +344,10 @@ class UpdateGraphsCog(BaseCommandCog):
             update_days = None
             fixed_update_time = None
             timestamp_format = "F"
+        
+        # Get the actual scheduled next update time from the update tracker
+        # This prevents race conditions and ensures consistency with scheduler state
+        next_update_time = self.tgraph_bot.update_tracker.get_next_update_time()
 
         try:
             for graph_file in graph_files:
@@ -366,9 +370,9 @@ class UpdateGraphsCog(BaseCommandCog):
                         )
                         continue
 
-                    # Create graph-specific embed with scheduling info
+                    # Create graph-specific embed with actual scheduled next update time
                     embed = create_graph_specific_embed(
-                        graph_file, update_days, fixed_update_time, timestamp_format=timestamp_format
+                        graph_file, update_days, fixed_update_time, next_update_time, timestamp_format
                     )
 
                     # Post individual message with graph and its specific embed

@@ -12,7 +12,7 @@ from typing import NamedTuple, Literal
 
 import discord
 
-from ..time import format_for_discord
+from ..time import format_for_discord, TimestampCalculator
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +54,8 @@ def calculate_next_update_time(
     """
     Calculate the next scheduled update time based on configuration.
 
-    This function is now a simple wrapper around the unified scheduling system.
+    This function now uses the centralized TimestampCalculator to ensure
+    consistency with the scheduler system.
 
     Args:
         update_days: Number of days between updates
@@ -64,9 +65,15 @@ def calculate_next_update_time(
         Next update datetime, or None if calculation fails
     """
     try:
-        # Use the unified scheduling function from utils.time
-        from ..time import calculate_next_update_time as unified_calculate
-        return unified_calculate(update_days, fixed_update_time)
+        calculator = TimestampCalculator()
+        return calculator.calculate_next_update(
+            update_days=update_days,
+            fixed_update_time=fixed_update_time,
+            # Note: Not providing last_update here means this will calculate
+            # from current time, which may differ from scheduler state.
+            # This is kept for backward compatibility but the preferred
+            # approach is to pass the actual scheduled next_update_time directly.
+        )
     except Exception:
         return None
 
