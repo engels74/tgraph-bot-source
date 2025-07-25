@@ -17,25 +17,25 @@ from src.tgraph_bot.config.manager import ConfigManager
 
 
 @pytest.fixture
-def mock_config_manager():
+def mock_config_manager() -> Mock:
     """Create a mock config manager with test configuration."""
     config_manager = Mock(spec=ConfigManager)
     mock_config = Mock()
     mock_config.UPDATE_DAYS = 1
     mock_config.FIXED_UPDATE_TIME = "23:59"
     mock_config.DISCORD_TIMESTAMP_FORMAT = "F"
-    config_manager.get_current_config.return_value = mock_config
+    config_manager.get_current_config.return_value = mock_config  # pyright: ignore[reportAny]
     return config_manager
 
 
 @pytest.fixture
-def test_timezone():
+def test_timezone() -> ZoneInfo:
     """Use a consistent timezone for testing."""
     return ZoneInfo("Europe/Copenhagen")
 
 
 @pytest.fixture
-def base_time(test_timezone):
+def base_time(test_timezone: ZoneInfo) -> datetime:
     """Base time for consistent testing - July 25, 2025 at 21:41:47."""
     return datetime(2025, 7, 25, 21, 41, 47, 967895, tzinfo=test_timezone)
 
@@ -43,19 +43,19 @@ def base_time(test_timezone):
 class TestTimestampConsistency:
     """Test that scheduler and embed timestamps are always consistent."""
 
-    def test_timestamp_calculator_exists(self):
+    def test_timestamp_calculator_exists(self) -> None:
         """Test that TimestampCalculator class exists and is importable."""
         # This test will fail until we create the class
         calculator = TimestampCalculator()
         assert calculator is not None
 
-    def test_scheduler_and_embed_use_same_calculation(self, mock_config_manager, base_time):
+    def test_scheduler_and_embed_use_same_calculation(self, base_time: datetime) -> None:
         """Test that scheduler and embed timestamps use the same calculation logic."""
         # Given: A timestamp calculator and configuration
         calculator = TimestampCalculator()
         update_days = 1
         fixed_time = "23:59"
-        last_update = base_time
+        last_update: datetime = base_time
         
         # When: Both scheduler and embed calculate next update time
         scheduler_next_update = calculator.calculate_next_update(
@@ -75,7 +75,7 @@ class TestTimestampConsistency:
         # Then: Both should return identical timestamps
         assert scheduler_next_update == embed_next_update
 
-    def test_scheduler_state_matches_embed_display(self, mock_config_manager, base_time):
+    def test_scheduler_state_matches_embed_display(self, base_time: datetime) -> None:
         """Test that the scheduler state matches what's displayed in embeds."""
         # This test will fail until we refactor the systems to use the same calculator
         
@@ -86,7 +86,7 @@ class TestTimestampConsistency:
         # Mock the scheduler to have a specific next update time
         expected_next_update = base_time + timedelta(days=1)
         expected_next_update = expected_next_update.replace(hour=23, minute=59, second=0, microsecond=0)
-        update_tracker._state.next_update = expected_next_update
+        update_tracker._state.next_update = expected_next_update  # pyright: ignore[reportPrivateUsage]
         
         # When: We create an embed using the same parameters
         with patch('src.tgraph_bot.utils.discord.discord_file_utils.calculate_next_update_time') as mock_calc:
@@ -104,12 +104,12 @@ class TestTimestampConsistency:
         assert embed.description is not None
         assert "Next update:" in embed.description
 
-    def test_update_days_properly_applied_to_timestamps(self, base_time):
+    def test_update_days_properly_applied_to_timestamps(self, base_time: datetime) -> None:
         """Test that UPDATE_DAYS=1 correctly adds 1 day to timestamps."""
         calculator = TimestampCalculator()
         
         # Given: UPDATE_DAYS=1 and a last update time
-        last_update = base_time
+        last_update: datetime = base_time
         update_days = 1
         fixed_time = "23:59"
         
@@ -135,12 +135,12 @@ class TestTimestampConsistency:
 class TestRaceConditionHandling:
     """Test race condition scenarios and proper handling."""
 
-    def test_embed_handles_uninitialized_scheduler(self, mock_config_manager):
+    def test_embed_handles_uninitialized_scheduler(self) -> None:
         """Test that embeds handle the case where scheduler isn't ready yet."""
         # Given: A scenario where scheduler hasn't calculated next_update yet
         bot = Mock()
         update_tracker = UpdateTracker(bot)
-        update_tracker._state.next_update = None  # Scheduler not ready
+        update_tracker._state.next_update = None  # Scheduler not ready  # pyright: ignore[reportPrivateUsage]
         
         # When: Creating an embed before scheduler is ready
         embed = create_graph_specific_embed(
@@ -155,7 +155,7 @@ class TestRaceConditionHandling:
         assert embed is not None
         assert embed.title is not None
 
-    def test_scheduler_ready_state_accessible(self, mock_config_manager):
+    def test_scheduler_ready_state_accessible(self) -> None:
         """Test that we can check if scheduler is ready and has calculated next_update."""
         # Given: An update tracker
         bot = Mock()
@@ -166,13 +166,13 @@ class TestRaceConditionHandling:
         assert not update_tracker.is_scheduler_healthy()
         
         # When: Scheduler has calculated next_update
-        update_tracker._state.next_update = datetime.now()
-        update_tracker._is_started = True
+        update_tracker._state.next_update = datetime.now()  # pyright: ignore[reportPrivateUsage]
+        update_tracker._is_started = True  # pyright: ignore[reportPrivateUsage]
         
         # Then: Should indicate it's ready (this will need implementation)
         # This test will help us design the interface for checking readiness
 
-    def test_manual_command_waits_for_scheduler_readiness(self, mock_config_manager):
+    def test_manual_command_waits_for_scheduler_readiness(self) -> None:
         """Test that manual /update_graphs command waits for scheduler readiness."""
         # This test will drive the implementation of race condition prevention
         
@@ -192,7 +192,7 @@ class TestRaceConditionHandling:
 class TestTimestampDisplayFormat:
     """Test that timestamp formatting is consistent across the system."""
 
-    def test_discord_timestamp_format_applied_correctly(self, base_time):
+    def test_discord_timestamp_format_applied_correctly(self, base_time: datetime) -> None:
         """Test that Discord timestamp format configuration is respected."""
         calculator = TimestampCalculator()
         
@@ -216,7 +216,7 @@ class TestTimestampDisplayFormat:
         assert formatted_r.startswith("<t:")
         assert formatted_r.endswith(":R>")
 
-    def test_timezone_awareness_preserved(self, test_timezone, base_time):
+    def test_timezone_awareness_preserved(self, test_timezone: ZoneInfo, base_time: datetime) -> None:
         """Test that timezone information is preserved through calculations."""
         calculator = TimestampCalculator()
         
@@ -233,14 +233,17 @@ class TestTimestampDisplayFormat:
         
         # Then: Result should maintain timezone awareness
         assert next_update.tzinfo is not None
-        assert next_update.tzinfo.key == test_timezone.key
+        # ZoneInfo objects have a 'key' attribute, but we need proper typing
+        assert hasattr(next_update.tzinfo, 'key')
+        assert hasattr(test_timezone, 'key')
+        assert next_update.tzinfo.key == test_timezone.key  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
 
 
 # Integration test to verify the fix
 class TestBugFix:
     """Integration tests to verify the specific UPDATE_DAYS bug is fixed."""
 
-    def test_update_days_1_scenario_matches_scheduler_state(self, base_time):
+    def test_update_days_1_scenario_matches_scheduler_state(self) -> None:
         """Test the specific scenario from the bug report: UPDATE_DAYS=1."""
         # Given: The exact scenario from the bug report
         last_update = datetime(2025, 7, 25, 21, 41, 47, 967895, tzinfo=ZoneInfo("Europe/Copenhagen"))

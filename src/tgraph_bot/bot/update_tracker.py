@@ -11,7 +11,7 @@ import logging
 import re
 import tempfile
 
-from datetime import datetime, time, timedelta, date
+from datetime import datetime, time, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING
 from collections.abc import Callable, Awaitable

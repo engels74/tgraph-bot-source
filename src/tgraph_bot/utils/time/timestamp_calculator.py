@@ -169,7 +169,7 @@ class TimestampCalculator:
             if time_diff > 1.0:
                 issues.append(
                     f"Stored next_update ({next_update}) doesn't match calculated "
-                    f"value ({calculated_next_update}). Difference: {time_diff:.1f}s"
+                    + f"value ({calculated_next_update}). Difference: {time_diff:.1f}s"
                 )
         
         # Check if next_update is reasonable
@@ -182,7 +182,7 @@ class TimestampCalculator:
             if next_update > max_future:
                 issues.append(
                     f"Next update time {next_update} is too far in the future "
-                    f"(more than {update_days * 2} days)"
+                    + f"(more than {update_days * 2} days)"
                 )
         
         # Check if last_update and calculated next_update are consistent
@@ -195,7 +195,7 @@ class TimestampCalculator:
             if abs(actual_interval - expected_interval) > tolerance:
                 issues.append(
                     f"Inconsistent interval: expected ~{expected_interval.days} days, "
-                    f"got {actual_interval.days} days"
+                    + f"got {actual_interval.days} days"
                 )
         
         is_valid = len(issues) == 0
