@@ -9,7 +9,7 @@ class TestTimestampFormatConfig:
     """Test cases for the Discord timestamp format configuration option."""
 
     def test_default_timestamp_format(self) -> None:
-        """Test that the default timestamp format is 'F'."""
+        """Test that the default timestamp format is 'R'."""
         config_data: dict[str, str | int] = {
             "TAUTULLI_API_KEY": "test_key",
             "TAUTULLI_URL": "http://localhost:8181/api/v2",
@@ -18,7 +18,7 @@ class TestTimestampFormatConfig:
         }
         
         config = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
-        assert config.DISCORD_TIMESTAMP_FORMAT == "F"
+        assert config.DISCORD_TIMESTAMP_FORMAT == "R"
 
     def test_valid_timestamp_formats(self) -> None:
         """Test that all valid Discord timestamp formats are accepted."""
@@ -77,4 +77,4 @@ class TestTimestampFormatConfig:
         field_info = TGraphBotConfig.model_fields["DISCORD_TIMESTAMP_FORMAT"]
         assert field_info.description is not None
         assert "Discord timestamp format" in field_info.description
-        assert "F" in field_info.description  # Should mention default
+        assert "R" in field_info.description  # Should mention default

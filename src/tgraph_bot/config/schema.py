@@ -67,7 +67,7 @@ class TGraphBotConfig(BaseModel):
 
     # Discord Settings
     DISCORD_TIMESTAMP_FORMAT: Literal["t", "T", "d", "D", "f", "F", "R"] = Field(
-        default="F",
+        default="R",
         description="Discord timestamp format (t=short time, T=long time, d=short date, D=long date, f=short date/time, F=long date/time, R=relative time)",
     )
 
