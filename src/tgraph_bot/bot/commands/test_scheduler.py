@@ -30,6 +30,7 @@ from ...utils.discord.command_utils import (
     create_info_embed,
     create_cooldown_embed,
 )
+from ...utils.time import format_for_discord
 
 if TYPE_CHECKING:
     pass
@@ -149,11 +150,18 @@ class SchedulerTestCog(BaseCommandCog):
             )
 
             if next_update_before:
+                last_update_str = (
+                    format_for_discord(last_update_before, "F")
+                    if last_update_before
+                    else "Never"
+                )
+                next_update_str = format_for_discord(next_update_before, "F")
+
                 _ = status_embed.add_field(
                     name=i18n.translate("Scheduled Times"),
                     value=(
-                        f"**Last Update:** {last_update_before.strftime('%Y-%m-%d %H:%M:%S') if last_update_before else 'Never'}\n"
-                        f"**Next Update:** {next_update_before.strftime('%Y-%m-%d %H:%M:%S')}"
+                        f"**Last Update:** {last_update_str}\n"
+                        f"**Next Update:** {next_update_str}"
                     ),
                     inline=False,
                 )
@@ -187,11 +195,18 @@ class SchedulerTestCog(BaseCommandCog):
             )
 
             if last_update_after and last_update_after != last_update_before:
+                last_update_str = format_for_discord(last_update_after, "F")
+                next_update_str = (
+                    format_for_discord(next_update_after, "F")
+                    if next_update_after
+                    else "Calculating..."
+                )
+
                 _ = success_embed.add_field(
                     name=i18n.translate("State Updates"),
                     value=(
-                        f"**Last Update:** Updated to {last_update_after.strftime('%Y-%m-%d %H:%M:%S')}\n"
-                        f"**Next Update:** {next_update_after.strftime('%Y-%m-%d %H:%M:%S') if next_update_after else 'Calculating...'}"
+                        f"**Last Update:** Updated to {last_update_str}\n"
+                        f"**Next Update:** {next_update_str}"
                     ),
                     inline=False,
                 )

@@ -377,7 +377,7 @@ class TestTimestampHandling:
         test_dt = datetime(2025, 1, 15, 12, 30, 0, tzinfo=dt.timezone.utc)
 
         with patch("discord.utils.format_dt") as mock_format_dt:
-            mock_format_dt.return_value = "<t:1737027000:R>"
+            mock_format_dt.return_value = "<t:1737027000:F>"
 
             result = format_next_update_timestamp(test_dt)
 
@@ -387,8 +387,8 @@ class TestTimestampHandling:
             args, kwargs = call_args  # pyright: ignore[reportAny]
             assert len(args) == 1  # pyright: ignore[reportAny]
             assert args[0].tzinfo is not None  # pyright: ignore[reportAny] # Ensure timezone-aware
-            assert kwargs.get("style") == "R"  # pyright: ignore[reportAny]
-            assert result == "<t:1737027000:R>"
+            assert kwargs.get("style") == "F"  # pyright: ignore[reportAny]
+            assert result == "<t:1737027000:F>"
 
     def test_format_next_update_timestamp_custom_style(self) -> None:
         """Test format_next_update_timestamp with custom style."""
@@ -413,7 +413,7 @@ class TestTimestampHandling:
         naive_dt = datetime(2025, 1, 15, 12, 30, 0)
 
         with patch("discord.utils.format_dt") as mock_format_dt:
-            mock_format_dt.return_value = "<t:1737027000:R>"
+            mock_format_dt.return_value = "<t:1737027000:F>"
 
             result = format_next_update_timestamp(naive_dt)
 
@@ -423,7 +423,7 @@ class TestTimestampHandling:
             args, _kwargs = call_args  # pyright: ignore[reportAny]
             # Verify the datetime passed to format_dt is timezone-aware
             assert args[0].tzinfo is not None  # pyright: ignore[reportAny]
-            assert result == "<t:1737027000:R>"
+            assert result == "<t:1737027000:F>"
 
     def test_timestamp_style_literal_type(self) -> None:
         """Test that TimestampStyle literal type works correctly."""

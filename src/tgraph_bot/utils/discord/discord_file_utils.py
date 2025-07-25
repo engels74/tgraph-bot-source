@@ -32,14 +32,14 @@ TimestampStyle = Literal["f", "F", "d", "D", "t", "T", "R"]
 
 
 def format_next_update_timestamp(
-    next_update: datetime, style: TimestampStyle = "R"
+    next_update: datetime, style: TimestampStyle = "F"
 ) -> str:
     """
     Format a datetime object as a Discord timestamp for next update display.
 
     Args:
         next_update: The datetime for the next update
-        style: Discord timestamp style (default: 'R' for relative)
+        style: Discord timestamp style (default: 'F' for full date/time)
 
     Returns:
         Formatted Discord timestamp string
@@ -158,7 +158,7 @@ def create_graph_specific_embed(
         next_update = calculate_next_update_time(update_days, fixed_update_time)
         if next_update:
             # Use the optimized timestamp formatting function
-            timestamp_str = format_next_update_timestamp(next_update, style="R")
+            timestamp_str = format_next_update_timestamp(next_update)
             current_description = embed.description or ""
             embed.description = (
                 current_description + f"\n\nNext update: {timestamp_str}"

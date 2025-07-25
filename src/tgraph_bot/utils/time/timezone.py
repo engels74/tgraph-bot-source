@@ -127,7 +127,7 @@ def to_system_timezone(dt: datetime) -> datetime:
 
 
 def format_for_discord(
-    dt: datetime, style: TimestampStyle = "R"
+    dt: datetime, style: TimestampStyle = "F"
 ) -> str:
     """
     Format a datetime object as a Discord timestamp.
@@ -137,7 +137,7 @@ def format_for_discord(
 
     Args:
         dt: The datetime to format
-        style: Discord timestamp style (default: 'R' for relative)
+        style: Discord timestamp style (default: 'F' for full date/time)
 
     Returns:
         Formatted Discord timestamp string
@@ -147,7 +147,7 @@ def format_for_discord(
         >>> timestamp = format_for_discord(dt)
         >>> timestamp.startswith("<t:")
         True
-        >>> timestamp.endswith(":R>")
+        >>> timestamp.endswith(":F>")
         True
     """
     # Ensure timezone-aware datetime in system timezone

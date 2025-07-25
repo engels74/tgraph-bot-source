@@ -339,10 +339,10 @@ class TestLocalTimezoneHandling:
         # Create a fixed datetime in local timezone
         dt = datetime(2025, 7, 18, 23, 59, 0, tzinfo=get_system_timezone())
 
-        # Test default style (relative)
+        # Test default style (full date/time)
         timestamp = format_next_update_timestamp(dt)
         assert timestamp.startswith("<t:")
-        assert timestamp.endswith(":R>")
+        assert timestamp.endswith(":F>")
 
         # Test specific style
         timestamp_f = format_next_update_timestamp(dt, "f")
@@ -353,7 +353,7 @@ class TestLocalTimezoneHandling:
         naive_dt = datetime(2025, 7, 18, 23, 59, 0)
         timestamp_naive = format_next_update_timestamp(naive_dt)
         assert timestamp_naive.startswith("<t:")
-        assert timestamp_naive.endswith(":R>")
+        assert timestamp_naive.endswith(":F>")
 
     def test_scheduler_state_with_local_timezone(self) -> None:
         """Test ScheduleState correctly handles local timezone datetimes."""

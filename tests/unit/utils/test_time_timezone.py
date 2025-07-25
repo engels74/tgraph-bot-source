@@ -175,19 +175,19 @@ class TestDiscordFormatting:
     @patch("src.tgraph_bot.utils.time.timezone.discord.utils.format_dt")
     def test_format_for_discord_with_timezone_aware(self, mock_format_dt: MagicMock) -> None:
         """Test Discord formatting with timezone-aware datetime."""
-        mock_format_dt.return_value = "<t:1737027000:R>"
-        
+        mock_format_dt.return_value = "<t:1737027000:F>"
+
         aware_dt = datetime(2025, 7, 25, 23, 59, 0, tzinfo=get_system_timezone())
         result = format_for_discord(aware_dt)
-        
+
         mock_format_dt.assert_called_once()
         call_args = mock_format_dt.call_args
         assert call_args is not None
         args, kwargs = call_args
         assert len(args) == 1
         assert args[0].tzinfo is not None
-        assert kwargs.get("style") == "R"
-        assert result == "<t:1737027000:R>"
+        assert kwargs.get("style") == "F"
+        assert result == "<t:1737027000:F>"
 
     @patch("src.tgraph_bot.utils.time.timezone.discord.utils.format_dt")
     def test_format_for_discord_with_naive_datetime(self, mock_format_dt: MagicMock) -> None:
@@ -211,14 +211,14 @@ class TestDiscordFormatting:
     @patch("src.tgraph_bot.utils.time.timezone.discord.utils.format_dt")
     def test_format_for_discord_default_style(self, mock_format_dt: MagicMock) -> None:
         """Test Discord formatting with default style."""
-        mock_format_dt.return_value = "<t:1737027000:R>"
-        
+        mock_format_dt.return_value = "<t:1737027000:F>"
+
         dt = datetime(2025, 7, 25, 23, 59, 0, tzinfo=get_system_timezone())
         result = format_for_discord(dt)
-        
+
         mock_format_dt.assert_called_once()
         call_args = mock_format_dt.call_args
         assert call_args is not None
         args, kwargs = call_args
-        assert kwargs.get("style") == "R"  # Default style
-        assert result == "<t:1737027000:R>"
+        assert kwargs.get("style") == "F"  # Default style
+        assert result == "<t:1737027000:F>"
