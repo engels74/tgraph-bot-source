@@ -454,11 +454,13 @@ class TestCalculateNextUpdateTime:
     def test_interval_based_update(self) -> None:
         """Test interval-based update calculation."""
         # Test with interval-based updates (XX:XX)
-        with patch(
-            "src.tgraph_bot.utils.time.scheduling.get_system_now"
-        ) as mock_get_system_now:
+        with (
+            patch("src.tgraph_bot.utils.time.scheduling.get_system_now") as mock_scheduling_now,
+            patch("src.tgraph_bot.utils.time.timestamp_calculator.get_system_now") as mock_calc_now,
+        ):
             mock_now = datetime(2025, 1, 15, 12, 30, 0, tzinfo=get_system_timezone())
-            mock_get_system_now.return_value = mock_now
+            mock_scheduling_now.return_value = mock_now
+            mock_calc_now.return_value = mock_now
 
             result = calculate_next_update_time(7, "XX:XX")
 
@@ -471,17 +473,17 @@ class TestCalculateNextUpdateTime:
             assert result == expected
 
     def test_fixed_time_update_future_today_no_state(self) -> None:
-        """Test fixed time update when time hasn't passed today and no scheduler state."""
+        """Test fixed time update with UPDATE_DAYS=1 (should be next day - bug fix)."""
         # Mock no state file exists and mock get_system_now
         with (
             patch("pathlib.Path.exists", return_value=False),
-            patch(
-                "src.tgraph_bot.utils.time.scheduling.get_system_now"
-            ) as mock_get_system_now,
+            patch("src.tgraph_bot.utils.time.scheduling.get_system_now") as mock_scheduling_now,
+            patch("src.tgraph_bot.utils.time.timestamp_calculator.get_system_now") as mock_calc_now,
         ):
             # Use a fixed time for predictable testing
             mock_now = datetime(2025, 1, 15, 14, 30, 0, tzinfo=get_system_timezone())
-            mock_get_system_now.return_value = mock_now
+            mock_scheduling_now.return_value = mock_now
+            mock_calc_now.return_value = mock_now
 
             # Use a time that's in the future today (18:00)
             time_str = "18:00"
@@ -492,19 +494,21 @@ class TestCalculateNextUpdateTime:
             # Verify it's timezone-aware
             assert result.tzinfo is not None
 
-            # Should be today at 18:00 in local timezone (time hasn't passed yet)
-            expected = datetime(2025, 1, 15, 18, 0, 0, tzinfo=get_system_timezone())
+            # With UPDATE_DAYS=1, should be tomorrow at 18:00 to respect interval (bug fix)
+            expected = datetime(2025, 1, 16, 18, 0, 0, tzinfo=get_system_timezone())
             assert result == expected
 
     def test_fixed_time_update_past_today_no_state(self) -> None:
-        """Test fixed time update when time has already passed today and no scheduler state."""
+        """Test fixed time update with UPDATE_DAYS=1 (should be next day - bug fix)."""
         # Mock get_system_now to return predictable time
-        with patch(
-            "src.tgraph_bot.utils.time.scheduling.get_system_now"
-        ) as mock_get_system_now:
+        with (
+            patch("src.tgraph_bot.utils.time.scheduling.get_system_now") as mock_scheduling_now,
+            patch("src.tgraph_bot.utils.time.timestamp_calculator.get_system_now") as mock_calc_now,
+        ):
             # Mock the current time to be 15:30 (3:30 PM) in local timezone
             mock_now = datetime(2025, 6, 28, 15, 30, 0, tzinfo=get_system_timezone())
-            mock_get_system_now.return_value = mock_now
+            mock_scheduling_now.return_value = mock_now
+            mock_calc_now.return_value = mock_now
 
             # Use a time that has definitely passed today (10:00 AM)
             time_str = "10:00"
@@ -514,7 +518,7 @@ class TestCalculateNextUpdateTime:
             assert result is not None
             # Verify it's timezone-aware
             assert result.tzinfo is not None
-            # Should be tomorrow at 10:00 in local timezone
+            # With UPDATE_DAYS=1, should be tomorrow at 10:00 to respect interval (bug fix)
             expected = datetime(2025, 6, 29, 10, 0, 0, tzinfo=get_system_timezone())
             assert result == expected
 

@@ -74,15 +74,16 @@ class TestNextFixedTimeCalculation:
     """Test next fixed time calculation."""
 
     def test_calculate_next_fixed_time_same_day(self) -> None:
-        """Test calculating next fixed time on the same day."""
-        # Current time: 10:00, fixed time: 15:00 -> should be today at 15:00
+        """Test calculating next fixed time with UPDATE_DAYS=1 (should be next day)."""
+        # Current time: 10:00, fixed time: 15:00, UPDATE_DAYS=1 -> should be tomorrow at 15:00
+        # This respects the UPDATE_DAYS=1 interval requirement (fix for date calculation bug)
         current_time = datetime(2025, 7, 25, 10, 0, 0, tzinfo=get_system_timezone())
         fixed_time = time(15, 0)
         update_days = 1
         
         result = calculate_next_fixed_time(current_time, fixed_time, update_days)
         
-        expected = datetime(2025, 7, 25, 15, 0, 0, tzinfo=get_system_timezone())
+        expected = datetime(2025, 7, 26, 15, 0, 0, tzinfo=get_system_timezone())
         assert result == expected
 
     def test_calculate_next_fixed_time_next_day(self) -> None:
@@ -179,14 +180,15 @@ class TestMainCalculateFunction:
     """Test the main calculate_next_update_time function."""
 
     def test_calculate_next_update_time_fixed_time_enabled(self) -> None:
-        """Test calculation with fixed time enabled."""
+        """Test calculation with fixed time enabled and UPDATE_DAYS=1."""
+        # With UPDATE_DAYS=1, should schedule for next day to respect interval (bug fix)
         current_time = datetime(2025, 7, 25, 10, 0, 0, tzinfo=get_system_timezone())
         update_days = 1
         fixed_update_time = "23:59"
         
         result = calculate_next_update_time(update_days, fixed_update_time, current_time)
         
-        expected = datetime(2025, 7, 25, 23, 59, 0, tzinfo=get_system_timezone())
+        expected = datetime(2025, 7, 26, 23, 59, 0, tzinfo=get_system_timezone())
         assert result == expected
 
     def test_calculate_next_update_time_fixed_time_disabled(self) -> None:

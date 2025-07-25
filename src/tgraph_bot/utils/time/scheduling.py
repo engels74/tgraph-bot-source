@@ -116,14 +116,11 @@ def calculate_next_fixed_time(
     else:
         # No last update - calculate from current time
         if update_days == 1:
-            # Special case for UPDATE_DAYS=1: next occurrence of fixed time,
-            # but if it already passed today, schedule for tomorrow
-            next_update = datetime.combine(current_time.date(), fixed_time)
+            # For UPDATE_DAYS=1, always schedule for next day to respect the interval
+            # This prevents both last_update and next_update from being on same date
+            next_date = current_time.date() + timedelta(days=1)
+            next_update = datetime.combine(next_date, fixed_time)
             next_update = next_update.replace(tzinfo=get_system_timezone())
-
-            # If the time has already passed today, move to tomorrow
-            if next_update <= current_time:
-                next_update = next_update + timedelta(days=1)
 
             return next_update
         else:
