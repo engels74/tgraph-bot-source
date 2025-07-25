@@ -814,6 +814,9 @@ class TestMainFunctionEnhancements:
             log_folder=Path("data/logs"),
         )
 
+        async def mock_start_with_login_failure(_token: str) -> None:
+            raise discord.LoginFailure("Invalid token")
+
         with (
             patch("src.tgraph_bot.main.get_parsed_args", return_value=mock_args),
             patch("src.tgraph_bot.main.setup_logging"),
@@ -823,8 +826,7 @@ class TestMainFunctionEnhancements:
             patch.object(
                 TGraphBot,
                 "start",
-                new_callable=AsyncMock,
-                side_effect=discord.LoginFailure("Invalid token"),
+                side_effect=mock_start_with_login_failure,
             ),
             patch("sys.exit") as mock_exit,
         ):
@@ -851,6 +853,9 @@ class TestMainFunctionEnhancements:
             log_folder=Path("data/logs"),
         )
 
+        async def mock_start_with_http_exception(_token: str) -> None:
+            raise discord.HTTPException(MagicMock(), "API Error")
+
         with (
             patch("src.tgraph_bot.main.get_parsed_args", return_value=mock_args),
             patch("src.tgraph_bot.main.setup_logging"),
@@ -860,8 +865,7 @@ class TestMainFunctionEnhancements:
             patch.object(
                 TGraphBot,
                 "start",
-                new_callable=AsyncMock,
-                side_effect=discord.HTTPException(MagicMock(), "API Error"),
+                side_effect=mock_start_with_http_exception,
             ),
             patch("sys.exit") as mock_exit,
         ):
@@ -878,6 +882,9 @@ class TestMainFunctionEnhancements:
             CHANNEL_ID=123456789,
         )
 
+        async def mock_start_with_exception(_token: str) -> None:
+            raise Exception("Test error")
+
         with (
             patch("src.tgraph_bot.main.setup_logging"),
             patch("pathlib.Path.exists", return_value=True),
@@ -886,8 +893,7 @@ class TestMainFunctionEnhancements:
             patch.object(
                 TGraphBot,
                 "start",
-                new_callable=AsyncMock,
-                side_effect=Exception("Test error"),
+                side_effect=mock_start_with_exception,
             ),
             patch.object(TGraphBot, "close", new_callable=AsyncMock) as mock_close,
             patch.object(TGraphBot, "is_shutting_down", return_value=False),

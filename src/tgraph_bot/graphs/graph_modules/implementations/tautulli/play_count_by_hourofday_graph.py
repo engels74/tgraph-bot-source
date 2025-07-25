@@ -151,6 +151,7 @@ class PlayCountByHourOfDayGraph(BaseGraph, VisualizationMixin):
                 data=df, 
                 x="hour", 
                 y="count", 
+                hue="hour",  # Assign x variable to hue to use palette
                 palette="viridis", 
                 legend=False, 
                 ax=ax

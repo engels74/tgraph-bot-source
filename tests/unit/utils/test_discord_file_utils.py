@@ -8,7 +8,7 @@ for both channel and DM uploads with comprehensive error handling scenarios.
 import json
 from datetime import datetime, timedelta
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch, mock_open, Mock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import discord
 import pytest
