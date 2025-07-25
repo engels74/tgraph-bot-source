@@ -32,6 +32,11 @@ FIXED_UPDATE_TIME: 'XX:XX'
 # Language code for internationalization (2-letter code)
 LANGUAGE: en
 
+# Discord timestamp format for date/time display
+# Options: t=short time, T=long time, d=short date, D=long date, 
+#          f=short date/time, F=long date/time, R=relative time
+DISCORD_TIMESTAMP_FORMAT: F
+
 # Number of days to keep generated graphs (1-365)
 KEEP_DAYS: 7
 

@@ -15,6 +15,7 @@ from discord.ext import commands
 
 from ... import i18n
 from ...utils.core.error_handler import ErrorContext, handle_command_error
+from ...utils.discord.base_command_cog import BaseCommandCog
 
 if TYPE_CHECKING:
     pass
@@ -22,7 +23,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class UptimeCog(commands.Cog):
+class UptimeCog(BaseCommandCog):
     """Cog for the /uptime command."""
 
     def __init__(self, bot: commands.Bot) -> None:
@@ -32,6 +33,7 @@ class UptimeCog(commands.Cog):
         Args:
             bot: The Discord bot instance
         """
+        super().__init__(bot)
         self.bot: commands.Bot = bot
 
     @app_commands.command(name="uptime", description=i18n.translate("Show bot uptime"))
@@ -75,9 +77,13 @@ class UptimeCog(commands.Cog):
                 name=i18n.translate("Uptime"), value=uptime_string, inline=False
             )
 
+            # Get timestamp format from configuration
+            config = self.get_current_config()
+            timestamp_format = config.DISCORD_TIMESTAMP_FORMAT
+            
             _ = embed.add_field(
                 name=i18n.translate("Started"),
-                value=f"<t:{int(start_time)}:F>",
+                value=f"<t:{int(start_time)}:{timestamp_format}>",
                 inline=False,
             )
 

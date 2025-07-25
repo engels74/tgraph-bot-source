@@ -512,10 +512,12 @@ class TGraphBot(commands.Bot):
             config = self.config_manager.get_current_config()
             update_days = config.UPDATE_DAYS
             fixed_update_time = config.FIXED_UPDATE_TIME
+            timestamp_format = config.DISCORD_TIMESTAMP_FORMAT
         except Exception:
             # If we can't get config, just use None values
             update_days = None
             fixed_update_time = None
+            timestamp_format = "F"
         
         # Get the actual scheduled next update time from the update tracker
         next_update_time = self.update_tracker.get_next_update_time()
@@ -547,7 +549,7 @@ class TGraphBot(commands.Bot):
 
                 # Create graph-specific embed with actual scheduled next update time
                 embed = create_graph_specific_embed(
-                    graph_file, update_days, fixed_update_time, next_update_time
+                    graph_file, update_days, fixed_update_time, next_update_time, timestamp_format
                 )
 
                 # Post individual message with graph and its specific embed

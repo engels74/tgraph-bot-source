@@ -1,7 +1,7 @@
 """Configuration schema for TGraph Bot using Pydantic."""
 
 import re
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, field_validator, ConfigDict
 from typing import ClassVar
@@ -63,6 +63,12 @@ class TGraphBotConfig(BaseModel):
         default="en",
         description="Language code for internationalization",
         pattern=r"^[a-z]{2}$",
+    )
+
+    # Discord Settings
+    DISCORD_TIMESTAMP_FORMAT: Literal["t", "T", "d", "D", "f", "F", "R"] = Field(
+        default="F",
+        description="Discord timestamp format (t=short time, T=long time, d=short date, D=long date, f=short date/time, F=long date/time, R=relative time)",
     )
 
     # Graph Options
@@ -230,6 +236,15 @@ class TGraphBotConfig(BaseModel):
         if not re.match(r"^#[0-9a-fA-F]{6}$", v):
             raise ValueError(f"Color must be in hex format (e.g., #1f77b4), got: {v}")
         return v.lower()
+
+    @field_validator("DISCORD_TIMESTAMP_FORMAT")
+    @classmethod
+    def validate_discord_timestamp_format(cls, v: str) -> str:
+        """Validate Discord timestamp format."""
+        valid_formats = {"t", "T", "d", "D", "f", "F", "R"}
+        if v not in valid_formats:
+            raise ValueError(f"DISCORD_TIMESTAMP_FORMAT must be one of {sorted(valid_formats)}, got: {v}")
+        return v
 
     @field_validator("TAUTULLI_URL")
     @classmethod
