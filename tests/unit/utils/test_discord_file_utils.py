@@ -1129,3 +1129,33 @@ class TestCreateGraphSpecificEmbed:
         # Verify it contains the Discord timestamp format
         assert "<t:" in embed.description
         assert ":F>" in embed.description
+
+    def test_embed_with_custom_timestamp_format(self) -> None:
+        """Test embed creation with custom timestamp format."""
+        # Create a specific next update time
+        next_update = datetime(2025, 7, 26, 23, 59, 0, tzinfo=get_system_timezone())
+        
+        # Test with different timestamp formats
+        test_cases: list[tuple[TimestampStyle, str]] = [
+            ("t", ":t>"),  # Short time
+            ("T", ":T>"),  # Long time  
+            ("d", ":d>"),  # Short date
+            ("D", ":D>"),  # Long date
+            ("f", ":f>"),  # Short date/time
+            ("F", ":F>"),  # Long date/time (default)
+            ("R", ":R>"),  # Relative time
+        ]
+        
+        for timestamp_format, expected_suffix in test_cases:
+            embed = create_graph_specific_embed(
+                "daily_play_count.png", 
+                update_days=1, 
+                fixed_update_time="23:59",
+                next_update_time=next_update,
+                timestamp_format=timestamp_format
+            )
+            
+            assert embed.description is not None
+            assert "Next update:" in embed.description
+            assert "<t:" in embed.description
+            assert expected_suffix in embed.description
