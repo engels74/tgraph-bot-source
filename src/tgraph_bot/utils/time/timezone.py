@@ -31,19 +31,55 @@ def get_system_timezone() -> ZoneInfo:
         >>> isinstance(tz, ZoneInfo)
         True
     """
+    import os
+    from pathlib import Path
+    
     # Use the system's local timezone - cross-platform approach
     try:
         # Try "localtime" first (works on Linux/WSL)
         return ZoneInfo("localtime")
     except ZoneInfoNotFoundError:
-        # Fall back to getting the key from datetime for macOS/Windows
+        pass
+    
+    # Try to read timezone from system files
+    try:
+        # Check TZ environment variable first
+        tz_env = os.environ.get('TZ')
+        if tz_env:
+            return ZoneInfo(tz_env)
+        
+        # Try /etc/timezone (Debian/Ubuntu)
+        timezone_file = Path("/etc/timezone")
+        if timezone_file.exists():
+            with open(timezone_file, 'r') as f:
+                tz_name = f.read().strip()
+                if tz_name:
+                    return ZoneInfo(tz_name)
+        
+        # Try parsing /etc/localtime symlink (macOS/BSD)
+        localtime_link = Path("/etc/localtime")
+        if localtime_link.is_symlink():
+            target = localtime_link.readlink()
+            target_str = str(target)
+            if "zoneinfo/" in target_str:
+                tz_name = target_str.split("zoneinfo/", 1)[1]
+                if tz_name:
+                    return ZoneInfo(tz_name)
+    except (OSError, ZoneInfoNotFoundError):
+        pass
+    
+    # Fall back to getting the key from datetime for other systems
+    try:
         local_tz = datetime.now().astimezone().tzinfo
         if hasattr(local_tz, "key"):
             key = getattr(local_tz, "key")  # pyright: ignore[reportAny] # timezone key from system
             if isinstance(key, str):
                 return ZoneInfo(key)
-        # Final fallback: use UTC
-        return ZoneInfo("UTC")
+    except (ZoneInfoNotFoundError, AttributeError):
+        pass
+    
+    # Final fallback: use UTC
+    return ZoneInfo("UTC")
 
 
 def get_system_now() -> datetime:
