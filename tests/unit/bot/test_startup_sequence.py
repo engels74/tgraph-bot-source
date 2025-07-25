@@ -288,7 +288,7 @@ class TestStartupSequence:
     ) -> None:
         """Test that scheduler state update converts UTC time to local timezone."""
         from zoneinfo import ZoneInfo
-        from tgraph_bot.bot.update_tracker import get_local_timezone
+        from tgraph_bot.utils.time import get_system_timezone
 
         # Mark initial post as completed
         startup_sequence.initial_post_completed = True
@@ -317,13 +317,13 @@ class TestStartupSequence:
             assert assigned_time is not None
 
             # The assigned time should be the UTC time converted to local timezone
-            expected_local_time = known_utc_time.astimezone(get_local_timezone())
+            expected_local_time = known_utc_time.astimezone(get_system_timezone())
             assert assigned_time == expected_local_time
 
             # Verify the timezone is local, not UTC
             assert assigned_time.tzinfo is not None  # pyright: ignore[reportAny]
             assert isinstance(assigned_time.tzinfo, ZoneInfo)  # pyright: ignore[reportAny]
-            assert str(assigned_time.tzinfo) == str(get_local_timezone())
+            assert str(assigned_time.tzinfo) == str(get_system_timezone())
             assert assigned_time.tzinfo != timezone.utc
 
     @pytest.mark.asyncio

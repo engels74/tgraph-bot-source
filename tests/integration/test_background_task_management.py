@@ -13,8 +13,8 @@ from src.tgraph_bot.bot.update_tracker import (
     BackgroundTaskManager,
     TaskStatus,
     UpdateTracker,
-    get_local_now,
 )
+from tgraph_bot.utils.time import get_system_now
 
 
 class TestBackgroundTaskManager:
@@ -323,7 +323,7 @@ async def test_scheduler_health_updates_during_long_waits() -> None:
 
     try:
         # Add a fake task to track health
-        tracker._task_manager._task_health[task_name] = get_local_now()  # pyright: ignore[reportPrivateUsage]
+        tracker._task_manager._task_health[task_name] = get_system_now()  # pyright: ignore[reportPrivateUsage]
         initial_health = tracker._task_manager._task_health[task_name]  # pyright: ignore[reportPrivateUsage]
 
         # Use shorter wait time for faster testing
@@ -362,7 +362,7 @@ async def test_scheduler_health_updates_during_long_waits() -> None:
 
                     # Update health status
                     if task_name in tracker._task_manager._task_health:  # pyright: ignore[reportPrivateUsage]
-                        tracker._task_manager._task_health[task_name] = get_local_now()  # pyright: ignore[reportPrivateUsage]
+                        tracker._task_manager._task_health[task_name] = get_system_now()  # pyright: ignore[reportPrivateUsage]
 
             return True
 
@@ -370,9 +370,9 @@ async def test_scheduler_health_updates_during_long_waits() -> None:
         tracker._wait_with_health_updates = mock_wait_with_health_updates  # pyright: ignore[reportPrivateUsage] # testing internal behavior
 
         # Call the wait method with precise timing
-        start_time = get_local_now()
+        start_time = get_system_now()
         result = await tracker._wait_with_health_updates(wait_time, task_name)  # pyright: ignore[reportPrivateUsage] # testing internal behavior
-        end_time = get_local_now()
+        end_time = get_system_now()
 
         # Verify the wait completed successfully
         assert result is True
@@ -396,7 +396,7 @@ async def test_scheduler_health_updates_during_long_waits() -> None:
         )
 
         # Verify health was updated recently (within the last few seconds)
-        time_since_health_update = (get_local_now() - final_health).total_seconds()
+        time_since_health_update = (get_system_now() - final_health).total_seconds()
         assert time_since_health_update < 3.0, (
             f"Health should be recent, but was {time_since_health_update:.2f}s ago"
         )

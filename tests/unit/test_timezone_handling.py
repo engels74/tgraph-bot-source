@@ -358,7 +358,7 @@ class TestLocalTimezoneHandling:
     def test_scheduler_state_with_local_timezone(self) -> None:
         """Test ScheduleState correctly handles local timezone datetimes."""
         state = ScheduleState()
-        local_time = get_local_now()
+        local_time = get_system_now()
 
         state.last_update = local_time
         state.next_update = local_time + timedelta(days=1)
@@ -465,14 +465,14 @@ class TestLocalTimezoneHandling:
 
         # This is what the startup sequence SHOULD do (convert UTC to local)
         # Instead of: state.last_update = discord.utils.utcnow()
-        # It should be: state.last_update = discord.utils.utcnow().astimezone(get_local_timezone())
-        converted_time = utc_time.astimezone(get_local_timezone())
+        # It should be: state.last_update = discord.utils.utcnow().astimezone(get_system_timezone())
+        converted_time = utc_time.astimezone(get_system_timezone())
         state.last_update = converted_time
 
         # Verify the timestamp is in local timezone
         assert state.last_update.tzinfo is not None
         assert isinstance(state.last_update.tzinfo, ZoneInfo)
-        assert str(state.last_update.tzinfo) == str(get_local_timezone())
+        assert str(state.last_update.tzinfo) == str(get_system_timezone())
 
         # Verify the time values are equivalent to what we expect
         # The UTC time converted to local should be the same moment in time

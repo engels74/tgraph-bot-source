@@ -32,8 +32,8 @@ from src.tgraph_bot.bot.update_tracker import (
     ErrorClassifier,
     CircuitBreaker,
     CircuitState,
-    get_local_timezone,
 )
+from tgraph_bot.utils.time import get_system_timezone
 from tests.utils.test_helpers import create_mock_discord_bot
 
 
@@ -115,7 +115,7 @@ class TestScheduleState:
     def test_update_tracking(self) -> None:
         """Test update tracking functionality."""
         state = ScheduleState()
-        now = datetime.now(get_local_timezone())
+        now = datetime.now(get_system_timezone())
 
         # Record successful update
         state.record_successful_update(now)
@@ -126,7 +126,7 @@ class TestScheduleState:
     def test_failure_tracking(self) -> None:
         """Test failure tracking functionality."""
         state = ScheduleState()
-        now = datetime.now(get_local_timezone())
+        now = datetime.now(get_system_timezone())
         error = Exception("Test error")
 
         # Record failure
@@ -146,7 +146,7 @@ class TestScheduleState:
     def test_schedule_management(self) -> None:
         """Test schedule management."""
         state = ScheduleState()
-        next_time = datetime.now(get_local_timezone()) + timedelta(hours=1)
+        next_time = datetime.now(get_system_timezone()) + timedelta(hours=1)
 
         state.set_next_update(next_time)
         assert state.next_update == next_time
@@ -168,7 +168,7 @@ class TestUpdateSchedule:
         schedule = UpdateSchedule(config, state)
 
         # First calculation (no previous update)
-        now = datetime.now(get_local_timezone())
+        now = datetime.now(get_system_timezone())
         next_update = schedule.calculate_next_update(now)
 
         expected = now + timedelta(days=7)
@@ -181,11 +181,11 @@ class TestUpdateSchedule:
         state = ScheduleState()
 
         # Set previous update
-        last_update = datetime.now(get_local_timezone()) - timedelta(days=3)
+        last_update = datetime.now(get_system_timezone()) - timedelta(days=3)
         state.record_successful_update(last_update)
 
         schedule = UpdateSchedule(config, state)
-        next_update = schedule.calculate_next_update(datetime.now(get_local_timezone()))
+        next_update = schedule.calculate_next_update(datetime.now(get_system_timezone()))
 
         expected = last_update + timedelta(days=7)
         assert abs((next_update - expected).total_seconds()) < 1
@@ -197,7 +197,7 @@ class TestUpdateSchedule:
         schedule = UpdateSchedule(config, state)
 
         # Test at early morning - should schedule for tomorrow (respects UPDATE_DAYS=1)
-        test_time = datetime.now(get_local_timezone()).replace(
+        test_time = datetime.now(get_system_timezone()).replace(
             hour=1, minute=0, second=0, microsecond=0
         )
         next_update = schedule.calculate_next_update(test_time)
@@ -212,7 +212,7 @@ class TestUpdateSchedule:
         schedule = UpdateSchedule(config, state)
 
         # Test at late evening - should schedule for tomorrow
-        test_time = datetime.now(get_local_timezone()).replace(
+        test_time = datetime.now(get_system_timezone()).replace(
             hour=22, minute=0, second=0, microsecond=0
         )
         next_update = schedule.calculate_next_update(test_time)
@@ -227,7 +227,7 @@ class TestUpdateSchedule:
         state = ScheduleState()
 
         # Set last update to 2 days ago with clean time
-        base_time = datetime.now(get_local_timezone()).replace(
+        base_time = datetime.now(get_system_timezone()).replace(
             hour=12, minute=0, second=0, microsecond=0
         )
         last_update = base_time - timedelta(days=2)
@@ -248,7 +248,7 @@ class TestUpdateSchedule:
         state = ScheduleState()
         schedule = UpdateSchedule(config, state)
 
-        now = datetime.now(get_local_timezone())
+        now = datetime.now(get_system_timezone())
 
         # Valid future time
         future_time = now + timedelta(hours=1)
@@ -272,7 +272,7 @@ class TestEnhancedScheduling:
         state = ScheduleState()
         schedule = UpdateSchedule(config, state)
 
-        now = datetime.now(get_local_timezone())
+        now = datetime.now(get_system_timezone())
         time_until = schedule.calculate_time_until_next_update(now)
 
         # Should be approximately 7 days
@@ -285,7 +285,7 @@ class TestEnhancedScheduling:
         state = ScheduleState()
         schedule = UpdateSchedule(config, state)
 
-        now = datetime.now(get_local_timezone())
+        now = datetime.now(get_system_timezone())
         assert schedule.should_skip_update(now) is False
 
     def test_should_skip_update_few_failures(self) -> None:
@@ -295,7 +295,7 @@ class TestEnhancedScheduling:
         schedule = UpdateSchedule(config, state)
 
         # Record 2 failures (below threshold)
-        now = datetime.now(get_local_timezone())
+        now = datetime.now(get_system_timezone())
         error = Exception("Test error")
         state.record_failure(now - timedelta(minutes=30), error)
         state.record_failure(now - timedelta(minutes=15), error)
@@ -309,7 +309,7 @@ class TestEnhancedScheduling:
         schedule = UpdateSchedule(config, state)
 
         # Record 3 failures (at threshold)
-        now = datetime.now(get_local_timezone())
+        now = datetime.now(get_system_timezone())
         error = Exception("Test error")
         state.record_failure(now - timedelta(hours=2), error)
         state.record_failure(now - timedelta(hours=1), error)
@@ -325,19 +325,19 @@ class TestEnhancedScheduling:
         schedule = UpdateSchedule(config, state)
 
         # Record 3 failures but long ago
-        old_time = datetime.now(get_local_timezone()) - timedelta(days=1)
+        old_time = datetime.now(get_system_timezone()) - timedelta(days=1)
         error = Exception("Test error")
         state.record_failure(old_time, error)
         state.record_failure(old_time, error)
         state.record_failure(old_time, error)
 
         # Should not skip because backoff period has expired
-        now = datetime.now(get_local_timezone())
+        now = datetime.now(get_system_timezone())
         assert schedule.should_skip_update(now) is False
 
     def test_exponential_backoff_calculation(self) -> None:
         """Test exponential backoff calculation."""
-        now = datetime.now(get_local_timezone())
+        now = datetime.now(get_system_timezone())
         error = Exception("Test error")
 
         # Test different failure counts
@@ -544,7 +544,7 @@ class TestFixedTimeSchedulingBugFix:
         schedule = UpdateSchedule(config, state)
 
         # Current time: 2025-07-16 21:28:00 (same as bug report)
-        current_time = datetime(2025, 7, 16, 21, 28, 0, tzinfo=get_local_timezone())
+        current_time = datetime(2025, 7, 16, 21, 28, 0, tzinfo=get_system_timezone())
 
         # Calculate next update
         next_update = schedule.calculate_next_update(current_time)
@@ -553,7 +553,7 @@ class TestFixedTimeSchedulingBugFix:
         expected_date = current_time.date() + timedelta(days=1)
         expected_time = time(23, 59)
         expected_next_update = datetime.combine(expected_date, expected_time).replace(
-            tzinfo=get_local_timezone()
+            tzinfo=get_system_timezone()
         )
 
         assert next_update == expected_next_update
@@ -567,14 +567,14 @@ class TestFixedTimeSchedulingBugFix:
         state = ScheduleState()  # No last_update (first run)
         schedule = UpdateSchedule(config, state)
 
-        current_time = datetime(2025, 7, 16, 10, 0, 0, tzinfo=get_local_timezone())
+        current_time = datetime(2025, 7, 16, 10, 0, 0, tzinfo=get_system_timezone())
         next_update = schedule.calculate_next_update(current_time)
 
         # Expected: Should be 3 days later at 14:30
         expected_date = current_time.date() + timedelta(days=3)
         expected_time = time(14, 30)
         expected_next_update = datetime.combine(expected_date, expected_time).replace(
-            tzinfo=get_local_timezone()
+            tzinfo=get_system_timezone()
         )
 
         assert next_update == expected_next_update
@@ -587,18 +587,18 @@ class TestFixedTimeSchedulingBugFix:
         config = SchedulingConfig(update_days=2, fixed_update_time="12:00")
         state = ScheduleState()
         state.last_update = datetime(
-            2025, 7, 14, 12, 0, 0, tzinfo=get_local_timezone()
+            2025, 7, 14, 12, 0, 0, tzinfo=get_system_timezone()
         )  # 2 days ago
         schedule = UpdateSchedule(config, state)
 
-        current_time = datetime(2025, 7, 16, 10, 0, 0, tzinfo=get_local_timezone())
+        current_time = datetime(2025, 7, 16, 10, 0, 0, tzinfo=get_system_timezone())
         next_update = schedule.calculate_next_update(current_time)
 
         # Expected: Should be 2 days after last_update at 12:00
         expected_date = state.last_update.date() + timedelta(days=2)
         expected_time = time(12, 0)
         expected_next_update = datetime.combine(expected_date, expected_time).replace(
-            tzinfo=get_local_timezone()
+            tzinfo=get_system_timezone()
         )
 
         assert next_update == expected_next_update
@@ -614,14 +614,14 @@ class TestFixedTimeSchedulingBugFix:
 
         # Bot started at 2025-07-16T21:28:00.798405
         current_time = datetime(
-            2025, 7, 16, 21, 28, 0, 798405, tzinfo=get_local_timezone()
+            2025, 7, 16, 21, 28, 0, 798405, tzinfo=get_system_timezone()
         )
         next_update = schedule.calculate_next_update(current_time)
 
         # Before fix: Would be 2025-07-16T23:59:00 (same day - BUG!)
         # After fix: Should be 2025-07-17T23:59:00 (next day - CORRECT!)
         expected_next_update = datetime(
-            2025, 7, 17, 23, 59, 0, tzinfo=get_local_timezone()
+            2025, 7, 17, 23, 59, 0, tzinfo=get_system_timezone()
         )
 
         assert next_update == expected_next_update
@@ -636,13 +636,13 @@ class TestFixedTimeSchedulingBugFix:
 
         # Set a previous update
         last_update = datetime(
-            2024, 1, 1, 14, 30, tzinfo=get_local_timezone()
+            2024, 1, 1, 14, 30, tzinfo=get_system_timezone()
         )  # Winter time
         state.record_successful_update(last_update)
 
         # Calculate next update during potential DST transition
         current_time = datetime(
-            2024, 1, 5, 10, 0, tzinfo=get_local_timezone()
+            2024, 1, 5, 10, 0, tzinfo=get_system_timezone()
         )  # 4 days later
         next_update = schedule.calculate_next_update(current_time)
 

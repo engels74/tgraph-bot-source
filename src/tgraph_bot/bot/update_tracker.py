@@ -20,7 +20,7 @@ from enum import Enum
 
 # import discord  # Not directly used, but needed for type checking contexts
 from ..utils.cli.paths import get_path_config
-from ..utils.time import get_system_timezone, get_system_now, ensure_timezone_aware
+from ..utils.time import get_system_now, ensure_timezone_aware
 
 if TYPE_CHECKING:
     from discord.ext import commands
@@ -851,18 +851,12 @@ class ScheduleState:
 
         if data.get("last_update"):
             state.last_update = datetime.fromisoformat(str(data["last_update"]))
-            # Ensure timezone-aware datetime
-            if state.last_update.tzinfo is None:
-                state.last_update = state.last_update.replace(
-                    tzinfo=get_system_timezone()
-                )
+            # Ensure timezone-aware datetime using unified system
+            state.last_update = ensure_timezone_aware(state.last_update)
         if data.get("next_update"):
             state.next_update = datetime.fromisoformat(str(data["next_update"]))
-            # Ensure timezone-aware datetime
-            if state.next_update.tzinfo is None:
-                state.next_update = state.next_update.replace(
-                    tzinfo=get_system_timezone()
-                )
+            # Ensure timezone-aware datetime using unified system
+            state.next_update = ensure_timezone_aware(state.next_update)
 
         state.is_running = bool(data.get("is_running", False))
         consecutive_failures_value = data.get("consecutive_failures", 0)
@@ -874,11 +868,8 @@ class ScheduleState:
 
         if data.get("last_failure"):
             state.last_failure = datetime.fromisoformat(str(data["last_failure"]))
-            # Ensure timezone-aware datetime
-            if state.last_failure.tzinfo is None:
-                state.last_failure = state.last_failure.replace(
-                    tzinfo=get_system_timezone()
-                )
+            # Ensure timezone-aware datetime using unified system
+            state.last_failure = ensure_timezone_aware(state.last_failure)
         if data.get("last_error"):
             state.last_error = Exception(str(data["last_error"]))
 
