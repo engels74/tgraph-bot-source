@@ -16,7 +16,6 @@ from .types import (
 )
 from .schedule import UpdateSchedule
 from .persistence import StateManager
-from ...utils.time import get_system_now
 
 logger = logging.getLogger(__name__)
 

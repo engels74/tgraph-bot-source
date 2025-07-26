@@ -7,7 +7,7 @@ the scheduling system, extracted from the original update_tracker.py.
 
 import re
 from dataclasses import dataclass, field, asdict
-from datetime import datetime, time, timedelta
+from datetime import datetime, time
 from enum import Enum
 from typing import TYPE_CHECKING
 
