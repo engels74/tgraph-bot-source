@@ -6,6 +6,12 @@ base classes, data fetching, graph factory, and specific graph types
 for Tautulli statistics visualization using Matplotlib and Seaborn.
 """
 
+# Configure logging early to suppress matplotlib categorical units warnings
+# These warnings occur when matplotlib detects numeric-looking string data
+import logging
+_matplotlib_category_logger = logging.getLogger("matplotlib.category")
+_matplotlib_category_logger.setLevel(logging.WARNING)
+
 # Import core components
 from .core import (
     BaseGraph,

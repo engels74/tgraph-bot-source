@@ -114,16 +114,16 @@ class Top10UsersGraph(BaseGraph, VisualizationMixin):
                 # Convert to pandas DataFrame for easier plotting
                 df = pd.DataFrame(top_users)
 
-                # Create horizontal bar plot
+                # Create horizontal bar plot with consistent color scheme
+                # Using single color avoids categorical units warnings that occur with hue="username"
+                tv_color = self.get_tv_color()  # Get consistent color from theme
                 _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
                     data=df,
                     x="play_count",
                     y="username",
-                    hue="username",
                     ax=ax,
                     orient="h",
-                    palette="viridis",
-                    legend=False,
+                    color=tv_color,  # Use theme-consistent color
                 )
 
                 # Customize the plot

@@ -11,6 +11,11 @@ import logging
 from typing import TYPE_CHECKING, Literal, Protocol
 from collections.abc import Sequence
 
+# Suppress matplotlib categorical units warnings early
+# These warnings occur when seaborn/matplotlib detects numeric-looking strings
+_matplotlib_category_logger = logging.getLogger("matplotlib.category")
+_matplotlib_category_logger.setLevel(logging.WARNING)
+
 import matplotlib.axes
 import matplotlib.figure
 import seaborn as sns

@@ -146,14 +146,14 @@ class PlayCountByHourOfDayGraph(BaseGraph, VisualizationMixin):
             df["hour"] = df["hour"].astype(int)
             df["count"] = df["count"].astype(int)
 
-            # Use seaborn with viridis palette and no legend
+            # Use seaborn barplot with consistent color scheme
+            # Using single color avoids categorical units warnings that occur with hue="hour"
+            tv_color = self.get_tv_color()  # Get consistent color from theme
             _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
                 data=df, 
                 x="hour", 
                 y="count", 
-                hue="hour",  # Assign x variable to hue to use palette
-                palette="viridis", 
-                legend=False, 
+                color=tv_color,  # Use theme-consistent color
                 ax=ax
             )
 
@@ -162,11 +162,7 @@ class PlayCountByHourOfDayGraph(BaseGraph, VisualizationMixin):
                 ax, xlabel="Hour of Day", ylabel="Play Count", label_fontsize=12
             )
 
-            # Set x-axis ticks to show all hours with proper numeric positions
-            tick_positions = list(range(0, 24, 2))
-            tick_labels = [f"{h:02d}:00" for h in range(0, 24, 2)]
-            _ = ax.set_xticks(tick_positions)  # pyright: ignore[reportAny] # matplotlib method returns Any
-            _ = ax.set_xticklabels(tick_labels)  # pyright: ignore[reportAny] # matplotlib method returns Any
+            # Let seaborn handle x-axis ticks automatically to avoid categorical warnings
 
             # Add bar value annotations if enabled
             self.annotation_helper.annotate_bar_patches(
