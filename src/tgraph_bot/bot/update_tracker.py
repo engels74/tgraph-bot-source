@@ -1829,9 +1829,23 @@ class UpdateTracker:
                 update_time = get_system_now()
                 duration = (update_time - start_time).total_seconds()
 
-                self._state.record_successful_update(update_time)
+                # Store the scheduled time before updating state
+                scheduled_time = self._state.next_update
+
+                # Record successful update using the scheduled time as the logical update time
+                # This ensures consistent scheduling intervals regardless of execution delays
+                logical_update_time = scheduled_time if scheduled_time else update_time
+                self._state.record_successful_update(logical_update_time)
                 self._update_metrics.record_success()
                 self._circuit_breaker.record_success()
+
+                # Calculate and set next update time after successful update
+                # This ensures the next_update field in scheduler_state.json reflects
+                # the correct future time, not the just-executed time
+                if self._schedule:
+                    next_update_time = self._schedule.calculate_next_update(logical_update_time)
+                    self._state.set_next_update(next_update_time)
+                    logger.info(f"Next update scheduled for: {next_update_time}")
 
                 success_msg = f"Scheduled update completed successfully in {duration:.1f}s (success rate: {self._update_metrics.get_success_rate():.2%})"
                 logger.info(success_msg)
