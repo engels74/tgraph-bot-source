@@ -6,10 +6,11 @@ ensuring consistency between the scheduler and Discord embed displays.
 Following DRY and KISS principles to eliminate duplicate calculation logic.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta, tzinfo
 
-from .timezone import get_system_now, to_system_timezone
-from .scheduling import parse_fixed_time, calculate_next_fixed_time, calculate_next_interval_time
+from .timezone import get_system_now, get_system_timezone
+from .scheduling import parse_fixed_time
+
 
 
 class TimestampCalculator:
@@ -44,7 +45,7 @@ class TimestampCalculator:
             current_time: Current datetime for calculation reference (defaults to system now)
 
         Returns:
-            Next update datetime in system timezone
+            Next update datetime preserving input timezone when possible
 
         Raises:
             ValueError: If fixed_update_time format is invalid
@@ -60,21 +61,25 @@ class TimestampCalculator:
         if current_time is None:
             current_time = get_system_now()
         
-        # Ensure current_time is in system timezone
-        current_time = to_system_timezone(current_time)
+        # Store original timezone to preserve it in the result
+        original_timezone = current_time.tzinfo
+        
+        # Ensure current_time is timezone-aware for calculations
+        if current_time.tzinfo is None:
+            current_time = current_time.replace(tzinfo=get_system_timezone())
         
         # Parse fixed time
         fixed_time = parse_fixed_time(fixed_update_time)
         
         if fixed_time is not None:
-            # Fixed time scheduling
-            return calculate_next_fixed_time(
-                current_time, fixed_time, update_days, last_update
+            # Fixed time scheduling with timezone preservation
+            return self._calculate_next_fixed_time_preserving_timezone(
+                current_time, fixed_time, update_days, last_update, original_timezone
             )
         else:
-            # Interval-based scheduling
-            return calculate_next_interval_time(
-                current_time, update_days, last_update
+            # Interval-based scheduling with timezone preservation
+            return self._calculate_next_interval_time_preserving_timezone(
+                current_time, update_days, last_update, original_timezone
             )
 
     def calculate_time_until_next_update(
@@ -200,3 +205,125 @@ class TimestampCalculator:
         
         is_valid = len(issues) == 0
         return is_valid, issues
+
+    def _calculate_next_fixed_time_preserving_timezone(
+        self,
+        current_time: datetime,
+        fixed_time: time,
+        update_days: int,
+        last_update: datetime | None,
+        original_timezone: tzinfo | None,
+    ) -> datetime:
+        """
+        Calculate next fixed time while preserving the original timezone.
+
+        Args:
+            current_time: Current datetime (timezone-aware)
+            fixed_time: Fixed time for updates
+            update_days: Number of days between updates
+            last_update: Last update datetime (optional)
+            original_timezone: Original timezone to preserve
+
+        Returns:
+            Next update datetime in the original timezone
+        """
+        # Use the existing scheduling logic but preserve timezone
+        if last_update is not None:
+            # If we have a last update, calculate based on that
+            if last_update.tzinfo is None:
+                last_update = last_update.replace(tzinfo=get_system_timezone())
+
+            # Calculate the next scheduled time based on last update + interval
+            next_date = last_update.date() + timedelta(days=update_days)
+            next_update = datetime.combine(next_date, fixed_time)
+            
+            # Apply the original timezone
+            if original_timezone is not None:
+                next_update = next_update.replace(tzinfo=original_timezone)
+            else:
+                next_update = next_update.replace(tzinfo=get_system_timezone())
+
+            # If that time is in the past, move to the next occurrence
+            while next_update <= current_time:
+                next_date = next_date + timedelta(days=update_days)
+                next_update = datetime.combine(next_date, fixed_time)
+                if original_timezone is not None:
+                    next_update = next_update.replace(tzinfo=original_timezone)
+                else:
+                    next_update = next_update.replace(tzinfo=get_system_timezone())
+
+            return next_update
+        else:
+            # No last update - calculate from current time
+            if update_days == 1:
+                # For UPDATE_DAYS=1, always schedule for next day to respect the interval
+                next_date = current_time.date() + timedelta(days=1)
+                next_update = datetime.combine(next_date, fixed_time)
+                
+                # Apply the original timezone
+                if original_timezone is not None:
+                    next_update = next_update.replace(tzinfo=original_timezone)
+                else:
+                    next_update = next_update.replace(tzinfo=get_system_timezone())
+
+                return next_update
+            else:
+                # For UPDATE_DAYS > 1, ensure we respect the minimum interval from current time
+                min_next_update = current_time + timedelta(days=update_days)
+                
+                # Find the next occurrence of fixed time on or after the minimum date
+                next_update = datetime.combine(min_next_update.date(), fixed_time)
+                
+                # Apply the original timezone
+                if original_timezone is not None:
+                    next_update = next_update.replace(tzinfo=original_timezone)
+                else:
+                    next_update = next_update.replace(tzinfo=get_system_timezone())
+
+                # If the time has already passed on the minimum date, move to the next day
+                if next_update < min_next_update:
+                    next_update = next_update + timedelta(days=1)
+
+                return next_update
+
+    def _calculate_next_interval_time_preserving_timezone(
+        self,
+        current_time: datetime,
+        update_days: int,
+        last_update: datetime | None,
+        original_timezone: tzinfo | None,
+    ) -> datetime:
+        """
+        Calculate next interval time while preserving the original timezone.
+
+        Args:
+            current_time: Current datetime (timezone-aware)
+            update_days: Number of days between updates
+            last_update: Last update datetime (optional)
+            original_timezone: Original timezone to preserve
+
+        Returns:
+            Next update datetime in the original timezone
+        """
+        if last_update is None:
+            # No last update, schedule from current time
+            next_update = current_time + timedelta(days=update_days)
+            
+            # Convert to original timezone if different
+            if original_timezone is not None and next_update.tzinfo != original_timezone:
+                next_update = next_update.astimezone(original_timezone)
+            
+            return next_update
+
+        # Ensure last_update is timezone-aware
+        if last_update.tzinfo is None:
+            last_update = last_update.replace(tzinfo=get_system_timezone())
+
+        # Calculate next update based on last update
+        next_update = last_update + timedelta(days=update_days)
+
+        # Convert to original timezone if different
+        if original_timezone is not None and next_update.tzinfo != original_timezone:
+            next_update = next_update.astimezone(original_timezone)
+
+        return next_update
