@@ -828,6 +828,8 @@ class TestMainFunctionEnhancements:
                 "start",
                 side_effect=mock_start_with_login_failure,
             ),
+            patch.object(TGraphBot, "close", new_callable=AsyncMock),
+            patch.object(TGraphBot, "is_shutting_down", return_value=False),
             patch("sys.exit") as mock_exit,
         ):
             await main()
