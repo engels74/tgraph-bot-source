@@ -25,6 +25,7 @@ import sys
 import time
 from pathlib import Path
 from typing import Any, NamedTuple
+from types import TracebackType
 
 import httpx
 
@@ -48,7 +49,7 @@ class WeblateError(Exception):
 
     def __init__(self, message: str, status_code: int | None = None) -> None:
         super().__init__(message)
-        self.status_code = status_code
+        self.status_code: int | None = status_code
 
 
 class WeblateClient:
@@ -61,8 +62,8 @@ class WeblateClient:
         Args:
             config: Weblate configuration
         """
-        self.config = config
-        self.client = httpx.Client(
+        self.config: WeblateConfig = config
+        self.client: httpx.Client = httpx.Client(
             base_url=config.api_url,
             headers={
                 "Authorization": f"Token {config.api_key}",
@@ -71,18 +72,23 @@ class WeblateClient:
             },
             timeout=config.timeout,
         )
-        self.logger = logging.getLogger(__name__)
+        self.logger: logging.Logger = logging.getLogger(__name__)
 
     def __enter__(self) -> WeblateClient:
         """Context manager entry."""
         return self
 
-    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+    def __exit__(
+        self, 
+        exc_type: type[BaseException] | None, 
+        exc_val: BaseException | None, 
+        exc_tb: TracebackType | None
+    ) -> None:
         """Context manager exit."""
         self.client.close()
 
     def _make_request(
-        self, method: str, endpoint: str, **kwargs: Any
+        self, method: str, endpoint: str, **kwargs: Any  # pyright: ignore[reportExplicitAny,reportAny] # httpx kwargs are diverse
     ) -> httpx.Response:
         """
         Make HTTP request to Weblate API.
@@ -101,8 +107,8 @@ class WeblateClient:
         url = f"/projects/{self.config.project}/components/{self.config.component}/{endpoint}"
 
         try:
-            response = self.client.request(method, url, **kwargs)
-            response.raise_for_status()
+            response = self.client.request(method, url, **kwargs)  # pyright: ignore[reportAny] # httpx kwargs flexible
+            _ = response.raise_for_status()
             return response
         except httpx.HTTPStatusError as e:
             error_msg = f"HTTP {e.response.status_code}: {e.response.text}"
@@ -110,7 +116,7 @@ class WeblateClient:
         except httpx.RequestError as e:
             raise WeblateError(f"Request failed: {e}") from e
 
-    def get_component_status(self) -> dict[str, Any]:
+    def get_component_status(self) -> dict[str, Any]:  # pyright: ignore[reportExplicitAny] # Weblate API returns arbitrary JSON
         """
         Get component status information.
 
@@ -121,7 +127,7 @@ class WeblateClient:
             WeblateError: If the request fails
         """
         response = self._make_request("GET", "")
-        return response.json()  # pyright: ignore[reportAny]
+        return response.json()  # pyright: ignore[reportAny] # Weblate API returns arbitrary JSON
 
     def lock_component(self) -> bool:
         """
@@ -134,7 +140,7 @@ class WeblateClient:
             WeblateError: If the request fails
         """
         try:
-            self._make_request("POST", "lock/")
+            _ = self._make_request("POST", "lock/")
             self.logger.info("🔒 Component locked successfully")
             return True
         except WeblateError as e:
@@ -154,7 +160,7 @@ class WeblateClient:
             WeblateError: If the request fails
         """
         try:
-            self._make_request("POST", "unlock/")
+            _ = self._make_request("POST", "unlock/")
             self.logger.info("🔓 Component unlocked successfully")
             return True
         except WeblateError as e:
@@ -163,7 +169,7 @@ class WeblateClient:
                 return False
             raise
 
-    def push_changes(self) -> dict[str, Any]:
+    def push_changes(self) -> dict[str, Any]:  # pyright: ignore[reportExplicitAny] # Weblate API returns arbitrary JSON
         """
         Push pending changes to the upstream repository.
 
@@ -174,11 +180,11 @@ class WeblateClient:
             WeblateError: If the request fails
         """
         response = self._make_request("POST", "push/")
-        result = response.json()  # pyright: ignore[reportAny]
+        result = response.json()  # pyright: ignore[reportAny] # Weblate API returns arbitrary JSON
         self.logger.info("📤 Pushed changes to upstream repository")
-        return result
+        return result  # pyright: ignore[reportAny] # Weblate API returns arbitrary JSON
 
-    def pull_changes(self) -> dict[str, Any]:
+    def pull_changes(self) -> dict[str, Any]:  # pyright: ignore[reportExplicitAny] # Weblate API returns arbitrary JSON
         """
         Pull changes from the upstream repository.
 
@@ -189,11 +195,11 @@ class WeblateClient:
             WeblateError: If the request fails
         """
         response = self._make_request("POST", "pull/")
-        result = response.json()  # pyright: ignore[reportAny]
+        result = response.json()  # pyright: ignore[reportAny] # Weblate API returns arbitrary JSON
         self.logger.info("📥 Pulled changes from upstream repository")
-        return result
+        return result  # pyright: ignore[reportAny] # Weblate API returns arbitrary JSON
 
-    def update_component(self) -> dict[str, Any]:
+    def update_component(self) -> dict[str, Any]:  # pyright: ignore[reportExplicitAny] # Weblate API returns arbitrary JSON
         """
         Update component from the upstream repository.
 
@@ -204,11 +210,11 @@ class WeblateClient:
             WeblateError: If the request fails
         """
         response = self._make_request("POST", "update/")
-        result = response.json()  # pyright: ignore[reportAny]
+        result = response.json()  # pyright: ignore[reportAny] # Weblate API returns arbitrary JSON
         self.logger.info("🔄 Updated component from upstream")
-        return result
+        return result  # pyright: ignore[reportAny] # Weblate API returns arbitrary JSON
 
-    def get_repository_status(self) -> dict[str, Any]:
+    def get_repository_status(self) -> dict[str, Any]:  # pyright: ignore[reportExplicitAny] # Weblate API returns arbitrary JSON
         """
         Get repository status information.
 
@@ -219,7 +225,7 @@ class WeblateClient:
             WeblateError: If the request fails
         """
         response = self._make_request("GET", "repository/")
-        return response.json()  # pyright: ignore[reportAny]
+        return response.json()  # pyright: ignore[reportAny] # Weblate API returns arbitrary JSON
 
     def wait_for_idle(self, max_wait: int = 300, check_interval: int = 5) -> bool:
         """
@@ -237,7 +243,8 @@ class WeblateClient:
         """
         start_time = time.time()
         while time.time() - start_time < max_wait:
-            status = self.get_component_status()
+            # We don't need the component status for this check, just the repo status
+            _ = self.get_component_status()
             
             # Check if there are any pending changes or running tasks
             repo_status = self.get_repository_status()
@@ -293,56 +300,56 @@ Examples:
         """,
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         "--project",
         required=True,
         help="Weblate project name",
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         "--component",
         required=True,
         help="Weblate component name",
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         "--api-url",
         default=os.getenv("WEBLATE_API_URL", "https://hosted.weblate.org/api"),
         help="Weblate API base URL (default: %(default)s)",
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         "--api-key",
         default=os.getenv("WEBLATE_API_KEY"),
         help="Weblate API key (default: from WEBLATE_API_KEY env var)",
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         "--timeout",
         type=int,
         default=30,
         help="API request timeout in seconds (default: %(default)s)",
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         "--force",
         action="store_true",
         help="Force synchronization even if conflicts exist",
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         "--status-only",
         action="store_true",
         help="Only check and report component status",
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         "--verbose",
         action="store_true",
         help="Enable verbose logging",
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         "--ci-mode",
         action="store_true",
         help="Enable CI-friendly logging format",
@@ -374,9 +381,9 @@ def sync_component(client: WeblateClient, force: bool = False) -> bool:
         logger.info(f"Source strings: {status.get('source_strings', 0)}")
         
         # Check if component needs synchronization
-        needs_commit = repo_status.get("needs_commit", False)
-        needs_push = repo_status.get("needs_push", False)
-        needs_merge = repo_status.get("needs_merge", False)
+        needs_commit: bool = repo_status.get("needs_commit", False)  # pyright: ignore[reportAny]
+        needs_push: bool = repo_status.get("needs_push", False)  # pyright: ignore[reportAny]
+        needs_merge: bool = repo_status.get("needs_merge", False)  # pyright: ignore[reportAny]
         
         if not (needs_commit or needs_push or needs_merge):
             logger.info("✅ Component is already synchronized")
@@ -398,15 +405,15 @@ def sync_component(client: WeblateClient, force: bool = False) -> bool:
             # Push any pending changes to upstream
             if needs_commit or needs_push:
                 logger.info("📤 Pushing pending changes...")
-                client.push_changes()
+                _ = client.push_changes()
             
             # Pull latest changes from upstream
             logger.info("📥 Pulling latest changes...")
-            client.pull_changes()
+            _ = client.pull_changes()
             
             # Update component
             logger.info("🔄 Updating component...")
-            client.update_component()
+            _ = client.update_component()
             
             logger.info("✅ Component synchronized successfully")
             return True
@@ -414,7 +421,7 @@ def sync_component(client: WeblateClient, force: bool = False) -> bool:
         finally:
             # Always unlock if we locked it
             if was_locked:
-                client.unlock_component()
+                _ = client.unlock_component()
                 
     except WeblateError as e:
         logger.error(f"❌ Weblate API error: {e}")
@@ -432,27 +439,39 @@ def main() -> int:
         Exit code (0 for success, 1 for error)
     """
     args = parse_arguments()
-    setup_logging(args.verbose, args.ci_mode)
+    
+    # Extract arguments with type annotations
+    verbose: bool = args.verbose  # pyright: ignore[reportAny]
+    ci_mode: bool = args.ci_mode  # pyright: ignore[reportAny]
+    api_key: str | None = args.api_key  # pyright: ignore[reportAny]
+    api_url: str = args.api_url  # pyright: ignore[reportAny]
+    project: str = args.project  # pyright: ignore[reportAny]
+    component: str = args.component  # pyright: ignore[reportAny]
+    timeout: int = args.timeout  # pyright: ignore[reportAny]
+    status_only: bool = args.status_only  # pyright: ignore[reportAny]
+    force: bool = args.force  # pyright: ignore[reportAny]
+    
+    setup_logging(verbose, ci_mode)
     
     logger = logging.getLogger(__name__)
     
     # Validate API key
-    if not args.api_key:
+    if not api_key:
         logger.error("❌ Weblate API key is required (use --api-key or WEBLATE_API_KEY env var)")
         return 1
     
     # Create Weblate configuration
     config = WeblateConfig(
-        api_url=args.api_url,
-        api_key=args.api_key,
-        project=args.project,
-        component=args.component,
-        timeout=args.timeout,
+        api_url=api_url,
+        api_key=api_key,
+        project=project,
+        component=component,
+        timeout=timeout,
     )
     
     try:
         with WeblateClient(config) as client:
-            if args.status_only:
+            if status_only:
                 # Just report status
                 status = client.get_component_status()
                 repo_status = client.get_repository_status()
@@ -468,7 +487,7 @@ def main() -> int:
                 return 0
             else:
                 # Perform synchronization
-                success = sync_component(client, args.force)
+                success = sync_component(client, force)
                 return 0 if success else 1
                 
     except KeyboardInterrupt:
@@ -476,7 +495,7 @@ def main() -> int:
         return 1
     except Exception as e:
         logger.error(f"❌ Fatal error: {e}")
-        if args.verbose:
+        if verbose:
             logger.exception("Full traceback:")
         return 1
 

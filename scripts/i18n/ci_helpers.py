@@ -135,7 +135,7 @@ def analyze_pr_changes(base_ref: str, head_ref: str) -> ChangeAnalysis:
                     break
     
     # Generate summary
-    summary_parts = []
+    summary_parts: list[str] = []
     if python_files:
         summary_parts.append(f"{len(python_files)} Python file(s) changed")
     if translation_files:
@@ -165,7 +165,7 @@ def validate_po_file(po_file: Path) -> tuple[bool, list[str]]:
     Returns:
         Tuple of (is_valid, list_of_issues)
     """
-    issues = []
+    issues: list[str] = []
     
     if not po_file.exists():
         return False, [f"File does not exist: {po_file}"]
@@ -194,8 +194,8 @@ def validate_po_file(po_file: Path) -> tuple[bool, list[str]]:
         msgid_pattern = re.compile(r'msgid\s+"([^"]*)"')
         msgstr_pattern = re.compile(r'msgstr\s+""(?!\s*\n\s*")')
         
-        msgids = msgid_pattern.findall(content)
-        empty_msgstrs = msgstr_pattern.findall(content)
+        msgids: list[str] = msgid_pattern.findall(content)
+        empty_msgstrs: list[str] = msgstr_pattern.findall(content)
         
         # Count non-header empty translations
         non_header_empty = sum(1 for msgid in msgids if msgid and msgid in empty_msgstrs)
@@ -239,7 +239,7 @@ def validate_translations(locale_dir: Path) -> ValidationResult:
             summary="No translation files found (this is okay for new projects)",
         )
     
-    all_issues = []
+    all_issues: list[str] = []
     total_files = len(po_files)
     valid_files = 0
     
@@ -289,11 +289,17 @@ def cmd_analyze_pr_changes(args: argparse.Namespace) -> int:
     Returns:
         Exit code
     """
-    setup_logging(args.verbose, args.ci_mode)
+    verbose: bool = args.verbose  # pyright: ignore[reportAny]
+    ci_mode: bool = args.ci_mode  # pyright: ignore[reportAny]
+    base_ref: str = args.base_ref  # pyright: ignore[reportAny]
+    head_ref: str = args.head_ref  # pyright: ignore[reportAny]
+    output_format: str = args.output_format  # pyright: ignore[reportAny]
     
-    analysis = analyze_pr_changes(args.base_ref, args.head_ref)
+    setup_logging(verbose, ci_mode)
     
-    if args.output_format == "github-actions":
+    analysis = analyze_pr_changes(base_ref, head_ref)
+    
+    if output_format == "github-actions":
         output_github_actions_format({
             "python_files_changed": str(len(analysis.python_files_changed)),
             "translation_files_changed": str(len(analysis.translation_files_changed)),
@@ -319,12 +325,17 @@ def cmd_validate_translations(args: argparse.Namespace) -> int:
     Returns:
         Exit code
     """
-    setup_logging(args.verbose, args.ci_mode)
+    verbose: bool = args.verbose  # pyright: ignore[reportAny]
+    ci_mode: bool = args.ci_mode  # pyright: ignore[reportAny]
+    locale_dir_str: str = args.locale_dir  # pyright: ignore[reportAny]
+    output_format: str = args.output_format  # pyright: ignore[reportAny]
     
-    locale_dir = Path(args.locale_dir)
+    setup_logging(verbose, ci_mode)
+    
+    locale_dir = Path(locale_dir_str)
     result = validate_translations(locale_dir)
     
-    if args.output_format == "github-actions":
+    if output_format == "github-actions":
         output_github_actions_format({
             "valid": str(result.valid).lower(),
             "issues_count": str(len(result.issues)),
@@ -362,28 +373,28 @@ def parse_arguments() -> argparse.Namespace:
         "analyze-pr-changes",
         help="Analyze changes in a pull request",
     )
-    analyze_parser.add_argument(
+    _ = analyze_parser.add_argument(
         "--base-ref",
         required=True,
         help="Base branch reference (e.g., main)",
     )
-    analyze_parser.add_argument(
+    _ = analyze_parser.add_argument(
         "--head-ref",
         required=True,
         help="Head branch reference (e.g., feature-branch)",
     )
-    analyze_parser.add_argument(
+    _ = analyze_parser.add_argument(
         "--output-format",
         choices=["text", "github-actions"],
         default="text",
         help="Output format",
     )
-    analyze_parser.add_argument(
+    _ = analyze_parser.add_argument(
         "--verbose",
         action="store_true",
         help="Enable verbose logging",
     )
-    analyze_parser.add_argument(
+    _ = analyze_parser.add_argument(
         "--ci-mode",
         action="store_true",
         help="Enable CI-friendly logging",
@@ -394,23 +405,23 @@ def parse_arguments() -> argparse.Namespace:
         "validate-translations",
         help="Validate translation files",
     )
-    validate_parser.add_argument(
+    _ = validate_parser.add_argument(
         "--locale-dir",
         default="locale",
         help="Path to locale directory (default: locale)",
     )
-    validate_parser.add_argument(
+    _ = validate_parser.add_argument(
         "--output-format",
         choices=["text", "github-actions"],
         default="text",
         help="Output format",
     )
-    validate_parser.add_argument(
+    _ = validate_parser.add_argument(
         "--verbose",
         action="store_true",
         help="Enable verbose logging",
     )
-    validate_parser.add_argument(
+    _ = validate_parser.add_argument(
         "--ci-mode",
         action="store_true",
         help="Enable CI-friendly logging",
@@ -428,17 +439,19 @@ def main() -> int:
     """
     args = parse_arguments()
     
-    if not args.command:
+    command: str | None = args.command  # pyright: ignore[reportAny]
+    
+    if not command:
         print("Error: No command specified. Use --help for usage information.")
         return 1
     
     try:
-        if args.command == "analyze-pr-changes":
+        if command == "analyze-pr-changes":
             return cmd_analyze_pr_changes(args)
-        elif args.command == "validate-translations":
+        elif command == "validate-translations":
             return cmd_validate_translations(args)
         else:
-            print(f"Error: Unknown command '{args.command}'")
+            print(f"Error: Unknown command '{command}'")
             return 1
     except KeyboardInterrupt:
         print("Operation cancelled by user")
