@@ -67,11 +67,14 @@ class TestTestSchedulerCog:
             # Verify force_update was called
             mock_update_tracker.force_update.assert_called_once()  # pyright: ignore[reportAny] # mock object typing
 
-            # Verify interaction responses were sent
-            mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
+            # Verify multiple ephemeral responses were sent (initial, status, completion)
             assert (
-                mock_interaction.followup.send.call_count >= 2  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
-            )  # Status and completion messages
+                mock_interaction.response.send_message.call_count >= 3  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
+            )  # Multiple ephemeral status messages
+            # All calls should be ephemeral with delete_after
+            for call in mock_interaction.response.send_message.call_args_list:  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
+                assert call.kwargs["ephemeral"] is True  # pyright: ignore[reportAny]
+                assert call.kwargs["delete_after"] == 60.0  # pyright: ignore[reportAny]
 
     @pytest.mark.asyncio
     async def test_test_scheduler_force_update_failure(
@@ -211,10 +214,13 @@ class TestTestSchedulerCog:
                 mock_interaction,  # pyright: ignore[reportCallIssue]
             )
 
-            # Verify initial response embed
-            mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
-            call_args = mock_interaction.response.send_message.call_args  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue,reportUnknownVariableType]
-            initial_embed = call_args[1]["embed"]  # pyright: ignore[reportUnknownVariableType]
+            # Verify multiple ephemeral response calls were made
+            assert mock_interaction.response.send_message.call_count >= 3  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
+            
+            # Check the first embed content (initial message)
+            call_args_list = mock_interaction.response.send_message.call_args_list  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue,reportUnknownVariableType]
+            initial_call = call_args_list[0]  # pyright: ignore[reportUnknownVariableType]
+            initial_embed = initial_call[1]["embed"]  # pyright: ignore[reportUnknownVariableType]
 
             # Check initial embed content
             assert "Scheduler Test Started" in initial_embed.title  # pyright: ignore[reportUnknownMemberType]
@@ -223,8 +229,10 @@ class TestTestSchedulerCog:
                 in initial_embed.description  # pyright: ignore[reportUnknownMemberType]
             )
 
-            # Verify followup messages were sent
-            assert mock_interaction.followup.send.call_count >= 2  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
+            # Verify all calls are ephemeral with delete_after
+            for call in call_args_list:  # pyright: ignore[reportUnknownVariableType]
+                assert call[1]["ephemeral"] is True  # pyright: ignore[reportUnknownVariableType]
+                assert call[1]["delete_after"] == 60.0  # pyright: ignore[reportUnknownVariableType]
 
     @pytest.mark.asyncio
     async def test_test_scheduler_permissions_check(

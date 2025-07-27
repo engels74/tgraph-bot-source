@@ -16,16 +16,6 @@ from typing import TYPE_CHECKING
 
 # Ensure matplotlib uses non-GUI backend for thread safety
 import matplotlib
-
-if matplotlib.get_backend() != "Agg":
-    matplotlib.use("Agg")
-
-# Suppress matplotlib categorical units warnings that occur with numeric data
-# These warnings appear when seaborn/matplotlib auto-detects categorical units
-# for numeric data, which is common in hour-of-day and similar time-based graphs
-_matplotlib_category_logger = logging.getLogger("matplotlib.category")
-_matplotlib_category_logger.setLevel(logging.WARNING)
-
 import matplotlib.figure
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
@@ -45,6 +35,16 @@ if TYPE_CHECKING:
     from ....config.schema import TGraphBotConfig
     from ..config.config_accessor import ConfigAccessor
     from ..data.media_type_processor import MediaTypeProcessor
+
+# Set matplotlib backend and configure logging
+if matplotlib.get_backend() != "Agg":
+    matplotlib.use("Agg")
+
+# Suppress matplotlib categorical units warnings that occur with numeric data
+# These warnings appear when seaborn/matplotlib auto-detects categorical units
+# for numeric data, which is common in hour-of-day and similar time-based graphs
+_matplotlib_category_logger = logging.getLogger("matplotlib.category")
+_matplotlib_category_logger.setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
 

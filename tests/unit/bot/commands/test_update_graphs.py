@@ -95,9 +95,12 @@ class TestUpdateGraphsCog:
                 mock_channel, ["graph1.png", "graph2.png", "graph3.png"]
             )
 
-            # Verify interaction responses were sent
-            mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
-            assert mock_interaction.followup.send.call_count >= 1  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
+            # Verify multiple ephemeral responses were sent (initial + completion)
+            assert mock_interaction.response.send_message.call_count >= 2  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
+            # All calls should be ephemeral with delete_after
+            for call in mock_interaction.response.send_message.call_args_list:  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
+                assert call.kwargs["ephemeral"] is True  # pyright: ignore[reportAny]
+                assert call.kwargs["delete_after"] == 60.0  # pyright: ignore[reportAny]
 
     @pytest.mark.asyncio
     async def test_update_graphs_cleanup_failure(
@@ -192,8 +195,8 @@ class TestUpdateGraphsCog:
             mock_graph_manager.generate_all_graphs.assert_called_once()  # pyright: ignore[reportAny]
             mock_post.assert_not_called()
 
-            # Should send a warning message
-            assert mock_interaction.followup.send.call_count >= 1  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
+            # Should send ephemeral warning messages (initial + warning)
+            assert mock_interaction.response.send_message.call_count >= 2  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
 
     @pytest.mark.asyncio
     async def test_cleanup_bot_messages_success(
@@ -521,8 +524,8 @@ class TestUpdateGraphsCog:
                 mock_interaction,  # pyright: ignore[reportCallIssue]
             )
 
-            # Verify partial success warning was sent
-            assert mock_interaction.followup.send.call_count >= 1  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
+            # Verify ephemeral warning messages were sent (initial + partial success warning)
+            assert mock_interaction.response.send_message.call_count >= 2  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
             # Should have called post with all 3 graphs
             mock_post.assert_called_once_with(
                 mock_channel, ["graph1.png", "graph2.png", "graph3.png"]

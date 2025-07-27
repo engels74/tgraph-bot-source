@@ -113,9 +113,7 @@ class UpdateGraphsCog(BaseCommandCog):
             cooldown_embed = create_cooldown_embed(
                 i18n.translate("update graphs"), retry_after
             )
-            _ = await interaction.response.send_message(
-                embed=cooldown_embed, ephemeral=True
-            )
+            await self.send_ephemeral_response(interaction, embed=cooldown_embed)
             return
 
         # Acknowledge the command immediately
@@ -136,7 +134,7 @@ class UpdateGraphsCog(BaseCommandCog):
             inline=False,
         )
 
-        _ = await interaction.response.send_message(embed=embed, ephemeral=True)
+        await self.send_ephemeral_response(interaction, embed=embed)
 
         try:
             # Validate Discord channel using helper
@@ -162,9 +160,7 @@ class UpdateGraphsCog(BaseCommandCog):
                             "No graph files were created. This may be due to insufficient data or configuration issues."
                         ),
                     )
-                    _ = await interaction.followup.send(
-                        embed=warning_embed, ephemeral=True
-                    )
+                    await self.send_ephemeral_response(interaction, embed=warning_embed)
                     return
 
                 # Step 3: Post graphs to configured channel (now posts individual messages)
@@ -208,12 +204,10 @@ class UpdateGraphsCog(BaseCommandCog):
                         value=i18n.translate("Some files may have failed to upload"),
                         inline=False,
                     )
-                    _ = await interaction.followup.send(
-                        embed=warning_embed, ephemeral=True
-                    )
+                    await self.send_ephemeral_response(interaction, embed=warning_embed)
                     return
 
-                _ = await interaction.followup.send(embed=success_embed, ephemeral=True)
+                await self.send_ephemeral_response(interaction, embed=success_embed)
 
                 # Update cooldowns after successful execution
                 self.update_cooldowns(interaction)

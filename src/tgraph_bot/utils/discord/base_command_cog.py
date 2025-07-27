@@ -16,6 +16,7 @@ import discord
 from discord.ext import commands
 
 from ...utils.core.error_handler import ErrorContext, handle_command_error
+from .ephemeral_utils import send_ephemeral_with_deletion, edit_ephemeral_with_deletion
 
 if TYPE_CHECKING:
     from ...main import TGraphBot
@@ -232,3 +233,89 @@ class BaseCommandCog(commands.Cog):
             interaction, command_name, additional_context
         )
         await handle_command_error(interaction, error, context)
+
+    async def send_ephemeral_response(
+        self,
+        interaction: discord.Interaction,
+        *,
+        content: str | None = None,
+        embed: discord.Embed | None = None,
+        view: discord.ui.View | None = None,
+        delete_after: float = 60.0,
+    ) -> None:
+        """
+        Send an ephemeral interaction response with automatic deletion.
+
+        This method is a convenience wrapper around the ephemeral_utils function
+        that provides consistent ephemeral messaging behavior across all command cogs.
+        The message will be automatically deleted after the specified timeout.
+
+        Args:
+            interaction: The Discord interaction to respond to
+            content: The text content of the message (optional)
+            embed: The embed to include in the message (optional)
+            view: The view (UI components) to include in the message (optional)
+            delete_after: Time in seconds after which to delete the message (default: 60.0)
+
+        Raises:
+            ValueError: If delete_after is not positive
+            ValueError: If neither content nor embed is provided
+            Exception: If the Discord API call fails
+
+        Example:
+            >>> await self.send_ephemeral_response(
+            ...     interaction,
+            ...     content="This command completed successfully!",
+            ...     delete_after=30.0
+            ... )
+        """
+        await send_ephemeral_with_deletion(
+            interaction,
+            content=content,
+            embed=embed,
+            view=view,
+            delete_after=delete_after,
+        )
+
+    async def edit_ephemeral_response(
+        self,
+        interaction: discord.Interaction,
+        *,
+        content: str | None = None,
+        embed: discord.Embed | None = None,
+        view: discord.ui.View | None = None,
+        delete_after: float = 60.0,
+    ) -> None:
+        """
+        Edit an ephemeral interaction response with automatic deletion.
+
+        This method is a convenience wrapper around the ephemeral_utils function
+        that provides consistent ephemeral message editing behavior across all
+        command cogs. The edited message will be automatically deleted after
+        the specified timeout.
+
+        Args:
+            interaction: The Discord interaction to edit the response for
+            content: The new text content of the message (optional)
+            embed: The new embed to include in the message (optional)
+            view: The new view (UI components) to include in the message (optional)
+            delete_after: Time in seconds after which to delete the message (default: 60.0)
+
+        Raises:
+            ValueError: If delete_after is not positive
+            Exception: If the Discord API call fails
+
+        Example:
+            >>> await self.edit_ephemeral_response(
+            ...     interaction,
+            ...     content="Configuration updated successfully!",
+            ...     delete_after=45.0
+            ... )
+        """
+        await edit_ephemeral_with_deletion(
+            interaction,
+            content=content,
+            embed=embed,
+            view=view,
+            delete_after=delete_after,
+        )

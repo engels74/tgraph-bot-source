@@ -106,9 +106,7 @@ class MyStatsCog(BaseCommandCog):
                 cooldown_embed = create_cooldown_embed(
                     i18n.translate("personal statistics"), retry_after
                 )
-                _ = await interaction.response.send_message(
-                    embed=cooldown_embed, ephemeral=True
-                )
+                await self.send_ephemeral_response(interaction, embed=cooldown_embed)
                 return
 
             # Enhanced email validation
@@ -139,7 +137,7 @@ class MyStatsCog(BaseCommandCog):
                 inline=True,
             )
 
-            _ = await interaction.response.send_message(embed=embed, ephemeral=True)
+            await self.send_ephemeral_response(interaction, embed=embed)
 
             # Update cooldowns after successful acknowledgment
             self.update_cooldowns(interaction)
@@ -185,9 +183,7 @@ class MyStatsCog(BaseCommandCog):
                         inline=False,
                     )
 
-                    _ = await interaction.followup.send(
-                        embed=success_embed, ephemeral=True
-                    )
+                    await self.send_ephemeral_response(interaction, embed=success_embed)
                 else:
                     # Error occurred during processing
                     error_embed = create_error_embed(
@@ -211,9 +207,7 @@ class MyStatsCog(BaseCommandCog):
                         inline=False,
                     )
 
-                    _ = await interaction.followup.send(
-                        embed=error_embed, ephemeral=True
-                    )
+                    await self.send_ephemeral_response(interaction, embed=error_embed)
 
         except Exception as e:
             # Use base class error handling with additional context

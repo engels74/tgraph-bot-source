@@ -172,9 +172,7 @@ class ConfigCog(BaseCommandCog):
                         ),
                         inline=False,
                     )
-                    _ = await interaction.response.send_message(
-                        embed=error_embed, ephemeral=True
-                    )
+                    await self.send_ephemeral_response(interaction, embed=error_embed)
                     return
 
                 # Get the value and its type
@@ -208,7 +206,7 @@ class ConfigCog(BaseCommandCog):
                         key=key,
                     )
                 )
-                _ = await interaction.response.send_message(embed=embed, ephemeral=True)
+                await self.send_ephemeral_response(interaction, embed=embed)
                 return
 
             # Create formatted configuration display for all settings
@@ -345,7 +343,7 @@ class ConfigCog(BaseCommandCog):
                 )
             )
 
-            _ = await interaction.response.send_message(embed=embed, ephemeral=True)
+            await self.send_ephemeral_response(interaction, embed=embed)
 
         except Exception as e:
             # Use base class error handling
@@ -443,9 +441,7 @@ class ConfigCog(BaseCommandCog):
                 )
             )
 
-            _ = await interaction.response.send_message(
-                embed=success_embed, ephemeral=True
-            )
+            await self.send_ephemeral_response(interaction, embed=success_embed)
 
         except Exception as e:
             # Use base class error handling with additional context

@@ -93,9 +93,7 @@ class SchedulerTestCog(BaseCommandCog):
                 cooldown_embed = create_cooldown_embed(
                     i18n.translate("test scheduler"), retry_after
                 )
-                _ = await interaction.response.send_message(
-                    embed=cooldown_embed, ephemeral=True
-                )
+                await self.send_ephemeral_response(interaction, embed=cooldown_embed)
                 return
         except Exception as e:
             # Handle configuration errors that occur during cooldown checks
@@ -122,7 +120,7 @@ class SchedulerTestCog(BaseCommandCog):
             inline=False,
         )
 
-        _ = await interaction.response.send_message(embed=embed, ephemeral=True)
+        await self.send_ephemeral_response(interaction, embed=embed)
 
         # Get scheduler status before test (initialize outside try block)
         update_tracker = self.tgraph_bot.update_tracker
@@ -166,7 +164,7 @@ class SchedulerTestCog(BaseCommandCog):
                     inline=False,
                 )
 
-            _ = await interaction.followup.send(embed=status_embed, ephemeral=True)
+            await self.send_ephemeral_response(interaction, embed=status_embed)
 
             # Trigger the scheduled update using the same method as the scheduler
             logger.info("Starting scheduler test via force_update()")
@@ -219,7 +217,7 @@ class SchedulerTestCog(BaseCommandCog):
                 inline=False,
             )
 
-            _ = await interaction.followup.send(embed=success_embed, ephemeral=True)
+            await self.send_ephemeral_response(interaction, embed=success_embed)
 
             # Update cooldowns after successful execution
             self.update_cooldowns(interaction)
@@ -256,7 +254,7 @@ class SchedulerTestCog(BaseCommandCog):
                 inline=False,
             )
 
-            _ = await interaction.followup.send(embed=error_embed, ephemeral=True)
+            await self.send_ephemeral_response(interaction, embed=error_embed)
 
             # Use base class error handling for logging
             await self.handle_command_error(

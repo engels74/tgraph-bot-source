@@ -9,10 +9,8 @@ for Tautulli statistics visualization using Matplotlib and Seaborn.
 # Configure logging early to suppress matplotlib categorical units warnings
 # These warnings occur when matplotlib detects numeric-looking string data
 import logging
-_matplotlib_category_logger = logging.getLogger("matplotlib.category")
-_matplotlib_category_logger.setLevel(logging.WARNING)
 
-# Import core components
+from .config import ConfigAccessor
 from .core import (
     BaseGraph,
     GraphError,
@@ -24,11 +22,6 @@ from .core import (
     GraphTypeRegistry,
     get_graph_type_registry,
 )
-
-# Import configuration utilities
-from .config import ConfigAccessor
-
-# Import data processing components
 from .data import (
     DataFetcher,
     DataProcessor,
@@ -36,8 +29,15 @@ from .data import (
     EmptyDataHandler,
     MediaTypeProcessor,
 )
-
-# Import type definitions and constants
+from .implementations import (
+    DailyPlayCountGraph,
+    PlayCountByDayOfWeekGraph,
+    PlayCountByHourOfDayGraph,
+    PlayCountByMonthGraph,
+    Top10PlatformsGraph,
+    Top10UsersGraph,
+    SampleGraph,
+)
 from .types import (
     DAYS_OF_WEEK,
     DATETIME_FORMATS,
@@ -60,8 +60,6 @@ from .types import (
     get_localized_media_type_names,
     get_localized_graph_titles,
 )
-
-# Import utility functions and helpers
 from .utils import (
     AnnotationHelper,
     BaseProgressTracker,
@@ -85,20 +83,10 @@ from .utils import (
     process_play_history_data,
     validate_graph_data,
 )
-
-# Import visualization utilities
 from .visualization import VisualizationMixin, VisualizationProtocol
 
-# Import graph implementations
-from .implementations import (
-    DailyPlayCountGraph,
-    PlayCountByDayOfWeekGraph,
-    PlayCountByHourOfDayGraph,
-    PlayCountByMonthGraph,
-    Top10PlatformsGraph,
-    Top10UsersGraph,
-    SampleGraph,
-)
+_matplotlib_category_logger = logging.getLogger("matplotlib.category")
+_matplotlib_category_logger.setLevel(logging.WARNING)
 
 __all__ = [
     # Core components
