@@ -61,9 +61,9 @@ class TestBaseCommandCog:
 
     def test_init_without_cooldown(self) -> None:
         """Test BaseCommandCog initialization without cooldown config."""
-        cog = BaseCommandCog(self.mock_bot)
+        cog = BaseCommandCog(self.mock_bot)  # pyright: ignore[reportAny]
 
-        assert cog.bot == self.mock_bot  # pyright: ignore[reportAny]
+        assert cog.bot == self.mock_bot
         assert cog.cooldown_config is None
         assert not hasattr(cog, "_user_cooldowns")
         assert not hasattr(cog, "_global_cooldown")
@@ -72,7 +72,7 @@ class TestBaseCommandCog:
         """Test BaseCommandCog initialization with cooldown config."""
         cog = BaseCommandCog(self.mock_bot, self.cooldown_config)  # pyright: ignore[reportAny]
 
-        assert cog.bot == self.mock_bot  # pyright: ignore[reportAny]
+        assert cog.bot == self.mock_bot
         assert cog.cooldown_config == self.cooldown_config
         assert hasattr(cog, "_user_cooldowns")
         assert hasattr(cog, "_global_cooldown")
@@ -91,14 +91,14 @@ class TestBaseCommandCog:
 
     def test_tgraph_bot_property_failure(self) -> None:
         """Test tgraph_bot property with invalid bot instance."""
-        cog = BaseCommandCog(self.mock_bot)
+        cog = BaseCommandCog(self.mock_bot)  # pyright: ignore[reportAny]
 
         with pytest.raises(TypeError, match="Expected TGraphBot instance"):
             _ = cog.tgraph_bot
 
     def test_check_cooldowns_no_config(self) -> None:
         """Test cooldown checking without cooldown config."""
-        cog = BaseCommandCog(self.mock_bot)
+        cog = BaseCommandCog(self.mock_bot)  # pyright: ignore[reportAny]
         mock_interaction = cast(discord.Interaction, Mock(spec=discord.Interaction))
 
         is_on_cooldown, retry_after = cog.check_cooldowns(mock_interaction)
@@ -148,7 +148,7 @@ class TestBaseCommandCog:
 
     def test_update_cooldowns_no_config(self) -> None:
         """Test cooldown updating without cooldown config."""
-        cog = BaseCommandCog(self.mock_bot)
+        cog = BaseCommandCog(self.mock_bot)  # pyright: ignore[reportAny]
         mock_interaction = cast(discord.Interaction, Mock(spec=discord.Interaction))
 
         # Should not raise any errors
@@ -179,7 +179,7 @@ class TestBaseCommandCog:
 
     def test_create_error_context(self) -> None:
         """Test error context creation."""
-        cog = BaseCommandCog(self.mock_bot)
+        cog = BaseCommandCog(self.mock_bot)  # pyright: ignore[reportAny]
 
         mock_interaction = Mock()
         mock_interaction.user = Mock()
@@ -202,7 +202,7 @@ class TestBaseCommandCog:
 
     def test_create_error_context_no_guild(self) -> None:
         """Test error context creation without guild."""
-        cog = BaseCommandCog(self.mock_bot)
+        cog = BaseCommandCog(self.mock_bot)  # pyright: ignore[reportAny]
 
         mock_interaction = Mock()
         mock_interaction.user = Mock()
@@ -220,7 +220,7 @@ class TestBaseCommandCog:
 
     def test_handle_command_error_creates_context(self) -> None:
         """Test that handle_command_error creates proper error context."""
-        cog = BaseCommandCog(self.mock_bot)
+        cog = BaseCommandCog(self.mock_bot)  # pyright: ignore[reportAny]
 
         mock_interaction = Mock()
         mock_interaction.user = Mock()

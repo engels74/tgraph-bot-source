@@ -72,9 +72,11 @@ class TestTestSchedulerCog:
                 mock_interaction.response.send_message.call_count >= 3  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
             )  # Multiple ephemeral status messages
             # All calls should be ephemeral with delete_after
-            for call in mock_interaction.response.send_message.call_args_list:  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
-                assert call.kwargs["ephemeral"] is True  # pyright: ignore[reportAny]
-                assert call.kwargs["delete_after"] == 60.0  # pyright: ignore[reportAny]
+            call_args_list = mock_interaction.response.send_message.call_args_list  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
+            for call in call_args_list:  # pyright: ignore[reportUnknownVariableType]
+                kwargs = call.kwargs  # pyright: ignore[reportUnknownVariableType]
+                assert kwargs["ephemeral"] is True
+                assert kwargs["delete_after"] == 60.0
 
     @pytest.mark.asyncio
     async def test_test_scheduler_force_update_failure(
@@ -231,8 +233,9 @@ class TestTestSchedulerCog:
 
             # Verify all calls are ephemeral with delete_after
             for call in call_args_list:  # pyright: ignore[reportUnknownVariableType]
-                assert call[1]["ephemeral"] is True  # pyright: ignore[reportUnknownVariableType]
-                assert call[1]["delete_after"] == 60.0  # pyright: ignore[reportUnknownVariableType]
+                call_kwargs = call[1]  # pyright: ignore[reportUnknownVariableType]
+                assert call_kwargs["ephemeral"] is True
+                assert call_kwargs["delete_after"] == 60.0
 
     @pytest.mark.asyncio
     async def test_test_scheduler_permissions_check(

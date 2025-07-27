@@ -98,9 +98,11 @@ class TestUpdateGraphsCog:
             # Verify multiple ephemeral responses were sent (initial + completion)
             assert mock_interaction.response.send_message.call_count >= 2  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
             # All calls should be ephemeral with delete_after
-            for call in mock_interaction.response.send_message.call_args_list:  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
-                assert call.kwargs["ephemeral"] is True  # pyright: ignore[reportAny]
-                assert call.kwargs["delete_after"] == 60.0  # pyright: ignore[reportAny]
+            call_args_list = mock_interaction.response.send_message.call_args_list  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
+            for call in call_args_list:  # pyright: ignore[reportUnknownVariableType]
+                kwargs = call.kwargs  # pyright: ignore[reportUnknownVariableType]
+                assert kwargs["ephemeral"] is True
+                assert kwargs["delete_after"] == 60.0
 
     @pytest.mark.asyncio
     async def test_update_graphs_cleanup_failure(
