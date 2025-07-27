@@ -196,9 +196,7 @@ class StartupSequence:
 
             # Document ephemeral message auto-deletion capabilities
             logger.info(
-                "Note: Ephemeral messages sent by this bot support automatic deletion. "
-                + "Initial responses use Discord's native delete_after parameter, while followup messages "
-                + "use scheduled manual deletion for full auto-cleanup functionality."
+                "Ephemeral messages will auto-delete after their configured timeout period."
             )
 
             self.cleanup_completed = True
