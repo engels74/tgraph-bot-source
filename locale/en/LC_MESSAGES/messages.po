@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TGraph Bot 1.0.0\n"
 "Report-Msgid-Bugs-To: https://github.com/engels74/tgraph-bot-source/issues\n"
-"POT-Creation-Date: 2025-07-27 20:32\n"
-"PO-Revision-Date: 2025-07-27 20:32\n"
+"POT-Creation-Date: 2025-07-27 18:41\n"
+"PO-Revision-Date: 2025-07-27 18:41\n"
 "Last-Translator: engels74 <141435164+engels74@users.noreply.github.com>\n"
 "Language-Team: English <https://weblate.engels74.net/projects/tgraph-bot/main/en/>\n"
 "Language: en\n"
@@ -64,11 +64,11 @@ msgstr "Background"
 msgid "Bot Uptime"
 msgstr "Bot Uptime"
 
-#: scripts/i18n/dev-helpers.py:140
 #: tests/unit/test_i18n.py:113
 #: tests/integration/test_locale_structure.py:176
 #: tests/integration/test_locale_structure.py:187
 #: tests/integration/test_locale_structure.py:198
+#: scripts/i18n/dev-helpers.py:140
 msgid "Bot is online and ready!"
 msgstr "Bot is online and ready!"
 
@@ -217,8 +217,8 @@ msgstr "Error Details"
 msgid "Error in command `{command_name}`: {error_message}"
 msgstr "Error in command `{command_name}`: {error_message}"
 
-#: src/tgraph_bot/bot/commands/my_stats.py:135
 #: src/tgraph_bot/bot/commands/update_graphs.py:132
+#: src/tgraph_bot/bot/commands/my_stats.py:135
 msgid "Estimated Time"
 msgstr "Estimated Time"
 
