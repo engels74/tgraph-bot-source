@@ -1,0 +1,165 @@
+name: i18n PR Validation
+
+on:
+  pull_request:
+    paths:
+      - 'src/**/*.py'
+      - 'scripts/**/*.py'
+      - 'locale/**'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  validate-i18n:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Need history to compare with base branch
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.8.3"
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --locked --dev
+
+      - name: Check current .pot file status
+        id: current-pot
+        run: |
+          if [ -f "locale/messages.pot" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "hash=$(sha256sum locale/messages.pot | cut -d' ' -f1)" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "hash=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Extract strings (check mode)
+        run: |
+          uv run python scripts/i18n/extract_strings.py --check --verbose
+        continue-on-error: true
+        id: extract-check
+
+      - name: Compare .pot file changes
+        id: pot-comparison
+        run: |
+          if [ -f "locale/messages.pot" ]; then
+            new_hash=$(sha256sum locale/messages.pot | cut -d' ' -f1)
+            if [ "${{ steps.current-pot.outputs.hash }}" != "$new_hash" ]; then
+              echo "changed=true" >> $GITHUB_OUTPUT
+              echo "action=needs-update" >> $GITHUB_OUTPUT
+            else
+              echo "changed=false" >> $GITHUB_OUTPUT
+              echo "action=up-to-date" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "action=needs-creation" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Analyze Python file changes
+        id: analyze-changes
+        run: |
+          uv run python scripts/i18n/ci_helpers.py analyze-pr-changes \
+            --base-ref="${{ github.base_ref }}" \
+            --head-ref="${{ github.head_ref }}" \
+            --output-format=github-actions
+
+      - name: Validate translation files
+        id: validate-translations
+        run: |
+          uv run python scripts/i18n/ci_helpers.py validate-translations \
+            --locale-dir=locale \
+            --output-format=github-actions
+        continue-on-error: true
+
+      - name: Generate i18n impact report
+        run: |
+          echo "## 🌐 Internationalization Impact Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ steps.pot-comparison.outputs.changed }}" = "true" ]; then
+            case "${{ steps.pot-comparison.outputs.action }}" in
+              "needs-update")
+                echo "### ⚠️ Translation Template Needs Update" >> $GITHUB_STEP_SUMMARY
+                echo "This PR introduces changes that affect translatable strings." >> $GITHUB_STEP_SUMMARY
+                echo "The \`locale/messages.pot\` file will be automatically updated when merged to main." >> $GITHUB_STEP_SUMMARY
+                ;;
+              "needs-creation")
+                echo "### 📝 New Translation Template Required" >> $GITHUB_STEP_SUMMARY
+                echo "This PR introduces the first translatable strings." >> $GITHUB_STEP_SUMMARY
+                echo "A new \`locale/messages.pot\` file will be created when merged to main." >> $GITHUB_STEP_SUMMARY
+                ;;
+            esac
+          else
+            echo "### ✅ No Translation Impact" >> $GITHUB_STEP_SUMMARY
+            echo "This PR does not affect translatable strings." >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📊 Analysis Details" >> $GITHUB_STEP_SUMMARY
+          echo "- **POT file exists**: ${{ steps.current-pot.outputs.exists }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **POT file changed**: ${{ steps.pot-comparison.outputs.changed }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Action required**: ${{ steps.pot-comparison.outputs.action }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Translation validation**: ${{ steps.validate-translations.outcome }}" >> $GITHUB_STEP_SUMMARY
+
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        if: steps.pot-comparison.outputs.changed == 'true'
+        with:
+          script: |
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('🌐 i18n Impact')
+            );
+            
+            let action = "${{ steps.pot-comparison.outputs.action }}";
+            let icon = action === "needs-creation" ? "📝" : "⚠️";
+            let title = action === "needs-creation" 
+              ? "New translatable strings detected" 
+              : "Translatable strings updated";
+            
+            const body = `## ${icon} i18n Impact: ${title}
+            
+            This PR affects internationalization:
+            
+            - **Translation template**: Will be ${action === "needs-creation" ? "created" : "updated"} automatically
+            - **Weblate sync**: Will occur automatically when merged to main
+            - **Translators**: Will be notified of new/changed strings
+            
+            ### What happens next?
+            1. ✅ PR can be merged normally
+            2. 🤖 GitHub Actions will update \`locale/messages.pot\`
+            3. 🌐 Weblate will be synchronized with new strings
+            4. 📧 Translators will be notified of changes
+            
+            _This comment is automatically generated by the i18n validation workflow._`;
+            
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }
