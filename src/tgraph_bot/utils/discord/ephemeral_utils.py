@@ -8,6 +8,7 @@ consistent behavior across all ephemeral messages in the bot.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import TYPE_CHECKING, Any
 
@@ -18,6 +19,35 @@ logger = logging.getLogger(__name__)
 
 # Default timeout for ephemeral message deletion (60 seconds)
 DEFAULT_EPHEMERAL_DELETION_TIMEOUT: float = 60.0
+
+
+async def _delete_message_after(
+    message: discord.Message | discord.WebhookMessage,
+    delay: float,
+) -> None:
+    """
+    Delete a message after a specified delay.
+
+    This helper function handles manual deletion of messages for cases where
+    the Discord API doesn't support automatic deletion (e.g., webhook messages).
+
+    Args:
+        message: The message to delete
+        delay: Time in seconds to wait before deletion
+
+    Note:
+        Errors during deletion are logged but don't raise exceptions to avoid
+        disrupting the calling code.
+    """
+    try:
+        await asyncio.sleep(delay)
+        await message.delete()
+        logger.debug(f"Successfully deleted message {message.id} after {delay}s")
+    except Exception as e:
+        logger.warning(
+            f"Failed to delete message {message.id} after {delay}s: {e}",
+            exc_info=True,
+        )
 
 
 async def send_ephemeral_with_deletion(
@@ -89,9 +119,17 @@ async def send_ephemeral_with_deletion(
         # Check if the interaction has already been responded to
         if interaction.response.is_done():
             # Use followup for additional messages
-            _ = await interaction.followup.send(**message_params)  # pyright: ignore[reportAny,reportUnknownVariableType]
+            # Note: followup.send() is webhook-based and doesn't support delete_after
+            followup_params = message_params.copy()
+            followup_params.pop("delete_after", None)  # Remove unsupported parameter
+            
+            message = await interaction.followup.send(**followup_params)  # pyright: ignore[reportAny,reportUnknownVariableType]
+            
+            # Schedule manual deletion for followup messages
+            if delete_after > 0:
+                _ = asyncio.create_task(_delete_message_after(message, delete_after))  # pyright: ignore[reportUnknownArgumentType]
         else:
-            # Use initial response
+            # Use initial response (supports delete_after natively)
             _ = await interaction.response.send_message(**message_params)  # pyright: ignore[reportAny]
 
     except Exception as e:

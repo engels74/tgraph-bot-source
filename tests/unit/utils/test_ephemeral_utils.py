@@ -29,7 +29,7 @@ class TestEphemeralUtils:
         await send_ephemeral_with_deletion(interaction, content=content)
         
         # Verify interaction.response.send_message was called with correct parameters
-        interaction.response.send_message.assert_called_once_with(
+        interaction.response.send_message.assert_called_once_with(  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
             content=content,
             ephemeral=True,
             delete_after=60.0
@@ -48,7 +48,7 @@ class TestEphemeralUtils:
         await send_ephemeral_with_deletion(interaction, content=content, delete_after=custom_timeout)
         
         # Verify interaction.response.send_message was called with custom timeout
-        interaction.response.send_message.assert_called_once_with(
+        interaction.response.send_message.assert_called_once_with(  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
             content=content,
             ephemeral=True,
             delete_after=custom_timeout
@@ -66,7 +66,7 @@ class TestEphemeralUtils:
         await send_ephemeral_with_deletion(interaction, embed=embed)
         
         # Verify interaction.response.send_message was called with embed
-        interaction.response.send_message.assert_called_once_with(
+        interaction.response.send_message.assert_called_once_with(  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
             embed=embed,
             ephemeral=True,
             delete_after=60.0
@@ -92,7 +92,7 @@ class TestEphemeralUtils:
         )
         
         # Verify interaction.response.send_message was called with all parameters
-        interaction.response.send_message.assert_called_once_with(
+        interaction.response.send_message.assert_called_once_with(  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
             content=content,
             embed=embed,
             view=view,
@@ -101,27 +101,53 @@ class TestEphemeralUtils:
         )
 
     @pytest.mark.asyncio
-    async def test_send_ephemeral_with_deletion_response_already_sent(self) -> None:
-        """Test handling when interaction response is already sent."""
+    async def test_send_ephemeral_with_deletion_response_already_sent_now_works(self) -> None:
+        """Test that the fix prevents TypeError when followup.send receives delete_after."""
         from src.tgraph_bot.utils.discord.ephemeral_utils import send_ephemeral_with_deletion
         
         interaction = create_mock_interaction(is_response_done=True)
         content = "Test ephemeral message"
         
-        # Mock followup to use instead of response
-        followup_mock = AsyncMock()
+        # Mock followup.send to return a message (normal successful behavior)
+        mock_message = MagicMock()
+        mock_message.delete = AsyncMock()
+        followup_mock = AsyncMock(return_value=mock_message)
+        interaction.followup.send = followup_mock
+        
+        # This should now work without raising TypeError
+        await send_ephemeral_with_deletion(interaction, content=content)
+        
+        # Verify followup.send was called WITHOUT the delete_after parameter
+        followup_mock.assert_called_once_with(  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+            content=content,
+            ephemeral=True
+        )
+
+    @pytest.mark.asyncio
+    async def test_send_ephemeral_with_deletion_followup_with_manual_deletion(self) -> None:
+        """Test expected behavior: followup messages use manual deletion instead of delete_after."""
+        from src.tgraph_bot.utils.discord.ephemeral_utils import send_ephemeral_with_deletion
+        
+        interaction = create_mock_interaction(is_response_done=True)
+        content = "Test ephemeral message"
+        
+        # Mock followup.send to return a message object that can be deleted
+        mock_message = MagicMock()
+        mock_message.delete = AsyncMock()
+        followup_mock = AsyncMock(return_value=mock_message)
         interaction.followup.send = followup_mock
         
         # Execute the function
-        await send_ephemeral_with_deletion(interaction, content=content)
+        await send_ephemeral_with_deletion(interaction, content=content, delete_after=30.0)
         
-        # Verify followup.send was used instead of response.send_message
-        interaction.response.send_message.assert_not_called()
-        followup_mock.assert_called_once_with(
+        # Verify followup.send was called WITHOUT delete_after parameter
+        followup_mock.assert_called_once_with(  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
             content=content,
-            ephemeral=True,
-            delete_after=60.0
+            ephemeral=True
         )
+        
+        # Verify response.send_message was not called
+        interaction.response.send_message.assert_not_called()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
 
     @pytest.mark.asyncio
     async def test_send_ephemeral_with_deletion_error_handling(self) -> None:
@@ -131,7 +157,7 @@ class TestEphemeralUtils:
         interaction = create_mock_interaction()
         
         # Mock interaction to raise an exception
-        interaction.response.send_message.side_effect = Exception("Discord API error")
+        interaction.response.send_message.side_effect = Exception("Discord API error")  # pyright: ignore[reportAttributeAccessIssue]
         
         # Verify the exception is propagated
         with pytest.raises(Exception, match="Discord API error"):
@@ -153,7 +179,7 @@ class TestEphemeralUtils:
         await edit_ephemeral_with_deletion(interaction, content=content)
         
         # Verify interaction.edit_original_response was called with correct parameters
-        edit_mock.assert_called_once_with(
+        edit_mock.assert_called_once_with(  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
             content=content,
             delete_after=60.0
         )
@@ -175,7 +201,7 @@ class TestEphemeralUtils:
         await edit_ephemeral_with_deletion(interaction, embed=embed, delete_after=custom_timeout)
         
         # Verify interaction.edit_original_response was called with custom timeout
-        edit_mock.assert_called_once_with(
+        edit_mock.assert_called_once_with(  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
             embed=embed,
             delete_after=custom_timeout
         )
@@ -204,7 +230,7 @@ class TestEphemeralUtils:
         )
         
         # Verify interaction.edit_original_response was called with all parameters
-        edit_mock.assert_called_once_with(
+        edit_mock.assert_called_once_with(  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
             content=content,
             embed=embed,
             view=view,
@@ -220,7 +246,7 @@ class TestEphemeralUtils:
         
         # Mock edit_original_response to raise an exception
         edit_mock = AsyncMock()
-        edit_mock.side_effect = Exception("Edit failed")
+        edit_mock.side_effect = Exception("Edit failed")  # pyright: ignore[reportAttributeAccessIssue]
         interaction.edit_original_response = edit_mock
         
         # Verify the exception is propagated
@@ -283,18 +309,18 @@ class TestEphemeralUtilsIntegration:
         await send_ephemeral_with_deletion(interaction, content="Initial message")
         
         # Mark response as done after sending
-        interaction.response.is_done.return_value = True
+        interaction.response.is_done.return_value = True  # pyright: ignore[reportAttributeAccessIssue]
         
         # Edit the message
         await edit_ephemeral_with_deletion(interaction, content="Updated message")
         
         # Verify both operations were called correctly
-        interaction.response.send_message.assert_called_once_with(
+        interaction.response.send_message.assert_called_once_with(  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
             content="Initial message",
             ephemeral=True,
             delete_after=60.0
         )
-        edit_mock.assert_called_once_with(
+        edit_mock.assert_called_once_with(  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
             content="Updated message",
             delete_after=60.0
         )
@@ -314,12 +340,12 @@ class TestEphemeralUtilsIntegration:
         await send_ephemeral_with_deletion(interaction, content="First followup")
         await send_ephemeral_with_deletion(interaction, content="Second followup")
         
-        # Verify both followup calls
+        # Verify both followup calls (without delete_after since it's removed for webhook compatibility)
         expected_calls = [
-            call(content="First followup", ephemeral=True, delete_after=60.0),
-            call(content="Second followup", ephemeral=True, delete_after=60.0)
+            call(content="First followup", ephemeral=True),
+            call(content="Second followup", ephemeral=True)
         ]
-        followup_mock.assert_has_calls(expected_calls)
+        followup_mock.assert_has_calls(expected_calls)  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
         assert followup_mock.call_count == 2
 
 
@@ -352,5 +378,5 @@ class TestEphemeralUtilsParameterValidation:
         await edit_ephemeral_with_deletion(interaction)
         
         # Verify edit was called with just delete_after
-        edit_mock.assert_called_once_with(delete_after=60.0)
+        edit_mock.assert_called_once_with(delete_after=60.0)  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
 
