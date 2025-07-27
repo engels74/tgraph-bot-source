@@ -13,7 +13,7 @@ import tempfile
 from pathlib import Path
 from typing import TYPE_CHECKING, override
 from collections.abc import AsyncIterator
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import discord
 import pytest
@@ -814,8 +814,15 @@ class TestMainFunctionEnhancements:
             log_folder=Path("data/logs"),
         )
 
-        async def mock_start_with_login_failure(_token: str) -> None:
+        # Create explicit async mocks to ensure proper cleanup
+        async def mock_start_func(_token: str) -> None:
             raise discord.LoginFailure("Invalid token")
+
+        async def mock_close_func() -> None:
+            pass
+
+        mock_start = Mock(side_effect=mock_start_func)
+        mock_close = Mock(side_effect=mock_close_func)
 
         with (
             patch("src.tgraph_bot.main.get_parsed_args", return_value=mock_args),
@@ -823,16 +830,14 @@ class TestMainFunctionEnhancements:
             patch("pathlib.Path.exists", return_value=True),
             patch.object(ConfigManager, "load_config", return_value=mock_config),
             patch("src.tgraph_bot.main.setup_signal_handlers"),
-            patch.object(
-                TGraphBot,
-                "start",
-                side_effect=mock_start_with_login_failure,
-            ),
-            patch.object(TGraphBot, "close", new_callable=AsyncMock),
+            patch.object(TGraphBot, "start", mock_start),
+            patch.object(TGraphBot, "close", mock_close),
             patch.object(TGraphBot, "is_shutting_down", return_value=False),
             patch("sys.exit") as mock_exit,
         ):
             await main()
+            mock_start.assert_called_once_with("invalid_token")
+            mock_close.assert_called_once()
             mock_exit.assert_called_once_with(1)
 
     @pytest.mark.asyncio
@@ -884,25 +889,39 @@ class TestMainFunctionEnhancements:
             CHANNEL_ID=123456789,
         )
 
-        async def mock_start_with_exception(_token: str) -> None:
+        # Mock get_parsed_args to avoid CLI argument parsing issues
+        from src.tgraph_bot.utils.cli.args import ParsedArgs
+
+        mock_args = ParsedArgs(
+            config_file=Path("data/config/config.yml"),
+            data_folder=Path("data"),
+            log_folder=Path("data/logs"),
+        )
+
+        # Create explicit async mocks to ensure proper cleanup
+        async def mock_start_func(_token: str) -> None:
             raise Exception("Test error")
 
+        async def mock_close_func() -> None:
+            pass
+
+        mock_start = Mock(side_effect=mock_start_func)
+        mock_close = Mock(side_effect=mock_close_func)
+
         with (
+            patch("src.tgraph_bot.main.get_parsed_args", return_value=mock_args),
             patch("src.tgraph_bot.main.setup_logging"),
             patch("pathlib.Path.exists", return_value=True),
             patch.object(ConfigManager, "load_config", return_value=mock_config),
             patch("src.tgraph_bot.main.setup_signal_handlers"),
-            patch.object(
-                TGraphBot,
-                "start",
-                side_effect=mock_start_with_exception,
-            ),
-            patch.object(TGraphBot, "close", new_callable=AsyncMock) as mock_close,
+            patch.object(TGraphBot, "start", mock_start),
+            patch.object(TGraphBot, "close", mock_close),
             patch.object(TGraphBot, "is_shutting_down", return_value=False),
             patch("sys.exit"),
         ):
             await main()
             # Bot should be closed in finally block
+            mock_start.assert_called_once_with("test_token")
             mock_close.assert_called()
 
 
