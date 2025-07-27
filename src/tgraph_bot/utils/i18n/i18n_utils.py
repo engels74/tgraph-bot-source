@@ -24,14 +24,24 @@ Usage Examples:
 from __future__ import annotations
 
 import ast
+import configparser
 import logging
 import re
 import subprocess
 from datetime import datetime
 from pathlib import Path
-from typing import override
+from typing import NamedTuple, override
 
 logger = logging.getLogger(__name__)
+
+
+class WeblateConfig(NamedTuple):
+    """Configuration data extracted from .weblate file."""
+
+    url: str
+    project: str
+    component: str
+
 
 # Translation function patterns to search for
 TRANSLATION_FUNCTIONS = {
@@ -57,6 +67,89 @@ EXCLUDED_DIRS = {
     ".venv",
     ".env",
 }
+
+
+def parse_weblate_config(config_path: Path | None = None) -> WeblateConfig | None:
+    """
+    Parse the .weblate configuration file to extract URL and component information.
+
+    Args:
+        config_path: Path to the .weblate configuration file (defaults to .weblate in project root)
+
+    Returns:
+        WeblateConfig object with parsed configuration, or None if parsing fails
+    """
+    if config_path is None:
+        # Find project root by looking for .weblate file
+        current_path = Path(__file__).resolve()
+        for parent in [current_path] + list(current_path.parents):
+            weblate_file = parent / ".weblate"
+            if weblate_file.exists():
+                config_path = weblate_file
+                break
+
+        if config_path is None:
+            logger.warning("Could not find .weblate configuration file")
+            return None
+
+    if not config_path.exists():
+        logger.warning(f"Weblate configuration file not found: {config_path}")
+        return None
+
+    try:
+        config = configparser.ConfigParser()
+        _ = config.read(config_path)
+
+        # Extract base URL from [weblate] section
+        if "weblate" not in config:
+            logger.warning("Missing [weblate] section in configuration")
+            return None
+
+        weblate_section = config["weblate"]
+        if "url" not in weblate_section:
+            logger.warning("Missing 'url' in [weblate] section")
+            return None
+
+        base_url = weblate_section["url"].rstrip("/")
+
+        # Find the main component section
+        component_sections = [
+            section for section in config.sections()
+            if section.startswith("component ")
+        ]
+
+        if not component_sections:
+            logger.warning("No component sections found in configuration")
+            return None
+
+        # Use the first component section (typically the main one)
+        main_component_section = component_sections[0]
+        component = config[main_component_section]
+
+        # Extract project and component names from the section name
+        # Format: 'component "project/component"' or similar
+        section_name = main_component_section.replace('component "', "").replace('"', "")
+
+        # Get project name from the section name or use a default
+        if "/" in section_name:
+            project_name = section_name.split("/")[0]
+        else:
+            project_name = section_name
+
+        # Get component slug from the configuration
+        component_slug = component.get("slug", "main")
+
+        logger.debug(f"Parsed Weblate config: URL={base_url}, project={project_name}, component={component_slug}")
+
+        return WeblateConfig(
+            url=base_url,
+            project=project_name,
+            component=component_slug
+        )
+
+    except Exception as e:
+        logger.warning(f"Error parsing Weblate configuration: {e}")
+        return None
 
 
 class StringExtractor(ast.NodeVisitor):
@@ -230,6 +323,16 @@ def generate_pot_header() -> str:
     now = datetime.now()
     timestamp = now.strftime("%Y-%m-%d %H:%M%z")
 
+    # Generate a more appropriate Language-Team placeholder based on actual config
+    weblate_config = parse_weblate_config()
+    if weblate_config:
+        language_team_placeholder = f"LANGUAGE <{weblate_config.url}/projects/{weblate_config.project}/{weblate_config.component}/LANG/>"
+        logger.debug(f"Using dynamic Language-Team placeholder: {language_team_placeholder}")
+    else:
+        # Use the standard gettext placeholder if config parsing fails
+        language_team_placeholder = "LANGUAGE <LL@li.org>"
+        logger.debug("Using standard gettext Language-Team placeholder")
+
     return f"""# TGraph Bot - Tautulli Discord Graph Generator
 # Copyright (C) {now.year} engels74
 # This file is distributed under the same license as the TGraph Bot package.
@@ -243,7 +346,7 @@ msgstr ""
 "POT-Creation-Date: {timestamp}\\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\\n"
 "Last-Translator: engels74 <141435164+engels74@users.noreply.github.com>\\n"
-"Language-Team: LANGUAGE <LL@li.org>\\n"
+"Language-Team: {language_team_placeholder}\\n"
 "Language: \\n"
 "MIME-Version: 1.0\\n"
 "Content-Type: text/plain; charset=UTF-8\\n"
@@ -458,6 +561,16 @@ def generate_po_header(language: str, existing_x_generator: str | None = None) -
     # Use existing X-Generator value if available, otherwise default to Weblate 5.0
     x_generator = existing_x_generator if existing_x_generator else "Weblate 5.0"
 
+    # Generate Language-Team URL dynamically from Weblate configuration
+    weblate_config = parse_weblate_config()
+    if weblate_config:
+        language_team_url = f"{weblate_config.url}/projects/{weblate_config.project}/{weblate_config.component}/{language}/"
+        logger.debug(f"Using dynamic Weblate URL for {language}: {language_team_url}")
+    else:
+        # Fallback to a generic placeholder if config parsing fails
+        language_team_url = f"https://weblate.example.org/projects/PROJECT/COMPONENT/{language}/"
+        logger.warning(f"Could not parse Weblate config, using placeholder URL for {language}")
+
     return f"""# {language_name} translations for TGraph Bot
 # Copyright (C) {now.year} engels74
 # This file is distributed under the same license as the TGraph Bot package.
@@ -470,7 +583,7 @@ msgstr ""
 "POT-Creation-Date: {timestamp}\\n"
 "PO-Revision-Date: {timestamp}\\n"
 "Last-Translator: engels74 <141435164+engels74@users.noreply.github.com>\\n"
-"Language-Team: {language_name} <https://hosted.weblate.org/projects/tgraph-bot/tgraph-bot/{language}/\\n"
+"Language-Team: {language_name} <{language_team_url}>\\n"
 "Language: {language}\\n"
 "MIME-Version: 1.0\\n"
 "Content-Type: text/plain; charset=UTF-8\\n"

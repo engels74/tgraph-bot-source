@@ -19,6 +19,7 @@ from src.tgraph_bot.utils.i18n.i18n_utils import (
     update_po_file,
     generate_pot_header,
     generate_po_header,
+    parse_weblate_config,
 )
 
 
@@ -406,3 +407,108 @@ class TestErrorHandling:
 
             with pytest.raises(FileNotFoundError):
                 update_po_file(Path("/nonexistent.pot"), po_file)
+
+
+class TestWeblateConfigParsing:
+    """Test Weblate configuration parsing functionality."""
+
+    def test_parse_weblate_config_success(self) -> None:
+        """Test successful parsing of .weblate configuration file."""
+        weblate_content = """[weblate]
+url = https://weblate.engels74.net/
+
+[component "tgraph-bot/main"]
+name = TGraph Bot Messages
+slug = main
+repo = https://github.com/engels74/tgraph-bot-source.git
+push = git@github.com:engels74/tgraph-bot-source.git
+branch = main
+filemask = locale/*/LC_MESSAGES/messages.po
+template = locale/messages.pot
+file_format = po-mono
+"""
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".weblate", delete=False) as f:
+            _ = f.write(weblate_content)
+            f.flush()
+
+            config = parse_weblate_config(Path(f.name))
+
+        assert config is not None
+        assert config.url == "https://weblate.engels74.net"
+        assert config.project == "tgraph-bot"
+        assert config.component == "main"
+
+    def test_parse_weblate_config_missing_file(self) -> None:
+        """Test parsing with missing .weblate file."""
+        config = parse_weblate_config(Path("/nonexistent/.weblate"))
+        assert config is None
+
+    def test_parse_weblate_config_missing_weblate_section(self) -> None:
+        """Test parsing with missing [weblate] section."""
+        weblate_content = """[component "tgraph-bot/main"]
+name = TGraph Bot Messages
+slug = main
+"""
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".weblate", delete=False) as f:
+            _ = f.write(weblate_content)
+            f.flush()
+
+            config = parse_weblate_config(Path(f.name))
+
+        assert config is None
+
+    def test_parse_weblate_config_missing_url(self) -> None:
+        """Test parsing with missing URL in [weblate] section."""
+        weblate_content = """[weblate]
+# Missing url field
+
+[component "tgraph-bot/main"]
+name = TGraph Bot Messages
+slug = main
+"""
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".weblate", delete=False) as f:
+            _ = f.write(weblate_content)
+            f.flush()
+
+            config = parse_weblate_config(Path(f.name))
+
+        assert config is None
+
+    def test_parse_weblate_config_no_components(self) -> None:
+        """Test parsing with no component sections."""
+        weblate_content = """[weblate]
+url = https://weblate.engels74.net/
+
+[some_other_section]
+value = test
+"""
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".weblate", delete=False) as f:
+            _ = f.write(weblate_content)
+            f.flush()
+
+            config = parse_weblate_config(Path(f.name))
+
+        assert config is None
+
+    def test_generate_po_header_with_weblate_config(self) -> None:
+        """Test that generate_po_header uses dynamic Weblate URLs when config is available."""
+        # This test uses the actual .weblate file in the project root
+        header = generate_po_header("da")
+
+        # Should contain the correct self-hosted Weblate URL
+        assert "https://weblate.engels74.net/projects/tgraph-bot/main/da/" in header
+        assert "Danish" in header
+        assert "Language: da" in header
+
+    def test_generate_pot_header_with_weblate_config(self) -> None:
+        """Test that generate_pot_header uses dynamic Weblate URLs when config is available."""
+        # This test uses the actual .weblate file in the project root
+        header = generate_pot_header()
+
+        # Should contain the correct self-hosted Weblate URL template
+        assert "https://weblate.engels74.net/projects/tgraph-bot/main/LANG/" in header
+        assert "LANGUAGE <" in header
