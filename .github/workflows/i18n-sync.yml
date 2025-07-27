@@ -87,19 +87,9 @@ jobs:
       - name: Push .pot file changes
         if: steps.check-changes.outputs.changes == 'true' && steps.check-pot-changes.outputs.pot_changed == 'true'
         run: git push
+        # Note: Weblate synchronization happens automatically via webhook
+        # when changes are pushed to the repository. No manual API calls needed.
 
-      - name: Sync with Weblate
-        if: steps.check-changes.outputs.changes == 'true' && steps.check-pot-changes.outputs.pot_changed == 'true'
-        env:
-          WEBLATE_API_KEY: ${{ secrets.WEBLATE_API_KEY }}
-          WEBLATE_API_URL: ${{ vars.WEBLATE_API_URL || 'https://hosted.weblate.org/api' }}
-          WEBLATE_PROJECT: ${{ vars.WEBLATE_PROJECT }}
-          WEBLATE_COMPONENT: ${{ vars.WEBLATE_COMPONENT }}
-        run: |
-          uv run python scripts/i18n/weblate_sync.py \
-            --project "$WEBLATE_PROJECT" \
-            --component "$WEBLATE_COMPONENT" \
-            --verbose
 
       - name: Summary
         run: |
@@ -109,7 +99,7 @@ jobs:
           if [ "${{ steps.check-changes.outputs.changes }}" = "true" ]; then
             echo "- **POT file updated**: ${{ steps.check-pot-changes.outputs.pot_changed }}" >> $GITHUB_STEP_SUMMARY
             if [ "${{ steps.check-pot-changes.outputs.pot_changed }}" = "true" ]; then
-              echo "- **Weblate sync**: ✅ Completed" >> $GITHUB_STEP_SUMMARY
+              echo "- **Weblate sync**: 🌐 Automatic via webhook" >> $GITHUB_STEP_SUMMARY
             else
               echo "- **Weblate sync**: ⏭️ Skipped (no string changes)" >> $GITHUB_STEP_SUMMARY
             fi
