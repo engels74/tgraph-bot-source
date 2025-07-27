@@ -73,8 +73,8 @@ jobs:
       - name: Commit .pot file changes
         if: steps.check-changes.outputs.changes == 'true' && steps.check-pot-changes.outputs.pot_changed == 'true'
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add locale/messages.pot
           git commit -m "feat(i18n): update translatable strings
 
