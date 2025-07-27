@@ -7,13 +7,13 @@ using the REST API. It handles component locking, pushing changes, and conflict 
 
 Usage Examples:
     Sync component with Weblate:
-        python scripts/i18n/weblate_sync.py --project tgraph-bot --component tgraph-bot
+        uv run python scripts/i18n/weblate_sync.py --project tgraph-bot --component tgraph-bot
 
     Force push even if conflicts exist:
-        python scripts/i18n/weblate_sync.py --project myproject --component mycomponent --force
+        uv run python scripts/i18n/weblate_sync.py --project myproject --component mycomponent --force
 
     Check component status:
-        python scripts/i18n/weblate_sync.py --project myproject --component mycomponent --status-only
+        uv run python scripts/i18n/weblate_sync.py --project myproject --component mycomponent --status-only
 """
 
 from __future__ import annotations

@@ -8,16 +8,16 @@ batch compilation of all language files.
 
 Usage Examples:
     Compile all .po files to .mo:
-        python scripts/i18n/compile_translations.py
+        uv run python scripts/i18n/compile_translations.py
 
     Compile specific language:
-        python scripts/i18n/compile_translations.py --language en
+        uv run python scripts/i18n/compile_translations.py --language en
 
     Force recompilation (ignore modification times):
-        python scripts/i18n/compile_translations.py --force
+        uv run python scripts/i18n/compile_translations.py --force
 
     Check which files need compilation:
-        python scripts/i18n/compile_translations.py --check-only
+        uv run python scripts/i18n/compile_translations.py --check-only
 """
 
 from __future__ import annotations

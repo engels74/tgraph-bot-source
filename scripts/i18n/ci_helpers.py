@@ -7,13 +7,13 @@ and generating reports for CI/CD pipelines.
 
 Usage Examples:
     Analyze PR changes:
-        python scripts/i18n/ci_helpers.py analyze-pr-changes --base-ref main --head-ref feature-branch
+        uv run python scripts/i18n/ci_helpers.py analyze-pr-changes --base-ref main --head-ref feature-branch
 
     Validate translation files:
-        python scripts/i18n/ci_helpers.py validate-translations --locale-dir locale
+        uv run python scripts/i18n/ci_helpers.py validate-translations --locale-dir locale
 
     Generate change report:
-        python scripts/i18n/ci_helpers.py generate-report --output-file report.md
+        uv run python scripts/i18n/ci_helpers.py generate-report --output-file report.md
 """
 
 from __future__ import annotations
