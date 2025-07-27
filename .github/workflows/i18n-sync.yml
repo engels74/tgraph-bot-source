@@ -1,3 +1,4 @@
+---
 name: i18n String Extraction and Weblate Sync
 
 on:
@@ -22,7 +23,6 @@ permissions:
 jobs:
   extract-and-sync:
     runs-on: ubuntu-latest
-    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -42,7 +42,8 @@ jobs:
       - name: Check for Python file changes
         id: check-changes
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.force_sync }}" = "true" ]; then
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && \
+             [ "${{ github.event.inputs.force_sync }}" = "true" ]; then
             echo "changes=true" >> $GITHUB_OUTPUT
             echo "reason=force-sync" >> $GITHUB_OUTPUT
           elif git diff --name-only HEAD~1 HEAD | grep -E '\.(py)$' > /dev/null; then
