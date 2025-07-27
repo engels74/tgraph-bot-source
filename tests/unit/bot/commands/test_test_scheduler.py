@@ -72,9 +72,9 @@ class TestTestSchedulerCog:
                 mock_interaction.response.send_message.call_count >= 3  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
             )  # Multiple ephemeral status messages
             # All calls should be ephemeral with delete_after
-            call_args_list = mock_interaction.response.send_message.call_args_list  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
+            call_args_list = mock_interaction.response.send_message.call_args_list  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue,reportUnknownVariableType]
             for call in call_args_list:  # pyright: ignore[reportUnknownVariableType]
-                kwargs = call.kwargs  # pyright: ignore[reportUnknownVariableType]
+                kwargs = call.kwargs  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
                 assert kwargs["ephemeral"] is True
                 assert kwargs["delete_after"] == 60.0
 
