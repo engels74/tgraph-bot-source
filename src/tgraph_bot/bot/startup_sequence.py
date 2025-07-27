@@ -194,10 +194,11 @@ class StartupSequence:
                 f"Message cleanup completed: {deleted_count} messages deleted, {error_count} errors"
             )
 
-            # Document ephemeral message limitations
+            # Document ephemeral message auto-deletion capabilities
             logger.info(
-                "Note: Ephemeral messages cannot be deleted by the bot after creation. "
-                + "They persist until users dismiss them manually. This is a Discord API limitation."
+                "Note: Ephemeral messages sent by this bot support automatic deletion. "
+                + "Initial responses use Discord's native delete_after parameter, while followup messages "
+                + "use scheduled manual deletion for full auto-cleanup functionality."
             )
 
             self.cleanup_completed = True
