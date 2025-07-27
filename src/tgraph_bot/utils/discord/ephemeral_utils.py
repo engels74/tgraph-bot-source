@@ -81,7 +81,7 @@ async def send_ephemeral_with_deletion(
         >>> await send_ephemeral_with_deletion(
         ...     interaction,
         ...     content="This message will be deleted in 60 seconds",
-        ...     delete_after=60.0
+        ...     delete_after=30.0
         ... )
     """
     # Validate delete_after parameter

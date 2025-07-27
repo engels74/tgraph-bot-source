@@ -399,7 +399,7 @@ class TestBaseCommandCogEphemeralMethods:
                 content=None,
                 embed=mock_embed,
                 view=None,
-                delete_after=60.0  # Default value
+                delete_after=30.0  # Default value
             )
 
     @pytest.mark.asyncio
@@ -423,5 +423,5 @@ class TestBaseCommandCogEphemeralMethods:
                 content=None,
                 embed=None,
                 view=None,
-                delete_after=60.0
+                delete_after=30.0
             )
