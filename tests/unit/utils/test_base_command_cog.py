@@ -246,10 +246,14 @@ class TestBaseCommandCog:
 class TestBaseCommandCogEphemeralMethods:
     """Test the ephemeral response methods in BaseCommandCog."""
 
+    def __init__(self) -> None:
+        """Initialize with mock_bot for type checker."""
+        self.mock_bot: Mock = Mock(spec=commands.Bot)
+    
     @pytest.fixture(autouse=True)
     def setup_method(self) -> None:
         """Set up test fixtures."""
-        self.mock_bot: Mock = Mock(spec=commands.Bot)
+        self.mock_bot = Mock(spec=commands.Bot)
 
     @pytest.mark.asyncio
     async def test_send_ephemeral_response_with_content(self) -> None:
@@ -282,7 +286,8 @@ class TestBaseCommandCogEphemeralMethods:
                 content="Test message",
                 embed=None,
                 view=None,
-                delete_after=30.0
+                delete_after=30.0,
+                config=None
             )
 
     @pytest.mark.asyncio
@@ -311,7 +316,8 @@ class TestBaseCommandCogEphemeralMethods:
                 content=None,
                 embed=mock_embed,
                 view=None,
-                delete_after=45.0
+                delete_after=45.0,
+                config=None
             )
 
     @pytest.mark.asyncio
@@ -343,7 +349,8 @@ class TestBaseCommandCogEphemeralMethods:
                 content="Test content",
                 embed=mock_embed,
                 view=mock_view,
-                delete_after=90.0
+                delete_after=90.0,
+                config=None
             )
 
     @pytest.mark.asyncio
@@ -371,7 +378,8 @@ class TestBaseCommandCogEphemeralMethods:
                 content="Updated message",
                 embed=None,
                 view=None,
-                delete_after=20.0
+                delete_after=20.0,
+                config=None
             )
 
     @pytest.mark.asyncio
@@ -399,7 +407,8 @@ class TestBaseCommandCogEphemeralMethods:
                 content=None,
                 embed=mock_embed,
                 view=None,
-                delete_after=30.0  # Default value
+                delete_after=None,  # Will be converted by function
+                config=None
             )
 
     @pytest.mark.asyncio
@@ -423,5 +432,6 @@ class TestBaseCommandCogEphemeralMethods:
                 content=None,
                 embed=None,
                 view=None,
-                delete_after=30.0
+                delete_after=None,  # Will be converted by function
+                config=None
             )

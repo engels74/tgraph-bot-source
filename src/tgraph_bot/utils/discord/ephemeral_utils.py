@@ -14,11 +14,28 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     import discord
+    from ...config.schema import TGraphBotConfig
 
 logger = logging.getLogger(__name__)
 
 # Default timeout for ephemeral message deletion (60 seconds)
+# Note: This is kept for backward compatibility but config value takes precedence
 DEFAULT_EPHEMERAL_DELETION_TIMEOUT: float = 60.0
+
+
+def get_ephemeral_delete_timeout(config: "TGraphBotConfig | None" = None) -> float:
+    """
+    Get the ephemeral message deletion timeout from config or default.
+    
+    Args:
+        config: Configuration object containing EPHEMERAL_MESSAGE_DELETE_AFTER
+        
+    Returns:
+        Float timeout value in seconds
+    """
+    if config is not None:
+        return config.EPHEMERAL_MESSAGE_DELETE_AFTER
+    return DEFAULT_EPHEMERAL_DELETION_TIMEOUT
 
 
 async def _delete_message_after(
@@ -56,7 +73,8 @@ async def send_ephemeral_with_deletion(
     content: str | None = None,
     embed: discord.Embed | None = None,
     view: discord.ui.View | None = None,
-    delete_after: float = DEFAULT_EPHEMERAL_DELETION_TIMEOUT,
+    delete_after: float | None = None,
+    config: "TGraphBotConfig | None" = None,
 ) -> None:
     """
     Send an ephemeral interaction response with automatic deletion.
@@ -70,7 +88,8 @@ async def send_ephemeral_with_deletion(
         content: The text content of the message (optional)
         embed: The embed to include in the message (optional)
         view: The view (UI components) to include in the message (optional)
-        delete_after: Time in seconds after which to delete the message (default: 60.0)
+        delete_after: Time in seconds after which to delete the message (optional, uses config or default)
+        config: Configuration object to get default timeout value (optional)
 
     Raises:
         ValueError: If delete_after is not positive
@@ -80,10 +99,14 @@ async def send_ephemeral_with_deletion(
     Example:
         >>> await send_ephemeral_with_deletion(
         ...     interaction,
-        ...     content="This message will be deleted in 60 seconds",
-        ...     delete_after=30.0
+        ...     content="This message will be deleted after configured timeout",
+        ...     config=bot_config
         ... )
     """
+    # Determine delete_after value from config or parameter
+    if delete_after is None:
+        delete_after = get_ephemeral_delete_timeout(config)
+    
     # Validate delete_after parameter
     if delete_after <= 0:
         msg = "delete_after must be positive"
@@ -146,7 +169,8 @@ async def edit_ephemeral_with_deletion(
     content: str | None = None,
     embed: discord.Embed | None = None,
     view: discord.ui.View | None = None,
-    delete_after: float = DEFAULT_EPHEMERAL_DELETION_TIMEOUT,
+    delete_after: float | None = None,
+    config: "TGraphBotConfig | None" = None,
 ) -> None:
     """
     Edit an ephemeral interaction response with automatic deletion.
@@ -160,7 +184,8 @@ async def edit_ephemeral_with_deletion(
         content: The new text content of the message (optional)
         embed: The new embed to include in the message (optional)
         view: The new view (UI components) to include in the message (optional)
-        delete_after: Time in seconds after which to delete the message (default: 60.0)
+        delete_after: Time in seconds after which to delete the message (optional, uses config or default)
+        config: Configuration object to get default timeout value (optional)
 
     Raises:
         ValueError: If delete_after is not positive
@@ -170,9 +195,13 @@ async def edit_ephemeral_with_deletion(
         >>> await edit_ephemeral_with_deletion(
         ...     interaction,
         ...     content="Updated message content",
-        ...     delete_after=30.0
+        ...     config=bot_config
         ... )
     """
+    # Determine delete_after value from config or parameter
+    if delete_after is None:
+        delete_after = get_ephemeral_delete_timeout(config)
+    
     # Validate delete_after parameter
     if delete_after <= 0:
         msg = "delete_after must be positive"

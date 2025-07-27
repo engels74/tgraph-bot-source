@@ -37,6 +37,9 @@ LANGUAGE: en
 #          f=short date/time, F=long date/time, R=relative time
 DISCORD_TIMESTAMP_FORMAT: R
 
+# Time in seconds after which ephemeral Discord messages are automatically deleted (1-3600)
+EPHEMERAL_MESSAGE_DELETE_AFTER: 30.0
+
 # Number of days to keep generated graphs (1-365)
 KEEP_DAYS: 7
 

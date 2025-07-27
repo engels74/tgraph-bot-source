@@ -241,21 +241,21 @@ class BaseCommandCog(commands.Cog):
         content: str | None = None,
         embed: discord.Embed | None = None,
         view: discord.ui.View | None = None,
-        delete_after: float = 60.0,
+        delete_after: float | None = None,
     ) -> None:
         """
         Send an ephemeral interaction response with automatic deletion.
 
         This method is a convenience wrapper around the ephemeral_utils function
         that provides consistent ephemeral messaging behavior across all command cogs.
-        The message will be automatically deleted after the specified timeout.
+        The message will be automatically deleted after the configured timeout.
 
         Args:
             interaction: The Discord interaction to respond to
             content: The text content of the message (optional)
             embed: The embed to include in the message (optional)
             view: The view (UI components) to include in the message (optional)
-            delete_after: Time in seconds after which to delete the message (default: 60.0)
+            delete_after: Time in seconds after which to delete the message (optional, uses config default)
 
         Raises:
             ValueError: If delete_after is not positive
@@ -265,16 +265,22 @@ class BaseCommandCog(commands.Cog):
         Example:
             >>> await self.send_ephemeral_response(
             ...     interaction,
-            ...     content="This command completed successfully!",
-            ...     delete_after=30.0
+            ...     content="This command completed successfully!"
             ... )
         """
+        # Try to get config, fallback to None if not available (e.g., in tests)
+        try:
+            config = self.get_current_config()
+        except (TypeError, AttributeError):
+            config = None
+            
         await send_ephemeral_with_deletion(
             interaction,
             content=content,
             embed=embed,
             view=view,
             delete_after=delete_after,
+            config=config,
         )
 
     async def edit_ephemeral_response(
@@ -284,7 +290,7 @@ class BaseCommandCog(commands.Cog):
         content: str | None = None,
         embed: discord.Embed | None = None,
         view: discord.ui.View | None = None,
-        delete_after: float = 60.0,
+        delete_after: float | None = None,
     ) -> None:
         """
         Edit an ephemeral interaction response with automatic deletion.
@@ -292,14 +298,14 @@ class BaseCommandCog(commands.Cog):
         This method is a convenience wrapper around the ephemeral_utils function
         that provides consistent ephemeral message editing behavior across all
         command cogs. The edited message will be automatically deleted after
-        the specified timeout.
+        the configured timeout.
 
         Args:
             interaction: The Discord interaction to edit the response for
             content: The new text content of the message (optional)
             embed: The new embed to include in the message (optional)
             view: The new view (UI components) to include in the message (optional)
-            delete_after: Time in seconds after which to delete the message (default: 60.0)
+            delete_after: Time in seconds after which to delete the message (optional, uses config default)
 
         Raises:
             ValueError: If delete_after is not positive
@@ -308,14 +314,20 @@ class BaseCommandCog(commands.Cog):
         Example:
             >>> await self.edit_ephemeral_response(
             ...     interaction,
-            ...     content="Configuration updated successfully!",
-            ...     delete_after=45.0
+            ...     content="Configuration updated successfully!"
             ... )
         """
+        # Try to get config, fallback to None if not available (e.g., in tests)
+        try:
+            config = self.get_current_config()
+        except (TypeError, AttributeError):
+            config = None
+            
         await edit_ephemeral_with_deletion(
             interaction,
             content=content,
             embed=embed,
             view=view,
             delete_after=delete_after,
+            config=config,
         )

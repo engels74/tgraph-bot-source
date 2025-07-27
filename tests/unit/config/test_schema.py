@@ -66,6 +66,7 @@ class TestTGraphBotConfig:
             "UPDATE_GRAPHS_GLOBAL_COOLDOWN_SECONDS": 60,
             "MY_STATS_COOLDOWN_MINUTES": 5,
             "MY_STATS_GLOBAL_COOLDOWN_SECONDS": 60,
+            "EPHEMERAL_MESSAGE_DELETE_AFTER": 45.0,
         }
         config = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
 
@@ -202,3 +203,100 @@ class TestTGraphBotConfig:
         }
         config_default = TGraphBotConfig(**config_data_default)  # pyright: ignore[reportArgumentType]
         assert config_default.ENABLE_STACKED_BAR_CHARTS is True
+
+    def test_ephemeral_message_delete_after_default_value(self) -> None:
+        """Test that EPHEMERAL_MESSAGE_DELETE_AFTER has correct default value."""
+        config_data = {
+            "TAUTULLI_API_KEY": "test_api_key",
+            "TAUTULLI_URL": "http://localhost:8181/api/v2",
+            "DISCORD_TOKEN": "test_discord_token",
+            "CHANNEL_ID": 123456789012345678,
+        }
+        config = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
+        
+        assert config.EPHEMERAL_MESSAGE_DELETE_AFTER == 30.0
+        assert isinstance(config.EPHEMERAL_MESSAGE_DELETE_AFTER, float)
+
+    def test_ephemeral_message_delete_after_custom_value(self) -> None:
+        """Test that EPHEMERAL_MESSAGE_DELETE_AFTER accepts custom values."""
+        config_data = {
+            "TAUTULLI_API_KEY": "test_api_key",
+            "TAUTULLI_URL": "http://localhost:8181/api/v2",
+            "DISCORD_TOKEN": "test_discord_token",
+            "CHANNEL_ID": 123456789012345678,
+            "EPHEMERAL_MESSAGE_DELETE_AFTER": 120.5,
+        }
+        config = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
+        
+        assert config.EPHEMERAL_MESSAGE_DELETE_AFTER == 120.5
+
+    def test_ephemeral_message_delete_after_validation_positive(self) -> None:
+        """Test that EPHEMERAL_MESSAGE_DELETE_AFTER must be positive."""
+        config_data = {
+            "TAUTULLI_API_KEY": "test_api_key",
+            "TAUTULLI_URL": "http://localhost:8181/api/v2",
+            "DISCORD_TOKEN": "test_discord_token",
+            "CHANNEL_ID": 123456789012345678,
+            "EPHEMERAL_MESSAGE_DELETE_AFTER": -1.0,
+        }
+        
+        with pytest.raises(ValidationError) as exc_info:
+            _ = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
+        
+        errors = exc_info.value.errors()
+        assert any(error["loc"] == ("EPHEMERAL_MESSAGE_DELETE_AFTER",) for error in errors)
+
+    def test_ephemeral_message_delete_after_validation_zero(self) -> None:
+        """Test that EPHEMERAL_MESSAGE_DELETE_AFTER cannot be zero."""
+        config_data = {
+            "TAUTULLI_API_KEY": "test_api_key",
+            "TAUTULLI_URL": "http://localhost:8181/api/v2",
+            "DISCORD_TOKEN": "test_discord_token",
+            "CHANNEL_ID": 123456789012345678,
+            "EPHEMERAL_MESSAGE_DELETE_AFTER": 0.0,
+        }
+        
+        with pytest.raises(ValidationError) as exc_info:
+            _ = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
+        
+        errors = exc_info.value.errors()
+        assert any(error["loc"] == ("EPHEMERAL_MESSAGE_DELETE_AFTER",) for error in errors)
+
+    def test_ephemeral_message_delete_after_validation_range(self) -> None:
+        """Test that EPHEMERAL_MESSAGE_DELETE_AFTER has reasonable range limits."""
+        # Test minimum valid value
+        config_data_min = {
+            "TAUTULLI_API_KEY": "test_api_key",
+            "TAUTULLI_URL": "http://localhost:8181/api/v2",
+            "DISCORD_TOKEN": "test_discord_token",
+            "CHANNEL_ID": 123456789012345678,
+            "EPHEMERAL_MESSAGE_DELETE_AFTER": 1.0,
+        }
+        config_min = TGraphBotConfig(**config_data_min)  # pyright: ignore[reportArgumentType]
+        assert config_min.EPHEMERAL_MESSAGE_DELETE_AFTER == 1.0
+
+        # Test maximum valid value
+        config_data_max = {
+            "TAUTULLI_API_KEY": "test_api_key",
+            "TAUTULLI_URL": "http://localhost:8181/api/v2",
+            "DISCORD_TOKEN": "test_discord_token",
+            "CHANNEL_ID": 123456789012345678,
+            "EPHEMERAL_MESSAGE_DELETE_AFTER": 3600.0,
+        }
+        config_max = TGraphBotConfig(**config_data_max)  # pyright: ignore[reportArgumentType]
+        assert config_max.EPHEMERAL_MESSAGE_DELETE_AFTER == 3600.0
+
+        # Test value above maximum
+        config_data_too_large = {
+            "TAUTULLI_API_KEY": "test_api_key",
+            "TAUTULLI_URL": "http://localhost:8181/api/v2",
+            "DISCORD_TOKEN": "test_discord_token",
+            "CHANNEL_ID": 123456789012345678,
+            "EPHEMERAL_MESSAGE_DELETE_AFTER": 3601.0,
+        }
+        
+        with pytest.raises(ValidationError) as exc_info:
+            _ = TGraphBotConfig(**config_data_too_large)  # pyright: ignore[reportArgumentType]
+        
+        errors = exc_info.value.errors()
+        assert any(error["loc"] == ("EPHEMERAL_MESSAGE_DELETE_AFTER",) for error in errors)

@@ -70,6 +70,10 @@ class TGraphBotConfig(BaseModel):
         default="R",
         description="Discord timestamp format (t=short time, T=long time, d=short date, D=long date, f=short date/time, F=long date/time, R=relative time)",
     )
+    EPHEMERAL_MESSAGE_DELETE_AFTER: Annotated[float, Field(gt=0, le=3600)] = Field(
+        default=30.0,
+        description="Time in seconds after which ephemeral Discord messages are automatically deleted",
+    )
 
     # Graph Options
     CENSOR_USERNAMES: bool = Field(

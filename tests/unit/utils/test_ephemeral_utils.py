@@ -32,7 +32,7 @@ class TestEphemeralUtils:
         interaction.response.send_message.assert_called_once_with(  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
             content=content,
             ephemeral=True,
-            delete_after=30.0
+            delete_after=60.0
         )
 
     @pytest.mark.asyncio
@@ -69,7 +69,7 @@ class TestEphemeralUtils:
         interaction.response.send_message.assert_called_once_with(  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
             embed=embed,
             ephemeral=True,
-            delete_after=30.0
+            delete_after=60.0
         )
 
     @pytest.mark.asyncio
@@ -181,7 +181,7 @@ class TestEphemeralUtils:
         # Verify interaction.edit_original_response was called with correct parameters
         edit_mock.assert_called_once_with(  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
             content=content,
-            delete_after=30.0
+            delete_after=60.0
         )
 
     @pytest.mark.asyncio
@@ -318,11 +318,11 @@ class TestEphemeralUtilsIntegration:
         interaction.response.send_message.assert_called_once_with(  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
             content="Initial message",
             ephemeral=True,
-            delete_after=30.0
+            delete_after=60.0
         )
         edit_mock.assert_called_once_with(  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
             content="Updated message",
-            delete_after=30.0
+            delete_after=60.0
         )
 
     @pytest.mark.asyncio
@@ -378,5 +378,5 @@ class TestEphemeralUtilsParameterValidation:
         await edit_ephemeral_with_deletion(interaction)
         
         # Verify edit was called with just delete_after
-        edit_mock.assert_called_once_with(delete_after=30.0)  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+        edit_mock.assert_called_once_with(delete_after=60.0)  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
 
