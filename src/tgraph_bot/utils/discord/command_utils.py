@@ -301,39 +301,6 @@ def validate_color_hex(color: str) -> bool:
         return False
 
 
-def create_progress_embed(
-    title: str, current: int, total: int, description: str = ""
-) -> discord.Embed:
-    """
-    Create an embed showing progress.
-
-    Args:
-        title: Title for the progress embed
-        current: Current progress value
-        total: Total progress value
-        description: Additional description
-
-    Returns:
-        Discord embed showing progress
-    """
-    percentage = (current / total * 100) if total > 0 else 0
-    progress_bar_length = 20
-    filled_length = int(progress_bar_length * current // total) if total > 0 else 0
-
-    progress_bar = "█" * filled_length + "░" * (progress_bar_length - filled_length)
-
-    embed = discord.Embed(
-        title=title, description=description, color=discord.Color.blue()
-    )
-
-    _ = embed.add_field(
-        name=i18n.translate("Progress"),
-        value=f"{progress_bar} {percentage:.1f}%\n{current}/{total}",
-        inline=False,
-    )
-
-    _ = embed.set_footer(text="TGraph Bot")
-    return embed
 
 
 def create_cooldown_embed(

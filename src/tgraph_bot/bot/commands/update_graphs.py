@@ -42,7 +42,6 @@ from ...utils.discord.discord_file_utils import (
 )
 from ...utils.core.exceptions import APIError, NetworkError
 from ...utils.core.error_handler import error_handler
-from ...utils.discord.progress_utils import ProgressCallbackManager
 
 if TYPE_CHECKING:
     pass
@@ -149,16 +148,9 @@ class UpdateGraphsCog(BaseCommandCog):
             )
             await self._cleanup_bot_messages(target_channel)
 
-            # Create progress callback manager for real-time updates
-            progress_manager = ProgressCallbackManager(
-                interaction, i18n.translate("Graph Generation")
-            )
-            progress_callback = progress_manager.create_progress_callback()
-
             # Step 2: Generate graphs using GraphManager
             async with GraphManager(self.tgraph_bot.config_manager) as graph_manager:
                 graph_files = await graph_manager.generate_all_graphs(
-                    progress_callback=progress_callback,
                     max_retries=3,
                     timeout_seconds=300.0,
                 )

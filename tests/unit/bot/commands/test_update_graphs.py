@@ -69,7 +69,6 @@ class TestUpdateGraphsCog:
                 new_callable=AsyncMock,
                 return_value=3,
             ) as mock_post,
-            patch("src.tgraph_bot.bot.commands.update_graphs.ProgressCallbackManager"),
         ):
             # Setup GraphManager mock
             mock_graph_manager = AsyncMock()
@@ -173,7 +172,6 @@ class TestUpdateGraphsCog:
             patch.object(
                 update_graphs_cog, "_post_graphs_to_channel", new_callable=AsyncMock
             ) as mock_post,
-            patch("src.tgraph_bot.bot.commands.update_graphs.ProgressCallbackManager"),
         ):
             # Setup GraphManager mock to return empty list
             mock_graph_manager = AsyncMock()
@@ -504,7 +502,6 @@ class TestUpdateGraphsCog:
                 new_callable=AsyncMock,
                 return_value=2,
             ) as mock_post,
-            patch("src.tgraph_bot.bot.commands.update_graphs.ProgressCallbackManager"),
         ):
             # Setup GraphManager mock with 3 graphs but only 2 post successfully
             mock_graph_manager = AsyncMock()

@@ -16,7 +16,6 @@ from src.tgraph_bot.utils.discord.command_utils import (
     create_cooldown_embed,
     create_error_embed,
     create_info_embed,
-    create_progress_embed,
     create_success_embed,
     format_command_help,
     format_config_value,
@@ -75,17 +74,6 @@ class TestEmbedCreation:
         assert embed.color == discord.Color.blue()
         assert embed.footer.text == "TGraph Bot"
 
-    def test_create_progress_embed(self) -> None:
-        """Test progress embed creation."""
-        embed = create_progress_embed("Processing", 50, 100, "Working on it...")
-
-        assert embed.title == "Processing"
-        assert embed.description == "Working on it..."
-        assert embed.color == discord.Color.blue()
-        field_value = embed.fields[0].value
-        assert field_value is not None
-        assert "50.0%" in field_value
-        assert "50/100" in field_value
 
     def test_create_cooldown_embed(self) -> None:
         """Test cooldown embed creation."""
