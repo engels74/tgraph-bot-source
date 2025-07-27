@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TGraph Bot 1.0.0\n"
 "Report-Msgid-Bugs-To: https://github.com/engels74/tgraph-bot-source/issues\n"
-"POT-Creation-Date: 2025-07-27 14:09\n"
+"POT-Creation-Date: 2025-07-27 17:59\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: engels74 <141435164+engels74@users.noreply.github.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -22,11 +22,11 @@ msgstr ""
 msgid "***HIDDEN***"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/my_stats.py:138
+#: src/tgraph_bot/bot/commands/my_stats.py:136
 msgid "1-3 minutes"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/update_graphs.py:135
+#: src/tgraph_bot/bot/commands/update_graphs.py:133
 msgid "2-5 minutes depending on data size"
 msgstr ""
 
@@ -39,12 +39,12 @@ msgstr ""
 msgid "An error occurred while processing your request"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:287
+#: src/tgraph_bot/bot/commands/config.py:285
 msgid "Annotation"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:275
-#: src/tgraph_bot/bot/commands/config.py:288
+#: src/tgraph_bot/bot/commands/config.py:273
+#: src/tgraph_bot/bot/commands/config.py:286
 msgid "Annotation Outline"
 msgstr ""
 
@@ -56,7 +56,7 @@ msgstr ""
 msgid "Available Keys"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:286
+#: src/tgraph_bot/bot/commands/config.py:284
 msgid "Background"
 msgstr ""
 
@@ -72,15 +72,15 @@ msgstr ""
 msgid "Bot is online and ready!"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/update_graphs.py:383
+#: src/tgraph_bot/bot/commands/update_graphs.py:377
 msgid "Bot lacks permission to post in the configured channel."
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:272
+#: src/tgraph_bot/bot/commands/config.py:270
 msgid "Censor Usernames"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:226
+#: src/tgraph_bot/bot/commands/config.py:224
 msgid "Channel ID"
 msgstr ""
 
@@ -88,19 +88,19 @@ msgstr ""
 msgid "Channel {channel_id} is not a text channel. Please configure a valid text channel."
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/update_graphs.py:207
+#: src/tgraph_bot/bot/commands/update_graphs.py:203
 msgid "Check Logs"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/my_stats.py:183
+#: src/tgraph_bot/bot/commands/my_stats.py:181
 msgid "Check Your DMs"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:253
+#: src/tgraph_bot/bot/commands/test_scheduler.py:251
 msgid "Check the bot logs for detailed error information and verify your configuration settings."
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:321
+#: src/tgraph_bot/bot/commands/config.py:319
 msgid "Color"
 msgstr ""
 
@@ -112,19 +112,19 @@ msgstr ""
 msgid "Command on Cooldown"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:333
+#: src/tgraph_bot/bot/commands/config.py:331
 msgid "Config command global cooldown"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:332
+#: src/tgraph_bot/bot/commands/config.py:330
 msgid "Config command per-user cooldown"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:143
+#: src/tgraph_bot/bot/commands/test_scheduler.py:141
 msgid "Configuration"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:441
+#: src/tgraph_bot/bot/commands/config.py:439
 msgid "Configuration changes require bot restart to take effect"
 msgstr ""
 
@@ -136,43 +136,43 @@ msgstr ""
 msgid "Could not find Discord channel with ID: {channel_id}. Please check the bot configuration."
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:196
+#: src/tgraph_bot/bot/commands/config.py:194
 msgid "Current Value"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:217
+#: src/tgraph_bot/bot/commands/config.py:215
 msgid "Current bot configuration settings"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:140
+#: src/tgraph_bot/bot/commands/test_scheduler.py:138
 msgid "Current scheduler configuration and state"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:248
-#: src/tgraph_bot/bot/commands/config.py:296
+#: src/tgraph_bot/bot/commands/config.py:246
+#: src/tgraph_bot/bot/commands/config.py:294
 msgid "Daily Play Count"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/my_stats.py:132
+#: src/tgraph_bot/bot/commands/my_stats.py:130
 msgid "Delivery Method"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/my_stats.py:133
+#: src/tgraph_bot/bot/commands/my_stats.py:131
 msgid "Direct Message (DM)"
 msgstr ""
 
+#: src/tgraph_bot/bot/commands/config.py:271
+#: src/tgraph_bot/bot/commands/config.py:272
 #: src/tgraph_bot/bot/commands/config.py:273
-#: src/tgraph_bot/bot/commands/config.py:274
-#: src/tgraph_bot/bot/commands/config.py:275
 #: src/tgraph_bot/utils/discord/command_utils.py:128
 msgid "Disabled"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/update_graphs.py:403
+#: src/tgraph_bot/bot/commands/update_graphs.py:397
 msgid "Discord API error occurred while posting graphs."
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/update_graphs.py:396
+#: src/tgraph_bot/bot/commands/update_graphs.py:390
 msgid "Discord rate limit reached. Please try again later."
 msgstr ""
 
@@ -184,11 +184,11 @@ msgstr ""
 msgid "Displays play activity patterns across different days of the week."
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:355
+#: src/tgraph_bot/bot/commands/config.py:353
 msgid "Edit bot configuration"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/my_stats.py:130
+#: src/tgraph_bot/bot/commands/my_stats.py:128
 msgid "Email"
 msgstr ""
 
@@ -196,10 +196,10 @@ msgstr ""
 msgid "Empty"
 msgstr ""
 
+#: src/tgraph_bot/bot/commands/config.py:271
+#: src/tgraph_bot/bot/commands/config.py:272
 #: src/tgraph_bot/bot/commands/config.py:273
-#: src/tgraph_bot/bot/commands/config.py:274
-#: src/tgraph_bot/bot/commands/config.py:275
-#: src/tgraph_bot/bot/commands/config.py:320
+#: src/tgraph_bot/bot/commands/config.py:318
 #: src/tgraph_bot/utils/discord/command_utils.py:126
 msgid "Enabled"
 msgstr ""
@@ -209,7 +209,7 @@ msgstr ""
 msgid "Error"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:240
+#: src/tgraph_bot/bot/commands/test_scheduler.py:238
 msgid "Error Details"
 msgstr ""
 
@@ -217,8 +217,8 @@ msgstr ""
 msgid "Error in command `{command_name}`: {error_message}"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/update_graphs.py:134
-#: src/tgraph_bot/bot/commands/my_stats.py:137
+#: src/tgraph_bot/bot/commands/update_graphs.py:132
+#: src/tgraph_bot/bot/commands/my_stats.py:135
 msgid "Estimated Time"
 msgstr ""
 
@@ -251,16 +251,16 @@ msgstr ""
 msgid "File too large: {actual_mb:.1f}MB exceeds {limit_mb:.0f}MB limit"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:237
+#: src/tgraph_bot/bot/commands/config.py:235
 msgid "Fixed Update Time"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:323
+#: src/tgraph_bot/bot/commands/config.py:321
 msgid "Font Size"
 msgstr ""
 
 #: src/tgraph_bot/graphs/user_graph_manager.py:548
-#: src/tgraph_bot/bot/commands/update_graphs.py:186
+#: src/tgraph_bot/bot/commands/update_graphs.py:182
 msgid "Generated Graphs"
 msgstr ""
 
@@ -268,15 +268,15 @@ msgstr ""
 msgid "Generated by TGraph Bot"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/update_graphs.py:200
+#: src/tgraph_bot/bot/commands/update_graphs.py:196
 msgid "Generated {total} graphs but only posted {success} successfully"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/update_graphs.py:124
+#: src/tgraph_bot/bot/commands/update_graphs.py:122
 msgid "Generating server graphs... This may take a few minutes."
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/my_stats.py:126
+#: src/tgraph_bot/bot/commands/my_stats.py:124
 msgid "Generating your personal Plex statistics... This may take a moment."
 msgstr ""
 
@@ -288,19 +288,19 @@ msgstr ""
 msgid "GitHub"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:273
+#: src/tgraph_bot/bot/commands/config.py:271
 msgid "Graph Grid"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/update_graphs.py:178
+#: src/tgraph_bot/bot/commands/update_graphs.py:174
 msgid "Graph Update Complete"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/update_graphs.py:123
+#: src/tgraph_bot/bot/commands/update_graphs.py:121
 msgid "Graph Update Started"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/my_stats.py:169
+#: src/tgraph_bot/bot/commands/my_stats.py:167
 msgid "Graphs Generated"
 msgstr ""
 
@@ -329,11 +329,11 @@ msgstr ""
 msgid "Issue Details"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:238
+#: src/tgraph_bot/bot/commands/config.py:236
 msgid "Keep Days"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:227
+#: src/tgraph_bot/bot/commands/config.py:225
 msgid "Language"
 msgstr ""
 
@@ -345,7 +345,7 @@ msgstr ""
 msgid "Manually trigger server-wide graph generation and posting"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:274
+#: src/tgraph_bot/bot/commands/config.py:272
 msgid "Media Type Separation"
 msgstr ""
 
@@ -361,41 +361,41 @@ msgstr ""
 msgid "Most popular platforms used for media consumption."
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:285
+#: src/tgraph_bot/bot/commands/config.py:283
 msgid "Movie Color"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:337
+#: src/tgraph_bot/bot/commands/config.py:335
 msgid "My stats command global cooldown"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:336
+#: src/tgraph_bot/bot/commands/config.py:334
 msgid "My stats command per-user cooldown"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/update_graphs.py:424
+#: src/tgraph_bot/bot/commands/update_graphs.py:418
 msgid "Network error occurred while posting graphs."
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:436
+#: src/tgraph_bot/bot/commands/config.py:434
 msgid "New Value"
 msgstr ""
 
 #: src/tgraph_bot/graphs/user_graph_manager.py:595
-#: src/tgraph_bot/bot/commands/test_scheduler.py:252
+#: src/tgraph_bot/bot/commands/test_scheduler.py:250
 msgid "Next Steps"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:272
-#: src/tgraph_bot/bot/commands/config.py:320
+#: src/tgraph_bot/bot/commands/config.py:270
+#: src/tgraph_bot/bot/commands/config.py:318
 msgid "No"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/update_graphs.py:160
+#: src/tgraph_bot/bot/commands/update_graphs.py:158
 msgid "No Graphs Generated"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:312
+#: src/tgraph_bot/bot/commands/config.py:310
 msgid "No annotations enabled"
 msgstr ""
 
@@ -404,7 +404,7 @@ msgstr ""
 msgid "No content provided"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:186
+#: src/tgraph_bot/bot/commands/config.py:184
 msgid "No description available"
 msgstr ""
 
@@ -413,11 +413,11 @@ msgstr ""
 msgid "No files provided for upload"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/update_graphs.py:161
+#: src/tgraph_bot/bot/commands/update_graphs.py:159
 msgid "No graph files were created. This may be due to insufficient data or configuration issues."
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:264
+#: src/tgraph_bot/bot/commands/config.py:262
 msgid "No graphs enabled"
 msgstr ""
 
@@ -439,7 +439,7 @@ msgstr ""
 msgid "Optional: View a specific configuration setting"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/update_graphs.py:199
+#: src/tgraph_bot/bot/commands/update_graphs.py:195
 msgid "Partial Success"
 msgstr ""
 
@@ -447,30 +447,30 @@ msgstr ""
 msgid "Path is not a file: {file_path}"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/my_stats.py:158
+#: src/tgraph_bot/bot/commands/my_stats.py:156
 msgid "Personal Statistics Complete"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/my_stats.py:125
+#: src/tgraph_bot/bot/commands/my_stats.py:123
 msgid "Personal Statistics Request"
+msgstr ""
+
+#: src/tgraph_bot/bot/commands/config.py:248
+#: src/tgraph_bot/bot/commands/config.py:296
+msgid "Play Count by Day of Week"
 msgstr ""
 
 #: src/tgraph_bot/bot/commands/config.py:250
 #: src/tgraph_bot/bot/commands/config.py:298
-msgid "Play Count by Day of Week"
-msgstr ""
-
-#: src/tgraph_bot/bot/commands/config.py:252
-#: src/tgraph_bot/bot/commands/config.py:300
 msgid "Play Count by Hour of Day"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:258
-#: src/tgraph_bot/bot/commands/config.py:306
+#: src/tgraph_bot/bot/commands/config.py:256
+#: src/tgraph_bot/bot/commands/config.py:304
 msgid "Play Count by Month"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/my_stats.py:118
+#: src/tgraph_bot/bot/commands/my_stats.py:116
 msgid "Please provide a valid email address (e.g., user@example.com)."
 msgstr ""
 
@@ -478,19 +478,19 @@ msgstr ""
 msgid "Please try the command again or contact support if the issue persists."
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/my_stats.py:200
+#: src/tgraph_bot/bot/commands/my_stats.py:196
 msgid "Possible Causes"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/update_graphs.py:191
+#: src/tgraph_bot/bot/commands/update_graphs.py:187
 msgid "Posted Successfully"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:139
+#: src/tgraph_bot/bot/commands/test_scheduler.py:137
 msgid "Pre-Test Status"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:431
+#: src/tgraph_bot/bot/commands/config.py:429
 msgid "Previous Value"
 msgstr ""
 
@@ -498,7 +498,7 @@ msgstr ""
 msgid "Privacy Notice"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/my_stats.py:176
+#: src/tgraph_bot/bot/commands/my_stats.py:174
 msgid "Processing Time"
 msgstr ""
 
@@ -510,19 +510,19 @@ msgstr ""
 msgid "Retry After"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:161
+#: src/tgraph_bot/bot/commands/test_scheduler.py:159
 msgid "Scheduled Times"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:183
+#: src/tgraph_bot/bot/commands/test_scheduler.py:181
 msgid "Scheduler Test Completed Successfully"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:234
+#: src/tgraph_bot/bot/commands/test_scheduler.py:232
 msgid "Scheduler Test Failed"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:107
+#: src/tgraph_bot/bot/commands/test_scheduler.py:105
 msgid "Scheduler Test Started"
 msgstr ""
 
@@ -538,7 +538,7 @@ msgstr ""
 msgid "Shows when users are most active throughout the day."
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/update_graphs.py:208
+#: src/tgraph_bot/bot/commands/update_graphs.py:204
 msgid "Some files may have failed to upload"
 msgstr ""
 
@@ -546,7 +546,7 @@ msgstr ""
 msgid "Started"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:206
+#: src/tgraph_bot/bot/commands/test_scheduler.py:204
 msgid "State Updates"
 msgstr ""
 
@@ -554,11 +554,11 @@ msgstr ""
 msgid "Statistical visualization of Plex activity data."
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/my_stats.py:194
+#: src/tgraph_bot/bot/commands/my_stats.py:190
 msgid "Statistics Generation Failed"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/update_graphs.py:129
+#: src/tgraph_bot/bot/commands/update_graphs.py:127
 msgid "Status"
 msgstr ""
 
@@ -567,15 +567,15 @@ msgstr ""
 msgid "Success"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/update_graphs.py:179
+#: src/tgraph_bot/bot/commands/update_graphs.py:175
 msgid "Successfully generated and posted {count} graphs to {channel}"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:427
+#: src/tgraph_bot/bot/commands/config.py:425
 msgid "Successfully updated `{key}`"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/my_stats.py:207
+#: src/tgraph_bot/bot/commands/my_stats.py:203
 msgid "Suggested Actions"
 msgstr ""
 
@@ -599,19 +599,19 @@ msgstr ""
 msgid "TGraph Bot is running smoothly!"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:284
+#: src/tgraph_bot/bot/commands/config.py:282
 msgid "TV Color"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:225
+#: src/tgraph_bot/bot/commands/config.py:223
 msgid "Tautulli URL"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:111
+#: src/tgraph_bot/bot/commands/test_scheduler.py:109
 msgid "Test Method"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:190
+#: src/tgraph_bot/bot/commands/test_scheduler.py:188
 msgid "Test Results"
 msgstr ""
 
@@ -628,11 +628,11 @@ msgstr ""
 msgid "Test the scheduled update functionality immediately"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:108
+#: src/tgraph_bot/bot/commands/test_scheduler.py:106
 msgid "Testing the scheduled update functionality..."
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:322
+#: src/tgraph_bot/bot/commands/config.py:320
 msgid "Text Color"
 msgstr ""
 
@@ -644,7 +644,7 @@ msgstr ""
 msgid "The configuration setting '{config_key}' is invalid or missing. Please check your configuration and try again."
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:358
+#: src/tgraph_bot/bot/commands/config.py:356
 msgid "The configuration setting to modify"
 msgstr ""
 
@@ -660,7 +660,7 @@ msgstr ""
 msgid "The generated graph failed validation checks. Please try generating the graph again."
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:359
+#: src/tgraph_bot/bot/commands/config.py:357
 msgid "The new value for the setting"
 msgstr ""
 
@@ -668,15 +668,15 @@ msgstr ""
 msgid "The provided input is invalid. Please check your parameters and try again."
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:184
+#: src/tgraph_bot/bot/commands/test_scheduler.py:182
 msgid "The scheduled update routine executed successfully!"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:235
+#: src/tgraph_bot/bot/commands/test_scheduler.py:233
 msgid "The scheduled update test encountered an error"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:216
+#: src/tgraph_bot/bot/commands/test_scheduler.py:214
 msgid "The scheduler will work correctly at the configured time. All timing calculations and update workflows are functioning properly."
 msgstr ""
 
@@ -692,7 +692,7 @@ msgstr ""
 msgid "There is an issue with the graph configuration. Please check your settings and try again."
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:246
+#: src/tgraph_bot/bot/commands/test_scheduler.py:244
 msgid "There may be an issue with:\n• Tautulli API connectivity\n• Discord channel permissions\n• Graph generation process\n• Bot configuration"
 msgstr ""
 
@@ -716,29 +716,29 @@ msgstr ""
 msgid "This prevents server overload during graph generation"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:239
+#: src/tgraph_bot/bot/commands/config.py:237
 msgid "Time Range Days"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:240
+#: src/tgraph_bot/bot/commands/config.py:238
 msgid "Time Range Months"
+msgstr ""
+
+#: src/tgraph_bot/bot/commands/config.py:252
+#: src/tgraph_bot/bot/commands/config.py:300
+msgid "Top 10 Platforms"
 msgstr ""
 
 #: src/tgraph_bot/bot/commands/config.py:254
 #: src/tgraph_bot/bot/commands/config.py:302
-msgid "Top 10 Platforms"
-msgstr ""
-
-#: src/tgraph_bot/bot/commands/config.py:256
-#: src/tgraph_bot/bot/commands/config.py:304
 msgid "Top 10 Users"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:201
+#: src/tgraph_bot/bot/commands/config.py:199
 msgid "Type"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/my_stats.py:195
+#: src/tgraph_bot/bot/commands/my_stats.py:191
 msgid "Unable to generate your personal statistics."
 msgstr ""
 
@@ -750,15 +750,15 @@ msgstr ""
 msgid "Unsupported file format: {file_format}. Supported: {supported_formats}"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:236
+#: src/tgraph_bot/bot/commands/config.py:234
 msgid "Update Days"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:335
+#: src/tgraph_bot/bot/commands/config.py:333
 msgid "Update graphs command global cooldown"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:334
+#: src/tgraph_bot/bot/commands/config.py:332
 msgid "Update graphs command per-user cooldown"
 msgstr ""
 
@@ -770,11 +770,11 @@ msgstr ""
 msgid "Usage"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:343
+#: src/tgraph_bot/bot/commands/config.py:341
 msgid "Use `/config edit <key> <value>` to modify settings"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:206
+#: src/tgraph_bot/bot/commands/config.py:204
 msgid "Use `/config edit {key} <value>` to modify this setting"
 msgstr ""
 
@@ -794,7 +794,7 @@ msgstr ""
 msgid "User {user} has {n} messages"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:112
+#: src/tgraph_bot/bot/commands/test_scheduler.py:110
 msgid "Using UpdateTracker.force_update() - same as scheduler"
 msgstr ""
 
@@ -810,15 +810,15 @@ msgstr ""
 msgid "View or edit bot configuration"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:215
+#: src/tgraph_bot/bot/commands/test_scheduler.py:213
 msgid "What This Confirms"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:245
+#: src/tgraph_bot/bot/commands/test_scheduler.py:243
 msgid "What This Means"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:118
+#: src/tgraph_bot/bot/commands/test_scheduler.py:116
 msgid "What This Tests"
 msgstr ""
 
@@ -826,8 +826,8 @@ msgstr ""
 msgid "Wiki"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:272
-#: src/tgraph_bot/bot/commands/config.py:320
+#: src/tgraph_bot/bot/commands/config.py:270
+#: src/tgraph_bot/bot/commands/config.py:318
 msgid "Yes"
 msgstr ""
 
@@ -857,11 +857,11 @@ msgstr ""
 msgid "Your Plex account email address (used to identify your statistics)"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/my_stats.py:184
+#: src/tgraph_bot/bot/commands/my_stats.py:182
 msgid "Your graphs have been sent privately"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/my_stats.py:159
+#: src/tgraph_bot/bot/commands/my_stats.py:157
 msgid "Your personal Plex statistics have been generated and sent via DM!"
 msgstr ""
 
@@ -881,7 +881,7 @@ msgstr ""
 msgid "update graphs"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/update_graphs.py:187
+#: src/tgraph_bot/bot/commands/update_graphs.py:183
 msgid "{count} files"
 msgstr ""
 
@@ -889,11 +889,11 @@ msgstr ""
 msgid "{count} graphs generated"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/update_graphs.py:192
+#: src/tgraph_bot/bot/commands/update_graphs.py:188
 msgid "{count} individual messages"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/my_stats.py:170
+#: src/tgraph_bot/bot/commands/my_stats.py:168
 msgid "{count} personal graphs"
 msgstr ""
 
@@ -945,39 +945,39 @@ msgstr ""
 msgid "{time:.1f} minutes"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/my_stats.py:177
+#: src/tgraph_bot/bot/commands/my_stats.py:175
 msgid "{time:.1f} seconds"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/my_stats.py:201
+#: src/tgraph_bot/bot/commands/my_stats.py:197
 msgid "• Email not found in Plex server\n• Insufficient data for graphs\n• Temporary server issue"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:119
+#: src/tgraph_bot/bot/commands/test_scheduler.py:117
 msgid "• UPDATE_DAYS configuration\n• FIXED_UPDATE_TIME configuration\n• Complete graph generation workflow\n• Error handling and retry logic\n• Scheduler state updates"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/my_stats.py:208
+#: src/tgraph_bot/bot/commands/my_stats.py:204
 msgid "• Verify your email is correct\n• Ensure you have Plex activity\n• Try again in a few minutes"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:234
+#: src/tgraph_bot/bot/commands/config.py:232
 msgid "⏰ Timing & Retention"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:330
+#: src/tgraph_bot/bot/commands/config.py:328
 msgid "⏱️ Command Cooldowns"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:270
+#: src/tgraph_bot/bot/commands/config.py:268
 msgid "⚙️ Graph Options"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:426
+#: src/tgraph_bot/bot/commands/config.py:424
 msgid "✅ Configuration Updated"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/test_scheduler.py:191
+#: src/tgraph_bot/bot/commands/test_scheduler.py:189
 msgid "✅ UPDATE_DAYS interval calculation working\n✅ FIXED_UPDATE_TIME scheduling working\n✅ Graph generation and posting successful\n✅ Scheduler state updated correctly"
 msgstr ""
 
@@ -985,11 +985,11 @@ msgstr ""
 msgid "❌ Configuration Key Not Found"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:282
+#: src/tgraph_bot/bot/commands/config.py:280
 msgid "🎨 Colors"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:318
+#: src/tgraph_bot/bot/commands/config.py:316
 msgid "🏔️ Peak Annotations"
 msgstr ""
 
@@ -1009,7 +1009,7 @@ msgstr ""
 msgid "📈 Daily Play Count"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:261
+#: src/tgraph_bot/bot/commands/config.py:259
 msgid "📊 Enabled Graphs"
 msgstr ""
 
@@ -1029,23 +1029,23 @@ msgstr ""
 msgid "📊 Your Personal Plex Statistics"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:309
+#: src/tgraph_bot/bot/commands/config.py:307
 msgid "📝 Annotations Enabled"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:223
+#: src/tgraph_bot/bot/commands/config.py:221
 msgid "📡 Essential Settings"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/update_graphs.py:130
+#: src/tgraph_bot/bot/commands/update_graphs.py:128
 msgid "🔄 Initializing graph generation"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:216
+#: src/tgraph_bot/bot/commands/config.py:214
 msgid "🔧 Bot Configuration"
 msgstr ""
 
-#: src/tgraph_bot/bot/commands/config.py:191
+#: src/tgraph_bot/bot/commands/config.py:189
 msgid "🔧 Configuration: {key}"
 msgstr ""
 
