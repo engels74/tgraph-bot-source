@@ -550,3 +550,54 @@ class TestVisualizationMixin:
                 assert graph.axes.get_ylabel() == "Y Axis"
 
             graph.cleanup()
+
+    def test_apply_configured_palette_with_viridis(self) -> None:
+        """Test apply_configured_palette method with viridis palette."""
+        with matplotlib_cleanup():
+            config: dict[str, object] = {"PLAY_COUNT_BY_HOUROFDAY_PALETTE": "viridis"}
+            graph = MockGraphWithVisualization(config=config)
+
+            with patch("seaborn.set_palette") as mock_set_palette:
+                graph.apply_configured_palette("PLAY_COUNT_BY_HOUROFDAY_PALETTE")
+                mock_set_palette.assert_called_once_with("viridis")
+
+    def test_apply_configured_palette_with_empty_config(self) -> None:
+        """Test apply_configured_palette method with no palette configured."""
+        with matplotlib_cleanup():
+            graph = MockGraphWithVisualization(config={})
+
+            with patch("seaborn.set_palette") as mock_set_palette:
+                graph.apply_configured_palette("PLAY_COUNT_BY_HOUROFDAY_PALETTE")
+                # Should not call set_palette when no palette is configured
+                mock_set_palette.assert_not_called()
+
+    def test_apply_configured_palette_with_none_config(self) -> None:
+        """Test apply_configured_palette method with None config."""
+        with matplotlib_cleanup():
+            graph = MockGraphWithVisualization(config=None)
+
+            with patch("seaborn.set_palette") as mock_set_palette:
+                graph.apply_configured_palette("PLAY_COUNT_BY_HOUROFDAY_PALETTE")
+                # Should not call set_palette when config is None
+                mock_set_palette.assert_not_called()
+
+    def test_apply_configured_palette_with_top_users(self) -> None:
+        """Test apply_configured_palette method for top users graph."""
+        with matplotlib_cleanup():
+            config: dict[str, object] = {"TOP_10_USERS_PALETTE": "plasma"}
+            graph = MockGraphWithVisualization(config=config)
+
+            with patch("seaborn.set_palette") as mock_set_palette:
+                graph.apply_configured_palette("TOP_10_USERS_PALETTE")
+                mock_set_palette.assert_called_once_with("plasma")
+
+    def test_apply_configured_palette_with_invalid_palette(self) -> None:
+        """Test apply_configured_palette method with invalid palette value."""
+        with matplotlib_cleanup():
+            config: dict[str, object] = {"PLAY_COUNT_BY_HOUROFDAY_PALETTE": "invalid_palette"}
+            graph = MockGraphWithVisualization(config=config)
+
+            with patch("seaborn.set_palette") as mock_set_palette:
+                # Should still attempt to set the palette (seaborn will handle invalid values)
+                graph.apply_configured_palette("PLAY_COUNT_BY_HOUROFDAY_PALETTE")
+                mock_set_palette.assert_called_once_with("invalid_palette")

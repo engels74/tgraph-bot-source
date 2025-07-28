@@ -95,10 +95,13 @@ class PlayCountByHourOfDayGraph(BaseGraph, VisualizationMixin):
             # Step 3: Configure grid styling
             self.configure_seaborn_style_with_grid()
 
-            # Step 4: Generate visualization
+            # Step 4: Apply configured palette if set
+            self.apply_configured_palette("PLAY_COUNT_BY_HOUROFDAY_PALETTE")
+
+            # Step 5: Generate visualization
             self._generate_hourly_visualization(ax, processed_records)
 
-            # Step 5: Finalize and save using combined utility
+            # Step 6: Finalize and save using combined utility
             output_path = self.finalize_and_save_figure(
                 graph_type="play_count_by_hourofday", user_id=None
             )

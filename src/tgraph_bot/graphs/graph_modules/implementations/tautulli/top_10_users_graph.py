@@ -109,7 +109,10 @@ class Top10UsersGraph(BaseGraph, VisualizationMixin):
             # Step 4: Configure grid styling
             self.configure_seaborn_style_with_grid()
 
-            # Step 5: Create visualization
+            # Step 5: Apply configured palette if set
+            self.apply_configured_palette("TOP_10_USERS_PALETTE")
+
+            # Step 6: Create visualization
             if top_users:
                 # Convert to pandas DataFrame for easier plotting
                 df = pd.DataFrame(top_users)
@@ -156,7 +159,7 @@ class Top10UsersGraph(BaseGraph, VisualizationMixin):
                 self.setup_standard_title_and_axes(title=self.get_title())
                 logger.warning("Generated empty top 10 users graph due to no data")
 
-            # Step 6: Finalize and save using combined utility
+            # Step 7: Finalize and save using combined utility
             output_path = self.finalize_and_save_figure(
                 graph_type="top_10_users", user_id=None
             )

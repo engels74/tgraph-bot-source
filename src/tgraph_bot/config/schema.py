@@ -199,6 +199,16 @@ class TGraphBotConfig(BaseModel):
         description="Text color for peak annotations",
     )
 
+    # Graph Color Palettes
+    PLAY_COUNT_BY_HOUROFDAY_PALETTE: str = Field(
+        default="",
+        description="Color palette for hourly play count graph (viridis, plasma, inferno, magma, or leave blank for default)",
+    )
+    TOP_10_USERS_PALETTE: str = Field(
+        default="",
+        description="Color palette for top users graph (viridis, plasma, inferno, magma, or leave blank for default)",
+    )
+
     # Command Cooldown Options
     CONFIG_COOLDOWN_MINUTES: Annotated[int, Field(ge=0, le=1440)] = Field(
         default=0,

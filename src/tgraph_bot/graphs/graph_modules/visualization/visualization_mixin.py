@@ -348,6 +348,32 @@ class VisualizationMixin:
         """
         sns.set_palette(palette)  # pyright: ignore[reportUnknownMemberType]
 
+    def apply_configured_palette(self: VisualizationProtocol, config_key: str) -> None:
+        """
+        Apply a seaborn color palette based on configuration.
+
+        This method checks the configuration for a palette setting and applies it
+        if found. This provides a DRY way to handle palette configuration across
+        different graph types.
+
+        Args:
+            config_key: The configuration key to check for palette setting
+        """
+        if self.config is None:
+            return
+        
+        # Handle both TGraphBotConfig objects and dict configs
+        palette: object = None
+        if isinstance(self.config, dict):
+            # Handle dict configs
+            palette = self.config.get(config_key)
+        else:
+            # Handle TGraphBotConfig objects
+            palette = getattr(self.config, config_key, None)
+        
+        if palette and isinstance(palette, str):
+            sns.set_palette(palette)  # pyright: ignore[reportUnknownMemberType]
+
     def configure_tick_parameters(
         self: VisualizationProtocol,
         axis: Literal["x", "y", "both"] = "both",

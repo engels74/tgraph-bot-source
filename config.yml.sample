@@ -127,6 +127,15 @@ ENABLE_PEAK_ANNOTATIONS: true
 PEAK_ANNOTATION_COLOR: '#ffcc00'
 PEAK_ANNOTATION_TEXT_COLOR: '#000000'
 
+# Color Palettes (Advanced Styling)
+# ---------------------------------
+
+# Color palette for hourly play count graph (viridis, plasma, inferno, magma, or leave blank for default single color)
+PLAY_COUNT_BY_HOUROFDAY_PALETTE: ''
+
+# Color palette for top users graph (viridis, plasma, inferno, magma, or leave blank for default single color)
+TOP_10_USERS_PALETTE: ''
+
 # ============================================================================
 # Performance & Rate Limiting
 # ============================================================================
