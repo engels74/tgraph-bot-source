@@ -76,7 +76,7 @@ class TestTestSchedulerCog:
             for call in call_args_list:  # pyright: ignore[reportUnknownVariableType]
                 kwargs = call.kwargs  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
                 assert kwargs["ephemeral"] is True
-                assert kwargs["delete_after"] == 60.0
+                assert kwargs["delete_after"] == 30.0
 
     @pytest.mark.asyncio
     async def test_test_scheduler_force_update_failure(
@@ -235,7 +235,7 @@ class TestTestSchedulerCog:
             for call in call_args_list:  # pyright: ignore[reportUnknownVariableType]
                 call_kwargs = call[1]  # pyright: ignore[reportUnknownVariableType]
                 assert call_kwargs["ephemeral"] is True
-                assert call_kwargs["delete_after"] == 60.0
+                assert call_kwargs["delete_after"] == 30.0
 
     @pytest.mark.asyncio
     async def test_test_scheduler_permissions_check(

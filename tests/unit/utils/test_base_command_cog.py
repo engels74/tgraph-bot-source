@@ -246,9 +246,7 @@ class TestBaseCommandCog:
 class TestBaseCommandCogEphemeralMethods:
     """Test the ephemeral response methods in BaseCommandCog."""
 
-    def __init__(self) -> None:
-        """Initialize with mock_bot for type checker."""
-        self.mock_bot: Mock = Mock(spec=commands.Bot)
+    mock_bot: Mock = Mock(spec=commands.Bot)
 
     @pytest.fixture(autouse=True)
     def setup_method(self) -> None:

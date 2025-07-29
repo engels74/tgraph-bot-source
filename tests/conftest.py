@@ -411,6 +411,9 @@ def base_config() -> TGraphBotConfig:
         ANNOTATE_TOP_10_PLATFORMS=True,
         ANNOTATE_TOP_10_USERS=True,
         ANNOTATE_PLAY_COUNT_BY_MONTH=True,
+        # Color Palettes (empty for default)
+        PLAY_COUNT_BY_HOUROFDAY_PALETTE="",
+        TOP_10_USERS_PALETTE="",
         # Command Cooldown Options (minimal for testing)
         CONFIG_COOLDOWN_MINUTES=0,
         CONFIG_GLOBAL_COOLDOWN_SECONDS=0,

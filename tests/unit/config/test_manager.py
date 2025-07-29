@@ -80,6 +80,8 @@ class TestConfigManager:
             "CHANNEL_ID": base_config.CHANNEL_ID,
             "UPDATE_DAYS": base_config.UPDATE_DAYS,
             "TV_COLOR": base_config.TV_COLOR,
+            "PLAY_COUNT_BY_HOUROFDAY_PALETTE": base_config.PLAY_COUNT_BY_HOUROFDAY_PALETTE,
+            "TOP_10_USERS_PALETTE": base_config.TOP_10_USERS_PALETTE,
         }
 
         with create_temp_config_file(config_data) as temp_config_file:
