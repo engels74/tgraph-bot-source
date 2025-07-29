@@ -8,6 +8,7 @@ import logging
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, override
 
+import numpy as np
 from matplotlib.axes import Axes
 
 from ...utils.annotation_helper import AnnotationHelper
@@ -290,8 +291,6 @@ class Top10PlatformsGraph(BaseGraph, VisualizationMixin):
             ax: The matplotlib axes to plot on
             processed_records: List of processed play history records
         """
-        import numpy as np
-
         # Aggregate data by media type with platform separation
         separated_data = aggregate_top_platforms_separated(processed_records, limit=10)
 
@@ -391,8 +390,8 @@ class Top10PlatformsGraph(BaseGraph, VisualizationMixin):
         self.configure_tick_parameters(axis="both", labelsize=12)
 
         # Set y-axis ticks to show platform names
-        ax.set_yticks(y_positions)
-        ax.set_yticklabels(platform_names)
+        ax.set_yticks(y_positions)  # pyright: ignore[reportAny] # matplotlib stubs incomplete
+        ax.set_yticklabels(platform_names)  # pyright: ignore[reportAny] # matplotlib stubs incomplete
 
         # Add legend
         if len(media_types) > 1:

@@ -8,6 +8,7 @@ import logging
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, override
 
+import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib.axes import Axes
@@ -384,8 +385,6 @@ class Top10UsersGraph(BaseGraph, VisualizationMixin):
             return
 
         # Create stacked horizontal bars
-        import numpy as np
-
         y_positions = np.arange(len(usernames))
         left_positions = np.zeros(len(usernames))
 
@@ -417,8 +416,8 @@ class Top10UsersGraph(BaseGraph, VisualizationMixin):
         )
 
         # Set y-axis ticks to show usernames
-        ax.set_yticks(y_positions)
-        ax.set_yticklabels(usernames)
+        ax.set_yticks(y_positions)  # pyright: ignore[reportAny] # matplotlib stubs incomplete
+        ax.set_yticklabels(usernames)  # pyright: ignore[reportAny] # matplotlib stubs incomplete
 
         # Add legend
         if len(media_types) > 1:

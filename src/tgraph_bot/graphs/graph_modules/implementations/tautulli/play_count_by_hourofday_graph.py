@@ -9,6 +9,7 @@ import logging
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, override
 
+import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib.axes import Axes
@@ -331,13 +332,11 @@ class PlayCountByHourOfDayGraph(BaseGraph, VisualizationMixin):
             return
 
         # Create stacked bar chart
-        import numpy as np
-
         # Convert hours to numpy array for plotting
         x_positions = np.arange(len(hours))
 
         # Create stacked bars
-        bottom = np.zeros(len(hours))
+        bottom = np.zeros(len(hours), dtype=np.float64)
         for i, (counts, label, color) in enumerate(zip(data_matrix, labels, colors)):
             _ = ax.bar(  # pyright: ignore[reportUnknownMemberType]
                 x_positions,
@@ -355,8 +354,8 @@ class PlayCountByHourOfDayGraph(BaseGraph, VisualizationMixin):
         )
 
         # Set x-axis ticks to show hours
-        ax.set_xticks(x_positions)
-        ax.set_xticklabels([str(hour) for hour in hours])
+        ax.set_xticks(x_positions)  # pyright: ignore[reportAny] # matplotlib stubs incomplete
+        ax.set_xticklabels([str(hour) for hour in hours])  # pyright: ignore[reportAny] # matplotlib stubs incomplete
 
         # Add legend
         _ = ax.legend(  # pyright: ignore[reportUnknownMemberType]
@@ -371,10 +370,10 @@ class PlayCountByHourOfDayGraph(BaseGraph, VisualizationMixin):
         # Add bar value annotations if enabled (for total values)
         if self.get_config_value("ANNOTATE_PLAY_COUNT_BY_HOUROFDAY", False):
             for i, total_value in enumerate(bottom):
-                total_float = float(total_value)  # pyright: ignore[reportAny] # numpy array element
+                total_float = float(total_value)  # pyright: ignore[reportAny] # numpy array element type
                 total_int = int(total_float)
                 if total_int > 0:
-                    _ = ax.annotate(
+                    _ = ax.annotate(  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
                         str(total_int),
                         (i, total_float),
                         ha="center",
