@@ -199,15 +199,55 @@ class BaseGraph(ABC):
         else:
             sns.set_style("white")
 
-        # Set color palette based on configuration
+        # Set color palette based on configuration with priority system
         if self.config is not None and self.get_media_type_separation_enabled():
-            # Use colors from MediaTypeProcessor for media type separation
-            preferred_order = self.media_type_processor.get_preferred_order()
-            custom_palette = [
-                self.media_type_processor.get_color_for_type(media_type)
-                for media_type in preferred_order
-            ]
-            sns.set_palette(custom_palette)  # pyright: ignore[reportUnknownMemberType]
+            # Check if any specific palette configurations exist first
+            user_palette_configured = self._has_user_configured_palette()
+            
+            if not user_palette_configured:
+                # Only apply media type separation palette if no user palette is configured
+                preferred_order = self.media_type_processor.get_preferred_order()
+                custom_palette = [
+                    self.media_type_processor.get_color_for_type(media_type)
+                    for media_type in preferred_order
+                ]
+                sns.set_palette(custom_palette)  # pyright: ignore[reportUnknownMemberType]
+            else:
+                # User palette configured - skip automatic media type palette
+                pass
+
+    def _has_user_configured_palette(self) -> bool:
+        """
+        Check if the user has configured a specific palette for any graph type.
+        
+        This method checks for explicit palette configurations that should 
+        take precedence over automatic media type separation palettes.
+        
+        Returns:
+            True if any user palette is configured, False otherwise
+        """
+        if self.config is None:
+            return False
+            
+        # List of palette configuration keys to check
+        palette_config_keys = [
+            "PLAY_COUNT_BY_HOUROFDAY_PALETTE",
+            "TOP_10_USERS_PALETTE",
+            # Add more palette config keys here as they are implemented
+        ]
+        
+        for key in palette_config_keys:
+            palette_value = None
+            if isinstance(self.config, dict):
+                palette_value = self.config.get(key)
+            else:
+                palette_value = getattr(self.config, key, None)
+            
+            # Check if palette is configured with a non-empty string
+            if palette_value and isinstance(palette_value, str) and palette_value.strip():
+                return True
+                
+        return False
 
     def create_separated_legend(
         self, ax: "Axes", media_types_present: list[str]
