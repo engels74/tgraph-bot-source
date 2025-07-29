@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TGraph Bot 1.0.0\n"
 "Report-Msgid-Bugs-To: https://github.com/engels74/tgraph-bot-source/issues\n"
-"POT-Creation-Date: 2025-07-29 12:36\n"
-"PO-Revision-Date: 2025-07-29 12:36\n"
+"POT-Creation-Date: 2025-07-29 15:18\n"
+"PO-Revision-Date: 2025-07-29 15:18\n"
 "Last-Translator: engels74 <141435164+engels74@users.noreply.github.com>\n"
 "Language-Team: Danish <https://weblate.engels74.net/projects/tgraph-bot/main/da/>\n"
 "Language: da\n"
@@ -31,7 +31,7 @@ msgid "2-5 minutes depending on data size"
 msgstr "2-5 minutter afhængig af datastørrelse"
 
 #: src/tgraph_bot/utils/discord/command_utils.py:46
-#: src/tgraph_bot/utils/discord/command_utils.py:458
+#: src/tgraph_bot/utils/discord/command_utils.py:456
 msgid "An error occurred"
 msgstr "Der opstod en fejl"
 
@@ -72,7 +72,7 @@ msgstr "Bot Oppetid"
 msgid "Bot is online and ready!"
 msgstr "Bot er online og klar!"
 
-#: src/tgraph_bot/bot/commands/update_graphs.py:377
+#: src/tgraph_bot/bot/commands/update_graphs.py:381
 msgid "Bot lacks permission to post in the configured channel."
 msgstr "Bot mangler tilladelse til at poste i den konfigurerede kanal."
 
@@ -108,7 +108,7 @@ msgstr "Farve"
 msgid "Command Error"
 msgstr "Kommando Fejl"
 
-#: src/tgraph_bot/utils/discord/command_utils.py:326
+#: src/tgraph_bot/utils/discord/command_utils.py:324
 msgid "Command on Cooldown"
 msgstr "Kommando på Cooldown"
 
@@ -168,11 +168,11 @@ msgstr "Direkte Besked (DM)"
 msgid "Disabled"
 msgstr "Deaktiveret"
 
-#: src/tgraph_bot/bot/commands/update_graphs.py:397
+#: src/tgraph_bot/bot/commands/update_graphs.py:401
 msgid "Discord API error occurred while posting graphs."
 msgstr "Discord API fejl opstod under posting af grafer."
 
-#: src/tgraph_bot/bot/commands/update_graphs.py:390
+#: src/tgraph_bot/bot/commands/update_graphs.py:394
 msgid "Discord rate limit reached. Please try again later."
 msgstr "Discord rate limit nået. Prøv venligst igen senere."
 
@@ -205,7 +205,7 @@ msgid "Enabled"
 msgstr "Aktiveret"
 
 #: src/tgraph_bot/utils/discord/command_utils.py:44
-#: src/tgraph_bot/utils/discord/command_utils.py:456
+#: src/tgraph_bot/utils/discord/command_utils.py:454
 msgid "Error"
 msgstr "Fejl"
 
@@ -222,12 +222,12 @@ msgstr "Fejl i kommando `{command_name}`: {error_message}"
 msgid "Estimated Time"
 msgstr "Estimeret Tid"
 
-#: src/tgraph_bot/utils/discord/command_utils.py:559
+#: src/tgraph_bot/utils/discord/command_utils.py:557
 msgid "Examples"
 msgstr "Eksempler"
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:380
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:473
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:384
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:477
 msgid "Failed to create Discord file for: {file_path}"
 msgstr "Fejlede i at oprette Discord fil for: {file_path}"
 
@@ -239,15 +239,15 @@ msgstr "Fejlede i at generere den anmodede graf. Dette kan være et midlertidigt
 msgid "Failed to generate the {graph_type} graph. This may be a temporary issue - please try again."
 msgstr "Fejlede i at generere {graph_type} grafen. Dette kan være et midlertidigt problem - prøv venligst igen."
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:224
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:228
 msgid "File does not exist: {file_path}"
 msgstr "Filen eksisterer ikke: {file_path}"
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:245
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:249
 msgid "File is empty: {file_path}"
 msgstr "Filen er tom: {file_path}"
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:262
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:266
 msgid "File too large: {actual_mb:.1f}MB exceeds {limit_mb:.0f}MB limit"
 msgstr "Filen er for stor: {actual_mb:.1f}MB overstiger {limit_mb:.0f}MB grænsen"
 
@@ -373,7 +373,7 @@ msgstr "Min stats kommando global cooldown"
 msgid "My stats command per-user cooldown"
 msgstr "Min stats kommando per-bruger cooldown"
 
-#: src/tgraph_bot/bot/commands/update_graphs.py:418
+#: src/tgraph_bot/bot/commands/update_graphs.py:422
 msgid "Network error occurred while posting graphs."
 msgstr "Netværksfejl opstod under posting af grafer."
 
@@ -399,8 +399,8 @@ msgstr "Ingen Grafer Genereret"
 msgid "No annotations enabled"
 msgstr "Ingen annotationer aktiveret"
 
-#: src/tgraph_bot/utils/discord/command_utils.py:381
-#: src/tgraph_bot/utils/discord/command_utils.py:399
+#: src/tgraph_bot/utils/discord/command_utils.py:379
+#: src/tgraph_bot/utils/discord/command_utils.py:397
 msgid "No content provided"
 msgstr "Intet indhold angivet"
 
@@ -408,8 +408,8 @@ msgstr "Intet indhold angivet"
 msgid "No description available"
 msgstr "Ingen beskrivelse tilgængelig"
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:361
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:454
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:365
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:458
 msgid "No files provided for upload"
 msgstr "Ingen filer angivet til upload"
 
@@ -421,8 +421,8 @@ msgstr "Ingen graffiler blev oprettet. Dette kan skyldes utilstrækkelige data e
 msgid "No graphs enabled"
 msgstr "Ingen grafer aktiveret"
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:401
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:494
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:405
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:498
 msgid "No valid files to upload. Errors: {errors}"
 msgstr "Ingen gyldige filer at uploade. Fejl: {errors}"
 
@@ -431,7 +431,7 @@ msgid "Not set"
 msgstr "Ikke indstillet"
 
 #: src/tgraph_bot/utils/discord/command_utils.py:75
-#: src/tgraph_bot/utils/discord/command_utils.py:487
+#: src/tgraph_bot/utils/discord/command_utils.py:485
 msgid "Operation completed successfully"
 msgstr "Operation gennemført succesfuldt"
 
@@ -443,7 +443,7 @@ msgstr "Valgfrit: Se en specifik konfigurationsindstilling"
 msgid "Partial Success"
 msgstr "Delvis Succes"
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:233
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:237
 msgid "Path is not a file: {file_path}"
 msgstr "Stien er ikke en fil: {file_path}"
 
@@ -502,11 +502,11 @@ msgstr "Privatlivsmeddelelse"
 msgid "Processing Time"
 msgstr "Behandlingstid"
 
-#: src/tgraph_bot/utils/discord/command_utils.py:337
+#: src/tgraph_bot/utils/discord/command_utils.py:335
 msgid "Reason"
 msgstr "Årsag"
 
-#: src/tgraph_bot/utils/discord/command_utils.py:334
+#: src/tgraph_bot/utils/discord/command_utils.py:332
 msgid "Retry After"
 msgstr "Prøv Igen Efter"
 
@@ -563,7 +563,7 @@ msgid "Status"
 msgstr "Status"
 
 #: src/tgraph_bot/utils/discord/command_utils.py:73
-#: src/tgraph_bot/utils/discord/command_utils.py:485
+#: src/tgraph_bot/utils/discord/command_utils.py:483
 msgid "Success"
 msgstr "Succes"
 
@@ -680,7 +680,7 @@ msgstr "Den planlagte opdateringstest stødte på en fejl"
 msgid "The scheduler will work correctly at the configured time. All timing calculations and update workflows are functioning properly."
 msgstr "Scheduleren vil fungere korrekt på det konfigurerede tidspunkt. Alle tidsberegninger og opdateringsworkflows fungerer korrekt."
 
-#: src/tgraph_bot/utils/discord/command_utils.py:327
+#: src/tgraph_bot/utils/discord/command_utils.py:325
 msgid "The {command_name} command is currently on cooldown."
 msgstr "{command_name} kommandoen er i øjeblikket på cooldown."
 
@@ -712,7 +712,7 @@ msgstr "Der er et konfigurationsproblem. Kontakt venligst serveradministratorern
 msgid "These statistics are private to you"
 msgstr "Disse statistikker er private for dig"
 
-#: src/tgraph_bot/utils/discord/command_utils.py:338
+#: src/tgraph_bot/utils/discord/command_utils.py:336
 msgid "This prevents server overload during graph generation"
 msgstr "Dette forhindrer server overbelastning under graf generering"
 
@@ -746,7 +746,7 @@ msgstr "Kunne ikke generere dine personlige statistikker."
 msgid "Unknown upload error occurred"
 msgstr "Ukendt uploadfejl opstod"
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:276
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:280
 msgid "Unsupported file format: {file_format}. Supported: {supported_formats}"
 msgstr "Ikke-understøttet filformat: {file_format}. Understøttet: {supported_formats}"
 
@@ -766,7 +766,7 @@ msgstr "Opdater grafer kommando per-bruger cooldown"
 msgid "Uptime"
 msgstr "Oppetid"
 
-#: src/tgraph_bot/utils/discord/command_utils.py:553
+#: src/tgraph_bot/utils/discord/command_utils.py:551
 msgid "Usage"
 msgstr "Brug"
 
@@ -937,11 +937,11 @@ msgstr "{n} sekund"
 msgid "{n} seconds"
 msgstr "{n} sekunder"
 
-#: src/tgraph_bot/utils/discord/command_utils.py:323
+#: src/tgraph_bot/utils/discord/command_utils.py:321
 msgid "{time:.0f} seconds"
 msgstr "{time:.0f} sekunder"
 
-#: src/tgraph_bot/utils/discord/command_utils.py:321
+#: src/tgraph_bot/utils/discord/command_utils.py:319
 msgid "{time:.1f} minutes"
 msgstr "{time:.1f} minutter"
 
