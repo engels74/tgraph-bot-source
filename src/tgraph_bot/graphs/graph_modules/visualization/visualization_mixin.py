@@ -358,6 +358,11 @@ class VisualizationMixin:
 
         Args:
             config_key: The configuration key to check for palette setting
+
+        Note:
+            This method is now primarily used for testing. In normal operation,
+            palettes are applied centrally in BaseGraph.apply_seaborn_style()
+            to ensure proper precedence over media type palettes.
         """
         if self.config is None:
             return
@@ -371,8 +376,9 @@ class VisualizationMixin:
             # Handle TGraphBotConfig objects
             palette = getattr(self.config, config_key, None)
 
-        if palette and isinstance(palette, str):
-            sns.set_palette(palette)  # pyright: ignore[reportUnknownMemberType]
+        # Check if palette is configured with a non-empty string
+        if palette and isinstance(palette, str) and palette.strip():
+            sns.set_palette(palette.strip())  # pyright: ignore[reportUnknownMemberType]
 
     def configure_tick_parameters(
         self: VisualizationProtocol,

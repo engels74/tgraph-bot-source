@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING
 import matplotlib
 import matplotlib.figure
 import matplotlib.pyplot as plt
+import seaborn as sns
 from matplotlib.axes import Axes
 
 from ..utils.utils import (
@@ -212,9 +213,11 @@ class BaseGraph(ABC):
                     for media_type in preferred_order
                 ]
                 sns.set_palette(custom_palette)  # pyright: ignore[reportUnknownMemberType]
-            else:
-                # User palette configured - skip automatic media type palette
-                pass
+
+        # Apply user-configured palettes LAST to ensure they take precedence
+        # This handles any configured palette keys (PLAY_COUNT_BY_HOUROFDAY_PALETTE, TOP_10_USERS_PALETTE, etc.)
+        if self.config is not None:
+            self._apply_user_configured_palettes()
 
     def _has_user_configured_palette(self) -> bool:
         """
@@ -252,6 +255,40 @@ class BaseGraph(ABC):
                 return True
 
         return False
+
+    def _apply_user_configured_palettes(self) -> None:
+        """
+        Apply user-configured palettes based on the current graph type.
+
+        This method checks all possible palette configuration keys and applies
+        the first non-empty palette it finds. This ensures user palettes
+        take precedence over media type palettes.
+        """
+        if self.config is None:
+            return
+
+        # List of palette configuration keys to check
+        palette_config_keys = [
+            "PLAY_COUNT_BY_HOUROFDAY_PALETTE",
+            "TOP_10_USERS_PALETTE",
+            # Add more palette config keys here as they are implemented
+        ]
+
+        for key in palette_config_keys:
+            palette_value = None
+            if isinstance(self.config, dict):
+                palette_value = self.config.get(key)
+            else:
+                palette_value = getattr(self.config, key, None)
+
+            # Check if palette is configured with a non-empty string
+            if (
+                palette_value
+                and isinstance(palette_value, str)
+                and palette_value.strip()
+            ):
+                sns.set_palette(palette_value.strip())  # pyright: ignore[reportUnknownMemberType]
+                return  # Only apply the first configured palette found
 
     def create_separated_legend(
         self, ax: "Axes", media_types_present: list[str]

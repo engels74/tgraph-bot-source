@@ -6,6 +6,7 @@ user-configured palettes take precedence over automatic media type palettes.
 """
 
 import pytest
+from typing import cast
 from unittest.mock import patch
 
 from tgraph_bot.config.schema import TGraphBotConfig
@@ -92,7 +93,7 @@ class TestPaletteConfiguration:
             mock_set_palette.assert_called_with("magma")
 
     def test_user_palette_takes_precedence_over_media_type(self) -> None:
-        """Test that user palette prevents media type palette from being applied."""
+        """Test that user palette takes precedence by being applied after media type palette."""
         config = TGraphBotConfig(
             DISCORD_TOKEN="test_token",
             TAUTULLI_API_KEY="test_key",
@@ -107,12 +108,17 @@ class TestPaletteConfiguration:
         graph = PlayCountByHourOfDayGraph(config=config)
 
         with patch("seaborn.set_palette") as mock_set_palette:
-            # This should skip setting media type palette
+            # This should set both palettes with user palette last (taking precedence)
             graph.apply_seaborn_style()
 
-            # Verify that media type palette was NOT set
-            # (should be 0 calls since user palette takes precedence)
-            mock_set_palette.assert_not_called()
+            # Verify that both palettes were set, with user palette last
+            assert mock_set_palette.call_count == 2
+            # First call should be media type palette (list of colors)
+            first_call = mock_set_palette.call_args_list[0]
+            assert isinstance(first_call[0][0], list)  # Media type palette is a list of colors
+            # Second call should be user palette (string)
+            second_call = mock_set_palette.call_args_list[1]
+            assert second_call[0][0] == "viridis"  # User palette is the string "viridis"
 
     def test_media_type_palette_applied_when_no_user_palette(self) -> None:
         """Test that media type palette is applied when no user palette is configured."""
@@ -132,12 +138,12 @@ class TestPaletteConfiguration:
         with patch("seaborn.set_palette") as mock_set_palette:
             graph.apply_seaborn_style()
 
-            # Should be called once with media type colors
-            mock_set_palette.assert_called_once()
-            # Get the actual colors that were passed
-            called_palette: list[str] = mock_set_palette.call_args[0][0]  # pyright: ignore[reportAny]
+            # Should be called twice: default palette + media type palette
+            assert mock_set_palette.call_count == 2
+            # Get the actual colors that were passed in the second call (media type palette)
+            media_type_palette = cast(list[str], mock_set_palette.call_args_list[1][0][0])
             # Should contain the configured TV and movie colors
-            assert "#ff0000" in called_palette or "#00ff00" in called_palette
+            assert "#ff0000" in media_type_palette and "#00ff00" in media_type_palette
 
     def test_empty_palette_configuration_does_not_apply_palette(self) -> None:
         """Test that empty palette configuration does not apply any palette."""
