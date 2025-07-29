@@ -271,14 +271,22 @@ class Top10UsersGraph(BaseGraph, VisualizationMixin):
             _, color = self.get_media_type_display_info(media_type)
             colors.append(color)
 
+        # Add color column to DataFrame for hue mapping
+        df["color"] = colors
+
+        # Get unique colors to avoid palette size warnings
+        unique_colors = list(dict.fromkeys(colors))  # Preserves order while removing duplicates
+
         # Create horizontal bar plot
         _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType]
             data=df,
             x="play_count",
             y="username",
-            palette=colors,
+            hue="color",
+            palette=unique_colors,
             ax=ax,
             orient="h",
+            legend=False,
         )
 
         # Customize the plot
