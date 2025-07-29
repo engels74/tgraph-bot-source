@@ -273,7 +273,7 @@ class BaseCommandCog(commands.Cog):
             config = self.get_current_config()
         except (TypeError, AttributeError):
             config = None
-            
+
         await send_ephemeral_with_deletion(
             interaction,
             content=content,
@@ -322,7 +322,7 @@ class BaseCommandCog(commands.Cog):
             config = self.get_current_config()
         except (TypeError, AttributeError):
             config = None
-            
+
         await edit_ephemeral_with_deletion(
             interaction,
             content=content,

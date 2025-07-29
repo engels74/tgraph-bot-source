@@ -12,11 +12,10 @@ from .timezone import get_system_now, get_system_timezone
 from .scheduling import parse_fixed_time
 
 
-
 class TimestampCalculator:
     """
     Centralized calculator for next update timestamps.
-    
+
     This class ensures that both the scheduler and Discord embeds use exactly
     the same calculation logic, preventing discrepancies in displayed times.
     """
@@ -60,17 +59,17 @@ class TimestampCalculator:
         """
         if current_time is None:
             current_time = get_system_now()
-        
+
         # Store original timezone to preserve it in the result
         original_timezone = current_time.tzinfo
-        
+
         # Ensure current_time is timezone-aware for calculations
         if current_time.tzinfo is None:
             current_time = current_time.replace(tzinfo=get_system_timezone())
-        
+
         # Parse fixed time
         fixed_time = parse_fixed_time(fixed_update_time)
-        
+
         if fixed_time is not None:
             # Fixed time scheduling with timezone preservation
             return self._calculate_next_fixed_time_preserving_timezone(
@@ -103,7 +102,7 @@ class TimestampCalculator:
         """
         if current_time is None:
             current_time = get_system_now()
-        
+
         next_update = self.calculate_next_update(
             update_days, fixed_update_time, last_update, current_time
         )
@@ -130,7 +129,7 @@ class TimestampCalculator:
         """
         if current_time is None:
             current_time = get_system_now()
-        
+
         next_update = self.calculate_next_update(
             update_days, fixed_update_time, last_update, current_time
         )
@@ -159,14 +158,14 @@ class TimestampCalculator:
         """
         if current_time is None:
             current_time = get_system_now()
-        
+
         issues: list[str] = []
-        
+
         # Calculate what the next update should be
         calculated_next_update = self.calculate_next_update(
             update_days, fixed_update_time, last_update, current_time
         )
-        
+
         # Check if stored next_update matches calculated value
         if next_update is not None:
             # Allow small tolerance for minor timing differences (1 second)
@@ -176,11 +175,11 @@ class TimestampCalculator:
                     f"Stored next_update ({next_update}) doesn't match calculated "
                     + f"value ({calculated_next_update}). Difference: {time_diff:.1f}s"
                 )
-        
+
         # Check if next_update is reasonable
         if next_update and next_update <= current_time:
             issues.append(f"Next update time {next_update} is in the past")
-        
+
         # Check if next_update is too far in the future
         if next_update:
             max_future = current_time + timedelta(days=update_days * 2)
@@ -189,12 +188,12 @@ class TimestampCalculator:
                     f"Next update time {next_update} is too far in the future "
                     + f"(more than {update_days * 2} days)"
                 )
-        
+
         # Check if last_update and calculated next_update are consistent
         if last_update and calculated_next_update:
             expected_interval = timedelta(days=update_days)
             actual_interval = calculated_next_update - last_update
-            
+
             # Allow some tolerance for fixed time scheduling (±1 day)
             tolerance = timedelta(days=1)
             if abs(actual_interval - expected_interval) > tolerance:
@@ -202,7 +201,7 @@ class TimestampCalculator:
                     f"Inconsistent interval: expected ~{expected_interval.days} days, "
                     + f"got {actual_interval.days} days"
                 )
-        
+
         is_valid = len(issues) == 0
         return is_valid, issues
 
@@ -236,7 +235,7 @@ class TimestampCalculator:
             # Calculate the next scheduled time based on last update + interval
             next_date = last_update.date() + timedelta(days=update_days)
             next_update = datetime.combine(next_date, fixed_time)
-            
+
             # Apply the original timezone
             if original_timezone is not None:
                 next_update = next_update.replace(tzinfo=original_timezone)
@@ -259,7 +258,7 @@ class TimestampCalculator:
                 # For UPDATE_DAYS=1, always schedule for next day to respect the interval
                 next_date = current_time.date() + timedelta(days=1)
                 next_update = datetime.combine(next_date, fixed_time)
-                
+
                 # Apply the original timezone
                 if original_timezone is not None:
                     next_update = next_update.replace(tzinfo=original_timezone)
@@ -270,10 +269,10 @@ class TimestampCalculator:
             else:
                 # For UPDATE_DAYS > 1, ensure we respect the minimum interval from current time
                 min_next_update = current_time + timedelta(days=update_days)
-                
+
                 # Find the next occurrence of fixed time on or after the minimum date
                 next_update = datetime.combine(min_next_update.date(), fixed_time)
-                
+
                 # Apply the original timezone
                 if original_timezone is not None:
                     next_update = next_update.replace(tzinfo=original_timezone)
@@ -308,11 +307,14 @@ class TimestampCalculator:
         if last_update is None:
             # No last update, schedule from current time
             next_update = current_time + timedelta(days=update_days)
-            
+
             # Convert to original timezone if different
-            if original_timezone is not None and next_update.tzinfo != original_timezone:
+            if (
+                original_timezone is not None
+                and next_update.tzinfo != original_timezone
+            ):
                 next_update = next_update.astimezone(original_timezone)
-            
+
             return next_update
 
         # Ensure last_update is timezone-aware

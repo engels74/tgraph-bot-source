@@ -80,7 +80,7 @@ class UptimeCog(BaseCommandCog):
             # Get timestamp format from configuration
             config = self.get_current_config()
             timestamp_format = config.DISCORD_TIMESTAMP_FORMAT
-            
+
             _ = embed.add_field(
                 name=i18n.translate("Started"),
                 value=f"<t:{int(start_time)}:{timestamp_format}>",

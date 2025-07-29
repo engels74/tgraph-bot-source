@@ -455,8 +455,12 @@ class TestCalculateNextUpdateTime:
         """Test interval-based update calculation."""
         # Test with interval-based updates (XX:XX)
         with (
-            patch("src.tgraph_bot.utils.time.scheduling.get_system_now") as mock_scheduling_now,
-            patch("src.tgraph_bot.utils.time.timestamp_calculator.get_system_now") as mock_calc_now,
+            patch(
+                "src.tgraph_bot.utils.time.scheduling.get_system_now"
+            ) as mock_scheduling_now,
+            patch(
+                "src.tgraph_bot.utils.time.timestamp_calculator.get_system_now"
+            ) as mock_calc_now,
         ):
             mock_now = datetime(2025, 1, 15, 12, 30, 0, tzinfo=get_system_timezone())
             mock_scheduling_now.return_value = mock_now
@@ -477,8 +481,12 @@ class TestCalculateNextUpdateTime:
         # Mock no state file exists and mock get_system_now
         with (
             patch("pathlib.Path.exists", return_value=False),
-            patch("src.tgraph_bot.utils.time.scheduling.get_system_now") as mock_scheduling_now,
-            patch("src.tgraph_bot.utils.time.timestamp_calculator.get_system_now") as mock_calc_now,
+            patch(
+                "src.tgraph_bot.utils.time.scheduling.get_system_now"
+            ) as mock_scheduling_now,
+            patch(
+                "src.tgraph_bot.utils.time.timestamp_calculator.get_system_now"
+            ) as mock_calc_now,
         ):
             # Use a fixed time for predictable testing
             mock_now = datetime(2025, 1, 15, 14, 30, 0, tzinfo=get_system_timezone())
@@ -502,8 +510,12 @@ class TestCalculateNextUpdateTime:
         """Test fixed time update with UPDATE_DAYS=1 (should be next day - bug fix)."""
         # Mock get_system_now to return predictable time
         with (
-            patch("src.tgraph_bot.utils.time.scheduling.get_system_now") as mock_scheduling_now,
-            patch("src.tgraph_bot.utils.time.timestamp_calculator.get_system_now") as mock_calc_now,
+            patch(
+                "src.tgraph_bot.utils.time.scheduling.get_system_now"
+            ) as mock_scheduling_now,
+            patch(
+                "src.tgraph_bot.utils.time.timestamp_calculator.get_system_now"
+            ) as mock_calc_now,
         ):
             # Mock the current time to be 15:30 (3:30 PM) in local timezone
             mock_now = datetime(2025, 6, 28, 15, 30, 0, tzinfo=get_system_timezone())
@@ -536,8 +548,13 @@ class TestCalculateNextUpdateTime:
         time_str = "10:00"
 
         # Import and use the unified function directly
-        from src.tgraph_bot.utils.time.scheduling import calculate_next_update_time as unified_calculate
-        result = unified_calculate(1, time_str, current_time=mock_now, last_update=last_update)
+        from src.tgraph_bot.utils.time.scheduling import (
+            calculate_next_update_time as unified_calculate,
+        )
+
+        result = unified_calculate(
+            1, time_str, current_time=mock_now, last_update=last_update
+        )
 
         assert result is not None
         # Verify it's timezone-aware
@@ -564,7 +581,9 @@ class TestCalculateNextUpdateTime:
         next_update_date = min_next_update.date()
         next_update_time = past_time.time()  # Use the fixed time (14:30)
         next_update_datetime = datetime.combine(next_update_date, next_update_time)
-        next_update_datetime = next_update_datetime.replace(tzinfo=get_system_timezone())
+        next_update_datetime = next_update_datetime.replace(
+            tzinfo=get_system_timezone()
+        )
 
         # If the fixed time on that date is before the minimum time, move to next day
         if next_update_datetime < min_next_update:
@@ -589,9 +608,7 @@ class TestCalculateNextUpdateTime:
             json.dump(scheduler_state, f)
 
         try:
-            with patch(
-                "tgraph_bot.utils.time.get_system_now"
-            ) as mock_get_system_now:
+            with patch("tgraph_bot.utils.time.get_system_now") as mock_get_system_now:
                 mock_get_system_now.return_value = now
 
                 result = calculate_next_update_time(7, time_str)  # 7 day interval
@@ -711,9 +728,7 @@ class TestCreateGraphSpecificEmbed:
     def test_embed_with_next_update_time(self) -> None:
         """Test embed creation with next update time included."""
         # Mock get_system_now to ensure predictable behavior
-        with patch(
-            "tgraph_bot.utils.time.get_system_now"
-        ) as mock_get_system_now:
+        with patch("tgraph_bot.utils.time.get_system_now") as mock_get_system_now:
             mock_now = datetime(2025, 1, 15, 12, 0, 0, tzinfo=get_system_timezone())
             mock_get_system_now.return_value = mock_now
 
@@ -733,9 +748,7 @@ class TestCreateGraphSpecificEmbed:
     def test_embed_with_interval_update(self) -> None:
         """Test embed creation with interval-based updates."""
         # Mock get_system_now to ensure predictable behavior
-        with patch(
-            "tgraph_bot.utils.time.get_system_now"
-        ) as mock_get_system_now:
+        with patch("tgraph_bot.utils.time.get_system_now") as mock_get_system_now:
             mock_now = datetime(2025, 1, 15, 12, 0, 0, tzinfo=get_system_timezone())
             mock_get_system_now.return_value = mock_now
 
@@ -768,12 +781,12 @@ class TestCreateGraphSpecificEmbed:
         """Test embed creation with explicitly provided next update time."""
         # Create a specific next update time
         next_update = datetime(2025, 7, 26, 23, 59, 0, tzinfo=get_system_timezone())
-        
+
         embed = create_graph_specific_embed(
-            "daily_play_count.png", 
-            update_days=1, 
+            "daily_play_count.png",
+            update_days=1,
             fixed_update_time="23:59",
-            next_update_time=next_update
+            next_update_time=next_update,
         )
 
         assert embed.description is not None
@@ -786,27 +799,27 @@ class TestCreateGraphSpecificEmbed:
         """Test embed creation with custom timestamp format."""
         # Create a specific next update time
         next_update = datetime(2025, 7, 26, 23, 59, 0, tzinfo=get_system_timezone())
-        
+
         # Test with different timestamp formats
         test_cases: list[tuple[TimestampStyle, str]] = [
             ("t", ":t>"),  # Short time
-            ("T", ":T>"),  # Long time  
+            ("T", ":T>"),  # Long time
             ("d", ":d>"),  # Short date
             ("D", ":D>"),  # Long date
             ("f", ":f>"),  # Short date/time
             ("F", ":F>"),  # Long date/time (default)
             ("R", ":R>"),  # Relative time
         ]
-        
+
         for timestamp_format, expected_suffix in test_cases:
             embed = create_graph_specific_embed(
-                "daily_play_count.png", 
-                update_days=1, 
+                "daily_play_count.png",
+                update_days=1,
                 fixed_update_time="23:59",
                 next_update_time=next_update,
-                timestamp_format=timestamp_format
+                timestamp_format=timestamp_format,
             )
-            
+
             assert embed.description is not None
             assert "Next update:" in embed.description
             assert "<t:" in embed.description

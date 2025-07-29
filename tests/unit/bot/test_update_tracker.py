@@ -185,7 +185,9 @@ class TestUpdateSchedule:
         state.record_successful_update(last_update)
 
         schedule = UpdateSchedule(config, state)
-        next_update = schedule.calculate_next_update(datetime.now(get_system_timezone()))
+        next_update = schedule.calculate_next_update(
+            datetime.now(get_system_timezone())
+        )
 
         expected = last_update + timedelta(days=7)
         assert abs((next_update - expected).total_seconds()) < 1

@@ -147,7 +147,7 @@ def main() -> int:
         Exit code (0 for success, 1 for error)
     """
     args = parse_arguments()
-    
+
     # Setup logging with CI mode considerations
     if args.ci_mode:
         # In CI mode, use structured logging
@@ -223,47 +223,49 @@ def handle_check_mode(
 ) -> int:
     """
     Handle check mode: extract to temporary file and compare with existing.
-    
+
     Args:
         args: Parsed command-line arguments
         exclude_dirs: Set of directories to exclude
         logger: Logger instance
-        
+
     Returns:
         Exit code (0 if no changes needed, 1 if changes needed or error)
     """
     import tempfile
     import hashlib
-    
+
     temp_path: Path | None = None
-    
+
     try:
         # Create temporary file for comparison
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.pot', delete=False) as temp_file:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".pot", delete=False
+        ) as temp_file:
             temp_path = Path(temp_file.name)
-        
+
         # Generate .pot to temporary file
         generate_pot_file(
             source_directory=args.source_dir,
             output_file=temp_path,
             exclude_dirs=exclude_dirs,
         )
-        
+
         # Compare with existing file if it exists
         if args.output.exists():
             # Read both files and compare
-            with open(args.output, 'rb') as existing_file:
+            with open(args.output, "rb") as existing_file:
                 existing_hash = hashlib.sha256(existing_file.read()).hexdigest()
-            
-            with open(temp_path, 'rb') as temp_file:
+
+            with open(temp_path, "rb") as temp_file:
                 new_hash = hashlib.sha256(temp_file.read()).hexdigest()
-            
+
             if existing_hash == new_hash:
                 if args.ci_mode:
                     logger.info("✅ Translation template is up to date")
                 else:
                     logger.info("No changes needed - .pot file is up to date")
-                
+
                 # Clean up temp file
                 temp_path.unlink()
                 return 0
@@ -272,22 +274,24 @@ def handle_check_mode(
                     logger.info("⚠️  Translation template needs update")
                 else:
                     logger.info("Changes detected - .pot file needs update")
-                
+
                 # Copy temp file to actual output location
                 import shutil
+
                 _ = shutil.move(str(temp_path), str(args.output))
                 return 0
         else:
             # No existing file, move temp file to output location
             import shutil
+
             _ = shutil.move(str(temp_path), str(args.output))
-            
+
             if args.ci_mode:
                 logger.info("📝 Created new translation template")
             else:
                 logger.info("Created new .pot file")
             return 0
-            
+
     except Exception as e:
         # Clean up temp file if it exists
         try:
@@ -295,7 +299,7 @@ def handle_check_mode(
                 temp_path.unlink()
         except Exception:
             pass
-        
+
         if args.ci_mode:
             logger.error(f"❌ Check mode failed: {e}")
         else:

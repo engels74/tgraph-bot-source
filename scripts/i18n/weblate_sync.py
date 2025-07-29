@@ -79,16 +79,19 @@ class WeblateClient:
         return self
 
     def __exit__(
-        self, 
-        exc_type: type[BaseException] | None, 
-        exc_val: BaseException | None, 
-        exc_tb: TracebackType | None
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
     ) -> None:
         """Context manager exit."""
         self.client.close()
 
     def _make_request(
-        self, method: str, endpoint: str, **kwargs: Any  # pyright: ignore[reportExplicitAny,reportAny] # httpx kwargs are diverse
+        self,
+        method: str,
+        endpoint: str,
+        **kwargs: Any,  # pyright: ignore[reportExplicitAny,reportAny] # httpx kwargs are diverse
     ) -> httpx.Response:
         """
         Make HTTP request to Weblate API.
@@ -245,18 +248,24 @@ class WeblateClient:
         while time.time() - start_time < max_wait:
             # We don't need the component status for this check, just the repo status
             _ = self.get_component_status()
-            
+
             # Check if there are any pending changes or running tasks
             repo_status = self.get_repository_status()
-            
-            if not repo_status.get("needs_commit", False) and not repo_status.get("needs_push", False):
+
+            if not repo_status.get("needs_commit", False) and not repo_status.get(
+                "needs_push", False
+            ):
                 self.logger.info("✅ Component is idle and ready")
                 return True
-            
-            self.logger.info(f"⏳ Waiting for component to become idle... ({check_interval}s)")
+
+            self.logger.info(
+                f"⏳ Waiting for component to become idle... ({check_interval}s)"
+            )
             time.sleep(check_interval)
-        
-        self.logger.warning(f"⏰ Timeout waiting for component to become idle after {max_wait}s")
+
+        self.logger.warning(
+            f"⏰ Timeout waiting for component to become idle after {max_wait}s"
+        )
         return False
 
 
@@ -269,12 +278,12 @@ def setup_logging(verbose: bool = False, ci_mode: bool = False) -> None:
         ci_mode: Enable CI-friendly logging format
     """
     level = logging.DEBUG if verbose else logging.INFO
-    
+
     if ci_mode:
         log_format = "::%(levelname)s::%(message)s" if verbose else "%(message)s"
     else:
         log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    
+
     logging.basicConfig(
         level=level,
         format=log_format,
@@ -370,59 +379,59 @@ def sync_component(client: WeblateClient, force: bool = False) -> bool:
         True if successful, False otherwise
     """
     logger = logging.getLogger(__name__)
-    
+
     try:
         # Get initial status
         status = client.get_component_status()
         repo_status = client.get_repository_status()
-        
+
         logger.info(f"Component: {status.get('name', 'Unknown')}")
         logger.info(f"Language count: {status.get('language_count', 0)}")
         logger.info(f"Source strings: {status.get('source_strings', 0)}")
-        
+
         # Check if component needs synchronization
         needs_commit: bool = repo_status.get("needs_commit", False)  # pyright: ignore[reportAny]
         needs_push: bool = repo_status.get("needs_push", False)  # pyright: ignore[reportAny]
         needs_merge: bool = repo_status.get("needs_merge", False)  # pyright: ignore[reportAny]
-        
+
         if not (needs_commit or needs_push or needs_merge):
             logger.info("✅ Component is already synchronized")
             return True
-        
+
         if needs_merge and not force:
             logger.error("❌ Component has merge conflicts. Use --force to override")
             return False
-        
+
         # Lock component for synchronization
         was_locked = client.lock_component()
-        
+
         try:
             # Wait for component to become idle
             if not client.wait_for_idle():
                 logger.error("❌ Component did not become idle in time")
                 return False
-            
+
             # Push any pending changes to upstream
             if needs_commit or needs_push:
                 logger.info("📤 Pushing pending changes...")
                 _ = client.push_changes()
-            
+
             # Pull latest changes from upstream
             logger.info("📥 Pulling latest changes...")
             _ = client.pull_changes()
-            
+
             # Update component
             logger.info("🔄 Updating component...")
             _ = client.update_component()
-            
+
             logger.info("✅ Component synchronized successfully")
             return True
-            
+
         finally:
             # Always unlock if we locked it
             if was_locked:
                 _ = client.unlock_component()
-                
+
     except WeblateError as e:
         logger.error(f"❌ Weblate API error: {e}")
         return False
@@ -439,7 +448,7 @@ def main() -> int:
         Exit code (0 for success, 1 for error)
     """
     args = parse_arguments()
-    
+
     # Extract arguments with type annotations
     verbose: bool = args.verbose  # pyright: ignore[reportAny]
     ci_mode: bool = args.ci_mode  # pyright: ignore[reportAny]
@@ -450,16 +459,18 @@ def main() -> int:
     timeout: int = args.timeout  # pyright: ignore[reportAny]
     status_only: bool = args.status_only  # pyright: ignore[reportAny]
     force: bool = args.force  # pyright: ignore[reportAny]
-    
+
     setup_logging(verbose, ci_mode)
-    
+
     logger = logging.getLogger(__name__)
-    
+
     # Validate API key
     if not api_key:
-        logger.error("❌ Weblate API key is required (use --api-key or WEBLATE_API_KEY env var)")
+        logger.error(
+            "❌ Weblate API key is required (use --api-key or WEBLATE_API_KEY env var)"
+        )
         return 1
-    
+
     # Create Weblate configuration
     config = WeblateConfig(
         api_url=api_url,
@@ -468,14 +479,14 @@ def main() -> int:
         component=component,
         timeout=timeout,
     )
-    
+
     try:
         with WeblateClient(config) as client:
             if status_only:
                 # Just report status
                 status = client.get_component_status()
                 repo_status = client.get_repository_status()
-                
+
                 logger.info("📊 Component Status Report")
                 logger.info(f"  Name: {status.get('name', 'Unknown')}")
                 logger.info(f"  Languages: {status.get('language_count', 0)}")
@@ -483,13 +494,13 @@ def main() -> int:
                 logger.info(f"  Needs commit: {repo_status.get('needs_commit', False)}")
                 logger.info(f"  Needs push: {repo_status.get('needs_push', False)}")
                 logger.info(f"  Needs merge: {repo_status.get('needs_merge', False)}")
-                
+
                 return 0
             else:
                 # Perform synchronization
                 success = sync_component(client, force)
                 return 0 if success else 1
-                
+
     except KeyboardInterrupt:
         logger.info("❌ Operation cancelled by user")
         return 1

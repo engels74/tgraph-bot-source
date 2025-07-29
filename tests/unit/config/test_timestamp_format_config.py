@@ -16,21 +16,21 @@ class TestTimestampFormatConfig:
             "DISCORD_TOKEN": "test_token_12345",
             "CHANNEL_ID": 123456789,
         }
-        
+
         config = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
         assert config.DISCORD_TIMESTAMP_FORMAT == "R"
 
     def test_valid_timestamp_formats(self) -> None:
         """Test that all valid Discord timestamp formats are accepted."""
         valid_formats = ["t", "T", "d", "D", "f", "F", "R"]
-        
+
         base_config = {
             "TAUTULLI_API_KEY": "test_key",
             "TAUTULLI_URL": "http://localhost:8181/api/v2",
             "DISCORD_TOKEN": "test_token_12345",
             "CHANNEL_ID": 123456789,
         }
-        
+
         for format_option in valid_formats:
             config_data = {**base_config, "DISCORD_TIMESTAMP_FORMAT": format_option}
             config = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
@@ -39,14 +39,14 @@ class TestTimestampFormatConfig:
     def test_invalid_timestamp_format_raises_error(self) -> None:
         """Test that invalid timestamp formats raise validation errors."""
         invalid_formats = ["X", "FF", "123", "", "G", "timestamp"]
-        
+
         base_config = {
             "TAUTULLI_API_KEY": "test_key",
             "TAUTULLI_URL": "http://localhost:8181/api/v2",
             "DISCORD_TOKEN": "test_token_12345",
             "CHANNEL_ID": 123456789,
         }
-        
+
         for invalid_format in invalid_formats:
             config_data = {**base_config, "DISCORD_TIMESTAMP_FORMAT": invalid_format}
             with pytest.raises(ValueError, match="Input should be"):
@@ -60,12 +60,12 @@ class TestTimestampFormatConfig:
             "DISCORD_TOKEN": "test_token_12345",
             "CHANNEL_ID": 123456789,
         }
-        
+
         # Lowercase should work
         config_data = {**base_config, "DISCORD_TIMESTAMP_FORMAT": "f"}
         config = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
         assert config.DISCORD_TIMESTAMP_FORMAT == "f"
-        
+
         # Uppercase should work
         config_data = {**base_config, "DISCORD_TIMESTAMP_FORMAT": "F"}
         config = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]

@@ -57,9 +57,7 @@ def validate_weblate_config(config_path: Path | None = None) -> bool:
 
         # Validate components
         components = [
-            section
-            for section in config.sections()
-            if section.startswith("component ")
+            section for section in config.sections() if section.startswith("component ")
         ]
 
         if not components:

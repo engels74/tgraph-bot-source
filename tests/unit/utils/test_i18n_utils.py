@@ -428,7 +428,9 @@ template = locale/messages.pot
 file_format = po-mono
 """
 
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".weblate", delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".weblate", delete=False
+        ) as f:
             _ = f.write(weblate_content)
             f.flush()
 
@@ -451,7 +453,9 @@ name = TGraph Bot Messages
 slug = main
 """
 
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".weblate", delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".weblate", delete=False
+        ) as f:
             _ = f.write(weblate_content)
             f.flush()
 
@@ -469,7 +473,9 @@ name = TGraph Bot Messages
 slug = main
 """
 
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".weblate", delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".weblate", delete=False
+        ) as f:
             _ = f.write(weblate_content)
             f.flush()
 
@@ -486,7 +492,9 @@ url = https://weblate.engels74.net/
 value = test
 """
 
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".weblate", delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".weblate", delete=False
+        ) as f:
             _ = f.write(weblate_content)
             f.flush()
 

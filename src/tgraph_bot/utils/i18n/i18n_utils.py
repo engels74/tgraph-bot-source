@@ -114,8 +114,7 @@ def parse_weblate_config(config_path: Path | None = None) -> WeblateConfig | Non
 
         # Find the main component section
         component_sections = [
-            section for section in config.sections()
-            if section.startswith("component ")
+            section for section in config.sections() if section.startswith("component ")
         ]
 
         if not component_sections:
@@ -128,7 +127,9 @@ def parse_weblate_config(config_path: Path | None = None) -> WeblateConfig | Non
 
         # Extract project and component names from the section name
         # Format: 'component "project/component"' or similar
-        section_name = main_component_section.replace('component "', "").replace('"', "")
+        section_name = main_component_section.replace('component "', "").replace(
+            '"', ""
+        )
 
         # Get project name from the section name or use a default
         if "/" in section_name:
@@ -139,12 +140,12 @@ def parse_weblate_config(config_path: Path | None = None) -> WeblateConfig | Non
         # Get component slug from the configuration
         component_slug = component.get("slug", "main")
 
-        logger.debug(f"Parsed Weblate config: URL={base_url}, project={project_name}, component={component_slug}")
+        logger.debug(
+            f"Parsed Weblate config: URL={base_url}, project={project_name}, component={component_slug}"
+        )
 
         return WeblateConfig(
-            url=base_url,
-            project=project_name,
-            component=component_slug
+            url=base_url, project=project_name, component=component_slug
         )
 
     except Exception as e:
@@ -327,7 +328,9 @@ def generate_pot_header() -> str:
     weblate_config = parse_weblate_config()
     if weblate_config:
         language_team_placeholder = f"LANGUAGE <{weblate_config.url}/projects/{weblate_config.project}/{weblate_config.component}/LANG/>"
-        logger.debug(f"Using dynamic Language-Team placeholder: {language_team_placeholder}")
+        logger.debug(
+            f"Using dynamic Language-Team placeholder: {language_team_placeholder}"
+        )
     else:
         # Use the standard gettext placeholder if config parsing fails
         language_team_placeholder = "LANGUAGE <LL@li.org>"
@@ -568,8 +571,12 @@ def generate_po_header(language: str, existing_x_generator: str | None = None) -
         logger.debug(f"Using dynamic Weblate URL for {language}: {language_team_url}")
     else:
         # Fallback to a generic placeholder if config parsing fails
-        language_team_url = f"https://weblate.example.org/projects/PROJECT/COMPONENT/{language}/"
-        logger.warning(f"Could not parse Weblate config, using placeholder URL for {language}")
+        language_team_url = (
+            f"https://weblate.example.org/projects/PROJECT/COMPONENT/{language}/"
+        )
+        logger.warning(
+            f"Could not parse Weblate config, using placeholder URL for {language}"
+        )
 
     return f"""# {language_name} translations for TGraph Bot
 # Copyright (C) {now.year} engels74

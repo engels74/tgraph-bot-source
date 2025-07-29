@@ -361,7 +361,7 @@ class VisualizationMixin:
         """
         if self.config is None:
             return
-        
+
         # Handle both TGraphBotConfig objects and dict configs
         palette: object = None
         if isinstance(self.config, dict):
@@ -370,7 +370,7 @@ class VisualizationMixin:
         else:
             # Handle TGraphBotConfig objects
             palette = getattr(self.config, config_key, None)
-        
+
         if palette and isinstance(palette, str):
             sns.set_palette(palette)  # pyright: ignore[reportUnknownMemberType]
 

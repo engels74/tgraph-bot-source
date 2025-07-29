@@ -39,11 +39,11 @@ class TestSystemTimezone:
         # by testing the actual implementation without complex mocking
         tz = get_system_timezone()
         assert isinstance(tz, ZoneInfo)
-        
+
         # The timezone should be detected consistently
         tz2 = get_system_timezone()
         assert tz.key == tz2.key
-        
+
         # Should not be None or empty
         assert tz.key is not None
         assert len(tz.key) > 0
@@ -64,8 +64,9 @@ class TestSystemNow:
         system_tz = get_system_timezone()
         assert now.tzinfo is not None
         assert system_tz is not None
-        assert hasattr(now.tzinfo, 'key') and hasattr(system_tz, 'key')
+        assert hasattr(now.tzinfo, "key") and hasattr(system_tz, "key")
         assert now.tzinfo.key == system_tz.key
+
 
 class TestTimezoneAware:
     """Test timezone awareness utilities."""
@@ -74,7 +75,7 @@ class TestTimezoneAware:
         """Test ensuring timezone awareness for naive datetime."""
         naive_dt = datetime(2025, 7, 25, 14, 30, 0)
         aware_dt = ensure_timezone_aware(naive_dt)
-        
+
         assert aware_dt.tzinfo is not None
         assert isinstance(aware_dt.tzinfo, ZoneInfo)
         assert aware_dt.year == 2025
@@ -87,22 +88,24 @@ class TestTimezoneAware:
         """Test ensuring timezone awareness for already aware datetime."""
         aware_dt = datetime(2025, 7, 25, 14, 30, 0, tzinfo=ZoneInfo("UTC"))
         result_dt = ensure_timezone_aware(aware_dt)
-        
+
         # Should return the same datetime unchanged
         assert result_dt is aware_dt
         assert result_dt.tzinfo is not None
-        assert hasattr(result_dt.tzinfo, 'key')
+        assert hasattr(result_dt.tzinfo, "key")
         assert result_dt.tzinfo.key == "UTC"
+
     def test_ensure_timezone_aware_uses_system_timezone(self) -> None:
         """Test that ensure_timezone_aware uses system timezone for naive datetimes."""
         naive_dt = datetime(2025, 7, 25, 14, 30, 0)
         aware_dt = ensure_timezone_aware(naive_dt)
         system_tz = get_system_timezone()
-        
+
         assert aware_dt.tzinfo is not None
-        assert system_tz is not None and hasattr(system_tz, 'key')
-        assert hasattr(aware_dt.tzinfo, 'key')
+        assert system_tz is not None and hasattr(system_tz, "key")
+        assert hasattr(aware_dt.tzinfo, "key")
         assert aware_dt.tzinfo.key == system_tz.key
+
 
 class TestTimezoneConversion:
     """Test timezone conversion utilities."""
@@ -111,7 +114,7 @@ class TestTimezoneConversion:
         """Test converting UTC datetime to system timezone."""
         utc_dt = datetime(2025, 7, 25, 12, 0, 0, tzinfo=ZoneInfo("UTC"))
         system_dt = to_system_timezone(utc_dt)
-        
+
         assert isinstance(system_dt.tzinfo, ZoneInfo)
         system_tz = get_system_timezone()
         assert system_dt.tzinfo.key == system_tz.key
@@ -120,7 +123,7 @@ class TestTimezoneConversion:
         """Test converting from different timezone to system timezone."""
         ny_dt = datetime(2025, 7, 25, 8, 0, 0, tzinfo=ZoneInfo("America/New_York"))
         system_dt = to_system_timezone(ny_dt)
-        
+
         assert isinstance(system_dt.tzinfo, ZoneInfo)
         system_tz = get_system_timezone()
         assert system_dt.tzinfo.key == system_tz.key
@@ -129,7 +132,7 @@ class TestTimezoneConversion:
         """Test converting naive datetime to system timezone."""
         naive_dt = datetime(2025, 7, 25, 14, 30, 0)
         system_dt = to_system_timezone(naive_dt)
-        
+
         assert isinstance(system_dt.tzinfo, ZoneInfo)
         system_tz = get_system_timezone()
         assert system_dt.tzinfo.key == system_tz.key
@@ -138,10 +141,10 @@ class TestTimezoneConversion:
         """Test that timezone conversion preserves the actual time value."""
         # Create a UTC datetime
         utc_dt = datetime(2025, 7, 25, 12, 0, 0, tzinfo=ZoneInfo("UTC"))
-        
+
         # Convert to system timezone
         system_dt = to_system_timezone(utc_dt)
-        
+
         # The UTC timestamp should be the same
         assert utc_dt.timestamp() == system_dt.timestamp()
 
@@ -150,7 +153,9 @@ class TestDiscordFormatting:
     """Test Discord timestamp formatting utilities."""
 
     @patch("src.tgraph_bot.utils.time.timezone.discord.utils.format_dt")
-    def test_format_for_discord_with_timezone_aware(self, mock_format_dt: MagicMock) -> None:
+    def test_format_for_discord_with_timezone_aware(
+        self, mock_format_dt: MagicMock
+    ) -> None:
         """Test Discord formatting with timezone-aware datetime."""
         mock_format_dt.return_value = "<t:1737027000:F>"
 
@@ -167,13 +172,15 @@ class TestDiscordFormatting:
         assert result == "<t:1737027000:F>"
 
     @patch("src.tgraph_bot.utils.time.timezone.discord.utils.format_dt")
-    def test_format_for_discord_with_naive_datetime(self, mock_format_dt: MagicMock) -> None:
+    def test_format_for_discord_with_naive_datetime(
+        self, mock_format_dt: MagicMock
+    ) -> None:
         """Test Discord formatting with naive datetime."""
         mock_format_dt.return_value = "<t:1737027000:F>"
-        
+
         naive_dt = datetime(2025, 7, 25, 23, 59, 0)
         result = format_for_discord(naive_dt, style="F")
-        
+
         mock_format_dt.assert_called_once()
         call_args = mock_format_dt.call_args
         assert call_args is not None

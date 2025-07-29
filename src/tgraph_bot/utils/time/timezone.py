@@ -33,29 +33,29 @@ def get_system_timezone() -> ZoneInfo:
     """
     import os
     from pathlib import Path
-    
+
     # Use the system's local timezone - cross-platform approach
     try:
         # Try "localtime" first (works on Linux/WSL)
         return ZoneInfo("localtime")
     except ZoneInfoNotFoundError:
         pass
-    
+
     # Try to read timezone from system files
     try:
         # Check TZ environment variable first
-        tz_env = os.environ.get('TZ')
+        tz_env = os.environ.get("TZ")
         if tz_env:
             return ZoneInfo(tz_env)
-        
+
         # Try /etc/timezone (Debian/Ubuntu)
         timezone_file = Path("/etc/timezone")
         if timezone_file.exists():
-            with open(timezone_file, 'r') as f:
+            with open(timezone_file, "r") as f:
                 tz_name = f.read().strip()
                 if tz_name:
                     return ZoneInfo(tz_name)
-        
+
         # Try parsing /etc/localtime symlink (macOS/BSD)
         localtime_link = Path("/etc/localtime")
         if localtime_link.is_symlink():
@@ -67,7 +67,7 @@ def get_system_timezone() -> ZoneInfo:
                     return ZoneInfo(tz_name)
     except (OSError, ZoneInfoNotFoundError):
         pass
-    
+
     # Fall back to getting the key from datetime for other systems
     try:
         local_tz = datetime.now().astimezone().tzinfo
@@ -77,7 +77,7 @@ def get_system_timezone() -> ZoneInfo:
                 return ZoneInfo(key)
     except (ZoneInfoNotFoundError, AttributeError):
         pass
-    
+
     # Final fallback: use UTC
     return ZoneInfo("UTC")
 
@@ -118,7 +118,7 @@ def ensure_timezone_aware(dt: datetime) -> datetime:
         >>> aware_dt = ensure_timezone_aware(naive_dt)
         >>> aware_dt.tzinfo is not None
         True
-        
+
         >>> already_aware = datetime(2025, 7, 25, 14, 30, 0, tzinfo=ZoneInfo("UTC"))
         >>> result = ensure_timezone_aware(already_aware)
         >>> result is already_aware
@@ -149,7 +149,7 @@ def to_system_timezone(dt: datetime) -> datetime:
         >>> local_dt = to_system_timezone(utc_dt)
         >>> local_dt.tzinfo.key == get_system_timezone().key
         True
-        
+
         >>> naive_dt = datetime(2025, 7, 25, 14, 30, 0)
         >>> local_dt = to_system_timezone(naive_dt)
         >>> local_dt.tzinfo.key == get_system_timezone().key
@@ -157,14 +157,12 @@ def to_system_timezone(dt: datetime) -> datetime:
     """
     # First ensure it's timezone-aware
     aware_dt = ensure_timezone_aware(dt)
-    
+
     # Convert to system timezone
     return aware_dt.astimezone(get_system_timezone())
 
 
-def format_for_discord(
-    dt: datetime, style: TimestampStyle = "F"
-) -> str:
+def format_for_discord(dt: datetime, style: TimestampStyle = "F") -> str:
     """
     Format a datetime object as a Discord timestamp.
 
@@ -188,6 +186,6 @@ def format_for_discord(
     """
     # Ensure timezone-aware datetime in system timezone
     aware_dt = to_system_timezone(dt)
-    
+
     # Use discord.py's format_dt function for consistent formatting
     return discord.utils.format_dt(aware_dt, style=style)

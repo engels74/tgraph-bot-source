@@ -74,7 +74,6 @@ class TestEmbedCreation:
         assert embed.color == discord.Color.blue()
         assert embed.footer.text == "TGraph Bot"
 
-
     def test_create_cooldown_embed(self) -> None:
         """Test cooldown embed creation."""
         embed = create_cooldown_embed("test_command", 120.5)

@@ -257,7 +257,9 @@ class TGraphBotConfig(BaseModel):
         """Validate Discord timestamp format."""
         valid_formats = {"t", "T", "d", "D", "f", "F", "R"}
         if v not in valid_formats:
-            raise ValueError(f"DISCORD_TIMESTAMP_FORMAT must be one of {sorted(valid_formats)}, got: {v}")
+            raise ValueError(
+                f"DISCORD_TIMESTAMP_FORMAT must be one of {sorted(valid_formats)}, got: {v}"
+            )
         return v
 
     @field_validator("TAUTULLI_URL")

@@ -25,20 +25,32 @@ class TestFixedTimeValidation:
     def test_is_valid_fixed_time_valid_formats(self) -> None:
         """Test valid fixed time formats."""
         valid_times = [
-            "00:00", "12:00", "23:59", "09:30", "15:45",
-            "XX:XX"  # Special case for disabled
+            "00:00",
+            "12:00",
+            "23:59",
+            "09:30",
+            "15:45",
+            "XX:XX",  # Special case for disabled
         ]
-        
+
         for time_str in valid_times:
             assert is_valid_fixed_time(time_str), f"'{time_str}' should be valid"
 
     def test_is_valid_fixed_time_invalid_formats(self) -> None:
         """Test invalid fixed time formats."""
         invalid_times = [
-            "24:00", "12:60", "25:30", "12", "12:00:00",
-            "abc:def", "", "12:ab", "ab:30", "12:3"
+            "24:00",
+            "12:60",
+            "25:30",
+            "12",
+            "12:00:00",
+            "abc:def",
+            "",
+            "12:ab",
+            "ab:30",
+            "12:3",
         ]
-        
+
         for time_str in invalid_times:
             assert not is_valid_fixed_time(time_str), f"'{time_str}' should be invalid"
 
@@ -51,10 +63,12 @@ class TestFixedTimeValidation:
             ("09:30", time(9, 30)),
             ("15:45", time(15, 45)),
         ]
-        
+
         for time_str, expected_time in test_cases:
             result = parse_fixed_time(time_str)
-            assert result == expected_time, f"'{time_str}' should parse to {expected_time}"
+            assert result == expected_time, (
+                f"'{time_str}' should parse to {expected_time}"
+            )
 
     def test_parse_fixed_time_disabled(self) -> None:
         """Test parsing disabled fixed time."""
@@ -64,7 +78,7 @@ class TestFixedTimeValidation:
     def test_parse_fixed_time_invalid(self) -> None:
         """Test parsing invalid fixed time strings."""
         invalid_times = ["24:00", "12:60", "abc:def", ""]
-        
+
         for time_str in invalid_times:
             with pytest.raises(ValueError, match="Invalid fixed time format"):
                 _ = parse_fixed_time(time_str)
@@ -80,9 +94,9 @@ class TestNextFixedTimeCalculation:
         current_time = datetime(2025, 7, 25, 10, 0, 0, tzinfo=get_system_timezone())
         fixed_time = time(15, 0)
         update_days = 1
-        
+
         result = calculate_next_fixed_time(current_time, fixed_time, update_days)
-        
+
         expected = datetime(2025, 7, 26, 15, 0, 0, tzinfo=get_system_timezone())
         assert result == expected
 
@@ -92,9 +106,9 @@ class TestNextFixedTimeCalculation:
         current_time = datetime(2025, 7, 25, 16, 0, 0, tzinfo=get_system_timezone())
         fixed_time = time(15, 0)
         update_days = 1
-        
+
         result = calculate_next_fixed_time(current_time, fixed_time, update_days)
-        
+
         expected = datetime(2025, 7, 26, 15, 0, 0, tzinfo=get_system_timezone())
         assert result == expected
 
@@ -104,9 +118,9 @@ class TestNextFixedTimeCalculation:
         current_time = datetime(2025, 7, 25, 10, 0, 0, tzinfo=get_system_timezone())
         fixed_time = time(15, 0)
         update_days = 3
-        
+
         result = calculate_next_fixed_time(current_time, fixed_time, update_days)
-        
+
         # Should be 3 days from now at 15:00
         expected = datetime(2025, 7, 28, 15, 0, 0, tzinfo=get_system_timezone())
         assert result == expected
@@ -117,9 +131,11 @@ class TestNextFixedTimeCalculation:
         fixed_time = time(15, 0)
         update_days = 2
         last_update = datetime(2025, 7, 24, 15, 0, 0, tzinfo=get_system_timezone())
-        
-        result = calculate_next_fixed_time(current_time, fixed_time, update_days, last_update)
-        
+
+        result = calculate_next_fixed_time(
+            current_time, fixed_time, update_days, last_update
+        )
+
         # Should be 2 days after last update at 15:00
         expected = datetime(2025, 7, 26, 15, 0, 0, tzinfo=get_system_timezone())
         assert result == expected
@@ -129,10 +145,14 @@ class TestNextFixedTimeCalculation:
         current_time = datetime(2025, 7, 25, 10, 0, 0, tzinfo=get_system_timezone())
         fixed_time = time(15, 0)
         update_days = 7  # Weekly updates
-        last_update = datetime(2025, 7, 24, 15, 0, 0, tzinfo=get_system_timezone())  # Yesterday
-        
-        result = calculate_next_fixed_time(current_time, fixed_time, update_days, last_update)
-        
+        last_update = datetime(
+            2025, 7, 24, 15, 0, 0, tzinfo=get_system_timezone()
+        )  # Yesterday
+
+        result = calculate_next_fixed_time(
+            current_time, fixed_time, update_days, last_update
+        )
+
         # Should be 7 days after last update, not today
         expected = datetime(2025, 7, 31, 15, 0, 0, tzinfo=get_system_timezone())
         assert result == expected
@@ -145,9 +165,9 @@ class TestNextIntervalTimeCalculation:
         """Test basic interval time calculation."""
         current_time = datetime(2025, 7, 25, 14, 30, 0, tzinfo=get_system_timezone())
         update_days = 3
-        
+
         result = calculate_next_interval_time(current_time, update_days)
-        
+
         expected = current_time + timedelta(days=3)
         assert result == expected
 
@@ -156,9 +176,9 @@ class TestNextIntervalTimeCalculation:
         current_time = datetime(2025, 7, 25, 14, 30, 0, tzinfo=get_system_timezone())
         update_days = 2
         last_update = datetime(2025, 7, 23, 10, 0, 0, tzinfo=get_system_timezone())
-        
+
         result = calculate_next_interval_time(current_time, update_days, last_update)
-        
+
         # Should be 2 days after last update
         expected = datetime(2025, 7, 25, 10, 0, 0, tzinfo=get_system_timezone())
         assert result == expected
@@ -167,7 +187,9 @@ class TestNextIntervalTimeCalculation:
         """Test interval time calculation when update is past due."""
         current_time = datetime(2025, 7, 25, 14, 30, 0, tzinfo=get_system_timezone())
         update_days = 2
-        last_update = datetime(2025, 7, 20, 10, 0, 0, tzinfo=get_system_timezone())  # 5 days ago
+        last_update = datetime(
+            2025, 7, 20, 10, 0, 0, tzinfo=get_system_timezone()
+        )  # 5 days ago
 
         result = calculate_next_interval_time(current_time, update_days, last_update)
 
@@ -185,9 +207,11 @@ class TestMainCalculateFunction:
         current_time = datetime(2025, 7, 25, 10, 0, 0, tzinfo=get_system_timezone())
         update_days = 1
         fixed_update_time = "23:59"
-        
-        result = calculate_next_update_time(update_days, fixed_update_time, current_time)
-        
+
+        result = calculate_next_update_time(
+            update_days, fixed_update_time, current_time
+        )
+
         expected = datetime(2025, 7, 26, 23, 59, 0, tzinfo=get_system_timezone())
         assert result == expected
 
@@ -196,9 +220,11 @@ class TestMainCalculateFunction:
         current_time = datetime(2025, 7, 25, 14, 30, 0, tzinfo=get_system_timezone())
         update_days = 3
         fixed_update_time = "XX:XX"
-        
-        result = calculate_next_update_time(update_days, fixed_update_time, current_time)
-        
+
+        result = calculate_next_update_time(
+            update_days, fixed_update_time, current_time
+        )
+
         expected = current_time + timedelta(days=3)
         assert result == expected
 
@@ -208,11 +234,11 @@ class TestMainCalculateFunction:
         update_days = 2
         fixed_update_time = "12:00"
         last_update = datetime(2025, 7, 24, 12, 0, 0, tzinfo=get_system_timezone())
-        
+
         result = calculate_next_update_time(
             update_days, fixed_update_time, current_time, last_update
         )
-        
+
         expected = datetime(2025, 7, 26, 12, 0, 0, tzinfo=get_system_timezone())
         assert result == expected
 
@@ -221,7 +247,7 @@ class TestMainCalculateFunction:
         current_time = datetime(2025, 7, 25, 14, 30, 0, tzinfo=get_system_timezone())
         update_days = 1
         fixed_update_time = "25:00"  # Invalid
-        
+
         with pytest.raises(ValueError, match="Invalid fixed time format"):
             _ = calculate_next_update_time(update_days, fixed_update_time, current_time)
 
@@ -229,13 +255,13 @@ class TestMainCalculateFunction:
         """Test that function uses system now when current_time is not provided."""
         update_days = 1
         fixed_update_time = "XX:XX"
-        
+
         with patch("src.tgraph_bot.utils.time.scheduling.get_system_now") as mock_now:
             mock_time = datetime(2025, 7, 25, 14, 30, 0, tzinfo=get_system_timezone())
             mock_now.return_value = mock_time
-            
+
             result = calculate_next_update_time(update_days, fixed_update_time)
-            
+
             mock_now.assert_called_once()
             expected = mock_time + timedelta(days=1)
             assert result == expected

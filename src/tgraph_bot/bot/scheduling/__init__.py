@@ -25,7 +25,7 @@ from .recovery import RecoveryManager
 __all__ = [
     # Types and enums
     "TaskStatus",
-    "ErrorType", 
+    "ErrorType",
     "CircuitState",
     # Configuration and state
     "RetryConfig",
@@ -37,7 +37,7 @@ __all__ = [
     # Core components
     "ErrorClassifier",
     "CircuitBreaker",
-    "BackgroundTaskManager", 
+    "BackgroundTaskManager",
     "UpdateSchedule",
     "StateManager",
     "RecoveryManager",

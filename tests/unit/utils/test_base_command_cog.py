@@ -249,7 +249,7 @@ class TestBaseCommandCogEphemeralMethods:
     def __init__(self) -> None:
         """Initialize with mock_bot for type checker."""
         self.mock_bot: Mock = Mock(spec=commands.Bot)
-    
+
     @pytest.fixture(autouse=True)
     def setup_method(self) -> None:
         """Set up test fixtures."""
@@ -259,27 +259,25 @@ class TestBaseCommandCogEphemeralMethods:
     async def test_send_ephemeral_response_with_content(self) -> None:
         """Test sending ephemeral response with content."""
         cog = BaseCommandCog(self.mock_bot)
-        
+
         # Mock the interaction
         mock_interaction = Mock()
         mock_interaction.response.is_done.return_value = False  # pyright: ignore[reportAny]
         mock_interaction.response.send_message = Mock()  # pyright: ignore[reportAny]
-        
+
         # Patch the ephemeral_utils function
         with pytest.MonkeyPatch().context() as m:
             mock_send = AsyncMock()
             m.setattr(
                 "src.tgraph_bot.utils.discord.base_command_cog.send_ephemeral_with_deletion",
-                mock_send
+                mock_send,
             )
-            
+
             # Call the method
             await cog.send_ephemeral_response(
-                mock_interaction,
-                content="Test message",
-                delete_after=30.0
+                mock_interaction, content="Test message", delete_after=30.0
             )
-            
+
             # Verify the underlying function was called correctly
             mock_send.assert_called_once_with(
                 mock_interaction,
@@ -287,151 +285,144 @@ class TestBaseCommandCogEphemeralMethods:
                 embed=None,
                 view=None,
                 delete_after=30.0,
-                config=None
+                config=None,
             )
 
     @pytest.mark.asyncio
     async def test_send_ephemeral_response_with_embed(self) -> None:
         """Test sending ephemeral response with embed."""
         cog = BaseCommandCog(self.mock_bot)
-        
+
         mock_interaction = Mock()
         mock_embed = Mock()
-        
+
         with pytest.MonkeyPatch().context() as m:
             mock_send = AsyncMock()
             m.setattr(
                 "src.tgraph_bot.utils.discord.base_command_cog.send_ephemeral_with_deletion",
-                mock_send
+                mock_send,
             )
-            
+
             await cog.send_ephemeral_response(
-                mock_interaction,
-                embed=mock_embed,
-                delete_after=45.0
+                mock_interaction, embed=mock_embed, delete_after=45.0
             )
-            
+
             mock_send.assert_called_once_with(
                 mock_interaction,
                 content=None,
                 embed=mock_embed,
                 view=None,
                 delete_after=45.0,
-                config=None
+                config=None,
             )
 
     @pytest.mark.asyncio
     async def test_send_ephemeral_response_with_all_params(self) -> None:
         """Test sending ephemeral response with all parameters."""
         cog = BaseCommandCog(self.mock_bot)
-        
+
         mock_interaction = Mock()
         mock_embed = Mock()
         mock_view = Mock()
-        
+
         with pytest.MonkeyPatch().context() as m:
             mock_send = AsyncMock()
             m.setattr(
                 "src.tgraph_bot.utils.discord.base_command_cog.send_ephemeral_with_deletion",
-                mock_send
+                mock_send,
             )
-            
+
             await cog.send_ephemeral_response(
                 mock_interaction,
                 content="Test content",
                 embed=mock_embed,
                 view=mock_view,
-                delete_after=90.0
+                delete_after=90.0,
             )
-            
+
             mock_send.assert_called_once_with(
                 mock_interaction,
                 content="Test content",
                 embed=mock_embed,
                 view=mock_view,
                 delete_after=90.0,
-                config=None
+                config=None,
             )
 
     @pytest.mark.asyncio
     async def test_edit_ephemeral_response_with_content(self) -> None:
         """Test editing ephemeral response with content."""
         cog = BaseCommandCog(self.mock_bot)
-        
+
         mock_interaction = Mock()
-        
+
         with pytest.MonkeyPatch().context() as m:
             mock_edit = AsyncMock()
             m.setattr(
                 "src.tgraph_bot.utils.discord.base_command_cog.edit_ephemeral_with_deletion",
-                mock_edit
+                mock_edit,
             )
-            
+
             await cog.edit_ephemeral_response(
-                mock_interaction,
-                content="Updated message",
-                delete_after=20.0
+                mock_interaction, content="Updated message", delete_after=20.0
             )
-            
+
             mock_edit.assert_called_once_with(
                 mock_interaction,
                 content="Updated message",
                 embed=None,
                 view=None,
                 delete_after=20.0,
-                config=None
+                config=None,
             )
 
     @pytest.mark.asyncio
     async def test_edit_ephemeral_response_with_embed(self) -> None:
         """Test editing ephemeral response with embed."""
         cog = BaseCommandCog(self.mock_bot)
-        
+
         mock_interaction = Mock()
         mock_embed = Mock()
-        
+
         with pytest.MonkeyPatch().context() as m:
             mock_edit = AsyncMock()
             m.setattr(
                 "src.tgraph_bot.utils.discord.base_command_cog.edit_ephemeral_with_deletion",
-                mock_edit
+                mock_edit,
             )
-            
-            await cog.edit_ephemeral_response(
-                mock_interaction,
-                embed=mock_embed
-            )
-            
+
+            await cog.edit_ephemeral_response(mock_interaction, embed=mock_embed)
+
             mock_edit.assert_called_once_with(
                 mock_interaction,
                 content=None,
                 embed=mock_embed,
                 view=None,
                 delete_after=None,  # Will be converted by function
-                config=None
+                config=None,
             )
 
     @pytest.mark.asyncio
     async def test_edit_ephemeral_response_defaults(self) -> None:
         """Test editing ephemeral response with default parameters."""
         cog = BaseCommandCog(self.mock_bot)
-        
+
         mock_interaction = Mock()
-        
+
         with pytest.MonkeyPatch().context() as m:
             mock_edit = AsyncMock()
             m.setattr(
                 "src.tgraph_bot.utils.discord.base_command_cog.edit_ephemeral_with_deletion",
-                mock_edit
+                mock_edit,
             )
-            
+
             await cog.edit_ephemeral_response(mock_interaction)
-            
+
             mock_edit.assert_called_once_with(
                 mock_interaction,
                 content=None,
                 embed=None,
                 view=None,
                 delete_after=None,  # Will be converted by function
-                config=None
+                config=None,
             )

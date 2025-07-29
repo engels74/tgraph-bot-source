@@ -301,8 +301,6 @@ def validate_color_hex(color: str) -> bool:
         return False
 
 
-
-
 def create_cooldown_embed(
     command_name: str, retry_after_seconds: float
 ) -> discord.Embed:

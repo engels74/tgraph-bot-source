@@ -328,6 +328,7 @@ class UpdateTracker:
                     logger.error(f"Invalid schedule time calculated: {next_update}")
                     # Fallback to a simple interval
                     from datetime import timedelta
+
                     next_update = current_time + timedelta(hours=1)
 
                 self._state.set_next_update(next_update)
@@ -415,19 +416,23 @@ class UpdateTracker:
                     )
                     await asyncio.sleep(delay)
 
-                # Store the scheduled time before updating state  
+                # Store the scheduled time before updating state
                 scheduled_time = self._state.next_update
-                logical_update_time = scheduled_time if scheduled_time else get_system_now()
+                logical_update_time = (
+                    scheduled_time if scheduled_time else get_system_now()
+                )
 
                 # Record successful update using the scheduled time as the logical update time
                 # This ensures consistent scheduling intervals regardless of execution delays
                 # Update this BEFORE calculating next update so the calculator uses the correct last_update
                 self._state.record_successful_update(logical_update_time)
-                
+
                 # Calculate and set next update time BEFORE executing update callback
                 # This ensures Discord embeds created during the callback get the correct future timestamp
                 if self._schedule:
-                    next_update_time = self._schedule.calculate_next_update(logical_update_time)
+                    next_update_time = self._schedule.calculate_next_update(
+                        logical_update_time
+                    )
                     self._state.set_next_update(next_update_time)
                     logger.info(f"Next update scheduled for: {next_update_time}")
 
@@ -843,7 +848,7 @@ __all__ = [
     "UpdateTracker",
     # Re-exported types for backward compatibility
     "TaskStatus",
-    "ErrorType", 
+    "ErrorType",
     "CircuitState",
     "RetryConfig",
     "ErrorMetrics",

@@ -152,24 +152,17 @@ class PlayCountByHourOfDayGraph(BaseGraph, VisualizationMixin):
             # Use seaborn barplot with palette support or consistent color scheme
             # Using single color avoids categorical units warnings that occur with hue="hour"
             tv_color = self.get_tv_color()  # Get consistent color from theme
-            
+
             # Only add color parameter when no palette is configured
             # This allows the configured palette to be used via sns.set_palette()
             palette_config = getattr(self.config, "PLAY_COUNT_BY_HOUROFDAY_PALETTE", "")
             if not palette_config:
                 _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
-                    data=df,
-                    x="hour", 
-                    y="count",
-                    color=tv_color,
-                    ax=ax
+                    data=df, x="hour", y="count", color=tv_color, ax=ax
                 )
             else:
                 _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
-                    data=df,
-                    x="hour", 
-                    y="count",
-                    ax=ax
+                    data=df, x="hour", y="count", ax=ax
                 )
 
             # Customize the plot

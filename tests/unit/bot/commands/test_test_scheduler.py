@@ -218,7 +218,7 @@ class TestTestSchedulerCog:
 
             # Verify multiple ephemeral response calls were made
             assert mock_interaction.response.send_message.call_count >= 3  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
-            
+
             # Check the first embed content (initial message)
             call_args_list = mock_interaction.response.send_message.call_args_list  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue,reportUnknownVariableType]
             initial_call = call_args_list[0]  # pyright: ignore[reportUnknownVariableType]

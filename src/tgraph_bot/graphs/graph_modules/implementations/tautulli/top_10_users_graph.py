@@ -120,7 +120,7 @@ class Top10UsersGraph(BaseGraph, VisualizationMixin):
                 # Create horizontal bar plot with palette support or consistent color scheme
                 # Using single color avoids categorical units warnings that occur with hue="username"
                 tv_color = self.get_tv_color()  # Get consistent color from theme
-                
+
                 # Only add color parameter when no palette is configured
                 # This allows the configured palette to be used via sns.set_palette()
                 palette_config = getattr(self.config, "TOP_10_USERS_PALETTE", "")

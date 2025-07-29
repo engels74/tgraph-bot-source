@@ -9,8 +9,12 @@ import pytest
 from unittest.mock import patch
 
 from tgraph_bot.config.schema import TGraphBotConfig
-from tgraph_bot.graphs.graph_modules.implementations.tautulli.play_count_by_hourofday_graph import PlayCountByHourOfDayGraph
-from tgraph_bot.graphs.graph_modules.implementations.tautulli.top_10_users_graph import Top10UsersGraph
+from tgraph_bot.graphs.graph_modules.implementations.tautulli.play_count_by_hourofday_graph import (
+    PlayCountByHourOfDayGraph,
+)
+from tgraph_bot.graphs.graph_modules.implementations.tautulli.top_10_users_graph import (
+    Top10UsersGraph,
+)
 
 
 class TestPaletteConfiguration:
@@ -26,15 +30,15 @@ class TestPaletteConfiguration:
             PLAY_COUNT_BY_HOUROFDAY_PALETTE="viridis",
             ENABLE_MEDIA_TYPE_SEPARATION=True,
         )
-        
+
         graph = PlayCountByHourOfDayGraph(config=config)
-        
+
         with patch("seaborn.set_palette") as mock_set_palette:
             # This should detect user palette and skip media type palette
             graph.apply_seaborn_style()
             # User palette should be applied via apply_configured_palette
             graph.apply_configured_palette("PLAY_COUNT_BY_HOUROFDAY_PALETTE")
-            
+
             # Verify that viridis was set as the palette
             mock_set_palette.assert_called_with("viridis")
 
@@ -48,9 +52,9 @@ class TestPaletteConfiguration:
             TOP_10_USERS_PALETTE="plasma",
             ENABLE_MEDIA_TYPE_SEPARATION=True,
         )
-        
+
         graph = Top10UsersGraph(config=config)
-        
+
         with patch("seaborn.set_palette") as mock_set_palette:
             graph.apply_configured_palette("TOP_10_USERS_PALETTE")
             mock_set_palette.assert_called_with("plasma")
@@ -64,9 +68,9 @@ class TestPaletteConfiguration:
             CHANNEL_ID=123456789,
             PLAY_COUNT_BY_HOUROFDAY_PALETTE="inferno",
         )
-        
+
         graph = PlayCountByHourOfDayGraph(config=config)
-        
+
         with patch("seaborn.set_palette") as mock_set_palette:
             graph.apply_configured_palette("PLAY_COUNT_BY_HOUROFDAY_PALETTE")
             mock_set_palette.assert_called_with("inferno")
@@ -80,9 +84,9 @@ class TestPaletteConfiguration:
             CHANNEL_ID=123456789,
             TOP_10_USERS_PALETTE="magma",
         )
-        
+
         graph = Top10UsersGraph(config=config)
-        
+
         with patch("seaborn.set_palette") as mock_set_palette:
             graph.apply_configured_palette("TOP_10_USERS_PALETTE")
             mock_set_palette.assert_called_with("magma")
@@ -99,13 +103,13 @@ class TestPaletteConfiguration:
             TV_COLOR="#ff0000",  # Red
             MOVIE_COLOR="#00ff00",  # Green
         )
-        
+
         graph = PlayCountByHourOfDayGraph(config=config)
-        
+
         with patch("seaborn.set_palette") as mock_set_palette:
             # This should skip setting media type palette
             graph.apply_seaborn_style()
-            
+
             # Verify that media type palette was NOT set
             # (should be 0 calls since user palette takes precedence)
             mock_set_palette.assert_not_called()
@@ -122,12 +126,12 @@ class TestPaletteConfiguration:
             TV_COLOR="#ff0000",  # Red
             MOVIE_COLOR="#00ff00",  # Green
         )
-        
+
         graph = PlayCountByHourOfDayGraph(config=config)
-        
+
         with patch("seaborn.set_palette") as mock_set_palette:
             graph.apply_seaborn_style()
-            
+
             # Should be called once with media type colors
             mock_set_palette.assert_called_once()
             # Get the actual colors that were passed
@@ -138,15 +142,15 @@ class TestPaletteConfiguration:
     def test_empty_palette_configuration_does_not_apply_palette(self) -> None:
         """Test that empty palette configuration does not apply any palette."""
         config = TGraphBotConfig(
-            DISCORD_TOKEN="test_token", 
+            DISCORD_TOKEN="test_token",
             TAUTULLI_API_KEY="test_key",
             TAUTULLI_URL="http://test.local",
             CHANNEL_ID=123456789,
             PLAY_COUNT_BY_HOUROFDAY_PALETTE="",  # Empty string
         )
-        
+
         graph = PlayCountByHourOfDayGraph(config=config)
-        
+
         with patch("seaborn.set_palette") as mock_set_palette:
             graph.apply_configured_palette("PLAY_COUNT_BY_HOUROFDAY_PALETTE")
             mock_set_palette.assert_not_called()
@@ -155,14 +159,14 @@ class TestPaletteConfiguration:
         """Test that whitespace-only palette configuration does not apply any palette."""
         config = TGraphBotConfig(
             DISCORD_TOKEN="test_token",
-            TAUTULLI_API_KEY="test_key", 
+            TAUTULLI_API_KEY="test_key",
             TAUTULLI_URL="http://test.local",
             CHANNEL_ID=123456789,
             PLAY_COUNT_BY_HOUROFDAY_PALETTE="   ",  # Whitespace only
         )
-        
+
         graph = PlayCountByHourOfDayGraph(config=config)
-        
+
         with patch("seaborn.set_palette") as mock_set_palette:
             graph.apply_configured_palette("PLAY_COUNT_BY_HOUROFDAY_PALETTE")
             mock_set_palette.assert_not_called()
@@ -173,14 +177,14 @@ class TestPaletteConfiguration:
         config_with_palette = TGraphBotConfig(
             DISCORD_TOKEN="test_token",
             TAUTULLI_API_KEY="test_key",
-            TAUTULLI_URL="http://test.local", 
+            TAUTULLI_URL="http://test.local",
             CHANNEL_ID=123456789,
             PLAY_COUNT_BY_HOUROFDAY_PALETTE="viridis",
         )
-        
+
         graph_with_palette = PlayCountByHourOfDayGraph(config=config_with_palette)
         assert graph_with_palette._has_user_configured_palette() is True  # pyright: ignore[reportPrivateUsage]
-        
+
         # Test with no palette configured
         config_no_palette = TGraphBotConfig(
             DISCORD_TOKEN="test_token",
@@ -190,7 +194,7 @@ class TestPaletteConfiguration:
             PLAY_COUNT_BY_HOUROFDAY_PALETTE="",
             TOP_10_USERS_PALETTE="",
         )
-        
+
         graph_no_palette = PlayCountByHourOfDayGraph(config=config_no_palette)
         assert graph_no_palette._has_user_configured_palette() is False  # pyright: ignore[reportPrivateUsage]
 
@@ -204,7 +208,7 @@ class TestPaletteConfiguration:
             PLAY_COUNT_BY_HOUROFDAY_PALETTE="",  # Empty
             TOP_10_USERS_PALETTE="plasma",  # Configured
         )
-        
+
         graph = PlayCountByHourOfDayGraph(config=config)
         # Should return True because TOP_10_USERS_PALETTE is configured
         assert graph._has_user_configured_palette() is True  # pyright: ignore[reportPrivateUsage]
@@ -219,9 +223,9 @@ class TestPaletteConfiguration:
             CHANNEL_ID=123456789,
             PLAY_COUNT_BY_HOUROFDAY_PALETTE=palette_name,
         )
-        
+
         graph = PlayCountByHourOfDayGraph(config=config)
-        
+
         with patch("seaborn.set_palette") as mock_set_palette:
             graph.apply_configured_palette("PLAY_COUNT_BY_HOUROFDAY_PALETTE")
             mock_set_palette.assert_called_with(palette_name)
@@ -232,9 +236,9 @@ class TestPaletteConfiguration:
             "PLAY_COUNT_BY_HOUROFDAY_PALETTE": "viridis",
             "ENABLE_MEDIA_TYPE_SEPARATION": True,
         }
-        
+
         graph = PlayCountByHourOfDayGraph(config=config_dict)
-        
+
         with patch("seaborn.set_palette") as mock_set_palette:
             graph.apply_configured_palette("PLAY_COUNT_BY_HOUROFDAY_PALETTE")
             mock_set_palette.assert_called_with("viridis")
@@ -242,7 +246,7 @@ class TestPaletteConfiguration:
     def test_none_config_does_not_apply_palette(self) -> None:
         """Test that None config does not apply any palette."""
         graph = PlayCountByHourOfDayGraph(config=None)
-        
+
         with patch("seaborn.set_palette") as mock_set_palette:
             graph.apply_configured_palette("PLAY_COUNT_BY_HOUROFDAY_PALETTE")
             mock_set_palette.assert_not_called()

@@ -594,7 +594,9 @@ class TestVisualizationMixin:
     def test_apply_configured_palette_with_invalid_palette(self) -> None:
         """Test apply_configured_palette method with invalid palette value."""
         with matplotlib_cleanup():
-            config: dict[str, object] = {"PLAY_COUNT_BY_HOUROFDAY_PALETTE": "invalid_palette"}
+            config: dict[str, object] = {
+                "PLAY_COUNT_BY_HOUROFDAY_PALETTE": "invalid_palette"
+            }
             graph = MockGraphWithVisualization(config=config)
 
             with patch("seaborn.set_palette") as mock_set_palette:
@@ -602,11 +604,10 @@ class TestVisualizationMixin:
                 graph.apply_configured_palette("PLAY_COUNT_BY_HOUROFDAY_PALETTE")
                 mock_set_palette.assert_called_once_with("invalid_palette")
 
-
     def test_apply_configured_palette_with_all_supported_palettes(self) -> None:
         """Test apply_configured_palette method with all supported palette values."""
         supported_palettes = ["viridis", "plasma", "inferno", "magma"]
-        
+
         for palette in supported_palettes:
             with matplotlib_cleanup():
                 config: dict[str, object] = {"PLAY_COUNT_BY_HOUROFDAY_PALETTE": palette}
@@ -616,7 +617,9 @@ class TestVisualizationMixin:
                     graph.apply_configured_palette("PLAY_COUNT_BY_HOUROFDAY_PALETTE")
                     mock_set_palette.assert_called_once_with(palette)
 
-    def test_apply_configured_palette_empty_string_does_not_call_set_palette(self) -> None:
+    def test_apply_configured_palette_empty_string_does_not_call_set_palette(
+        self,
+    ) -> None:
         """Test that empty string palette config does not call sns.set_palette()."""
         with matplotlib_cleanup():
             config: dict[str, object] = {"PLAY_COUNT_BY_HOUROFDAY_PALETTE": ""}

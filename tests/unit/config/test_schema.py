@@ -213,7 +213,7 @@ class TestTGraphBotConfig:
             "CHANNEL_ID": 123456789012345678,
         }
         config = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
-        
+
         assert config.EPHEMERAL_MESSAGE_DELETE_AFTER == 30.0
         assert isinstance(config.EPHEMERAL_MESSAGE_DELETE_AFTER, float)
 
@@ -227,7 +227,7 @@ class TestTGraphBotConfig:
             "EPHEMERAL_MESSAGE_DELETE_AFTER": 120.5,
         }
         config = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
-        
+
         assert config.EPHEMERAL_MESSAGE_DELETE_AFTER == 120.5
 
     def test_ephemeral_message_delete_after_validation_positive(self) -> None:
@@ -239,12 +239,14 @@ class TestTGraphBotConfig:
             "CHANNEL_ID": 123456789012345678,
             "EPHEMERAL_MESSAGE_DELETE_AFTER": -1.0,
         }
-        
+
         with pytest.raises(ValidationError) as exc_info:
             _ = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
-        
+
         errors = exc_info.value.errors()
-        assert any(error["loc"] == ("EPHEMERAL_MESSAGE_DELETE_AFTER",) for error in errors)
+        assert any(
+            error["loc"] == ("EPHEMERAL_MESSAGE_DELETE_AFTER",) for error in errors
+        )
 
     def test_ephemeral_message_delete_after_validation_zero(self) -> None:
         """Test that EPHEMERAL_MESSAGE_DELETE_AFTER cannot be zero."""
@@ -255,12 +257,14 @@ class TestTGraphBotConfig:
             "CHANNEL_ID": 123456789012345678,
             "EPHEMERAL_MESSAGE_DELETE_AFTER": 0.0,
         }
-        
+
         with pytest.raises(ValidationError) as exc_info:
             _ = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
-        
+
         errors = exc_info.value.errors()
-        assert any(error["loc"] == ("EPHEMERAL_MESSAGE_DELETE_AFTER",) for error in errors)
+        assert any(
+            error["loc"] == ("EPHEMERAL_MESSAGE_DELETE_AFTER",) for error in errors
+        )
 
     def test_ephemeral_message_delete_after_validation_range(self) -> None:
         """Test that EPHEMERAL_MESSAGE_DELETE_AFTER has reasonable range limits."""
@@ -294,9 +298,11 @@ class TestTGraphBotConfig:
             "CHANNEL_ID": 123456789012345678,
             "EPHEMERAL_MESSAGE_DELETE_AFTER": 3601.0,
         }
-        
+
         with pytest.raises(ValidationError) as exc_info:
             _ = TGraphBotConfig(**config_data_too_large)  # pyright: ignore[reportArgumentType]
-        
+
         errors = exc_info.value.errors()
-        assert any(error["loc"] == ("EPHEMERAL_MESSAGE_DELETE_AFTER",) for error in errors)
+        assert any(
+            error["loc"] == ("EPHEMERAL_MESSAGE_DELETE_AFTER",) for error in errors
+        )

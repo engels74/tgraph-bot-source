@@ -26,10 +26,10 @@ DEFAULT_EPHEMERAL_DELETION_TIMEOUT: float = 60.0
 def get_ephemeral_delete_timeout(config: "TGraphBotConfig | None" = None) -> float:
     """
     Get the ephemeral message deletion timeout from config or default.
-    
+
     Args:
         config: Configuration object containing EPHEMERAL_MESSAGE_DELETE_AFTER
-        
+
     Returns:
         Float timeout value in seconds
     """
@@ -106,7 +106,7 @@ async def send_ephemeral_with_deletion(
     # Determine delete_after value from config or parameter
     if delete_after is None:
         delete_after = get_ephemeral_delete_timeout(config)
-    
+
     # Validate delete_after parameter
     if delete_after <= 0:
         msg = "delete_after must be positive"
@@ -135,7 +135,7 @@ async def send_ephemeral_with_deletion(
         "Sending ephemeral message with %ss deletion timeout for user %s in command %s",
         delete_after,
         interaction.user.id,
-        getattr(interaction.command, 'name', 'unknown')
+        getattr(interaction.command, "name", "unknown"),
     )
 
     try:
@@ -145,9 +145,9 @@ async def send_ephemeral_with_deletion(
             # Note: followup.send() is webhook-based and doesn't support delete_after
             followup_params = message_params.copy()
             followup_params.pop("delete_after", None)  # Remove unsupported parameter
-            
+
             message = await interaction.followup.send(**followup_params)  # pyright: ignore[reportAny,reportUnknownVariableType]
-            
+
             # Schedule manual deletion for followup messages
             if delete_after > 0:
                 _ = asyncio.create_task(_delete_message_after(message, delete_after))  # pyright: ignore[reportUnknownArgumentType]
@@ -201,7 +201,7 @@ async def edit_ephemeral_with_deletion(
     # Determine delete_after value from config or parameter
     if delete_after is None:
         delete_after = get_ephemeral_delete_timeout(config)
-    
+
     # Validate delete_after parameter
     if delete_after <= 0:
         msg = "delete_after must be positive"
@@ -224,7 +224,7 @@ async def edit_ephemeral_with_deletion(
         "Editing ephemeral message with %ss deletion timeout for user %s in command %s",
         delete_after,
         interaction.user.id,
-        getattr(interaction.command, 'name', 'unknown')
+        getattr(interaction.command, "name", "unknown"),
     )
 
     try:
@@ -237,5 +237,3 @@ async def edit_ephemeral_with_deletion(
             exc_info=True,
         )
         raise
-
-

@@ -302,7 +302,10 @@ class StartupSequence:
 
                 # Create graph-specific embed with scheduling info
                 embed = create_graph_specific_embed(
-                    graph_file, update_days, fixed_update_time, timestamp_format=timestamp_format
+                    graph_file,
+                    update_days,
+                    fixed_update_time,
+                    timestamp_format=timestamp_format,
                 )
 
                 # Post the graph

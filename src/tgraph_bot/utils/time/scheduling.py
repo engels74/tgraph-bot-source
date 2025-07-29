@@ -32,7 +32,7 @@ def is_valid_fixed_time(time_str: str) -> bool:
     # Check for disabled fixed time
     if time_str == "XX:XX":
         return True
-    
+
     # Check format with regex
     pattern = r"^([01]?[0-9]|2[0-3]):[0-5][0-9]$"
     return bool(re.match(pattern, time_str))
@@ -59,10 +59,10 @@ def parse_fixed_time(time_str: str) -> time | None:
     """
     if time_str == "XX:XX":
         return None
-    
+
     if not is_valid_fixed_time(time_str):
         raise ValueError(f"Invalid fixed time format: {time_str}")
-    
+
     hour, minute = map(int, time_str.split(":"))
     return time(hour, minute)
 
@@ -126,7 +126,7 @@ def calculate_next_fixed_time(
         else:
             # For UPDATE_DAYS > 1, ensure we respect the minimum interval from current time
             min_next_update = current_time + timedelta(days=update_days)
-            
+
             # Find the next occurrence of fixed time on or after the minimum date
             next_update = datetime.combine(min_next_update.date(), fixed_time)
             next_update = next_update.replace(tzinfo=get_system_timezone())
@@ -213,16 +213,18 @@ def calculate_next_update_time(
     """
     if current_time is None:
         current_time = get_system_now()
-    
+
     # Ensure current_time is in system timezone
     current_time = to_system_timezone(current_time)
-    
+
     # Parse fixed time
     fixed_time = parse_fixed_time(fixed_update_time)
-    
+
     if fixed_time is not None:
         # Fixed time scheduling
-        return calculate_next_fixed_time(current_time, fixed_time, update_days, last_update)
+        return calculate_next_fixed_time(
+            current_time, fixed_time, update_days, last_update
+        )
     else:
         # Interval-based scheduling
         return calculate_next_interval_time(current_time, update_days, last_update)

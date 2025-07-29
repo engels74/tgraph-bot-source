@@ -166,16 +166,20 @@ def create_graph_specific_embed(
 
     # Add next update time if provided or can be calculated from config
     next_update = next_update_time
-    if next_update is None and update_days is not None and fixed_update_time is not None:
+    if (
+        next_update is None
+        and update_days is not None
+        and fixed_update_time is not None
+    ):
         next_update = calculate_next_update_time(update_days, fixed_update_time)
-    
+
     if next_update:
         # Use the optimized timestamp formatting function
-        timestamp_str = format_next_update_timestamp(next_update, style=timestamp_format)
-        current_description = embed.description or ""
-        embed.description = (
-            current_description + f"\n\nNext update: {timestamp_str}"
+        timestamp_str = format_next_update_timestamp(
+            next_update, style=timestamp_format
         )
+        current_description = embed.description or ""
+        embed.description = current_description + f"\n\nNext update: {timestamp_str}"
 
     return embed
 
