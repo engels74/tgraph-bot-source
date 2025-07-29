@@ -114,15 +114,32 @@ class Top10UsersGraph(BaseGraph, VisualizationMixin):
                 # Convert to pandas DataFrame for easier plotting
                 df = pd.DataFrame(top_users)
 
-                # Create horizontal bar plot - palette is handled centrally by BaseGraph.apply_seaborn_style()
-                # This ensures user-configured palettes take precedence over media type palettes
-                _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
-                    data=df,
-                    x="play_count",
-                    y="username",
-                    ax=ax,
-                    orient="h",
-                )
+                # Get user-configured palette for this graph type
+                user_palette = self.get_user_configured_palette()
+                
+                if user_palette:
+                    # Use the configured palette with hue to apply different colors to each bar
+                    _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
+                        data=df,
+                        x="play_count",
+                        y="username",
+                        hue="username",
+                        palette=user_palette,
+                        legend=False,
+                        ax=ax,
+                        orient="h",
+                    )
+                else:
+                    # Use default single color when no palette is configured
+                    tv_color = self.get_tv_color()
+                    _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
+                        data=df,
+                        x="play_count",
+                        y="username",
+                        color=tv_color,
+                        ax=ax,
+                        orient="h",
+                    )
 
                 # Customize the plot
                 self.setup_standard_title_and_axes(

@@ -256,16 +256,18 @@ class BaseGraph(ABC):
 
         return False
 
-    def _apply_user_configured_palettes(self) -> None:
+    def get_user_configured_palette(self) -> str | None:
         """
-        Apply user-configured palettes based on the current graph type.
+        Get the user-configured palette for the current graph type.
 
         This method determines the specific palette configuration key for the current
-        graph type and applies only that palette. This ensures each graph type uses
-        its own configured palette.
+        graph type and returns the palette value if configured.
+
+        Returns:
+            The palette name (e.g., 'viridis') if configured, None otherwise
         """
         if self.config is None:
-            return
+            return None
 
         # Map graph class names to their corresponding palette configuration keys
         graph_type_to_palette_key = {
@@ -281,7 +283,7 @@ class BaseGraph(ABC):
         palette_key = graph_type_to_palette_key.get(current_graph_class)
         if palette_key is None:
             # No specific palette configuration for this graph type
-            return
+            return None
 
         # Get the palette value for this specific graph
         palette_value = None
@@ -290,13 +292,27 @@ class BaseGraph(ABC):
         else:
             palette_value = getattr(self.config, palette_key, None)
 
-        # Apply the palette if it's configured with a non-empty string
+        # Return the palette if it's configured with a non-empty string
         if (
             palette_value
             and isinstance(palette_value, str)
             and palette_value.strip()
         ):
-            sns.set_palette(palette_value.strip())  # pyright: ignore[reportUnknownMemberType]
+            return palette_value.strip()
+        
+        return None
+
+    def _apply_user_configured_palettes(self) -> None:
+        """
+        Apply user-configured palettes based on the current graph type.
+
+        This method is now deprecated in favor of get_user_configured_palette()
+        and direct palette parameter usage in barplot calls. It's kept for
+        backward compatibility with media type separation logic.
+        """
+        user_palette = self.get_user_configured_palette()
+        if user_palette:
+            sns.set_palette(user_palette)  # pyright: ignore[reportUnknownMemberType]
 
     def create_separated_legend(
         self, ax: "Axes", media_types_present: list[str]
