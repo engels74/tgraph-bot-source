@@ -6,8 +6,7 @@ user-configured palettes take precedence over automatic media type palettes.
 """
 
 import pytest
-from unittest.mock import patch, MagicMock
-import seaborn as sns
+from unittest.mock import patch
 
 from tgraph_bot.config.schema import TGraphBotConfig
 from tgraph_bot.graphs.graph_modules.implementations.tautulli.play_count_by_hourofday_graph import PlayCountByHourOfDayGraph
@@ -132,7 +131,7 @@ class TestPaletteConfiguration:
             # Should be called once with media type colors
             mock_set_palette.assert_called_once()
             # Get the actual colors that were passed
-            called_palette = mock_set_palette.call_args[0][0]
+            called_palette: list[str] = mock_set_palette.call_args[0][0]  # pyright: ignore[reportAny]
             # Should contain the configured TV and movie colors
             assert "#ff0000" in called_palette or "#00ff00" in called_palette
 
@@ -180,7 +179,7 @@ class TestPaletteConfiguration:
         )
         
         graph_with_palette = PlayCountByHourOfDayGraph(config=config_with_palette)
-        assert graph_with_palette._has_user_configured_palette() is True
+        assert graph_with_palette._has_user_configured_palette() is True  # pyright: ignore[reportPrivateUsage]
         
         # Test with no palette configured
         config_no_palette = TGraphBotConfig(
@@ -193,7 +192,7 @@ class TestPaletteConfiguration:
         )
         
         graph_no_palette = PlayCountByHourOfDayGraph(config=config_no_palette)
-        assert graph_no_palette._has_user_configured_palette() is False
+        assert graph_no_palette._has_user_configured_palette() is False  # pyright: ignore[reportPrivateUsage]
 
     def test_multiple_palette_configurations_detected(self) -> None:
         """Test that multiple palette configurations are correctly detected."""
@@ -208,7 +207,7 @@ class TestPaletteConfiguration:
         
         graph = PlayCountByHourOfDayGraph(config=config)
         # Should return True because TOP_10_USERS_PALETTE is configured
-        assert graph._has_user_configured_palette() is True
+        assert graph._has_user_configured_palette() is True  # pyright: ignore[reportPrivateUsage]
 
     @pytest.mark.parametrize("palette_name", ["viridis", "plasma", "inferno", "magma"])
     def test_all_supported_palettes(self, palette_name: str) -> None:
@@ -229,7 +228,7 @@ class TestPaletteConfiguration:
 
     def test_dict_config_palette_application(self) -> None:
         """Test palette application with dict-based configuration."""
-        config_dict = {
+        config_dict: dict[str, object] = {
             "PLAY_COUNT_BY_HOUROFDAY_PALETTE": "viridis",
             "ENABLE_MEDIA_TYPE_SEPARATION": True,
         }
