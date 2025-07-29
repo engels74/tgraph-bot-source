@@ -17,9 +17,12 @@ import pytest
 
 from src.tgraph_bot.graphs.graph_modules import (
     PlayCountByHourOfDayGraph,
+    Top10UsersGraph,
+    Top10PlatformsGraph,
     SampleGraph,
 )
 from src.tgraph_bot.graphs.graph_modules.core.base_graph import BaseGraph
+from src.tgraph_bot.config.schema import TGraphBotConfig
 from pathlib import Path
 from tests.utils.graph_helpers import (
     create_test_config_minimal,
@@ -56,6 +59,38 @@ class TestStandardGraphs:
     def sample_graph_data(self) -> dict[str, object]:
         """Sample data for sample graph testing."""
         return {"x_values": [1, 2, 3, 4, 5], "y_values": [10, 20, 30, 40, 50]}
+
+    @pytest.fixture
+    def sample_users_data(self) -> dict[str, object]:
+        """Sample data for top users graph testing."""
+        return {
+            "data": [
+                {"date": 1704100200, "user": "alice", "media_type": "movie"},
+                {"date": 1704121700, "user": "bob", "media_type": "tv"},
+                {"date": 1704143100, "user": "alice", "media_type": "movie"},
+                {"date": 1704187200, "user": "charlie", "media_type": "tv"},
+                {"date": 1704210600, "user": "bob", "media_type": "movie"},
+                {"date": 1704230400, "user": "alice", "media_type": "tv"},
+                {"date": 1704274500, "user": "charlie", "media_type": "movie"},
+                {"date": 1704297300, "user": "bob", "media_type": "tv"},
+            ]
+        }
+
+    @pytest.fixture
+    def sample_platforms_data(self) -> dict[str, object]:
+        """Sample data for top platforms graph testing."""
+        return {
+            "data": [
+                {"date": 1704100200, "platform": "Plex Web", "media_type": "movie"},
+                {"date": 1704121700, "platform": "Plex Android", "media_type": "tv"},
+                {"date": 1704143100, "platform": "Plex Web", "media_type": "movie"},
+                {"date": 1704187200, "platform": "Plex iOS", "media_type": "tv"},
+                {"date": 1704210600, "platform": "Plex Android", "media_type": "movie"},
+                {"date": 1704230400, "platform": "Plex Web", "media_type": "tv"},
+                {"date": 1704274500, "platform": "Plex iOS", "media_type": "movie"},
+                {"date": 1704297300, "platform": "Plex Android", "media_type": "tv"},
+            ]
+        }
 
     @pytest.mark.parametrize(
         "graph_class,sample_data_fixture,expected_title,expected_file_pattern",
@@ -118,6 +153,214 @@ class TestStandardGraphs:
 
                 # Clean up
                 output_file.unlink(missing_ok=True)
+
+
+class TestGraphSeparationFunctionality:
+    """Test cases for media type separation functionality in graphs."""
+
+    @pytest.fixture
+    def separation_config(self) -> TGraphBotConfig:
+        """Configuration with media type separation enabled."""
+        return TGraphBotConfig(
+            DISCORD_TOKEN="test_token",
+            TAUTULLI_API_KEY="test_key",
+            TAUTULLI_URL="http://test.local",
+            CHANNEL_ID=123456789,
+            ENABLE_MEDIA_TYPE_SEPARATION=True,
+            ENABLE_STACKED_BAR_CHARTS=True,
+        )
+
+    @pytest.fixture
+    def no_separation_config(self) -> TGraphBotConfig:
+        """Configuration with media type separation disabled."""
+        return TGraphBotConfig(
+            DISCORD_TOKEN="test_token",
+            TAUTULLI_API_KEY="test_key",
+            TAUTULLI_URL="http://test.local",
+            CHANNEL_ID=123456789,
+            ENABLE_MEDIA_TYPE_SEPARATION=False,
+            ENABLE_STACKED_BAR_CHARTS=False,
+        )
+
+    @pytest.fixture
+    def sample_separation_data(self) -> dict[str, object]:
+        """Sample data with mixed media types for separation testing."""
+        return {
+            "data": [
+                {"date": 1704100200, "user": "alice", "platform": "Plex Web", "media_type": "movie"},
+                {"date": 1704121700, "user": "bob", "platform": "Plex Android", "media_type": "episode"},
+                {"date": 1704143100, "user": "alice", "platform": "Plex Web", "media_type": "movie"},
+                {"date": 1704187200, "user": "charlie", "platform": "Plex iOS", "media_type": "episode"},
+                {"date": 1704210600, "user": "bob", "platform": "Plex Android", "media_type": "movie"},
+                {"date": 1704230400, "user": "alice", "platform": "Plex Web", "media_type": "episode"},
+                {"date": 1704274500, "user": "charlie", "platform": "Plex iOS", "media_type": "movie"},
+                {"date": 1704297300, "user": "bob", "platform": "Plex Android", "media_type": "episode"},
+            ]
+        }
+
+    def test_play_count_by_hourofday_separation_methods_exist(self) -> None:
+        """Test that PlayCountByHourOfDayGraph will have separation methods after implementation."""
+        graph = PlayCountByHourOfDayGraph()
+
+        # These methods should exist after implementation
+        # For now, we test that the graph can be instantiated
+        assert graph is not None
+        assert hasattr(graph, 'generate')
+
+        # After implementation, these methods should exist:
+        # assert hasattr(graph, '_generate_separated_visualization')
+        # assert hasattr(graph, '_generate_stacked_visualization')
+
+    def test_top_10_users_separation_methods_exist(self) -> None:
+        """Test that Top10UsersGraph will have separation methods after implementation."""
+        graph = Top10UsersGraph()
+
+        # These methods should exist after implementation
+        # For now, we test that the graph can be instantiated
+        assert graph is not None
+        assert hasattr(graph, 'generate')
+
+        # After implementation, these methods should exist:
+        # assert hasattr(graph, '_generate_separated_visualization')
+        # assert hasattr(graph, '_generate_stacked_visualization')
+
+    def test_top_10_platforms_separation_methods_exist(self) -> None:
+        """Test that Top10PlatformsGraph will have separation methods after implementation."""
+        graph = Top10PlatformsGraph()
+
+        # These methods should exist after implementation
+        # For now, we test that the graph can be instantiated
+        assert graph is not None
+        assert hasattr(graph, 'generate')
+
+        # After implementation, these methods should exist:
+        # assert hasattr(graph, '_generate_separated_visualization')
+        # assert hasattr(graph, '_generate_stacked_visualization')
+
+    def test_configuration_driven_mode_selection(
+        self,
+        separation_config: TGraphBotConfig,
+        no_separation_config: TGraphBotConfig,
+        sample_separation_data: dict[str, object]
+    ) -> None:
+        """Test that graphs respond to configuration-driven mode selection."""
+        # Test with separation enabled
+        with matplotlib_cleanup():
+            graph_with_separation = PlayCountByHourOfDayGraph(config=separation_config)
+
+            # Should be able to generate without error
+            output_path_separated = graph_with_separation.generate(sample_separation_data)
+            assert Path(output_path_separated).exists()
+            Path(output_path_separated).unlink(missing_ok=True)
+
+        # Test with separation disabled
+        with matplotlib_cleanup():
+            graph_without_separation = PlayCountByHourOfDayGraph(config=no_separation_config)
+
+            # Should be able to generate without error
+            output_path_normal = graph_without_separation.generate(sample_separation_data)
+            assert Path(output_path_normal).exists()
+            Path(output_path_normal).unlink(missing_ok=True)
+
+    def test_color_palette_integration_with_separation(
+        self,
+        sample_separation_data: dict[str, object]
+    ) -> None:
+        """Test that color palettes integrate properly with separation functionality."""
+        # Test with palette configuration
+        palette_config = TGraphBotConfig(
+            DISCORD_TOKEN="test_token",
+            TAUTULLI_API_KEY="test_key",
+            TAUTULLI_URL="http://test.local",
+            CHANNEL_ID=123456789,
+            ENABLE_MEDIA_TYPE_SEPARATION=True,
+            PLAY_COUNT_BY_HOUROFDAY_PALETTE="viridis",
+            TOP_10_USERS_PALETTE="plasma",
+        )
+
+        # Test PlayCountByHourOfDayGraph with palette
+        with matplotlib_cleanup():
+            hourly_graph = PlayCountByHourOfDayGraph(config=palette_config)
+
+            # Should use configured palette
+            assert hourly_graph.get_user_configured_palette() == "viridis"
+
+            # Should generate without error
+            output_path = hourly_graph.generate(sample_separation_data)
+            assert Path(output_path).exists()
+            Path(output_path).unlink(missing_ok=True)
+
+        # Test Top10UsersGraph with palette
+        with matplotlib_cleanup():
+            users_graph = Top10UsersGraph(config=palette_config)
+
+            # Should use configured palette
+            assert users_graph.get_user_configured_palette() == "plasma"
+
+            # Should generate without error
+            output_path = users_graph.generate(sample_separation_data)
+            assert Path(output_path).exists()
+            Path(output_path).unlink(missing_ok=True)
+
+    def test_empty_data_handling_with_separation(
+        self,
+        separation_config: TGraphBotConfig
+    ) -> None:
+        """Test that graphs handle empty data gracefully with separation enabled."""
+        empty_data: dict[str, object] = {"data": []}
+
+        graphs_to_test = [
+            PlayCountByHourOfDayGraph(config=separation_config),
+            Top10UsersGraph(config=separation_config),
+            Top10PlatformsGraph(config=separation_config),
+        ]
+
+        for graph in graphs_to_test:
+            with matplotlib_cleanup():
+                # Should handle empty data gracefully
+                output_path = graph.generate(empty_data)
+                assert Path(output_path).exists()
+                Path(output_path).unlink(missing_ok=True)
+
+    def test_stacked_visualization_mode_configuration(
+        self,
+        sample_separation_data: dict[str, object]
+    ) -> None:
+        """Test that stacked visualization mode responds to configuration."""
+        # Test with stacked mode enabled
+        stacked_config = TGraphBotConfig(
+            DISCORD_TOKEN="test_token",
+            TAUTULLI_API_KEY="test_key",
+            TAUTULLI_URL="http://test.local",
+            CHANNEL_ID=123456789,
+            ENABLE_MEDIA_TYPE_SEPARATION=True,
+            ENABLE_STACKED_BAR_CHARTS=True,
+        )
+
+        # Test with stacked mode disabled
+        grouped_config = TGraphBotConfig(
+            DISCORD_TOKEN="test_token",
+            TAUTULLI_API_KEY="test_key",
+            TAUTULLI_URL="http://test.local",
+            CHANNEL_ID=123456789,
+            ENABLE_MEDIA_TYPE_SEPARATION=True,
+            ENABLE_STACKED_BAR_CHARTS=False,
+        )
+
+        # Test graphs with both configurations
+        for config in [stacked_config, grouped_config]:
+            graphs_to_test = [
+                PlayCountByHourOfDayGraph(config=config),
+                Top10UsersGraph(config=config),
+                Top10PlatformsGraph(config=config),
+            ]
+
+            for graph in graphs_to_test:
+                with matplotlib_cleanup():
+                    # Should generate without error regardless of stacked mode setting
+                    output_path = graph.generate(sample_separation_data)
+                    assert Path(output_path).exists()
+                    Path(output_path).unlink(missing_ok=True)
 
     @pytest.mark.parametrize(
         "graph_class,config_attribute,config_value,expected_title",

@@ -29,6 +29,9 @@ from src.tgraph_bot.graphs.graph_modules.utils.utils import (
     parse_date,
     sanitize_filename,
     validate_color,
+    # aggregate_top_users_separated,  # Will be implemented in Phase 2
+    # aggregate_top_platforms_separated,  # Will be implemented in Phase 2
+    ProcessedRecords,
 )
 
 
@@ -446,3 +449,310 @@ class TestGraphStorageUtilities:
         # Just verify we can call this without error
         # The styling effects are hard to test directly
         assert sns is not None
+
+
+@pytest.mark.skip(reason="Separation utility functions will be implemented in Phase 2")
+class TestSeparationUtilityFunctions:
+    """Test cases for media type separation utility functions.
+
+    NOTE: These tests are written for TDD - they will pass once the
+    separation utility functions are implemented in Phase 2.
+    """
+
+    def create_sample_processed_records(self) -> ProcessedRecords:
+        """Create sample processed records for testing."""
+        return [
+            {
+                "date": "2023-12-25",
+                "user": "alice",
+                "platform": "Plex Web",
+                "media_type": "movie",
+                "datetime": datetime(2023, 12, 25, 14, 30),
+                "duration": 7200,
+                "stopped": 1703516200,
+                "paused_counter": 0,
+            },
+            {
+                "date": "2023-12-25",
+                "user": "alice",
+                "platform": "Plex Web",
+                "media_type": "episode",
+                "datetime": datetime(2023, 12, 25, 16, 0),
+                "duration": 2400,
+                "stopped": 1703521600,
+                "paused_counter": 1,
+            },
+            {
+                "date": "2023-12-25",
+                "user": "bob",
+                "platform": "Plex Android",
+                "media_type": "movie",
+                "datetime": datetime(2023, 12, 25, 18, 0),
+                "duration": 6000,
+                "stopped": 1703528400,
+                "paused_counter": 0,
+            },
+            {
+                "date": "2023-12-25",
+                "user": "bob",
+                "platform": "Plex Android",
+                "media_type": "episode",
+                "datetime": datetime(2023, 12, 25, 20, 0),
+                "duration": 3000,
+                "stopped": 1703535600,
+                "paused_counter": 2,
+            },
+            {
+                "date": "2023-12-26",
+                "user": "charlie",
+                "platform": "Plex iOS",
+                "media_type": "movie",
+                "datetime": datetime(2023, 12, 26, 10, 0),
+                "duration": 5400,
+                "stopped": 1703584800,
+                "paused_counter": 0,
+            },
+        ]
+
+    @pytest.mark.skip(reason="Function will be implemented in Phase 2")
+    def test_aggregate_top_users_separated_basic_functionality(self) -> None:
+        """Test basic functionality of aggregate_top_users_separated."""
+        pass  # Implementation will be tested once function exists
+
+    def test_aggregate_top_users_separated_limit_parameter(self) -> None:
+        """Test that limit parameter is respected."""
+        records = self.create_sample_processed_records()
+
+        result = aggregate_top_users_separated(records, limit=2, censor=False)
+
+        # Each media type should respect the limit
+        for media_type, user_data in result.items():
+            assert len(user_data) <= 2
+
+    def test_aggregate_top_users_separated_censor_parameter(self) -> None:
+        """Test that censor parameter works correctly."""
+        records = self.create_sample_processed_records()
+
+        # Test with censoring enabled
+        result_censored = aggregate_top_users_separated(records, limit=10, censor=True)
+
+        # Test with censoring disabled
+        result_uncensored = aggregate_top_users_separated(records, limit=10, censor=False)
+
+        # Should have same structure but different usernames
+        assert set(result_censored.keys()) == set(result_uncensored.keys())
+
+        # Check that usernames are different when censored
+        for media_type in result_censored:
+            censored_users = {entry["username"] for entry in result_censored[media_type]}
+            uncensored_users = {entry["username"] for entry in result_uncensored[media_type]}
+
+            # At least some usernames should be different (censored)
+            if uncensored_users:  # Only check if there are users
+                # For usernames longer than 2 chars, they should be censored
+                long_usernames = {u for u in uncensored_users if len(u) > 2}
+                if long_usernames:
+                    assert censored_users != uncensored_users
+
+    def test_aggregate_top_users_separated_empty_data(self) -> None:
+        """Test handling of empty data."""
+        empty_records: ProcessedRecords = []
+
+        result = aggregate_top_users_separated(empty_records, limit=10, censor=False)
+
+        # Should return empty structure but with proper media type keys
+        assert isinstance(result, dict)
+        # May have empty lists for each media type or be completely empty
+        for media_type, user_data in result.items():
+            assert isinstance(user_data, list)
+            assert len(user_data) == 0
+
+    def test_aggregate_top_users_separated_data_consistency(self) -> None:
+        """Test data structure consistency with existing aggregate_top_users."""
+        records = self.create_sample_processed_records()
+
+        result = aggregate_top_users_separated(records, limit=10, censor=False)
+
+        # Each media type should contain UserAggregateRecord-like structures
+        for media_type, user_data in result.items():
+            for entry in user_data:
+                assert "username" in entry
+                assert "play_count" in entry
+                assert isinstance(entry["username"], str)
+                assert isinstance(entry["play_count"], int)
+                assert entry["play_count"] > 0
+
+    def test_aggregate_top_platforms_separated_basic_functionality(self) -> None:
+        """Test basic functionality of aggregate_top_platforms_separated."""
+        records = self.create_sample_processed_records()
+
+        result = aggregate_top_platforms_separated(records, limit=10)
+
+        # Should return data grouped by media type
+        assert isinstance(result, dict)
+        assert "movie" in result
+        assert "tv" in result  # episode gets classified as tv
+
+        # Check movie data structure
+        movie_data = result["movie"]
+        assert isinstance(movie_data, list)
+        assert len(movie_data) <= 10  # Respects limit
+
+        # Check that each entry has required fields
+        for entry in movie_data:
+            assert "platform" in entry
+            assert "play_count" in entry
+            assert isinstance(entry["play_count"], int)
+            assert entry["play_count"] > 0
+
+        # Check TV data structure
+        tv_data = result["tv"]
+        assert isinstance(tv_data, list)
+        assert len(tv_data) <= 10  # Respects limit
+
+    def test_aggregate_top_platforms_separated_limit_parameter(self) -> None:
+        """Test that limit parameter is respected."""
+        records = self.create_sample_processed_records()
+
+        result = aggregate_top_platforms_separated(records, limit=2)
+
+        # Each media type should respect the limit
+        for media_type, platform_data in result.items():
+            assert len(platform_data) <= 2
+
+    def test_aggregate_top_platforms_separated_empty_data(self) -> None:
+        """Test handling of empty data."""
+        empty_records: ProcessedRecords = []
+
+        result = aggregate_top_platforms_separated(empty_records, limit=10)
+
+        # Should return empty structure but with proper media type keys
+        assert isinstance(result, dict)
+        # May have empty lists for each media type or be completely empty
+        for media_type, platform_data in result.items():
+            assert isinstance(platform_data, list)
+            assert len(platform_data) == 0
+
+    def test_aggregate_top_platforms_separated_data_consistency(self) -> None:
+        """Test data structure consistency with existing aggregate_top_platforms."""
+        records = self.create_sample_processed_records()
+
+        result = aggregate_top_platforms_separated(records, limit=10)
+
+        # Each media type should contain PlatformAggregateRecord-like structures
+        for media_type, platform_data in result.items():
+            for entry in platform_data:
+                assert "platform" in entry
+                assert "play_count" in entry
+                assert isinstance(entry["platform"], str)
+                assert isinstance(entry["play_count"], int)
+                assert entry["play_count"] > 0
+
+    def test_separation_functions_media_type_classification(self) -> None:
+        """Test that separation functions properly classify media types."""
+        # Create records with various media types
+        records: ProcessedRecords = [
+            {
+                "date": "2023-12-25",
+                "user": "test_user",
+                "platform": "Plex Web",
+                "media_type": "movie",  # Should be classified as "movie"
+                "datetime": datetime(2023, 12, 25, 14, 30),
+                "duration": 7200,
+                "stopped": 1703516200,
+                "paused_counter": 0,
+            },
+            {
+                "date": "2023-12-25",
+                "user": "test_user",
+                "platform": "Plex Web",
+                "media_type": "episode",  # Should be classified as "tv"
+                "datetime": datetime(2023, 12, 25, 16, 0),
+                "duration": 2400,
+                "stopped": 1703521600,
+                "paused_counter": 1,
+            },
+            {
+                "date": "2023-12-25",
+                "user": "test_user",
+                "platform": "Plex Web",
+                "media_type": "track",  # Should be classified as "music"
+                "datetime": datetime(2023, 12, 25, 18, 0),
+                "duration": 180,
+                "stopped": 1703528400,
+                "paused_counter": 0,
+            },
+            {
+                "date": "2023-12-25",
+                "user": "test_user",
+                "platform": "Plex Web",
+                "media_type": "unknown_type",  # Should be classified as "other"
+                "datetime": datetime(2023, 12, 25, 20, 0),
+                "duration": 1800,
+                "stopped": 1703535600,
+                "paused_counter": 0,
+            },
+        ]
+
+        # Test users separation
+        users_result = aggregate_top_users_separated(records, limit=10, censor=False)
+
+        # Should have entries for different media types
+        expected_media_types = {"movie", "tv", "music", "other"}
+        actual_media_types = set(users_result.keys())
+
+        # Should have at least some of the expected media types
+        assert len(actual_media_types.intersection(expected_media_types)) > 0
+
+        # Test platforms separation
+        platforms_result = aggregate_top_platforms_separated(records, limit=10)
+
+        # Should have entries for different media types
+        actual_platform_media_types = set(platforms_result.keys())
+
+        # Should have at least some of the expected media types
+        assert len(actual_platform_media_types.intersection(expected_media_types)) > 0
+
+    def test_separation_functions_input_validation(self) -> None:
+        """Test input validation and edge cases for separation functions."""
+        # Test with records missing required fields
+        invalid_records: ProcessedRecords = [
+            {
+                "date": "2023-12-25",
+                "user": "",  # Empty user
+                "platform": "Plex Web",
+                "media_type": "movie",
+                "datetime": datetime(2023, 12, 25, 14, 30),
+                "duration": 7200,
+                "stopped": 1703516200,
+                "paused_counter": 0,
+            },
+            {
+                "date": "2023-12-25",
+                "user": "test_user",
+                "platform": "",  # Empty platform
+                "media_type": "episode",
+                "datetime": datetime(2023, 12, 25, 16, 0),
+                "duration": 2400,
+                "stopped": 1703521600,
+                "paused_counter": 1,
+            },
+        ]
+
+        # Functions should handle invalid data gracefully
+        users_result = aggregate_top_users_separated(invalid_records, limit=10, censor=False)
+        platforms_result = aggregate_top_platforms_separated(invalid_records, limit=10)
+
+        # Should return valid structure even with invalid input
+        assert isinstance(users_result, dict)
+        assert isinstance(platforms_result, dict)
+
+        # Test with negative limit (should handle gracefully)
+        valid_records = self.create_sample_processed_records()
+
+        users_result_negative = aggregate_top_users_separated(valid_records, limit=-1, censor=False)
+        platforms_result_negative = aggregate_top_platforms_separated(valid_records, limit=-1)
+
+        # Should return valid structure
+        assert isinstance(users_result_negative, dict)
+        assert isinstance(platforms_result_negative, dict)
