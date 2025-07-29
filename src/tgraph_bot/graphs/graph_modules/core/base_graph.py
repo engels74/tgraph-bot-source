@@ -18,7 +18,6 @@ from typing import TYPE_CHECKING
 import matplotlib
 import matplotlib.figure
 import matplotlib.pyplot as plt
-import seaborn as sns
 from matplotlib.axes import Axes
 
 from ..utils.utils import (
@@ -200,61 +199,18 @@ class BaseGraph(ABC):
         else:
             sns.set_style("white")
 
-        # Set color palette based on configuration with priority system
+        # Set color palette based on configuration
         if self.config is not None and self.get_media_type_separation_enabled():
-            # Check if any specific palette configurations exist first
-            user_palette_configured = self._has_user_configured_palette()
+            # Apply media type separation palette
+            import seaborn as sns
+            preferred_order = self.media_type_processor.get_preferred_order()
+            custom_palette = [
+                self.media_type_processor.get_color_for_type(media_type)
+                for media_type in preferred_order
+            ]
+            sns.set_palette(custom_palette)  # pyright: ignore[reportUnknownMemberType]
 
-            if not user_palette_configured:
-                # Only apply media type separation palette if no user palette is configured
-                preferred_order = self.media_type_processor.get_preferred_order()
-                custom_palette = [
-                    self.media_type_processor.get_color_for_type(media_type)
-                    for media_type in preferred_order
-                ]
-                sns.set_palette(custom_palette)  # pyright: ignore[reportUnknownMemberType]
 
-        # Apply user-configured palettes LAST to ensure they take precedence
-        # This handles any configured palette keys (PLAY_COUNT_BY_HOUROFDAY_PALETTE, TOP_10_USERS_PALETTE, etc.)
-        if self.config is not None:
-            self._apply_user_configured_palettes()
-
-    def _has_user_configured_palette(self) -> bool:
-        """
-        Check if the user has configured a specific palette for any graph type.
-
-        This method checks for explicit palette configurations that should
-        take precedence over automatic media type separation palettes.
-
-        Returns:
-            True if any user palette is configured, False otherwise
-        """
-        if self.config is None:
-            return False
-
-        # List of palette configuration keys to check
-        palette_config_keys = [
-            "PLAY_COUNT_BY_HOUROFDAY_PALETTE",
-            "TOP_10_USERS_PALETTE",
-            # Add more palette config keys here as they are implemented
-        ]
-
-        for key in palette_config_keys:
-            palette_value = None
-            if isinstance(self.config, dict):
-                palette_value = self.config.get(key)
-            else:
-                palette_value = getattr(self.config, key, None)
-
-            # Check if palette is configured with a non-empty string
-            if (
-                palette_value
-                and isinstance(palette_value, str)
-                and palette_value.strip()
-            ):
-                return True
-
-        return False
 
     def get_user_configured_palette(self) -> str | None:
         """
@@ -302,17 +258,6 @@ class BaseGraph(ABC):
         
         return None
 
-    def _apply_user_configured_palettes(self) -> None:
-        """
-        Apply user-configured palettes based on the current graph type.
-
-        This method is now deprecated in favor of get_user_configured_palette()
-        and direct palette parameter usage in barplot calls. It's kept for
-        backward compatibility with media type separation logic.
-        """
-        user_palette = self.get_user_configured_palette()
-        if user_palette:
-            sns.set_palette(user_palette)  # pyright: ignore[reportUnknownMemberType]
 
     def create_separated_legend(
         self, ax: "Axes", media_types_present: list[str]
