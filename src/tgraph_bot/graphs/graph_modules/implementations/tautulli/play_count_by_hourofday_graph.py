@@ -369,13 +369,12 @@ class PlayCountByHourOfDayGraph(BaseGraph, VisualizationMixin):
 
         # Add bar value annotations if enabled (for total values)
         if self.get_config_value("ANNOTATE_PLAY_COUNT_BY_HOUROFDAY", False):
-            for i, total_value in enumerate(bottom):
-                total_float = float(total_value)  # pyright: ignore[reportAny] # numpy array element type
-                total_int = int(total_float)
+            for i, total_value in enumerate(bottom):  # pyright: ignore[reportAny] # numpy array element type inference limitation
+                total_int = int(total_value)  # pyright: ignore[reportAny]
                 if total_int > 0:
                     _ = ax.annotate(  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
                         str(total_int),
-                        (i, total_float),
+                        (i, float(total_value)),  # pyright: ignore[reportAny]
                         ha="center",
                         va="bottom",
                         fontweight="bold",
