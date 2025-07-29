@@ -146,21 +146,11 @@ class PlayCountByHourOfDayGraph(BaseGraph, VisualizationMixin):
             df["hour"] = df["hour"].astype(int)
             df["count"] = df["count"].astype(int)
 
-            # Use seaborn barplot with palette support or consistent color scheme
-            # Using single color avoids categorical units warnings that occur with hue="hour"
-            tv_color = self.get_tv_color()  # Get consistent color from theme
-
-            # Only add color parameter when no palette is configured
-            # This allows the configured palette to be used via sns.set_palette()
-            palette_config = getattr(self.config, "PLAY_COUNT_BY_HOUROFDAY_PALETTE", "")
-            if not palette_config:
-                _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
-                    data=df, x="hour", y="count", color=tv_color, ax=ax
-                )
-            else:
-                _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
-                    data=df, x="hour", y="count", ax=ax
-                )
+            # Use seaborn barplot - palette is handled centrally by BaseGraph.apply_seaborn_style()
+            # This ensures user-configured palettes take precedence over media type palettes
+            _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
+                data=df, x="hour", y="count", ax=ax
+            )
 
             # Customize the plot
             self.setup_title_and_axes_with_ax(

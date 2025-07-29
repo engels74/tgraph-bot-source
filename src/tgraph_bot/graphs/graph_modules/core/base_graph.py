@@ -260,35 +260,43 @@ class BaseGraph(ABC):
         """
         Apply user-configured palettes based on the current graph type.
 
-        This method checks all possible palette configuration keys and applies
-        the first non-empty palette it finds. This ensures user palettes
-        take precedence over media type palettes.
+        This method determines the specific palette configuration key for the current
+        graph type and applies only that palette. This ensures each graph type uses
+        its own configured palette.
         """
         if self.config is None:
             return
 
-        # List of palette configuration keys to check
-        palette_config_keys = [
-            "PLAY_COUNT_BY_HOUROFDAY_PALETTE",
-            "TOP_10_USERS_PALETTE",
-            # Add more palette config keys here as they are implemented
-        ]
+        # Map graph class names to their corresponding palette configuration keys
+        graph_type_to_palette_key = {
+            "PlayCountByHourOfDayGraph": "PLAY_COUNT_BY_HOUROFDAY_PALETTE",
+            "Top10UsersGraph": "TOP_10_USERS_PALETTE",
+            # Add more graph types here as they are implemented
+        }
 
-        for key in palette_config_keys:
-            palette_value = None
-            if isinstance(self.config, dict):
-                palette_value = self.config.get(key)
-            else:
-                palette_value = getattr(self.config, key, None)
+        # Get the current graph's class name
+        current_graph_class = self.__class__.__name__
+        
+        # Find the palette key for this specific graph type
+        palette_key = graph_type_to_palette_key.get(current_graph_class)
+        if palette_key is None:
+            # No specific palette configuration for this graph type
+            return
 
-            # Check if palette is configured with a non-empty string
-            if (
-                palette_value
-                and isinstance(palette_value, str)
-                and palette_value.strip()
-            ):
-                sns.set_palette(palette_value.strip())  # pyright: ignore[reportUnknownMemberType]
-                return  # Only apply the first configured palette found
+        # Get the palette value for this specific graph
+        palette_value = None
+        if isinstance(self.config, dict):
+            palette_value = self.config.get(palette_key)
+        else:
+            palette_value = getattr(self.config, palette_key, None)
+
+        # Apply the palette if it's configured with a non-empty string
+        if (
+            palette_value
+            and isinstance(palette_value, str)
+            and palette_value.strip()
+        ):
+            sns.set_palette(palette_value.strip())  # pyright: ignore[reportUnknownMemberType]
 
     def create_separated_legend(
         self, ax: "Axes", media_types_present: list[str]

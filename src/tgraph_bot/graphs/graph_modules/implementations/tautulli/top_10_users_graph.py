@@ -114,30 +114,15 @@ class Top10UsersGraph(BaseGraph, VisualizationMixin):
                 # Convert to pandas DataFrame for easier plotting
                 df = pd.DataFrame(top_users)
 
-                # Create horizontal bar plot with palette support or consistent color scheme
-                # Using single color avoids categorical units warnings that occur with hue="username"
-                tv_color = self.get_tv_color()  # Get consistent color from theme
-
-                # Only add color parameter when no palette is configured
-                # This allows the configured palette to be used via sns.set_palette()
-                palette_config = getattr(self.config, "TOP_10_USERS_PALETTE", "")
-                if not palette_config:
-                    _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
-                        data=df,
-                        x="play_count",
-                        y="username",
-                        ax=ax,
-                        orient="h",
-                        color=tv_color,  # Use theme-consistent color
-                    )
-                else:
-                    _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
-                        data=df,
-                        x="play_count",
-                        y="username",
-                        ax=ax,
-                        orient="h",
-                    )
+                # Create horizontal bar plot - palette is handled centrally by BaseGraph.apply_seaborn_style()
+                # This ensures user-configured palettes take precedence over media type palettes
+                _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
+                    data=df,
+                    x="play_count",
+                    y="username",
+                    ax=ax,
+                    orient="h",
+                )
 
                 # Customize the plot
                 self.setup_standard_title_and_axes(
