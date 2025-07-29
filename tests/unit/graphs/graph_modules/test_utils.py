@@ -29,8 +29,8 @@ from src.tgraph_bot.graphs.graph_modules.utils.utils import (
     parse_date,
     sanitize_filename,
     validate_color,
-    # aggregate_top_users_separated,  # Will be implemented in Phase 2
-    # aggregate_top_platforms_separated,  # Will be implemented in Phase 2
+    aggregate_top_users_separated,  # Implemented in Phase 2
+    aggregate_top_platforms_separated,  # Implemented in Phase 2
     ProcessedRecords,
 )
 
@@ -451,7 +451,6 @@ class TestGraphStorageUtilities:
         assert sns is not None
 
 
-@pytest.mark.skip(reason="Separation utility functions will be implemented in Phase 2")
 class TestSeparationUtilityFunctions:
     """Test cases for media type separation utility functions.
 
@@ -514,10 +513,26 @@ class TestSeparationUtilityFunctions:
             },
         ]
 
-    @pytest.mark.skip(reason="Function will be implemented in Phase 2")
     def test_aggregate_top_users_separated_basic_functionality(self) -> None:
         """Test basic functionality of aggregate_top_users_separated."""
-        pass  # Implementation will be tested once function exists
+        records = self.create_sample_processed_records()
+
+        result = aggregate_top_users_separated(records, limit=10, censor=False)
+
+        # Should return data grouped by media type
+        assert isinstance(result, dict)
+        assert "movie" in result
+        assert "tv" in result  # episode gets classified as tv
+
+        # Check movie data structure
+        movie_data = result["movie"]
+        assert isinstance(movie_data, list)
+        assert len(movie_data) <= 10  # Respects limit
+
+        # Check TV data structure
+        tv_data = result["tv"]
+        assert isinstance(tv_data, list)
+        assert len(tv_data) <= 10  # Respects limit
 
     def test_aggregate_top_users_separated_limit_parameter(self) -> None:
         """Test that limit parameter is respected."""
@@ -526,7 +541,7 @@ class TestSeparationUtilityFunctions:
         result = aggregate_top_users_separated(records, limit=2, censor=False)
 
         # Each media type should respect the limit
-        for media_type, user_data in result.items():
+        for _, user_data in result.items():
             assert len(user_data) <= 2
 
     def test_aggregate_top_users_separated_censor_parameter(self) -> None:
@@ -563,7 +578,7 @@ class TestSeparationUtilityFunctions:
         # Should return empty structure but with proper media type keys
         assert isinstance(result, dict)
         # May have empty lists for each media type or be completely empty
-        for media_type, user_data in result.items():
+        for _, user_data in result.items():
             assert isinstance(user_data, list)
             assert len(user_data) == 0
 
@@ -574,7 +589,7 @@ class TestSeparationUtilityFunctions:
         result = aggregate_top_users_separated(records, limit=10, censor=False)
 
         # Each media type should contain UserAggregateRecord-like structures
-        for media_type, user_data in result.items():
+        for _, user_data in result.items():
             for entry in user_data:
                 assert "username" in entry
                 assert "play_count" in entry
@@ -617,7 +632,7 @@ class TestSeparationUtilityFunctions:
         result = aggregate_top_platforms_separated(records, limit=2)
 
         # Each media type should respect the limit
-        for media_type, platform_data in result.items():
+        for _, platform_data in result.items():
             assert len(platform_data) <= 2
 
     def test_aggregate_top_platforms_separated_empty_data(self) -> None:
@@ -629,7 +644,7 @@ class TestSeparationUtilityFunctions:
         # Should return empty structure but with proper media type keys
         assert isinstance(result, dict)
         # May have empty lists for each media type or be completely empty
-        for media_type, platform_data in result.items():
+        for _, platform_data in result.items():
             assert isinstance(platform_data, list)
             assert len(platform_data) == 0
 
@@ -640,7 +655,7 @@ class TestSeparationUtilityFunctions:
         result = aggregate_top_platforms_separated(records, limit=10)
 
         # Each media type should contain PlatformAggregateRecord-like structures
-        for media_type, platform_data in result.items():
+        for _, platform_data in result.items():
             for entry in platform_data:
                 assert "platform" in entry
                 assert "play_count" in entry

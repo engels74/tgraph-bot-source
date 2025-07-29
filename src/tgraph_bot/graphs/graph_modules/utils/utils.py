@@ -64,6 +64,8 @@ UserAggregates = list[UserAggregateRecord]
 PlatformAggregates = list[PlatformAggregateRecord]
 MediaTypeAggregates = list[MediaTypeAggregateRecord]
 SeparatedGraphData = dict[str, dict[str, int]]
+SeparatedUserAggregates = dict[str, UserAggregates]
+SeparatedPlatformAggregates = dict[str, PlatformAggregates]
 
 logger = logging.getLogger(__name__)
 
@@ -873,6 +875,69 @@ def aggregate_by_month_separated(records: ProcessedRecords) -> SeparatedGraphDat
             separated_data[media_type][month_str] = 0
 
         separated_data[media_type][month_str] += 1
+
+    return separated_data
+
+
+def aggregate_top_users_separated(
+    records: ProcessedRecords, limit: int = 10, censor: bool = True
+) -> SeparatedUserAggregates:
+    """
+    Aggregate play records to get top users by play count with media type separation.
+
+    Args:
+        records: List of processed play history records
+        limit: Maximum number of users to return per media type
+        censor: Whether to censor usernames
+
+    Returns:
+        Dictionary mapping media types to lists of user dictionaries with username and play count
+    """
+    # Group records by media type first
+    media_type_records: dict[str, ProcessedRecords] = defaultdict(list)
+
+    for record in records:
+        media_type = classify_media_type(record.get("media_type", ""))
+        media_type_records[media_type].append(record)
+
+    # Aggregate users for each media type
+    separated_data: SeparatedUserAggregates = {}
+
+    for media_type, type_records in media_type_records.items():
+        # Use existing aggregate_top_users function for consistency
+        user_aggregates = aggregate_top_users(type_records, limit=limit, censor=censor)
+        separated_data[media_type] = user_aggregates
+
+    return separated_data
+
+
+def aggregate_top_platforms_separated(
+    records: ProcessedRecords, limit: int = 10
+) -> SeparatedPlatformAggregates:
+    """
+    Aggregate play records to get top platforms by play count with media type separation.
+
+    Args:
+        records: List of processed play history records
+        limit: Maximum number of platforms to return per media type
+
+    Returns:
+        Dictionary mapping media types to lists of platform dictionaries with platform and play count
+    """
+    # Group records by media type first
+    media_type_records: dict[str, ProcessedRecords] = defaultdict(list)
+
+    for record in records:
+        media_type = classify_media_type(record.get("media_type", ""))
+        media_type_records[media_type].append(record)
+
+    # Aggregate platforms for each media type
+    separated_data: SeparatedPlatformAggregates = {}
+
+    for media_type, type_records in media_type_records.items():
+        # Use existing aggregate_top_platforms function for consistency
+        platform_aggregates = aggregate_top_platforms(type_records, limit=limit)
+        separated_data[media_type] = platform_aggregates
 
     return separated_data
 
