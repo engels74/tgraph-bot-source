@@ -246,12 +246,12 @@ class TestBaseCommandCog:
 class TestBaseCommandCogEphemeralMethods:
     """Test the ephemeral response methods in BaseCommandCog."""
 
-    mock_bot: Mock = Mock(spec=commands.Bot)
+    mock_bot: commands.Bot  # pyright: ignore[reportUninitializedInstanceVariable]
 
     @pytest.fixture(autouse=True)
     def setup_method(self) -> None:
         """Set up test fixtures."""
-        self.mock_bot = Mock(spec=commands.Bot)
+        self.mock_bot = cast(commands.Bot, Mock(spec=commands.Bot))
 
     @pytest.mark.asyncio
     async def test_send_ephemeral_response_with_content(self) -> None:
