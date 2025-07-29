@@ -208,6 +208,22 @@ class TGraphBotConfig(BaseModel):
         default="",
         description="Color palette for top users graph (viridis, plasma, inferno, magma, or leave blank for default)",
     )
+    DAILY_PLAY_COUNT_PALETTE: str = Field(
+        default="",
+        description="Color palette for daily play count graph (viridis, plasma, inferno, magma, or leave blank for default)",
+    )
+    PLAY_COUNT_BY_DAYOFWEEK_PALETTE: str = Field(
+        default="",
+        description="Color palette for day of week play count graph (viridis, plasma, inferno, magma, or leave blank for default)",
+    )
+    TOP_10_PLATFORMS_PALETTE: str = Field(
+        default="",
+        description="Color palette for top platforms graph (viridis, plasma, inferno, magma, or leave blank for default)",
+    )
+    PLAY_COUNT_BY_MONTH_PALETTE: str = Field(
+        default="",
+        description="Color palette for monthly play count graph (viridis, plasma, inferno, magma, or leave blank for default)",
+    )
 
     # Command Cooldown Options
     CONFIG_COOLDOWN_MINUTES: Annotated[int, Field(ge=0, le=1440)] = Field(

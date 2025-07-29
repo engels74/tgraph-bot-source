@@ -148,6 +148,18 @@ PLAY_COUNT_BY_HOUROFDAY_PALETTE: ''
 # Palette for top users graph - gives each user a unique color
 TOP_10_USERS_PALETTE: ''
 
+# Palette for daily activity graph - creates colorful gradient over time
+DAILY_PLAY_COUNT_PALETTE: ''
+
+# Palette for day of week graph - gives each day a unique color
+PLAY_COUNT_BY_DAYOFWEEK_PALETTE: ''
+
+# Palette for top platforms graph - gives each platform a unique color
+TOP_10_PLATFORMS_PALETTE: ''
+
+# Palette for monthly activity graph - creates colorful gradient over months
+PLAY_COUNT_BY_MONTH_PALETTE: ''
+
 # Annotation Styling
 # ------------------
 # Bar value annotations (numbers shown on bars/points)

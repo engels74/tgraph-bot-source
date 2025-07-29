@@ -105,46 +105,40 @@ class TestPaletteConfiguration:
         assert graph_none_config.get_user_configured_palette() is None
 
     def test_all_graph_types_palette_configuration(self) -> None:
-        """Test palette configuration for all graph types."""
-        # NOTE: This test documents the expected palette configuration keys
-        # that will be implemented in Phase 4 of the plan
-
-        # Test configuration with all palette types
+        """Test palette configuration for all graph types after Phase 4 implementation."""
+        # Test configuration with all palette types - this test will pass after Phase 4
         config = TGraphBotConfig(
             DISCORD_TOKEN="test_token",
             TAUTULLI_API_KEY="test_key",
             TAUTULLI_URL="http://test.local",
             CHANNEL_ID=123456789,
-            # Existing palette configurations (should work)
+            # All palette configurations should work after Phase 4
             PLAY_COUNT_BY_HOUROFDAY_PALETTE="viridis",
             TOP_10_USERS_PALETTE="plasma",
-            # Missing palette configurations (will be implemented)
-            # DAILY_PLAY_COUNT_PALETTE="inferno",
-            # PLAY_COUNT_BY_DAYOFWEEK_PALETTE="magma",
-            # TOP_10_PLATFORMS_PALETTE="cividis",
-            # PLAY_COUNT_BY_MONTH_PALETTE="turbo",
+            DAILY_PLAY_COUNT_PALETTE="inferno",
+            PLAY_COUNT_BY_DAYOFWEEK_PALETTE="magma",
+            TOP_10_PLATFORMS_PALETTE="cividis",
+            PLAY_COUNT_BY_MONTH_PALETTE="turbo",
         )
 
-        # Test existing palette configurations
+        # Test all graph types return their configured palettes
         hourly_graph = PlayCountByHourOfDayGraph(config=config)
         assert hourly_graph.get_user_configured_palette() == "viridis"
 
         users_graph = Top10UsersGraph(config=config)
         assert users_graph.get_user_configured_palette() == "plasma"
 
-        # Test graphs that don't have palette configuration yet
-        # These should return None until Phase 4 is implemented
         daily_graph = DailyPlayCountGraph(config=config)
-        assert daily_graph.get_user_configured_palette() is None
+        assert daily_graph.get_user_configured_palette() == "inferno"
 
         dayofweek_graph = PlayCountByDayOfWeekGraph(config=config)
-        assert dayofweek_graph.get_user_configured_palette() is None
+        assert dayofweek_graph.get_user_configured_palette() == "magma"
 
         platforms_graph = Top10PlatformsGraph(config=config)
-        assert platforms_graph.get_user_configured_palette() is None
+        assert platforms_graph.get_user_configured_palette() == "cividis"
 
         month_graph = PlayCountByMonthGraph(config=config)
-        assert month_graph.get_user_configured_palette() is None
+        assert month_graph.get_user_configured_palette() == "turbo"
 
     def test_palette_precedence_over_default_colors(self) -> None:
         """Test that user-configured palettes take precedence over default media type colors."""
@@ -251,3 +245,76 @@ class TestPaletteConfiguration:
 
         platforms_graph = Top10PlatformsGraph(config=config)
         assert platforms_graph.get_user_configured_palette() is None
+
+    def test_new_palette_configurations_individual_testing(self) -> None:
+        """Test each new palette configuration individually after Phase 4 implementation."""
+        # Test DAILY_PLAY_COUNT_PALETTE
+        daily_config = TGraphBotConfig(
+            DISCORD_TOKEN="test_token",
+            TAUTULLI_API_KEY="test_key",
+            TAUTULLI_URL="http://test.local",
+            CHANNEL_ID=123456789,
+            DAILY_PLAY_COUNT_PALETTE="inferno",
+        )
+        daily_graph = DailyPlayCountGraph(config=daily_config)
+        assert daily_graph.get_user_configured_palette() == "inferno"
+
+        # Test PLAY_COUNT_BY_DAYOFWEEK_PALETTE
+        dayofweek_config = TGraphBotConfig(
+            DISCORD_TOKEN="test_token",
+            TAUTULLI_API_KEY="test_key",
+            TAUTULLI_URL="http://test.local",
+            CHANNEL_ID=123456789,
+            PLAY_COUNT_BY_DAYOFWEEK_PALETTE="magma",
+        )
+        dayofweek_graph = PlayCountByDayOfWeekGraph(config=dayofweek_config)
+        assert dayofweek_graph.get_user_configured_palette() == "magma"
+
+        # Test TOP_10_PLATFORMS_PALETTE
+        platforms_config = TGraphBotConfig(
+            DISCORD_TOKEN="test_token",
+            TAUTULLI_API_KEY="test_key",
+            TAUTULLI_URL="http://test.local",
+            CHANNEL_ID=123456789,
+            TOP_10_PLATFORMS_PALETTE="cividis",
+        )
+        platforms_graph = Top10PlatformsGraph(config=platforms_config)
+        assert platforms_graph.get_user_configured_palette() == "cividis"
+
+        # Test PLAY_COUNT_BY_MONTH_PALETTE
+        month_config = TGraphBotConfig(
+            DISCORD_TOKEN="test_token",
+            TAUTULLI_API_KEY="test_key",
+            TAUTULLI_URL="http://test.local",
+            CHANNEL_ID=123456789,
+            PLAY_COUNT_BY_MONTH_PALETTE="turbo",
+        )
+        month_graph = PlayCountByMonthGraph(config=month_config)
+        assert month_graph.get_user_configured_palette() == "turbo"
+
+    def test_new_palette_configurations_empty_values(self) -> None:
+        """Test that new palette configurations handle empty values correctly."""
+        # Test with empty palette values for new configurations
+        config = TGraphBotConfig(
+            DISCORD_TOKEN="test_token",
+            TAUTULLI_API_KEY="test_key",
+            TAUTULLI_URL="http://test.local",
+            CHANNEL_ID=123456789,
+            DAILY_PLAY_COUNT_PALETTE="",
+            PLAY_COUNT_BY_DAYOFWEEK_PALETTE="   ",
+            TOP_10_PLATFORMS_PALETTE="",
+            PLAY_COUNT_BY_MONTH_PALETTE="",
+        )
+
+        # All graphs should return None for empty palette values
+        daily_graph = DailyPlayCountGraph(config=config)
+        assert daily_graph.get_user_configured_palette() is None
+
+        dayofweek_graph = PlayCountByDayOfWeekGraph(config=config)
+        assert dayofweek_graph.get_user_configured_palette() is None
+
+        platforms_graph = Top10PlatformsGraph(config=config)
+        assert platforms_graph.get_user_configured_palette() is None
+
+        month_graph = PlayCountByMonthGraph(config=config)
+        assert month_graph.get_user_configured_palette() is None

@@ -229,7 +229,10 @@ class BaseGraph(ABC):
         graph_type_to_palette_key = {
             "PlayCountByHourOfDayGraph": "PLAY_COUNT_BY_HOUROFDAY_PALETTE",
             "Top10UsersGraph": "TOP_10_USERS_PALETTE",
-            # Add more graph types here as they are implemented
+            "DailyPlayCountGraph": "DAILY_PLAY_COUNT_PALETTE",
+            "PlayCountByDayOfWeekGraph": "PLAY_COUNT_BY_DAYOFWEEK_PALETTE",
+            "Top10PlatformsGraph": "TOP_10_PLATFORMS_PALETTE",
+            "PlayCountByMonthGraph": "PLAY_COUNT_BY_MONTH_PALETTE",
         }
 
         # Get the current graph's class name
