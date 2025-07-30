@@ -1,9 +1,9 @@
 ---
 type: "always_apply"
-description: "Python Development Guidelines  "
+description: "Python Development Guidelines"
 ---
 - Use `uv` or `uvx` for all Python commands (e.g., `uv run`, `uv run pytest`, `uv pip install`).  
-- Adhere to Python 3.13 best practices for 2025, and leverage modern 2025 typing features.  
+- Adhere to Python 3.12+ best practices for 2025, and leverage modern 2025 typing features.  
 - Verify type safety using `uvx basedpyright` before commits.  
 - Install type stubs for dependencies (e.g., `uv pip install types-requests`) only when `basedpyright` reports missing stubs.  
 - Prefer `# pyright: ignore[specific-error]` over `# type: ignore` comments, always with specific error codes.  
