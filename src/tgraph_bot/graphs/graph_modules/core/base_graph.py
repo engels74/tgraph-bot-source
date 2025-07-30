@@ -261,6 +261,43 @@ class BaseGraph(ABC):
         
         return None
 
+    def get_palette_or_default_color(self) -> tuple[str | None, str]:
+        """
+        Get user-configured palette and fallback color for this graph type.
+
+        This method provides a simple interface to get both the user-configured
+        palette (if available and valid) and the appropriate fallback color
+        for visualization methods that need to handle both palette and single-color scenarios.
+
+        Returns:
+            Tuple of (user_palette, fallback_color) where user_palette is None
+            if no palette is configured or if palette is invalid.
+        """
+        user_palette = self.get_user_configured_palette()
+        fallback_color = self.get_tv_color()
+
+        # Validate palette if provided
+        if user_palette and not self._is_valid_seaborn_palette(user_palette):
+            logger.warning(f"Invalid palette '{user_palette}' for {self.__class__.__name__}, using default color")
+            user_palette = None
+
+        return user_palette, fallback_color
+
+    def _is_valid_seaborn_palette(self, palette_name: str) -> bool:
+        """
+        Validate if palette name is supported by seaborn.
+
+        This method checks against a set of well-known seaborn palettes that are
+        commonly used and supported across different seaborn versions.
+
+        Args:
+            palette_name: The palette name to validate
+
+        Returns:
+            True if palette name is valid, False otherwise
+        """
+        valid_palettes = {"viridis", "plasma", "inferno", "magma", "cividis", "turbo"}
+        return palette_name in valid_palettes
 
     def create_separated_legend(
         self, ax: "Axes", media_types_present: list[str]

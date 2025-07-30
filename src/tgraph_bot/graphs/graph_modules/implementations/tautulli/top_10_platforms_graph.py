@@ -141,17 +141,33 @@ class Top10PlatformsGraph(BaseGraph, VisualizationMixin):
             # Convert to DataFrame for Seaborn
             df = pd.DataFrame(top_platforms)
 
-            # Create horizontal bar plot using Seaborn
-            color = self.get_tv_color()
-            _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
-                data=df,
-                x="play_count",
-                y="platform",
-                ax=ax,
-                color=color,
-                alpha=0.8,
-                orient="h",
-            )
+            # Get user-configured palette or default color
+            user_palette, fallback_color = self.get_palette_or_default_color()
+
+            if user_palette:
+                # Use palette with hue for multiple colors
+                _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
+                    data=df,
+                    x="play_count",
+                    y="platform",
+                    hue="platform",
+                    palette=user_palette,
+                    legend=False,
+                    ax=ax,
+                    alpha=0.8,
+                    orient="h",
+                )
+            else:
+                # Use single default color
+                _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
+                    data=df,
+                    x="play_count",
+                    y="platform",
+                    ax=ax,
+                    color=fallback_color,
+                    alpha=0.8,
+                    orient="h",
+                )
 
             # Customize the plot
             self.setup_standard_title_and_axes(

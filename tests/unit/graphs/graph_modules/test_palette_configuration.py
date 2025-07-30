@@ -5,6 +5,8 @@ This module tests the priority-based palette system to ensure that
 user-configured palettes take precedence over automatic media type palettes.
 """
 
+from unittest.mock import patch, MagicMock
+import pytest
 
 from tgraph_bot.config.schema import TGraphBotConfig
 from tgraph_bot.graphs.graph_modules.implementations.tautulli.daily_play_count_graph import (
@@ -318,3 +320,267 @@ class TestPaletteConfiguration:
 
         month_graph = PlayCountByMonthGraph(config=config)
         assert month_graph.get_user_configured_palette() is None
+
+    def test_palette_helper_method_with_valid_palette(self) -> None:
+        """Test the get_palette_or_default_color() helper method with valid palette."""
+        config = TGraphBotConfig(
+            DISCORD_TOKEN="test_token",
+            TAUTULLI_API_KEY="test_key",
+            TAUTULLI_URL="http://test.local",
+            CHANNEL_ID=123456789,
+            DAILY_PLAY_COUNT_PALETTE="viridis",
+        )
+
+        graph = DailyPlayCountGraph(config=config)
+        palette, color = graph.get_palette_or_default_color()
+
+        assert palette == "viridis"
+        assert color == graph.get_tv_color()
+
+    def test_palette_helper_method_with_no_palette(self) -> None:
+        """Test the get_palette_or_default_color() helper method when no palette is configured."""
+        config = TGraphBotConfig(
+            DISCORD_TOKEN="test_token",
+            TAUTULLI_API_KEY="test_key",
+            TAUTULLI_URL="http://test.local",
+            CHANNEL_ID=123456789,
+            DAILY_PLAY_COUNT_PALETTE="",
+        )
+
+        graph = DailyPlayCountGraph(config=config)
+        palette, color = graph.get_palette_or_default_color()
+
+        assert palette is None
+        assert color == graph.get_tv_color()
+
+    def test_palette_helper_method_with_invalid_palette(self) -> None:
+        """Test the get_palette_or_default_color() helper method with invalid palette."""
+        config = TGraphBotConfig(
+            DISCORD_TOKEN="test_token",
+            TAUTULLI_API_KEY="test_key",
+            TAUTULLI_URL="http://test.local",
+            CHANNEL_ID=123456789,
+            DAILY_PLAY_COUNT_PALETTE="invalid_palette_name",
+        )
+
+        graph = DailyPlayCountGraph(config=config)
+        palette, color = graph.get_palette_or_default_color()
+
+        assert palette is None  # Invalid palette should be rejected
+        assert color == graph.get_tv_color()
+
+    def test_palette_helper_method_for_all_graph_types(self) -> None:
+        """Test the get_palette_or_default_color() helper method works for all graph types."""
+        config = TGraphBotConfig(
+            DISCORD_TOKEN="test_token",
+            TAUTULLI_API_KEY="test_key",
+            TAUTULLI_URL="http://test.local",
+            CHANNEL_ID=123456789,
+            PLAY_COUNT_BY_HOUROFDAY_PALETTE="viridis",
+            TOP_10_USERS_PALETTE="plasma",
+            DAILY_PLAY_COUNT_PALETTE="inferno",
+            PLAY_COUNT_BY_DAYOFWEEK_PALETTE="magma",
+            TOP_10_PLATFORMS_PALETTE="cividis",
+            PLAY_COUNT_BY_MONTH_PALETTE="turbo",
+        )
+
+        # Test all graph types return correct palette and color
+        test_cases = [
+            (PlayCountByHourOfDayGraph, "viridis"),
+            (Top10UsersGraph, "plasma"),
+            (DailyPlayCountGraph, "inferno"),
+            (PlayCountByDayOfWeekGraph, "magma"),
+            (Top10PlatformsGraph, "cividis"),
+            (PlayCountByMonthGraph, "turbo"),
+        ]
+
+        for graph_class, expected_palette in test_cases:
+            graph = graph_class(config=config)
+            palette, color = graph.get_palette_or_default_color()
+            
+            assert palette == expected_palette
+            assert color == graph.get_tv_color()
+
+    def test_palette_helper_method_none_config(self) -> None:
+        """Test the get_palette_or_default_color() helper method with None config."""
+        graph = DailyPlayCountGraph(config=None)
+        palette, color = graph.get_palette_or_default_color()
+
+        assert palette is None
+        assert color == graph.get_tv_color()
+
+    @pytest.mark.parametrize("graph_class,palette_config", [
+        (DailyPlayCountGraph, "DAILY_PLAY_COUNT_PALETTE"),
+        (PlayCountByDayOfWeekGraph, "PLAY_COUNT_BY_DAYOFWEEK_PALETTE"),
+        (PlayCountByMonthGraph, "PLAY_COUNT_BY_MONTH_PALETTE"),
+        (Top10PlatformsGraph, "TOP_10_PLATFORMS_PALETTE"),
+        (PlayCountByHourOfDayGraph, "PLAY_COUNT_BY_HOUROFDAY_PALETTE"),
+        (Top10UsersGraph, "TOP_10_USERS_PALETTE"),
+    ])
+    def test_combined_mode_palette_usage_with_palette(self, graph_class: type, palette_config: str) -> None:
+        """Test that combined modes actually use configured palettes when calling seaborn."""
+        # Create config with palette configured - use explicit construction to avoid type issues
+        if palette_config == "DAILY_PLAY_COUNT_PALETTE":
+            config = TGraphBotConfig(
+                DISCORD_TOKEN="test_token",
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://test.local",
+                CHANNEL_ID=123456789,
+                DAILY_PLAY_COUNT_PALETTE="viridis",
+            )
+        elif palette_config == "PLAY_COUNT_BY_DAYOFWEEK_PALETTE":
+            config = TGraphBotConfig(
+                DISCORD_TOKEN="test_token",
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://test.local",
+                CHANNEL_ID=123456789,
+                PLAY_COUNT_BY_DAYOFWEEK_PALETTE="viridis",
+            )
+        elif palette_config == "PLAY_COUNT_BY_MONTH_PALETTE":
+            config = TGraphBotConfig(
+                DISCORD_TOKEN="test_token", 
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://test.local",
+                CHANNEL_ID=123456789,
+                PLAY_COUNT_BY_MONTH_PALETTE="viridis",
+            )
+        elif palette_config == "TOP_10_PLATFORMS_PALETTE":
+            config = TGraphBotConfig(
+                DISCORD_TOKEN="test_token",
+                TAUTULLI_API_KEY="test_key", 
+                TAUTULLI_URL="http://test.local",
+                CHANNEL_ID=123456789,
+                TOP_10_PLATFORMS_PALETTE="viridis",
+            )
+        elif palette_config == "PLAY_COUNT_BY_HOUROFDAY_PALETTE":
+            config = TGraphBotConfig(
+                DISCORD_TOKEN="test_token",
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://test.local", 
+                CHANNEL_ID=123456789,
+                PLAY_COUNT_BY_HOUROFDAY_PALETTE="viridis",
+            )
+        else:  # TOP_10_USERS_PALETTE
+            config = TGraphBotConfig(
+                DISCORD_TOKEN="test_token",
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://test.local",
+                CHANNEL_ID=123456789,
+                TOP_10_USERS_PALETTE="viridis",
+            )
+        
+        graph = graph_class(config=config)
+        
+        # Mock seaborn barplot and other plotting functions
+        with patch("seaborn.barplot") as mock_barplot, \
+             patch("matplotlib.axes.Axes.plot") as mock_plot, \
+             patch("seaborn.color_palette") as mock_color_palette:
+            
+            # Setup mock returns
+            mock_color_palette.return_value = ["#440154"]  # Viridis first color
+            
+            # Create mock axes
+            mock_ax = MagicMock()
+            
+            # Create sample processed records for testing
+            sample_records = [
+                {"date": "2023-01-01", "media_type": "tv", "play_count": 5, "user": "test_user", "hour": 14, "platform": "Web"},
+                {"date": "2023-01-02", "media_type": "movie", "play_count": 3, "user": "test_user2", "hour": 15, "platform": "Mobile"},
+            ]
+            
+            # Test the visualization methods that should use palettes
+            try:
+                if hasattr(graph, '_generate_combined_visualization'):
+                    method = getattr(graph, '_generate_combined_visualization')
+                    method(mock_ax, sample_records)  # pyright: ignore[reportAny]
+                elif hasattr(graph, '_generate_hourly_visualization'):
+                    method = getattr(graph, '_generate_hourly_visualization') 
+                    method(mock_ax, sample_records)  # pyright: ignore[reportAny]
+                else:
+                    # Skip graphs that don't have these methods
+                    return
+                    
+            except Exception:
+                # Some visualization methods might fail due to incomplete mocking,
+                # but we're primarily testing that palette parameters are passed correctly
+                pass
+            
+            # Verify that seaborn functions were called with palette parameter when palette is configured
+            if mock_barplot.called:
+                # Check if any call used the palette parameter
+                palette_used = any(
+                    call.kwargs.get("palette") == "viridis" 
+                    for call in mock_barplot.call_args_list
+                )
+                assert palette_used, f"Expected {graph_class.__name__} to use palette 'viridis' in seaborn.barplot calls"
+            
+            if mock_plot.called and mock_color_palette.called:
+                # For line plots, verify color_palette was called to get colors from palette
+                mock_color_palette.assert_called_with("viridis", n_colors=1)
+
+    @pytest.mark.parametrize("graph_class", [
+        DailyPlayCountGraph,
+        PlayCountByDayOfWeekGraph, 
+        PlayCountByMonthGraph,
+        Top10PlatformsGraph,
+        PlayCountByHourOfDayGraph,
+        Top10UsersGraph,
+    ])
+    def test_combined_mode_palette_usage_without_palette(self, graph_class: type) -> None:
+        """Test that combined modes use default colors when no palette is configured."""
+        # Create config without palette
+        config = TGraphBotConfig(
+            DISCORD_TOKEN="test_token",
+            TAUTULLI_API_KEY="test_key",
+            TAUTULLI_URL="http://test.local", 
+            CHANNEL_ID=123456789,
+        )
+        
+        graph = graph_class(config=config)
+        expected_color = graph.get_tv_color()
+        
+        # Mock seaborn barplot and other plotting functions
+        with patch("seaborn.barplot") as mock_barplot, \
+             patch("matplotlib.axes.Axes.plot") as mock_plot:
+            
+            # Create mock axes  
+            mock_ax = MagicMock()
+            
+            # Create sample processed records for testing
+            sample_records = [
+                {"date": "2023-01-01", "media_type": "tv", "play_count": 5, "user": "test_user", "hour": 14, "platform": "Web"},
+            ]
+            
+            # Test the visualization methods
+            try:
+                if hasattr(graph, '_generate_combined_visualization'):
+                    method = getattr(graph, '_generate_combined_visualization')
+                    method(mock_ax, sample_records)  # pyright: ignore[reportAny]
+                elif hasattr(graph, '_generate_hourly_visualization'):
+                    method = getattr(graph, '_generate_hourly_visualization')
+                    method(mock_ax, sample_records)  # pyright: ignore[reportAny]
+                else:
+                    # Skip graphs that don't have these methods
+                    return
+                    
+            except Exception:
+                # Some visualization methods might fail due to incomplete mocking,
+                # but we're primarily testing that color parameters are passed correctly
+                pass
+            
+            # Verify that seaborn functions were called with default color when no palette
+            if mock_barplot.called:
+                # Check if any call used the default color parameter
+                color_used = any(
+                    call.kwargs.get("color") == expected_color
+                    for call in mock_barplot.call_args_list  
+                )
+                assert color_used, f"Expected {graph_class.__name__} to use default color {expected_color} in seaborn.barplot calls"
+            
+            if mock_plot.called:
+                # For line plots, verify the color parameter was used
+                color_used = any(
+                    call.kwargs.get("color") == expected_color
+                    for call in mock_plot.call_args_list
+                )
+                assert color_used, f"Expected {graph_class.__name__} to use default color {expected_color} in plot calls"

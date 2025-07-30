@@ -423,15 +423,31 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
         if days and any(count > 0 for count in counts):
             df = pd.DataFrame({"day": days, "count": counts})
 
-            # Create bar plot with modern styling
-            _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
-                data=df,
-                x="day",
-                y="count",
-                ax=ax,
-                color=self.get_tv_color(),  # Use TV color as default
-                alpha=0.8,
-            )
+            # Get user-configured palette or default color
+            user_palette, fallback_color = self.get_palette_or_default_color()
+
+            if user_palette:
+                # Use palette with hue for multiple colors
+                _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
+                    data=df,
+                    x="day",
+                    y="count",
+                    hue="day",
+                    palette=user_palette,
+                    legend=False,
+                    ax=ax,
+                    alpha=0.8,
+                )
+            else:
+                # Use single default color
+                _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
+                    data=df,
+                    x="day",
+                    y="count",
+                    ax=ax,
+                    color=fallback_color,
+                    alpha=0.8,
+                )
 
             # Customize the plot
             self.setup_title_and_axes_with_ax(

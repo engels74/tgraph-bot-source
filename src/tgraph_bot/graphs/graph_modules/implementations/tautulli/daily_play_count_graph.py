@@ -382,6 +382,17 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
             # Create line plot with numerical x-axis for better control
             import numpy as np
 
+            # Get user-configured palette or default color
+            user_palette, fallback_color = self.get_palette_or_default_color()
+
+            if user_palette:
+                # Use first color from palette for line plots
+                import seaborn as sns
+                palette_colors = sns.color_palette(user_palette, n_colors=1)  # pyright: ignore[reportUnknownMemberType] # seaborn typing
+                line_color = palette_colors[0]
+            else:
+                line_color = fallback_color
+
             x_positions = np.arange(len(sorted_dates))
             _ = ax.plot(  # pyright: ignore[reportUnknownMemberType] # matplotlib method
                 x_positions,
@@ -389,8 +400,8 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
                 marker="o",
                 linewidth=3,
                 markersize=8,
-                color=self.get_tv_color(),  # Use TV color as default
-                markerfacecolor=self.get_tv_color(),
+                color=line_color,
+                markerfacecolor=line_color,
                 markeredgecolor="white",
                 markeredgewidth=1.5,
                 alpha=0.8,

@@ -151,8 +151,8 @@ class Top10UsersGraph(BaseGraph, VisualizationMixin):
             # Convert to pandas DataFrame for easier plotting
             df = pd.DataFrame(top_users)
 
-            # Get user-configured palette for this graph type
-            user_palette = self.get_user_configured_palette()
+            # Get user-configured palette or default color
+            user_palette, fallback_color = self.get_palette_or_default_color()
 
             if user_palette:
                 # Use the configured palette with hue to apply different colors to each bar
@@ -168,12 +168,11 @@ class Top10UsersGraph(BaseGraph, VisualizationMixin):
                 )
             else:
                 # Use default single color when no palette is configured
-                tv_color = self.get_tv_color()
                 _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
                     data=df,
                     x="play_count",
                     y="username",
-                    color=tv_color,
+                    color=fallback_color,
                     ax=ax,
                     orient="h",
                 )

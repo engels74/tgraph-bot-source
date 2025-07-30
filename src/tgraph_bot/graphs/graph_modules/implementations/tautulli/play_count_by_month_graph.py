@@ -506,17 +506,35 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
             ]
         )
 
-        # Create bar plot with modern styling
-        _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
-            data=df,
-            x="month",
-            y="count",
-            ax=ax,
-            color=self.get_tv_color(),  # Use TV color as default
-            alpha=0.8,
-            edgecolor="white",
-            linewidth=0.7,
-        )
+        # Get user-configured palette or default color
+        user_palette, fallback_color = self.get_palette_or_default_color()
+
+        if user_palette:
+            # Use palette with hue for multiple colors
+            _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
+                data=df,
+                x="month",
+                y="count",
+                hue="month",
+                palette=user_palette,
+                legend=False,
+                ax=ax,
+                alpha=0.8,
+                edgecolor="white",
+                linewidth=0.7,
+            )
+        else:
+            # Use single default color
+            _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
+                data=df,
+                x="month",
+                y="count",
+                ax=ax,
+                color=fallback_color,
+                alpha=0.8,
+                edgecolor="white",
+                linewidth=0.7,
+            )
 
         # Customize the plot
         self.setup_title_and_axes_with_ax(ax, xlabel="Month", ylabel="Play Count")
