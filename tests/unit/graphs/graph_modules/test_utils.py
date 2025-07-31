@@ -552,15 +552,21 @@ class TestSeparationUtilityFunctions:
         result_censored = aggregate_top_users_separated(records, limit=10, censor=True)
 
         # Test with censoring disabled
-        result_uncensored = aggregate_top_users_separated(records, limit=10, censor=False)
+        result_uncensored = aggregate_top_users_separated(
+            records, limit=10, censor=False
+        )
 
         # Should have same structure but different usernames
         assert set(result_censored.keys()) == set(result_uncensored.keys())
 
         # Check that usernames are different when censored
         for media_type in result_censored:
-            censored_users = {entry["username"] for entry in result_censored[media_type]}
-            uncensored_users = {entry["username"] for entry in result_uncensored[media_type]}
+            censored_users = {
+                entry["username"] for entry in result_censored[media_type]
+            }
+            uncensored_users = {
+                entry["username"] for entry in result_uncensored[media_type]
+            }
 
             # At least some usernames should be different (censored)
             if uncensored_users:  # Only check if there are users
@@ -755,7 +761,9 @@ class TestSeparationUtilityFunctions:
         ]
 
         # Functions should handle invalid data gracefully
-        users_result = aggregate_top_users_separated(invalid_records, limit=10, censor=False)
+        users_result = aggregate_top_users_separated(
+            invalid_records, limit=10, censor=False
+        )
         platforms_result = aggregate_top_platforms_separated(invalid_records, limit=10)
 
         # Should return valid structure even with invalid input
@@ -765,8 +773,12 @@ class TestSeparationUtilityFunctions:
         # Test with negative limit (should handle gracefully)
         valid_records = self.create_sample_processed_records()
 
-        users_result_negative = aggregate_top_users_separated(valid_records, limit=-1, censor=False)
-        platforms_result_negative = aggregate_top_platforms_separated(valid_records, limit=-1)
+        users_result_negative = aggregate_top_users_separated(
+            valid_records, limit=-1, censor=False
+        )
+        platforms_result_negative = aggregate_top_platforms_separated(
+            valid_records, limit=-1
+        )
 
         # Should return valid structure
         assert isinstance(users_result_negative, dict)

@@ -35,6 +35,7 @@ if TYPE_CHECKING:
     from ....config.schema import TGraphBotConfig
     from ..config.config_accessor import ConfigAccessor
     from ..data.media_type_processor import MediaTypeProcessor
+    from .palette_resolver import PaletteResolver, ColorResolution
 
 # Set matplotlib backend and configure logging
 if matplotlib.get_backend() != "Agg":
@@ -86,6 +87,9 @@ class BaseGraph(ABC):
 
         # Lazy initialization for MediaTypeProcessor
         self._media_type_processor: "MediaTypeProcessor | None" = None
+
+        # Lazy initialization for PaletteResolver
+        self._palette_resolver: "PaletteResolver | None" = None
 
         # Use background color from config if not explicitly provided
         if background_color is None:
@@ -148,6 +152,27 @@ class BaseGraph(ABC):
             self._media_type_processor = MediaTypeProcessor(self._config_accessor)
         return self._media_type_processor
 
+    @property
+    def palette_resolver(self) -> "PaletteResolver":
+        """
+        Get the PaletteResolver instance for this graph.
+
+        This property provides lazy initialization of the PaletteResolver
+        to avoid circular import issues while providing centralized color
+        and palette priority resolution functionality.
+
+        Returns:
+            PaletteResolver instance configured with this graph's config and config accessor
+        """
+        if self._palette_resolver is None:
+            # Import here to avoid circular imports
+            from .palette_resolver import PaletteResolver
+
+            self._palette_resolver = PaletteResolver(
+                config=self.config, config_accessor=self._config_accessor
+            )
+        return self._palette_resolver
+
     def setup_figure(self) -> tuple[matplotlib.figure.Figure, Axes]:
         """
         Setup the matplotlib figure and axes.
@@ -199,18 +224,21 @@ class BaseGraph(ABC):
         else:
             sns.set_style("white")
 
-        # Set color palette based on configuration
+        # Set color palette based on configuration priority system
         if self.config is not None and self.get_media_type_separation_enabled():
-            # Apply media type separation palette
-            import seaborn as sns
-            preferred_order = self.media_type_processor.get_preferred_order()
-            custom_palette = [
-                self.media_type_processor.get_color_for_type(media_type)
-                for media_type in preferred_order
-            ]
-            sns.set_palette(custom_palette)  # pyright: ignore[reportUnknownMemberType]
+            # Check if custom palette should take precedence over media type separation
+            graph_type = self.__class__.__name__
+            if not self.palette_resolver.should_palette_override_separation(graph_type):
+                # No palette override - apply media type separation palette
+                import seaborn as sns
 
-
+                preferred_order = self.media_type_processor.get_preferred_order()
+                custom_palette = [
+                    self.media_type_processor.get_color_for_type(media_type)
+                    for media_type in preferred_order
+                ]
+                sns.set_palette(custom_palette)  # pyright: ignore[reportUnknownMemberType]
+            # If palette should override, let individual graph methods handle coloring
 
     def get_user_configured_palette(self) -> str | None:
         """
@@ -237,7 +265,7 @@ class BaseGraph(ABC):
 
         # Get the current graph's class name
         current_graph_class = self.__class__.__name__
-        
+
         # Find the palette key for this specific graph type
         palette_key = graph_type_to_palette_key.get(current_graph_class)
         if palette_key is None:
@@ -252,36 +280,66 @@ class BaseGraph(ABC):
             palette_value = getattr(self.config, palette_key, None)
 
         # Return the palette if it's configured with a non-empty string
-        if (
-            palette_value
-            and isinstance(palette_value, str)
-            and palette_value.strip()
-        ):
+        if palette_value and isinstance(palette_value, str) and palette_value.strip():
             return palette_value.strip()
-        
+
         return None
 
     def get_palette_or_default_color(self) -> tuple[str | None, str]:
         """
-        Get user-configured palette and fallback color for this graph type.
+        Get user-configured palette and intelligent fallback color for this graph type.
 
-        This method provides a simple interface to get both the user-configured
-        palette (if available and valid) and the appropriate fallback color
-        for visualization methods that need to handle both palette and single-color scenarios.
+        This method uses the PaletteResolver to provide both the user-configured
+        palette (if available and valid) and the appropriate fallback color based
+        on the priority system (palette > separation > default).
 
         Returns:
             Tuple of (user_palette, fallback_color) where user_palette is None
             if no palette is configured or if palette is invalid.
         """
-        user_palette = self.get_user_configured_palette()
-        fallback_color = self.get_tv_color()
+        # Get the resolved color strategy from PaletteResolver
+        resolution = self.get_resolved_color_strategy()
 
-        # Validate palette if provided
-        if user_palette and not self._is_valid_seaborn_palette(user_palette):
-            logger.warning(f"Invalid palette '{user_palette}' for {self.__class__.__name__}, using default color")
-            user_palette = None
+        user_palette = None
+        fallback_color = self.get_tv_color()  # Default fallback
+
+        if resolution.use_palette and resolution.palette_name:
+            # Validate palette if provided
+            if self._is_valid_seaborn_palette(resolution.palette_name):
+                user_palette = resolution.palette_name
+            else:
+                logger.warning(
+                    f"Invalid palette '{resolution.palette_name}' for {self.__class__.__name__}, using fallback color"
+                )
+
+        # Use intelligent fallback color from resolution
+        if resolution.fallback_colors and len(resolution.fallback_colors) > 0:
+            fallback_color = resolution.fallback_colors[0]
 
         return user_palette, fallback_color
+
+    def get_resolved_color_strategy(self) -> "ColorResolution":
+        """
+        Get the resolved color strategy for this graph using the priority system.
+
+        This method uses the PaletteResolver to determine whether to use custom palettes,
+        media type separation colors, or default colors based on the configured priority system:
+        1. Highest Priority: Non-empty *_PALETTE configurations override everything
+        2. Medium Priority: ENABLE_MEDIA_TYPE_SEPARATION with MOVIE_COLOR/TV_COLOR
+        3. Lowest Priority: Default system colors
+
+        Returns:
+            ColorResolution containing the strategy and color information
+
+        Example:
+            >>> resolution = graph.get_resolved_color_strategy()
+            >>> if resolution.use_palette:
+            ...     colors = resolution.palette_colors
+            ... else:
+            ...     colors = resolution.fallback_colors
+        """
+        graph_type = self.__class__.__name__
+        return self.palette_resolver.resolve_color_strategy(graph_type)
 
     def _is_valid_seaborn_palette(self, palette_name: str) -> bool:
         """

@@ -550,4 +550,3 @@ class TestVisualizationMixin:
                 assert graph.axes.get_ylabel() == "Y Axis"
 
             graph.cleanup()
-

@@ -261,7 +261,9 @@ class Top10PlatformsGraph(BaseGraph, VisualizationMixin):
         df["color"] = colors
 
         # Get unique colors to avoid palette size warnings
-        unique_colors = list(dict.fromkeys(colors))  # Preserves order while removing duplicates
+        unique_colors = list(
+            dict.fromkeys(colors)
+        )  # Preserves order while removing duplicates
 
         # Create horizontal bar plot
         _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType]
@@ -289,7 +291,9 @@ class Top10PlatformsGraph(BaseGraph, VisualizationMixin):
         self.configure_tick_parameters(axis="both", labelsize=12)
 
         # Create legend for media types
-        media_types_present = list(set(str(platform["media_type"]) for platform in top_platforms))
+        media_types_present = list(
+            set(str(platform["media_type"]) for platform in top_platforms)
+        )
         if len(media_types_present) > 1:
             self.create_separated_legend(ax, media_types_present)
 
@@ -303,7 +307,9 @@ class Top10PlatformsGraph(BaseGraph, VisualizationMixin):
             fontweight="bold",
         )
 
-        logger.info(f"Created separated top 10 platforms graph with {len(top_platforms)} platforms across {len(media_types_present)} media types")
+        logger.info(
+            f"Created separated top 10 platforms graph with {len(top_platforms)} platforms across {len(media_types_present)} media types"
+        )
 
     def _generate_stacked_visualization(
         self, ax: Axes, processed_records: ProcessedRecords
@@ -356,9 +362,7 @@ class Top10PlatformsGraph(BaseGraph, VisualizationMixin):
 
         # Sort platforms by total play count and take top 10
         sorted_platforms = sorted(
-            platform_data_matrix.items(),
-            key=lambda x: x[1]["total"],
-            reverse=True
+            platform_data_matrix.items(), key=lambda x: x[1]["total"], reverse=True
         )[:10]
 
         if not sorted_platforms:
@@ -369,9 +373,11 @@ class Top10PlatformsGraph(BaseGraph, VisualizationMixin):
 
         # Prepare data for stacked horizontal bars
         platform_names = [platform[0] for platform in sorted_platforms]
-        media_types = [mt for mt in separated_data.keys() if any(
-            platform[1][mt] > 0 for platform in sorted_platforms
-        )]
+        media_types = [
+            mt
+            for mt in separated_data.keys()
+            if any(platform[1][mt] > 0 for platform in sorted_platforms)
+        ]
 
         if not media_types:
             self.handle_empty_data_with_message(
@@ -384,7 +390,9 @@ class Top10PlatformsGraph(BaseGraph, VisualizationMixin):
         left_positions = np.zeros(len(platform_names))
 
         for media_type in media_types:
-            counts = [sorted_platforms[i][1][media_type] for i in range(len(platform_names))]
+            counts = [
+                sorted_platforms[i][1][media_type] for i in range(len(platform_names))
+            ]
 
             # Only create bars for media types with data
             if any(count > 0 for count in counts):
@@ -443,4 +451,6 @@ class Top10PlatformsGraph(BaseGraph, VisualizationMixin):
                         textcoords="offset points",
                     )
 
-        logger.info(f"Created stacked top 10 platforms graph with {len(platform_names)} platforms across {len(media_types)} media types")
+        logger.info(
+            f"Created stacked top 10 platforms graph with {len(platform_names)} platforms across {len(media_types)} media types"
+        )

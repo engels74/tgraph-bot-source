@@ -250,7 +250,11 @@ class ConfigManager:
                         formatted_value = "null"
                     elif isinstance(new_value, str):
                         # Quote strings that are empty, start with #, or contain spaces
-                        if new_value == "" or new_value.startswith("#") or " " in new_value:
+                        if (
+                            new_value == ""
+                            or new_value.startswith("#")
+                            or " " in new_value
+                        ):
                             formatted_value = f"'{new_value}'"
                         else:
                             formatted_value = new_value

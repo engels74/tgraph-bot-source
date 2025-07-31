@@ -156,11 +156,17 @@ class PlayCountByHourOfDayGraph(BaseGraph, VisualizationMixin):
 
             # Get user-configured palette or default color
             user_palette, fallback_color = self.get_palette_or_default_color()
-            
+
             if user_palette:
                 # Use the configured palette with hue to apply different colors to each bar
                 _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
-                    data=df, x="hour", y="count", hue="hour", palette=user_palette, legend=False, ax=ax
+                    data=df,
+                    x="hour",
+                    y="count",
+                    hue="hour",
+                    palette=user_palette,
+                    legend=False,
+                    ax=ax,
                 )
             else:
                 # Use default single color when no palette is configured
@@ -231,10 +237,13 @@ class PlayCountByHourOfDayGraph(BaseGraph, VisualizationMixin):
 
             # Create DataFrame for seaborn
             import pandas as pd
-            df = pd.DataFrame({
-                "hour": hours,
-                "count": counts,
-            })
+
+            df = pd.DataFrame(
+                {
+                    "hour": hours,
+                    "count": counts,
+                }
+            )
 
             # Ensure numeric dtypes to prevent seaborn categorical warning
             df["hour"] = df["hour"].astype(int)
@@ -242,6 +251,7 @@ class PlayCountByHourOfDayGraph(BaseGraph, VisualizationMixin):
 
             # Create the bar plot for this media type
             import seaborn as sns
+
             _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType]
                 data=df, x="hour", y="count", color=color, alpha=0.8, ax=ax, label=label
             )
@@ -277,7 +287,9 @@ class PlayCountByHourOfDayGraph(BaseGraph, VisualizationMixin):
             fontweight="bold",
         )
 
-        logger.info(f"Created separated hour of day graph with {len(media_types_plotted)} media types")
+        logger.info(
+            f"Created separated hour of day graph with {len(media_types_plotted)} media types"
+        )
 
     def _generate_stacked_visualization(
         self, ax: Axes, processed_records: ProcessedRecords

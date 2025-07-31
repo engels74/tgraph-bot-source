@@ -388,6 +388,7 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
             if user_palette:
                 # Use first color from palette for line plots
                 import seaborn as sns
+
                 palette_colors = sns.color_palette(user_palette, n_colors=1)  # pyright: ignore[reportUnknownMemberType] # seaborn typing
                 line_color = palette_colors[0]
             else:

@@ -274,7 +274,9 @@ class Top10UsersGraph(BaseGraph, VisualizationMixin):
         df["color"] = colors
 
         # Get unique colors to avoid palette size warnings
-        unique_colors = list(dict.fromkeys(colors))  # Preserves order while removing duplicates
+        unique_colors = list(
+            dict.fromkeys(colors)
+        )  # Preserves order while removing duplicates
 
         # Create horizontal bar plot
         _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType]
@@ -312,7 +314,9 @@ class Top10UsersGraph(BaseGraph, VisualizationMixin):
             fontweight="normal",
         )
 
-        logger.info(f"Created separated top 10 users graph with {len(top_users)} users across {len(media_types_present)} media types")
+        logger.info(
+            f"Created separated top 10 users graph with {len(top_users)} users across {len(media_types_present)} media types"
+        )
 
     def _generate_stacked_visualization(
         self, ax: Axes, processed_records: ProcessedRecords
@@ -368,9 +372,7 @@ class Top10UsersGraph(BaseGraph, VisualizationMixin):
 
         # Sort users by total play count and take top 10
         sorted_users = sorted(
-            user_data_matrix.items(),
-            key=lambda x: x[1]["total"],
-            reverse=True
+            user_data_matrix.items(), key=lambda x: x[1]["total"], reverse=True
         )[:10]
 
         if not sorted_users:
@@ -381,9 +383,11 @@ class Top10UsersGraph(BaseGraph, VisualizationMixin):
 
         # Prepare data for stacked horizontal bars
         usernames = [user[0] for user in sorted_users]
-        media_types = [mt for mt in separated_data.keys() if any(
-            user[1][mt] > 0 for user in sorted_users
-        )]
+        media_types = [
+            mt
+            for mt in separated_data.keys()
+            if any(user[1][mt] > 0 for user in sorted_users)
+        ]
 
         if not media_types:
             self.handle_empty_data_with_message(
@@ -452,4 +456,6 @@ class Top10UsersGraph(BaseGraph, VisualizationMixin):
                         textcoords="offset points",
                     )
 
-        logger.info(f"Created stacked top 10 users graph with {len(usernames)} users across {len(media_types)} media types")
+        logger.info(
+            f"Created stacked top 10 users graph with {len(usernames)} users across {len(media_types)} media types"
+        )

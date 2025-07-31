@@ -17,6 +17,7 @@ import seaborn as sns
 
 if TYPE_CHECKING:
     from ....config.schema import TGraphBotConfig
+    from ..core.palette_resolver import ColorResolution
 
 # Suppress matplotlib categorical units warnings early
 # These warnings occur when seaborn/matplotlib detects numeric-looking strings
@@ -47,6 +48,10 @@ class VisualizationProtocol(Protocol):
 
     def get_title(self) -> str:
         """Get the title for this graph."""
+        ...
+
+    def get_resolved_color_strategy(self) -> "ColorResolution":
+        """Get the resolved color strategy for this graph (optional method)."""
         ...
 
     def setup_figure(self) -> tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]:
@@ -172,7 +177,9 @@ class VisualizationMixin:
         Get standardized display name and color for a media type.
 
         This method consolidates the common pattern of getting media type display
-        information with config overrides for TV and movie colors.
+        information with config overrides for TV and movie colors, now with
+        support for the priority system where custom palettes can override
+        media type separation colors.
 
         Args:
             media_type: The media type to get info for (e.g., "tv", "movie")
@@ -188,11 +195,52 @@ class VisualizationMixin:
             label = display_info[media_type]["display_name"]
             color = display_info[media_type]["color"]
 
-            # Override with config colors if available
-            if media_type == "tv":
-                color = self.get_tv_color()
-            elif media_type == "movie":
-                color = self.get_movie_color()
+            # Check if the class supports the new priority system
+            if hasattr(self, "get_resolved_color_strategy"):
+                try:
+                    # Get the resolved color strategy using our priority system
+                    resolution = self.get_resolved_color_strategy()
+                    
+                    # If using palette strategy, get color from palette
+                    if resolution.use_palette and resolution.palette_colors:
+                        # Use palette colors - for separated visualization, we'll use
+                        # different colors from the palette for different media types
+                        media_type_index = 0 if media_type == "tv" else 1
+                        if media_type_index < len(resolution.palette_colors):
+                            color = resolution.palette_colors[media_type_index]
+                        else:
+                            # Fallback to first palette color if not enough colors
+                            color = resolution.palette_colors[0]
+                    elif resolution.media_type_colors and media_type in resolution.media_type_colors:
+                        # Use media type separation colors
+                        color = resolution.media_type_colors[media_type]
+                    elif resolution.fallback_colors:
+                        # Use fallback colors
+                        media_type_index = 0 if media_type == "tv" else 1
+                        if media_type_index < len(resolution.fallback_colors):
+                            color = resolution.fallback_colors[media_type_index]
+                        else:
+                            color = resolution.fallback_colors[0]
+                    else:
+                        # Final fallback to traditional method
+                        if media_type == "tv":
+                            color = self.get_tv_color()
+                        elif media_type == "movie":
+                            color = self.get_movie_color()
+                            
+                except Exception as e:
+                    logger.warning(f"Error in priority color resolution for {media_type}: {e}, using fallback")
+                    # Fallback to traditional method on any error
+                    if media_type == "tv":
+                        color = self.get_tv_color()
+                    elif media_type == "movie":
+                        color = self.get_movie_color()
+            else:
+                # Fallback to traditional method for classes without priority system
+                if media_type == "tv":
+                    color = self.get_tv_color()
+                elif media_type == "movie":
+                    color = self.get_movie_color()
 
             return label, color
         else:
@@ -347,7 +395,6 @@ class VisualizationMixin:
             palette: Seaborn palette name to apply
         """
         sns.set_palette(palette)  # pyright: ignore[reportUnknownMemberType]
-
 
     def configure_tick_parameters(
         self: VisualizationProtocol,
