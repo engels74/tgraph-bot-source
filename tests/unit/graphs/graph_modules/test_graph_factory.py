@@ -54,13 +54,19 @@ class TestGraphFactory:
 
     def test_create_enabled_graphs_all_disabled(self) -> None:
         """Test creating graphs with all graph types disabled."""
-        config = create_test_config_with_nested_overrides(
-            ENABLE_DAILY_PLAY_COUNT=False,
-            ENABLE_PLAY_COUNT_BY_DAYOFWEEK=False,
-            ENABLE_PLAY_COUNT_BY_HOUROFDAY=False,
-            ENABLE_PLAY_COUNT_BY_MONTH=False,
-            ENABLE_TOP_10_PLATFORMS=False,
-            ENABLE_TOP_10_USERS=False,
+        config = create_test_config_custom(
+            graphs_overrides={
+                "features": {
+                    "enabled_types": {
+                        "daily_play_count": False,
+                        "play_count_by_dayofweek": False,
+                        "play_count_by_hourofday": False,
+                        "play_count_by_month": False,
+                        "top_10_platforms": False,
+                        "top_10_users": False,
+                    }
+                }
+            }
         )
         factory = GraphFactory(config)
         graphs = factory.create_enabled_graphs()
@@ -70,13 +76,19 @@ class TestGraphFactory:
 
     def test_create_enabled_graphs_all_enabled(self) -> None:
         """Test creating graphs with all graph types enabled."""
-        config = create_test_config_with_nested_overrides(
-            ENABLE_DAILY_PLAY_COUNT=True,
-            ENABLE_PLAY_COUNT_BY_DAYOFWEEK=True,
-            ENABLE_PLAY_COUNT_BY_HOUROFDAY=True,
-            ENABLE_PLAY_COUNT_BY_MONTH=True,
-            ENABLE_TOP_10_PLATFORMS=True,
-            ENABLE_TOP_10_USERS=True,
+        config = create_test_config_custom(
+            graphs_overrides={
+                "features": {
+                    "enabled_types": {
+                        "daily_play_count": True,
+                        "play_count_by_dayofweek": True,
+                        "play_count_by_hourofday": True,
+                        "play_count_by_month": True,
+                        "top_10_platforms": True,
+                        "top_10_users": True,
+                    }
+                }
+            }
         )
         factory = GraphFactory(config)
         graphs = factory.create_enabled_graphs()
@@ -87,13 +99,19 @@ class TestGraphFactory:
 
     def test_create_enabled_graphs_partial_enabled(self) -> None:
         """Test creating graphs with some graph types enabled."""
-        config = create_test_config_with_nested_overrides(
-            ENABLE_DAILY_PLAY_COUNT=True,
-            ENABLE_PLAY_COUNT_BY_DAYOFWEEK=False,
-            ENABLE_PLAY_COUNT_BY_HOUROFDAY=True,
-            ENABLE_PLAY_COUNT_BY_MONTH=False,
-            ENABLE_TOP_10_PLATFORMS=True,
-            ENABLE_TOP_10_USERS=False,
+        config = create_test_config_custom(
+            graphs_overrides={
+                "features": {
+                    "enabled_types": {
+                        "daily_play_count": True,
+                        "play_count_by_dayofweek": False,
+                        "play_count_by_hourofday": True,
+                        "play_count_by_month": False,
+                        "top_10_platforms": True,
+                        "top_10_users": False,
+                    }
+                }
+            }
         )
         factory = GraphFactory(config)
         graphs = factory.create_enabled_graphs()

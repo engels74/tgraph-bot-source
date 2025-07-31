@@ -187,7 +187,7 @@ class SchedulingConfig:
     def _validate_update_days(self) -> None:
         """Validate update_days is within acceptable range."""
         if not (1 <= self.update_days <= 365):
-            raise ValueError("UPDATE_DAYS must be between 1 and 365")
+            raise ValueError("update_days must be between 1 and 365")
 
     def _validate_fixed_update_time(self) -> None:
         """Validate fixed_update_time format."""

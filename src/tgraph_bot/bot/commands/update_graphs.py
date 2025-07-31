@@ -71,8 +71,8 @@ class UpdateGraphsCog(BaseCommandCog):
         """
         # Configure cooldown settings for this command
         cooldown_config = BaseCooldownConfig(
-            user_cooldown_config_key="UPDATE_GRAPHS_COOLDOWN_MINUTES",
-            global_cooldown_config_key="UPDATE_GRAPHS_GLOBAL_COOLDOWN_SECONDS",
+            user_cooldown_config_key="rate_limiting.commands.update_graphs.user_cooldown_minutes",
+            global_cooldown_config_key="rate_limiting.commands.update_graphs.global_cooldown_seconds",
         )
 
         # Initialize base class with cooldown configuration

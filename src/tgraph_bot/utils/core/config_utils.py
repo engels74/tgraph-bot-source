@@ -104,7 +104,7 @@ class ConfigurationHelper:
 
         Args:
             bot: Discord bot instance
-            channel_id: Optional channel ID (uses config CHANNEL_ID if not provided)
+            channel_id: Optional channel ID (uses config services.discord.channel_id if not provided)
 
         Returns:
             Discord TextChannel object
@@ -138,28 +138,7 @@ class ConfigurationHelper:
 
         return channel
 
-    def get_cooldown_settings(self, command_prefix: str) -> tuple[int, int]:
-        """
-        Get cooldown settings for a specific command.
 
-        Args:
-            command_prefix: Command prefix (e.g., "UPDATE_GRAPHS", "MY_STATS")
-
-        Returns:
-            Tuple of (user_cooldown_seconds, global_cooldown_seconds)
-        """
-        config = self.get_config()
-
-        # Get user cooldown (usually in minutes)
-        user_cooldown_key = f"{command_prefix}_COOLDOWN_MINUTES"
-        user_cooldown_minutes = getattr(config, user_cooldown_key, 0)
-        user_cooldown_seconds = user_cooldown_minutes * 60
-
-        # Get global cooldown (usually in seconds)
-        global_cooldown_key = f"{command_prefix}_GLOBAL_COOLDOWN_SECONDS"
-        global_cooldown_seconds = getattr(config, global_cooldown_key, 0)
-
-        return user_cooldown_seconds, global_cooldown_seconds
 
     def validate_setting_exists(self, setting: str) -> bool:
         """

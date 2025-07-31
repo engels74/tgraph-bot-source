@@ -116,8 +116,8 @@ def format_config_value(key: str, value: str | int | float | bool | None) -> str
         Formatted string representation
     """
     # Hide sensitive values
-    sensitive_keys = {"DISCORD_TOKEN", "TAUTULLI_API_KEY"}
-    if key.upper() in sensitive_keys:
+    sensitive_keys = {"services.discord.token", "services.tautulli.api_key"}
+    if key in sensitive_keys:
         return i18n.translate("***HIDDEN***")
 
     # Format boolean values

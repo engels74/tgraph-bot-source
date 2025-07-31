@@ -135,16 +135,18 @@ class BaseCommandCog(commands.Cog):
         config = self.get_current_config()
 
         # Check global cooldown
-        global_cooldown_seconds = getattr(
-            config, self.cooldown_config.global_cooldown_config_key, 0
+        from ...graphs.graph_modules.config.config_accessor import ConfigAccessor
+        config_accessor = ConfigAccessor(config)
+        global_cooldown_seconds = config_accessor.get_int_value(
+            self.cooldown_config.global_cooldown_config_key, 0
         )
         if global_cooldown_seconds > 0:
             if current_time < self._global_cooldown:
                 return True, self._global_cooldown - current_time
 
         # Check per-user cooldown
-        user_cooldown_minutes = getattr(
-            config, self.cooldown_config.user_cooldown_config_key, 0
+        user_cooldown_minutes = config_accessor.get_int_value(
+            self.cooldown_config.user_cooldown_config_key, 0
         )
         user_cooldown_seconds = (
             user_cooldown_minutes * self.cooldown_config.user_cooldown_multiplier
@@ -170,16 +172,19 @@ class BaseCommandCog(commands.Cog):
         current_time = time.time()
         config = self.get_current_config()
 
+        from ...graphs.graph_modules.config.config_accessor import ConfigAccessor
+        config_accessor = ConfigAccessor(config)
+
         # Update global cooldown
-        global_cooldown_seconds = getattr(
-            config, self.cooldown_config.global_cooldown_config_key, 0
+        global_cooldown_seconds = config_accessor.get_int_value(
+            self.cooldown_config.global_cooldown_config_key, 0
         )
         if global_cooldown_seconds > 0:
             self._global_cooldown = current_time + global_cooldown_seconds
 
         # Update per-user cooldown
-        user_cooldown_minutes = getattr(
-            config, self.cooldown_config.user_cooldown_config_key, 0
+        user_cooldown_minutes = config_accessor.get_int_value(
+            self.cooldown_config.user_cooldown_config_key, 0
         )
         user_cooldown_seconds = (
             user_cooldown_minutes * self.cooldown_config.user_cooldown_multiplier

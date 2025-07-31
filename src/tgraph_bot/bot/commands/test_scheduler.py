@@ -58,8 +58,8 @@ class SchedulerTestCog(BaseCommandCog):
         """
         # Configure cooldown settings for this command (more permissive for testing)
         cooldown_config = BaseCooldownConfig(
-            user_cooldown_config_key="UPDATE_GRAPHS_COOLDOWN_MINUTES",  # Reuse existing config
-            global_cooldown_config_key="UPDATE_GRAPHS_GLOBAL_COOLDOWN_SECONDS",
+            user_cooldown_config_key="rate_limiting.commands.update_graphs.user_cooldown_minutes",  # Reuse existing config
+            global_cooldown_config_key="rate_limiting.commands.update_graphs.global_cooldown_seconds",
         )
 
         # Initialize base class with cooldown configuration

@@ -24,7 +24,7 @@ from tests.utils.graph_helpers import (
     create_graph_factory_with_config,
     matplotlib_cleanup,
 )
-from tests.utils.test_helpers import create_test_config_with_nested_overrides
+from tests.utils.test_helpers import create_test_config_custom
 
 if TYPE_CHECKING:
     from src.tgraph_bot.config.schema import TGraphBotConfig

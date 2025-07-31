@@ -50,70 +50,68 @@ class ConfigCog(BaseCommandCog):
 
     def _get_config_keys(self) -> list[str]:
         """
-        Get all available configuration keys (old flat key names for user compatibility).
+        Get all available configuration keys using nested paths.
 
         Returns:
-            List of configuration key names that users can use
+            List of nested configuration paths that users can use
         """
-        # Return the old flat key names that users are familiar with
-        # These are mapped to nested paths by the ConfigAccessor
         return [
             # Service configuration
-            "TAUTULLI_API_KEY",
-            "TAUTULLI_URL",
-            "DISCORD_TOKEN",
-            "CHANNEL_ID",
+            "services.tautulli.api_key",
+            "services.tautulli.url",
+            "services.discord.token",
+            "services.discord.channel_id",
 
             # Automation configuration
-            "UPDATE_DAYS",
-            "FIXED_UPDATE_TIME",
-            "KEEP_DAYS",
+            "automation.scheduling.update_days",
+            "automation.scheduling.fixed_update_time",
+            "automation.data_retention.keep_days",
 
             # Data collection configuration
-            "TIME_RANGE_DAYS",
-            "TIME_RANGE_MONTHS",
-            "CENSOR_USERNAMES",
+            "data_collection.time_ranges.days",
+            "data_collection.time_ranges.months",
+            "data_collection.privacy.censor_usernames",
 
             # System configuration
-            "LANGUAGE",
+            "system.localization.language",
 
             # Graph features configuration
-            "ENABLE_DAILY_PLAY_COUNT",
-            "ENABLE_PLAY_COUNT_BY_DAYOFWEEK",
-            "ENABLE_PLAY_COUNT_BY_HOUROFDAY",
-            "ENABLE_TOP_10_PLATFORMS",
-            "ENABLE_TOP_10_USERS",
-            "ENABLE_PLAY_COUNT_BY_MONTH",
-            "ENABLE_MEDIA_TYPE_SEPARATION",
-            "ENABLE_STACKED_BAR_CHARTS",
+            "graphs.features.enabled_types.daily_play_count",
+            "graphs.features.enabled_types.play_count_by_dayofweek",
+            "graphs.features.enabled_types.play_count_by_hourofday",
+            "graphs.features.enabled_types.top_10_platforms",
+            "graphs.features.enabled_types.top_10_users",
+            "graphs.features.enabled_types.play_count_by_month",
+            "graphs.features.media_type_separation",
+            "graphs.features.stacked_bar_charts",
 
             # Graph appearance configuration
-            "GRAPH_WIDTH",
-            "GRAPH_HEIGHT",
-            "GRAPH_DPI",
-            "TV_COLOR",
-            "MOVIE_COLOR",
-            "GRAPH_BACKGROUND_COLOR",
-            "ENABLE_GRAPH_GRID",
+            "graphs.appearance.dimensions.width",
+            "graphs.appearance.dimensions.height",
+            "graphs.appearance.dimensions.dpi",
+            "graphs.appearance.colors.tv",
+            "graphs.appearance.colors.movie",
+            "graphs.appearance.colors.background",
+            "graphs.appearance.grid.enabled",
 
             # Annotation configuration
-            "ANNOTATION_COLOR",
-            "ANNOTATION_OUTLINE_COLOR",
-            "ENABLE_ANNOTATION_OUTLINE",
-            "ANNOTATE_DAILY_PLAY_COUNT",
-            "ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK",
-            "ANNOTATE_PLAY_COUNT_BY_HOUROFDAY",
-            "ANNOTATE_TOP_10_PLATFORMS",
-            "ANNOTATE_TOP_10_USERS",
-            "ANNOTATE_PLAY_COUNT_BY_MONTH",
+            "graphs.appearance.annotations.basic.color",
+            "graphs.appearance.annotations.basic.outline_color",
+            "graphs.appearance.annotations.basic.enable_outline",
+            "graphs.appearance.annotations.enabled_on.daily_play_count",
+            "graphs.appearance.annotations.enabled_on.play_count_by_dayofweek",
+            "graphs.appearance.annotations.enabled_on.play_count_by_hourofday",
+            "graphs.appearance.annotations.enabled_on.top_10_platforms",
+            "graphs.appearance.annotations.enabled_on.top_10_users",
+            "graphs.appearance.annotations.enabled_on.play_count_by_month",
 
             # Palette configuration
-            "DAILY_PLAY_COUNT_PALETTE",
-            "PLAY_COUNT_BY_DAYOFWEEK_PALETTE",
-            "PLAY_COUNT_BY_HOUROFDAY_PALETTE",
-            "TOP_10_PLATFORMS_PALETTE",
-            "TOP_10_USERS_PALETTE",
-            "PLAY_COUNT_BY_MONTH_PALETTE",
+            "graphs.appearance.palettes.daily_play_count",
+            "graphs.appearance.palettes.play_count_by_dayofweek",
+            "graphs.appearance.palettes.play_count_by_hourofday",
+            "graphs.appearance.palettes.top_10_platforms",
+            "graphs.appearance.palettes.top_10_users",
+            "graphs.appearance.palettes.play_count_by_month",
         ]
 
     async def _config_key_autocomplete(
@@ -239,8 +237,7 @@ class ConfigCog(BaseCommandCog):
                     await self.send_ephemeral_response(interaction, embed=error_embed)
                     return
 
-                # For old flat keys, we don't have field descriptions in the schema
-                # So provide a generic description
+                # Provide a generic description for the configuration key
                 description = i18n.translate("Configuration setting: {key}", key=key)
 
                 # Create embed for specific key

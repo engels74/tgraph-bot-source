@@ -63,8 +63,8 @@ class MyStatsCog(BaseCommandCog):
         """
         # Configure cooldown settings for this command
         cooldown_config = BaseCooldownConfig(
-            user_cooldown_config_key="MY_STATS_COOLDOWN_MINUTES",
-            global_cooldown_config_key="MY_STATS_GLOBAL_COOLDOWN_SECONDS",
+            user_cooldown_config_key="rate_limiting.commands.my_stats.user_cooldown_minutes",
+            global_cooldown_config_key="rate_limiting.commands.my_stats.global_cooldown_seconds",
         )
 
         # Initialize base class with cooldown configuration

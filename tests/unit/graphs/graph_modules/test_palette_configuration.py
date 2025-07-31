@@ -1,4 +1,4 @@
-from tests.utils.test_helpers import create_test_config_with_nested_overrides
+from tests.utils.test_helpers import create_test_config_custom
 
 """
 Test cases for color palette configuration functionality.
@@ -43,15 +43,21 @@ class TestPaletteConfiguration:
     def test_graph_specific_palette_application(self) -> None:
         """Test that each graph type returns only its own specific palette."""
         # Configure both palettes with different values
-        config = create_test_config_with_nested_overrides(
-                DISCORD_TOKEN="test_token",
-                TAUTULLI_API_KEY="test_key",
-                TAUTULLI_URL="http://test.local",
-                CHANNEL_ID=123456789,
-                PLAY_COUNT_BY_HOUROFDAY_PALETTE="viridis",
-                TOP_10_USERS_PALETTE="plasma",
-                ENABLE_MEDIA_TYPE_SEPARATION=True,
-            )
+        config = create_test_config_custom(
+            services_overrides={
+                "tautulli": {"api_key": "test_key", "url": "http://test.local"},
+                "discord": {"token": "test_token", "channel_id": 123456789}
+            },
+            graphs_overrides={
+                "features": {"media_type_separation": True},
+                "appearance": {
+                    "palettes": {
+                        "play_count_by_hourofday": "viridis",
+                        "top_10_users": "plasma"
+                    }
+                }
+            }
+        )
 
         # Test hourly graph returns viridis
         hourly_graph = PlayCountByHourOfDayGraph(config=config)
@@ -64,15 +70,21 @@ class TestPaletteConfiguration:
     def test_single_graph_palette_does_not_affect_other_graphs(self) -> None:
         """Test that configuring one graph's palette doesn't affect others."""
         # Configure only the hourly palette, not the users palette
-        config = create_test_config_with_nested_overrides(
-                DISCORD_TOKEN="test_token",
-                TAUTULLI_API_KEY="test_key",
-                TAUTULLI_URL="http://test.local",
-                CHANNEL_ID=123456789,
-                PLAY_COUNT_BY_HOUROFDAY_PALETTE="viridis",
-                TOP_10_USERS_PALETTE="",  # Empty - no palette configured,
-                ENABLE_MEDIA_TYPE_SEPARATION=True,
-            )
+        config = create_test_config_custom(
+            services_overrides={
+                "tautulli": {"api_key": "test_key", "url": "http://test.local"},
+                "discord": {"token": "test_token", "channel_id": 123456789}
+            },
+            graphs_overrides={
+                "features": {"media_type_separation": True},
+                "appearance": {
+                    "palettes": {
+                        "play_count_by_hourofday": "viridis",
+                        "top_10_users": ""  # Empty - no palette configured
+                    }
+                }
+            }
+        )
 
         # Hourly graph should return viridis
         hourly_graph = PlayCountByHourOfDayGraph(config=config)
