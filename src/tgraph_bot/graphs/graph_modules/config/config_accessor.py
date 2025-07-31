@@ -183,7 +183,26 @@ class ConfigAccessor:
             True if graph type is enabled, False otherwise
         """
         path = f"graphs.features.enabled_types.{graph_type}"
-        return self.get_bool_value(path, default=True)
+
+        # For graph types that are in the configuration schema, use True as default
+        # For graph types not in the schema (like sample_graph), use False as default
+        # This prevents test/demo graphs from being enabled by default
+        schema_graph_types = {
+            "daily_play_count", "play_count_by_dayofweek", "play_count_by_hourofday",
+            "top_10_platforms", "top_10_users", "play_count_by_month"
+        }
+
+        # Check if the value is explicitly set in the configuration
+        # This allows non-schema graph types to be enabled if explicitly configured
+        try:
+            # Try to get the value directly from the config without a default
+            # This will raise ConfigurationError if the path doesn't exist
+            value = self.get_nested_value(path)
+            return bool(value)
+        except ConfigurationError:
+            # If the path doesn't exist, use the default based on whether it's in the schema
+            default_value = graph_type in schema_graph_types
+            return default_value
 
     def get_color_value(self, color_type: str) -> str:
         """

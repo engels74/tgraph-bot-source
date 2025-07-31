@@ -312,7 +312,7 @@ class TestConfigCog:
         _ = await config_cog.config_view.callback(  # pyright: ignore[reportUnknownVariableType]
             config_cog,
             mock_interaction,
-            key="UPDATE_DAYS",  # pyright: ignore[reportCallIssue]
+            key="automation.scheduling.update_days",  # pyright: ignore[reportCallIssue]
         )
 
         # Verify response was sent
@@ -323,7 +323,7 @@ class TestConfigCog:
         embed = call_args[1]["embed"]  # pyright: ignore[reportUnknownVariableType]
 
         # Verify the embed contains the specific key information
-        assert "UPDATE_DAYS" in embed.title  # pyright: ignore[reportUnknownMemberType]
+        assert "automation.scheduling.update_days" in embed.title  # pyright: ignore[reportUnknownMemberType]
         assert embed.fields[0].name == "Current Value"  # pyright: ignore[reportUnknownMemberType]
 
     @pytest.mark.asyncio
@@ -368,8 +368,8 @@ class TestConfigCog:
         assert all(choice.name in config_cog._get_config_keys() for choice in choices)  # pyright: ignore[reportPrivateUsage]
 
         # Test autocomplete with partial input
-        choices = await config_cog._config_key_autocomplete(mock_interaction, "UPDATE")  # pyright: ignore[reportPrivateUsage]
+        choices = await config_cog._config_key_autocomplete(mock_interaction, "automation")  # pyright: ignore[reportPrivateUsage]
 
         # Should return filtered keys
-        assert all("UPDATE" in choice.name for choice in choices)
+        assert all("automation" in choice.name for choice in choices)
         assert len(choices) > 0

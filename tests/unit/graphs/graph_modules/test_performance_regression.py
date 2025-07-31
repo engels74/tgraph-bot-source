@@ -213,9 +213,9 @@ class TestPerformanceRegression:
 
         # Perform multiple configuration accesses
         for _ in range(1000):
-            _ = accessor.get_value("TV_COLOR")
-            _ = accessor.get_value("MOVIE_COLOR")
-            _ = accessor.get_value("ENABLE_DAILY_PLAY_COUNT")
+            _ = accessor.get_value("graphs.appearance.colors.tv")
+            _ = accessor.get_value("graphs.appearance.colors.movie")
+            _ = accessor.get_value("graphs.features.enabled_types.daily_play_count")
 
         access_time = time.time() - start_time
 

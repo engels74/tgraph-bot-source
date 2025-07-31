@@ -504,8 +504,12 @@ class TestGraphSeparationFunctionality:
 
         graph = graph_class(config=config)
 
-        # Test configuration access
-        actual_value = graph.get_config_value(old_config_key, not annotation_enabled)
+        # Test configuration access - convert old flat key to nested path
+        config_path_map = {
+            "ANNOTATE_PLAY_COUNT_BY_HOUROFDAY": "graphs.appearance.annotations.enabled_on.play_count_by_hourofday",
+        }
+        config_path = config_path_map.get(old_config_key, old_config_key)
+        actual_value = graph.get_config_value(config_path, not annotation_enabled)
         assert actual_value == annotation_enabled
 
 
@@ -1548,7 +1552,7 @@ class TestSpecificGraphBehaviors:
         assert graph.get_title() == "Play Count by Hour of Day (Last 14 days)"
 
         # Test hour-specific configuration access
-        assert graph.get_config_value("ANNOTATE_PLAY_COUNT_BY_HOUROFDAY", False) is True
+        assert graph.get_config_value("graphs.appearance.annotations.enabled_on.play_count_by_hourofday", False) is True
 
     def test_sample_graph_custom_parameters(self) -> None:
         """Test SampleGraph with custom initialization parameters."""

@@ -166,8 +166,8 @@ class TestFormattingFunctions:
 
     def test_format_config_value_sensitive(self) -> None:
         """Test config value formatting for sensitive keys."""
-        assert format_config_value("DISCORD_TOKEN", "secret") == "***HIDDEN***"
-        assert format_config_value("TAUTULLI_API_KEY", "api_key") == "***HIDDEN***"
+        assert format_config_value("services.discord.token", "secret") == "***HIDDEN***"
+        assert format_config_value("services.tautulli.api_key", "api_key") == "***HIDDEN***"
 
     def test_format_config_value_boolean(self) -> None:
         """Test config value formatting for boolean values."""

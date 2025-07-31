@@ -117,15 +117,15 @@ class TestConfigurationValidation:
 
         # Test through ConfigAccessor
         accessor = ConfigAccessor(config)
-        assert accessor.get_value("TV_COLOR") == "#2e86ab"
-        assert accessor.get_value("MOVIE_COLOR") == "#a23b72"
-        assert accessor.get_value("ENABLE_DAILY_PLAY_COUNT") is True
+        assert accessor.get_value("graphs.appearance.colors.tv") == "#2e86ab"
+        assert accessor.get_value("graphs.appearance.colors.movie") == "#a23b72"
+        assert accessor.get_value("graphs.features.enabled_types.daily_play_count") is True
 
         # Test through BaseGraph
         graph = ConfigTestGraph(config=config)
-        assert graph.get_config_value("TV_COLOR") == "#2e86ab"
-        assert graph.get_config_value("MOVIE_COLOR") == "#a23b72"
-        assert graph.get_config_value("ENABLE_DAILY_PLAY_COUNT") is True
+        assert graph.get_config_value("graphs.appearance.colors.tv") == "#2e86ab"
+        assert graph.get_config_value("graphs.appearance.colors.movie") == "#a23b72"
+        assert graph.get_config_value("graphs.features.enabled_types.daily_play_count") is True
 
     def test_configuration_inheritance_patterns(self) -> None:
         """Test configuration inheritance and override patterns."""
@@ -161,8 +161,17 @@ class TestConfigurationValidation:
 
             # Verify configuration is properly applied
             for key, value in combination.items():
-                config_key = key.upper()
-                assert graph.get_config_value(config_key) is value
+                # Map parameter names to nested config paths
+                config_path_map = {
+                    "enable_daily_play_count": "graphs.features.enabled_types.daily_play_count",
+                    "enable_play_count_by_dayofweek": "graphs.features.enabled_types.play_count_by_dayofweek",
+                    "enable_play_count_by_hourofday": "graphs.features.enabled_types.play_count_by_hourofday",
+                    "enable_play_count_by_month": "graphs.features.enabled_types.play_count_by_month",
+                    "enable_top_10_platforms": "graphs.features.enabled_types.top_10_platforms",
+                    "enable_top_10_users": "graphs.features.enabled_types.top_10_users",
+                }
+                config_path = config_path_map[key]
+                assert graph.get_config_value(config_path) is value
 
     def test_privacy_configuration_validation(self) -> None:
         """Test privacy-focused configuration validation."""
@@ -175,7 +184,7 @@ class TestConfigurationValidation:
 
         # Test that privacy config works with graphs
         graph = ConfigTestGraph(config=privacy_config)
-        assert graph.get_config_value("CENSOR_USERNAMES") is True
+        assert graph.get_config_value("data_collection.privacy.censor_usernames") is True
 
     def test_configuration_edge_cases(self) -> None:
         """Test edge cases in configuration handling."""

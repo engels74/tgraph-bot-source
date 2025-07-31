@@ -252,14 +252,14 @@ class BaseGraph(ABC):
         if self.config is None:
             return None
 
-        # Map graph class names to their corresponding palette configuration keys
+        # Map graph class names to their corresponding palette configuration paths
         graph_type_to_palette_key = {
-            "PlayCountByHourOfDayGraph": "PLAY_COUNT_BY_HOUROFDAY_PALETTE",
-            "Top10UsersGraph": "TOP_10_USERS_PALETTE",
-            "DailyPlayCountGraph": "DAILY_PLAY_COUNT_PALETTE",
-            "PlayCountByDayOfWeekGraph": "PLAY_COUNT_BY_DAYOFWEEK_PALETTE",
-            "Top10PlatformsGraph": "TOP_10_PLATFORMS_PALETTE",
-            "PlayCountByMonthGraph": "PLAY_COUNT_BY_MONTH_PALETTE",
+            "PlayCountByHourOfDayGraph": "graphs.appearance.palettes.play_count_by_hourofday",
+            "Top10UsersGraph": "graphs.appearance.palettes.top_10_users",
+            "DailyPlayCountGraph": "graphs.appearance.palettes.daily_play_count",
+            "PlayCountByDayOfWeekGraph": "graphs.appearance.palettes.play_count_by_dayofweek",
+            "Top10PlatformsGraph": "graphs.appearance.palettes.top_10_platforms",
+            "PlayCountByMonthGraph": "graphs.appearance.palettes.play_count_by_month",
         }
 
         # Get the current graph's class name
@@ -395,7 +395,7 @@ class BaseGraph(ABC):
         Returns:
             True if grid should be enabled, False otherwise
         """
-        grid_enabled = self.get_config_value("ENABLE_GRAPH_GRID", False)
+        grid_enabled = self.get_config_value("graphs.appearance.grid.enabled", False)
         return bool(grid_enabled)
 
     def get_media_type_separation_enabled(self) -> bool:
@@ -405,7 +405,7 @@ class BaseGraph(ABC):
         Returns:
             True if media type separation should be enabled, False otherwise
         """
-        separation_enabled = self.get_config_value("ENABLE_MEDIA_TYPE_SEPARATION", True)
+        separation_enabled = self.get_config_value("graphs.features.media_type_separation", True)
         return bool(separation_enabled)
 
     def get_stacked_bar_charts_enabled(self) -> bool:
@@ -415,7 +415,7 @@ class BaseGraph(ABC):
         Returns:
             True if stacked bar charts should be enabled, False otherwise
         """
-        stacked_enabled = self.get_config_value("ENABLE_STACKED_BAR_CHARTS", False)
+        stacked_enabled = self.get_config_value("graphs.features.stacked_bar_charts", False)
         return bool(stacked_enabled)
 
     def get_tv_color(self) -> str:
@@ -443,7 +443,7 @@ class BaseGraph(ABC):
         Returns:
             Hex color string for annotations
         """
-        annotation_color = self.get_config_value("ANNOTATION_COLOR", "#ff0000")
+        annotation_color = self.get_config_value("graphs.appearance.annotations.basic.color", "#ff0000")
         return str(annotation_color)
 
     def get_annotation_outline_color(self) -> str:
@@ -453,7 +453,7 @@ class BaseGraph(ABC):
         Returns:
             Hex color string for annotation outlines
         """
-        outline_color = self.get_config_value("ANNOTATION_OUTLINE_COLOR", "#000000")
+        outline_color = self.get_config_value("graphs.appearance.annotations.basic.outline_color", "#000000")
         return str(outline_color)
 
     def is_annotation_outline_enabled(self) -> bool:
@@ -463,7 +463,7 @@ class BaseGraph(ABC):
         Returns:
             True if annotation outlines should be enabled, False otherwise
         """
-        outline_enabled = self.get_config_value("ENABLE_ANNOTATION_OUTLINE", True)
+        outline_enabled = self.get_config_value("graphs.appearance.annotations.basic.enable_outline", True)
         return bool(outline_enabled)
 
     def is_peak_annotations_enabled(self) -> bool:
@@ -503,7 +503,7 @@ class BaseGraph(ABC):
         Returns:
             True if usernames should be censored, False otherwise
         """
-        censor_usernames = self.get_config_value("CENSOR_USERNAMES", True)
+        censor_usernames = self.get_config_value("data_collection.privacy.censor_usernames", True)
         return bool(censor_usernames)
 
     def get_annotation_font_size(self) -> int:
@@ -557,7 +557,7 @@ class BaseGraph(ABC):
         """
         if use_months:
             # Use TIME_RANGE_MONTHS for monthly graphs
-            time_range = self.get_config_value("TIME_RANGE_MONTHS", 12)
+            time_range = self.get_config_value("data_collection.time_ranges.months", 12)
             if isinstance(time_range, (int, float)):
                 time_range_int = int(time_range)
                 unit = "month" if time_range_int == 1 else "months"
@@ -566,7 +566,7 @@ class BaseGraph(ABC):
                 return base_title
         else:
             # Use TIME_RANGE_DAYS for daily/weekly/hourly graphs
-            time_range = self.get_config_value("TIME_RANGE_DAYS", 30)
+            time_range = self.get_config_value("data_collection.time_ranges.days", 30)
             if isinstance(time_range, (int, float)):
                 time_range_int = int(time_range)
                 unit = "day" if time_range_int == 1 else "days"
@@ -888,7 +888,7 @@ class BaseGraph(ABC):
         Returns:
             Number of days for the time range from config, defaults to 30 if not found
         """
-        time_range = self.get_config_value("TIME_RANGE_DAYS", 30)
+        time_range = self.get_config_value("data_collection.time_ranges.days", 30)
 
         if isinstance(time_range, (int, float)):
             return int(time_range)
@@ -908,7 +908,7 @@ class BaseGraph(ABC):
         Returns:
             Number of months for the time range from config, defaults to 12 if not found
         """
-        time_range = self.get_config_value("TIME_RANGE_MONTHS", 12)
+        time_range = self.get_config_value("data_collection.time_ranges.months", 12)
 
         if isinstance(time_range, (int, float)):
             return int(time_range)

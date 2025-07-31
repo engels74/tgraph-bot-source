@@ -83,10 +83,10 @@ class TestSchedulingConfig:
 
     def test_invalid_update_days(self) -> None:
         """Test invalid update days validation."""
-        with pytest.raises(ValueError, match="UPDATE_DAYS must be between 1 and 365"):
+        with pytest.raises(ValueError, match="update_days must be between 1 and 365"):
             _ = SchedulingConfig(update_days=0, fixed_update_time="XX:XX")
 
-        with pytest.raises(ValueError, match="UPDATE_DAYS must be between 1 and 365"):
+        with pytest.raises(ValueError, match="update_days must be between 1 and 365"):
             _ = SchedulingConfig(update_days=366, fixed_update_time="XX:XX")
 
     def test_config_equality(self) -> None:

@@ -115,10 +115,10 @@ class MediaTypeProcessor:
         if self.config_accessor is None:
             return default_color
 
-        # Map media types to configuration keys
+        # Map media types to configuration paths
         config_key_map = {
-            "tv": "TV_COLOR",
-            "movie": "MOVIE_COLOR",
+            "tv": "graphs.appearance.colors.tv",
+            "movie": "graphs.appearance.colors.movie",
         }
 
         config_key = config_key_map.get(media_type)

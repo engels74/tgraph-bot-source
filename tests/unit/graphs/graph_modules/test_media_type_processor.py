@@ -129,8 +129,8 @@ class TestMediaTypeProcessor:
 
         def mock_get_value(key: str, default: str) -> str:
             return {
-                "TV_COLOR": "#custom_tv",
-                "MOVIE_COLOR": "#custom_movie",
+                "graphs.appearance.colors.tv": "#custom_tv",
+                "graphs.appearance.colors.movie": "#custom_movie",
             }.get(key, default)
 
         mock_config.get_value.side_effect = mock_get_value  # pyright: ignore[reportAny]
@@ -170,8 +170,8 @@ class TestMediaTypeProcessor:
 
         def mock_get_value_2(key: str, default: str) -> str:
             return {
-                "TV_COLOR": "#custom_tv",
-                "MOVIE_COLOR": "#custom_movie",
+                "graphs.appearance.colors.tv": "#custom_tv",
+                "graphs.appearance.colors.movie": "#custom_movie",
             }.get(key, default)
 
         mock_config.get_value.side_effect = mock_get_value_2  # pyright: ignore[reportAny]

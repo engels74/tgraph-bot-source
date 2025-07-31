@@ -343,16 +343,24 @@ class TestGraphFactory:
         assert sample_graph.get_title() == "Sample Data Visualization"
 
     def test_sample_graph_in_enabled_graphs(self) -> None:
-        """Test that sample graph appears in enabled graphs when configured."""
-        config = create_test_config()  # Sample graph not in our mapping, use default config
+        """Test that sample graph is disabled by default and not configurable through normal config."""
+        # Sample graph should not be enabled by default
+        config = create_test_config()
         factory = GraphFactory(config)
 
         enabled_types = factory.get_enabled_graph_types()
-        assert "sample_graph" in enabled_types
+        assert "sample_graph" not in enabled_types
 
         enabled_graphs = factory.create_enabled_graphs()
-        # Should have sample graph plus 6 default graphs (all enabled by default)
-        assert len(enabled_graphs) == 7
+        # Should have only the 6 default graphs (sample graph is disabled by default)
+        assert len(enabled_graphs) == 6
+
+        # Sample graph should still be creatable by type even if not enabled by default
+        sample_graph = factory.create_graph_by_type("sample_graph")
+        assert sample_graph is not None
+        assert hasattr(sample_graph, "generate")
+        assert hasattr(sample_graph, "get_title")
+        assert sample_graph.get_title() == "Sample Data Visualization"
 
     def test_sample_graph_disabled_by_default(self) -> None:
         """Test that sample graph is disabled by default."""
