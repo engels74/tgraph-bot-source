@@ -30,44 +30,12 @@ from tests.utils.graph_helpers import (
     matplotlib_cleanup,
 )
 from tests.utils.test_helpers import (
-    create_test_config_with_nested_overrides,
+    create_test_config_custom,
     assert_graph_output_valid,
     assert_file_cleanup_successful,
 )
 
 
-def set_nested_config_value(config: TGraphBotConfig, old_key: str, value: object) -> None:
-    """
-    Set a nested configuration value using the old flat key name.
-
-    This helper function maps old flat configuration keys to their new nested
-    structure paths and sets the value appropriately.
-
-    Args:
-        config: The TGraphBotConfig instance to modify
-        old_key: The old flat configuration key (e.g., "ANNOTATE_PLAY_COUNT_BY_HOUROFDAY")
-        value: The value to set
-    """
-    # Map old flat keys to nested paths based on config_migration_mapping.md
-    if old_key == "TIME_RANGE_DAYS":
-        if isinstance(value, (int, float, str)):
-            config.data_collection.time_ranges.days = int(value)
-        else:
-            raise ValueError(f"Invalid value type for TIME_RANGE_DAYS: {type(value)}")
-    elif old_key == "ANNOTATE_PLAY_COUNT_BY_HOUROFDAY":
-        config.graphs.appearance.annotations.enabled_on.play_count_by_hourofday = bool(value)
-    elif old_key == "ANNOTATE_DAILY_PLAY_COUNT":
-        config.graphs.appearance.annotations.enabled_on.daily_play_count = bool(value)
-    elif old_key == "ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK":
-        config.graphs.appearance.annotations.enabled_on.play_count_by_dayofweek = bool(value)
-    elif old_key == "ANNOTATE_TOP_10_PLATFORMS":
-        config.graphs.appearance.annotations.enabled_on.top_10_platforms = bool(value)
-    elif old_key == "ANNOTATE_TOP_10_USERS":
-        config.graphs.appearance.annotations.enabled_on.top_10_users = bool(value)
-    elif old_key == "ANNOTATE_PLAY_COUNT_BY_MONTH":
-        config.graphs.appearance.annotations.enabled_on.play_count_by_month = bool(value)
-    else:
-        raise ValueError(f"Unknown configuration key: {old_key}")
 
 
 class TestStandardGraphs:
@@ -196,26 +164,34 @@ class TestGraphSeparationFunctionality:
     @pytest.fixture
     def separation_config(self) -> TGraphBotConfig:
         """Configuration with media type separation enabled."""
-        return create_test_config_with_nested_overrides(
-                DISCORD_TOKEN="test_token",
-                TAUTULLI_API_KEY="test_key",
-                TAUTULLI_URL="http://test.local",
-                CHANNEL_ID=123456789,
-                ENABLE_MEDIA_TYPE_SEPARATION=True,
-                ENABLE_STACKED_BAR_CHARTS=True,
-            )
+        return create_test_config_custom(
+            services_overrides={
+                "discord": {"token": "test_token", "channel_id": 123456789},
+                "tautulli": {"api_key": "test_key", "url": "http://test.local"}
+            },
+            graphs_overrides={
+                "features": {
+                    "media_type_separation": True,
+                    "stacked_bar_charts": True
+                }
+            }
+        )
 
     @pytest.fixture
     def no_separation_config(self) -> TGraphBotConfig:
         """Configuration with media type separation disabled."""
-        return create_test_config_with_nested_overrides(
-                DISCORD_TOKEN="test_token",
-                TAUTULLI_API_KEY="test_key",
-                TAUTULLI_URL="http://test.local",
-                CHANNEL_ID=123456789,
-                ENABLE_MEDIA_TYPE_SEPARATION=False,
-                ENABLE_STACKED_BAR_CHARTS=False,
-            )
+        return create_test_config_custom(
+            services_overrides={
+                "discord": {"token": "test_token", "channel_id": 123456789},
+                "tautulli": {"api_key": "test_key", "url": "http://test.local"}
+            },
+            graphs_overrides={
+                "features": {
+                    "media_type_separation": False,
+                    "stacked_bar_charts": False
+                }
+            }
+        )
 
     @pytest.fixture
     def sample_separation_data(self) -> dict[str, object]:
@@ -355,15 +331,21 @@ class TestGraphSeparationFunctionality:
     ) -> None:
         """Test that color palettes integrate properly with separation functionality."""
         # Test with palette configuration
-        palette_config = create_test_config_with_nested_overrides(
-                DISCORD_TOKEN="test_token",
-                TAUTULLI_API_KEY="test_key",
-                TAUTULLI_URL="http://test.local",
-                CHANNEL_ID=123456789,
-                ENABLE_MEDIA_TYPE_SEPARATION=True,
-                PLAY_COUNT_BY_HOUROFDAY_PALETTE="viridis",
-                TOP_10_USERS_PALETTE="plasma",
-            )
+        palette_config = create_test_config_custom(
+            services_overrides={
+                "discord": {"token": "test_token", "channel_id": 123456789},
+                "tautulli": {"api_key": "test_key", "url": "http://test.local"}
+            },
+            graphs_overrides={
+                "features": {"media_type_separation": True},
+                "appearance": {
+                    "palettes": {
+                        "play_count_by_hourofday": "viridis",
+                        "top_10_users": "plasma"
+                    }
+                }
+            }
+        )
 
         # Test PlayCountByHourOfDayGraph with palette
         with matplotlib_cleanup():
@@ -413,24 +395,32 @@ class TestGraphSeparationFunctionality:
     ) -> None:
         """Test that stacked visualization mode responds to configuration."""
         # Test with stacked mode enabled
-        stacked_config = create_test_config_with_nested_overrides(
-                DISCORD_TOKEN="test_token",
-                TAUTULLI_API_KEY="test_key",
-                TAUTULLI_URL="http://test.local",
-                CHANNEL_ID=123456789,
-                ENABLE_MEDIA_TYPE_SEPARATION=True,
-                ENABLE_STACKED_BAR_CHARTS=True,
-            )
+        stacked_config = create_test_config_custom(
+            services_overrides={
+                "discord": {"token": "test_token", "channel_id": 123456789},
+                "tautulli": {"api_key": "test_key", "url": "http://test.local"}
+            },
+            graphs_overrides={
+                "features": {
+                    "media_type_separation": True,
+                    "stacked_bar_charts": True
+                }
+            }
+        )
 
         # Test with stacked mode disabled
-        grouped_config = create_test_config_with_nested_overrides(
-                DISCORD_TOKEN="test_token",
-                TAUTULLI_API_KEY="test_key",
-                TAUTULLI_URL="http://test.local",
-                CHANNEL_ID=123456789,
-                ENABLE_MEDIA_TYPE_SEPARATION=True,
-                ENABLE_STACKED_BAR_CHARTS=False,
-            )
+        grouped_config = create_test_config_custom(
+            services_overrides={
+                "discord": {"token": "test_token", "channel_id": 123456789},
+                "tautulli": {"api_key": "test_key", "url": "http://test.local"}
+            },
+            graphs_overrides={
+                "features": {
+                    "media_type_separation": True,
+                    "stacked_bar_charts": False
+                }
+            }
+        )
 
         # Test graphs with both configurations
         for config in [stacked_config, grouped_config]:
@@ -448,17 +438,15 @@ class TestGraphSeparationFunctionality:
                     Path(output_path).unlink(missing_ok=True)
 
     @pytest.mark.parametrize(
-        "graph_class,config_attribute,config_value,expected_title",
+        "graph_class,time_range_days,expected_title",
         [
             (
                 PlayCountByHourOfDayGraph,
-                "TIME_RANGE_DAYS",
                 7,
                 "Play Count by Hour of Day (Last 7 days)",
             ),
             (
                 PlayCountByHourOfDayGraph,
-                "TIME_RANGE_DAYS",
                 14,
                 "Play Count by Hour of Day (Last 14 days)",
             ),
@@ -467,47 +455,58 @@ class TestGraphSeparationFunctionality:
     def test_configuration_based_titles(
         self,
         graph_class: type[BaseGraph],
-        config_attribute: str,
-        config_value: object,
+        time_range_days: int,
         expected_title: str,
     ) -> None:
         """Test that graphs generate correct titles based on configuration."""
-        config = create_test_config_minimal()
-        set_nested_config_value(config, config_attribute, config_value)
+        config = create_test_config_custom(
+            data_collection_overrides={
+                "time_ranges": {"days": time_range_days}
+            }
+        )
 
         graph = graph_class(config=config)
         assert graph.get_title() == expected_title
 
     @pytest.mark.parametrize(
-        "graph_class,config_attribute,config_value",
+        "graph_class,annotation_enabled,old_config_key",
         [
             (
                 PlayCountByHourOfDayGraph,
-                "ANNOTATE_PLAY_COUNT_BY_HOUROFDAY",
                 True,
+                "ANNOTATE_PLAY_COUNT_BY_HOUROFDAY",
             ),
             (
                 PlayCountByHourOfDayGraph,
-                "ANNOTATE_PLAY_COUNT_BY_HOUROFDAY",
                 False,
+                "ANNOTATE_PLAY_COUNT_BY_HOUROFDAY",
             ),
         ],
     )
     def test_configuration_access(
         self,
         graph_class: type[BaseGraph],
-        config_attribute: str,
-        config_value: object,
+        annotation_enabled: bool,
+        old_config_key: str,
     ) -> None:
         """Test that graphs can access configuration values correctly."""
-        config = create_test_config_minimal()
-        set_nested_config_value(config, config_attribute, config_value)
+        config = create_test_config_custom(
+            graphs_overrides={
+                "appearance": {
+                    "annotations": {
+                        "enabled_on": {
+                            "play_count_by_hourofday": annotation_enabled
+                        }
+                    }
+                }
+            }
+        )
 
         graph = graph_class(config=config)
 
         # Test configuration access
-        actual_value = graph.get_config_value(config_attribute, not config_value)
-        assert actual_value == config_value
+        actual_value = graph.get_config_value(old_config_key, not annotation_enabled)
+        assert actual_value == annotation_enabled
 
 
 class TestSampleGraphSpecific:
@@ -636,37 +635,47 @@ class TestPlayCountByHourOfDaySeparation:
     @pytest.fixture
     def separation_enabled_config(self) -> TGraphBotConfig:
         """Configuration with media type separation enabled."""
-        return create_test_config_with_nested_overrides(
-                TAUTULLI_API_KEY="test_api_key",
-                TAUTULLI_URL="http://localhost:8181/api/v2",
-                DISCORD_TOKEN="test_discord_token",
-                CHANNEL_ID=123456789,
-                ENABLE_MEDIA_TYPE_SEPARATION=True,
-                ENABLE_STACKED_BAR_CHARTS=False,
-            )
+        return create_test_config_custom(
+            services_overrides={
+                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
+                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+            },
+            graphs_overrides={
+                "features": {
+                    "media_type_separation": True,
+                    "stacked_bar_charts": False
+                }
+            }
+        )
 
     @pytest.fixture
     def stacked_enabled_config(self) -> TGraphBotConfig:
         """Configuration with stacked bar charts enabled."""
-        return create_test_config_with_nested_overrides(
-                TAUTULLI_API_KEY="test_api_key",
-                TAUTULLI_URL="http://localhost:8181/api/v2",
-                DISCORD_TOKEN="test_discord_token",
-                CHANNEL_ID=123456789,
-                ENABLE_MEDIA_TYPE_SEPARATION=True,
-                ENABLE_STACKED_BAR_CHARTS=True,
-            )
+        return create_test_config_custom(
+            services_overrides={
+                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
+                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+            },
+            graphs_overrides={
+                "features": {
+                    "media_type_separation": True,
+                    "stacked_bar_charts": True
+                }
+            }
+        )
 
     @pytest.fixture
     def separation_disabled_config(self) -> TGraphBotConfig:
         """Configuration with media type separation disabled."""
-        return create_test_config_with_nested_overrides(
-                TAUTULLI_API_KEY="test_api_key",
-                TAUTULLI_URL="http://localhost:8181/api/v2",
-                DISCORD_TOKEN="test_discord_token",
-                CHANNEL_ID=123456789,
-                ENABLE_MEDIA_TYPE_SEPARATION=False,
-            )
+        return create_test_config_custom(
+            services_overrides={
+                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
+                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+            },
+            graphs_overrides={
+                "features": {"media_type_separation": False}
+            }
+        )
 
     def test_separated_visualization_method_exists(
         self, separation_enabled_config: "TGraphBotConfig"

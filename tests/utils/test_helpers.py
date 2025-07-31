@@ -21,7 +21,7 @@ from unittest.mock import AsyncMock, MagicMock
 __all__ = [
     "create_config_manager_with_config",
     "create_test_config",
-    "create_test_config_with_nested_overrides",
+    "create_test_config_custom",
     "create_temp_config_file",
     "create_temp_directory",
     "create_mock_discord_bot",
@@ -152,25 +152,37 @@ def create_test_config(
     return config
 
 
-def create_test_config_with_nested_overrides(**overrides: object) -> TGraphBotConfig:
+def create_test_config_custom(
+    *,
+    services_overrides: dict[str, object] | None = None,
+    automation_overrides: dict[str, object] | None = None,
+    data_collection_overrides: dict[str, object] | None = None,
+    system_overrides: dict[str, object] | None = None,
+    graphs_overrides: dict[str, object] | None = None,
+    rate_limiting_overrides: dict[str, object] | None = None,
+) -> TGraphBotConfig:
     """
-    Create a TGraphBotConfig with specific overrides for testing.
+    Create a TGraphBotConfig with specific section overrides for testing.
 
-    This function provides backwards compatibility by accepting both old flat keys
-    and new nested dictionary structures for configuration overrides.
+    This function creates a test configuration with the new nested structure
+    and allows customization of specific sections without backwards compatibility.
+    Use specific nested dictionary structures for each configuration section.
 
     Args:
-        **overrides: Configuration overrides using flat keys (like "TAUTULLI_API_KEY") 
-                    or nested structures or dot-notation paths
+        services_overrides: Overrides for services configuration section
+        automation_overrides: Overrides for automation configuration section
+        data_collection_overrides: Overrides for data_collection configuration section
+        system_overrides: Overrides for system configuration section
+        graphs_overrides: Overrides for graphs configuration section
+        rate_limiting_overrides: Overrides for rate_limiting configuration section
 
     Returns:
-        TGraphBotConfig: Configured instance
+        TGraphBotConfig: Configured instance with applied overrides
 
     Example:
-        >>> config = create_test_config_with_nested_overrides(
-        ...     TAUTULLI_API_KEY="custom_key",  # Old flat key
-        ...     services={"discord": {"channel_id": 999}},  # Nested dict
-        ...     graphs__appearance__colors__tv="#ff0000"  # Dot notation
+        >>> config = create_test_config_custom(
+        ...     services_overrides={"tautulli": {"api_key": "custom_key"}},
+        ...     graphs_overrides={"appearance": {"colors": {"tv": "#ff0000"}}}
         ... )
     """
     try:
@@ -183,108 +195,23 @@ def create_test_config_with_nested_overrides(**overrides: object) -> TGraphBotCo
     base_config = create_test_config()
     base_dict = base_config.model_dump()
 
-    # Map old flat keys to nested paths
-    flat_key_mapping = {
-        # Service configuration
-        "TAUTULLI_API_KEY": "services.tautulli.api_key",
-        "TAUTULLI_URL": "services.tautulli.url",
-        "DISCORD_TOKEN": "services.discord.token",
-        "CHANNEL_ID": "services.discord.channel_id",
-        
-        # Automation configuration
-        "UPDATE_DAYS": "automation.scheduling.update_days",
-        "FIXED_UPDATE_TIME": "automation.scheduling.fixed_update_time",
-        "KEEP_DAYS": "automation.data_retention.keep_days",
-        
-        # Data collection configuration
-        "TIME_RANGE_DAYS": "data_collection.time_ranges.days",
-        "TIME_RANGE_MONTHS": "data_collection.time_ranges.months",
-        "CENSOR_USERNAMES": "data_collection.privacy.censor_usernames",
-        
-        # System configuration
-        "LANGUAGE": "system.localization.language",
-        
-        # Graph features configuration
-        "ENABLE_DAILY_PLAY_COUNT": "graphs.features.enabled_types.daily_play_count",
-        "ENABLE_PLAY_COUNT_BY_DAYOFWEEK": "graphs.features.enabled_types.play_count_by_dayofweek",
-        "ENABLE_PLAY_COUNT_BY_HOUROFDAY": "graphs.features.enabled_types.play_count_by_hourofday",
-        "ENABLE_TOP_10_PLATFORMS": "graphs.features.enabled_types.top_10_platforms",
-        "ENABLE_TOP_10_USERS": "graphs.features.enabled_types.top_10_users",
-        "ENABLE_PLAY_COUNT_BY_MONTH": "graphs.features.enabled_types.play_count_by_month",
-        "ENABLE_MEDIA_TYPE_SEPARATION": "graphs.features.media_type_separation",
-        "ENABLE_STACKED_BAR_CHARTS": "graphs.features.stacked_bar_charts",
-        
-        # Graph appearance configuration
-        "GRAPH_WIDTH": "graphs.appearance.dimensions.width",
-        "GRAPH_HEIGHT": "graphs.appearance.dimensions.height",
-        "GRAPH_DPI": "graphs.appearance.dimensions.dpi",
-        "TV_COLOR": "graphs.appearance.colors.tv",
-        "MOVIE_COLOR": "graphs.appearance.colors.movie",
-        "GRAPH_BACKGROUND_COLOR": "graphs.appearance.colors.background",
-        "ENABLE_GRAPH_GRID": "graphs.appearance.grid.enabled",
-        
-        # Annotation configuration
-        "ANNOTATION_COLOR": "graphs.appearance.annotations.basic.color",
-        "ANNOTATION_OUTLINE_COLOR": "graphs.appearance.annotations.basic.outline_color",
-        "ENABLE_ANNOTATION_OUTLINE": "graphs.appearance.annotations.basic.enable_outline",
-        "ANNOTATION_FONT_SIZE": "graphs.appearance.annotations.basic.font_size",
-        "ANNOTATE_DAILY_PLAY_COUNT": "graphs.appearance.annotations.enabled_on.daily_play_count",
-        "ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK": "graphs.appearance.annotations.enabled_on.play_count_by_dayofweek",
-        "ANNOTATE_PLAY_COUNT_BY_HOUROFDAY": "graphs.appearance.annotations.enabled_on.play_count_by_hourofday",
-        "ANNOTATE_TOP_10_PLATFORMS": "graphs.appearance.annotations.enabled_on.top_10_platforms",
-        "ANNOTATE_TOP_10_USERS": "graphs.appearance.annotations.enabled_on.top_10_users",
-        "ANNOTATE_PLAY_COUNT_BY_MONTH": "graphs.appearance.annotations.enabled_on.play_count_by_month",
-        
-        # Palette configuration
-        "DAILY_PLAY_COUNT_PALETTE": "graphs.appearance.palettes.daily_play_count",
-        "PLAY_COUNT_BY_DAYOFWEEK_PALETTE": "graphs.appearance.palettes.play_count_by_dayofweek",
-        "PLAY_COUNT_BY_HOUROFDAY_PALETTE": "graphs.appearance.palettes.play_count_by_hourofday",
-        "TOP_10_PLATFORMS_PALETTE": "graphs.appearance.palettes.top_10_platforms",
-        "TOP_10_USERS_PALETTE": "graphs.appearance.palettes.top_10_users",
-        "PLAY_COUNT_BY_MONTH_PALETTE": "graphs.appearance.palettes.play_count_by_month",
-    }
-
-    # Apply overrides using different strategies
-    for key, value in overrides.items():
-        if key in flat_key_mapping:
-            # Handle old flat keys by mapping to nested path
-            nested_path = flat_key_mapping[key]
-            _set_nested_value(base_dict, nested_path, value)
-        elif "__" in key:
-            # Handle dot-notation keys like "graphs__appearance__colors__tv"
-            nested_path = key.replace("__", ".")
-            _set_nested_value(base_dict, nested_path, value)
-        else:
-            # Handle direct nested dictionary overrides
-            if isinstance(value, dict) and key in base_dict and isinstance(base_dict[key], dict):
-                # Deep merge dictionaries
-                _deep_merge(base_dict[key], value)
-            else:
-                base_dict[key] = value
+    # Apply section-specific overrides using deep merge
+    if services_overrides:
+        _deep_merge(cast(dict[str, object], base_dict["services"]), services_overrides)
+    if automation_overrides:
+        _deep_merge(cast(dict[str, object], base_dict["automation"]), automation_overrides)
+    if data_collection_overrides:
+        _deep_merge(cast(dict[str, object], base_dict["data_collection"]), data_collection_overrides)
+    if system_overrides:
+        _deep_merge(cast(dict[str, object], base_dict["system"]), system_overrides)
+    if graphs_overrides:
+        _deep_merge(cast(dict[str, object], base_dict["graphs"]), graphs_overrides)
+    if rate_limiting_overrides:
+        _deep_merge(cast(dict[str, object], base_dict["rate_limiting"]), rate_limiting_overrides)
 
     return TGraphBotConfig.model_validate(base_dict)
 
 
-def _set_nested_value(target_dict: dict[str, object], path: str, value: object) -> None:
-    """
-    Set a nested value in a dictionary using dot notation path.
-
-    Args:
-        target_dict: Target dictionary to modify
-        path: Dot-separated path (e.g., "graphs.appearance.colors.tv")
-        value: Value to set
-    """
-    keys = path.split(".")
-    current = target_dict
-    
-    # Navigate to the parent of the target key
-    for key in keys[:-1]:
-        if key not in current:
-            current[key] = {}
-        current = current[key]  # pyright: ignore[reportAssignmentType]
-    
-    # Set the final value
-    current[keys[-1]] = value  # pyright: ignore[reportIndexIssue]
 
 
 def _deep_merge(target: dict[str, object], source: dict[str, object]) -> None:
@@ -301,7 +228,7 @@ def _deep_merge(target: dict[str, object], source: dict[str, object]) -> None:
             and isinstance(target[key], dict)  
             and isinstance(value, dict)
         ):
-            _deep_merge(target[key], value)  # pyright: ignore[reportArgumentType]
+            _deep_merge(cast(dict[str, object], target[key]), value)
         else:
             target[key] = value
 
