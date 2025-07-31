@@ -24,10 +24,10 @@ class TestAsyncThreading:
         # Mock the config manager
         mock_config_manager = MagicMock()
         mock_config = MagicMock()
-        mock_config.TAUTULLI_URL = "http://localhost:8181"
-        mock_config.TAUTULLI_API_KEY = "test_key"
-        mock_config.TIME_RANGE_DAYS = 30
-        mock_config.KEEP_DAYS = 7
+        mock_config.services.tautulli.url = "http://localhost:8181"
+        mock_config.services.tautulli.api_key = "test_key"
+        mock_config.data_collection.time_ranges.days = 30
+        mock_config.automation.data_retention.keep_days = 7
         mock_config_manager.get_current_config.return_value = mock_config  # pyright: ignore[reportAny]
 
         # Create GraphManager instance
@@ -88,10 +88,10 @@ class TestAsyncThreading:
         # Mock the config manager
         mock_config_manager = MagicMock()
         mock_config = MagicMock()
-        mock_config.TAUTULLI_URL = "http://localhost:8181"
-        mock_config.TAUTULLI_API_KEY = "test_key"
-        mock_config.TIME_RANGE_DAYS = 30
-        mock_config.KEEP_DAYS = 7
+        mock_config.services.tautulli.url = "http://localhost:8181"
+        mock_config.services.tautulli.api_key = "test_key"
+        mock_config.data_collection.time_ranges.days = 30
+        mock_config.automation.data_retention.keep_days = 7
         mock_config_manager.get_current_config.return_value = mock_config  # pyright: ignore[reportAny]
 
         # Create UserGraphManager instance
@@ -158,7 +158,7 @@ class TestAsyncThreading:
         # Mock the config manager
         mock_config_manager = MagicMock()
         mock_config = MagicMock()
-        mock_config.KEEP_DAYS = 7
+        mock_config.automation.data_retention.keep_days = 7
         mock_config_manager.get_current_config.return_value = mock_config  # pyright: ignore[reportAny]
 
         # Create GraphManager instance
@@ -186,9 +186,9 @@ class TestAsyncThreading:
         # Mock the config manager
         mock_config_manager = MagicMock()
         mock_config = MagicMock()
-        mock_config.TAUTULLI_URL = "http://localhost:8181"
-        mock_config.TAUTULLI_API_KEY = "test_key"
-        mock_config.TIME_RANGE_DAYS = 30
+        mock_config.services.tautulli.url = "http://localhost:8181"
+        mock_config.services.tautulli.api_key = "test_key"
+        mock_config.data_collection.time_ranges.days = 30
         mock_config_manager.get_current_config.return_value = mock_config  # pyright: ignore[reportAny]
 
         graph_manager = GraphManager(mock_config_manager)

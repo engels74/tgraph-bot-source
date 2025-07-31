@@ -24,6 +24,7 @@ from tests.utils.graph_helpers import (
     create_graph_factory_with_config,
     matplotlib_cleanup,
 )
+from tests.utils.test_helpers import create_test_config_with_overrides
 
 if TYPE_CHECKING:
     from src.tgraph_bot.config.schema import TGraphBotConfig
@@ -36,16 +37,14 @@ class TestPalettePriorityIntegration:
         """Test that custom palettes override media type separation across all graph types."""
         with matplotlib_cleanup():
             # Create config with both palette and media type separation enabled
-            config = TGraphBotConfig(
+            config = create_test_config_with_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
                 CHANNEL_ID=123456789,
-                # Enable media type separation
                 ENABLE_MEDIA_TYPE_SEPARATION=True,
-                TV_COLOR="#ff0000",  # Red
-                MOVIE_COLOR="#00ff00",  # Green
-                # Configure palettes for all graph types (should override separation)
+                TV_COLOR="#ff0000",  # Red,
+                MOVIE_COLOR="#00ff00",  # Green,
                 DAILY_PLAY_COUNT_PALETTE="viridis",
                 PLAY_COUNT_BY_DAYOFWEEK_PALETTE="plasma",
                 PLAY_COUNT_BY_HOUROFDAY_PALETTE="inferno",
@@ -109,16 +108,14 @@ class TestPalettePriorityIntegration:
         """Test that media type separation works when no custom palettes are configured."""
         with matplotlib_cleanup():
             # Create config with only media type separation enabled
-            config = TGraphBotConfig(
+            config = create_test_config_with_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
                 CHANNEL_ID=123456789,
-                # Enable media type separation
                 ENABLE_MEDIA_TYPE_SEPARATION=True,
-                TV_COLOR="#ff0000",  # Red
-                MOVIE_COLOR="#00ff00",  # Green
-                # No palettes configured
+                TV_COLOR="#ff0000",  # Red,
+                MOVIE_COLOR="#00ff00",  # Green,
             )
 
             factory = create_graph_factory_with_config(config)
@@ -156,12 +153,11 @@ class TestPalettePriorityIntegration:
         """Test that default colors are used when no palettes or separation are configured."""
         with matplotlib_cleanup():
             # Create minimal config with no color customizations
-            config = TGraphBotConfig(
+            config = create_test_config_with_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
                 CHANNEL_ID=123456789,
-                # No color configurations
             )
 
             factory = create_graph_factory_with_config(config)
@@ -192,16 +188,14 @@ class TestPalettePriorityIntegration:
         """Test that empty/invalid palettes fall back to media type separation."""
         with matplotlib_cleanup():
             # Create config with empty palettes and media type separation
-            config = TGraphBotConfig(
+            config = create_test_config_with_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
                 CHANNEL_ID=123456789,
-                # Enable media type separation
                 ENABLE_MEDIA_TYPE_SEPARATION=True,
-                TV_COLOR="#ff0000",  # Red
+                TV_COLOR="#ff0000",  # Red,
                 MOVIE_COLOR="#00ff00",  # Green
-                # Configure empty/invalid palettes (should fall back to separation)
                 DAILY_PLAY_COUNT_PALETTE="",
                 PLAY_COUNT_BY_DAYOFWEEK_PALETTE="   ",  # Whitespace only
                 PLAY_COUNT_BY_HOUROFDAY_PALETTE="invalid_palette_name",
@@ -236,13 +230,13 @@ class TestPalettePriorityIntegration:
             invalid_palettes = ["", "   ", "not_a_palette", "123invalid"]
             
             for palette in valid_palettes:
-                config = TGraphBotConfig(
-                    DISCORD_TOKEN="test_token",
-                    TAUTULLI_API_KEY="test_key",
-                    TAUTULLI_URL="http://test.local",
-                    CHANNEL_ID=123456789,
-                    DAILY_PLAY_COUNT_PALETTE=palette,
-                )
+                config = create_test_config_with_overrides(
+                DISCORD_TOKEN="test_token",
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://test.local",
+                CHANNEL_ID=123456789,
+                DAILY_PLAY_COUNT_PALETTE=palette,
+            )
                 
                 factory = create_graph_factory_with_config(config)
                 graph = factory.create_graph_by_type("daily_play_count")
@@ -258,14 +252,14 @@ class TestPalettePriorityIntegration:
                 graph.cleanup()
             
             for palette in invalid_palettes:
-                config = TGraphBotConfig(
-                    DISCORD_TOKEN="test_token",
-                    TAUTULLI_API_KEY="test_key",
-                    TAUTULLI_URL="http://test.local",
-                    CHANNEL_ID=123456789,
-                    ENABLE_MEDIA_TYPE_SEPARATION=True,
-                    DAILY_PLAY_COUNT_PALETTE=palette,
-                )
+                config = create_test_config_with_overrides(
+                DISCORD_TOKEN="test_token",
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://test.local",
+                CHANNEL_ID=123456789,
+                ENABLE_MEDIA_TYPE_SEPARATION=True,
+                DAILY_PLAY_COUNT_PALETTE=palette,
+            )
                 
                 factory = create_graph_factory_with_config(config)
                 graph = factory.create_graph_by_type("daily_play_count")
@@ -281,16 +275,14 @@ class TestPalettePriorityIntegration:
         """Test that existing configurations without palettes continue to work."""
         with matplotlib_cleanup():
             # Simulate old configuration style (before palette priority system)
-            old_style_config = TGraphBotConfig(
+            old_style_config = create_test_config_with_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
                 CHANNEL_ID=123456789,
-                # Old style: only media type separation
                 ENABLE_MEDIA_TYPE_SEPARATION=True,
                 TV_COLOR="#1f77b4",  # Default blue
                 MOVIE_COLOR="#ff7f0e",  # Default orange
-                # No palette configurations (old style)
             )
             
             factory = create_graph_factory_with_config(old_style_config)
@@ -317,29 +309,29 @@ class TestPalettePriorityIntegration:
             # across different configurations
             
             configs = {
-                "palette": TGraphBotConfig(
-                    DISCORD_TOKEN="test_token",
-                    TAUTULLI_API_KEY="test_key",
-                    TAUTULLI_URL="http://test.local",
-                    CHANNEL_ID=123456789,
-                    DAILY_PLAY_COUNT_PALETTE="Set1",
-                ),
-                "separation": TGraphBotConfig(
-                    DISCORD_TOKEN="test_token",
-                    TAUTULLI_API_KEY="test_key",
-                    TAUTULLI_URL="http://test.local",
-                    CHANNEL_ID=123456789,
-                    ENABLE_MEDIA_TYPE_SEPARATION=True,
-                    TV_COLOR="#ff0000",
-                    MOVIE_COLOR="#00ff00",
-                ),
-                "default": TGraphBotConfig(
-                    DISCORD_TOKEN="test_token",
-                    TAUTULLI_API_KEY="test_key",
-                    TAUTULLI_URL="http://test.local",
-                    CHANNEL_ID=123456789,
-                    ENABLE_MEDIA_TYPE_SEPARATION=False,
-                ),
+                "palette": create_test_config_with_overrides(
+                DISCORD_TOKEN="test_token",
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://test.local",
+                CHANNEL_ID=123456789,
+                DAILY_PLAY_COUNT_PALETTE="Set1",
+            ),
+                "separation": create_test_config_with_overrides(
+                DISCORD_TOKEN="test_token",
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://test.local",
+                CHANNEL_ID=123456789,
+                ENABLE_MEDIA_TYPE_SEPARATION=True,
+                TV_COLOR="#ff0000",
+                MOVIE_COLOR="#00ff00",
+            ),
+                "default": create_test_config_with_overrides(
+                DISCORD_TOKEN="test_token",
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://test.local",
+                CHANNEL_ID=123456789,
+                ENABLE_MEDIA_TYPE_SEPARATION=False,
+            ),
             }
             
             for config_type, config in configs.items():

@@ -21,9 +21,9 @@ def mock_config_manager() -> Mock:
     """Create a mock config manager with test configuration."""
     config_manager = Mock(spec=ConfigManager)
     mock_config = Mock()
-    mock_config.UPDATE_DAYS = 1
-    mock_config.FIXED_UPDATE_TIME = "23:59"
-    mock_config.DISCORD_TIMESTAMP_FORMAT = "F"
+    mock_config.automation.scheduling.update_days = 1
+    mock_config.automation.scheduling.fixed_update_time = "23:59"
+    mock_config.services.discord.timestamp_format = "F"
     config_manager.get_current_config.return_value = mock_config  # pyright: ignore[reportAny]
     return config_manager
 

@@ -12,6 +12,8 @@ import pytest
 
 from src.tgraph_bot.graphs.graph_modules import GraphFactory
 from src.tgraph_bot.config.schema import TGraphBotConfig
+from tests.utils.test_helpers import create_test_config_with_overrides
+
 
 
 class TestGraphFactory:
@@ -219,15 +221,15 @@ class TestGraphFactory:
 
     def test_graph_dimensions_extraction(self) -> None:
         """Test graph dimensions extraction from configuration."""
-        config = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token",
-            CHANNEL_ID=123456789,
-            GRAPH_WIDTH=15,
-            GRAPH_HEIGHT=10,
-            GRAPH_DPI=150,
-        )
+        config = create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_api_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_discord_token",
+                CHANNEL_ID=123456789,
+                GRAPH_WIDTH=15,
+                GRAPH_HEIGHT=10,
+                GRAPH_DPI=150,
+            )
         factory = GraphFactory(config)
 
         # Access private method for testing
@@ -463,14 +465,14 @@ class TestGraphFactory:
 
     def test_config_accessor_integration(self) -> None:
         """Test that ConfigAccessor is properly integrated."""
-        config = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token",
-            CHANNEL_ID=123456789,
-            ENABLE_DAILY_PLAY_COUNT=True,
-            ENABLE_TOP_10_USERS=False,
-        )
+        config = create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_api_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_discord_token",
+                CHANNEL_ID=123456789,
+                ENABLE_DAILY_PLAY_COUNT=True,
+                ENABLE_TOP_10_USERS=False,
+            )
         factory = GraphFactory(config)
 
         # Test that the factory uses ConfigAccessor properly
@@ -499,15 +501,15 @@ class TestGraphFactory:
 
     def test_create_graph_by_type_with_dimensions(self) -> None:
         """Test that created graphs receive proper dimensions from config."""
-        config = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token",
-            CHANNEL_ID=123456789,
-            GRAPH_WIDTH=15,
-            GRAPH_HEIGHT=10,
-            GRAPH_DPI=150,
-        )
+        config = create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_api_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_discord_token",
+                CHANNEL_ID=123456789,
+                GRAPH_WIDTH=15,
+                GRAPH_HEIGHT=10,
+                GRAPH_DPI=150,
+            )
         factory = GraphFactory(config)
 
         # Create a graph and verify dimensions
@@ -518,21 +520,21 @@ class TestGraphFactory:
 
     def test_create_enabled_graphs_with_dimensions(self) -> None:
         """Test that enabled graphs receive proper dimensions from config."""
-        config = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token",
-            CHANNEL_ID=123456789,
-            ENABLE_DAILY_PLAY_COUNT=True,
-            ENABLE_PLAY_COUNT_BY_DAYOFWEEK=False,
-            ENABLE_PLAY_COUNT_BY_HOUROFDAY=False,
-            ENABLE_PLAY_COUNT_BY_MONTH=False,
-            ENABLE_TOP_10_PLATFORMS=False,
-            ENABLE_TOP_10_USERS=False,
-            GRAPH_WIDTH=20,
-            GRAPH_HEIGHT=12,
-            GRAPH_DPI=200,
-        )
+        config = create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_api_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_discord_token",
+                CHANNEL_ID=123456789,
+                ENABLE_DAILY_PLAY_COUNT=True,
+                ENABLE_PLAY_COUNT_BY_DAYOFWEEK=False,
+                ENABLE_PLAY_COUNT_BY_HOUROFDAY=False,
+                ENABLE_PLAY_COUNT_BY_MONTH=False,
+                ENABLE_TOP_10_PLATFORMS=False,
+                ENABLE_TOP_10_USERS=False,
+                GRAPH_WIDTH=20,
+                GRAPH_HEIGHT=12,
+                GRAPH_DPI=200,
+            )
         factory = GraphFactory(config)
 
         # Create enabled graphs and verify dimensions

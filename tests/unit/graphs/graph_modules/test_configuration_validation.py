@@ -99,21 +99,21 @@ class TestConfigurationValidation:
         minimal_config = create_test_config_minimal()
 
         # Check that defaults are applied
-        assert minimal_config.UPDATE_DAYS == 7  # Default value
-        assert minimal_config.KEEP_DAYS == 7  # Default value
-        assert minimal_config.TIME_RANGE_DAYS == 30  # Default value
-        assert minimal_config.ENABLE_DAILY_PLAY_COUNT is True  # Default value
-        assert minimal_config.TV_COLOR == "#1f77b4"  # Default value
-        assert minimal_config.MOVIE_COLOR == "#ff7f0e"  # Default value
+        assert minimal_config.automation.scheduling.update_days == 7  # Default value
+        assert minimal_config.automation.data_retention.keep_days == 7  # Default value
+        assert minimal_config.data_collection.time_ranges.days == 30  # Default value
+        assert minimal_config.graphs.features.enabled_types.daily_play_count is True  # Default value
+        assert minimal_config.graphs.appearance.colors.tv == "#1f77b4"  # Default value
+        assert minimal_config.graphs.appearance.colors.movie == "#ff7f0e"  # Default value
 
     def test_configuration_access_patterns(self) -> None:
         """Test different patterns of accessing configuration values."""
         config = create_test_config_comprehensive()
 
         # Test direct access
-        assert config.TV_COLOR == "#2e86ab"
-        assert config.MOVIE_COLOR == "#a23b72"
-        assert config.ENABLE_DAILY_PLAY_COUNT is True
+        assert config.graphs.appearance.colors.tv == "#2e86ab"
+        assert config.graphs.appearance.colors.movie == "#a23b72"
+        assert config.graphs.features.enabled_types.daily_play_count is True
 
         # Test through ConfigAccessor
         accessor = ConfigAccessor(config)
@@ -134,9 +134,9 @@ class TestConfigurationValidation:
         graph = ConfigTestGraph(config=config)
 
         # Test inherited values
-        assert graph.get_tv_color() == config.TV_COLOR
-        assert graph.get_movie_color() == config.MOVIE_COLOR
-        assert graph.background_color == config.GRAPH_BACKGROUND_COLOR
+        assert graph.get_tv_color() == config.graphs.appearance.colors.tv
+        assert graph.get_movie_color() == config.graphs.appearance.colors.movie
+        assert graph.background_color == config.graphs.appearance.colors.background
 
         # Test that None config uses defaults
         graph_no_config = ConfigTestGraph()
@@ -169,9 +169,9 @@ class TestConfigurationValidation:
         privacy_config = create_test_config_privacy_focused()
 
         # Test privacy settings
-        assert privacy_config.CENSOR_USERNAMES is True
-        assert privacy_config.ENABLE_TOP_10_USERS is False
-        assert privacy_config.ANNOTATE_TOP_10_USERS is False
+        assert privacy_config.data_collection.privacy.censor_usernames is True
+        assert privacy_config.graphs.features.enabled_types.top_10_users is False
+        assert privacy_config.graphs.appearance.annotations.enabled_on.top_10_users is False
 
         # Test that privacy config works with graphs
         graph = ConfigTestGraph(config=privacy_config)
@@ -276,12 +276,12 @@ class TestConfigurationValidation:
         assert graph.is_annotation_outline_enabled() is True
 
         # Test individual graph annotation settings
-        assert config.ANNOTATE_DAILY_PLAY_COUNT is True
-        assert config.ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK is True
-        assert config.ANNOTATE_PLAY_COUNT_BY_HOUROFDAY is True
-        assert config.ANNOTATE_TOP_10_PLATFORMS is True
-        assert config.ANNOTATE_TOP_10_USERS is True
-        assert config.ANNOTATE_PLAY_COUNT_BY_MONTH is True
+        assert config.graphs.appearance.annotations.enabled_on.daily_play_count is True
+        assert config.graphs.appearance.annotations.enabled_on.play_count_by_dayofweek is True
+        assert config.graphs.appearance.annotations.enabled_on.play_count_by_hourofday is True
+        assert config.graphs.appearance.annotations.enabled_on.top_10_platforms is True
+        assert config.graphs.appearance.annotations.enabled_on.top_10_users is True
+        assert config.graphs.appearance.annotations.enabled_on.play_count_by_month is True
 
     def test_media_type_configuration_validation(self) -> None:
         """Test validation of media type-related configuration."""
@@ -295,20 +295,20 @@ class TestConfigurationValidation:
         assert processor.get_color_for_type("movie") == "#a23b72"
 
         # Test stacked bar chart setting
-        assert config.ENABLE_STACKED_BAR_CHARTS is True
+        assert config.graphs.features.stacked_bar_charts is True
 
     def test_graph_customization_configuration_validation(self) -> None:
         """Test validation of graph customization configuration."""
         config = create_test_config_comprehensive()
 
         # Test grid and background settings
-        assert config.ENABLE_GRAPH_GRID is True
+        assert config.graphs.appearance.grid.enabled is True
         assert (
-            config.GRAPH_BACKGROUND_COLOR == "#f8f9fa"
+            config.graphs.appearance.colors.background == "#f8f9fa"
         )  # Colors are normalized to lowercase
 
         # Test user privacy settings
-        assert config.CENSOR_USERNAMES is True
+        assert config.data_collection.privacy.censor_usernames is True
 
         # Test that these settings are accessible through graphs
         graph = ConfigTestGraph(config=config)
@@ -320,27 +320,27 @@ class TestConfigurationValidation:
         config = create_test_config_comprehensive()
 
         # Test that color values are properly formatted hex strings
-        assert config.TV_COLOR.startswith("#")
-        assert len(config.TV_COLOR) in [4, 7]  # #RGB or #RRGGBB
-        assert config.MOVIE_COLOR.startswith("#")
-        assert len(config.MOVIE_COLOR) in [4, 7]
+        assert config.graphs.appearance.colors.tv.startswith("#")
+        assert len(config.graphs.appearance.colors.tv) in [4, 7]  # #RGB or #RRGGBB
+        assert config.graphs.appearance.colors.movie.startswith("#")
+        assert len(config.graphs.appearance.colors.movie) in [4, 7]
 
         # Test color access through graph
         graph = ConfigTestGraph(config=config)
         tv_color = graph.get_tv_color()
         movie_color = graph.get_movie_color()
 
-        assert tv_color == config.TV_COLOR
-        assert movie_color == config.MOVIE_COLOR
+        assert tv_color == config.graphs.appearance.colors.tv
+        assert movie_color == config.graphs.appearance.colors.movie
 
     def test_boolean_configuration_patterns(self) -> None:
         """Test boolean configuration patterns."""
         config = create_test_config_comprehensive()
 
         # Test that boolean values are properly typed
-        assert isinstance(config.ENABLE_DAILY_PLAY_COUNT, bool)
-        assert isinstance(config.ENABLE_GRAPH_GRID, bool)
-        assert isinstance(config.CENSOR_USERNAMES, bool)
+        assert isinstance(config.graphs.features.enabled_types.daily_play_count, bool)
+        assert isinstance(config.graphs.appearance.grid.enabled, bool)
+        assert isinstance(config.data_collection.privacy.censor_usernames, bool)
 
         # Test boolean access through graph
         graph = ConfigTestGraph(config=config)
@@ -352,25 +352,25 @@ class TestConfigurationValidation:
         config = create_test_config_comprehensive()
 
         # Test that integer values are properly typed and within valid ranges
-        assert isinstance(config.UPDATE_DAYS, int)
-        assert config.UPDATE_DAYS > 0
+        assert isinstance(config.automation.scheduling.update_days, int)
+        assert config.automation.scheduling.update_days > 0
 
-        assert isinstance(config.TIME_RANGE_DAYS, int)
-        assert config.TIME_RANGE_DAYS > 0
+        assert isinstance(config.data_collection.time_ranges.days, int)
+        assert config.data_collection.time_ranges.days > 0
 
-        assert isinstance(config.CHANNEL_ID, int)
-        assert config.CHANNEL_ID > 0
+        assert isinstance(config.services.discord.channel_id, int)
+        assert config.services.discord.channel_id > 0
 
     def test_string_configuration_patterns(self) -> None:
         """Test string configuration patterns."""
         config = create_test_config_comprehensive()
 
         # Test that string values are properly typed and non-empty
-        assert isinstance(config.TAUTULLI_API_KEY, str)
-        assert len(config.TAUTULLI_API_KEY) > 0
+        assert isinstance(config.services.tautulli.api_key, str)
+        assert len(config.services.tautulli.api_key) > 0
 
-        assert isinstance(config.DISCORD_TOKEN, str)
-        assert len(config.DISCORD_TOKEN) > 0
+        assert isinstance(config.services.discord.token, str)
+        assert len(config.services.discord.token) > 0
 
-        assert isinstance(config.TAUTULLI_URL, str)
-        assert config.TAUTULLI_URL.startswith(("http://", "https://"))
+        assert isinstance(config.services.tautulli.url, str)
+        assert config.services.tautulli.url.startswith(("http://", "https://"))

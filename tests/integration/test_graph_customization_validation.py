@@ -20,9 +20,11 @@ from src.tgraph_bot.graphs.graph_modules.core.graph_type_registry import (
 )
 from tests.utils.graph_helpers import (
     create_test_config_minimal,
+    create_test_config_selective,
     create_graph_factory_with_config,
     matplotlib_cleanup,
 )
+from tests.utils.test_helpers import create_test_config_with_overrides
 
 if TYPE_CHECKING:
     from src.tgraph_bot.config.schema import TGraphBotConfig
@@ -57,11 +59,11 @@ class TestGraphCustomizationValidation:
                 config_obj: TGraphBotConfig = graph.config
 
                 # Check the actual colors from comprehensive_config fixture
-                assert config_obj.TV_COLOR == "#ff4444"
-                assert config_obj.MOVIE_COLOR == "#44ff44"
-                assert config_obj.GRAPH_BACKGROUND_COLOR == "#f8f8f8"
-                assert config_obj.ANNOTATION_COLOR == "#4444ff"
-                assert config_obj.ANNOTATION_OUTLINE_COLOR == "#222222"
+                assert config_obj.graphs.appearance.colors.tv == "#ff4444"
+                assert config_obj.graphs.appearance.colors.movie == "#44ff44"
+                assert config_obj.graphs.appearance.colors.background == "#f8f8f8"
+                assert config_obj.graphs.appearance.annotations.basic.color == "#4444ff"
+                assert config_obj.graphs.appearance.annotations.basic.outline_color == "#222222"
 
                 # Verify graph can be instantiated with custom colors
                 assert graph.background_color == "#f8f8f8"
@@ -73,17 +75,13 @@ class TestGraphCustomizationValidation:
         """Test that all feature toggles work correctly."""
         with matplotlib_cleanup():
             # Test all graphs disabled
-            config_all_disabled = TGraphBotConfig(
-                TAUTULLI_API_KEY="test_api_key_here",
-                TAUTULLI_URL="http://localhost:8181/api/v2",
-                DISCORD_TOKEN="test_discord_token_1234567890",
-                CHANNEL_ID=123456789,
-                ENABLE_DAILY_PLAY_COUNT=False,
-                ENABLE_PLAY_COUNT_BY_DAYOFWEEK=False,
-                ENABLE_PLAY_COUNT_BY_HOUROFDAY=False,
-                ENABLE_PLAY_COUNT_BY_MONTH=False,
-                ENABLE_TOP_10_PLATFORMS=False,
-                ENABLE_TOP_10_USERS=False,
+            config_all_disabled = create_test_config_selective(
+                enable_daily_play_count=False,
+                enable_play_count_by_dayofweek=False,
+                enable_play_count_by_hourofday=False,
+                enable_play_count_by_month=False,
+                enable_top_10_platforms=False,
+                enable_top_10_users=False,
             )
 
             factory = create_graph_factory_with_config(config_all_disabled)
@@ -91,17 +89,13 @@ class TestGraphCustomizationValidation:
             assert len(graphs) == 0
 
             # Test selective enabling
-            config_selective = TGraphBotConfig(
-                TAUTULLI_API_KEY="test_api_key_here",
-                TAUTULLI_URL="http://localhost:8181/api/v2",
-                DISCORD_TOKEN="test_discord_token_1234567890",
-                CHANNEL_ID=123456789,
-                ENABLE_DAILY_PLAY_COUNT=True,
-                ENABLE_PLAY_COUNT_BY_DAYOFWEEK=False,
-                ENABLE_PLAY_COUNT_BY_HOUROFDAY=True,
-                ENABLE_PLAY_COUNT_BY_MONTH=False,
-                ENABLE_TOP_10_PLATFORMS=True,
-                ENABLE_TOP_10_USERS=False,
+            config_selective = create_test_config_selective(
+                enable_daily_play_count=True,
+                enable_play_count_by_dayofweek=False,
+                enable_play_count_by_hourofday=True,
+                enable_play_count_by_month=False,
+                enable_top_10_platforms=True,
+                enable_top_10_users=False,
             )
 
             factory = create_graph_factory_with_config(config_selective)
@@ -125,7 +119,7 @@ class TestGraphCustomizationValidation:
         """Test that annotation settings work correctly for all graph types."""
         with matplotlib_cleanup():
             # Test with annotations enabled
-            config_annotations_enabled = TGraphBotConfig(
+            config_annotations_enabled = create_test_config_with_overrides(
                 TAUTULLI_API_KEY="test_api_key_here",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_discord_token_1234567890",
@@ -156,7 +150,7 @@ class TestGraphCustomizationValidation:
                     )
                     annotation_config_obj: TGraphBotConfig = graph.config
 
-                    assert annotation_config_obj.ENABLE_ANNOTATION_OUTLINE is True
+                    assert annotation_config_obj.graphs.appearance.annotations.basic.enable_outline is True
                 finally:
                     graph.cleanup()
 
@@ -164,7 +158,7 @@ class TestGraphCustomizationValidation:
         """Test that grid settings work correctly."""
         with matplotlib_cleanup():
             # Test with grid enabled
-            config_grid_enabled = TGraphBotConfig(
+            config_grid_enabled = create_test_config_with_overrides(
                 TAUTULLI_API_KEY="test_api_key_here",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_discord_token_1234567890",
@@ -181,12 +175,12 @@ class TestGraphCustomizationValidation:
                     "Config should be TGraphBotConfig, not dict"
                 )
                 config_obj: TGraphBotConfig = graph.config
-                assert config_obj.ENABLE_GRAPH_GRID is True
+                assert config_obj.graphs.appearance.grid.enabled is True
             finally:
                 graph.cleanup()
 
             # Test with grid disabled
-            config_grid_disabled = TGraphBotConfig(
+            config_grid_disabled = create_test_config_with_overrides(
                 TAUTULLI_API_KEY="test_api_key_here",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_discord_token_1234567890",
@@ -203,7 +197,7 @@ class TestGraphCustomizationValidation:
                     "Config should be TGraphBotConfig, not dict"
                 )
                 config_obj_disabled: TGraphBotConfig = graph.config
-                assert config_obj_disabled.ENABLE_GRAPH_GRID is False
+                assert config_obj_disabled.graphs.appearance.grid.enabled is False
             finally:
                 graph.cleanup()
 
@@ -211,7 +205,7 @@ class TestGraphCustomizationValidation:
         """Test that username censoring works correctly."""
         with matplotlib_cleanup():
             # Test with censoring enabled
-            config_censor_enabled = TGraphBotConfig(
+            config_censor_enabled = create_test_config_with_overrides(
                 TAUTULLI_API_KEY="test_api_key_here",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_discord_token_1234567890",
@@ -227,7 +221,7 @@ class TestGraphCustomizationValidation:
                 graph.cleanup()
 
             # Test with censoring disabled
-            config_censor_disabled = TGraphBotConfig(
+            config_censor_disabled = create_test_config_with_overrides(
                 TAUTULLI_API_KEY="test_api_key_here",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_discord_token_1234567890",
@@ -273,11 +267,11 @@ class TestGraphCustomizationValidation:
                     )
                     config_obj: TGraphBotConfig = graph.config
 
-                    assert config_obj.TV_COLOR == "#ff4444"
-                    assert config_obj.MOVIE_COLOR == "#44ff44"
-                    assert config_obj.ENABLE_GRAPH_GRID is True
+                    assert config_obj.graphs.appearance.colors.tv == "#ff4444"
+                    assert config_obj.graphs.appearance.colors.movie == "#44ff44"
+                    assert config_obj.graphs.appearance.grid.enabled is True
                     # comprehensive_config has CENSOR_USERNAMES=False
-                    assert config_obj.CENSOR_USERNAMES is False
+                    assert config_obj.data_collection.privacy.censor_usernames is False
                 finally:
                     graph.cleanup()
 
@@ -314,9 +308,9 @@ class TestGraphCustomizationValidation:
         with matplotlib_cleanup():
             config = create_test_config_minimal()
             # Set boolean flags
-            config.ENABLE_GRAPH_GRID = True
-            config.CENSOR_USERNAMES = False
-            config.ENABLE_ANNOTATION_OUTLINE = True
+            config.graphs.appearance.grid.enabled = True
+            config.data_collection.privacy.censor_usernames = False
+            config.graphs.appearance.annotations.basic.enable_outline = True
 
             factory = create_graph_factory_with_config(config)
             graph = factory.create_graph_by_type("daily_play_count")
@@ -329,7 +323,7 @@ class TestGraphCustomizationValidation:
             )
             config_obj: TGraphBotConfig = graph.config
 
-            assert config_obj.ENABLE_ANNOTATION_OUTLINE is True
+            assert config_obj.graphs.appearance.annotations.basic.enable_outline is True
 
             # Test methods that use these flags
             assert graph.get_grid_enabled() is True
@@ -340,7 +334,7 @@ class TestGraphCustomizationValidation:
         """Test that grid enabling is consistent across different graph types."""
         with matplotlib_cleanup():
             config = create_test_config_minimal()
-            config.ENABLE_GRAPH_GRID = True
+            config.graphs.appearance.grid.enabled = True
 
             factory = create_graph_factory_with_config(config)
 
@@ -362,7 +356,7 @@ class TestGraphCustomizationValidation:
                 )
                 config_obj: TGraphBotConfig = graph.config
 
-                assert config_obj.ENABLE_GRAPH_GRID is True
+                assert config_obj.graphs.appearance.grid.enabled is True
                 assert graph.get_grid_enabled() is True
 
                 # Cleanup
@@ -372,7 +366,7 @@ class TestGraphCustomizationValidation:
         """Test that grid disabling is consistent across different graph types."""
         with matplotlib_cleanup():
             config = create_test_config_minimal()
-            config.ENABLE_GRAPH_GRID = False
+            config.graphs.appearance.grid.enabled = False
 
             factory = create_graph_factory_with_config(config)
 
@@ -394,7 +388,7 @@ class TestGraphCustomizationValidation:
                 )
                 config_obj: TGraphBotConfig = graph.config
 
-                assert config_obj.ENABLE_GRAPH_GRID is False
+                assert config_obj.graphs.appearance.grid.enabled is False
                 assert graph.get_grid_enabled() is False
 
                 # Cleanup
@@ -405,8 +399,8 @@ class TestGraphCustomizationValidation:
         with matplotlib_cleanup():
             # Test with stacked bar charts enabled
             config_enabled = create_test_config_minimal()
-            config_enabled.ENABLE_MEDIA_TYPE_SEPARATION = True
-            config_enabled.ENABLE_STACKED_BAR_CHARTS = True
+            config_enabled.graphs.features.media_type_separation = True
+            config_enabled.graphs.features.stacked_bar_charts = True
 
             factory_enabled = create_graph_factory_with_config(config_enabled)
 
@@ -424,7 +418,7 @@ class TestGraphCustomizationValidation:
                 )
                 config_obj: TGraphBotConfig = graph.config
 
-                assert config_obj.ENABLE_STACKED_BAR_CHARTS is True
+                assert config_obj.graphs.features.stacked_bar_charts is True
                 assert graph.get_stacked_bar_charts_enabled() is True
                 assert graph.get_media_type_separation_enabled() is True
 
@@ -433,8 +427,8 @@ class TestGraphCustomizationValidation:
 
             # Test with stacked bar charts disabled
             config_disabled = create_test_config_minimal()
-            config_disabled.ENABLE_MEDIA_TYPE_SEPARATION = True
-            config_disabled.ENABLE_STACKED_BAR_CHARTS = False
+            config_disabled.graphs.features.media_type_separation = True
+            config_disabled.graphs.features.stacked_bar_charts = False
 
             factory_disabled = create_graph_factory_with_config(config_disabled)
 
@@ -449,7 +443,7 @@ class TestGraphCustomizationValidation:
                 )
                 config_obj_disabled: TGraphBotConfig = graph.config
 
-                assert config_obj_disabled.ENABLE_STACKED_BAR_CHARTS is False
+                assert config_obj_disabled.graphs.features.stacked_bar_charts is False
                 assert graph.get_stacked_bar_charts_enabled() is False
                 assert (
                     graph.get_media_type_separation_enabled() is True
@@ -463,7 +457,7 @@ class TestGraphCustomizationValidation:
         with matplotlib_cleanup():
             config = create_test_config_minimal()
             # Enable privacy settings
-            config.CENSOR_USERNAMES = True
+            config.data_collection.privacy.censor_usernames = True
 
             factory = create_graph_factory_with_config(config)
 
@@ -480,7 +474,7 @@ class TestGraphCustomizationValidation:
                 )
                 config_obj: TGraphBotConfig = graph.config
 
-                assert config_obj.CENSOR_USERNAMES is True
+                assert config_obj.data_collection.privacy.censor_usernames is True
                 assert graph.should_censor_usernames() is True
 
                 # Test username formatting
@@ -499,10 +493,10 @@ class TestGraphCustomizationValidation:
         with matplotlib_cleanup():
             config = create_test_config_minimal()
             # Apply comprehensive customizations
-            config.TV_COLOR = "#FF6B6B"
-            config.MOVIE_COLOR = "#4ECDC4"
-            config.ENABLE_GRAPH_GRID = True
-            config.CENSOR_USERNAMES = True
+            config.graphs.appearance.colors.tv = "#FF6B6B"
+            config.graphs.appearance.colors.movie = "#4ECDC4"
+            config.graphs.appearance.grid.enabled = True
+            config.data_collection.privacy.censor_usernames = True
 
             factory = create_graph_factory_with_config(config)
             graph = factory.create_graph_by_type("daily_play_count")
@@ -515,10 +509,10 @@ class TestGraphCustomizationValidation:
                 )
                 config_obj: TGraphBotConfig = graph.config
 
-                assert config_obj.TV_COLOR == "#ff6b6b"  # Normalized to lowercase
-                assert config_obj.MOVIE_COLOR == "#4ecdc4"  # Normalized to lowercase
-                assert config_obj.ENABLE_GRAPH_GRID is True
-                assert config_obj.CENSOR_USERNAMES is True
+                assert config_obj.graphs.appearance.colors.tv == "#ff6b6b"  # Normalized to lowercase
+                assert config_obj.graphs.appearance.colors.movie == "#4ecdc4"  # Normalized to lowercase
+                assert config_obj.graphs.appearance.grid.enabled is True
+                assert config_obj.data_collection.privacy.censor_usernames is True
 
                 # Test that graph methods return expected values
                 assert graph.get_tv_color() == "#ff6b6b"
@@ -534,9 +528,9 @@ class TestGraphCustomizationValidation:
         with matplotlib_cleanup():
             config = create_test_config_minimal()
             # Set annotation customizations with valid colors
-            config.ANNOTATION_COLOR = "#ff0000"  # Valid red color
-            config.ANNOTATION_OUTLINE_COLOR = "#000000"
-            config.ENABLE_ANNOTATION_OUTLINE = True
+            config.graphs.appearance.annotations.basic.color = "#ff0000"  # Valid red color
+            config.graphs.appearance.annotations.basic.outline_color = "#000000"
+            config.graphs.appearance.annotations.basic.enable_outline = True
 
             factory = create_graph_factory_with_config(config)
             graph = factory.create_graph_by_type("daily_play_count")

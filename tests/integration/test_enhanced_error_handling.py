@@ -87,7 +87,7 @@ class TestGraphManagerErrorHandling:
         """Test successful graph generation with retry logic."""
         mock_config_manager = MagicMock()
         mock_config = MagicMock()
-        mock_config.TIME_RANGE_DAYS = 30
+        mock_config.data_collection.time_ranges.days = 30
         mock_config_manager.get_current_config.return_value = mock_config  # pyright: ignore[reportAny]
 
         graph_manager = GraphManager(mock_config_manager)
@@ -134,7 +134,7 @@ class TestGraphManagerErrorHandling:
         """Test graph generation timeout handling."""
         mock_config_manager = MagicMock()
         mock_config = MagicMock()
-        mock_config.TIME_RANGE_DAYS = 30
+        mock_config.data_collection.time_ranges.days = 30
         mock_config_manager.get_current_config.return_value = mock_config  # pyright: ignore[reportAny]
 
         graph_manager = GraphManager(mock_config_manager)
@@ -202,7 +202,7 @@ class TestGraphManagerErrorHandling:
         """Test cleanup operations with timeout handling."""
         mock_config_manager = MagicMock()
         mock_config = MagicMock()
-        mock_config.KEEP_DAYS = 7
+        mock_config.automation.data_retention.keep_days = 7
         mock_config_manager.get_current_config.return_value = mock_config  # pyright: ignore[reportAny]
 
         graph_manager = GraphManager(mock_config_manager)
@@ -228,7 +228,7 @@ class TestUserGraphManagerErrorHandling:
         """Test successful user graph generation with retry logic."""
         mock_config_manager = MagicMock()
         mock_config = MagicMock()
-        mock_config.TIME_RANGE_DAYS = 30
+        mock_config.data_collection.time_ranges.days = 30
         mock_config_manager.get_current_config.return_value = mock_config  # pyright: ignore[reportAny]
 
         user_graph_manager = UserGraphManager(mock_config_manager)

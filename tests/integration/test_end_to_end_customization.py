@@ -156,10 +156,10 @@ class TestEndToEndCustomization:
             enable_top_10_users=True,
         )
         # Override for performance testing
-        config.TIME_RANGE_DAYS = 7
-        config.ANNOTATE_DAILY_PLAY_COUNT = False
-        config.ANNOTATE_PLAY_COUNT_BY_MONTH = False
-        config.ANNOTATE_TOP_10_USERS = False
+        config.data_collection.time_ranges.days = 7
+        config.graphs.appearance.annotations.enabled_on.daily_play_count = False
+        config.graphs.appearance.annotations.enabled_on.play_count_by_month = False
+        config.graphs.appearance.annotations.enabled_on.top_10_users = False
 
         factory = create_graph_factory_with_config(config)
         enabled_types = factory.get_enabled_graph_types()
@@ -170,19 +170,19 @@ class TestEndToEndCustomization:
         assert set(enabled_types) == expected_types
 
         # Verify performance settings are applied
-        assert config.TIME_RANGE_DAYS == 7
+        assert config.data_collection.time_ranges.days == 7
 
     def test_high_contrast_theme_configuration(self) -> None:
         """Test configuration with high contrast theme."""
         config = create_test_config_minimal()
         # Override for high contrast theme
-        config.GRAPH_BACKGROUND_COLOR = "#2b2b2b"
-        config.TV_COLOR = "#00ff00"
-        config.MOVIE_COLOR = "#ff6600"
-        config.ANNOTATION_COLOR = "#ffffff"
-        config.ANNOTATION_OUTLINE_COLOR = "#000000"
-        config.ENABLE_GRAPH_GRID = True
-        config.ENABLE_ANNOTATION_OUTLINE = True
+        config.graphs.appearance.colors.background = "#2b2b2b"
+        config.graphs.appearance.colors.tv = "#00ff00"
+        config.graphs.appearance.colors.movie = "#ff6600"
+        config.graphs.appearance.annotations.basic.color = "#ffffff"
+        config.graphs.appearance.annotations.basic.outline_color = "#000000"
+        config.graphs.appearance.grid.enabled = True
+        config.graphs.appearance.annotations.basic.enable_outline = True
 
         factory = create_graph_factory_with_config(config)
         graph = factory.create_graph_by_type("daily_play_count")
@@ -195,11 +195,11 @@ class TestEndToEndCustomization:
         )
         config_obj: TGraphBotConfig = graph.config
 
-        assert config_obj.GRAPH_BACKGROUND_COLOR == "#2b2b2b"
-        assert config_obj.TV_COLOR == "#00ff00"
-        assert config_obj.MOVIE_COLOR == "#ff6600"
-        assert config_obj.ANNOTATION_COLOR == "#ffffff"
-        assert config_obj.ENABLE_GRAPH_GRID is True
+        assert config_obj.graphs.appearance.colors.background == "#2b2b2b"
+        assert config_obj.graphs.appearance.colors.tv == "#00ff00"
+        assert config_obj.graphs.appearance.colors.movie == "#ff6600"
+        assert config_obj.graphs.appearance.annotations.basic.color == "#ffffff"
+        assert config_obj.graphs.appearance.grid.enabled is True
 
         # Verify graph background is applied
         assert graph.background_color == "#2b2b2b"
@@ -236,9 +236,9 @@ class TestEndToEndCustomization:
         # Test with boundary values
         config = create_test_config_minimal()
         # Override for edge case testing
-        config.UPDATE_DAYS = 1  # Minimum
-        config.KEEP_DAYS = 365  # Maximum
-        config.TIME_RANGE_DAYS = 1  # Minimum
+        config.automation.scheduling.update_days = 1  # Minimum
+        config.automation.data_retention.keep_days = 365  # Maximum
+        config.data_collection.time_ranges.days = 1  # Minimum
 
         factory = create_graph_factory_with_config(config)
         graph = factory.create_graph_by_type("daily_play_count")
@@ -251,6 +251,6 @@ class TestEndToEndCustomization:
         config_obj: TGraphBotConfig = graph.config
 
         # Verify boundary values are accepted
-        assert config_obj.UPDATE_DAYS == 1
-        assert config_obj.KEEP_DAYS == 365
-        assert config_obj.TIME_RANGE_DAYS == 1
+        assert config_obj.automation.scheduling.update_days == 1
+        assert config_obj.automation.data_retention.keep_days == 365
+        assert config_obj.data_collection.time_ranges.days == 1

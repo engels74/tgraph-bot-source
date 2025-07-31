@@ -1,3 +1,5 @@
+from tests.utils.test_helpers import create_test_config_with_overrides
+
 """
 Test helper utilities for TGraph Bot tests.
 
@@ -65,6 +67,214 @@ def create_config_manager_with_config(config: TGraphBotConfig) -> ConfigManager:
     except AttributeError as e:
         msg = f"ConfigManager missing expected methods: {e}"
         raise AttributeError(msg) from e
+
+
+def create_test_config(
+    *,
+    tautulli_api_key: str = "test_api_key",
+    tautulli_url: str = "http://localhost:8181",
+    discord_token: str = "test_discord_token_1234567890",
+    discord_channel_id: int = 123456789012345678,
+) -> TGraphBotConfig:
+    """
+    Create a TGraphBotConfig instance with nested structure for testing.
+
+    This utility function creates a properly structured TGraphBotConfig instance
+    using the new nested configuration schema, with sensible defaults for testing.
+    It replaces the old flat configuration pattern with the modern nested approach.
+
+    Args:
+        tautulli_api_key: API key for Tautulli service
+        tautulli_url: URL for Tautulli service
+        discord_token: Discord bot token
+        discord_channel_id: Discord channel ID
+
+    Returns:
+        TGraphBotConfig: A configured instance with the nested structure
+
+    Raises:
+        ImportError: If configuration schema classes cannot be imported
+
+    Example:
+        >>> # Basic config with defaults
+        >>> config = create_test_config()
+        >>> assert config.services.tautulli.api_key == "test_api_key"
+
+        >>> # Config with custom values
+        >>> config = create_test_config(
+        ...     tautulli_api_key="custom_key",
+        ...     discord_channel_id=999999999
+        ... )
+        >>> assert config.services.tautulli.api_key == "custom_key"
+    """
+    try:
+        from src.tgraph_bot.config.schema import (
+            TGraphBotConfig,
+            ServicesConfig,
+            TautulliConfig,
+            DiscordConfig,
+        )
+    except ImportError as e:
+        msg = f"Failed to import configuration schema: {e}"
+        raise ImportError(msg) from e
+
+    # Create configuration with provided values
+    services_config = ServicesConfig(
+        tautulli=TautulliConfig(
+            api_key=tautulli_api_key,
+            url=tautulli_url,
+        ),
+        discord=DiscordConfig(
+            token=discord_token,
+            channel_id=discord_channel_id,
+        ),
+    )
+
+    # Create the main config with services and defaults for other sections
+    config = TGraphBotConfig(services=services_config)
+
+    return config
+
+
+def create_test_config_with_overrides(**kwargs: object) -> TGraphBotConfig:
+    """
+    Create a TGraphBotConfig with specific overrides for testing.
+
+    This function provides a flexible way to create test configurations
+    by accepting old flat parameter names and converting them to the
+    new nested structure automatically.
+
+    Args:
+        **kwargs: Configuration overrides using old flat names or new nested structure
+
+    Returns:
+        TGraphBotConfig: Configured instance
+
+    Example:
+        >>> config = create_test_config_with_overrides(
+        ...     TAUTULLI_API_KEY="custom_key",
+        ...     ENABLE_DAILY_PLAY_COUNT=False,
+        ...     TV_COLOR="#ff0000"
+        ... )
+    """
+    try:
+        from src.tgraph_bot.config.schema import (
+            TGraphBotConfig, ServicesConfig, TautulliConfig, DiscordConfig,
+            GraphsConfig, GraphFeaturesConfig, EnabledTypesConfig,
+            GraphAppearanceConfig, ColorsConfig, AnnotationsConfig,
+            BasicAnnotationsConfig, EnabledOnConfig, GridConfig,
+            PalettesConfig,
+        )
+    except ImportError as e:
+        msg = f"Failed to import configuration schema: {e}"
+        raise ImportError(msg) from e
+
+    # Extract service configuration
+    tautulli_api_key = str(kwargs.get("TAUTULLI_API_KEY", "test_api_key"))
+    tautulli_url = str(kwargs.get("TAUTULLI_URL", "http://localhost:8181"))
+    discord_token = str(kwargs.get("DISCORD_TOKEN", "test_discord_token_1234567890"))
+    channel_id_value = kwargs.get("CHANNEL_ID", 123456789012345678)
+    discord_channel_id = int(channel_id_value) if isinstance(channel_id_value, (int, str)) else 123456789012345678
+    discord_timestamp_format = str(kwargs.get("DISCORD_TIMESTAMP_FORMAT", "R"))
+
+    # Extract graph feature configuration
+    enable_daily_play_count = bool(kwargs.get("ENABLE_DAILY_PLAY_COUNT", True))
+    enable_play_count_by_dayofweek = bool(kwargs.get("ENABLE_PLAY_COUNT_BY_DAYOFWEEK", True))
+    enable_play_count_by_hourofday = bool(kwargs.get("ENABLE_PLAY_COUNT_BY_HOUROFDAY", True))
+    enable_play_count_by_month = bool(kwargs.get("ENABLE_PLAY_COUNT_BY_MONTH", True))
+    enable_top_10_platforms = bool(kwargs.get("ENABLE_TOP_10_PLATFORMS", True))
+    enable_top_10_users = bool(kwargs.get("ENABLE_TOP_10_USERS", True))
+    enable_media_type_separation = bool(kwargs.get("ENABLE_MEDIA_TYPE_SEPARATION", True))
+    enable_stacked_bar_charts = bool(kwargs.get("ENABLE_STACKED_BAR_CHARTS", True))
+
+    # Extract appearance configuration
+    tv_color = str(kwargs.get("TV_COLOR", "#1f77b4"))
+    movie_color = str(kwargs.get("MOVIE_COLOR", "#ff7f0e"))
+    graph_background_color = str(kwargs.get("GRAPH_BACKGROUND_COLOR", "#ffffff"))
+    enable_graph_grid = bool(kwargs.get("ENABLE_GRAPH_GRID", False))
+
+    # Extract annotation configuration
+    annotation_color = str(kwargs.get("ANNOTATION_COLOR", "#ff0000"))
+    annotation_outline_color = str(kwargs.get("ANNOTATION_OUTLINE_COLOR", "#000000"))
+    enable_annotation_outline = bool(kwargs.get("ENABLE_ANNOTATION_OUTLINE", True))
+    annotate_daily_play_count = bool(kwargs.get("ANNOTATE_DAILY_PLAY_COUNT", True))
+    annotate_play_count_by_dayofweek = bool(kwargs.get("ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK", True))
+    annotate_play_count_by_hourofday = bool(kwargs.get("ANNOTATE_PLAY_COUNT_BY_HOUROFDAY", True))
+    annotate_play_count_by_month = bool(kwargs.get("ANNOTATE_PLAY_COUNT_BY_MONTH", True))
+    annotate_top_10_platforms = bool(kwargs.get("ANNOTATE_TOP_10_PLATFORMS", True))
+    annotate_top_10_users = bool(kwargs.get("ANNOTATE_TOP_10_USERS", True))
+
+    # Extract palette configuration
+    daily_play_count_palette = str(kwargs.get("DAILY_PLAY_COUNT_PALETTE", ""))
+    play_count_by_dayofweek_palette = str(kwargs.get("PLAY_COUNT_BY_DAYOFWEEK_PALETTE", ""))
+    play_count_by_hourofday_palette = str(kwargs.get("PLAY_COUNT_BY_HOUROFDAY_PALETTE", ""))
+    play_count_by_month_palette = str(kwargs.get("PLAY_COUNT_BY_MONTH_PALETTE", ""))
+    top_10_platforms_palette = str(kwargs.get("TOP_10_PLATFORMS_PALETTE", ""))
+    top_10_users_palette = str(kwargs.get("TOP_10_USERS_PALETTE", ""))
+
+    # Build the configuration
+    config = TGraphBotConfig(
+        services=ServicesConfig(
+            tautulli=TautulliConfig(
+                api_key=tautulli_api_key,
+                url=tautulli_url,
+            ),
+            discord=DiscordConfig(
+                token=discord_token,
+                channel_id=discord_channel_id,
+                timestamp_format=discord_timestamp_format,  # pyright: ignore[reportArgumentType]
+            ),
+        ),
+        graphs=GraphsConfig(
+            features=GraphFeaturesConfig(
+                enabled_types=EnabledTypesConfig(
+                    daily_play_count=enable_daily_play_count,
+                    play_count_by_dayofweek=enable_play_count_by_dayofweek,
+                    play_count_by_hourofday=enable_play_count_by_hourofday,
+                    play_count_by_month=enable_play_count_by_month,
+                    top_10_platforms=enable_top_10_platforms,
+                    top_10_users=enable_top_10_users,
+                ),
+                media_type_separation=enable_media_type_separation,
+                stacked_bar_charts=enable_stacked_bar_charts,
+            ),
+            appearance=GraphAppearanceConfig(
+                colors=ColorsConfig(
+                    tv=tv_color,
+                    movie=movie_color,
+                    background=graph_background_color,
+                ),
+                grid=GridConfig(
+                    enabled=enable_graph_grid,
+                ),
+                annotations=AnnotationsConfig(
+                    basic=BasicAnnotationsConfig(
+                        color=annotation_color,
+                        outline_color=annotation_outline_color,
+                        enable_outline=enable_annotation_outline,
+                    ),
+                    enabled_on=EnabledOnConfig(
+                        daily_play_count=annotate_daily_play_count,
+                        play_count_by_dayofweek=annotate_play_count_by_dayofweek,
+                        play_count_by_hourofday=annotate_play_count_by_hourofday,
+                        play_count_by_month=annotate_play_count_by_month,
+                        top_10_platforms=annotate_top_10_platforms,
+                        top_10_users=annotate_top_10_users,
+                    ),
+                ),
+                palettes=PalettesConfig(
+                    daily_play_count=daily_play_count_palette,
+                    play_count_by_dayofweek=play_count_by_dayofweek_palette,
+                    play_count_by_hourofday=play_count_by_hourofday_palette,
+                    play_count_by_month=play_count_by_month_palette,
+                    top_10_platforms=top_10_platforms_palette,
+                    top_10_users=top_10_users_palette,
+                ),
+            ),
+        ),
+    )
+
+    return config
 
 
 @contextmanager
@@ -697,7 +907,9 @@ def assert_config_values_match(
         AssertionError: If any configuration values don't match expectations
 
     Example:
-        >>> config = TGraphBotConfig(TAUTULLI_API_KEY="test_key", ...)
+        >>> config = create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_key", ...,
+            )
         >>> assert_config_values_match(config, {
         ...     "TAUTULLI_API_KEY": "test_key",
         ...     "UPDATE_DAYS": 7,

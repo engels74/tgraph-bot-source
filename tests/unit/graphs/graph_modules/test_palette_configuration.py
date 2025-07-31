@@ -1,3 +1,5 @@
+from tests.utils.test_helpers import create_test_config_with_overrides
+
 """
 Test cases for color palette configuration functionality.
 
@@ -41,15 +43,15 @@ class TestPaletteConfiguration:
     def test_graph_specific_palette_application(self) -> None:
         """Test that each graph type returns only its own specific palette."""
         # Configure both palettes with different values
-        config = TGraphBotConfig(
-            DISCORD_TOKEN="test_token",
-            TAUTULLI_API_KEY="test_key",
-            TAUTULLI_URL="http://test.local",
-            CHANNEL_ID=123456789,
-            PLAY_COUNT_BY_HOUROFDAY_PALETTE="viridis",
-            TOP_10_USERS_PALETTE="plasma",
-            ENABLE_MEDIA_TYPE_SEPARATION=True,
-        )
+        config = create_test_config_with_overrides(
+                DISCORD_TOKEN="test_token",
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://test.local",
+                CHANNEL_ID=123456789,
+                PLAY_COUNT_BY_HOUROFDAY_PALETTE="viridis",
+                TOP_10_USERS_PALETTE="plasma",
+                ENABLE_MEDIA_TYPE_SEPARATION=True,
+            )
 
         # Test hourly graph returns viridis
         hourly_graph = PlayCountByHourOfDayGraph(config=config)
@@ -62,15 +64,15 @@ class TestPaletteConfiguration:
     def test_single_graph_palette_does_not_affect_other_graphs(self) -> None:
         """Test that configuring one graph's palette doesn't affect others."""
         # Configure only the hourly palette, not the users palette
-        config = TGraphBotConfig(
-            DISCORD_TOKEN="test_token",
-            TAUTULLI_API_KEY="test_key",
-            TAUTULLI_URL="http://test.local",
-            CHANNEL_ID=123456789,
-            PLAY_COUNT_BY_HOUROFDAY_PALETTE="viridis",
-            TOP_10_USERS_PALETTE="",  # Empty - no palette configured
-            ENABLE_MEDIA_TYPE_SEPARATION=True,
-        )
+        config = create_test_config_with_overrides(
+                DISCORD_TOKEN="test_token",
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://test.local",
+                CHANNEL_ID=123456789,
+                PLAY_COUNT_BY_HOUROFDAY_PALETTE="viridis",
+                TOP_10_USERS_PALETTE="",  # Empty - no palette configured,
+                ENABLE_MEDIA_TYPE_SEPARATION=True,
+            )
 
         # Hourly graph should return viridis
         hourly_graph = PlayCountByHourOfDayGraph(config=config)
@@ -83,24 +85,24 @@ class TestPaletteConfiguration:
     def test_get_user_configured_palette_method(self) -> None:
         """Test the get_user_configured_palette method works correctly."""
         # Test with configured palette
-        config_with_palette = TGraphBotConfig(
-            DISCORD_TOKEN="test_token",
-            TAUTULLI_API_KEY="test_key",
-            TAUTULLI_URL="http://test.local",
-            CHANNEL_ID=123456789,
-            PLAY_COUNT_BY_HOUROFDAY_PALETTE="viridis",
-        )
+        config_with_palette = create_test_config_with_overrides(
+                DISCORD_TOKEN="test_token",
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://test.local",
+                CHANNEL_ID=123456789,
+                PLAY_COUNT_BY_HOUROFDAY_PALETTE="viridis",
+            )
         graph_with_palette = PlayCountByHourOfDayGraph(config=config_with_palette)
         assert graph_with_palette.get_user_configured_palette() == "viridis"
 
         # Test with empty palette
-        config_no_palette = TGraphBotConfig(
-            DISCORD_TOKEN="test_token",
-            TAUTULLI_API_KEY="test_key",
-            TAUTULLI_URL="http://test.local",
-            CHANNEL_ID=123456789,
-            PLAY_COUNT_BY_HOUROFDAY_PALETTE="",
-        )
+        config_no_palette = create_test_config_with_overrides(
+                DISCORD_TOKEN="test_token",
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://test.local",
+                CHANNEL_ID=123456789,
+                PLAY_COUNT_BY_HOUROFDAY_PALETTE="",
+            )
         graph_no_palette = PlayCountByHourOfDayGraph(config=config_no_palette)
         assert graph_no_palette.get_user_configured_palette() is None
 
@@ -111,19 +113,18 @@ class TestPaletteConfiguration:
     def test_all_graph_types_palette_configuration(self) -> None:
         """Test palette configuration for all graph types after Phase 4 implementation."""
         # Test configuration with all palette types - this test will pass after Phase 4
-        config = TGraphBotConfig(
-            DISCORD_TOKEN="test_token",
-            TAUTULLI_API_KEY="test_key",
-            TAUTULLI_URL="http://test.local",
-            CHANNEL_ID=123456789,
-            # All palette configurations should work after Phase 4
-            PLAY_COUNT_BY_HOUROFDAY_PALETTE="viridis",
-            TOP_10_USERS_PALETTE="plasma",
-            DAILY_PLAY_COUNT_PALETTE="inferno",
-            PLAY_COUNT_BY_DAYOFWEEK_PALETTE="magma",
-            TOP_10_PLATFORMS_PALETTE="cividis",
-            PLAY_COUNT_BY_MONTH_PALETTE="turbo",
-        )
+        config = create_test_config_with_overrides(
+                DISCORD_TOKEN="test_token",
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://test.local",
+                CHANNEL_ID=123456789,
+                PLAY_COUNT_BY_HOUROFDAY_PALETTE="viridis",
+                TOP_10_USERS_PALETTE="plasma",
+                DAILY_PLAY_COUNT_PALETTE="inferno",
+                PLAY_COUNT_BY_DAYOFWEEK_PALETTE="magma",
+                TOP_10_PLATFORMS_PALETTE="cividis",
+                PLAY_COUNT_BY_MONTH_PALETTE="turbo",
+            )
 
         # Test all graph types return their configured palettes
         hourly_graph = PlayCountByHourOfDayGraph(config=config)
@@ -147,24 +148,24 @@ class TestPaletteConfiguration:
     def test_palette_precedence_over_default_colors(self) -> None:
         """Test that user-configured palettes take precedence over default media type colors."""
         # Test with palette configured
-        config_with_palette = TGraphBotConfig(
-            DISCORD_TOKEN="test_token",
-            TAUTULLI_API_KEY="test_key",
-            TAUTULLI_URL="http://test.local",
-            CHANNEL_ID=123456789,
-            PLAY_COUNT_BY_HOUROFDAY_PALETTE="viridis",
-            ENABLE_MEDIA_TYPE_SEPARATION=True,
-        )
+        config_with_palette = create_test_config_with_overrides(
+                DISCORD_TOKEN="test_token",
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://test.local",
+                CHANNEL_ID=123456789,
+                PLAY_COUNT_BY_HOUROFDAY_PALETTE="viridis",
+                ENABLE_MEDIA_TYPE_SEPARATION=True,
+            )
 
         # Test without palette configured
-        config_without_palette = TGraphBotConfig(
-            DISCORD_TOKEN="test_token",
-            TAUTULLI_API_KEY="test_key",
-            TAUTULLI_URL="http://test.local",
-            CHANNEL_ID=123456789,
-            PLAY_COUNT_BY_HOUROFDAY_PALETTE="",  # Empty palette
-            ENABLE_MEDIA_TYPE_SEPARATION=True,
-        )
+        config_without_palette = create_test_config_with_overrides(
+                DISCORD_TOKEN="test_token",
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://test.local",
+                CHANNEL_ID=123456789,
+                PLAY_COUNT_BY_HOUROFDAY_PALETTE="",  # Empty palette,
+                ENABLE_MEDIA_TYPE_SEPARATION=True,
+            )
 
         # Graph with palette should return the configured palette
         graph_with_palette = PlayCountByHourOfDayGraph(config=config_with_palette)
@@ -184,7 +185,7 @@ class TestPaletteConfiguration:
                 # Skip None test as it would cause validation error in TGraphBotConfig
                 continue
 
-            config = TGraphBotConfig(
+            config = create_test_config_with_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -206,7 +207,7 @@ class TestPaletteConfiguration:
         valid_palettes = ["viridis", "plasma", "inferno", "magma", "cividis"]
 
         for palette in valid_palettes:
-            config = TGraphBotConfig(
+            config = create_test_config_with_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -225,14 +226,14 @@ class TestPaletteConfiguration:
     def test_graph_specific_palette_isolation(self) -> None:
         """Test that each graph type only returns its own specific palette configuration."""
         # Configure different palettes for different graph types
-        config = TGraphBotConfig(
-            DISCORD_TOKEN="test_token",
-            TAUTULLI_API_KEY="test_key",
-            TAUTULLI_URL="http://test.local",
-            CHANNEL_ID=123456789,
-            PLAY_COUNT_BY_HOUROFDAY_PALETTE="viridis",
-            TOP_10_USERS_PALETTE="plasma",
-        )
+        config = create_test_config_with_overrides(
+                DISCORD_TOKEN="test_token",
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://test.local",
+                CHANNEL_ID=123456789,
+                PLAY_COUNT_BY_HOUROFDAY_PALETTE="viridis",
+                TOP_10_USERS_PALETTE="plasma",
+            )
 
         # Each graph should only return its own palette, not others
         hourly_graph = PlayCountByHourOfDayGraph(config=config)
@@ -253,62 +254,62 @@ class TestPaletteConfiguration:
     def test_new_palette_configurations_individual_testing(self) -> None:
         """Test each new palette configuration individually after Phase 4 implementation."""
         # Test DAILY_PLAY_COUNT_PALETTE
-        daily_config = TGraphBotConfig(
-            DISCORD_TOKEN="test_token",
-            TAUTULLI_API_KEY="test_key",
-            TAUTULLI_URL="http://test.local",
-            CHANNEL_ID=123456789,
-            DAILY_PLAY_COUNT_PALETTE="inferno",
-        )
+        daily_config = create_test_config_with_overrides(
+                DISCORD_TOKEN="test_token",
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://test.local",
+                CHANNEL_ID=123456789,
+                DAILY_PLAY_COUNT_PALETTE="inferno",
+            )
         daily_graph = DailyPlayCountGraph(config=daily_config)
         assert daily_graph.get_user_configured_palette() == "inferno"
 
         # Test PLAY_COUNT_BY_DAYOFWEEK_PALETTE
-        dayofweek_config = TGraphBotConfig(
-            DISCORD_TOKEN="test_token",
-            TAUTULLI_API_KEY="test_key",
-            TAUTULLI_URL="http://test.local",
-            CHANNEL_ID=123456789,
-            PLAY_COUNT_BY_DAYOFWEEK_PALETTE="magma",
-        )
+        dayofweek_config = create_test_config_with_overrides(
+                DISCORD_TOKEN="test_token",
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://test.local",
+                CHANNEL_ID=123456789,
+                PLAY_COUNT_BY_DAYOFWEEK_PALETTE="magma",
+            )
         dayofweek_graph = PlayCountByDayOfWeekGraph(config=dayofweek_config)
         assert dayofweek_graph.get_user_configured_palette() == "magma"
 
         # Test TOP_10_PLATFORMS_PALETTE
-        platforms_config = TGraphBotConfig(
-            DISCORD_TOKEN="test_token",
-            TAUTULLI_API_KEY="test_key",
-            TAUTULLI_URL="http://test.local",
-            CHANNEL_ID=123456789,
-            TOP_10_PLATFORMS_PALETTE="cividis",
-        )
+        platforms_config = create_test_config_with_overrides(
+                DISCORD_TOKEN="test_token",
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://test.local",
+                CHANNEL_ID=123456789,
+                TOP_10_PLATFORMS_PALETTE="cividis",
+            )
         platforms_graph = Top10PlatformsGraph(config=platforms_config)
         assert platforms_graph.get_user_configured_palette() == "cividis"
 
         # Test PLAY_COUNT_BY_MONTH_PALETTE
-        month_config = TGraphBotConfig(
-            DISCORD_TOKEN="test_token",
-            TAUTULLI_API_KEY="test_key",
-            TAUTULLI_URL="http://test.local",
-            CHANNEL_ID=123456789,
-            PLAY_COUNT_BY_MONTH_PALETTE="turbo",
-        )
+        month_config = create_test_config_with_overrides(
+                DISCORD_TOKEN="test_token",
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://test.local",
+                CHANNEL_ID=123456789,
+                PLAY_COUNT_BY_MONTH_PALETTE="turbo",
+            )
         month_graph = PlayCountByMonthGraph(config=month_config)
         assert month_graph.get_user_configured_palette() == "turbo"
 
     def test_new_palette_configurations_empty_values(self) -> None:
         """Test that new palette configurations handle empty values correctly."""
         # Test with empty palette values for new configurations
-        config = TGraphBotConfig(
-            DISCORD_TOKEN="test_token",
-            TAUTULLI_API_KEY="test_key",
-            TAUTULLI_URL="http://test.local",
-            CHANNEL_ID=123456789,
-            DAILY_PLAY_COUNT_PALETTE="",
-            PLAY_COUNT_BY_DAYOFWEEK_PALETTE="   ",
-            TOP_10_PLATFORMS_PALETTE="",
-            PLAY_COUNT_BY_MONTH_PALETTE="",
-        )
+        config = create_test_config_with_overrides(
+                DISCORD_TOKEN="test_token",
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://test.local",
+                CHANNEL_ID=123456789,
+                DAILY_PLAY_COUNT_PALETTE="",
+                PLAY_COUNT_BY_DAYOFWEEK_PALETTE="   ",
+                TOP_10_PLATFORMS_PALETTE="",
+                PLAY_COUNT_BY_MONTH_PALETTE="",
+            )
 
         # All graphs should return None for empty palette values
         daily_graph = DailyPlayCountGraph(config=config)
@@ -325,13 +326,13 @@ class TestPaletteConfiguration:
 
     def test_palette_helper_method_with_valid_palette(self) -> None:
         """Test the get_palette_or_default_color() helper method with valid palette."""
-        config = TGraphBotConfig(
-            DISCORD_TOKEN="test_token",
-            TAUTULLI_API_KEY="test_key",
-            TAUTULLI_URL="http://test.local",
-            CHANNEL_ID=123456789,
-            DAILY_PLAY_COUNT_PALETTE="viridis",
-        )
+        config = create_test_config_with_overrides(
+                DISCORD_TOKEN="test_token",
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://test.local",
+                CHANNEL_ID=123456789,
+                DAILY_PLAY_COUNT_PALETTE="viridis",
+            )
 
         graph = DailyPlayCountGraph(config=config)
         palette, color = graph.get_palette_or_default_color()
@@ -341,13 +342,13 @@ class TestPaletteConfiguration:
 
     def test_palette_helper_method_with_no_palette(self) -> None:
         """Test the get_palette_or_default_color() helper method when no palette is configured."""
-        config = TGraphBotConfig(
-            DISCORD_TOKEN="test_token",
-            TAUTULLI_API_KEY="test_key",
-            TAUTULLI_URL="http://test.local",
-            CHANNEL_ID=123456789,
-            DAILY_PLAY_COUNT_PALETTE="",
-        )
+        config = create_test_config_with_overrides(
+                DISCORD_TOKEN="test_token",
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://test.local",
+                CHANNEL_ID=123456789,
+                DAILY_PLAY_COUNT_PALETTE="",
+            )
 
         graph = DailyPlayCountGraph(config=config)
         palette, color = graph.get_palette_or_default_color()
@@ -357,13 +358,13 @@ class TestPaletteConfiguration:
 
     def test_palette_helper_method_with_invalid_palette(self) -> None:
         """Test the get_palette_or_default_color() helper method with invalid palette."""
-        config = TGraphBotConfig(
-            DISCORD_TOKEN="test_token",
-            TAUTULLI_API_KEY="test_key",
-            TAUTULLI_URL="http://test.local",
-            CHANNEL_ID=123456789,
-            DAILY_PLAY_COUNT_PALETTE="invalid_palette_name",
-        )
+        config = create_test_config_with_overrides(
+                DISCORD_TOKEN="test_token",
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://test.local",
+                CHANNEL_ID=123456789,
+                DAILY_PLAY_COUNT_PALETTE="invalid_palette_name",
+            )
 
         graph = DailyPlayCountGraph(config=config)
         palette, color = graph.get_palette_or_default_color()
@@ -373,18 +374,18 @@ class TestPaletteConfiguration:
 
     def test_palette_helper_method_for_all_graph_types(self) -> None:
         """Test the get_palette_or_default_color() helper method works for all graph types."""
-        config = TGraphBotConfig(
-            DISCORD_TOKEN="test_token",
-            TAUTULLI_API_KEY="test_key",
-            TAUTULLI_URL="http://test.local",
-            CHANNEL_ID=123456789,
-            PLAY_COUNT_BY_HOUROFDAY_PALETTE="viridis",
-            TOP_10_USERS_PALETTE="plasma",
-            DAILY_PLAY_COUNT_PALETTE="inferno",
-            PLAY_COUNT_BY_DAYOFWEEK_PALETTE="magma",
-            TOP_10_PLATFORMS_PALETTE="cividis",
-            PLAY_COUNT_BY_MONTH_PALETTE="turbo",
-        )
+        config = create_test_config_with_overrides(
+                DISCORD_TOKEN="test_token",
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://test.local",
+                CHANNEL_ID=123456789,
+                PLAY_COUNT_BY_HOUROFDAY_PALETTE="viridis",
+                TOP_10_USERS_PALETTE="plasma",
+                DAILY_PLAY_COUNT_PALETTE="inferno",
+                PLAY_COUNT_BY_DAYOFWEEK_PALETTE="magma",
+                TOP_10_PLATFORMS_PALETTE="cividis",
+                PLAY_COUNT_BY_MONTH_PALETTE="turbo",
+            )
 
         # Test all graph types return correct palette and color
         test_cases = [
@@ -428,7 +429,7 @@ class TestPaletteConfiguration:
         """Test that combined modes actually use configured palettes when calling seaborn."""
         # Create config with palette configured - use explicit construction to avoid type issues
         if palette_config == "DAILY_PLAY_COUNT_PALETTE":
-            config = TGraphBotConfig(
+            config = create_test_config_with_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -436,7 +437,7 @@ class TestPaletteConfiguration:
                 DAILY_PLAY_COUNT_PALETTE="viridis",
             )
         elif palette_config == "PLAY_COUNT_BY_DAYOFWEEK_PALETTE":
-            config = TGraphBotConfig(
+            config = create_test_config_with_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -444,7 +445,7 @@ class TestPaletteConfiguration:
                 PLAY_COUNT_BY_DAYOFWEEK_PALETTE="viridis",
             )
         elif palette_config == "PLAY_COUNT_BY_MONTH_PALETTE":
-            config = TGraphBotConfig(
+            config = create_test_config_with_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -452,7 +453,7 @@ class TestPaletteConfiguration:
                 PLAY_COUNT_BY_MONTH_PALETTE="viridis",
             )
         elif palette_config == "TOP_10_PLATFORMS_PALETTE":
-            config = TGraphBotConfig(
+            config = create_test_config_with_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -460,7 +461,7 @@ class TestPaletteConfiguration:
                 TOP_10_PLATFORMS_PALETTE="viridis",
             )
         elif palette_config == "PLAY_COUNT_BY_HOUROFDAY_PALETTE":
-            config = TGraphBotConfig(
+            config = create_test_config_with_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -468,7 +469,7 @@ class TestPaletteConfiguration:
                 PLAY_COUNT_BY_HOUROFDAY_PALETTE="viridis",
             )
         else:  # TOP_10_USERS_PALETTE
-            config = TGraphBotConfig(
+            config = create_test_config_with_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -558,12 +559,12 @@ class TestPaletteConfiguration:
     ) -> None:
         """Test that combined modes use default colors when no palette is configured."""
         # Create config without palette
-        config = TGraphBotConfig(
-            DISCORD_TOKEN="test_token",
-            TAUTULLI_API_KEY="test_key",
-            TAUTULLI_URL="http://test.local",
-            CHANNEL_ID=123456789,
-        )
+        config = create_test_config_with_overrides(
+                DISCORD_TOKEN="test_token",
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://test.local",
+                CHANNEL_ID=123456789,
+            )
 
         graph = graph_class(config=config)
         expected_color = graph.get_tv_color()

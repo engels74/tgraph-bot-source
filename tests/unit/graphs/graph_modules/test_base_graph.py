@@ -24,7 +24,7 @@ from tests.utils.graph_helpers import (
     assert_graph_properties,
     assert_graph_cleanup,
 )
-from tests.utils.test_helpers import create_temp_directory
+from tests.utils.test_helpers import create_temp_directory, create_test_config_with_overrides
 
 
 class ConcreteGraph(BaseGraph):
@@ -325,24 +325,24 @@ class TestBaseGraph:
         from src.tgraph_bot.config.schema import TGraphBotConfig
 
         # Test with stacked charts enabled
-        config_enabled = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token",
-            CHANNEL_ID=123456789,
-            ENABLE_STACKED_BAR_CHARTS=True,
-        )
+        config_enabled = create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_api_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_discord_token",
+                CHANNEL_ID=123456789,
+                ENABLE_STACKED_BAR_CHARTS=True,
+            )
         graph_enabled = ConcreteGraph(config=config_enabled)
         assert graph_enabled.get_stacked_bar_charts_enabled() is True
 
         # Test with stacked charts disabled
-        config_disabled = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token",
-            CHANNEL_ID=123456789,
-            ENABLE_STACKED_BAR_CHARTS=False,
-        )
+        config_disabled = create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_api_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_discord_token",
+                CHANNEL_ID=123456789,
+                ENABLE_STACKED_BAR_CHARTS=False,
+            )
         graph_disabled = ConcreteGraph(config=config_disabled)
         assert graph_disabled.get_stacked_bar_charts_enabled() is False
 
@@ -357,24 +357,24 @@ class TestBaseGraph:
         from src.tgraph_bot.config.schema import TGraphBotConfig
 
         # Test with media type separation enabled
-        config_enabled = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token",
-            CHANNEL_ID=123456789,
-            ENABLE_MEDIA_TYPE_SEPARATION=True,
-        )
+        config_enabled = create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_api_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_discord_token",
+                CHANNEL_ID=123456789,
+                ENABLE_MEDIA_TYPE_SEPARATION=True,
+            )
         graph_enabled = ConcreteGraph(config=config_enabled)
         assert graph_enabled.get_media_type_separation_enabled() is True
 
         # Test with media type separation disabled
-        config_disabled = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token",
-            CHANNEL_ID=123456789,
-            ENABLE_MEDIA_TYPE_SEPARATION=False,
-        )
+        config_disabled = create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_api_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_discord_token",
+                CHANNEL_ID=123456789,
+                ENABLE_MEDIA_TYPE_SEPARATION=False,
+            )
         graph_disabled = ConcreteGraph(config=config_disabled)
         assert graph_disabled.get_media_type_separation_enabled() is False
 
@@ -531,13 +531,13 @@ class TestBaseGraph:
         """Test get_time_range_days_from_config with configuration."""
         from src.tgraph_bot.config.schema import TGraphBotConfig
 
-        config = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token",
-            CHANNEL_ID=123456789,
-            TIME_RANGE_DAYS=60,
-        )
+        config = create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_api_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_discord_token",
+                CHANNEL_ID=123456789,
+                TIME_RANGE_DAYS=60,
+            )
         graph = ConcreteGraph(config=config)
 
         result = graph.get_time_range_days_from_config()
@@ -560,13 +560,13 @@ class TestBaseGraph:
 
     def test_get_time_range_months_from_config_with_config(self) -> None:
         """Test get_time_range_months_from_config with configuration."""
-        config = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token",
-            CHANNEL_ID=123456789,
-            TIME_RANGE_MONTHS=24,
-        )
+        config = create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_api_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_discord_token",
+                CHANNEL_ID=123456789,
+                TIME_RANGE_MONTHS=24,
+            )
         graph = ConcreteGraph(config=config)
 
         result = graph.get_time_range_months_from_config()
@@ -574,13 +574,13 @@ class TestBaseGraph:
 
     def test_time_range_days_method_consistency(self) -> None:
         """Test that time range days methods are consistent and don't have unnecessary wrappers."""
-        config = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token",
-            CHANNEL_ID=123456789,
-            TIME_RANGE_DAYS=45,
-        )
+        config = create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_api_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_discord_token",
+                CHANNEL_ID=123456789,
+                TIME_RANGE_DAYS=45,
+            )
         graph = ConcreteGraph(config=config)
 
         # Test that the base method works correctly
@@ -619,14 +619,14 @@ class TestBaseGraph:
 
     def test_config_accessor_integration(self) -> None:
         """Test ConfigAccessor integration in BaseGraph."""
-        config = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token",
-            CHANNEL_ID=123456789,
-            ENABLE_MEDIA_TYPE_SEPARATION=True,
-            ENABLE_STACKED_BAR_CHARTS=False,
-        )
+        config = create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_api_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_discord_token",
+                CHANNEL_ID=123456789,
+                ENABLE_MEDIA_TYPE_SEPARATION=True,
+                ENABLE_STACKED_BAR_CHARTS=False,
+            )
         graph = ConcreteGraph(config=config)
 
         # Test ConfigAccessor is properly initialized
@@ -647,12 +647,12 @@ class TestBaseGraph:
 
     def test_media_type_processor_lazy_initialization(self) -> None:
         """Test MediaTypeProcessor lazy initialization."""
-        config = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token",
-            CHANNEL_ID=123456789,
-        )
+        config = create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_api_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_discord_token",
+                CHANNEL_ID=123456789,
+            )
         graph = ConcreteGraph(config=config)
 
         # Initially None
@@ -669,13 +669,13 @@ class TestBaseGraph:
 
     def test_apply_seaborn_style_with_grid(self) -> None:
         """Test apply_seaborn_style with grid enabled."""
-        config = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token",
-            CHANNEL_ID=123456789,
-            ENABLE_GRAPH_GRID=True,
-        )
+        config = create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_api_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_discord_token",
+                CHANNEL_ID=123456789,
+                ENABLE_GRAPH_GRID=True,
+            )
         graph = ConcreteGraph(config=config)
         _ = graph.setup_figure()
 
@@ -687,13 +687,13 @@ class TestBaseGraph:
 
     def test_apply_seaborn_style_without_grid(self) -> None:
         """Test apply_seaborn_style with grid disabled."""
-        config = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token",
-            CHANNEL_ID=123456789,
-            ENABLE_GRAPH_GRID=False,
-        )
+        config = create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_api_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_discord_token",
+                CHANNEL_ID=123456789,
+                ENABLE_GRAPH_GRID=False,
+            )
         graph = ConcreteGraph(config=config)
         _ = graph.setup_figure()
 
@@ -706,24 +706,24 @@ class TestBaseGraph:
     def test_get_grid_enabled(self) -> None:
         """Test get_grid_enabled method."""
         # Test with grid enabled
-        config_enabled = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token",
-            CHANNEL_ID=123456789,
-            ENABLE_GRAPH_GRID=True,
-        )
+        config_enabled = create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_api_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_discord_token",
+                CHANNEL_ID=123456789,
+                ENABLE_GRAPH_GRID=True,
+            )
         graph_enabled = ConcreteGraph(config=config_enabled)
         assert graph_enabled.get_grid_enabled() is True
 
         # Test with grid disabled
-        config_disabled = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token",
-            CHANNEL_ID=123456789,
-            ENABLE_GRAPH_GRID=False,
-        )
+        config_disabled = create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_api_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_discord_token",
+                CHANNEL_ID=123456789,
+                ENABLE_GRAPH_GRID=False,
+            )
         graph_disabled = ConcreteGraph(config=config_disabled)
         assert graph_disabled.get_grid_enabled() is False
 
@@ -767,13 +767,13 @@ class TestBaseGraph:
 
     def test_enhanced_title_with_timeframe_days(self) -> None:
         """Test enhanced title generation with days timeframe."""
-        config = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token",
-            CHANNEL_ID=123456789,
-            TIME_RANGE_DAYS=7,
-        )
+        config = create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_api_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_discord_token",
+                CHANNEL_ID=123456789,
+                TIME_RANGE_DAYS=7,
+            )
         graph = ConcreteGraph(config=config)
 
         result = graph.get_enhanced_title_with_timeframe(
@@ -782,13 +782,13 @@ class TestBaseGraph:
         assert result == "Daily Play Count (Last 7 days)"
 
         # Test singular form
-        config_singular = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token",
-            CHANNEL_ID=123456789,
-            TIME_RANGE_DAYS=1,
-        )
+        config_singular = create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_api_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_discord_token",
+                CHANNEL_ID=123456789,
+                TIME_RANGE_DAYS=1,
+            )
         graph_singular = ConcreteGraph(config=config_singular)
 
         result_singular = graph_singular.get_enhanced_title_with_timeframe(
@@ -798,13 +798,13 @@ class TestBaseGraph:
 
     def test_enhanced_title_with_timeframe_months(self) -> None:
         """Test enhanced title generation with months timeframe."""
-        config = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token",
-            CHANNEL_ID=123456789,
-            TIME_RANGE_MONTHS=6,
-        )
+        config = create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_api_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_discord_token",
+                CHANNEL_ID=123456789,
+                TIME_RANGE_MONTHS=6,
+            )
         graph = ConcreteGraph(config=config)
 
         result = graph.get_enhanced_title_with_timeframe(
@@ -813,13 +813,13 @@ class TestBaseGraph:
         assert result == "Monthly Play Count (Last 6 months)"
 
         # Test singular form
-        config_singular = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token",
-            CHANNEL_ID=123456789,
-            TIME_RANGE_MONTHS=1,
-        )
+        config_singular = create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_api_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_discord_token",
+                CHANNEL_ID=123456789,
+                TIME_RANGE_MONTHS=1,
+            )
         graph_singular = ConcreteGraph(config=config_singular)
 
         result_singular = graph_singular.get_enhanced_title_with_timeframe(
@@ -829,13 +829,13 @@ class TestBaseGraph:
 
     def test_add_bar_value_annotation_with_outline(self) -> None:
         """Test add_bar_value_annotation with outline enabled."""
-        config = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token",
-            CHANNEL_ID=123456789,
-            ENABLE_ANNOTATION_OUTLINE=True,
-        )
+        config = create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_api_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_discord_token",
+                CHANNEL_ID=123456789,
+                ENABLE_ANNOTATION_OUTLINE=True,
+            )
         graph = ConcreteGraph(config=config)
         _ = graph.setup_figure()
 
@@ -850,13 +850,13 @@ class TestBaseGraph:
 
     def test_add_bar_value_annotation_without_outline(self) -> None:
         """Test add_bar_value_annotation with outline disabled."""
-        config = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token",
-            CHANNEL_ID=123456789,
-            ENABLE_ANNOTATION_OUTLINE=False,
-        )
+        config = create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_api_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_discord_token",
+                CHANNEL_ID=123456789,
+                ENABLE_ANNOTATION_OUTLINE=False,
+            )
         graph = ConcreteGraph(config=config)
         _ = graph.setup_figure()
 

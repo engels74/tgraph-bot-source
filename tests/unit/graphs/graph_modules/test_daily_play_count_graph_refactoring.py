@@ -28,7 +28,7 @@ class TestDailyPlayCountGraphRefactoring:
     def test_time_range_days_method_behavior_before_refactoring(self) -> None:
         """Test current wrapper method behavior (to be eliminated)."""
         config = create_test_config_minimal()
-        config.TIME_RANGE_DAYS = 60
+        config.data_collection.time_ranges.days = 60
 
         graph = DailyPlayCountGraph(config=config)
 
@@ -53,7 +53,7 @@ class TestDailyPlayCountGraphRefactoring:
     def test_time_range_days_direct_base_method_usage(self) -> None:
         """Test that base method can be used directly (post-refactoring behavior)."""
         config = create_test_config_minimal()
-        config.TIME_RANGE_DAYS = 90
+        config.data_collection.time_ranges.days = 90
 
         graph = DailyPlayCountGraph(config=config)
 
@@ -157,7 +157,7 @@ class TestDailyPlayCountGraphRefactoring:
     def test_refactoring_maintains_functionality(self) -> None:
         """Test that refactoring maintains all original functionality."""
         config = create_test_config_minimal()
-        config.TIME_RANGE_DAYS = 14
+        config.data_collection.time_ranges.days = 14
 
         graph = DailyPlayCountGraph(config=config)
 

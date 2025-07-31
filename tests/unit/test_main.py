@@ -83,7 +83,7 @@ class TestTGraphBot:
                 await bot.setup_hook()
 
                 # Verify i18n setup was called with correct language
-                mock_setup_i18n.assert_called_once_with(base_config.LANGUAGE)
+                mock_setup_i18n.assert_called_once_with(base_config.system.localization.language)
 
                 # Verify extensions loading was called with bot instance
                 mock_load_extensions.assert_called_once_with(bot)
@@ -158,7 +158,7 @@ class TestTGraphBot:
                 await bot.setup_hook()
 
                 # Verify other steps still completed
-                mock_setup_i18n.assert_called_once_with(base_config.LANGUAGE)
+                mock_setup_i18n.assert_called_once_with(base_config.system.localization.language)
                 mock_load_extensions.assert_called_once_with(bot)
                 mock_sync.assert_called_once()
                 mock_setup_tasks.assert_called_once()
@@ -167,13 +167,13 @@ class TestTGraphBot:
     async def test_setup_hook_extension_loading_errors(self) -> None:
         """Test setup_hook handling extension loading errors gracefully."""
         config_manager = ConfigManager()
-        mock_config = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_token",
-            CHANNEL_ID=123456789,
-            LANGUAGE="en",
-        )
+        mock_config = create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_token",
+                CHANNEL_ID=123456789,
+                LANGUAGE="en",
+            )
         config_manager.set_current_config(mock_config)
         bot = TGraphBot(config_manager)
 
@@ -340,12 +340,12 @@ class TestMainFunction:
         from src.tgraph_bot.utils.cli.args import ParsedArgs
 
         # Create a mock config
-        mock_config = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_token",
-            CHANNEL_ID=123456789,
-        )
+        mock_config = create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_token",
+                CHANNEL_ID=123456789,
+            )
 
         # Mock CLI args
         mock_args = ParsedArgs(
@@ -370,12 +370,12 @@ class TestMainFunction:
         """Test main() handling KeyboardInterrupt."""
         from src.tgraph_bot.utils.cli.args import ParsedArgs
 
-        mock_config = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_token",
-            CHANNEL_ID=123456789,
-        )
+        mock_config = create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_token",
+                CHANNEL_ID=123456789,
+            )
 
         # Mock CLI args
         mock_args = ParsedArgs(
@@ -403,12 +403,12 @@ class TestMainFunction:
         """Test main() handling general exceptions."""
         from src.tgraph_bot.utils.cli.args import ParsedArgs
 
-        mock_config = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_token",
-            CHANNEL_ID=123456789,
-        )
+        mock_config = create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_token",
+                CHANNEL_ID=123456789,
+            )
 
         # Mock CLI args
         mock_args = ParsedArgs(
@@ -757,12 +757,12 @@ class TestMainFunctionEnhancements:
         """Test that main() sets up signal handlers."""
         from src.tgraph_bot.utils.cli.args import ParsedArgs
 
-        mock_config = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_token",
-            CHANNEL_ID=123456789,
-        )
+        mock_config = create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_token",
+                CHANNEL_ID=123456789,
+            )
 
         # Mock CLI args
         mock_args = ParsedArgs(
@@ -800,12 +800,12 @@ class TestMainFunctionEnhancements:
         import discord
         from src.tgraph_bot.utils.cli.args import ParsedArgs
 
-        mock_config = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="invalid_token",
-            CHANNEL_ID=123456789,
-        )
+        mock_config = create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="invalid_token",
+                CHANNEL_ID=123456789,
+            )
 
         # Mock CLI args
         mock_args = ParsedArgs(
@@ -841,12 +841,12 @@ class TestMainFunctionEnhancements:
         import discord
         from src.tgraph_bot.utils.cli.args import ParsedArgs
 
-        mock_config = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_token",
-            CHANNEL_ID=123456789,
-        )
+        mock_config = create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_token",
+                CHANNEL_ID=123456789,
+            )
 
         # Mock CLI args
         mock_args = ParsedArgs(
@@ -877,12 +877,12 @@ class TestMainFunctionEnhancements:
     @pytest.mark.asyncio
     async def test_main_finally_block_cleanup(self) -> None:
         """Test that main() properly cleans up in finally block."""
-        mock_config = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_token",
-            CHANNEL_ID=123456789,
-        )
+        mock_config = create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_token",
+                CHANNEL_ID=123456789,
+            )
 
         async def mock_start_with_exception(_token: str) -> None:
             raise Exception("Test error")

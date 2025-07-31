@@ -48,7 +48,7 @@ def mock_bot() -> MagicMock:
 def mock_config() -> TGraphBotConfig:
     """Create a mock configuration."""
     config = MagicMock(spec=TGraphBotConfig)
-    config.CHANNEL_ID = 987654321
+    config.services.discord.channel_id = 987654321
     return config
 
 
@@ -122,7 +122,7 @@ class TestStartupSequence:
         # Verify
         assert startup_sequence.cleanup_completed is True
         bot_message.delete.assert_called_once()  # pyright: ignore[reportAny]
-        get_channel_mock.assert_called_once_with(mock_config.CHANNEL_ID)
+        get_channel_mock.assert_called_once_with(mock_config.services.discord.channel_id)
 
     @pytest.mark.asyncio
     async def test_cleanup_previous_messages_no_channel(

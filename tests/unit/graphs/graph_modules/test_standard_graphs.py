@@ -161,26 +161,26 @@ class TestGraphSeparationFunctionality:
     @pytest.fixture
     def separation_config(self) -> TGraphBotConfig:
         """Configuration with media type separation enabled."""
-        return TGraphBotConfig(
-            DISCORD_TOKEN="test_token",
-            TAUTULLI_API_KEY="test_key",
-            TAUTULLI_URL="http://test.local",
-            CHANNEL_ID=123456789,
-            ENABLE_MEDIA_TYPE_SEPARATION=True,
-            ENABLE_STACKED_BAR_CHARTS=True,
-        )
+        return create_test_config_with_overrides(
+                DISCORD_TOKEN="test_token",
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://test.local",
+                CHANNEL_ID=123456789,
+                ENABLE_MEDIA_TYPE_SEPARATION=True,
+                ENABLE_STACKED_BAR_CHARTS=True,
+            )
 
     @pytest.fixture
     def no_separation_config(self) -> TGraphBotConfig:
         """Configuration with media type separation disabled."""
-        return TGraphBotConfig(
-            DISCORD_TOKEN="test_token",
-            TAUTULLI_API_KEY="test_key",
-            TAUTULLI_URL="http://test.local",
-            CHANNEL_ID=123456789,
-            ENABLE_MEDIA_TYPE_SEPARATION=False,
-            ENABLE_STACKED_BAR_CHARTS=False,
-        )
+        return create_test_config_with_overrides(
+                DISCORD_TOKEN="test_token",
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://test.local",
+                CHANNEL_ID=123456789,
+                ENABLE_MEDIA_TYPE_SEPARATION=False,
+                ENABLE_STACKED_BAR_CHARTS=False,
+            )
 
     @pytest.fixture
     def sample_separation_data(self) -> dict[str, object]:
@@ -320,15 +320,15 @@ class TestGraphSeparationFunctionality:
     ) -> None:
         """Test that color palettes integrate properly with separation functionality."""
         # Test with palette configuration
-        palette_config = TGraphBotConfig(
-            DISCORD_TOKEN="test_token",
-            TAUTULLI_API_KEY="test_key",
-            TAUTULLI_URL="http://test.local",
-            CHANNEL_ID=123456789,
-            ENABLE_MEDIA_TYPE_SEPARATION=True,
-            PLAY_COUNT_BY_HOUROFDAY_PALETTE="viridis",
-            TOP_10_USERS_PALETTE="plasma",
-        )
+        palette_config = create_test_config_with_overrides(
+                DISCORD_TOKEN="test_token",
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://test.local",
+                CHANNEL_ID=123456789,
+                ENABLE_MEDIA_TYPE_SEPARATION=True,
+                PLAY_COUNT_BY_HOUROFDAY_PALETTE="viridis",
+                TOP_10_USERS_PALETTE="plasma",
+            )
 
         # Test PlayCountByHourOfDayGraph with palette
         with matplotlib_cleanup():
@@ -378,24 +378,24 @@ class TestGraphSeparationFunctionality:
     ) -> None:
         """Test that stacked visualization mode responds to configuration."""
         # Test with stacked mode enabled
-        stacked_config = TGraphBotConfig(
-            DISCORD_TOKEN="test_token",
-            TAUTULLI_API_KEY="test_key",
-            TAUTULLI_URL="http://test.local",
-            CHANNEL_ID=123456789,
-            ENABLE_MEDIA_TYPE_SEPARATION=True,
-            ENABLE_STACKED_BAR_CHARTS=True,
-        )
+        stacked_config = create_test_config_with_overrides(
+                DISCORD_TOKEN="test_token",
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://test.local",
+                CHANNEL_ID=123456789,
+                ENABLE_MEDIA_TYPE_SEPARATION=True,
+                ENABLE_STACKED_BAR_CHARTS=True,
+            )
 
         # Test with stacked mode disabled
-        grouped_config = TGraphBotConfig(
-            DISCORD_TOKEN="test_token",
-            TAUTULLI_API_KEY="test_key",
-            TAUTULLI_URL="http://test.local",
-            CHANNEL_ID=123456789,
-            ENABLE_MEDIA_TYPE_SEPARATION=True,
-            ENABLE_STACKED_BAR_CHARTS=False,
-        )
+        grouped_config = create_test_config_with_overrides(
+                DISCORD_TOKEN="test_token",
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://test.local",
+                CHANNEL_ID=123456789,
+                ENABLE_MEDIA_TYPE_SEPARATION=True,
+                ENABLE_STACKED_BAR_CHARTS=False,
+            )
 
         # Test graphs with both configurations
         for config in [stacked_config, grouped_config]:
@@ -603,41 +603,41 @@ class TestPlayCountByHourOfDaySeparation:
         """Configuration with media type separation enabled."""
         from src.tgraph_bot.config.schema import TGraphBotConfig
 
-        return TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token",
-            CHANNEL_ID=123456789,
-            ENABLE_MEDIA_TYPE_SEPARATION=True,
-            ENABLE_STACKED_BAR_CHARTS=False,
-        )
+        return create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_api_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_discord_token",
+                CHANNEL_ID=123456789,
+                ENABLE_MEDIA_TYPE_SEPARATION=True,
+                ENABLE_STACKED_BAR_CHARTS=False,
+            )
 
     @pytest.fixture
     def stacked_enabled_config(self) -> "TGraphBotConfig":
         """Configuration with stacked bar charts enabled."""
         from src.tgraph_bot.config.schema import TGraphBotConfig
 
-        return TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token",
-            CHANNEL_ID=123456789,
-            ENABLE_MEDIA_TYPE_SEPARATION=True,
-            ENABLE_STACKED_BAR_CHARTS=True,
-        )
+        return create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_api_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_discord_token",
+                CHANNEL_ID=123456789,
+                ENABLE_MEDIA_TYPE_SEPARATION=True,
+                ENABLE_STACKED_BAR_CHARTS=True,
+            )
 
     @pytest.fixture
     def separation_disabled_config(self) -> "TGraphBotConfig":
         """Configuration with media type separation disabled."""
         from src.tgraph_bot.config.schema import TGraphBotConfig
 
-        return TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token",
-            CHANNEL_ID=123456789,
-            ENABLE_MEDIA_TYPE_SEPARATION=False,
-        )
+        return create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_api_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_discord_token",
+                CHANNEL_ID=123456789,
+                ENABLE_MEDIA_TYPE_SEPARATION=False,
+            )
 
     def test_separated_visualization_method_exists(
         self, separation_enabled_config: "TGraphBotConfig"
@@ -871,44 +871,44 @@ class TestTop10UsersSeparation:
         """Configuration with media type separation enabled for users."""
         from src.tgraph_bot.config.schema import TGraphBotConfig
 
-        return TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token",
-            CHANNEL_ID=123456789,
-            ENABLE_MEDIA_TYPE_SEPARATION=True,
-            ENABLE_STACKED_BAR_CHARTS=False,
-            CENSOR_USERNAMES=False,  # Disable censoring for easier testing
-        )
+        return create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_api_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_discord_token",
+                CHANNEL_ID=123456789,
+                ENABLE_MEDIA_TYPE_SEPARATION=True,
+                ENABLE_STACKED_BAR_CHARTS=False,
+                CENSOR_USERNAMES=False,  # Disable censoring for easier testing,
+            )
 
     @pytest.fixture
     def users_stacked_enabled_config(self) -> "TGraphBotConfig":
         """Configuration with stacked bar charts enabled for users."""
         from src.tgraph_bot.config.schema import TGraphBotConfig
 
-        return TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token",
-            CHANNEL_ID=123456789,
-            ENABLE_MEDIA_TYPE_SEPARATION=True,
-            ENABLE_STACKED_BAR_CHARTS=True,
-            CENSOR_USERNAMES=False,  # Disable censoring for easier testing
-        )
+        return create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_api_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_discord_token",
+                CHANNEL_ID=123456789,
+                ENABLE_MEDIA_TYPE_SEPARATION=True,
+                ENABLE_STACKED_BAR_CHARTS=True,
+                CENSOR_USERNAMES=False,  # Disable censoring for easier testing,
+            )
 
     @pytest.fixture
     def users_separation_disabled_config(self) -> "TGraphBotConfig":
         """Configuration with media type separation disabled for users."""
         from src.tgraph_bot.config.schema import TGraphBotConfig
 
-        return TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token",
-            CHANNEL_ID=123456789,
-            ENABLE_MEDIA_TYPE_SEPARATION=False,
-            CENSOR_USERNAMES=False,  # Disable censoring for easier testing
-        )
+        return create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_api_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_discord_token",
+                CHANNEL_ID=123456789,
+                ENABLE_MEDIA_TYPE_SEPARATION=False,
+                CENSOR_USERNAMES=False,  # Disable censoring for easier testing,
+            )
 
     def test_users_separated_visualization_method_exists(
         self, users_separation_enabled_config: "TGraphBotConfig"
@@ -1029,15 +1029,15 @@ class TestTop10UsersSeparation:
         """Test that annotation handling works with separated user data."""
         from src.tgraph_bot.config.schema import TGraphBotConfig
 
-        config_with_annotations = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token",
-            CHANNEL_ID=123456789,
-            ENABLE_MEDIA_TYPE_SEPARATION=True,
-            ANNOTATE_TOP_10_USERS=True,
-            CENSOR_USERNAMES=False,
-        )
+        config_with_annotations = create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_api_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_discord_token",
+                CHANNEL_ID=123456789,
+                ENABLE_MEDIA_TYPE_SEPARATION=True,
+                ANNOTATE_TOP_10_USERS=True,
+                CENSOR_USERNAMES=False,
+            )
 
         graph = Top10UsersGraph(config=config_with_annotations)
 
@@ -1200,41 +1200,41 @@ class TestTop10PlatformsSeparation:
         """Configuration with media type separation enabled for platforms."""
         from src.tgraph_bot.config.schema import TGraphBotConfig
 
-        return TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token",
-            CHANNEL_ID=123456789,
-            ENABLE_MEDIA_TYPE_SEPARATION=True,
-            ENABLE_STACKED_BAR_CHARTS=False,
-        )
+        return create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_api_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_discord_token",
+                CHANNEL_ID=123456789,
+                ENABLE_MEDIA_TYPE_SEPARATION=True,
+                ENABLE_STACKED_BAR_CHARTS=False,
+            )
 
     @pytest.fixture
     def platforms_stacked_enabled_config(self) -> "TGraphBotConfig":
         """Configuration with stacked bar charts enabled for platforms."""
         from src.tgraph_bot.config.schema import TGraphBotConfig
 
-        return TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token",
-            CHANNEL_ID=123456789,
-            ENABLE_MEDIA_TYPE_SEPARATION=True,
-            ENABLE_STACKED_BAR_CHARTS=True,
-        )
+        return create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_api_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_discord_token",
+                CHANNEL_ID=123456789,
+                ENABLE_MEDIA_TYPE_SEPARATION=True,
+                ENABLE_STACKED_BAR_CHARTS=True,
+            )
 
     @pytest.fixture
     def platforms_separation_disabled_config(self) -> "TGraphBotConfig":
         """Configuration with media type separation disabled for platforms."""
         from src.tgraph_bot.config.schema import TGraphBotConfig
 
-        return TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token",
-            CHANNEL_ID=123456789,
-            ENABLE_MEDIA_TYPE_SEPARATION=False,
-        )
+        return create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_api_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_discord_token",
+                CHANNEL_ID=123456789,
+                ENABLE_MEDIA_TYPE_SEPARATION=False,
+            )
 
     def test_platforms_separated_visualization_method_exists(
         self, platforms_separation_enabled_config: "TGraphBotConfig"
@@ -1369,14 +1369,14 @@ class TestTop10PlatformsSeparation:
         """Test that annotation handling works with separated platform data."""
         from src.tgraph_bot.config.schema import TGraphBotConfig
 
-        config_with_annotations = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_api_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_discord_token",
-            CHANNEL_ID=123456789,
-            ENABLE_MEDIA_TYPE_SEPARATION=True,
-            ANNOTATE_TOP_10_PLATFORMS=True,
-        )
+        config_with_annotations = create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_api_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_discord_token",
+                CHANNEL_ID=123456789,
+                ENABLE_MEDIA_TYPE_SEPARATION=True,
+                ANNOTATE_TOP_10_PLATFORMS=True,
+            )
 
         graph = Top10PlatformsGraph(config=config_with_annotations)
 
@@ -1473,8 +1473,8 @@ class TestSpecificGraphBehaviors:
     def test_play_count_by_hourofday_specific_config(self) -> None:
         """Test PlayCountByHourOfDayGraph specific configuration functionality."""
         config = create_test_config_minimal()
-        config.TIME_RANGE_DAYS = 14
-        config.ANNOTATE_PLAY_COUNT_BY_HOUROFDAY = True
+        config.data_collection.time_ranges.days = 14
+        config.graphs.appearance.annotations.enabled_on.play_count_by_hourofday = True
 
         graph = PlayCountByHourOfDayGraph(config=config)
 

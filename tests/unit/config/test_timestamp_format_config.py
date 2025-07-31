@@ -18,7 +18,7 @@ class TestTimestampFormatConfig:
         }
 
         config = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
-        assert config.DISCORD_TIMESTAMP_FORMAT == "R"
+        assert config.services.discord.timestamp_format == "R"
 
     def test_valid_timestamp_formats(self) -> None:
         """Test that all valid Discord timestamp formats are accepted."""
@@ -34,7 +34,7 @@ class TestTimestampFormatConfig:
         for format_option in valid_formats:
             config_data = {**base_config, "DISCORD_TIMESTAMP_FORMAT": format_option}
             config = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
-            assert config.DISCORD_TIMESTAMP_FORMAT == format_option
+            assert config.services.discord.timestamp_format == format_option
 
     def test_invalid_timestamp_format_raises_error(self) -> None:
         """Test that invalid timestamp formats raise validation errors."""
@@ -64,12 +64,12 @@ class TestTimestampFormatConfig:
         # Lowercase should work
         config_data = {**base_config, "DISCORD_TIMESTAMP_FORMAT": "f"}
         config = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
-        assert config.DISCORD_TIMESTAMP_FORMAT == "f"
+        assert config.services.discord.timestamp_format == "f"
 
         # Uppercase should work
         config_data = {**base_config, "DISCORD_TIMESTAMP_FORMAT": "F"}
         config = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
-        assert config.DISCORD_TIMESTAMP_FORMAT == "F"
+        assert config.services.discord.timestamp_format == "F"
 
     def test_timestamp_format_description(self) -> None:
         """Test that the field has an appropriate description."""

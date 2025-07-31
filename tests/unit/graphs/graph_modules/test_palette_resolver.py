@@ -107,7 +107,7 @@ class TestPaletteResolver:
         assert resolution.strategy == ColorStrategy.DEFAULT
         assert resolution.use_palette is False
         assert resolution.palette_name is None
-        assert resolution.fallback_colors == [DEFAULT_COLORS.TV_COLOR]
+        assert resolution.fallback_colors == [DEFAULT_COLORS.graphs.appearance.colors.tv]
 
     def test_resolve_color_strategy_palette_priority(self) -> None:
         """Test that custom palette has highest priority."""
@@ -157,7 +157,7 @@ class TestPaletteResolver:
 
         assert resolution.strategy == ColorStrategy.DEFAULT
         assert resolution.use_palette is False
-        assert resolution.fallback_colors == [DEFAULT_COLORS.TV_COLOR]
+        assert resolution.fallback_colors == [DEFAULT_COLORS.graphs.appearance.colors.tv]
 
     def test_should_palette_override_separation_true(self) -> None:
         """Test that palette should override separation when valid palette is configured."""
@@ -236,7 +236,7 @@ class TestPaletteResolver:
         resolver = PaletteResolver()
         colors = resolver.get_effective_colors("DailyPlayCountGraph")
 
-        assert colors == [DEFAULT_COLORS.TV_COLOR]
+        assert colors == [DEFAULT_COLORS.graphs.appearance.colors.tv]
 
     def test_get_palette_for_graph_type_with_tgraph_config(self) -> None:
         """Test _get_palette_for_graph_type with TGraphBotConfig object."""
@@ -363,8 +363,8 @@ class TestPaletteResolver:
         colors = resolver._get_media_type_colors()  # pyright: ignore[reportPrivateUsage]
 
         assert colors == {
-            "tv": DEFAULT_COLORS.TV_COLOR,
-            "movie": DEFAULT_COLORS.MOVIE_COLOR,
+            "tv": DEFAULT_COLORS.graphs.appearance.colors.tv,
+            "movie": DEFAULT_COLORS.graphs.appearance.colors.movie,
         }
 
     def test_get_media_type_colors_dict_config(self) -> None:
@@ -408,7 +408,7 @@ class TestPaletteResolver:
         resolver = PaletteResolver(config=config)
         colors = resolver._get_fallback_colors()  # pyright: ignore[reportPrivateUsage]
 
-        assert colors == [DEFAULT_COLORS.TV_COLOR]
+        assert colors == [DEFAULT_COLORS.graphs.appearance.colors.tv]
 
     @patch("seaborn.color_palette")
     @patch("matplotlib.colors.to_hex")
@@ -567,4 +567,4 @@ class TestPaletteResolverIntegration:
 
         # Test effective colors
         colors = resolver.get_effective_colors("PlayCountByDayOfWeekGraph")
-        assert colors == [DEFAULT_COLORS.TV_COLOR]
+        assert colors == [DEFAULT_COLORS.graphs.appearance.colors.tv]

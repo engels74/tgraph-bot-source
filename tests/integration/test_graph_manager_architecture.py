@@ -12,7 +12,7 @@ import pytest
 
 from src.tgraph_bot.graphs.graph_manager import GraphManager
 from src.tgraph_bot.config.schema import TGraphBotConfig
-from tests.utils.test_helpers import create_config_manager_with_config
+from tests.utils.test_helpers import create_config_manager_with_config, create_test_config_with_overrides
 
 
 class TestGraphManagerArchitecture:
@@ -32,12 +32,12 @@ class TestGraphManagerArchitecture:
     async def test_async_context_manager(self) -> None:
         """Test GraphManager async context manager functionality."""
         # Create a mock config using utility
-        mock_config = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_token",
-            CHANNEL_ID=123456789,
-        )
+        mock_config = create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_token",
+                CHANNEL_ID=123456789,
+            )
         config_manager = create_config_manager_with_config(mock_config)
 
         with patch(
@@ -79,13 +79,13 @@ class TestGraphManagerArchitecture:
     async def test_generate_all_graphs_architecture(self) -> None:
         """Test the generate_all_graphs method architecture."""
         # Create a mock config using utility
-        mock_config = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_token",
-            CHANNEL_ID=123456789,
-            TIME_RANGE_DAYS=30,
-        )
+        mock_config = create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_token",
+                CHANNEL_ID=123456789,
+                TIME_RANGE_DAYS=30,
+            )
         config_manager = create_config_manager_with_config(mock_config)
 
         with patch(
@@ -156,12 +156,12 @@ class TestGraphManagerArchitecture:
     def test_architecture_interfaces(self) -> None:
         """Test that GraphManager has the expected interface methods."""
         # Create a mock config using utility
-        mock_config = TGraphBotConfig(
-            TAUTULLI_API_KEY="test_key",
-            TAUTULLI_URL="http://localhost:8181/api/v2",
-            DISCORD_TOKEN="test_token",
-            CHANNEL_ID=123456789,
-        )
+        mock_config = create_test_config_with_overrides(
+                TAUTULLI_API_KEY="test_key",
+                TAUTULLI_URL="http://localhost:8181/api/v2",
+                DISCORD_TOKEN="test_token",
+                CHANNEL_ID=123456789,
+            )
         config_manager = create_config_manager_with_config(mock_config)
 
         graph_manager = GraphManager(config_manager)
