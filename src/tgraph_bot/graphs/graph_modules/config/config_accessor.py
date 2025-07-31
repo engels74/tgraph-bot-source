@@ -2,8 +2,8 @@
 Configuration accessor utility for graph modules.
 
 This module provides a centralized configuration access utility that handles
-both dict and TGraphBotConfig objects, eliminating code duplication in
-GraphFactory and other graph-related modules.
+TGraphBotConfig objects, providing direct access to nested configuration
+values without backwards compatibility.
 """
 
 from __future__ import annotations
@@ -26,157 +26,116 @@ class ConfigAccessor:
     """
     Centralized configuration access utility for graph modules.
 
-    This class provides type-safe configuration access for both dict and
-    TGraphBotConfig objects, eliminating the need for duplicated configuration
-    access logic throughout the graph modules.
+    This class provides type-safe configuration access for TGraphBotConfig objects,
+    working directly with the nested configuration structure.
     """
 
-    def __init__(self, config: "TGraphBotConfig | dict[str, object]") -> None:
+    def __init__(self, config: "TGraphBotConfig") -> None:
         """
         Initialize the configuration accessor.
 
         Args:
-            config: Configuration object (either TGraphBotConfig or dict)
+            config: TGraphBotConfig object with nested structure
         """
-        self.config: "TGraphBotConfig | dict[str, object]" = config
+        self.config: "TGraphBotConfig" = config
 
-    def _get_nested_value(self, key: str) -> object | None:
+    def _get_nested_path_for_flat_key(self, flat_key: str) -> str | None:
         """
-        Get value from nested TGraphBotConfig structure using old flat key names.
+        Map old flat configuration keys to new nested paths.
 
         Args:
-            key: Old flat configuration key
+            flat_key: Old flat configuration key
 
         Returns:
-            Configuration value or None if not found
+            Nested path for the key, or None if not found
         """
-        if isinstance(self.config, dict):
-            return None
-
-        if not hasattr(self.config, "services"):
-            return None
-
-        # Map old flat keys to nested paths - check for nested structure
-        config = self.config
-        if not (hasattr(config, "graphs") and hasattr(config.graphs, "appearance")):
-            return None
-
-        # Service configuration
-        if key == "TAUTULLI_API_KEY":
-            return config.services.tautulli.api_key
-        elif key == "TAUTULLI_URL":
-            return config.services.tautulli.url
-        elif key == "DISCORD_TOKEN":
-            return config.services.discord.token
-        elif key == "CHANNEL_ID":
-            return config.services.discord.channel_id
-
-        # Automation configuration
-        elif key == "UPDATE_DAYS":
-            return config.automation.scheduling.update_days
-        elif key == "FIXED_UPDATE_TIME":
-            return config.automation.scheduling.fixed_update_time
-        elif key == "KEEP_DAYS":
-            return config.automation.data_retention.keep_days
-
-        # Data collection configuration
-        elif key == "TIME_RANGE_DAYS":
-            return config.data_collection.time_ranges.days
-        elif key == "TIME_RANGE_MONTHS":
-            return config.data_collection.time_ranges.months
-        elif key == "CENSOR_USERNAMES":
-            return config.data_collection.privacy.censor_usernames
-
-        # System configuration
-        elif key == "LANGUAGE":
-            return config.system.localization.language
-
-        # Graph features configuration
-        elif key == "ENABLE_DAILY_PLAY_COUNT":
-            return config.graphs.features.enabled_types.daily_play_count
-        elif key == "ENABLE_PLAY_COUNT_BY_DAYOFWEEK":
-            return config.graphs.features.enabled_types.play_count_by_dayofweek
-        elif key == "ENABLE_PLAY_COUNT_BY_HOUROFDAY":
-            return config.graphs.features.enabled_types.play_count_by_hourofday
-        elif key == "ENABLE_TOP_10_PLATFORMS":
-            return config.graphs.features.enabled_types.top_10_platforms
-        elif key == "ENABLE_TOP_10_USERS":
-            return config.graphs.features.enabled_types.top_10_users
-        elif key == "ENABLE_PLAY_COUNT_BY_MONTH":
-            return config.graphs.features.enabled_types.play_count_by_month
-        elif key == "ENABLE_MEDIA_TYPE_SEPARATION":
-            return config.graphs.features.media_type_separation
-        elif key == "ENABLE_STACKED_BAR_CHARTS":
-            return config.graphs.features.stacked_bar_charts
-
-        # Graph appearance configuration
-        elif key == "GRAPH_WIDTH":
-            return config.graphs.appearance.dimensions.width
-        elif key == "GRAPH_HEIGHT":
-            return config.graphs.appearance.dimensions.height
-        elif key == "GRAPH_DPI":
-            return config.graphs.appearance.dimensions.dpi
-        elif key == "TV_COLOR":
-            return config.graphs.appearance.colors.tv
-        elif key == "MOVIE_COLOR":
-            return config.graphs.appearance.colors.movie
-        elif key == "GRAPH_BACKGROUND_COLOR":
-            return config.graphs.appearance.colors.background
-        elif key == "ENABLE_GRAPH_GRID":
-            return config.graphs.appearance.grid.enabled
-
-        # Annotation configuration
-        elif key == "ANNOTATION_COLOR":
-            return config.graphs.appearance.annotations.basic.color
-        elif key == "ANNOTATION_OUTLINE_COLOR":
-            return config.graphs.appearance.annotations.basic.outline_color
-        elif key == "ENABLE_ANNOTATION_OUTLINE":
-            return config.graphs.appearance.annotations.basic.enable_outline
-        elif key == "ANNOTATE_DAILY_PLAY_COUNT":
-            return config.graphs.appearance.annotations.enabled_on.daily_play_count
-        elif key == "ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK":
-            return config.graphs.appearance.annotations.enabled_on.play_count_by_dayofweek
-        elif key == "ANNOTATE_PLAY_COUNT_BY_HOUROFDAY":
-            return config.graphs.appearance.annotations.enabled_on.play_count_by_hourofday
-        elif key == "ANNOTATE_TOP_10_PLATFORMS":
-            return config.graphs.appearance.annotations.enabled_on.top_10_platforms
-        elif key == "ANNOTATE_TOP_10_USERS":
-            return config.graphs.appearance.annotations.enabled_on.top_10_users
-        elif key == "ANNOTATE_PLAY_COUNT_BY_MONTH":
-            return config.graphs.appearance.annotations.enabled_on.play_count_by_month
-
-        # Palette configuration
-        elif key == "DAILY_PLAY_COUNT_PALETTE":
-            return config.graphs.appearance.palettes.daily_play_count
-        elif key == "PLAY_COUNT_BY_DAYOFWEEK_PALETTE":
-            return config.graphs.appearance.palettes.play_count_by_dayofweek
-        elif key == "PLAY_COUNT_BY_HOUROFDAY_PALETTE":
-            return config.graphs.appearance.palettes.play_count_by_hourofday
-        elif key == "TOP_10_PLATFORMS_PALETTE":
-            return config.graphs.appearance.palettes.top_10_platforms
-        elif key == "TOP_10_USERS_PALETTE":
-            return config.graphs.appearance.palettes.top_10_users
-        elif key == "PLAY_COUNT_BY_MONTH_PALETTE":
-            return config.graphs.appearance.palettes.play_count_by_month
-
-        return None
+        # Map old flat keys to new nested paths
+        path_mapping = {
+            # Service configuration
+            "TAUTULLI_API_KEY": "services.tautulli.api_key",
+            "TAUTULLI_URL": "services.tautulli.url",
+            "DISCORD_TOKEN": "services.discord.token",
+            "CHANNEL_ID": "services.discord.channel_id",
+            
+            # Automation configuration
+            "UPDATE_DAYS": "automation.scheduling.update_days",
+            "FIXED_UPDATE_TIME": "automation.scheduling.fixed_update_time",
+            "KEEP_DAYS": "automation.data_retention.keep_days",
+            
+            # Data collection configuration
+            "TIME_RANGE_DAYS": "data_collection.time_ranges.days",
+            "TIME_RANGE_MONTHS": "data_collection.time_ranges.months",
+            "CENSOR_USERNAMES": "data_collection.privacy.censor_usernames",
+            
+            # System configuration
+            "LANGUAGE": "system.localization.language",
+            
+            # Graph features configuration
+            "ENABLE_DAILY_PLAY_COUNT": "graphs.features.enabled_types.daily_play_count",
+            "ENABLE_PLAY_COUNT_BY_DAYOFWEEK": "graphs.features.enabled_types.play_count_by_dayofweek",
+            "ENABLE_PLAY_COUNT_BY_HOUROFDAY": "graphs.features.enabled_types.play_count_by_hourofday",
+            "ENABLE_TOP_10_PLATFORMS": "graphs.features.enabled_types.top_10_platforms",
+            "ENABLE_TOP_10_USERS": "graphs.features.enabled_types.top_10_users",
+            "ENABLE_PLAY_COUNT_BY_MONTH": "graphs.features.enabled_types.play_count_by_month",
+            "ENABLE_MEDIA_TYPE_SEPARATION": "graphs.features.media_type_separation",
+            "ENABLE_STACKED_BAR_CHARTS": "graphs.features.stacked_bar_charts",
+            
+            # Graph appearance configuration
+            "GRAPH_WIDTH": "graphs.appearance.dimensions.width",
+            "GRAPH_HEIGHT": "graphs.appearance.dimensions.height",
+            "GRAPH_DPI": "graphs.appearance.dimensions.dpi",
+            "TV_COLOR": "graphs.appearance.colors.tv",
+            "MOVIE_COLOR": "graphs.appearance.colors.movie",
+            "GRAPH_BACKGROUND_COLOR": "graphs.appearance.colors.background",
+            "ENABLE_GRAPH_GRID": "graphs.appearance.grid.enabled",
+            
+            # Annotation configuration
+            "ANNOTATION_COLOR": "graphs.appearance.annotations.basic.color",
+            "ANNOTATION_OUTLINE_COLOR": "graphs.appearance.annotations.basic.outline_color",
+            "ENABLE_ANNOTATION_OUTLINE": "graphs.appearance.annotations.basic.enable_outline",
+            "ANNOTATION_FONT_SIZE": "graphs.appearance.annotations.basic.font_size",
+            "ANNOTATE_DAILY_PLAY_COUNT": "graphs.appearance.annotations.enabled_on.daily_play_count",
+            "ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK": "graphs.appearance.annotations.enabled_on.play_count_by_dayofweek",
+            "ANNOTATE_PLAY_COUNT_BY_HOUROFDAY": "graphs.appearance.annotations.enabled_on.play_count_by_hourofday",
+            "ANNOTATE_TOP_10_PLATFORMS": "graphs.appearance.annotations.enabled_on.top_10_platforms",
+            "ANNOTATE_TOP_10_USERS": "graphs.appearance.annotations.enabled_on.top_10_users",
+            "ANNOTATE_PLAY_COUNT_BY_MONTH": "graphs.appearance.annotations.enabled_on.play_count_by_month",
+            
+            # Peak annotations (if they exist in schema)
+            "ENABLE_PEAK_ANNOTATIONS": "graphs.appearance.annotations.peaks.enabled",
+            "PEAK_ANNOTATION_COLOR": "graphs.appearance.annotations.peaks.color",
+            "PEAK_ANNOTATION_TEXT_COLOR": "graphs.appearance.annotations.peaks.text_color",
+            
+            # Palette configuration
+            "DAILY_PLAY_COUNT_PALETTE": "graphs.appearance.palettes.daily_play_count",
+            "PLAY_COUNT_BY_DAYOFWEEK_PALETTE": "graphs.appearance.palettes.play_count_by_dayofweek",
+            "PLAY_COUNT_BY_HOUROFDAY_PALETTE": "graphs.appearance.palettes.play_count_by_hourofday",
+            "TOP_10_PLATFORMS_PALETTE": "graphs.appearance.palettes.top_10_platforms",
+            "TOP_10_USERS_PALETTE": "graphs.appearance.palettes.top_10_users",
+            "PLAY_COUNT_BY_MONTH_PALETTE": "graphs.appearance.palettes.play_count_by_month",
+        }
+        
+        return path_mapping.get(flat_key)
 
     @overload
     def get_value(self, key: str, default: T) -> T:
-        """Get configuration value with typed default."""
+        """Get configuration value with typed default (handles both flat keys and nested paths)."""
         ...
 
     @overload
     def get_value(self, key: str) -> object:
-        """Get configuration value without default."""
+        """Get configuration value without default (handles both flat keys and nested paths)."""
         ...
 
     def get_value(self, key: str, default: T | None = None) -> T | object:
         """
-        Get a configuration value with optional default.
+        Get a configuration value using either flat key or nested path.
+
+        This method provides backwards compatibility by accepting both old flat keys
+        and new nested paths.
 
         Args:
-            key: Configuration key to retrieve
+            key: Configuration key (flat key like "TV_COLOR" or nested path like "graphs.appearance.colors.tv")
             default: Default value if key doesn't exist
 
         Returns:
@@ -185,101 +144,102 @@ class ConfigAccessor:
         Raises:
             ConfigurationError: If key doesn't exist and no default provided
         """
-        if isinstance(self.config, dict):
-            if default is not None:
-                return self.config.get(key, default)
-            elif key in self.config:
-                return self.config[key]
-            else:
-                raise ConfigurationError(
-                    f"Configuration key '{key}' not found in dict config",
-                    user_message=f"Configuration setting `{key}` is not available.",
-                )
+        # First, try to map flat key to nested path
+        nested_path = self._get_nested_path_for_flat_key(key)
+        if nested_path is not None:
+            # It's a flat key, use the mapped nested path
+            return self.get_nested_value(nested_path, default)
         else:
-            # TGraphBotConfig object - map old flat keys to nested paths
-            nested_value = self._get_nested_value(key)
-            if nested_value is not None:
-                return nested_value
-            elif default is not None:
+            # Assume it's already a nested path
+            return self.get_nested_value(key, default)
+
+    @overload
+    def get_nested_value(self, path: str, default: T) -> T:
+        """Get nested configuration value with typed default."""
+        ...
+
+    @overload
+    def get_nested_value(self, path: str) -> object:
+        """Get nested configuration value without default."""
+        ...
+
+    def get_nested_value(self, path: str, default: T | None = None) -> T | object:
+        """
+        Get a nested configuration value using dot notation path.
+
+        Args:
+            path: Dot-separated path to configuration value (e.g., "graphs.appearance.colors.tv")
+            default: Default value if path doesn't exist
+
+        Returns:
+            Configuration value or default
+
+        Raises:
+            ConfigurationError: If path doesn't exist and no default provided
+        """
+        try:
+            current: object = self.config
+            for part in path.split("."):
+                current = getattr(current, part)  # pyright: ignore[reportAny]
+            return current
+        except AttributeError:
+            if default is not None:
                 return default
             else:
                 raise ConfigurationError(
-                    f"Configuration key '{key}' not found in TGraphBotConfig",
-                    user_message=f"Configuration setting `{key}` is not available.",
-                )
+                    f"Configuration path '{path}' not found",
+                    user_message=f"Configuration setting `{path}` is not available.",
+                ) from None
 
-    def get_bool_value(self, key: str, default: bool = True) -> bool:
+    def get_bool_value(self, path: str, default: bool = True) -> bool:
         """
         Get a boolean configuration value.
 
         Args:
-            key: Configuration key to retrieve
-            default: Default boolean value if key doesn't exist
+            path: Dot-separated path to configuration value
+            default: Default boolean value if path doesn't exist
 
         Returns:
             Boolean configuration value
         """
-        value = self.get_value(key, default)
+        value = self.get_nested_value(path, default)
         return bool(value)
 
-    def get_int_value(self, key: str, default: int) -> int:
+    def get_int_value(self, path: str, default: int) -> int:
         """
         Get an integer configuration value with safe conversion.
 
         Args:
-            key: Configuration key to retrieve
-            default: Default integer value if key doesn't exist or conversion fails
+            path: Dot-separated path to configuration value
+            default: Default integer value if path doesn't exist or conversion fails
 
         Returns:
             Integer configuration value
         """
         try:
-            # Get the raw value without default to handle None case
-            raw_value = self.get_value(key)
+            raw_value = self.get_nested_value(path)
             if raw_value is None:
                 return default
             return int(raw_value)  # pyright: ignore[reportArgumentType]
         except (ConfigurationError, ValueError, TypeError):
-            # If key doesn't exist or conversion fails, use default
             logger.warning(
-                f"Could not get or convert config value '{key}' to int, using default: {default}"
+                f"Could not get or convert config value '{path}' to int, using default: {default}"
             )
             return default
 
-    def get_graph_enable_value(self, graph_type: str, default: bool = True) -> bool:
+    def get_str_value(self, path: str, default: str) -> str:
         """
-        Get the enable status for a specific graph type.
+        Get a string configuration value.
 
         Args:
-            graph_type: Graph type key (e.g., "ENABLE_DAILY_PLAY_COUNT")
-            default: Default value if key doesn't exist
+            path: Dot-separated path to configuration value
+            default: Default string value if path doesn't exist
 
         Returns:
-            True if graph type is enabled, False otherwise
+            String configuration value
         """
-        if isinstance(self.config, dict):
-            return bool(self.config.get(graph_type, default))
-        else:
-            # Use direct attribute access for TGraphBotConfig objects
-            # This handles the specific graph enable attributes
-            if graph_type == "ENABLE_DAILY_PLAY_COUNT":
-                return self.config.graphs.features.enabled_types.daily_play_count
-            elif graph_type == "ENABLE_PLAY_COUNT_BY_DAYOFWEEK":
-                return self.config.graphs.features.enabled_types.play_count_by_dayofweek
-            elif graph_type == "ENABLE_PLAY_COUNT_BY_HOUROFDAY":
-                return self.config.graphs.features.enabled_types.play_count_by_hourofday
-            elif graph_type == "ENABLE_PLAY_COUNT_BY_MONTH":
-                return self.config.graphs.features.enabled_types.play_count_by_month
-            elif graph_type == "ENABLE_TOP_10_PLATFORMS":
-                return self.config.graphs.features.enabled_types.top_10_platforms
-            elif graph_type == "ENABLE_TOP_10_USERS":
-                return self.config.graphs.features.enabled_types.top_10_users
-            elif graph_type == "ENABLE_SAMPLE_GRAPH":
-                # Sample graph is not in the main config schema, default to False
-                return False
-            else:
-                # Fallback to generic attribute access
-                return getattr(self.config, graph_type, default)
+        value = self.get_nested_value(path, default)
+        return str(value)
 
     def get_graph_dimensions(self) -> dict[str, int]:
         """
@@ -288,9 +248,9 @@ class ConfigAccessor:
         Returns:
             Dictionary containing width, height, and dpi values
         """
-        width = self.get_int_value("GRAPH_WIDTH", 12)
-        height = self.get_int_value("GRAPH_HEIGHT", 8)
-        dpi = self.get_int_value("GRAPH_DPI", 100)
+        width = self.get_int_value("graphs.appearance.dimensions.width", 12)
+        height = self.get_int_value("graphs.appearance.dimensions.height", 8)
+        dpi = self.get_int_value("graphs.appearance.dimensions.dpi", 100)
 
         return {
             "width": width,
@@ -298,68 +258,138 @@ class ConfigAccessor:
             "dpi": dpi,
         }
 
-    def is_dict_config(self) -> bool:
+    def is_graph_type_enabled(self, graph_type: str) -> bool:
         """
-        Check if the configuration is a dictionary.
-
-        Returns:
-            True if configuration is a dict, False if TGraphBotConfig
-        """
-        return isinstance(self.config, dict)
-
-    def is_tgraph_config(self) -> bool:
-        """
-        Check if the configuration is a TGraphBotConfig object.
-
-        Returns:
-            True if configuration is TGraphBotConfig, False if dict
-        """
-        return not isinstance(self.config, dict)
-
-    def validate_required_keys(self, keys: list[str]) -> None:
-        """
-        Validate that required configuration keys exist.
+        Check if a specific graph type is enabled.
 
         Args:
-            keys: List of required configuration keys
-
-        Raises:
-            ConfigurationError: If any required key is missing
-        """
-        missing_keys: list[str] = []
-
-        for key in keys:
-            try:
-                _ = self.get_value(key)
-            except ConfigurationError:
-                missing_keys.append(key)
-
-        if missing_keys:
-            raise ConfigurationError(
-                f"Missing required configuration keys: {missing_keys}",
-                user_message=f"Required configuration settings are missing: {', '.join(missing_keys)}",
-            )
-
-    def get_all_graph_enable_keys(self) -> dict[str, bool]:
-        """
-        Get all graph enable configuration values.
+            graph_type: Graph type name (e.g., "daily_play_count", "top_10_users")
 
         Returns:
-            Dictionary mapping graph enable keys to their boolean values
+            True if graph type is enabled, False otherwise
         """
-        graph_enable_keys = [
-            "ENABLE_DAILY_PLAY_COUNT",
-            "ENABLE_PLAY_COUNT_BY_DAYOFWEEK",
-            "ENABLE_PLAY_COUNT_BY_HOUROFDAY",
-            "ENABLE_PLAY_COUNT_BY_MONTH",
-            "ENABLE_TOP_10_PLATFORMS",
-            "ENABLE_TOP_10_USERS",
-            "ENABLE_SAMPLE_GRAPH",
-        ]
+        path = f"graphs.features.enabled_types.{graph_type}"
+        return self.get_bool_value(path, default=True)
 
-        return {
-            key: self.get_graph_enable_value(
-                key, default=True if key != "ENABLE_SAMPLE_GRAPH" else False
-            )
-            for key in graph_enable_keys
+    def get_color_value(self, color_type: str) -> str:
+        """
+        Get a color configuration value.
+
+        Args:
+            color_type: Color type name (e.g., "tv", "movie", "background")
+
+        Returns:
+            Color value as hex string
+        """
+        path = f"graphs.appearance.colors.{color_type}"
+        defaults = {
+            "tv": "#1f77b4",
+            "movie": "#ff7f0e", 
+            "background": "#ffffff"
         }
+        return self.get_str_value(path, defaults.get(color_type, "#000000"))
+
+    def get_palette_value(self, graph_type: str) -> str:
+        """
+        Get a palette configuration value for a specific graph type.
+
+        Args:
+            graph_type: Graph type name (e.g., "daily_play_count", "top_10_users")
+
+        Returns:
+            Palette name or empty string for default
+        """
+        path = f"graphs.appearance.palettes.{graph_type}"
+        return self.get_str_value(path, "")
+
+    def is_annotation_enabled(self, graph_type: str) -> bool:
+        """
+        Check if annotations are enabled for a specific graph type.
+
+        Args:
+            graph_type: Graph type name (e.g., "daily_play_count", "top_10_users")
+
+        Returns:
+            True if annotations are enabled, False otherwise
+        """
+        path = f"graphs.appearance.annotations.enabled_on.{graph_type}"
+        return self.get_bool_value(path, default=True)
+
+    def validate_config(self) -> None:
+        """
+        Validate that the configuration object has required nested structure.
+
+        Raises:
+            ConfigurationError: If configuration is missing required sections
+        """
+        required_sections = [
+            "services.tautulli",
+            "services.discord",
+            "graphs.features",
+            "graphs.appearance"
+        ]
+        
+        for section in required_sections:
+            try:
+                _ = self.get_nested_value(section)
+            except ConfigurationError as e:
+                raise ConfigurationError(
+                    f"Configuration missing required section: {section}",
+                    user_message=f"Configuration section `{section}` is required but missing."
+                ) from e
+
+    def get_all_enabled_graph_types(self) -> dict[str, bool]:
+        """
+        Get all graph type enable states.
+
+        Returns:
+            Dictionary mapping graph type names to their enabled status
+        """
+        graph_types = [
+            "daily_play_count",
+            "play_count_by_dayofweek", 
+            "play_count_by_hourofday",
+            "play_count_by_month",
+            "top_10_platforms",
+            "top_10_users"
+        ]
+        
+        return {
+            graph_type: self.is_graph_type_enabled(graph_type)
+            for graph_type in graph_types
+        }
+
+    def get_graph_enable_value(self, graph_type_key: str, default: bool = True) -> bool:
+        """
+        Get the enable status for a specific graph type using old flat key format.
+
+        DEPRECATED: Use is_graph_type_enabled() with proper graph type names instead.
+
+        Args:
+            graph_type_key: Old flat graph enable key (e.g., "ENABLE_DAILY_PLAY_COUNT")
+            default: Default value if key doesn't exist
+
+        Returns:
+            True if graph type is enabled, False otherwise
+        """
+        # Map old enable keys to new graph type names
+        enable_key_mapping = {
+            "ENABLE_DAILY_PLAY_COUNT": "daily_play_count",
+            "ENABLE_PLAY_COUNT_BY_DAYOFWEEK": "play_count_by_dayofweek",
+            "ENABLE_PLAY_COUNT_BY_HOUROFDAY": "play_count_by_hourofday",
+            "ENABLE_PLAY_COUNT_BY_MONTH": "play_count_by_month",
+            "ENABLE_TOP_10_PLATFORMS": "top_10_platforms",
+            "ENABLE_TOP_10_USERS": "top_10_users",
+            "ENABLE_SAMPLE_GRAPH": "sample_graph",  # Special case
+        }
+        
+        graph_type = enable_key_mapping.get(graph_type_key)
+        if graph_type is None:
+            # Unknown key, return default
+            return default
+            
+        if graph_type == "sample_graph":
+            # Sample graph is not in main config, default to False
+            return False
+            
+        return self.is_graph_type_enabled(graph_type)

@@ -24,7 +24,7 @@ from tests.utils.graph_helpers import (
     create_graph_factory_with_config,
     matplotlib_cleanup,
 )
-from tests.utils.test_helpers import create_test_config_with_overrides
+from tests.utils.test_helpers import create_test_config_with_nested_overrides
 
 if TYPE_CHECKING:
     from src.tgraph_bot.config.schema import TGraphBotConfig
@@ -119,7 +119,7 @@ class TestGraphCustomizationValidation:
         """Test that annotation settings work correctly for all graph types."""
         with matplotlib_cleanup():
             # Test with annotations enabled
-            config_annotations_enabled = create_test_config_with_overrides(
+            config_annotations_enabled = create_test_config_with_nested_overrides(
                 TAUTULLI_API_KEY="test_api_key_here",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_discord_token_1234567890",
@@ -158,7 +158,7 @@ class TestGraphCustomizationValidation:
         """Test that grid settings work correctly."""
         with matplotlib_cleanup():
             # Test with grid enabled
-            config_grid_enabled = create_test_config_with_overrides(
+            config_grid_enabled = create_test_config_with_nested_overrides(
                 TAUTULLI_API_KEY="test_api_key_here",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_discord_token_1234567890",
@@ -180,7 +180,7 @@ class TestGraphCustomizationValidation:
                 graph.cleanup()
 
             # Test with grid disabled
-            config_grid_disabled = create_test_config_with_overrides(
+            config_grid_disabled = create_test_config_with_nested_overrides(
                 TAUTULLI_API_KEY="test_api_key_here",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_discord_token_1234567890",
@@ -205,7 +205,7 @@ class TestGraphCustomizationValidation:
         """Test that username censoring works correctly."""
         with matplotlib_cleanup():
             # Test with censoring enabled
-            config_censor_enabled = create_test_config_with_overrides(
+            config_censor_enabled = create_test_config_with_nested_overrides(
                 TAUTULLI_API_KEY="test_api_key_here",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_discord_token_1234567890",
@@ -221,7 +221,7 @@ class TestGraphCustomizationValidation:
                 graph.cleanup()
 
             # Test with censoring disabled
-            config_censor_disabled = create_test_config_with_overrides(
+            config_censor_disabled = create_test_config_with_nested_overrides(
                 TAUTULLI_API_KEY="test_api_key_here",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_discord_token_1234567890",

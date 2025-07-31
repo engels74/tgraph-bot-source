@@ -21,7 +21,7 @@ from unittest.mock import AsyncMock, MagicMock
 __all__ = [
     "create_config_manager_with_config",
     "create_test_config",
-    "create_test_config_with_overrides",
+    "create_test_config_with_nested_overrides",
     "create_temp_config_file",
     "create_temp_directory",
     "create_mock_discord_bot",
@@ -152,174 +152,158 @@ def create_test_config(
     return config
 
 
-def create_test_config_with_overrides(**kwargs: object) -> TGraphBotConfig:
+def create_test_config_with_nested_overrides(**overrides: object) -> TGraphBotConfig:
     """
     Create a TGraphBotConfig with specific overrides for testing.
 
-    This function provides a flexible way to create test configurations
-    by accepting old flat parameter names and converting them to the
-    new nested structure automatically.
+    This function provides backwards compatibility by accepting both old flat keys
+    and new nested dictionary structures for configuration overrides.
 
     Args:
-        **kwargs: Configuration overrides using old flat names or new nested structure
+        **overrides: Configuration overrides using flat keys (like "TAUTULLI_API_KEY") 
+                    or nested structures or dot-notation paths
 
     Returns:
         TGraphBotConfig: Configured instance
 
     Example:
-        >>> config = create_test_config_with_overrides(
-        ...     TAUTULLI_API_KEY="custom_key",
-        ...     ENABLE_DAILY_PLAY_COUNT=False,
-        ...     TV_COLOR="#ff0000"
+        >>> config = create_test_config_with_nested_overrides(
+        ...     TAUTULLI_API_KEY="custom_key",  # Old flat key
+        ...     services={"discord": {"channel_id": 999}},  # Nested dict
+        ...     graphs__appearance__colors__tv="#ff0000"  # Dot notation
         ... )
     """
     try:
-        from src.tgraph_bot.config.schema import (
-            TGraphBotConfig, ServicesConfig, TautulliConfig, DiscordConfig,
-            GraphsConfig, GraphFeaturesConfig, EnabledTypesConfig,
-            GraphAppearanceConfig, DimensionsConfig, ColorsConfig, AnnotationsConfig,
-            BasicAnnotationsConfig, EnabledOnConfig, GridConfig,
-            PalettesConfig, DataCollectionConfig, TimeRangesConfig, PrivacyConfig,
-        )
+        from src.tgraph_bot.config.schema import TGraphBotConfig
     except ImportError as e:
         msg = f"Failed to import configuration schema: {e}"
         raise ImportError(msg) from e
 
-    # Extract service configuration
-    tautulli_api_key = str(kwargs.get("TAUTULLI_API_KEY", "test_api_key"))
-    tautulli_url = str(kwargs.get("TAUTULLI_URL", "http://localhost:8181"))
-    discord_token = str(kwargs.get("DISCORD_TOKEN", "test_discord_token_1234567890"))
-    channel_id_value = kwargs.get("CHANNEL_ID", 123456789012345678)
-    discord_channel_id = int(channel_id_value) if isinstance(channel_id_value, (int, str)) else 123456789012345678
-    discord_timestamp_format = str(kwargs.get("DISCORD_TIMESTAMP_FORMAT", "R"))
+    # Start with a base configuration
+    base_config = create_test_config()
+    base_dict = base_config.model_dump()
 
-    # Extract graph feature configuration
-    enable_daily_play_count = bool(kwargs.get("ENABLE_DAILY_PLAY_COUNT", True))
-    enable_play_count_by_dayofweek = bool(kwargs.get("ENABLE_PLAY_COUNT_BY_DAYOFWEEK", True))
-    enable_play_count_by_hourofday = bool(kwargs.get("ENABLE_PLAY_COUNT_BY_HOUROFDAY", True))
-    enable_play_count_by_month = bool(kwargs.get("ENABLE_PLAY_COUNT_BY_MONTH", True))
-    enable_top_10_platforms = bool(kwargs.get("ENABLE_TOP_10_PLATFORMS", True))
-    enable_top_10_users = bool(kwargs.get("ENABLE_TOP_10_USERS", True))
-    enable_media_type_separation = bool(kwargs.get("ENABLE_MEDIA_TYPE_SEPARATION", True))
-    enable_stacked_bar_charts = bool(kwargs.get("ENABLE_STACKED_BAR_CHARTS", True))
+    # Map old flat keys to nested paths
+    flat_key_mapping = {
+        # Service configuration
+        "TAUTULLI_API_KEY": "services.tautulli.api_key",
+        "TAUTULLI_URL": "services.tautulli.url",
+        "DISCORD_TOKEN": "services.discord.token",
+        "CHANNEL_ID": "services.discord.channel_id",
+        
+        # Automation configuration
+        "UPDATE_DAYS": "automation.scheduling.update_days",
+        "FIXED_UPDATE_TIME": "automation.scheduling.fixed_update_time",
+        "KEEP_DAYS": "automation.data_retention.keep_days",
+        
+        # Data collection configuration
+        "TIME_RANGE_DAYS": "data_collection.time_ranges.days",
+        "TIME_RANGE_MONTHS": "data_collection.time_ranges.months",
+        "CENSOR_USERNAMES": "data_collection.privacy.censor_usernames",
+        
+        # System configuration
+        "LANGUAGE": "system.localization.language",
+        
+        # Graph features configuration
+        "ENABLE_DAILY_PLAY_COUNT": "graphs.features.enabled_types.daily_play_count",
+        "ENABLE_PLAY_COUNT_BY_DAYOFWEEK": "graphs.features.enabled_types.play_count_by_dayofweek",
+        "ENABLE_PLAY_COUNT_BY_HOUROFDAY": "graphs.features.enabled_types.play_count_by_hourofday",
+        "ENABLE_TOP_10_PLATFORMS": "graphs.features.enabled_types.top_10_platforms",
+        "ENABLE_TOP_10_USERS": "graphs.features.enabled_types.top_10_users",
+        "ENABLE_PLAY_COUNT_BY_MONTH": "graphs.features.enabled_types.play_count_by_month",
+        "ENABLE_MEDIA_TYPE_SEPARATION": "graphs.features.media_type_separation",
+        "ENABLE_STACKED_BAR_CHARTS": "graphs.features.stacked_bar_charts",
+        
+        # Graph appearance configuration
+        "GRAPH_WIDTH": "graphs.appearance.dimensions.width",
+        "GRAPH_HEIGHT": "graphs.appearance.dimensions.height",
+        "GRAPH_DPI": "graphs.appearance.dimensions.dpi",
+        "TV_COLOR": "graphs.appearance.colors.tv",
+        "MOVIE_COLOR": "graphs.appearance.colors.movie",
+        "GRAPH_BACKGROUND_COLOR": "graphs.appearance.colors.background",
+        "ENABLE_GRAPH_GRID": "graphs.appearance.grid.enabled",
+        
+        # Annotation configuration
+        "ANNOTATION_COLOR": "graphs.appearance.annotations.basic.color",
+        "ANNOTATION_OUTLINE_COLOR": "graphs.appearance.annotations.basic.outline_color",
+        "ENABLE_ANNOTATION_OUTLINE": "graphs.appearance.annotations.basic.enable_outline",
+        "ANNOTATION_FONT_SIZE": "graphs.appearance.annotations.basic.font_size",
+        "ANNOTATE_DAILY_PLAY_COUNT": "graphs.appearance.annotations.enabled_on.daily_play_count",
+        "ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK": "graphs.appearance.annotations.enabled_on.play_count_by_dayofweek",
+        "ANNOTATE_PLAY_COUNT_BY_HOUROFDAY": "graphs.appearance.annotations.enabled_on.play_count_by_hourofday",
+        "ANNOTATE_TOP_10_PLATFORMS": "graphs.appearance.annotations.enabled_on.top_10_platforms",
+        "ANNOTATE_TOP_10_USERS": "graphs.appearance.annotations.enabled_on.top_10_users",
+        "ANNOTATE_PLAY_COUNT_BY_MONTH": "graphs.appearance.annotations.enabled_on.play_count_by_month",
+        
+        # Palette configuration
+        "DAILY_PLAY_COUNT_PALETTE": "graphs.appearance.palettes.daily_play_count",
+        "PLAY_COUNT_BY_DAYOFWEEK_PALETTE": "graphs.appearance.palettes.play_count_by_dayofweek",
+        "PLAY_COUNT_BY_HOUROFDAY_PALETTE": "graphs.appearance.palettes.play_count_by_hourofday",
+        "TOP_10_PLATFORMS_PALETTE": "graphs.appearance.palettes.top_10_platforms",
+        "TOP_10_USERS_PALETTE": "graphs.appearance.palettes.top_10_users",
+        "PLAY_COUNT_BY_MONTH_PALETTE": "graphs.appearance.palettes.play_count_by_month",
+    }
 
-    # Extract appearance configuration
-    tv_color = str(kwargs.get("TV_COLOR", "#1f77b4"))
-    movie_color = str(kwargs.get("MOVIE_COLOR", "#ff7f0e"))
-    graph_background_color = str(kwargs.get("GRAPH_BACKGROUND_COLOR", "#ffffff"))
-    enable_graph_grid = bool(kwargs.get("ENABLE_GRAPH_GRID", False))
+    # Apply overrides using different strategies
+    for key, value in overrides.items():
+        if key in flat_key_mapping:
+            # Handle old flat keys by mapping to nested path
+            nested_path = flat_key_mapping[key]
+            _set_nested_value(base_dict, nested_path, value)
+        elif "__" in key:
+            # Handle dot-notation keys like "graphs__appearance__colors__tv"
+            nested_path = key.replace("__", ".")
+            _set_nested_value(base_dict, nested_path, value)
+        else:
+            # Handle direct nested dictionary overrides
+            if isinstance(value, dict) and key in base_dict and isinstance(base_dict[key], dict):
+                # Deep merge dictionaries
+                _deep_merge(base_dict[key], value)
+            else:
+                base_dict[key] = value
 
-    # Extract graph dimensions configuration
-    graph_width_value = kwargs.get("GRAPH_WIDTH", 14)
-    graph_width = int(graph_width_value) if isinstance(graph_width_value, (int, str)) else 14
-    graph_height_value = kwargs.get("GRAPH_HEIGHT", 8)
-    graph_height = int(graph_height_value) if isinstance(graph_height_value, (int, str)) else 8
-    graph_dpi_value = kwargs.get("GRAPH_DPI", 100)
-    graph_dpi = int(graph_dpi_value) if isinstance(graph_dpi_value, (int, str)) else 100
+    return TGraphBotConfig.model_validate(base_dict)
 
-    # Extract annotation configuration
-    annotation_color = str(kwargs.get("ANNOTATION_COLOR", "#ff0000"))
-    annotation_outline_color = str(kwargs.get("ANNOTATION_OUTLINE_COLOR", "#000000"))
-    enable_annotation_outline = bool(kwargs.get("ENABLE_ANNOTATION_OUTLINE", True))
-    annotate_daily_play_count = bool(kwargs.get("ANNOTATE_DAILY_PLAY_COUNT", True))
-    annotate_play_count_by_dayofweek = bool(kwargs.get("ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK", True))
-    annotate_play_count_by_hourofday = bool(kwargs.get("ANNOTATE_PLAY_COUNT_BY_HOUROFDAY", True))
-    annotate_play_count_by_month = bool(kwargs.get("ANNOTATE_PLAY_COUNT_BY_MONTH", True))
-    annotate_top_10_platforms = bool(kwargs.get("ANNOTATE_TOP_10_PLATFORMS", True))
-    annotate_top_10_users = bool(kwargs.get("ANNOTATE_TOP_10_USERS", True))
 
-    # Extract palette configuration
-    daily_play_count_palette = str(kwargs.get("DAILY_PLAY_COUNT_PALETTE", ""))
-    play_count_by_dayofweek_palette = str(kwargs.get("PLAY_COUNT_BY_DAYOFWEEK_PALETTE", ""))
-    play_count_by_hourofday_palette = str(kwargs.get("PLAY_COUNT_BY_HOUROFDAY_PALETTE", ""))
-    play_count_by_month_palette = str(kwargs.get("PLAY_COUNT_BY_MONTH_PALETTE", ""))
-    top_10_platforms_palette = str(kwargs.get("TOP_10_PLATFORMS_PALETTE", ""))
-    top_10_users_palette = str(kwargs.get("TOP_10_USERS_PALETTE", ""))
+def _set_nested_value(target_dict: dict[str, object], path: str, value: object) -> None:
+    """
+    Set a nested value in a dictionary using dot notation path.
 
-    # Extract data collection configuration
-    time_range_days_value = kwargs.get("TIME_RANGE_DAYS", 30)
-    time_range_days = int(time_range_days_value) if isinstance(time_range_days_value, (int, str)) else 30
-    time_range_months_value = kwargs.get("TIME_RANGE_MONTHS", 12)
-    time_range_months = int(time_range_months_value) if isinstance(time_range_months_value, (int, str)) else 12
-    censor_usernames = bool(kwargs.get("CENSOR_USERNAMES", True))
+    Args:
+        target_dict: Target dictionary to modify
+        path: Dot-separated path (e.g., "graphs.appearance.colors.tv")
+        value: Value to set
+    """
+    keys = path.split(".")
+    current = target_dict
+    
+    # Navigate to the parent of the target key
+    for key in keys[:-1]:
+        if key not in current:
+            current[key] = {}
+        current = current[key]  # pyright: ignore[reportAssignmentType]
+    
+    # Set the final value
+    current[keys[-1]] = value  # pyright: ignore[reportIndexIssue]
 
-    # Build the configuration
-    config = TGraphBotConfig(
-        services=ServicesConfig(
-            tautulli=TautulliConfig(
-                api_key=tautulli_api_key,
-                url=tautulli_url,
-            ),
-            discord=DiscordConfig(
-                token=discord_token,
-                channel_id=discord_channel_id,
-                timestamp_format=discord_timestamp_format,  # pyright: ignore[reportArgumentType]
-            ),
-        ),
-        graphs=GraphsConfig(
-            features=GraphFeaturesConfig(
-                enabled_types=EnabledTypesConfig(
-                    daily_play_count=enable_daily_play_count,
-                    play_count_by_dayofweek=enable_play_count_by_dayofweek,
-                    play_count_by_hourofday=enable_play_count_by_hourofday,
-                    play_count_by_month=enable_play_count_by_month,
-                    top_10_platforms=enable_top_10_platforms,
-                    top_10_users=enable_top_10_users,
-                ),
-                media_type_separation=enable_media_type_separation,
-                stacked_bar_charts=enable_stacked_bar_charts,
-            ),
-            appearance=GraphAppearanceConfig(
-                dimensions=DimensionsConfig(
-                    width=graph_width,
-                    height=graph_height,
-                    dpi=graph_dpi,
-                ),
-                colors=ColorsConfig(
-                    tv=tv_color,
-                    movie=movie_color,
-                    background=graph_background_color,
-                ),
-                grid=GridConfig(
-                    enabled=enable_graph_grid,
-                ),
-                annotations=AnnotationsConfig(
-                    basic=BasicAnnotationsConfig(
-                        color=annotation_color,
-                        outline_color=annotation_outline_color,
-                        enable_outline=enable_annotation_outline,
-                    ),
-                    enabled_on=EnabledOnConfig(
-                        daily_play_count=annotate_daily_play_count,
-                        play_count_by_dayofweek=annotate_play_count_by_dayofweek,
-                        play_count_by_hourofday=annotate_play_count_by_hourofday,
-                        play_count_by_month=annotate_play_count_by_month,
-                        top_10_platforms=annotate_top_10_platforms,
-                        top_10_users=annotate_top_10_users,
-                    ),
-                ),
-                palettes=PalettesConfig(
-                    daily_play_count=daily_play_count_palette,
-                    play_count_by_dayofweek=play_count_by_dayofweek_palette,
-                    play_count_by_hourofday=play_count_by_hourofday_palette,
-                    play_count_by_month=play_count_by_month_palette,
-                    top_10_platforms=top_10_platforms_palette,
-                    top_10_users=top_10_users_palette,
-                ),
-            ),
-        ),
-        data_collection=DataCollectionConfig(
-            time_ranges=TimeRangesConfig(
-                days=time_range_days,
-                months=time_range_months,
-            ),
-            privacy=PrivacyConfig(
-                censor_usernames=censor_usernames,
-            ),
-        ),
-    )
 
-    return config
+def _deep_merge(target: dict[str, object], source: dict[str, object]) -> None:
+    """
+    Deep merge source dictionary into target dictionary.
+
+    Args:
+        target: Target dictionary to merge into
+        source: Source dictionary to merge from
+    """
+    for key, value in source.items():
+        if (
+            key in target
+            and isinstance(target[key], dict)  
+            and isinstance(value, dict)
+        ):
+            _deep_merge(target[key], value)  # pyright: ignore[reportArgumentType]
+        else:
+            target[key] = value
 
 
 @contextmanager
@@ -351,10 +335,10 @@ def create_temp_config_file(
 
     Example:
         >>> config_data = {
-        ...     'TAUTULLI_API_KEY': 'test_key',
-        ...     'TAUTULLI_URL': 'http://localhost:8181/api/v2',
-        ...     'DISCORD_TOKEN': 'test_token',
-        ...     'CHANNEL_ID': 123456789,
+        ...     'services': {
+        ...         'tautulli': {'api_key': 'test_key', 'url': 'http://localhost:8181/api/v2'},
+        ...         'discord': {'token': 'test_token', 'channel_id': 123456789},
+        ...     }
         ... }
         >>> with create_temp_config_file(config_data) as config_path:
         ...     # Use config_path for testing
@@ -362,12 +346,18 @@ def create_temp_config_file(
         ...     # File is automatically cleaned up after context
     """
     if config_data is None:
-        # Provide minimal valid configuration data
+        # Provide minimal valid configuration data in nested structure
         config_data = {
-            "TAUTULLI_API_KEY": "test_api_key",
-            "TAUTULLI_URL": "http://localhost:8181/api/v2",
-            "DISCORD_TOKEN": "test_discord_token",
-            "CHANNEL_ID": 123456789012345678,
+            "services": {
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {
+                    "token": "test_discord_token",
+                    "channel_id": 123456789012345678,
+                },
+            },
         }
 
     try:
@@ -939,31 +929,40 @@ def assert_config_values_match(
     expected_values: dict[str, object],
 ) -> None:
     """
-    Assert that configuration object has expected attribute values.
+    Assert that configuration object has expected nested attribute values.
 
     This utility function consolidates configuration validation patterns
     to reduce repetitive assertion code across configuration tests.
 
     Args:
         actual_config: The configuration object to validate
-        expected_values: Dictionary of attribute names to expected values
+        expected_values: Dictionary of nested path names to expected values
+                        (e.g., "services.tautulli.api_key": "test_key")
 
     Raises:
         AssertionError: If any configuration values don't match expectations
 
     Example:
-        >>> config = create_test_config_with_overrides(
-                TAUTULLI_API_KEY="test_key", ...,
+        >>> config = create_test_config_with_nested_overrides(
+                services={"tautulli": {"api_key": "test_key"}}, ...,
             )
         >>> assert_config_values_match(config, {
-        ...     "TAUTULLI_API_KEY": "test_key",
-        ...     "UPDATE_DAYS": 7,
+        ...     "services.tautulli.api_key": "test_key",
+        ...     "automation.scheduling.update_days": 7,
         ... })
     """
-    for attr_name, expected_value in expected_values.items():
-        actual_value: object = getattr(actual_config, attr_name)  # pyright: ignore[reportAny]
-        assert actual_value == expected_value, (
-            f"Config attribute {attr_name}: expected {expected_value}, got {actual_value}"
+    for path, expected_value in expected_values.items():
+        current: object = actual_config
+        parts = path.split(".")
+        
+        try:
+            for part in parts:
+                current = getattr(current, part)
+        except AttributeError as e:
+            raise AssertionError(f"Config path {path} not found: {e}") from e
+        
+        assert current == expected_value, (
+            f"Config path {path}: expected {expected_value}, got {current}"
         )
 
 

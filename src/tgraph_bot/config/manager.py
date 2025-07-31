@@ -71,63 +71,12 @@ class ConfigManager:
                 f"Configuration file must contain a YAML dictionary, got {type(raw_config_data).__name__}"
             )
 
-        # Parse configuration using match statement for specific fields
-        parsed_data = ConfigManager._parse_config_data(config_data)
-
         try:
-            return TGraphBotConfig(**parsed_data)  # pyright: ignore[reportArgumentType]
+            return TGraphBotConfig.model_validate(config_data)
         except ValidationError as e:
             # Re-raise the original ValidationError with additional context
             raise e
 
-    @staticmethod
-    def _parse_config_data(config_data: dict[str, object]) -> dict[str, object]:
-        """
-        Parse configuration data using match statements for specific fields.
-
-        Args:
-            config_data: Raw configuration data from YAML
-
-        Returns:
-            dict[str, Any]: Parsed configuration data
-        """
-        parsed_data = config_data.copy()
-
-        # Parse specific fields using match statements as specified in requirements
-        for key, value in config_data.items():
-            match key:
-                case "FIXED_UPDATE_TIME":
-                    # Validate time format or XX:XX
-                    match value:
-                        case str() if value == "XX:XX":
-                            parsed_data[key] = value
-                        case str() if ":" in value:
-                            # Let Pydantic handle time format validation
-                            parsed_data[key] = value
-                        case _:
-                            parsed_data[key] = value
-
-                case "LANGUAGE":
-                    # Validate language code
-                    match value:
-                        case str() if len(value) == 2 and value.isalpha():
-                            parsed_data[key] = value.lower()
-                        case _:
-                            parsed_data[key] = value
-
-                case key if key.endswith("_COLOR"):
-                    # Normalize color values to lowercase
-                    match value:
-                        case str() if value.startswith("#"):
-                            parsed_data[key] = value.lower()
-                        case _:
-                            parsed_data[key] = value
-
-                case _:
-                    # No special parsing needed
-                    parsed_data[key] = value
-
-        return parsed_data
 
     @staticmethod
     def save_config(
@@ -329,8 +278,7 @@ class ConfigManager:
         """
         # Re-validate the configuration by creating a new instance
         try:
-            # model_dump() returns dict[str, Any] which is expected for Pydantic models
-            _ = TGraphBotConfig(**config.model_dump())  # pyright: ignore[reportAny]
+            _ = TGraphBotConfig.model_validate(config.model_dump())
             return True
         except ValidationError:
             raise

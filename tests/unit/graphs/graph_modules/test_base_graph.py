@@ -23,7 +23,7 @@ from tests.utils.graph_helpers import (
     assert_graph_properties,
     assert_graph_cleanup,
 )
-from tests.utils.test_helpers import create_temp_directory, create_test_config_with_overrides
+from tests.utils.test_helpers import create_temp_directory, create_test_config_with_nested_overrides
 
 
 class ConcreteGraph(BaseGraph):
@@ -322,7 +322,7 @@ class TestBaseGraph:
     def test_get_stacked_bar_charts_enabled_with_config(self) -> None:
         """Test get_stacked_bar_charts_enabled with configuration object."""
         # Test with stacked charts enabled
-        config_enabled = create_test_config_with_overrides(
+        config_enabled = create_test_config_with_nested_overrides(
                 TAUTULLI_API_KEY="test_api_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_discord_token",
@@ -333,7 +333,7 @@ class TestBaseGraph:
         assert graph_enabled.get_stacked_bar_charts_enabled() is True
 
         # Test with stacked charts disabled
-        config_disabled = create_test_config_with_overrides(
+        config_disabled = create_test_config_with_nested_overrides(
                 TAUTULLI_API_KEY="test_api_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_discord_token",
@@ -352,7 +352,7 @@ class TestBaseGraph:
     def test_get_media_type_separation_enabled_with_config(self) -> None:
         """Test get_media_type_separation_enabled with configuration object."""
         # Test with media type separation enabled
-        config_enabled = create_test_config_with_overrides(
+        config_enabled = create_test_config_with_nested_overrides(
                 TAUTULLI_API_KEY="test_api_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_discord_token",
@@ -363,7 +363,7 @@ class TestBaseGraph:
         assert graph_enabled.get_media_type_separation_enabled() is True
 
         # Test with media type separation disabled
-        config_disabled = create_test_config_with_overrides(
+        config_disabled = create_test_config_with_nested_overrides(
                 TAUTULLI_API_KEY="test_api_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_discord_token",
@@ -524,7 +524,7 @@ class TestBaseGraph:
 
     def test_get_time_range_days_from_config_with_config(self) -> None:
         """Test get_time_range_days_from_config with configuration."""
-        config = create_test_config_with_overrides(
+        config = create_test_config_with_nested_overrides(
                 TAUTULLI_API_KEY="test_api_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_discord_token",
@@ -553,7 +553,7 @@ class TestBaseGraph:
 
     def test_get_time_range_months_from_config_with_config(self) -> None:
         """Test get_time_range_months_from_config with configuration."""
-        config = create_test_config_with_overrides(
+        config = create_test_config_with_nested_overrides(
                 TAUTULLI_API_KEY="test_api_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_discord_token",
@@ -567,7 +567,7 @@ class TestBaseGraph:
 
     def test_time_range_days_method_consistency(self) -> None:
         """Test that time range days methods are consistent and don't have unnecessary wrappers."""
-        config = create_test_config_with_overrides(
+        config = create_test_config_with_nested_overrides(
                 TAUTULLI_API_KEY="test_api_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_discord_token",
@@ -612,7 +612,7 @@ class TestBaseGraph:
 
     def test_config_accessor_integration(self) -> None:
         """Test ConfigAccessor integration in BaseGraph."""
-        config = create_test_config_with_overrides(
+        config = create_test_config_with_nested_overrides(
                 TAUTULLI_API_KEY="test_api_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_discord_token",
@@ -640,7 +640,7 @@ class TestBaseGraph:
 
     def test_media_type_processor_lazy_initialization(self) -> None:
         """Test MediaTypeProcessor lazy initialization."""
-        config = create_test_config_with_overrides(
+        config = create_test_config_with_nested_overrides(
                 TAUTULLI_API_KEY="test_api_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_discord_token",
@@ -662,7 +662,7 @@ class TestBaseGraph:
 
     def test_apply_seaborn_style_with_grid(self) -> None:
         """Test apply_seaborn_style with grid enabled."""
-        config = create_test_config_with_overrides(
+        config = create_test_config_with_nested_overrides(
                 TAUTULLI_API_KEY="test_api_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_discord_token",
@@ -680,7 +680,7 @@ class TestBaseGraph:
 
     def test_apply_seaborn_style_without_grid(self) -> None:
         """Test apply_seaborn_style with grid disabled."""
-        config = create_test_config_with_overrides(
+        config = create_test_config_with_nested_overrides(
                 TAUTULLI_API_KEY="test_api_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_discord_token",
@@ -699,7 +699,7 @@ class TestBaseGraph:
     def test_get_grid_enabled(self) -> None:
         """Test get_grid_enabled method."""
         # Test with grid enabled
-        config_enabled = create_test_config_with_overrides(
+        config_enabled = create_test_config_with_nested_overrides(
                 TAUTULLI_API_KEY="test_api_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_discord_token",
@@ -710,7 +710,7 @@ class TestBaseGraph:
         assert graph_enabled.get_grid_enabled() is True
 
         # Test with grid disabled
-        config_disabled = create_test_config_with_overrides(
+        config_disabled = create_test_config_with_nested_overrides(
                 TAUTULLI_API_KEY="test_api_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_discord_token",
@@ -760,7 +760,7 @@ class TestBaseGraph:
 
     def test_enhanced_title_with_timeframe_days(self) -> None:
         """Test enhanced title generation with days timeframe."""
-        config = create_test_config_with_overrides(
+        config = create_test_config_with_nested_overrides(
                 TAUTULLI_API_KEY="test_api_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_discord_token",
@@ -775,7 +775,7 @@ class TestBaseGraph:
         assert result == "Daily Play Count (Last 7 days)"
 
         # Test singular form
-        config_singular = create_test_config_with_overrides(
+        config_singular = create_test_config_with_nested_overrides(
                 TAUTULLI_API_KEY="test_api_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_discord_token",
@@ -791,7 +791,7 @@ class TestBaseGraph:
 
     def test_enhanced_title_with_timeframe_months(self) -> None:
         """Test enhanced title generation with months timeframe."""
-        config = create_test_config_with_overrides(
+        config = create_test_config_with_nested_overrides(
                 TAUTULLI_API_KEY="test_api_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_discord_token",
@@ -806,7 +806,7 @@ class TestBaseGraph:
         assert result == "Monthly Play Count (Last 6 months)"
 
         # Test singular form
-        config_singular = create_test_config_with_overrides(
+        config_singular = create_test_config_with_nested_overrides(
                 TAUTULLI_API_KEY="test_api_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_discord_token",
@@ -822,7 +822,7 @@ class TestBaseGraph:
 
     def test_add_bar_value_annotation_with_outline(self) -> None:
         """Test add_bar_value_annotation with outline enabled."""
-        config = create_test_config_with_overrides(
+        config = create_test_config_with_nested_overrides(
                 TAUTULLI_API_KEY="test_api_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_discord_token",
@@ -843,7 +843,7 @@ class TestBaseGraph:
 
     def test_add_bar_value_annotation_without_outline(self) -> None:
         """Test add_bar_value_annotation with outline disabled."""
-        config = create_test_config_with_overrides(
+        config = create_test_config_with_nested_overrides(
                 TAUTULLI_API_KEY="test_api_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_discord_token",

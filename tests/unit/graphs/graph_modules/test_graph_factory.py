@@ -12,7 +12,7 @@ import pytest
 
 from src.tgraph_bot.graphs.graph_modules import GraphFactory
 from src.tgraph_bot.config.schema import TGraphBotConfig
-from tests.utils.test_helpers import create_test_config_with_overrides
+from tests.utils.test_helpers import create_test_config_with_nested_overrides
 
 
 
@@ -221,7 +221,7 @@ class TestGraphFactory:
 
     def test_graph_dimensions_extraction(self) -> None:
         """Test graph dimensions extraction from configuration."""
-        config = create_test_config_with_overrides(
+        config = create_test_config_with_nested_overrides(
                 TAUTULLI_API_KEY="test_api_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_discord_token",
@@ -465,7 +465,7 @@ class TestGraphFactory:
 
     def test_config_accessor_integration(self) -> None:
         """Test that ConfigAccessor is properly integrated."""
-        config = create_test_config_with_overrides(
+        config = create_test_config_with_nested_overrides(
                 TAUTULLI_API_KEY="test_api_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_discord_token",
@@ -501,7 +501,7 @@ class TestGraphFactory:
 
     def test_create_graph_by_type_with_dimensions(self) -> None:
         """Test that created graphs receive proper dimensions from config."""
-        config = create_test_config_with_overrides(
+        config = create_test_config_with_nested_overrides(
                 TAUTULLI_API_KEY="test_api_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_discord_token",
@@ -520,7 +520,7 @@ class TestGraphFactory:
 
     def test_create_enabled_graphs_with_dimensions(self) -> None:
         """Test that enabled graphs receive proper dimensions from config."""
-        config = create_test_config_with_overrides(
+        config = create_test_config_with_nested_overrides(
                 TAUTULLI_API_KEY="test_api_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_discord_token",

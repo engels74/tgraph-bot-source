@@ -1,4 +1,4 @@
-from tests.utils.test_helpers import create_test_config_with_overrides
+from tests.utils.test_helpers import create_test_config_with_nested_overrides
 
 """
 Test cases for color palette configuration functionality.
@@ -43,7 +43,7 @@ class TestPaletteConfiguration:
     def test_graph_specific_palette_application(self) -> None:
         """Test that each graph type returns only its own specific palette."""
         # Configure both palettes with different values
-        config = create_test_config_with_overrides(
+        config = create_test_config_with_nested_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -64,7 +64,7 @@ class TestPaletteConfiguration:
     def test_single_graph_palette_does_not_affect_other_graphs(self) -> None:
         """Test that configuring one graph's palette doesn't affect others."""
         # Configure only the hourly palette, not the users palette
-        config = create_test_config_with_overrides(
+        config = create_test_config_with_nested_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -85,7 +85,7 @@ class TestPaletteConfiguration:
     def test_get_user_configured_palette_method(self) -> None:
         """Test the get_user_configured_palette method works correctly."""
         # Test with configured palette
-        config_with_palette = create_test_config_with_overrides(
+        config_with_palette = create_test_config_with_nested_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -96,7 +96,7 @@ class TestPaletteConfiguration:
         assert graph_with_palette.get_user_configured_palette() == "viridis"
 
         # Test with empty palette
-        config_no_palette = create_test_config_with_overrides(
+        config_no_palette = create_test_config_with_nested_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -113,7 +113,7 @@ class TestPaletteConfiguration:
     def test_all_graph_types_palette_configuration(self) -> None:
         """Test palette configuration for all graph types after Phase 4 implementation."""
         # Test configuration with all palette types - this test will pass after Phase 4
-        config = create_test_config_with_overrides(
+        config = create_test_config_with_nested_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -148,7 +148,7 @@ class TestPaletteConfiguration:
     def test_palette_precedence_over_default_colors(self) -> None:
         """Test that user-configured palettes take precedence over default media type colors."""
         # Test with palette configured
-        config_with_palette = create_test_config_with_overrides(
+        config_with_palette = create_test_config_with_nested_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -158,7 +158,7 @@ class TestPaletteConfiguration:
             )
 
         # Test without palette configured
-        config_without_palette = create_test_config_with_overrides(
+        config_without_palette = create_test_config_with_nested_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -185,7 +185,7 @@ class TestPaletteConfiguration:
                 # Skip None test as it would cause validation error in TGraphBotConfig
                 continue
 
-            config = create_test_config_with_overrides(
+            config = create_test_config_with_nested_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -207,7 +207,7 @@ class TestPaletteConfiguration:
         valid_palettes = ["viridis", "plasma", "inferno", "magma", "cividis"]
 
         for palette in valid_palettes:
-            config = create_test_config_with_overrides(
+            config = create_test_config_with_nested_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -226,7 +226,7 @@ class TestPaletteConfiguration:
     def test_graph_specific_palette_isolation(self) -> None:
         """Test that each graph type only returns its own specific palette configuration."""
         # Configure different palettes for different graph types
-        config = create_test_config_with_overrides(
+        config = create_test_config_with_nested_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -254,7 +254,7 @@ class TestPaletteConfiguration:
     def test_new_palette_configurations_individual_testing(self) -> None:
         """Test each new palette configuration individually after Phase 4 implementation."""
         # Test DAILY_PLAY_COUNT_PALETTE
-        daily_config = create_test_config_with_overrides(
+        daily_config = create_test_config_with_nested_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -265,7 +265,7 @@ class TestPaletteConfiguration:
         assert daily_graph.get_user_configured_palette() == "inferno"
 
         # Test PLAY_COUNT_BY_DAYOFWEEK_PALETTE
-        dayofweek_config = create_test_config_with_overrides(
+        dayofweek_config = create_test_config_with_nested_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -276,7 +276,7 @@ class TestPaletteConfiguration:
         assert dayofweek_graph.get_user_configured_palette() == "magma"
 
         # Test TOP_10_PLATFORMS_PALETTE
-        platforms_config = create_test_config_with_overrides(
+        platforms_config = create_test_config_with_nested_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -287,7 +287,7 @@ class TestPaletteConfiguration:
         assert platforms_graph.get_user_configured_palette() == "cividis"
 
         # Test PLAY_COUNT_BY_MONTH_PALETTE
-        month_config = create_test_config_with_overrides(
+        month_config = create_test_config_with_nested_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -300,7 +300,7 @@ class TestPaletteConfiguration:
     def test_new_palette_configurations_empty_values(self) -> None:
         """Test that new palette configurations handle empty values correctly."""
         # Test with empty palette values for new configurations
-        config = create_test_config_with_overrides(
+        config = create_test_config_with_nested_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -326,7 +326,7 @@ class TestPaletteConfiguration:
 
     def test_palette_helper_method_with_valid_palette(self) -> None:
         """Test the get_palette_or_default_color() helper method with valid palette."""
-        config = create_test_config_with_overrides(
+        config = create_test_config_with_nested_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -342,7 +342,7 @@ class TestPaletteConfiguration:
 
     def test_palette_helper_method_with_no_palette(self) -> None:
         """Test the get_palette_or_default_color() helper method when no palette is configured."""
-        config = create_test_config_with_overrides(
+        config = create_test_config_with_nested_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -358,7 +358,7 @@ class TestPaletteConfiguration:
 
     def test_palette_helper_method_with_invalid_palette(self) -> None:
         """Test the get_palette_or_default_color() helper method with invalid palette."""
-        config = create_test_config_with_overrides(
+        config = create_test_config_with_nested_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -374,7 +374,7 @@ class TestPaletteConfiguration:
 
     def test_palette_helper_method_for_all_graph_types(self) -> None:
         """Test the get_palette_or_default_color() helper method works for all graph types."""
-        config = create_test_config_with_overrides(
+        config = create_test_config_with_nested_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -429,7 +429,7 @@ class TestPaletteConfiguration:
         """Test that combined modes actually use configured palettes when calling seaborn."""
         # Create config with palette configured - use explicit construction to avoid type issues
         if palette_config == "DAILY_PLAY_COUNT_PALETTE":
-            config = create_test_config_with_overrides(
+            config = create_test_config_with_nested_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -437,7 +437,7 @@ class TestPaletteConfiguration:
                 DAILY_PLAY_COUNT_PALETTE="viridis",
             )
         elif palette_config == "PLAY_COUNT_BY_DAYOFWEEK_PALETTE":
-            config = create_test_config_with_overrides(
+            config = create_test_config_with_nested_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -445,7 +445,7 @@ class TestPaletteConfiguration:
                 PLAY_COUNT_BY_DAYOFWEEK_PALETTE="viridis",
             )
         elif palette_config == "PLAY_COUNT_BY_MONTH_PALETTE":
-            config = create_test_config_with_overrides(
+            config = create_test_config_with_nested_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -453,7 +453,7 @@ class TestPaletteConfiguration:
                 PLAY_COUNT_BY_MONTH_PALETTE="viridis",
             )
         elif palette_config == "TOP_10_PLATFORMS_PALETTE":
-            config = create_test_config_with_overrides(
+            config = create_test_config_with_nested_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -461,7 +461,7 @@ class TestPaletteConfiguration:
                 TOP_10_PLATFORMS_PALETTE="viridis",
             )
         elif palette_config == "PLAY_COUNT_BY_HOUROFDAY_PALETTE":
-            config = create_test_config_with_overrides(
+            config = create_test_config_with_nested_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -469,7 +469,7 @@ class TestPaletteConfiguration:
                 PLAY_COUNT_BY_HOUROFDAY_PALETTE="viridis",
             )
         else:  # TOP_10_USERS_PALETTE
-            config = create_test_config_with_overrides(
+            config = create_test_config_with_nested_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -559,7 +559,7 @@ class TestPaletteConfiguration:
     ) -> None:
         """Test that combined modes use default colors when no palette is configured."""
         # Create config without palette
-        config = create_test_config_with_overrides(
+        config = create_test_config_with_nested_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",

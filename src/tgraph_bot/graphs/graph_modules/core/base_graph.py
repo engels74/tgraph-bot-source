@@ -55,7 +55,7 @@ class BaseGraph(ABC):
 
     def __init__(
         self,
-        config: "TGraphBotConfig | dict[str, object] | None" = None,
+        config: "TGraphBotConfig | None" = None,
         width: int = 14,
         height: int = 8,
         dpi: int = 100,
@@ -74,7 +74,7 @@ class BaseGraph(ABC):
         Raises:
             ValueError: If background_color is not a valid color format
         """
-        self.config: "TGraphBotConfig | dict[str, object] | None" = config
+        self.config: "TGraphBotConfig | None" = config
 
         # Initialize ConfigAccessor for centralized configuration access
         if config is not None:
@@ -115,7 +115,7 @@ class BaseGraph(ABC):
         Get a configuration value using the centralized ConfigAccessor.
 
         Args:
-            key: Configuration key to retrieve
+            key: Configuration key to retrieve (supports both flat keys and nested paths)
             default: Default value if key not found
 
         Returns:
@@ -124,14 +124,11 @@ class BaseGraph(ABC):
         if self._config_accessor is None:
             return default
 
-        if default is not None:
+        try:
             return self._config_accessor.get_value(key, default)
-        else:
-            try:
-                return self._config_accessor.get_value(key)
-            except Exception:
-                # If key doesn't exist and no default provided, return None for backward compatibility
-                return None
+        except Exception:
+            # If key doesn't exist, return default
+            return default
 
     @property
     def media_type_processor(self) -> "MediaTypeProcessor":

@@ -924,61 +924,77 @@ def config_validation_scenarios() -> list[tuple[str, dict[str, object], str]]:
     return [
         (
             "missing_api_key",
-            {"DISCORD_TOKEN": "test", "CHANNEL_ID": 123},
-            "TAUTULLI_API_KEY.*required",
+            {
+                "services": {
+                    "discord": {"token": "test", "channel_id": 123},
+                    "tautulli": {"url": "http://localhost:8181"},
+                }
+            },
+            "api_key.*required",
         ),
         (
             "missing_token",
-            {"TAUTULLI_API_KEY": "test", "CHANNEL_ID": 123},
-            "DISCORD_TOKEN.*required",
+            {
+                "services": {
+                    "tautulli": {"api_key": "test", "url": "http://localhost:8181"},
+                    "discord": {"channel_id": 123},
+                }
+            },
+            "token.*required",
         ),
         (
             "invalid_url",
             {
-                "TAUTULLI_URL": "not-a-url",
-                "TAUTULLI_API_KEY": "test",
-                "DISCORD_TOKEN": "test",
-                "CHANNEL_ID": 123,
+                "services": {
+                    "tautulli": {"api_key": "test", "url": "not-a-url"},
+                    "discord": {"token": "test", "channel_id": 123},
+                }
             },
             "Invalid URL",
         ),
         (
             "negative_days",
             {
-                "UPDATE_DAYS": -1,
-                "TAUTULLI_API_KEY": "test",
-                "DISCORD_TOKEN": "test",
-                "CHANNEL_ID": 123,
+                "services": {
+                    "tautulli": {"api_key": "test", "url": "http://localhost:8181"},
+                    "discord": {"token": "test", "channel_id": 123},
+                },
+                "automation": {"scheduling": {"update_days": -1}},
             },
             "greater than 0",
         ),
         (
             "invalid_time",
             {
-                "FIXED_UPDATE_TIME": "25:99",
-                "TAUTULLI_API_KEY": "test",
-                "DISCORD_TOKEN": "test",
-                "CHANNEL_ID": 123,
+                "services": {
+                    "tautulli": {"api_key": "test", "url": "http://localhost:8181"},
+                    "discord": {"token": "test", "channel_id": 123},
+                },
+                "automation": {"scheduling": {"fixed_update_time": "25:99"}},
             },
             "Invalid time format",
         ),
         (
             "invalid_color",
             {
-                "TV_COLOR": "not-a-color",
-                "TAUTULLI_API_KEY": "test",
-                "DISCORD_TOKEN": "test",
-                "CHANNEL_ID": 123,
+                "services": {
+                    "tautulli": {"api_key": "test", "url": "http://localhost:8181"},
+                    "discord": {"token": "test", "channel_id": 123},
+                },
+                "graphs": {"appearance": {"colors": {"tv": "not-a-color"}}},
             },
             "Invalid color",
         ),
         (
             "negative_cooldown",
             {
-                "CONFIG_COOLDOWN_MINUTES": -5,
-                "TAUTULLI_API_KEY": "test",
-                "DISCORD_TOKEN": "test",
-                "CHANNEL_ID": 123,
+                "services": {
+                    "tautulli": {"api_key": "test", "url": "http://localhost:8181"},
+                    "discord": {"token": "test", "channel_id": 123},
+                },
+                "rate_limiting": {
+                    "commands": {"config": {"user_cooldown_minutes": -5}}
+                },
             },
             "greater than or equal to 0",
         ),

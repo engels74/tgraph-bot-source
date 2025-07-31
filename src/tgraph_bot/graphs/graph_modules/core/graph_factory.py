@@ -32,14 +32,14 @@ class GraphDimensions(TypedDict):
 class GraphFactory:
     """Factory class for creating graph instances based on configuration."""
 
-    def __init__(self, config: "TGraphBotConfig | dict[str, object]") -> None:
+    def __init__(self, config: "TGraphBotConfig") -> None:
         """
         Initialize the graph factory.
 
         Args:
-            config: Configuration object containing graph settings
+            config: TGraphBotConfig object containing graph settings
         """
-        self.config: "TGraphBotConfig | dict[str, object]" = config
+        self.config: "TGraphBotConfig" = config
         self._config_accessor: ConfigAccessor = ConfigAccessor(config)
         self._graph_registry: GraphTypeRegistry = get_graph_type_registry()
 

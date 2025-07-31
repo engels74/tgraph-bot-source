@@ -22,7 +22,7 @@ from discord.ext import commands
 from src.tgraph_bot.main import TGraphBot, main, setup_logging, setup_signal_handlers
 from src.tgraph_bot.config.manager import ConfigManager
 from src.tgraph_bot.config.schema import TGraphBotConfig
-from tests.utils.test_helpers import create_config_manager_with_config, create_test_config_with_overrides
+from tests.utils.test_helpers import create_config_manager_with_config, create_test_config_with_nested_overrides
 from tests.utils.async_helpers import AsyncTestBase, async_mock_context
 
 if TYPE_CHECKING:
@@ -167,7 +167,7 @@ class TestTGraphBot:
     async def test_setup_hook_extension_loading_errors(self) -> None:
         """Test setup_hook handling extension loading errors gracefully."""
         config_manager = ConfigManager()
-        mock_config = create_test_config_with_overrides(
+        mock_config = create_test_config_with_nested_overrides(
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_token",
@@ -340,7 +340,7 @@ class TestMainFunction:
         from src.tgraph_bot.utils.cli.args import ParsedArgs
 
         # Create a mock config
-        mock_config = create_test_config_with_overrides(
+        mock_config = create_test_config_with_nested_overrides(
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_token",
@@ -370,7 +370,7 @@ class TestMainFunction:
         """Test main() handling KeyboardInterrupt."""
         from src.tgraph_bot.utils.cli.args import ParsedArgs
 
-        mock_config = create_test_config_with_overrides(
+        mock_config = create_test_config_with_nested_overrides(
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_token",
@@ -403,7 +403,7 @@ class TestMainFunction:
         """Test main() handling general exceptions."""
         from src.tgraph_bot.utils.cli.args import ParsedArgs
 
-        mock_config = create_test_config_with_overrides(
+        mock_config = create_test_config_with_nested_overrides(
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_token",
@@ -757,7 +757,7 @@ class TestMainFunctionEnhancements:
         """Test that main() sets up signal handlers."""
         from src.tgraph_bot.utils.cli.args import ParsedArgs
 
-        mock_config = create_test_config_with_overrides(
+        mock_config = create_test_config_with_nested_overrides(
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_token",
@@ -800,7 +800,7 @@ class TestMainFunctionEnhancements:
         import discord
         from src.tgraph_bot.utils.cli.args import ParsedArgs
 
-        mock_config = create_test_config_with_overrides(
+        mock_config = create_test_config_with_nested_overrides(
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="invalid_token",
@@ -841,7 +841,7 @@ class TestMainFunctionEnhancements:
         import discord
         from src.tgraph_bot.utils.cli.args import ParsedArgs
 
-        mock_config = create_test_config_with_overrides(
+        mock_config = create_test_config_with_nested_overrides(
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_token",
@@ -877,7 +877,7 @@ class TestMainFunctionEnhancements:
     @pytest.mark.asyncio
     async def test_main_finally_block_cleanup(self) -> None:
         """Test that main() properly cleans up in finally block."""
-        mock_config = create_test_config_with_overrides(
+        mock_config = create_test_config_with_nested_overrides(
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
                 DISCORD_TOKEN="test_token",

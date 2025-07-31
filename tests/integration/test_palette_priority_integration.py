@@ -23,7 +23,7 @@ from tests.utils.graph_helpers import (
     create_graph_factory_with_config,
     matplotlib_cleanup,
 )
-from tests.utils.test_helpers import create_test_config_with_overrides
+from tests.utils.test_helpers import create_test_config_with_nested_overrides
 
 if TYPE_CHECKING:
     pass
@@ -36,7 +36,7 @@ class TestPalettePriorityIntegration:
         """Test that custom palettes override media type separation across all graph types."""
         with matplotlib_cleanup():
             # Create config with both palette and media type separation enabled
-            config = create_test_config_with_overrides(
+            config = create_test_config_with_nested_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -107,7 +107,7 @@ class TestPalettePriorityIntegration:
         """Test that media type separation works when no custom palettes are configured."""
         with matplotlib_cleanup():
             # Create config with only media type separation enabled
-            config = create_test_config_with_overrides(
+            config = create_test_config_with_nested_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -152,7 +152,7 @@ class TestPalettePriorityIntegration:
         """Test that default colors are used when no palettes or separation are configured."""
         with matplotlib_cleanup():
             # Create minimal config with no color customizations
-            config = create_test_config_with_overrides(
+            config = create_test_config_with_nested_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -187,7 +187,7 @@ class TestPalettePriorityIntegration:
         """Test that empty/invalid palettes fall back to media type separation."""
         with matplotlib_cleanup():
             # Create config with empty palettes and media type separation
-            config = create_test_config_with_overrides(
+            config = create_test_config_with_nested_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -229,7 +229,7 @@ class TestPalettePriorityIntegration:
             invalid_palettes = ["", "   ", "not_a_palette", "123invalid"]
             
             for palette in valid_palettes:
-                config = create_test_config_with_overrides(
+                config = create_test_config_with_nested_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -251,7 +251,7 @@ class TestPalettePriorityIntegration:
                 graph.cleanup()
             
             for palette in invalid_palettes:
-                config = create_test_config_with_overrides(
+                config = create_test_config_with_nested_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -274,7 +274,7 @@ class TestPalettePriorityIntegration:
         """Test that existing configurations without palettes continue to work."""
         with matplotlib_cleanup():
             # Simulate old configuration style (before palette priority system)
-            old_style_config = create_test_config_with_overrides(
+            old_style_config = create_test_config_with_nested_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -308,14 +308,14 @@ class TestPalettePriorityIntegration:
             # across different configurations
             
             configs = {
-                "palette": create_test_config_with_overrides(
+                "palette": create_test_config_with_nested_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
                 CHANNEL_ID=123456789,
                 DAILY_PLAY_COUNT_PALETTE="Set1",
             ),
-                "separation": create_test_config_with_overrides(
+                "separation": create_test_config_with_nested_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
@@ -324,7 +324,7 @@ class TestPalettePriorityIntegration:
                 TV_COLOR="#ff0000",
                 MOVIE_COLOR="#00ff00",
             ),
-                "default": create_test_config_with_overrides(
+                "default": create_test_config_with_nested_overrides(
                 DISCORD_TOKEN="test_token",
                 TAUTULLI_API_KEY="test_key",
                 TAUTULLI_URL="http://test.local",
