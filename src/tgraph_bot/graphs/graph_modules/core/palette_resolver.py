@@ -227,9 +227,11 @@ class PaletteResolver:
         if palette_key is None:
             return None
 
-        # Get palette value from config
+        # Get palette value from config using ConfigAccessor
         palette_value: object = None
-        if isinstance(self.config, dict):
+        if self.config_accessor is not None:
+            palette_value = self.config_accessor.get_value(palette_key, "")
+        elif isinstance(self.config, dict):
             palette_value = self.config.get(palette_key)
         elif self.config is not None:
             palette_value = getattr(self.config, palette_key, None)

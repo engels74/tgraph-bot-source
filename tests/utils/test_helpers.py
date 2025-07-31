@@ -179,7 +179,7 @@ def create_test_config_with_overrides(**kwargs: object) -> TGraphBotConfig:
             GraphsConfig, GraphFeaturesConfig, EnabledTypesConfig,
             GraphAppearanceConfig, ColorsConfig, AnnotationsConfig,
             BasicAnnotationsConfig, EnabledOnConfig, GridConfig,
-            PalettesConfig,
+            PalettesConfig, DataCollectionConfig, TimeRangesConfig, PrivacyConfig,
         )
     except ImportError as e:
         msg = f"Failed to import configuration schema: {e}"
@@ -227,6 +227,13 @@ def create_test_config_with_overrides(**kwargs: object) -> TGraphBotConfig:
     play_count_by_month_palette = str(kwargs.get("PLAY_COUNT_BY_MONTH_PALETTE", ""))
     top_10_platforms_palette = str(kwargs.get("TOP_10_PLATFORMS_PALETTE", ""))
     top_10_users_palette = str(kwargs.get("TOP_10_USERS_PALETTE", ""))
+
+    # Extract data collection configuration
+    time_range_days_value = kwargs.get("TIME_RANGE_DAYS", 30)
+    time_range_days = int(time_range_days_value) if isinstance(time_range_days_value, (int, str)) else 30
+    time_range_months_value = kwargs.get("TIME_RANGE_MONTHS", 12)
+    time_range_months = int(time_range_months_value) if isinstance(time_range_months_value, (int, str)) else 12
+    censor_usernames = bool(kwargs.get("CENSOR_USERNAMES", True))
 
     # Build the configuration
     config = TGraphBotConfig(
@@ -286,6 +293,15 @@ def create_test_config_with_overrides(**kwargs: object) -> TGraphBotConfig:
                     top_10_platforms=top_10_platforms_palette,
                     top_10_users=top_10_users_palette,
                 ),
+            ),
+        ),
+        data_collection=DataCollectionConfig(
+            time_ranges=TimeRangesConfig(
+                days=time_range_days,
+                months=time_range_months,
+            ),
+            privacy=PrivacyConfig(
+                censor_usernames=censor_usernames,
             ),
         ),
     )

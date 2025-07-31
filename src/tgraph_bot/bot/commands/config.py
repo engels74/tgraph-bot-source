@@ -16,6 +16,7 @@ from pydantic import ValidationError
 from ... import i18n
 from ...config.manager import ConfigManager
 from ...config.schema import TGraphBotConfig
+from ...graphs.graph_modules.config.config_accessor import ConfigAccessor
 from ...utils.discord.base_command_cog import BaseCommandCog
 from ...utils.core.config_utils import ConfigurationHelper
 from ...utils.core.exceptions import (
@@ -49,12 +50,71 @@ class ConfigCog(BaseCommandCog):
 
     def _get_config_keys(self) -> list[str]:
         """
-        Get all available configuration keys from the schema.
+        Get all available configuration keys (old flat key names for user compatibility).
 
         Returns:
-            List of configuration key names
+            List of configuration key names that users can use
         """
-        return list(TGraphBotConfig.model_fields.keys())
+        # Return the old flat key names that users are familiar with
+        # These are mapped to nested paths by the ConfigAccessor
+        return [
+            # Service configuration
+            "TAUTULLI_API_KEY",
+            "TAUTULLI_URL",
+            "DISCORD_TOKEN",
+            "CHANNEL_ID",
+
+            # Automation configuration
+            "UPDATE_DAYS",
+            "FIXED_UPDATE_TIME",
+            "KEEP_DAYS",
+
+            # Data collection configuration
+            "TIME_RANGE_DAYS",
+            "TIME_RANGE_MONTHS",
+            "CENSOR_USERNAMES",
+
+            # System configuration
+            "LANGUAGE",
+
+            # Graph features configuration
+            "ENABLE_DAILY_PLAY_COUNT",
+            "ENABLE_PLAY_COUNT_BY_DAYOFWEEK",
+            "ENABLE_PLAY_COUNT_BY_HOUROFDAY",
+            "ENABLE_TOP_10_PLATFORMS",
+            "ENABLE_TOP_10_USERS",
+            "ENABLE_PLAY_COUNT_BY_MONTH",
+            "ENABLE_MEDIA_TYPE_SEPARATION",
+            "ENABLE_STACKED_BAR_CHARTS",
+
+            # Graph appearance configuration
+            "GRAPH_WIDTH",
+            "GRAPH_HEIGHT",
+            "GRAPH_DPI",
+            "TV_COLOR",
+            "MOVIE_COLOR",
+            "GRAPH_BACKGROUND_COLOR",
+            "ENABLE_GRAPH_GRID",
+
+            # Annotation configuration
+            "ANNOTATION_COLOR",
+            "ANNOTATION_OUTLINE_COLOR",
+            "ENABLE_ANNOTATION_OUTLINE",
+            "ANNOTATE_DAILY_PLAY_COUNT",
+            "ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK",
+            "ANNOTATE_PLAY_COUNT_BY_HOUROFDAY",
+            "ANNOTATE_TOP_10_PLATFORMS",
+            "ANNOTATE_TOP_10_USERS",
+            "ANNOTATE_PLAY_COUNT_BY_MONTH",
+
+            # Palette configuration
+            "DAILY_PLAY_COUNT_PALETTE",
+            "PLAY_COUNT_BY_DAYOFWEEK_PALETTE",
+            "PLAY_COUNT_BY_HOUROFDAY_PALETTE",
+            "TOP_10_PLATFORMS_PALETTE",
+            "TOP_10_USERS_PALETTE",
+            "PLAY_COUNT_BY_MONTH_PALETTE",
+        ]
 
     async def _config_key_autocomplete(
         self,
@@ -154,10 +214,14 @@ class ConfigCog(BaseCommandCog):
         """
         try:
             config = self.tgraph_bot.config_manager.get_current_config()
+            config_accessor = ConfigAccessor(config)
 
             # If a specific key is requested, show only that key
             if key is not None:
-                if not hasattr(config, key):
+                try:
+                    # Use ConfigAccessor to get the value
+                    value: object = config_accessor.get_value(key)
+                except ConfigurationError:
                     error_embed = discord.Embed(
                         title=i18n.translate("❌ Configuration Key Not Found"),
                         description=i18n.translate(
@@ -175,14 +239,9 @@ class ConfigCog(BaseCommandCog):
                     await self.send_ephemeral_response(interaction, embed=error_embed)
                     return
 
-                # Get the value and its type
-                value: object = getattr(config, key)  # pyright: ignore[reportAny]
-                field_info = TGraphBotConfig.model_fields.get(key)
-                description = (
-                    field_info.description
-                    if field_info
-                    else i18n.translate("No description available")
-                )
+                # For old flat keys, we don't have field descriptions in the schema
+                # So provide a generic description
+                description = i18n.translate("Configuration setting: {key}", key=key)
 
                 # Create embed for specific key
                 embed = discord.Embed(

@@ -272,12 +272,8 @@ class BaseGraph(ABC):
             # No specific palette configuration for this graph type
             return None
 
-        # Get the palette value for this specific graph
-        palette_value = None
-        if isinstance(self.config, dict):
-            palette_value = self.config.get(palette_key)
-        else:
-            palette_value = getattr(self.config, palette_key, None)
+        # Get the palette value for this specific graph using ConfigAccessor
+        palette_value = self.get_config_value(palette_key, "")
 
         # Return the palette if it's configured with a non-empty string
         if palette_value and isinstance(palette_value, str) and palette_value.strip():

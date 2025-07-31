@@ -53,7 +53,7 @@ class TestConfigAccessor:
         accessor = ConfigAccessor(config)
 
         assert accessor.get_value("ENABLE_DAILY_PLAY_COUNT") is True
-        assert accessor.get_value("GRAPH_WIDTH") == 12  # Default value from schema
+        assert accessor.get_value("GRAPH_WIDTH") == 14  # Default value from schema
         assert accessor.get_value("TAUTULLI_API_KEY") == "test_api_key_comprehensive"
 
     def test_get_value_with_default_dict(self) -> None:
@@ -152,7 +152,7 @@ class TestConfigAccessor:
         accessor = ConfigAccessor(config)
 
         assert (
-            accessor.get_int_value("GRAPH_WIDTH", 0) == 12
+            accessor.get_int_value("GRAPH_WIDTH", 0) == 14
         )  # Default value from schema
         assert (
             accessor.get_int_value("GRAPH_HEIGHT", 0) == 8
@@ -215,7 +215,7 @@ class TestConfigAccessor:
 
         dimensions = accessor.get_graph_dimensions()
         assert dimensions == {
-            "width": 12,
+            "width": 14,
             "height": 8,
             "dpi": 100,
         }  # Default values from schema
