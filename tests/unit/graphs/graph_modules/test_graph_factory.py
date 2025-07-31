@@ -12,7 +12,7 @@ import pytest
 
 from src.tgraph_bot.graphs.graph_modules import GraphFactory
 from src.tgraph_bot.config.schema import TGraphBotConfig
-from tests.utils.test_helpers import create_test_config, create_test_config_custom
+from tests.utils.test_helpers import create_test_config, create_test_config_custom, create_test_config_with_nested_overrides
 
 
 
@@ -175,7 +175,8 @@ class TestGraphFactory:
 
     def test_get_enabled_graph_types_empty_config(self) -> None:
         """Test getting enabled graph types with empty configuration."""
-        factory = GraphFactory({})
+        config = create_test_config()  # Use minimal config instead of empty dict
+        factory = GraphFactory(config)
         enabled_types = factory.get_enabled_graph_types()
 
         # All types should be enabled by default (True is the default)
@@ -192,14 +193,14 @@ class TestGraphFactory:
 
     def test_get_enabled_graph_types_all_disabled(self) -> None:
         """Test getting enabled graph types with all disabled."""
-        config: dict[str, object] = {
-            "ENABLE_DAILY_PLAY_COUNT": False,
-            "ENABLE_PLAY_COUNT_BY_DAYOFWEEK": False,
-            "ENABLE_PLAY_COUNT_BY_HOUROFDAY": False,
-            "ENABLE_PLAY_COUNT_BY_MONTH": False,
-            "ENABLE_TOP_10_PLATFORMS": False,
-            "ENABLE_TOP_10_USERS": False,
-        }
+        config = create_test_config_with_nested_overrides(
+            ENABLE_DAILY_PLAY_COUNT=False,
+            ENABLE_PLAY_COUNT_BY_DAYOFWEEK=False,
+            ENABLE_PLAY_COUNT_BY_HOUROFDAY=False,
+            ENABLE_PLAY_COUNT_BY_MONTH=False,
+            ENABLE_TOP_10_PLATFORMS=False,
+            ENABLE_TOP_10_USERS=False,
+        )
         factory = GraphFactory(config)
         enabled_types = factory.get_enabled_graph_types()
 
@@ -207,14 +208,14 @@ class TestGraphFactory:
 
     def test_get_enabled_graph_types_partial_enabled(self) -> None:
         """Test getting enabled graph types with some enabled."""
-        config: dict[str, object] = {
-            "ENABLE_DAILY_PLAY_COUNT": True,
-            "ENABLE_PLAY_COUNT_BY_DAYOFWEEK": False,
-            "ENABLE_PLAY_COUNT_BY_HOUROFDAY": True,
-            "ENABLE_PLAY_COUNT_BY_MONTH": False,
-            "ENABLE_TOP_10_PLATFORMS": True,
-            "ENABLE_TOP_10_USERS": False,
-        }
+        config = create_test_config_with_nested_overrides(
+            ENABLE_DAILY_PLAY_COUNT=True,
+            ENABLE_PLAY_COUNT_BY_DAYOFWEEK=False,
+            ENABLE_PLAY_COUNT_BY_HOUROFDAY=True,
+            ENABLE_PLAY_COUNT_BY_MONTH=False,
+            ENABLE_TOP_10_PLATFORMS=True,
+            ENABLE_TOP_10_USERS=False,
+        )
         factory = GraphFactory(config)
         enabled_types = factory.get_enabled_graph_types()
 
@@ -228,14 +229,14 @@ class TestGraphFactory:
 
     def test_get_enabled_graph_types_mixed_values(self) -> None:
         """Test getting enabled graph types with mixed value types."""
-        config: dict[str, object] = {
-            "ENABLE_DAILY_PLAY_COUNT": 1,  # Truthy
-            "ENABLE_PLAY_COUNT_BY_DAYOFWEEK": 0,  # Falsy
-            "ENABLE_PLAY_COUNT_BY_HOUROFDAY": "yes",  # Truthy
-            "ENABLE_PLAY_COUNT_BY_MONTH": "",  # Falsy
-            "ENABLE_TOP_10_PLATFORMS": None,  # Falsy
-            "ENABLE_TOP_10_USERS": "false",  # Truthy (non-empty string)
-        }
+        config = create_test_config_with_nested_overrides(
+            ENABLE_DAILY_PLAY_COUNT=True,  # Convert truthy to boolean
+            ENABLE_PLAY_COUNT_BY_DAYOFWEEK=False,  # Convert falsy to boolean
+            ENABLE_PLAY_COUNT_BY_HOUROFDAY=True,  # Convert truthy to boolean
+            ENABLE_PLAY_COUNT_BY_MONTH=False,  # Convert falsy to boolean
+            ENABLE_TOP_10_PLATFORMS=False,  # Convert falsy to boolean
+            ENABLE_TOP_10_USERS=True,  # Convert truthy to boolean
+        )
         factory = GraphFactory(config)
         enabled_types = factory.get_enabled_graph_types()
 
@@ -275,7 +276,7 @@ class TestGraphFactory:
 
     def test_graph_dimensions_defaults(self) -> None:
         """Test graph dimensions with default values."""
-        config: dict[str, object] = {}
+        config = create_test_config()  # Use minimal config instead of empty dict
         factory = GraphFactory(config)
 
         # Access private method for testing
@@ -291,25 +292,26 @@ class TestGraphFactory:
 
     def test_factory_config_immutability(self) -> None:
         """Test that factory doesn't modify the original config."""
-        original_config: dict[str, object] = {
-            "ENABLE_DAILY_PLAY_COUNT": True,
-            "ENABLE_PLAY_COUNT_BY_DAYOFWEEK": False,
-        }
-        config_copy = original_config.copy()
+        original_config = create_test_config_with_nested_overrides(
+            ENABLE_DAILY_PLAY_COUNT=True,
+            ENABLE_PLAY_COUNT_BY_DAYOFWEEK=False,
+        )
+        # Create a copy by serializing and deserializing
+        config_copy = TGraphBotConfig.model_validate(original_config.model_dump())
 
         factory = GraphFactory(config_copy)
         _ = factory.get_enabled_graph_types()
         _ = factory.create_enabled_graphs()
 
         # Original config should be unchanged
-        assert original_config == config_copy
+        assert original_config.model_dump() == config_copy.model_dump()
 
     def test_factory_extensibility(self) -> None:
         """Test that factory design supports extensibility."""
         # This test verifies the factory pattern structure supports
         # adding new graph types without modifying existing code
 
-        factory = GraphFactory({})
+        factory = GraphFactory(create_test_config())
 
         # Verify the type mapping exists and has expected structure
         enabled_types = factory.get_enabled_graph_types()
@@ -330,7 +332,7 @@ class TestGraphFactory:
 
     def test_sample_graph_integration(self) -> None:
         """Test that sample graph can be created through factory."""
-        config: dict[str, object] = {"ENABLE_SAMPLE_GRAPH": True}
+        config = create_test_config()  # Sample graph not in our mapping, use default config
         factory = GraphFactory(config)
 
         # Test creating sample graph by type
@@ -342,7 +344,7 @@ class TestGraphFactory:
 
     def test_sample_graph_in_enabled_graphs(self) -> None:
         """Test that sample graph appears in enabled graphs when configured."""
-        config: dict[str, object] = {"ENABLE_SAMPLE_GRAPH": True}
+        config = create_test_config()  # Sample graph not in our mapping, use default config
         factory = GraphFactory(config)
 
         enabled_types = factory.get_enabled_graph_types()
@@ -354,7 +356,7 @@ class TestGraphFactory:
 
     def test_sample_graph_disabled_by_default(self) -> None:
         """Test that sample graph is disabled by default."""
-        factory = GraphFactory({})  # Empty config
+        factory = GraphFactory(create_test_config())  # Use minimal config
 
         enabled_types = factory.get_enabled_graph_types()
         assert "sample_graph" not in enabled_types
@@ -369,7 +371,7 @@ class TestGraphFactory:
             SampleGraph,
         )
 
-        config: dict[str, object] = {"ENABLE_SAMPLE_GRAPH": True}
+        config = create_test_config()  # Sample graph not in our mapping, use default config
         factory = GraphFactory(config)
 
         # Create graph through factory
@@ -389,7 +391,7 @@ class TestGraphFactory:
 
     def test_setup_graph_environment(self) -> None:
         """Test that setup_graph_environment creates directory and returns path."""
-        factory = GraphFactory({})
+        factory = GraphFactory(create_test_config())
 
         with tempfile.TemporaryDirectory() as temp_dir:
             base_path = Path(temp_dir) / "test_graphs"
@@ -404,7 +406,7 @@ class TestGraphFactory:
 
     def test_cleanup_old_graphs_with_directory(self) -> None:
         """Test cleanup of old graph files from specified directory."""
-        factory = GraphFactory({})
+        factory = GraphFactory(create_test_config())
 
         with tempfile.TemporaryDirectory() as temp_dir:
             graph_dir = Path(temp_dir)
@@ -433,7 +435,7 @@ class TestGraphFactory:
 
     def test_cleanup_old_graphs_default_directory(self) -> None:
         """Test cleanup using default graph directory."""
-        factory = GraphFactory({})
+        factory = GraphFactory(create_test_config())
 
         # This should not raise an error even if directory doesn't exist
         deleted_count = factory.cleanup_old_graphs()
@@ -535,7 +537,7 @@ class TestGraphFactory:
 
     def test_graph_type_registry_integration(self) -> None:
         """Test that GraphTypeRegistry is properly integrated."""
-        factory = GraphFactory({})
+        factory = GraphFactory(create_test_config())
 
         # Test that the factory can access registry information
         enabled_types = factory.get_enabled_graph_types()

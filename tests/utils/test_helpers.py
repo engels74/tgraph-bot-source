@@ -152,6 +152,149 @@ def create_test_config(
     return config
 
 
+def create_test_config_with_nested_overrides(**kwargs: object) -> TGraphBotConfig:
+    """
+    Create a TGraphBotConfig with old flat parameter names converted to nested structure.
+
+    This function provides backwards compatibility for tests that use old flat config
+    parameter names by converting them to the new nested structure according to the
+    migration mapping documented in docs/config_migration_mapping.md.
+
+    Args:
+        **kwargs: Old flat configuration parameters (e.g., TAUTULLI_API_KEY, DISCORD_TOKEN)
+
+    Returns:
+        TGraphBotConfig: Properly structured configuration object
+
+    Example:
+        >>> config = create_test_config_with_nested_overrides(
+        ...     TAUTULLI_API_KEY="test_key",
+        ...     DISCORD_TOKEN="test_token",
+        ...     CHANNEL_ID=123456789,
+        ...     ENABLE_DAILY_PLAY_COUNT=True
+        ... )
+        >>> assert config.services.tautulli.api_key == "test_key"
+        >>> assert config.services.discord.token == "test_token"
+    """
+    try:
+        from src.tgraph_bot.config.schema import TGraphBotConfig
+    except ImportError as e:
+        msg = f"Failed to import configuration schema: {e}"
+        raise ImportError(msg) from e
+
+    # Start with a base configuration
+    base_config = create_test_config()
+    base_dict = base_config.model_dump()
+
+    # Convert flat parameters to nested structure according to migration mapping
+    for flat_key, value in kwargs.items():
+        nested_path = _convert_flat_key_to_nested_path(flat_key)
+        if nested_path:
+            _set_nested_value(base_dict, nested_path, value)
+
+    return TGraphBotConfig.model_validate(base_dict)
+
+
+def _convert_flat_key_to_nested_path(flat_key: str) -> str | None:
+    """
+    Convert old flat configuration key to new nested path.
+
+    Args:
+        flat_key: Old flat configuration key (e.g., "TAUTULLI_API_KEY")
+
+    Returns:
+        Nested path string or None if no mapping exists
+    """
+    # Mapping from old flat keys to new nested paths
+    # Based on docs/config_migration_mapping.md
+    mapping = {
+        # Services
+        "TAUTULLI_API_KEY": "services.tautulli.api_key",
+        "TAUTULLI_URL": "services.tautulli.url",
+        "DISCORD_TOKEN": "services.discord.token",
+        "CHANNEL_ID": "services.discord.channel_id",
+
+        # Automation
+        "UPDATE_DAYS": "automation.scheduling.update_days",
+        "FIXED_UPDATE_TIME": "automation.scheduling.fixed_update_time",
+        "KEEP_DAYS": "automation.data_retention.keep_days",
+
+        # Data Collection
+        "TIME_RANGE_DAYS": "data_collection.time_ranges.days",
+        "TIME_RANGE_MONTHS": "data_collection.time_ranges.months",
+        "CENSOR_USERNAMES": "data_collection.privacy.censor_usernames",
+
+        # System
+        "LANGUAGE": "system.localization.language",
+
+        # Graph Features
+        "ENABLE_DAILY_PLAY_COUNT": "graphs.features.enabled_types.daily_play_count",
+        "ENABLE_PLAY_COUNT_BY_DAYOFWEEK": "graphs.features.enabled_types.play_count_by_dayofweek",
+        "ENABLE_PLAY_COUNT_BY_HOUROFDAY": "graphs.features.enabled_types.play_count_by_hourofday",
+        "ENABLE_TOP_10_PLATFORMS": "graphs.features.enabled_types.top_10_platforms",
+        "ENABLE_TOP_10_USERS": "graphs.features.enabled_types.top_10_users",
+        "ENABLE_PLAY_COUNT_BY_MONTH": "graphs.features.enabled_types.play_count_by_month",
+        "ENABLE_MEDIA_TYPE_SEPARATION": "graphs.features.media_type_separation",
+        "ENABLE_STACKED_BAR_CHARTS": "graphs.features.stacked_bar_charts",
+
+        # Graph Appearance - Dimensions
+        "GRAPH_WIDTH": "graphs.appearance.dimensions.width",
+        "GRAPH_HEIGHT": "graphs.appearance.dimensions.height",
+        "GRAPH_DPI": "graphs.appearance.dimensions.dpi",
+
+        # Graph Appearance - Colors
+        "TV_COLOR": "graphs.appearance.colors.tv",
+        "MOVIE_COLOR": "graphs.appearance.colors.movie",
+        "GRAPH_BACKGROUND_COLOR": "graphs.appearance.colors.background",
+
+        # Graph Appearance - Grid
+        "ENABLE_GRAPH_GRID": "graphs.appearance.grid.enabled",
+
+        # Graph Appearance - Annotations
+        "ANNOTATION_COLOR": "graphs.appearance.annotations.basic.color",
+        "ANNOTATION_OUTLINE_COLOR": "graphs.appearance.annotations.basic.outline_color",
+        "ENABLE_ANNOTATION_OUTLINE": "graphs.appearance.annotations.basic.enable_outline",
+        "ANNOTATE_DAILY_PLAY_COUNT": "graphs.appearance.annotations.enabled_on.daily_play_count",
+        "ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK": "graphs.appearance.annotations.enabled_on.play_count_by_dayofweek",
+        "ANNOTATE_PLAY_COUNT_BY_HOUROFDAY": "graphs.appearance.annotations.enabled_on.play_count_by_hourofday",
+        "ANNOTATE_TOP_10_PLATFORMS": "graphs.appearance.annotations.enabled_on.top_10_platforms",
+        "ANNOTATE_TOP_10_USERS": "graphs.appearance.annotations.enabled_on.top_10_users",
+        "ANNOTATE_PLAY_COUNT_BY_MONTH": "graphs.appearance.annotations.enabled_on.play_count_by_month",
+
+        # Graph Appearance - Palettes
+        "DAILY_PLAY_COUNT_PALETTE": "graphs.appearance.palettes.daily_play_count",
+        "PLAY_COUNT_BY_DAYOFWEEK_PALETTE": "graphs.appearance.palettes.play_count_by_dayofweek",
+        "PLAY_COUNT_BY_HOUROFDAY_PALETTE": "graphs.appearance.palettes.play_count_by_hourofday",
+        "TOP_10_PLATFORMS_PALETTE": "graphs.appearance.palettes.top_10_platforms",
+        "TOP_10_USERS_PALETTE": "graphs.appearance.palettes.top_10_users",
+        "PLAY_COUNT_BY_MONTH_PALETTE": "graphs.appearance.palettes.play_count_by_month",
+    }
+
+    return mapping.get(flat_key)
+
+
+def _set_nested_value(config_dict: dict[str, object], path: str, value: object) -> None:
+    """
+    Set a nested value in a configuration dictionary using dot notation.
+
+    Args:
+        config_dict: Configuration dictionary to modify
+        path: Dot-separated path (e.g., "services.tautulli.api_key")
+        value: Value to set
+    """
+    parts = path.split(".")
+    current = config_dict
+
+    # Navigate to the parent of the target key
+    for part in parts[:-1]:
+        if part not in current:
+            current[part] = {}
+        current = cast(dict[str, object], current[part])
+
+    # Set the final value
+    current[parts[-1]] = value
+
+
 def create_test_config_custom(
     *,
     services_overrides: dict[str, object] | None = None,

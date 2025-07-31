@@ -17,6 +17,7 @@ from tests.utils.graph_helpers import (
     create_test_config_minimal,
     create_test_config_comprehensive,
 )
+from tests.utils.test_helpers import create_test_config_with_nested_overrides
 
 
 class TestColorStrategy:
@@ -71,20 +72,18 @@ class TestPaletteResolver:
         """Test PaletteResolver initialization with no configuration."""
         resolver = PaletteResolver()
         assert resolver.config is None
-        assert resolver.config_accessor is None
 
     def test_initialization_with_config(self) -> None:
         """Test PaletteResolver initialization with TGraphBotConfig."""
         config = create_test_config_minimal()
         resolver = PaletteResolver(config=config)
         assert resolver.config == config
-        assert resolver.config_accessor is None
 
     def test_initialization_with_dict_config(self) -> None:
-        """Test PaletteResolver initialization with dictionary config."""
-        config_dict: dict[str, object] = {"ENABLE_MEDIA_TYPE_SEPARATION": True}
-        resolver = PaletteResolver(config=config_dict)
-        assert resolver.config == config_dict
+        """Test PaletteResolver initialization with TGraphBotConfig."""
+        config = create_test_config_with_nested_overrides(ENABLE_MEDIA_TYPE_SEPARATION=True)
+        resolver = PaletteResolver(config=config)
+        assert resolver.config == config
 
     def test_graph_type_to_palette_key_mapping(self) -> None:
         """Test that all expected graph types are mapped to palette keys."""
@@ -249,52 +248,34 @@ class TestPaletteResolver:
         assert palette == "turbo"
 
     def test_get_palette_for_graph_type_with_dict_config(self) -> None:
-        """Test _get_palette_for_graph_type with dictionary config."""
-        config_dict: dict[str, object] = {
-            "graphs": {
-                "appearance": {
-                    "palettes": {
-                        "top_10_platforms": "cividis",
-                    },
-                },
-            },
-        }
+        """Test _get_palette_for_graph_type with TGraphBotConfig."""
+        config = create_test_config_with_nested_overrides(
+            TOP_10_PLATFORMS_PALETTE="cividis"
+        )
 
-        resolver = PaletteResolver(config=config_dict)
+        resolver = PaletteResolver(config=config)
         palette = resolver._get_palette_for_graph_type("Top10PlatformsGraph")  # pyright: ignore[reportPrivateUsage]
 
         assert palette == "cividis"
 
     def test_get_palette_for_graph_type_empty_string(self) -> None:
         """Test _get_palette_for_graph_type with empty string returns None."""
-        config_dict: dict[str, object] = {
-            "graphs": {
-                "appearance": {
-                    "palettes": {
-                        "top_10_platforms": "",
-                    },
-                },
-            },
-        }
+        config = create_test_config_with_nested_overrides(
+            TOP_10_PLATFORMS_PALETTE=""
+        )
 
-        resolver = PaletteResolver(config=config_dict)
+        resolver = PaletteResolver(config=config)
         palette = resolver._get_palette_for_graph_type("Top10PlatformsGraph")  # pyright: ignore[reportPrivateUsage]
 
         assert palette is None
 
     def test_get_palette_for_graph_type_whitespace_string(self) -> None:
         """Test _get_palette_for_graph_type with whitespace string returns None."""
-        config_dict: dict[str, object] = {
-            "graphs": {
-                "appearance": {
-                    "palettes": {
-                        "top_10_platforms": "   ",
-                    },
-                },
-            },
-        }
+        config = create_test_config_with_nested_overrides(
+            TOP_10_PLATFORMS_PALETTE="   "
+        )
 
-        resolver = PaletteResolver(config=config_dict)
+        resolver = PaletteResolver(config=config)
         palette = resolver._get_palette_for_graph_type("Top10PlatformsGraph")  # pyright: ignore[reportPrivateUsage]
 
         assert palette is None
@@ -335,10 +316,10 @@ class TestPaletteResolver:
         assert result is False
 
     def test_is_media_type_separation_enabled_dict_config(self) -> None:
-        """Test _is_media_type_separation_enabled with dictionary config."""
-        config_dict: dict[str, object] = {"ENABLE_MEDIA_TYPE_SEPARATION": True}
+        """Test _is_media_type_separation_enabled with TGraphBotConfig."""
+        config = create_test_config_with_nested_overrides(ENABLE_MEDIA_TYPE_SEPARATION=True)
 
-        resolver = PaletteResolver(config=config_dict)
+        resolver = PaletteResolver(config=config)
         result = resolver._is_media_type_separation_enabled()  # pyright: ignore[reportPrivateUsage]
 
         assert result is True
@@ -368,19 +349,13 @@ class TestPaletteResolver:
         }
 
     def test_get_media_type_colors_dict_config(self) -> None:
-        """Test _get_media_type_colors with dictionary config."""
-        config_dict: dict[str, object] = {
-            "graphs": {
-                "appearance": {
-                    "colors": {
-                        "tv": "#33dd33",
-                        "movie": "#dd3333",
-                    },
-                },
-            },
-        }
+        """Test _get_media_type_colors with TGraphBotConfig."""
+        config = create_test_config_with_nested_overrides(
+            TV_COLOR="#33dd33",
+            MOVIE_COLOR="#dd3333"
+        )
 
-        resolver = PaletteResolver(config=config_dict)
+        resolver = PaletteResolver(config=config)
         colors = resolver._get_media_type_colors()  # pyright: ignore[reportPrivateUsage]
 
         assert colors == {

@@ -75,7 +75,7 @@ class ConfigurationHelper:
         try:
             for key in keys:
                 if hasattr(current, key):
-                    current = getattr(current, key)
+                    current = getattr(current, key)  # pyright: ignore[reportAny] # dynamic attribute access
                 else:
                     if default is not None:
                         return default
