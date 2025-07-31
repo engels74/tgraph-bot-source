@@ -473,7 +473,7 @@ class BaseGraph(ABC):
         Returns:
             True if peak annotations should be enabled, False otherwise
         """
-        peak_enabled = self.get_config_value("ENABLE_PEAK_ANNOTATIONS", True)
+        peak_enabled = self.get_config_value("graphs.appearance.annotations.peaks.enabled", True)
         return bool(peak_enabled)
 
     def get_peak_annotation_color(self) -> str:
@@ -483,7 +483,7 @@ class BaseGraph(ABC):
         Returns:
             Hex color string for peak annotation background
         """
-        peak_color = self.get_config_value("PEAK_ANNOTATION_COLOR", "#ffcc00")
+        peak_color = self.get_config_value("graphs.appearance.annotations.peaks.color", "#ffcc00")
         return str(peak_color)
 
     def get_peak_annotation_text_color(self) -> str:
@@ -493,7 +493,7 @@ class BaseGraph(ABC):
         Returns:
             Hex color string for peak annotation text
         """
-        text_color = self.get_config_value("PEAK_ANNOTATION_TEXT_COLOR", "#000000")
+        text_color = self.get_config_value("graphs.appearance.annotations.peaks.text_color", "#000000")
         return str(text_color)
 
     def should_censor_usernames(self) -> bool:
@@ -513,7 +513,7 @@ class BaseGraph(ABC):
         Returns:
             Font size for annotations
         """
-        font_size = self.get_config_value("ANNOTATION_FONT_SIZE", 10)
+        font_size = self.get_config_value("graphs.appearance.annotations.basic.font_size", 10)
         if isinstance(font_size, (int, float)):
             return int(font_size)
         else:

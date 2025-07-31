@@ -328,7 +328,7 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
         # Add bar value annotations if enabled
         self.annotation_helper.annotate_bar_patches(
             ax=ax,
-            config_key="ANNOTATE_DAILY_PLAY_COUNT",
+            config_key="graphs.appearance.annotations.enabled_on.daily_play_count",
             ha="center",
             va="bottom",
             offset_y=2,
@@ -418,7 +418,7 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
             # Add bar value annotations if enabled
             self.annotation_helper.annotate_bar_patches(
                 ax,
-                "ANNOTATE_DAILY_PLAY_COUNT",
+                "graphs.appearance.annotations.enabled_on.daily_play_count",
                 offset_y=2,
             )
 

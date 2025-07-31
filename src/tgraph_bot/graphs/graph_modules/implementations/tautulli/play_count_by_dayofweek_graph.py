@@ -238,7 +238,7 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
         # Add bar value annotations if enabled
         self.annotation_helper.annotate_bar_patches(
             ax,
-            "ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK",
+            "graphs.appearance.annotations.enabled_on.play_count_by_dayofweek",
             offset_y=1,
             fontweight="bold",
         )
@@ -366,7 +366,7 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
         # Add annotations if enabled
         self.annotation_helper.annotate_stacked_bar_segments(
             ax,
-            "ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK",
+            "graphs.appearance.annotations.enabled_on.play_count_by_dayofweek",
             bar_containers,
             day_order,
             include_totals=True,
@@ -457,7 +457,7 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
             # Add bar value annotations if enabled
             self.annotation_helper.annotate_bar_patches(
                 ax,
-                "ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK",
+                "graphs.appearance.annotations.enabled_on.play_count_by_dayofweek",
                 offset_y=1,
                 fontweight="bold",
             )

@@ -184,7 +184,7 @@ class PlayCountByHourOfDayGraph(BaseGraph, VisualizationMixin):
             # Add bar value annotations if enabled
             self.annotation_helper.annotate_bar_patches(
                 ax,
-                "ANNOTATE_PLAY_COUNT_BY_HOUROFDAY",
+                "graphs.appearance.annotations.enabled_on.play_count_by_hourofday",
                 offset_y=1,
                 fontweight="bold",
             )
@@ -282,7 +282,7 @@ class PlayCountByHourOfDayGraph(BaseGraph, VisualizationMixin):
         # Add bar value annotations if enabled
         self.annotation_helper.annotate_bar_patches(
             ax,
-            "ANNOTATE_PLAY_COUNT_BY_HOUROFDAY",
+            "graphs.appearance.annotations.enabled_on.play_count_by_hourofday",
             offset_y=1,
             fontweight="bold",
         )
@@ -379,7 +379,7 @@ class PlayCountByHourOfDayGraph(BaseGraph, VisualizationMixin):
         )
 
         # Add bar value annotations if enabled (for total values)
-        if self.get_config_value("ANNOTATE_PLAY_COUNT_BY_HOUROFDAY", False):
+        if self.get_config_value("graphs.appearance.annotations.enabled_on.play_count_by_hourofday", False):
             for i, total_value in enumerate(bottom):  # pyright: ignore[reportAny] # numpy array element type inference limitation
                 total_int = int(total_value)  # pyright: ignore[reportAny]
                 if total_int > 0:

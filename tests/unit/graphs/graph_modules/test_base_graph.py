@@ -538,7 +538,7 @@ class TestBaseGraph:
                 "discord": {"token": "test_discord_token", "channel_id": 123456789}
             },
             data_collection_overrides={
-                "collection_settings": {"time_ranges": {"days": 60}}
+                "time_ranges": {"days": 60}
             }
         )
         graph = ConcreteGraph(config=config)
@@ -571,7 +571,7 @@ class TestBaseGraph:
                 "discord": {"token": "test_discord_token", "channel_id": 123456789}
             },
             data_collection_overrides={
-                "collection_settings": {"time_ranges": {"months": 24}}
+                "time_ranges": {"months": 24}
             }
         )
         graph = ConcreteGraph(config=config)
@@ -587,7 +587,7 @@ class TestBaseGraph:
                 "discord": {"token": "test_discord_token", "channel_id": 123456789}
             },
             data_collection_overrides={
-                "collection_settings": {"time_ranges": {"days": 45}}
+                "time_ranges": {"days": 45}
             }
         )
         graph = ConcreteGraph(config=config)
@@ -784,6 +784,88 @@ class TestBaseGraph:
         assert isinstance(font_size, int)
         assert font_size > 0
 
+    def test_peak_annotations_settings_with_config(self) -> None:
+        """Test peak annotation settings with nested configuration."""
+        # Test with peak annotations enabled
+        config_enabled = create_test_config_custom(
+            services_overrides={
+                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
+                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+            },
+            graphs_overrides={
+                "appearance": {
+                    "annotations": {
+                        "peaks": {
+                            "enabled": True,
+                            "color": "#ffcc00",
+                            "text_color": "#000000"
+                        },
+                        "basic": {
+                            "font_size": 12
+                        }
+                    }
+                }
+            }
+        )
+        graph_enabled = ConcreteGraph(config=config_enabled)
+        
+        # Test peak annotations enabled
+        assert graph_enabled.is_peak_annotations_enabled() is True
+        assert graph_enabled.get_peak_annotation_color() == "#ffcc00"
+        assert graph_enabled.get_peak_annotation_text_color() == "#000000"
+        assert graph_enabled.get_annotation_font_size() == 12
+
+        # Test with peak annotations disabled
+        config_disabled = create_test_config_custom(
+            services_overrides={
+                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
+                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+            },
+            graphs_overrides={
+                "appearance": {
+                    "annotations": {
+                        "peaks": {
+                            "enabled": False,
+                            "color": "#ff0000",
+                            "text_color": "#ffffff"
+                        }
+                    }
+                }
+            }
+        )
+        graph_disabled = ConcreteGraph(config=config_disabled)
+        
+        # Test peak annotations disabled
+        assert graph_disabled.is_peak_annotations_enabled() is False
+        assert graph_disabled.get_peak_annotation_color() == "#ff0000"
+        assert graph_disabled.get_peak_annotation_text_color() == "#ffffff"
+
+    def test_annotation_enabled_on_specific_graphs_with_config(self) -> None:
+        """Test annotation enabled_on settings with nested configuration."""
+        config = create_test_config_custom(
+            services_overrides={
+                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
+                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+            },
+            graphs_overrides={
+                "appearance": {
+                    "annotations": {
+                        "enabled_on": {
+                            "top_10_users": True,
+                            "top_10_platforms": False,
+                            "play_count_by_hourofday": True
+                        }
+                    }
+                }
+            }
+        )
+        graph = ConcreteGraph(config=config)
+        
+        # Test specific graph annotation settings
+        assert graph.get_config_value("graphs.appearance.annotations.enabled_on.top_10_users", False) is True
+        assert graph.get_config_value("graphs.appearance.annotations.enabled_on.top_10_platforms", True) is False
+        assert graph.get_config_value("graphs.appearance.annotations.enabled_on.play_count_by_hourofday", False) is True
+
     def test_enhanced_title_with_timeframe_days(self) -> None:
         """Test enhanced title generation with days timeframe."""
         config = create_test_config_custom(
@@ -792,7 +874,7 @@ class TestBaseGraph:
                 "discord": {"token": "test_discord_token", "channel_id": 123456789}
             },
             data_collection_overrides={
-                "collection_settings": {"time_ranges": {"days": 7}}
+                "time_ranges": {"days": 7}
             }
         )
         graph = ConcreteGraph(config=config)
@@ -809,7 +891,7 @@ class TestBaseGraph:
                 "discord": {"token": "test_discord_token", "channel_id": 123456789}
             },
             data_collection_overrides={
-                "collection_settings": {"time_ranges": {"days": 1}}
+                "time_ranges": {"days": 1}
             }
         )
         graph_singular = ConcreteGraph(config=config_singular)
@@ -827,7 +909,7 @@ class TestBaseGraph:
                 "discord": {"token": "test_discord_token", "channel_id": 123456789}
             },
             data_collection_overrides={
-                "collection_settings": {"time_ranges": {"months": 6}}
+                "time_ranges": {"months": 6}
             }
         )
         graph = ConcreteGraph(config=config)
@@ -844,7 +926,7 @@ class TestBaseGraph:
                 "discord": {"token": "test_discord_token", "channel_id": 123456789}
             },
             data_collection_overrides={
-                "collection_settings": {"time_ranges": {"months": 1}}
+                "time_ranges": {"months": 1}
             }
         )
         graph_singular = ConcreteGraph(config=config_singular)

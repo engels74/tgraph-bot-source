@@ -189,7 +189,7 @@ class Top10UsersGraph(BaseGraph, VisualizationMixin):
             # Add value labels on bars if enabled
             self.annotation_helper.annotate_horizontal_bar_patches(
                 ax=ax,
-                config_key="ANNOTATE_TOP_10_USERS",
+                config_key="graphs.appearance.annotations.enabled_on.top_10_users",
                 offset_x_ratio=0.01,
                 ha="left",
                 va="center",
@@ -307,7 +307,7 @@ class Top10UsersGraph(BaseGraph, VisualizationMixin):
         # Add value labels on bars if enabled
         self.annotation_helper.annotate_horizontal_bar_patches(
             ax=ax,
-            config_key="ANNOTATE_TOP_10_USERS",
+            config_key="graphs.appearance.annotations.enabled_on.top_10_users",
             offset_x_ratio=0.01,
             ha="left",
             va="center",
@@ -442,7 +442,7 @@ class Top10UsersGraph(BaseGraph, VisualizationMixin):
             )
 
         # Add value annotations if enabled (for total values)
-        if self.get_config_value("ANNOTATE_TOP_10_USERS", False):
+        if self.get_config_value("graphs.appearance.annotations.enabled_on.top_10_users", False):
             for i, (username, data) in enumerate(sorted_users):
                 total = data["total"]
                 if total > 0:

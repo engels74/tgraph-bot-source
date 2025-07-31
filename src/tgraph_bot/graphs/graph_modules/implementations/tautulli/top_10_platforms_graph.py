@@ -184,7 +184,7 @@ class Top10PlatformsGraph(BaseGraph, VisualizationMixin):
             # Add value annotations if enabled
             self.annotation_helper.annotate_horizontal_bar_patches(
                 ax,
-                "ANNOTATE_TOP_10_PLATFORMS",
+                "graphs.appearance.annotations.enabled_on.top_10_platforms",
                 offset_x_ratio=0.01,
                 ha="left",
                 va="center",
@@ -300,7 +300,7 @@ class Top10PlatformsGraph(BaseGraph, VisualizationMixin):
         # Add value annotations if enabled
         self.annotation_helper.annotate_horizontal_bar_patches(
             ax,
-            "ANNOTATE_TOP_10_PLATFORMS",
+            "graphs.appearance.annotations.enabled_on.top_10_platforms",
             offset_x_ratio=0.01,
             ha="left",
             va="center",
@@ -437,7 +437,7 @@ class Top10PlatformsGraph(BaseGraph, VisualizationMixin):
             )
 
         # Add value annotations if enabled (for total values)
-        if self.get_config_value("ANNOTATE_TOP_10_PLATFORMS", False):
+        if self.get_config_value("graphs.appearance.annotations.enabled_on.top_10_platforms", False):
             for i, (platform_name, data) in enumerate(sorted_platforms):
                 total = data["total"]
                 if total > 0:

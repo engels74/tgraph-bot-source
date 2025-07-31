@@ -274,7 +274,7 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
         # Add bar value annotations if enabled
         self.annotation_helper.annotate_bar_patches(
             ax,
-            "ANNOTATE_PLAY_COUNT_BY_MONTH",
+            "graphs.appearance.annotations.enabled_on.play_count_by_month",
             offset_y=2,
             fontweight="bold",
         )
@@ -422,7 +422,7 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
         # Add annotations if enabled
         self.annotation_helper.annotate_stacked_bar_segments(
             ax,
-            "ANNOTATE_PLAY_COUNT_BY_MONTH",
+            "graphs.appearance.annotations.enabled_on.play_count_by_month",
             bar_containers,
             categories,
             include_totals=True,
@@ -546,7 +546,7 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
         # Add bar value annotations if enabled
         self.annotation_helper.annotate_bar_patches(
             ax=ax,
-            config_key="ANNOTATE_PLAY_COUNT_BY_MONTH",
+            config_key="graphs.appearance.annotations.enabled_on.play_count_by_month",
             ha="center",
             va="bottom",
             offset_y=2,
@@ -674,7 +674,7 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
         # Add bar value annotations if enabled
         self.annotation_helper.annotate_bar_patches(
             ax=ax,
-            config_key="ANNOTATE_PLAY_COUNT_BY_MONTH",
+            config_key="graphs.appearance.annotations.enabled_on.play_count_by_month",
             ha="center",
             va="bottom",
             offset_y=2,
@@ -733,7 +733,7 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
             # Add bar value annotations if enabled
             self.annotation_helper.annotate_bar_patches(
                 ax=ax,
-                config_key="ANNOTATE_PLAY_COUNT_BY_MONTH",
+                config_key="graphs.appearance.annotations.enabled_on.play_count_by_month",
                 ha="center",
                 va="bottom",
                 offset_y=2,
