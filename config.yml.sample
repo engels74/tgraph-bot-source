@@ -1,12 +1,12 @@
 # ============================================================================
-# TGraph Bot Configuration File
+# TGraph Bot Configuration File - Nested Structure
 # ============================================================================
 # 
 # This file contains all configuration options for the TGraph Discord bot.
 # 
 # SETUP INSTRUCTIONS:
 # 1. Copy this file to data/config/config.yml
-# 2. Configure the Essential Settings section below
+# 2. Configure the Services section below (Essential Settings)
 # 3. Adjust other settings as needed for your use case
 # 
 # The application will look for the configuration file in data/config/config.yml by default.
@@ -18,170 +18,180 @@
 # ESSENTIAL CONFIGURATION (Required - Set These First!)
 # ============================================================================
 
-# Tautulli Integration
-# --------------------
-# Required: Get your API key from Tautulli Settings > Web Interface > API
-TAUTULLI_API_KEY: "your_tautulli_api_key_here"
+services:
+  # Tautulli Integration
+  # --------------------
+  tautulli:
+    # Required: Get your API key from Tautulli Settings > Web Interface > API
+    api_key: "your_tautulli_api_key_here"
+    
+    # Required: Include the full URL with protocol and port (e.g., http://192.168.1.100:8181/api/v2)
+    url: "http://localhost:8181/api/v2"
 
-# Required: Include the full URL with protocol and port (e.g., http://192.168.1.100:8181/api/v2)
-TAUTULLI_URL: "http://localhost:8181/api/v2"
-
-# Discord Integration  
-# -------------------
-# Required: Get your bot token from Discord Developer Portal
-DISCORD_TOKEN: "your_discord_bot_token_here"
-
-# Required: Channel ID where graphs will be posted (enable Developer Mode in Discord to copy ID)
-CHANNEL_ID: 123456789012345678
+  # Discord Integration  
+  # -------------------
+  discord:
+    # Required: Get your bot token from Discord Developer Portal
+    token: "your_discord_bot_token_here"
+    
+    # Required: Channel ID where graphs will be posted (enable Developer Mode in Discord to copy ID)
+    channel_id: 123456789012345678
+    
+    # Discord timestamp display format
+    # Options: t=short time, T=long time, d=short date, D=long date, 
+    #          f=short date/time, F=long date/time, R=relative time
+    timestamp_format: R
+    
+    # Seconds before ephemeral messages auto-delete (1-3600)
+    ephemeral_message_delete_after: 30.0
 
 
 # ============================================================================
 # AUTOMATION & SCHEDULING
 # ============================================================================
 
-# Update Schedule
-# ---------------
-# How often to automatically generate and post new graphs (1-365 days)
-UPDATE_DAYS: 7
+automation:
+  # Update Schedule
+  # ---------------
+  scheduling:
+    # How often to automatically generate and post new graphs (1-365 days)
+    update_days: 7
+    
+    # Optional: Fixed time for daily updates in 24-hour format (HH:MM), or 'XX:XX' to disable
+    # Example: '14:30' for 2:30 PM, 'XX:XX' for random timing
+    fixed_update_time: 'XX:XX'
 
-# Optional: Fixed time for daily updates in 24-hour format (HH:MM), or 'XX:XX' to disable
-# Example: '14:30' for 2:30 PM, 'XX:XX' for random timing
-FIXED_UPDATE_TIME: 'XX:XX'
-
-# Data Retention
-# --------------
-# How long to keep generated graph files on disk (1-365 days)
-KEEP_DAYS: 7
-
-# System Settings
-# ---------------
-# Language code for bot interface (currently supported: en, da)
-LANGUAGE: en
-
-# Discord timestamp display format
-# Options: t=short time, T=long time, d=short date, D=long date, 
-#          f=short date/time, F=long date/time, R=relative time
-DISCORD_TIMESTAMP_FORMAT: R
-
-# Seconds before ephemeral messages auto-delete (1-3600)
-EPHEMERAL_MESSAGE_DELETE_AFTER: 30.0
+  # Data Retention
+  # --------------
+  data_retention:
+    # How long to keep generated graph files on disk (1-365 days)
+    keep_days: 7
 
 
 # ============================================================================
 # DATA COLLECTION
 # ============================================================================
 
-# Time Ranges
-# -----------
-# How many days of data to include in most graphs (1-365)
-TIME_RANGE_DAYS: 30
+data_collection:
+  # Time Ranges
+  # -----------
+  time_ranges:
+    # How many days of data to include in most graphs (1-365)
+    days: 30
+    
+    # How many months of data for monthly trend graphs (1-60)
+    months: 12
 
-# How many months of data for monthly trend graphs (1-60)
-TIME_RANGE_MONTHS: 12
-
-# Privacy Settings
-# ----------------
-# Whether to censor/anonymize usernames in graphs for privacy
-CENSOR_USERNAMES: true
-
-
-# ============================================================================
-# GRAPH SELECTION & BEHAVIOR
-# ============================================================================
-
-# Graph Types to Generate
-# ------------------------
-# Enable or disable specific graph types (true/false for each)
-ENABLE_DAILY_PLAY_COUNT: true              # Daily activity over time
-ENABLE_PLAY_COUNT_BY_DAYOFWEEK: true       # Activity by day of week (Mon-Sun)
-ENABLE_PLAY_COUNT_BY_HOUROFDAY: true       # Activity by hour (0-23)
-ENABLE_TOP_10_PLATFORMS: true              # Most used streaming platforms/players
-ENABLE_TOP_10_USERS: true                  # Most active users
-ENABLE_PLAY_COUNT_BY_MONTH: true           # Monthly trends over time
-
-# Media Type Handling
-# -------------------
-# Whether to separate Movies and TV Shows with different colors/sections
-ENABLE_MEDIA_TYPE_SEPARATION: true
-
-# Whether to use stacked bars (vs side-by-side) when media separation is enabled
-# Only affects bar chart graphs - line graphs always separate by color
-ENABLE_STACKED_BAR_CHARTS: true
+  # Privacy Settings
+  # ----------------
+  privacy:
+    # Whether to censor/anonymize usernames in graphs for privacy
+    censor_usernames: true
 
 
 # ============================================================================
-# VISUAL STYLING
+# SYSTEM SETTINGS
 # ============================================================================
 
-# Graph Output Settings
-# ---------------------
-# Graph dimensions in inches - affects file size and Discord display
-GRAPH_WIDTH: 14                            # Width in inches (6-20)
-GRAPH_HEIGHT: 8                            # Height in inches (4-16)
-GRAPH_DPI: 100                             # Image quality/resolution (72-300)
+system:
+  # Localization
+  # ------------
+  localization:
+    # Language code for bot interface (currently supported: en, da)
+    language: en
 
-# Background and Grid
-GRAPH_BACKGROUND_COLOR: '#ffffff'          # Graph background color (hex format)
-ENABLE_GRAPH_GRID: false                   # Whether to show grid lines
 
-# Base Media Type Colors
-# ----------------------
-# These colors are used for TV/Movie separation when media type separation is enabled
-# Colors are in hex format (#RRGGBB) - use any color picker tool to generate
-TV_COLOR: '#1f77b4'                        # Blue - color for TV shows/episodes
-MOVIE_COLOR: '#ff7f0e'                     # Orange - color for movies
+# ============================================================================
+# GRAPH CONFIGURATION
+# ============================================================================
 
-# Advanced Color Palettes
-# ------------------------
-# IMPORTANT: When a palette is specified, it OVERRIDES the base colors above
-# Leave empty ('') to use base TV/Movie colors, or specify a palette name
-#
-# Available palettes: viridis, plasma, inferno, magma
-# - viridis: Purple to yellow gradient (great for accessibility)
-# - plasma: Purple to pink to yellow (vibrant)
-# - inferno: Black to red to yellow (dramatic)
-# - magma: Black to purple to white (elegant)
+graphs:
+  # Graph Features & Behavior
+  # -------------------------
+  features:
+    # Graph Types to Generate
+    # Enable or disable specific graph types (true/false for each)
+    enabled_types:
+      daily_play_count: true              # Daily activity over time
+      play_count_by_dayofweek: true       # Activity by day of week (Mon-Sun)
+      play_count_by_hourofday: true       # Activity by hour (0-23)
+      top_10_platforms: true              # Most used streaming platforms/players
+      top_10_users: true                  # Most active users
+      play_count_by_month: true           # Monthly trends over time
 
-# Palette for hourly activity graph - creates colorful gradient across 24 hours
-PLAY_COUNT_BY_HOUROFDAY_PALETTE: ''
+    # Media Type Handling
+    # Whether to separate Movies and TV Shows with different colors/sections
+    media_type_separation: true
 
-# Palette for top users graph - gives each user a unique color
-TOP_10_USERS_PALETTE: ''
+    # Whether to use stacked bars (vs side-by-side) when media separation is enabled
+    # Only affects bar chart graphs - line graphs always separate by color
+    stacked_bar_charts: true
 
-# Palette for daily activity graph - creates colorful gradient over time
-DAILY_PLAY_COUNT_PALETTE: ''
+  # Visual Styling
+  # --------------
+  appearance:
+    # Graph Output Settings
+    # Graph dimensions in inches - affects file size and Discord display
+    dimensions:
+      width: 14                            # Width in inches (6-20)
+      height: 8                            # Height in inches (4-16)
+      dpi: 100                             # Image quality/resolution (72-300)
 
-# Palette for day of week graph - gives each day a unique color
-PLAY_COUNT_BY_DAYOFWEEK_PALETTE: ''
+    # Base Media Type Colors
+    # These colors are used for TV/Movie separation when media type separation is enabled
+    # Colors are in hex format (#RRGGBB) - use any color picker tool to generate
+    colors:
+      tv: '#1f77b4'                        # Blue - color for TV shows/episodes
+      movie: '#ff7f0e'                     # Orange - color for movies
+      background: '#ffffff'                # Graph background color (hex format)
 
-# Palette for top platforms graph - gives each platform a unique color
-TOP_10_PLATFORMS_PALETTE: ''
+    # Background and Grid
+    grid:
+      enabled: false                       # Whether to show grid lines
 
-# Palette for monthly activity graph - creates colorful gradient over months
-PLAY_COUNT_BY_MONTH_PALETTE: ''
+    # Annotations Settings
+    # --------------------
+    annotations:
+      # Basic annotation styling (numbers shown on bars/points)
+      basic:
+        color: '#ff0000'                   # Text color for value labels
+        outline_color: '#000000'           # Outline color for better readability
+        enable_outline: true               # Whether to add outlines to text
+        font_size: 10                      # Font size for value labels (6-24)
 
-# Annotation Styling
-# ------------------
-# Bar value annotations (numbers shown on bars/points)
-ANNOTATION_COLOR: '#ff0000'                # Text color for value labels
-ANNOTATION_OUTLINE_COLOR: '#000000'        # Outline color for better readability
-ENABLE_ANNOTATION_OUTLINE: true            # Whether to add outlines to text
-ANNOTATION_FONT_SIZE: 10                   # Font size for value labels (6-24)
+      # Control which graph types show value annotations
+      enabled_on:
+        daily_play_count: true
+        play_count_by_dayofweek: true
+        play_count_by_hourofday: true
+        top_10_platforms: true
+        top_10_users: true
+        play_count_by_month: true
 
-# Control which graph types show value annotations
-ANNOTATE_DAILY_PLAY_COUNT: true
-ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK: true
-ANNOTATE_PLAY_COUNT_BY_HOUROFDAY: true
-ANNOTATE_TOP_10_PLATFORMS: true
-ANNOTATE_TOP_10_USERS: true
-ANNOTATE_PLAY_COUNT_BY_MONTH: true
+      # Peak Highlights
+      # Special highlighting for peak values (highest bars/points)
+      peaks:
+        enabled: true                      # Whether to highlight peak values
+        color: '#ffcc00'                   # Background color for peak highlights
+        text_color: '#000000'              # Text color for peak labels
 
-# Peak Highlights
-# ---------------
-# Special highlighting for peak values (highest bars/points)
-ENABLE_PEAK_ANNOTATIONS: true              # Whether to highlight peak values
-PEAK_ANNOTATION_COLOR: '#ffcc00'           # Background color for peak highlights
-PEAK_ANNOTATION_TEXT_COLOR: '#000000'      # Text color for peak labels
+    # Advanced Color Palettes
+    # ------------------------
+    # IMPORTANT: When a palette is specified, it OVERRIDES the base colors above
+    # Leave empty ('') to use base TV/Movie colors, or specify a palette name
+    #
+    # Available palettes: viridis, plasma, inferno, magma
+    # - viridis: Purple to yellow gradient (great for accessibility)
+    # - plasma: Purple to pink to yellow (vibrant)
+    # - inferno: Black to red to yellow (dramatic)
+    # - magma: Black to purple to white (elegant)
+    palettes:
+      play_count_by_hourofday: ''          # Palette for hourly activity graph
+      top_10_users: ''                     # Palette for top users graph
+      daily_play_count: ''                 # Palette for daily activity graph
+      play_count_by_dayofweek: ''          # Palette for day of week graph
+      top_10_platforms: ''                 # Palette for top platforms graph
+      play_count_by_month: ''              # Palette for monthly activity graph
 
 
 # ============================================================================
@@ -191,20 +201,22 @@ PEAK_ANNOTATION_TEXT_COLOR: '#000000'      # Text color for peak labels
 # These settings prevent command spam and reduce server load
 # Set to 0 to disable cooldowns (not recommended for public bots)
 
-# Configuration Command Limits
-# -----------------------------
-# Limits for /config command usage
-CONFIG_COOLDOWN_MINUTES: 0                 # Per-user cooldown in minutes (0-1440)
-CONFIG_GLOBAL_COOLDOWN_SECONDS: 0          # Global cooldown in seconds (0-86400)
+rate_limiting:
+  commands:
+    # Configuration Command Limits
+    # Limits for /config command usage
+    config:
+      user_cooldown_minutes: 0             # Per-user cooldown in minutes (0-1440)
+      global_cooldown_seconds: 0           # Global cooldown in seconds (0-86400)
 
-# Graph Update Command Limits  
-# ----------------------------
-# Limits for manual /update-graphs command usage
-UPDATE_GRAPHS_COOLDOWN_MINUTES: 0          # Per-user cooldown in minutes (0-1440)
-UPDATE_GRAPHS_GLOBAL_COOLDOWN_SECONDS: 0   # Global cooldown in seconds (0-86400)
+    # Graph Update Command Limits  
+    # Limits for manual /update-graphs command usage
+    update_graphs:
+      user_cooldown_minutes: 0             # Per-user cooldown in minutes (0-1440)
+      global_cooldown_seconds: 0           # Global cooldown in seconds (0-86400)
 
-# Personal Stats Command Limits
-# ------------------------------
-# Limits for /my-stats command usage (typically higher due to processing cost)
-MY_STATS_COOLDOWN_MINUTES: 5               # Per-user cooldown in minutes (0-1440)
-MY_STATS_GLOBAL_COOLDOWN_SECONDS: 60       # Global cooldown in seconds (0-86400)
+    # Personal Stats Command Limits
+    # Limits for /my-stats command usage (typically higher due to processing cost)
+    my_stats:
+      user_cooldown_minutes: 5             # Per-user cooldown in minutes (0-1440)
+      global_cooldown_seconds: 60          # Global cooldown in seconds (0-86400)

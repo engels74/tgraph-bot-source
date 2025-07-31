@@ -18,26 +18,42 @@ class TestConfigManager:
 
     def test_load_config_success(self, base_config: TGraphBotConfig) -> None:
         """Test successful configuration loading."""
-        # Create temp config file with data from base_config
+        # Create temp config file with nested data structure
         config_data: dict[str, object] = {
-            "TAUTULLI_API_KEY": base_config.TAUTULLI_API_KEY,
-            "TAUTULLI_URL": base_config.TAUTULLI_URL,
-            "DISCORD_TOKEN": base_config.DISCORD_TOKEN,
-            "CHANNEL_ID": base_config.CHANNEL_ID,
-            "UPDATE_DAYS": base_config.UPDATE_DAYS,
-            "TV_COLOR": base_config.TV_COLOR,
+            "services": {
+                "tautulli": {
+                    "api_key": base_config.services.tautulli.api_key,
+                    "url": base_config.services.tautulli.url,
+                },
+                "discord": {
+                    "token": base_config.services.discord.token,
+                    "channel_id": base_config.services.discord.channel_id,
+                },
+            },
+            "automation": {
+                "scheduling": {
+                    "update_days": base_config.automation.scheduling.update_days,
+                },
+            },
+            "graphs": {
+                "appearance": {
+                    "colors": {
+                        "tv": base_config.graphs.appearance.colors.tv,
+                    },
+                },
+            },
         }
 
         with create_temp_config_file(config_data) as temp_config_file:
             config = ConfigManager.load_config(temp_config_file)
 
             assert isinstance(config, TGraphBotConfig)
-            assert config.TAUTULLI_API_KEY == base_config.TAUTULLI_API_KEY
-            assert config.TAUTULLI_URL == base_config.TAUTULLI_URL
-            assert config.DISCORD_TOKEN == base_config.DISCORD_TOKEN
-            assert config.CHANNEL_ID == base_config.CHANNEL_ID
-            assert config.UPDATE_DAYS == base_config.UPDATE_DAYS
-            assert config.TV_COLOR == base_config.TV_COLOR
+            assert config.services.tautulli.api_key == base_config.services.tautulli.api_key
+            assert config.services.tautulli.url == base_config.services.tautulli.url
+            assert config.services.discord.token == base_config.services.discord.token
+            assert config.services.discord.channel_id == base_config.services.discord.channel_id
+            assert config.automation.scheduling.update_days == base_config.automation.scheduling.update_days
+            assert config.graphs.appearance.colors.tv == base_config.graphs.appearance.colors.tv
 
     def test_load_config_file_not_found(self) -> None:
         """Test loading config when file doesn't exist."""
@@ -62,8 +78,18 @@ class TestConfigManager:
         """Test loading config with validation errors."""
         # Missing required fields
         invalid_config_data: dict[str, object] = {
-            "UPDATE_DAYS": 14,
-            "TV_COLOR": "#1f77b4",
+            "automation": {
+                "scheduling": {
+                    "update_days": 14,
+                },
+            },
+            "graphs": {
+                "appearance": {
+                    "colors": {
+                        "tv": "#1f77b4",
+                    },
+                },
+            },
         }
 
         with create_temp_config_file(invalid_config_data) as invalid_config_file:
@@ -72,16 +98,34 @@ class TestConfigManager:
 
     def test_save_config_success(self, base_config: TGraphBotConfig) -> None:
         """Test successful configuration saving."""
-        # Create temp config file with base config data
+        # Create temp config file with nested config data
         config_data: dict[str, object] = {
-            "TAUTULLI_API_KEY": base_config.TAUTULLI_API_KEY,
-            "TAUTULLI_URL": base_config.TAUTULLI_URL,
-            "DISCORD_TOKEN": base_config.DISCORD_TOKEN,
-            "CHANNEL_ID": base_config.CHANNEL_ID,
-            "UPDATE_DAYS": base_config.UPDATE_DAYS,
-            "TV_COLOR": base_config.TV_COLOR,
-            "PLAY_COUNT_BY_HOUROFDAY_PALETTE": base_config.PLAY_COUNT_BY_HOUROFDAY_PALETTE,
-            "TOP_10_USERS_PALETTE": base_config.TOP_10_USERS_PALETTE,
+            "services": {
+                "tautulli": {
+                    "api_key": base_config.services.tautulli.api_key,
+                    "url": base_config.services.tautulli.url,
+                },
+                "discord": {
+                    "token": base_config.services.discord.token,
+                    "channel_id": base_config.services.discord.channel_id,
+                },
+            },
+            "automation": {
+                "scheduling": {
+                    "update_days": base_config.automation.scheduling.update_days,
+                },
+            },
+            "graphs": {
+                "appearance": {
+                    "colors": {
+                        "tv": base_config.graphs.appearance.colors.tv,
+                    },
+                    "palettes": {
+                        "play_count_by_hourofday": base_config.graphs.appearance.palettes.play_count_by_hourofday,
+                        "top_10_users": base_config.graphs.appearance.palettes.top_10_users,
+                    },
+                },
+            },
         }
 
         with create_temp_config_file(config_data) as temp_config_file:
@@ -89,15 +133,15 @@ class TestConfigManager:
             config = ConfigManager.load_config(temp_config_file)
 
             # Modify some values
-            config.UPDATE_DAYS = 21
-            config.TV_COLOR = "#ff0000"
+            config.automation.scheduling.update_days = 21
+            config.graphs.appearance.colors.tv = "#ff0000"
 
             # Save the config
             ConfigManager.save_config(config, temp_config_file)
 
             # Load again and verify changes
             reloaded_config = ConfigManager.load_config(temp_config_file)
-            assert reloaded_config.UPDATE_DAYS == 21
+            assert reloaded_config.automation.scheduling.update_days == 21
             assert reloaded_config.TV_COLOR == "#ff0000"
 
     def test_save_config_preserves_comments(self, base_config: TGraphBotConfig) -> None:

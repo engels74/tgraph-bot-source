@@ -14,89 +14,153 @@ class TestTGraphBotConfig:
     def test_valid_minimal_config(self) -> None:
         """Test that minimal required configuration is valid."""
         config_data = {
-            "TAUTULLI_API_KEY": "test_api_key",
-            "TAUTULLI_URL": "http://localhost:8181/api/v2",
-            "DISCORD_TOKEN": "test_discord_token",
-            "CHANNEL_ID": 123456789012345678,
+            "services": {
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {
+                    "token": "test_discord_token",
+                    "channel_id": 123456789012345678,
+                },
+            },
         }
         config = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
 
-        assert config.TAUTULLI_API_KEY == "test_api_key"
-        assert config.TAUTULLI_URL == "http://localhost:8181/api/v2"
-        assert config.DISCORD_TOKEN == "test_discord_token"
-        assert config.CHANNEL_ID == 123456789012345678
+        assert config.services.tautulli.api_key == "test_api_key"
+        assert config.services.tautulli.url == "http://localhost:8181/api/v2"
+        assert config.services.discord.token == "test_discord_token"
+        assert config.services.discord.channel_id == 123456789012345678
 
     def test_valid_full_config(self) -> None:
         """Test that full configuration with all options is valid."""
         config_data = {
-            "TAUTULLI_API_KEY": "test_api_key",
-            "TAUTULLI_URL": "http://localhost:8181/api/v2",
-            "DISCORD_TOKEN": "test_discord_token",
-            "CHANNEL_ID": 123456789012345678,
-            "UPDATE_DAYS": 14,
-            "FIXED_UPDATE_TIME": "12:30",
-            "KEEP_DAYS": 14,
-            "TIME_RANGE_DAYS": 60,
-            "LANGUAGE": "en",
-            "CENSOR_USERNAMES": False,
-            "ENABLE_GRAPH_GRID": True,
-            "ENABLE_MEDIA_TYPE_SEPARATION": True,
-            "ENABLE_STACKED_BAR_CHARTS": True,
-            "ENABLE_DAILY_PLAY_COUNT": True,
-            "ENABLE_PLAY_COUNT_BY_DAYOFWEEK": True,
-            "ENABLE_PLAY_COUNT_BY_HOUROFDAY": True,
-            "ENABLE_TOP_10_PLATFORMS": True,
-            "ENABLE_TOP_10_USERS": True,
-            "ENABLE_PLAY_COUNT_BY_MONTH": True,
-            "TV_COLOR": "#1f77b4",
-            "MOVIE_COLOR": "#ff7f0e",
-            "GRAPH_BACKGROUND_COLOR": "#ffffff",
-            "ANNOTATION_COLOR": "#ff0000",
-            "ANNOTATION_OUTLINE_COLOR": "#000000",
-            "ENABLE_ANNOTATION_OUTLINE": True,
-            "ANNOTATE_DAILY_PLAY_COUNT": True,
-            "ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK": True,
-            "ANNOTATE_PLAY_COUNT_BY_HOUROFDAY": True,
-            "ANNOTATE_TOP_10_PLATFORMS": True,
-            "ANNOTATE_TOP_10_USERS": True,
-            "ANNOTATE_PLAY_COUNT_BY_MONTH": True,
-            "CONFIG_COOLDOWN_MINUTES": 5,
-            "CONFIG_GLOBAL_COOLDOWN_SECONDS": 30,
-            "UPDATE_GRAPHS_COOLDOWN_MINUTES": 10,
-            "UPDATE_GRAPHS_GLOBAL_COOLDOWN_SECONDS": 60,
-            "MY_STATS_COOLDOWN_MINUTES": 5,
-            "MY_STATS_GLOBAL_COOLDOWN_SECONDS": 60,
-            "EPHEMERAL_MESSAGE_DELETE_AFTER": 45.0,
+            "services": {
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {
+                    "token": "test_discord_token",
+                    "channel_id": 123456789012345678,
+                    "timestamp_format": "f",
+                    "ephemeral_message_delete_after": 45.0,
+                },
+            },
+            "automation": {
+                "scheduling": {
+                    "update_days": 14,
+                    "fixed_update_time": "12:30",
+                },
+                "data_retention": {
+                    "keep_days": 14,
+                },
+            },
+            "data_collection": {
+                "time_ranges": {
+                    "days": 60,
+                    "months": 12,
+                },
+                "privacy": {
+                    "censor_usernames": False,
+                },
+            },
+            "system": {
+                "localization": {
+                    "language": "en",
+                },
+            },
+            "graphs": {
+                "features": {
+                    "enabled_types": {
+                        "daily_play_count": True,
+                        "play_count_by_dayofweek": True,
+                        "play_count_by_hourofday": True,
+                        "top_10_platforms": True,
+                        "top_10_users": True,
+                        "play_count_by_month": True,
+                    },
+                    "media_type_separation": True,
+                    "stacked_bar_charts": True,
+                },
+                "appearance": {
+                    "colors": {
+                        "tv": "#1f77b4",
+                        "movie": "#ff7f0e",
+                        "background": "#ffffff",
+                    },
+                    "grid": {
+                        "enabled": True,
+                    },
+                    "annotations": {
+                        "basic": {
+                            "color": "#ff0000",
+                            "outline_color": "#000000",
+                            "enable_outline": True,
+                        },
+                        "enabled_on": {
+                            "daily_play_count": True,
+                            "play_count_by_dayofweek": True,
+                            "play_count_by_hourofday": True,
+                            "top_10_platforms": True,
+                            "top_10_users": True,
+                            "play_count_by_month": True,
+                        },
+                    },
+                },
+            },
+            "rate_limiting": {
+                "commands": {
+                    "config": {
+                        "user_cooldown_minutes": 5,
+                        "global_cooldown_seconds": 30,
+                    },
+                    "update_graphs": {
+                        "user_cooldown_minutes": 10,
+                        "global_cooldown_seconds": 60,
+                    },
+                    "my_stats": {
+                        "user_cooldown_minutes": 5,
+                        "global_cooldown_seconds": 60,
+                    },
+                },
+            },
         }
         config = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
 
-        assert config.UPDATE_DAYS == 14
-        assert config.FIXED_UPDATE_TIME == "12:30"
-        assert config.CENSOR_USERNAMES is False
-        assert config.TV_COLOR == "#1f77b4"
-        assert config.ENABLE_STACKED_BAR_CHARTS is True
+        assert config.automation.scheduling.update_days == 14
+        assert config.automation.scheduling.fixed_update_time == "12:30"
+        assert config.data_collection.privacy.censor_usernames is False
+        assert config.graphs.appearance.colors.tv == "#1f77b4"
+        assert config.graphs.features.stacked_bar_charts is True
 
     def test_default_values(self) -> None:
         """Test that default values are applied correctly."""
         config_data = {
-            "TAUTULLI_API_KEY": "test_api_key",
-            "TAUTULLI_URL": "http://localhost:8181/api/v2",
-            "DISCORD_TOKEN": "test_discord_token",
-            "CHANNEL_ID": 123456789012345678,
+            "services": {
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {
+                    "token": "test_discord_token",
+                    "channel_id": 123456789012345678,
+                },
+            },
         }
         config = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
 
         # Test some default values from PRD
-        assert config.UPDATE_DAYS == 7
-        assert config.FIXED_UPDATE_TIME == "XX:XX"
-        assert config.KEEP_DAYS == 7
-        assert config.TIME_RANGE_DAYS == 30
-        assert config.LANGUAGE == "en"
-        assert config.CENSOR_USERNAMES is True
-        assert config.ENABLE_GRAPH_GRID is False
-        assert config.ENABLE_MEDIA_TYPE_SEPARATION is True
-        assert config.ENABLE_STACKED_BAR_CHARTS is True
-        assert config.ENABLE_DAILY_PLAY_COUNT is True
+        assert config.automation.scheduling.update_days == 7
+        assert config.automation.scheduling.fixed_update_time == "XX:XX"
+        assert config.automation.data_retention.keep_days == 7
+        assert config.data_collection.time_ranges.days == 30
+        assert config.system.localization.language == "en"
+        assert config.data_collection.privacy.censor_usernames is True
+        assert config.graphs.appearance.grid.enabled is False
+        assert config.graphs.features.media_type_separation is True
+        assert config.graphs.features.stacked_bar_charts is True
+        assert config.graphs.features.enabled_types.daily_play_count is True
 
     def test_missing_required_fields(self) -> None:
         """Test that missing required fields raise ValidationError."""
@@ -104,42 +168,61 @@ class TestTGraphBotConfig:
             _ = TGraphBotConfig()  # pyright: ignore[reportCallIssue]
 
         errors = exc_info.value.errors()
-        required_fields = {
-            "TAUTULLI_API_KEY",
-            "TAUTULLI_URL",
-            "DISCORD_TOKEN",
-            "CHANNEL_ID",
-        }
-        error_fields = {
-            error["loc"][0] for error in errors if error["type"] == "missing"
-        }
-
-        assert required_fields.issubset(error_fields)
+        # Check that the services section is missing
+        assert any(
+            error["loc"] == ("services",) and error["type"] == "missing"
+            for error in errors
+        )
 
     def test_invalid_color_format(self) -> None:
         """Test that invalid color formats raise ValidationError."""
         config_data = {
-            "TAUTULLI_API_KEY": "test_api_key",
-            "TAUTULLI_URL": "http://localhost:8181/api/v2",
-            "DISCORD_TOKEN": "test_discord_token",
-            "CHANNEL_ID": 123456789012345678,
-            "TV_COLOR": "invalid_color",
+            "services": {
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {
+                    "token": "test_discord_token",
+                    "channel_id": 123456789012345678,
+                },
+            },
+            "graphs": {
+                "appearance": {
+                    "colors": {
+                        "tv": "invalid_color",
+                    },
+                },
+            },
         }
 
         with pytest.raises(ValidationError) as exc_info:
             _ = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
 
         errors = exc_info.value.errors()
-        assert any(error["loc"] == ("TV_COLOR",) for error in errors)
+        assert any(
+            error["loc"] == ("graphs", "appearance", "colors", "tv")
+            for error in errors
+        )
 
     def test_invalid_time_format(self) -> None:
         """Test that invalid time formats raise ValidationError."""
         config_data = {
-            "TAUTULLI_API_KEY": "test_api_key",
-            "TAUTULLI_URL": "http://localhost:8181/api/v2",
-            "DISCORD_TOKEN": "test_discord_token",
-            "CHANNEL_ID": 123456789012345678,
-            "FIXED_UPDATE_TIME": "25:99",  # Invalid time
+            "services": {
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {
+                    "token": "test_discord_token",
+                    "channel_id": 123456789012345678,
+                },
+            },
+            "automation": {
+                "scheduling": {
+                    "fixed_update_time": "25:99",  # Invalid time
+                },
+            },
         }
 
         with pytest.raises(ValidationError):
@@ -148,11 +231,21 @@ class TestTGraphBotConfig:
     def test_negative_values_validation(self) -> None:
         """Test that negative values for certain fields raise ValidationError."""
         config_data = {
-            "TAUTULLI_API_KEY": "test_api_key",
-            "TAUTULLI_URL": "http://localhost:8181/api/v2",
-            "DISCORD_TOKEN": "test_discord_token",
-            "CHANNEL_ID": 123456789012345678,
-            "UPDATE_DAYS": -1,  # Should be positive
+            "services": {
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {
+                    "token": "test_discord_token",
+                    "channel_id": 123456789012345678,
+                },
+            },
+            "automation": {
+                "scheduling": {
+                    "update_days": -1,  # Should be positive
+                },
+            },
         }
 
         with pytest.raises(ValidationError):
@@ -161,83 +254,133 @@ class TestTGraphBotConfig:
     def test_channel_id_validation(self) -> None:
         """Test that channel ID validation works correctly."""
         config_data = {
-            "TAUTULLI_API_KEY": "test_api_key",
-            "TAUTULLI_URL": "http://localhost:8181/api/v2",
-            "DISCORD_TOKEN": "test_discord_token",
-            "CHANNEL_ID": "not_an_integer",
+            "services": {
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {
+                    "token": "test_discord_token",
+                    "channel_id": "not_an_integer",
+                },
+            },
         }
 
         with pytest.raises(ValidationError):
             _ = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
 
     def test_stacked_bar_charts_configuration(self) -> None:
-        """Test ENABLE_STACKED_BAR_CHARTS boolean configuration field."""
+        """Test stacked_bar_charts boolean configuration field."""
         # Test with stacked bar charts enabled
         config_data_enabled = {
-            "TAUTULLI_API_KEY": "test_api_key",
-            "TAUTULLI_URL": "http://localhost:8181/api/v2",
-            "DISCORD_TOKEN": "test_discord_token",
-            "CHANNEL_ID": 123456789012345678,
-            "ENABLE_STACKED_BAR_CHARTS": True,
+            "services": {
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {
+                    "token": "test_discord_token",
+                    "channel_id": 123456789012345678,
+                },
+            },
+            "graphs": {
+                "features": {
+                    "stacked_bar_charts": True,
+                },
+            },
         }
         config_enabled = TGraphBotConfig(**config_data_enabled)  # pyright: ignore[reportArgumentType]
-        assert config_enabled.ENABLE_STACKED_BAR_CHARTS is True
+        assert config_enabled.graphs.features.stacked_bar_charts is True
 
         # Test with stacked bar charts disabled
         config_data_disabled = {
-            "TAUTULLI_API_KEY": "test_api_key",
-            "TAUTULLI_URL": "http://localhost:8181/api/v2",
-            "DISCORD_TOKEN": "test_discord_token",
-            "CHANNEL_ID": 123456789012345678,
-            "ENABLE_STACKED_BAR_CHARTS": False,
+            "services": {
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {
+                    "token": "test_discord_token",
+                    "channel_id": 123456789012345678,
+                },
+            },
+            "graphs": {
+                "features": {
+                    "stacked_bar_charts": False,
+                },
+            },
         }
         config_disabled = TGraphBotConfig(**config_data_disabled)  # pyright: ignore[reportArgumentType]
-        assert config_disabled.ENABLE_STACKED_BAR_CHARTS is False
+        assert config_disabled.graphs.features.stacked_bar_charts is False
 
         # Test default value (should be True)
         config_data_default = {
-            "TAUTULLI_API_KEY": "test_api_key",
-            "TAUTULLI_URL": "http://localhost:8181/api/v2",
-            "DISCORD_TOKEN": "test_discord_token",
-            "CHANNEL_ID": 123456789012345678,
+            "services": {
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {
+                    "token": "test_discord_token",
+                    "channel_id": 123456789012345678,
+                },
+            },
         }
         config_default = TGraphBotConfig(**config_data_default)  # pyright: ignore[reportArgumentType]
-        assert config_default.ENABLE_STACKED_BAR_CHARTS is True
+        assert config_default.graphs.features.stacked_bar_charts is True
 
     def test_ephemeral_message_delete_after_default_value(self) -> None:
-        """Test that EPHEMERAL_MESSAGE_DELETE_AFTER has correct default value."""
+        """Test that ephemeral_message_delete_after has correct default value."""
         config_data = {
-            "TAUTULLI_API_KEY": "test_api_key",
-            "TAUTULLI_URL": "http://localhost:8181/api/v2",
-            "DISCORD_TOKEN": "test_discord_token",
-            "CHANNEL_ID": 123456789012345678,
+            "services": {
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {
+                    "token": "test_discord_token",
+                    "channel_id": 123456789012345678,
+                },
+            },
         }
         config = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
 
-        assert config.EPHEMERAL_MESSAGE_DELETE_AFTER == 30.0
-        assert isinstance(config.EPHEMERAL_MESSAGE_DELETE_AFTER, float)
+        assert config.services.discord.ephemeral_message_delete_after == 30.0
+        assert isinstance(config.services.discord.ephemeral_message_delete_after, float)
 
     def test_ephemeral_message_delete_after_custom_value(self) -> None:
-        """Test that EPHEMERAL_MESSAGE_DELETE_AFTER accepts custom values."""
+        """Test that ephemeral_message_delete_after accepts custom values."""
         config_data = {
-            "TAUTULLI_API_KEY": "test_api_key",
-            "TAUTULLI_URL": "http://localhost:8181/api/v2",
-            "DISCORD_TOKEN": "test_discord_token",
-            "CHANNEL_ID": 123456789012345678,
-            "EPHEMERAL_MESSAGE_DELETE_AFTER": 120.5,
+            "services": {
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {
+                    "token": "test_discord_token",
+                    "channel_id": 123456789012345678,
+                    "ephemeral_message_delete_after": 120.5,
+                },
+            },
         }
         config = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
 
-        assert config.EPHEMERAL_MESSAGE_DELETE_AFTER == 120.5
+        assert config.services.discord.ephemeral_message_delete_after == 120.5
 
     def test_ephemeral_message_delete_after_validation_positive(self) -> None:
-        """Test that EPHEMERAL_MESSAGE_DELETE_AFTER must be positive."""
+        """Test that ephemeral_message_delete_after must be positive."""
         config_data = {
-            "TAUTULLI_API_KEY": "test_api_key",
-            "TAUTULLI_URL": "http://localhost:8181/api/v2",
-            "DISCORD_TOKEN": "test_discord_token",
-            "CHANNEL_ID": 123456789012345678,
-            "EPHEMERAL_MESSAGE_DELETE_AFTER": -1.0,
+            "services": {
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {
+                    "token": "test_discord_token",
+                    "channel_id": 123456789012345678,
+                    "ephemeral_message_delete_after": -1.0,
+                },
+            },
         }
 
         with pytest.raises(ValidationError) as exc_info:
@@ -245,17 +388,24 @@ class TestTGraphBotConfig:
 
         errors = exc_info.value.errors()
         assert any(
-            error["loc"] == ("EPHEMERAL_MESSAGE_DELETE_AFTER",) for error in errors
+            error["loc"] == ("services", "discord", "ephemeral_message_delete_after")
+            for error in errors
         )
 
     def test_ephemeral_message_delete_after_validation_zero(self) -> None:
-        """Test that EPHEMERAL_MESSAGE_DELETE_AFTER cannot be zero."""
+        """Test that ephemeral_message_delete_after cannot be zero."""
         config_data = {
-            "TAUTULLI_API_KEY": "test_api_key",
-            "TAUTULLI_URL": "http://localhost:8181/api/v2",
-            "DISCORD_TOKEN": "test_discord_token",
-            "CHANNEL_ID": 123456789012345678,
-            "EPHEMERAL_MESSAGE_DELETE_AFTER": 0.0,
+            "services": {
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {
+                    "token": "test_discord_token",
+                    "channel_id": 123456789012345678,
+                    "ephemeral_message_delete_after": 0.0,
+                },
+            },
         }
 
         with pytest.raises(ValidationError) as exc_info:
@@ -263,40 +413,59 @@ class TestTGraphBotConfig:
 
         errors = exc_info.value.errors()
         assert any(
-            error["loc"] == ("EPHEMERAL_MESSAGE_DELETE_AFTER",) for error in errors
+            error["loc"] == ("services", "discord", "ephemeral_message_delete_after")
+            for error in errors
         )
 
     def test_ephemeral_message_delete_after_validation_range(self) -> None:
-        """Test that EPHEMERAL_MESSAGE_DELETE_AFTER has reasonable range limits."""
+        """Test that ephemeral_message_delete_after has reasonable range limits."""
         # Test minimum valid value
         config_data_min = {
-            "TAUTULLI_API_KEY": "test_api_key",
-            "TAUTULLI_URL": "http://localhost:8181/api/v2",
-            "DISCORD_TOKEN": "test_discord_token",
-            "CHANNEL_ID": 123456789012345678,
-            "EPHEMERAL_MESSAGE_DELETE_AFTER": 1.0,
+            "services": {
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {
+                    "token": "test_discord_token",
+                    "channel_id": 123456789012345678,
+                    "ephemeral_message_delete_after": 1.0,
+                },
+            },
         }
         config_min = TGraphBotConfig(**config_data_min)  # pyright: ignore[reportArgumentType]
-        assert config_min.EPHEMERAL_MESSAGE_DELETE_AFTER == 1.0
+        assert config_min.services.discord.ephemeral_message_delete_after == 1.0
 
         # Test maximum valid value
         config_data_max = {
-            "TAUTULLI_API_KEY": "test_api_key",
-            "TAUTULLI_URL": "http://localhost:8181/api/v2",
-            "DISCORD_TOKEN": "test_discord_token",
-            "CHANNEL_ID": 123456789012345678,
-            "EPHEMERAL_MESSAGE_DELETE_AFTER": 3600.0,
+            "services": {
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {
+                    "token": "test_discord_token",
+                    "channel_id": 123456789012345678,
+                    "ephemeral_message_delete_after": 3600.0,
+                },
+            },
         }
         config_max = TGraphBotConfig(**config_data_max)  # pyright: ignore[reportArgumentType]
-        assert config_max.EPHEMERAL_MESSAGE_DELETE_AFTER == 3600.0
+        assert config_max.services.discord.ephemeral_message_delete_after == 3600.0
 
         # Test value above maximum
         config_data_too_large = {
-            "TAUTULLI_API_KEY": "test_api_key",
-            "TAUTULLI_URL": "http://localhost:8181/api/v2",
-            "DISCORD_TOKEN": "test_discord_token",
-            "CHANNEL_ID": 123456789012345678,
-            "EPHEMERAL_MESSAGE_DELETE_AFTER": 3601.0,
+            "services": {
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {
+                    "token": "test_discord_token",
+                    "channel_id": 123456789012345678,
+                    "ephemeral_message_delete_after": 3601.0,
+                },
+            },
         }
 
         with pytest.raises(ValidationError) as exc_info:
@@ -304,5 +473,6 @@ class TestTGraphBotConfig:
 
         errors = exc_info.value.errors()
         assert any(
-            error["loc"] == ("EPHEMERAL_MESSAGE_DELETE_AFTER",) for error in errors
+            error["loc"] == ("services", "discord", "ephemeral_message_delete_after")
+            for error in errors
         )

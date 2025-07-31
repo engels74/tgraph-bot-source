@@ -377,50 +377,115 @@ def base_config() -> TGraphBotConfig:
         TGraphBotConfig: A standard test configuration with typical values
     """
     return TGraphBotConfig(
-        # Essential Settings (required)
-        TAUTULLI_API_KEY="test_api_key_standard",
-        TAUTULLI_URL="http://localhost:8181/api/v2",
-        DISCORD_TOKEN="test_discord_token_1234567890",
-        CHANNEL_ID=123456789012345678,
-        # Timing and Retention (common test values)
-        UPDATE_DAYS=7,
-        FIXED_UPDATE_TIME="XX:XX",
-        KEEP_DAYS=7,
-        TIME_RANGE_DAYS=30,
-        LANGUAGE="en",
-        # Graph Options (balanced mix for testing)
-        CENSOR_USERNAMES=True,
-        ENABLE_GRAPH_GRID=False,
-        ENABLE_DAILY_PLAY_COUNT=True,
-        ENABLE_PLAY_COUNT_BY_DAYOFWEEK=True,
-        ENABLE_PLAY_COUNT_BY_HOUROFDAY=True,
-        ENABLE_TOP_10_PLATFORMS=True,
-        ENABLE_TOP_10_USERS=True,
-        ENABLE_PLAY_COUNT_BY_MONTH=True,
-        # Graph Colors (default values)
-        TV_COLOR="#1f77b4",
-        MOVIE_COLOR="#ff7f0e",
-        GRAPH_BACKGROUND_COLOR="#ffffff",
-        ANNOTATION_COLOR="#ff0000",
-        ANNOTATION_OUTLINE_COLOR="#000000",
-        ENABLE_ANNOTATION_OUTLINE=True,
-        # Annotation Options (enabled for testing)
-        ANNOTATE_DAILY_PLAY_COUNT=True,
-        ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK=True,
-        ANNOTATE_PLAY_COUNT_BY_HOUROFDAY=True,
-        ANNOTATE_TOP_10_PLATFORMS=True,
-        ANNOTATE_TOP_10_USERS=True,
-        ANNOTATE_PLAY_COUNT_BY_MONTH=True,
-        # Color Palettes (empty for default)
-        PLAY_COUNT_BY_HOUROFDAY_PALETTE="",
-        TOP_10_USERS_PALETTE="",
-        # Command Cooldown Options (minimal for testing)
-        CONFIG_COOLDOWN_MINUTES=0,
-        CONFIG_GLOBAL_COOLDOWN_SECONDS=0,
-        UPDATE_GRAPHS_COOLDOWN_MINUTES=0,
-        UPDATE_GRAPHS_GLOBAL_COOLDOWN_SECONDS=0,
-        MY_STATS_COOLDOWN_MINUTES=0,
-        MY_STATS_GLOBAL_COOLDOWN_SECONDS=0,
+        services={
+            "tautulli": {
+                "api_key": "test_api_key_standard",
+                "url": "http://localhost:8181/api/v2",
+            },
+            "discord": {
+                "token": "test_discord_token_1234567890",
+                "channel_id": 123456789012345678,
+                "timestamp_format": "R",
+                "ephemeral_message_delete_after": 30.0,
+            },
+        },
+        automation={
+            "scheduling": {
+                "update_days": 7,
+                "fixed_update_time": "XX:XX",
+            },
+            "data_retention": {
+                "keep_days": 7,
+            },
+        },
+        data_collection={
+            "time_ranges": {
+                "days": 30,
+                "months": 12,
+            },
+            "privacy": {
+                "censor_usernames": True,
+            },
+        },
+        system={
+            "localization": {
+                "language": "en",
+            },
+        },
+        graphs={
+            "features": {
+                "enabled_types": {
+                    "daily_play_count": True,
+                    "play_count_by_dayofweek": True,
+                    "play_count_by_hourofday": True,
+                    "top_10_platforms": True,
+                    "top_10_users": True,
+                    "play_count_by_month": True,
+                },
+                "media_type_separation": True,
+                "stacked_bar_charts": True,
+            },
+            "appearance": {
+                "dimensions": {
+                    "width": 14,
+                    "height": 8,
+                    "dpi": 100,
+                },
+                "colors": {
+                    "tv": "#1f77b4",
+                    "movie": "#ff7f0e",
+                    "background": "#ffffff",
+                },
+                "grid": {
+                    "enabled": False,
+                },
+                "annotations": {
+                    "basic": {
+                        "color": "#ff0000",
+                        "outline_color": "#000000",
+                        "enable_outline": True,
+                        "font_size": 10,
+                    },
+                    "enabled_on": {
+                        "daily_play_count": True,
+                        "play_count_by_dayofweek": True,
+                        "play_count_by_hourofday": True,
+                        "top_10_platforms": True,
+                        "top_10_users": True,
+                        "play_count_by_month": True,
+                    },
+                    "peaks": {
+                        "enabled": True,
+                        "color": "#ffcc00",
+                        "text_color": "#000000",
+                    },
+                },
+                "palettes": {
+                    "play_count_by_hourofday": "",
+                    "top_10_users": "",
+                    "daily_play_count": "",
+                    "play_count_by_dayofweek": "",
+                    "top_10_platforms": "",
+                    "play_count_by_month": "",
+                },
+            },
+        },
+        rate_limiting={
+            "commands": {
+                "config": {
+                    "user_cooldown_minutes": 0,
+                    "global_cooldown_seconds": 0,
+                },
+                "update_graphs": {
+                    "user_cooldown_minutes": 0,
+                    "global_cooldown_seconds": 0,
+                },
+                "my_stats": {
+                    "user_cooldown_minutes": 0,
+                    "global_cooldown_seconds": 0,
+                },
+            },
+        },
     )
 
 
@@ -438,12 +503,17 @@ def minimal_config() -> TGraphBotConfig:
         TGraphBotConfig: A minimal configuration with only required fields set
     """
     return TGraphBotConfig(
-        # Only the essential required settings
-        TAUTULLI_API_KEY="test_api_key_minimal",
-        TAUTULLI_URL="http://localhost:8181/api/v2",
-        DISCORD_TOKEN="test_discord_token_minimal",
-        CHANNEL_ID=123456789,
-        # All other fields will use their default values from the schema
+        services={
+            "tautulli": {
+                "api_key": "test_api_key_minimal",
+                "url": "http://localhost:8181/api/v2",
+            },
+            "discord": {
+                "token": "test_discord_token_minimal",
+                "channel_id": 123456789,
+            },
+        },
+        # All other sections will use their default values from the schema
     )
 
 
