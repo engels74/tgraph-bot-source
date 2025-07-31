@@ -17,6 +17,7 @@ import pytest
 from src.tgraph_bot.graphs.graph_manager import GraphManager, GraphGenerationError
 from src.tgraph_bot.graphs.graph_modules.utils.progress_tracker import ProgressTracker
 from src.tgraph_bot.graphs.user_graph_manager import UserGraphManager
+from tests.utils.test_helpers import create_test_config, create_config_manager_with_config
 
 
 class TestProgressTracker:
@@ -85,10 +86,8 @@ class TestGraphManagerErrorHandling:
     @pytest.mark.asyncio
     async def test_generate_all_graphs_with_retry_success(self) -> None:
         """Test successful graph generation with retry logic."""
-        mock_config_manager = MagicMock()
-        mock_config = MagicMock()
-        mock_config.data_collection.time_ranges.days = 30
-        mock_config_manager.get_current_config.return_value = mock_config  # pyright: ignore[reportAny]
+        config = create_test_config()
+        mock_config_manager = create_config_manager_with_config(config)
 
         graph_manager = GraphManager(mock_config_manager)
 
@@ -132,10 +131,8 @@ class TestGraphManagerErrorHandling:
     @pytest.mark.asyncio
     async def test_generate_all_graphs_with_timeout(self) -> None:
         """Test graph generation timeout handling."""
-        mock_config_manager = MagicMock()
-        mock_config = MagicMock()
-        mock_config.data_collection.time_ranges.days = 30
-        mock_config_manager.get_current_config.return_value = mock_config  # pyright: ignore[reportAny]
+        config = create_test_config()
+        mock_config_manager = create_config_manager_with_config(config)
 
         graph_manager = GraphManager(mock_config_manager)
 
@@ -172,7 +169,8 @@ class TestGraphManagerErrorHandling:
     @pytest.mark.asyncio
     async def test_fetch_graph_data_with_retry_failure(self) -> None:
         """Test data fetch retry logic with eventual failure."""
-        mock_config_manager = MagicMock()
+        config = create_test_config()
+        mock_config_manager = create_config_manager_with_config(config)
         graph_manager = GraphManager(mock_config_manager)
 
         # Mock components
@@ -200,10 +198,8 @@ class TestGraphManagerErrorHandling:
     @pytest.mark.asyncio
     async def test_cleanup_old_graphs_with_timeout(self) -> None:
         """Test cleanup operations with timeout handling."""
-        mock_config_manager = MagicMock()
-        mock_config = MagicMock()
-        mock_config.automation.data_retention.keep_days = 7
-        mock_config_manager.get_current_config.return_value = mock_config  # pyright: ignore[reportAny]
+        config = create_test_config()
+        mock_config_manager = create_config_manager_with_config(config)
 
         graph_manager = GraphManager(mock_config_manager)
 
@@ -226,10 +222,8 @@ class TestUserGraphManagerErrorHandling:
     @pytest.mark.asyncio
     async def test_generate_user_graphs_with_retry_success(self) -> None:
         """Test successful user graph generation with retry logic."""
-        mock_config_manager = MagicMock()
-        mock_config = MagicMock()
-        mock_config.data_collection.time_ranges.days = 30
-        mock_config_manager.get_current_config.return_value = mock_config  # pyright: ignore[reportAny]
+        config = create_test_config()
+        mock_config_manager = create_config_manager_with_config(config)
 
         user_graph_manager = UserGraphManager(mock_config_manager)
 
@@ -290,7 +284,8 @@ class TestUserGraphManagerErrorHandling:
     @pytest.mark.asyncio
     async def test_cleanup_user_graphs_with_statistics(self) -> None:
         """Test user graph cleanup with detailed statistics."""
-        mock_config_manager = MagicMock()
+        config = create_test_config()
+        mock_config_manager = create_config_manager_with_config(config)
         user_graph_manager = UserGraphManager(mock_config_manager)
 
         # Create temporary test files

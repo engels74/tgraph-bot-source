@@ -19,6 +19,7 @@ import pytest
 from src.tgraph_bot.bot.startup_sequence import StartupSequence, TGraphBotProtocol
 from src.tgraph_bot.config.manager import ConfigManager
 from src.tgraph_bot.config.schema import TGraphBotConfig
+from tests.utils.test_helpers import create_test_config
 
 
 @pytest.fixture
@@ -47,9 +48,7 @@ def mock_bot() -> MagicMock:
 @pytest.fixture
 def mock_config() -> TGraphBotConfig:
     """Create a mock configuration."""
-    config = MagicMock(spec=TGraphBotConfig)
-    config.services.discord.channel_id = 987654321
-    return config
+    return create_test_config(discord_channel_id=987654321)
 
 
 @pytest.fixture

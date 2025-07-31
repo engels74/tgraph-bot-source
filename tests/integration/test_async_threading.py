@@ -13,6 +13,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from src.tgraph_bot.graphs.graph_manager import GraphManager
 from src.tgraph_bot.graphs.user_graph_manager import UserGraphManager
+from tests.utils.test_helpers import create_test_config, create_config_manager_with_config
 
 
 class TestAsyncThreading:
@@ -21,14 +22,12 @@ class TestAsyncThreading:
     @pytest.mark.asyncio
     async def test_graph_manager_async_threading(self) -> None:
         """Test that GraphManager uses async threading for CPU-bound operations."""
-        # Mock the config manager
-        mock_config_manager = MagicMock()
-        mock_config = MagicMock()
-        mock_config.services.tautulli.url = "http://localhost:8181"
-        mock_config.services.tautulli.api_key = "test_key"
-        mock_config.data_collection.time_ranges.days = 30
-        mock_config.automation.data_retention.keep_days = 7
-        mock_config_manager.get_current_config.return_value = mock_config  # pyright: ignore[reportAny]
+        # Create proper config with test values
+        config = create_test_config(
+            tautulli_url="http://localhost:8181",
+            tautulli_api_key="test_key"
+        )
+        mock_config_manager = create_config_manager_with_config(config)
 
         # Create GraphManager instance
         graph_manager = GraphManager(mock_config_manager)
@@ -85,14 +84,12 @@ class TestAsyncThreading:
     @pytest.mark.asyncio
     async def test_user_graph_manager_async_threading(self) -> None:
         """Test that UserGraphManager uses async threading for CPU-bound operations."""
-        # Mock the config manager
-        mock_config_manager = MagicMock()
-        mock_config = MagicMock()
-        mock_config.services.tautulli.url = "http://localhost:8181"
-        mock_config.services.tautulli.api_key = "test_key"
-        mock_config.data_collection.time_ranges.days = 30
-        mock_config.automation.data_retention.keep_days = 7
-        mock_config_manager.get_current_config.return_value = mock_config  # pyright: ignore[reportAny]
+        # Create proper config with test values
+        config = create_test_config(
+            tautulli_url="http://localhost:8181",
+            tautulli_api_key="test_key"
+        )
+        mock_config_manager = create_config_manager_with_config(config)
 
         # Create UserGraphManager instance
         user_graph_manager = UserGraphManager(mock_config_manager)
@@ -155,11 +152,9 @@ class TestAsyncThreading:
     @pytest.mark.asyncio
     async def test_cleanup_operations_async_threading(self) -> None:
         """Test that cleanup operations use async threading."""
-        # Mock the config manager
-        mock_config_manager = MagicMock()
-        mock_config = MagicMock()
-        mock_config.automation.data_retention.keep_days = 7
-        mock_config_manager.get_current_config.return_value = mock_config  # pyright: ignore[reportAny]
+        # Create proper config with test values
+        config = create_test_config()
+        mock_config_manager = create_config_manager_with_config(config)
 
         # Create GraphManager instance
         graph_manager = GraphManager(mock_config_manager)
@@ -183,13 +178,12 @@ class TestAsyncThreading:
         """Test that the event loop remains responsive during graph generation."""
         # This test verifies that CPU-bound operations don't block the event loop
 
-        # Mock the config manager
-        mock_config_manager = MagicMock()
-        mock_config = MagicMock()
-        mock_config.services.tautulli.url = "http://localhost:8181"
-        mock_config.services.tautulli.api_key = "test_key"
-        mock_config.data_collection.time_ranges.days = 30
-        mock_config_manager.get_current_config.return_value = mock_config  # pyright: ignore[reportAny]
+        # Create proper config with test values
+        config = create_test_config(
+            tautulli_url="http://localhost:8181",
+            tautulli_api_key="test_key"
+        )
+        mock_config_manager = create_config_manager_with_config(config)
 
         graph_manager = GraphManager(mock_config_manager)
 

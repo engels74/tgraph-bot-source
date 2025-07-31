@@ -14,18 +14,18 @@ from src.tgraph_bot.utils.time.timestamp_calculator import TimestampCalculator
 from src.tgraph_bot.utils.discord.discord_file_utils import create_graph_specific_embed
 from src.tgraph_bot.bot.update_tracker import UpdateTracker
 from src.tgraph_bot.config.manager import ConfigManager
+from tests.utils.test_helpers import create_test_config, create_config_manager_with_config
 
 
 @pytest.fixture
-def mock_config_manager() -> Mock:
+def mock_config_manager() -> ConfigManager:
     """Create a mock config manager with test configuration."""
-    config_manager = Mock(spec=ConfigManager)
-    mock_config = Mock()
-    mock_config.automation.scheduling.update_days = 1
-    mock_config.automation.scheduling.fixed_update_time = "23:59"
-    mock_config.services.discord.timestamp_format = "F"
-    config_manager.get_current_config.return_value = mock_config  # pyright: ignore[reportAny]
-    return config_manager
+    config = create_test_config(discord_channel_id=123456789012345678)
+    # Override specific values for this test
+    config.automation.scheduling.update_days = 1
+    config.automation.scheduling.fixed_update_time = "23:59"
+    config.services.discord.timestamp_format = "F"
+    return create_config_manager_with_config(config)
 
 
 @pytest.fixture
