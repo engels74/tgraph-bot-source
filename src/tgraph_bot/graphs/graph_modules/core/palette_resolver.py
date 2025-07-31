@@ -93,12 +93,12 @@ class PaletteResolver:
 
     # Map graph class names to their corresponding palette configuration keys
     GRAPH_TYPE_TO_PALETTE_KEY: dict[str, str] = {
-        "PlayCountByHourOfDayGraph": "PLAY_COUNT_BY_HOUROFDAY_PALETTE",
-        "Top10UsersGraph": "TOP_10_USERS_PALETTE",
-        "DailyPlayCountGraph": "DAILY_PLAY_COUNT_PALETTE",
-        "PlayCountByDayOfWeekGraph": "PLAY_COUNT_BY_DAYOFWEEK_PALETTE",
-        "Top10PlatformsGraph": "TOP_10_PLATFORMS_PALETTE",
-        "PlayCountByMonthGraph": "PLAY_COUNT_BY_MONTH_PALETTE",
+        "PlayCountByHourOfDayGraph": "graphs.appearance.palettes.play_count_by_hourofday",
+        "Top10UsersGraph": "graphs.appearance.palettes.top_10_users",
+        "DailyPlayCountGraph": "graphs.appearance.palettes.daily_play_count",
+        "PlayCountByDayOfWeekGraph": "graphs.appearance.palettes.play_count_by_dayofweek",
+        "Top10PlatformsGraph": "graphs.appearance.palettes.top_10_platforms",
+        "PlayCountByMonthGraph": "graphs.appearance.palettes.play_count_by_month",
     }
 
     def __init__(
@@ -227,20 +227,89 @@ class PaletteResolver:
         if palette_key is None:
             return None
 
-        # Get palette value from config using ConfigAccessor
+        # Get palette value from config using nested structure
         palette_value: object = None
         if self.config_accessor is not None:
-            palette_value = self.config_accessor.get_value(palette_key, "")
+            # Use the old flat key for ConfigAccessor compatibility
+            old_key = self._get_old_palette_key(graph_type)
+            if old_key:
+                palette_value = self.config_accessor.get_value(old_key, "")
         elif isinstance(self.config, dict):
-            palette_value = self.config.get(palette_key)
+            # Navigate nested dict structure
+            palette_value = self._get_nested_dict_value(self.config, palette_key)
         elif self.config is not None:
-            palette_value = getattr(self.config, palette_key, None)
+            # Navigate nested TGraphBotConfig structure
+            palette_value = self._get_nested_config_value(self.config, palette_key)
 
         # Return palette if it's a non-empty string
         if palette_value and isinstance(palette_value, str) and palette_value.strip():
             return palette_value.strip()
 
         return None
+
+    def _get_old_palette_key(self, graph_type: str) -> str | None:
+        """
+        Get the old flat palette key for ConfigAccessor compatibility.
+
+        Args:
+            graph_type: The graph class name
+
+        Returns:
+            Old flat key name or None if not found
+        """
+        old_key_mapping = {
+            "PlayCountByHourOfDayGraph": "PLAY_COUNT_BY_HOUROFDAY_PALETTE",
+            "Top10UsersGraph": "TOP_10_USERS_PALETTE",
+            "DailyPlayCountGraph": "DAILY_PLAY_COUNT_PALETTE",
+            "PlayCountByDayOfWeekGraph": "PLAY_COUNT_BY_DAYOFWEEK_PALETTE",
+            "Top10PlatformsGraph": "TOP_10_PLATFORMS_PALETTE",
+            "PlayCountByMonthGraph": "PLAY_COUNT_BY_MONTH_PALETTE",
+        }
+        return old_key_mapping.get(graph_type)
+
+    def _get_nested_dict_value(self, config_dict: dict[str, object], key_path: str) -> object:
+        """
+        Get value from nested dictionary using dot notation path.
+
+        Args:
+            config_dict: The configuration dictionary
+            key_path: Dot-separated path (e.g., "graphs.appearance.palettes.daily_play_count")
+
+        Returns:
+            The value at the path or None if not found
+        """
+        keys = key_path.split(".")
+        current: object = config_dict
+
+        for key in keys:
+            if isinstance(current, dict) and key in current:
+                current = current[key]  # pyright: ignore[reportUnknownVariableType] # dynamic dict access
+            else:
+                return None
+
+        return current  # pyright: ignore[reportUnknownVariableType] # dynamic dict navigation
+
+    def _get_nested_config_value(self, config: "TGraphBotConfig", key_path: str) -> object:
+        """
+        Get value from nested TGraphBotConfig using dot notation path.
+
+        Args:
+            config: The TGraphBotConfig instance
+            key_path: Dot-separated path (e.g., "graphs.appearance.palettes.daily_play_count")
+
+        Returns:
+            The value at the path or None if not found
+        """
+        keys = key_path.split(".")
+        current: object = config
+
+        for key in keys:
+            if hasattr(current, key):
+                current = getattr(current, key)  # pyright: ignore[reportAny] # dynamic attribute access
+            else:
+                return None
+
+        return current
 
     def _is_media_type_separation_enabled(self) -> bool:
         """
@@ -252,10 +321,17 @@ class PaletteResolver:
         if self.config is None:
             return False
 
-        if isinstance(self.config, dict):
-            return bool(self.config.get("ENABLE_MEDIA_TYPE_SEPARATION", True))
+        # Use ConfigAccessor if available for compatibility
+        if self.config_accessor is not None:
+            return bool(self.config_accessor.get_value("ENABLE_MEDIA_TYPE_SEPARATION", True))
+        elif isinstance(self.config, dict):
+            # Navigate nested dict structure
+            value = self._get_nested_dict_value(self.config, "graphs.features.media_type_separation")
+            return bool(value if value is not None else True)
         else:
-            return bool(getattr(self.config, "ENABLE_MEDIA_TYPE_SEPARATION", True))
+            # Navigate nested TGraphBotConfig structure
+            value = self._get_nested_config_value(self.config, "graphs.features.media_type_separation")
+            return bool(value if value is not None else True)
 
     def _get_media_type_colors(self) -> dict[str, str]:
         """
@@ -270,14 +346,22 @@ class PaletteResolver:
                 "movie": DEFAULT_COLORS.MOVIE_COLOR,
             }
 
-        if isinstance(self.config, dict):
-            tv_color = self.config.get("TV_COLOR", DEFAULT_COLORS.TV_COLOR)
-            movie_color = self.config.get("MOVIE_COLOR", DEFAULT_COLORS.MOVIE_COLOR)
+        # Use ConfigAccessor if available for compatibility
+        if self.config_accessor is not None:
+            tv_color = self.config_accessor.get_value("TV_COLOR", DEFAULT_COLORS.TV_COLOR)
+            movie_color = self.config_accessor.get_value("MOVIE_COLOR", DEFAULT_COLORS.MOVIE_COLOR)
+        elif isinstance(self.config, dict):
+            # Navigate nested dict structure
+            tv_color = self._get_nested_dict_value(self.config, "graphs.appearance.colors.tv")
+            movie_color = self._get_nested_dict_value(self.config, "graphs.appearance.colors.movie")
+            tv_color = tv_color if tv_color is not None else DEFAULT_COLORS.TV_COLOR
+            movie_color = movie_color if movie_color is not None else DEFAULT_COLORS.MOVIE_COLOR
         else:
-            tv_color = getattr(self.config, "TV_COLOR", DEFAULT_COLORS.TV_COLOR)
-            movie_color = getattr(
-                self.config, "MOVIE_COLOR", DEFAULT_COLORS.MOVIE_COLOR
-            )
+            # Navigate nested TGraphBotConfig structure
+            tv_color = self._get_nested_config_value(self.config, "graphs.appearance.colors.tv")
+            movie_color = self._get_nested_config_value(self.config, "graphs.appearance.colors.movie")
+            tv_color = tv_color if tv_color is not None else DEFAULT_COLORS.TV_COLOR
+            movie_color = movie_color if movie_color is not None else DEFAULT_COLORS.MOVIE_COLOR
 
         return {
             "tv": str(tv_color),

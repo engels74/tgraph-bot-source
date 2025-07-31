@@ -460,7 +460,7 @@ def memory_monitoring() -> Generator[dict[str, float], None, None]:
 def assert_graph_properties(
     graph: BaseGraph,
     *,
-    expected_width: int = 12,
+    expected_width: int = 14,
     expected_height: int = 8,
     expected_dpi: int = 100,
     expected_background_color: str = "#ffffff",

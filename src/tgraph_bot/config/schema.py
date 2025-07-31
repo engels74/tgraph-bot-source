@@ -210,7 +210,7 @@ class DimensionsConfig(BaseModel):
 
 class ColorsConfig(BaseModel):
     """Graph colors configuration."""
-    
+
     tv: str = Field(
         default="#1f77b4",
         description="Color for TV shows in graphs",
@@ -222,6 +222,10 @@ class ColorsConfig(BaseModel):
     background: str = Field(
         default="#ffffff",
         description="Background color for graphs",
+    )
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(
+        validate_assignment=True,
     )
 
     @field_validator("tv", "movie", "background")

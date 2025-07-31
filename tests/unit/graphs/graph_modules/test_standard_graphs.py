@@ -36,6 +36,40 @@ from tests.utils.test_helpers import (
 )
 
 
+def set_nested_config_value(config: TGraphBotConfig, old_key: str, value: object) -> None:
+    """
+    Set a nested configuration value using the old flat key name.
+
+    This helper function maps old flat configuration keys to their new nested
+    structure paths and sets the value appropriately.
+
+    Args:
+        config: The TGraphBotConfig instance to modify
+        old_key: The old flat configuration key (e.g., "ANNOTATE_PLAY_COUNT_BY_HOUROFDAY")
+        value: The value to set
+    """
+    # Map old flat keys to nested paths based on config_migration_mapping.md
+    if old_key == "TIME_RANGE_DAYS":
+        if isinstance(value, (int, float, str)):
+            config.data_collection.time_ranges.days = int(value)
+        else:
+            raise ValueError(f"Invalid value type for TIME_RANGE_DAYS: {type(value)}")
+    elif old_key == "ANNOTATE_PLAY_COUNT_BY_HOUROFDAY":
+        config.graphs.appearance.annotations.enabled_on.play_count_by_hourofday = bool(value)
+    elif old_key == "ANNOTATE_DAILY_PLAY_COUNT":
+        config.graphs.appearance.annotations.enabled_on.daily_play_count = bool(value)
+    elif old_key == "ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK":
+        config.graphs.appearance.annotations.enabled_on.play_count_by_dayofweek = bool(value)
+    elif old_key == "ANNOTATE_TOP_10_PLATFORMS":
+        config.graphs.appearance.annotations.enabled_on.top_10_platforms = bool(value)
+    elif old_key == "ANNOTATE_TOP_10_USERS":
+        config.graphs.appearance.annotations.enabled_on.top_10_users = bool(value)
+    elif old_key == "ANNOTATE_PLAY_COUNT_BY_MONTH":
+        config.graphs.appearance.annotations.enabled_on.play_count_by_month = bool(value)
+    else:
+        raise ValueError(f"Unknown configuration key: {old_key}")
+
+
 class TestStandardGraphs:
     """Consolidated tests for graphs that follow standard patterns."""
 
@@ -439,7 +473,7 @@ class TestGraphSeparationFunctionality:
     ) -> None:
         """Test that graphs generate correct titles based on configuration."""
         config = create_test_config_minimal()
-        setattr(config, config_attribute, config_value)
+        set_nested_config_value(config, config_attribute, config_value)
 
         graph = graph_class(config=config)
         assert graph.get_title() == expected_title
@@ -467,7 +501,7 @@ class TestGraphSeparationFunctionality:
     ) -> None:
         """Test that graphs can access configuration values correctly."""
         config = create_test_config_minimal()
-        setattr(config, config_attribute, config_value)
+        set_nested_config_value(config, config_attribute, config_value)
 
         graph = graph_class(config=config)
 

@@ -458,7 +458,7 @@ class ConfigCog(BaseCommandCog):
 
             # Validate the new configuration
             try:
-                new_config = TGraphBotConfig(**config_data)  # pyright: ignore[reportAny]
+                new_config = TGraphBotConfig(**config_data)  # pyright: ignore[reportAny] # dict unpacking
             except ValidationError as e:
                 raise ConfigurationError(
                     f"Configuration validation failed: {e}",

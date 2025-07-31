@@ -177,7 +177,7 @@ def create_test_config_with_overrides(**kwargs: object) -> TGraphBotConfig:
         from src.tgraph_bot.config.schema import (
             TGraphBotConfig, ServicesConfig, TautulliConfig, DiscordConfig,
             GraphsConfig, GraphFeaturesConfig, EnabledTypesConfig,
-            GraphAppearanceConfig, ColorsConfig, AnnotationsConfig,
+            GraphAppearanceConfig, DimensionsConfig, ColorsConfig, AnnotationsConfig,
             BasicAnnotationsConfig, EnabledOnConfig, GridConfig,
             PalettesConfig, DataCollectionConfig, TimeRangesConfig, PrivacyConfig,
         )
@@ -208,6 +208,14 @@ def create_test_config_with_overrides(**kwargs: object) -> TGraphBotConfig:
     movie_color = str(kwargs.get("MOVIE_COLOR", "#ff7f0e"))
     graph_background_color = str(kwargs.get("GRAPH_BACKGROUND_COLOR", "#ffffff"))
     enable_graph_grid = bool(kwargs.get("ENABLE_GRAPH_GRID", False))
+
+    # Extract graph dimensions configuration
+    graph_width_value = kwargs.get("GRAPH_WIDTH", 14)
+    graph_width = int(graph_width_value) if isinstance(graph_width_value, (int, str)) else 14
+    graph_height_value = kwargs.get("GRAPH_HEIGHT", 8)
+    graph_height = int(graph_height_value) if isinstance(graph_height_value, (int, str)) else 8
+    graph_dpi_value = kwargs.get("GRAPH_DPI", 100)
+    graph_dpi = int(graph_dpi_value) if isinstance(graph_dpi_value, (int, str)) else 100
 
     # Extract annotation configuration
     annotation_color = str(kwargs.get("ANNOTATION_COLOR", "#ff0000"))
@@ -262,6 +270,11 @@ def create_test_config_with_overrides(**kwargs: object) -> TGraphBotConfig:
                 stacked_bar_charts=enable_stacked_bar_charts,
             ),
             appearance=GraphAppearanceConfig(
+                dimensions=DimensionsConfig(
+                    width=graph_width,
+                    height=graph_height,
+                    dpi=graph_dpi,
+                ),
                 colors=ColorsConfig(
                     tv=tv_color,
                     movie=movie_color,

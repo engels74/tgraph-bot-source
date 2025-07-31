@@ -48,7 +48,7 @@ class GenericTestGraph(BaseGraph):
         self,
         *,
         config: TGraphBotConfig | None = None,
-        width: int = 12,
+        width: int = 14,
         height: int = 8,
         dpi: int = 100,
         background_color: str | None = None,

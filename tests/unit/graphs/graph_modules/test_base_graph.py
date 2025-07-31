@@ -85,7 +85,7 @@ class TestBaseGraph:
         assert axes is graph.axes
 
         # Verify figure properties
-        assert figure.get_figwidth() == 12  # pyright: ignore[reportUnknownMemberType]
+        assert figure.get_figwidth() == 14  # pyright: ignore[reportUnknownMemberType]
         assert figure.get_figheight() == 8  # pyright: ignore[reportUnknownMemberType]
         # On high-DPI displays (like Retina), matplotlib may double the DPI
         # The graph instance stores the requested DPI, but matplotlib figure may use system DPI
