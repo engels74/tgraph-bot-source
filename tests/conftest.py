@@ -21,7 +21,32 @@ from typing import TypedDict
 
 import pytest
 
-from src.tgraph_bot.config.schema import TGraphBotConfig
+from src.tgraph_bot.config.schema import (
+    TGraphBotConfig,
+    ServicesConfig,
+    TautulliConfig,
+    DiscordConfig,
+    AutomationConfig,
+    SchedulingConfig,
+    DataRetentionConfig,
+    DataCollectionConfig,
+    TimeRangesConfig,
+    PrivacyConfig,
+    SystemConfig,
+    LocalizationConfig,
+    GraphsConfig,
+    GraphFeaturesConfig,
+    EnabledTypesConfig,
+    GraphAppearanceConfig,
+    ColorsConfig,
+    GridConfig,
+    AnnotationsConfig,
+    BasicAnnotationsConfig,
+    EnabledOnConfig,
+    RateLimitingConfig,
+    CommandsConfig,
+    CommandCooldownConfig,
+)
 
 
 class AsyncTestContext(TypedDict):
@@ -48,13 +73,36 @@ def invalid_config_dict() -> dict[str, object]:
         dict[str, object]: Configuration dictionary with validation issues
     """
     return {
-        # Missing required fields (TAUTULLI_API_KEY, DISCORD_TOKEN)
-        "TAUTULLI_URL": "invalid-url-format",  # Invalid URL
-        "CHANNEL_ID": "not-a-number",  # Invalid type
-        "UPDATE_DAYS": -1,  # Negative value
-        "FIXED_UPDATE_TIME": "25:99",  # Invalid time format
-        "TV_COLOR": "not-a-color",  # Invalid color format
-        "CONFIG_COOLDOWN_MINUTES": -5,  # Negative cooldown
+        "services": {
+            # Missing required api_key
+            "tautulli": {
+                "url": "invalid-url-format",  # Invalid URL format
+            },
+            "discord": {
+                # Missing required token
+                "channel_id": "not-a-number",  # Invalid type
+            },
+        },
+        "automation": {
+            "scheduling": {
+                "update_days": -1,  # Negative value
+                "fixed_update_time": "25:99",  # Invalid time format
+            },
+        },
+        "graphs": {
+            "appearance": {
+                "colors": {
+                    "tv": "not-a-color",  # Invalid color format
+                },
+            },
+        },
+        "rate_limiting": {
+            "commands": {
+                "config": {
+                    "user_cooldown_minutes": -5,  # Negative cooldown
+                },
+            },
+        },
     }
 
 
@@ -70,30 +118,58 @@ def edge_case_config() -> TGraphBotConfig:
         TGraphBotConfig: Configuration with edge case values
     """
     return TGraphBotConfig(
-        # Required fields
-        TAUTULLI_API_KEY="a",  # Minimal length
-        TAUTULLI_URL="http://localhost",  # Minimal URL
-        DISCORD_TOKEN="x" * 50,  # Minimal Discord token length
-        CHANNEL_ID=1,  # Minimum valid Discord ID
-        # Edge case values
-        UPDATE_DAYS=1,  # Minimum
-        KEEP_DAYS=1,  # Minimum
-        TIME_RANGE_DAYS=1,  # Minimum
-        FIXED_UPDATE_TIME="00:00",  # Midnight
-        # All graphs disabled
-        ENABLE_DAILY_PLAY_COUNT=False,
-        ENABLE_PLAY_COUNT_BY_DAYOFWEEK=False,
-        ENABLE_PLAY_COUNT_BY_HOUROFDAY=False,
-        ENABLE_TOP_10_PLATFORMS=False,
-        ENABLE_TOP_10_USERS=False,
-        ENABLE_PLAY_COUNT_BY_MONTH=False,
-        # Maximum cooldowns
-        CONFIG_COOLDOWN_MINUTES=60,
-        CONFIG_GLOBAL_COOLDOWN_SECONDS=300,
-        UPDATE_GRAPHS_COOLDOWN_MINUTES=60,
-        UPDATE_GRAPHS_GLOBAL_COOLDOWN_SECONDS=300,
-        MY_STATS_COOLDOWN_MINUTES=60,
-        MY_STATS_GLOBAL_COOLDOWN_SECONDS=300,
+        services=ServicesConfig(
+            tautulli=TautulliConfig(
+                api_key="a",  # Minimal length
+                url="http://localhost",  # Minimal URL
+            ),
+            discord=DiscordConfig(
+                token="x" * 50,  # Minimal Discord token length
+                channel_id=1,  # Minimum valid Discord ID
+            ),
+        ),
+        automation=AutomationConfig(
+            scheduling=SchedulingConfig(
+                update_days=1,  # Minimum
+                fixed_update_time="00:00",  # Midnight
+            ),
+            data_retention=DataRetentionConfig(
+                keep_days=1,  # Minimum
+            ),
+        ),
+        data_collection=DataCollectionConfig(
+            time_ranges=TimeRangesConfig(
+                days=1,  # Minimum
+            ),
+        ),
+        graphs=GraphsConfig(
+            features=GraphFeaturesConfig(
+                enabled_types=EnabledTypesConfig(
+                    daily_play_count=False,
+                    play_count_by_dayofweek=False,
+                    play_count_by_hourofday=False,
+                    top_10_platforms=False,
+                    top_10_users=False,
+                    play_count_by_month=False,
+                ),
+            ),
+        ),
+        rate_limiting=RateLimitingConfig(
+            commands=CommandsConfig(
+                config=CommandCooldownConfig(
+                    user_cooldown_minutes=60,
+                    global_cooldown_seconds=300,
+                ),
+                update_graphs=CommandCooldownConfig(
+                    user_cooldown_minutes=60,
+                    global_cooldown_seconds=300,
+                ),
+                my_stats=CommandCooldownConfig(
+                    user_cooldown_minutes=60,
+                    global_cooldown_seconds=300,
+                ),
+            ),
+        ),
     )
 
 
@@ -109,35 +185,69 @@ def maximum_config() -> TGraphBotConfig:
         TGraphBotConfig: Configuration with maximum values
     """
     return TGraphBotConfig(
-        # Required fields with long values
-        TAUTULLI_API_KEY="x" * 100,  # Long API key
-        TAUTULLI_URL="https://very-long-domain-name.example.com:8181/api/v2",
-        DISCORD_TOKEN="x" * 100,  # Long Discord token
-        CHANNEL_ID=999999999999999999,  # Large Discord ID
-        # Maximum reasonable values
-        UPDATE_DAYS=30,  # Monthly updates
-        KEEP_DAYS=365,  # Keep for a year
-        TIME_RANGE_DAYS=365,  # Full year range
-        # All graphs enabled with annotations
-        ENABLE_DAILY_PLAY_COUNT=True,
-        ENABLE_PLAY_COUNT_BY_DAYOFWEEK=True,
-        ENABLE_PLAY_COUNT_BY_HOUROFDAY=True,
-        ENABLE_TOP_10_PLATFORMS=True,
-        ENABLE_TOP_10_USERS=True,
-        ENABLE_PLAY_COUNT_BY_MONTH=True,
-        ANNOTATE_DAILY_PLAY_COUNT=True,
-        ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK=True,
-        ANNOTATE_PLAY_COUNT_BY_HOUROFDAY=True,
-        ANNOTATE_TOP_10_PLATFORMS=True,
-        ANNOTATE_TOP_10_USERS=True,
-        ANNOTATE_PLAY_COUNT_BY_MONTH=True,
-        # Maximum cooldowns
-        CONFIG_COOLDOWN_MINUTES=60,
-        CONFIG_GLOBAL_COOLDOWN_SECONDS=300,
-        UPDATE_GRAPHS_COOLDOWN_MINUTES=60,
-        UPDATE_GRAPHS_GLOBAL_COOLDOWN_SECONDS=300,
-        MY_STATS_COOLDOWN_MINUTES=60,
-        MY_STATS_GLOBAL_COOLDOWN_SECONDS=300,
+        services=ServicesConfig(
+            tautulli=TautulliConfig(
+                api_key="x" * 100,  # Long API key
+                url="https://very-long-domain-name.example.com:8181/api/v2",
+            ),
+            discord=DiscordConfig(
+                token="x" * 100,  # Long Discord token
+                channel_id=999999999999999999,  # Large Discord ID
+            ),
+        ),
+        automation=AutomationConfig(
+            scheduling=SchedulingConfig(
+                update_days=30,  # Monthly updates
+            ),
+            data_retention=DataRetentionConfig(
+                keep_days=365,  # Keep for a year
+            ),
+        ),
+        data_collection=DataCollectionConfig(
+            time_ranges=TimeRangesConfig(
+                days=365,  # Full year range
+            ),
+        ),
+        graphs=GraphsConfig(
+            features=GraphFeaturesConfig(
+                enabled_types=EnabledTypesConfig(
+                    daily_play_count=True,
+                    play_count_by_dayofweek=True,
+                    play_count_by_hourofday=True,
+                    top_10_platforms=True,
+                    top_10_users=True,
+                    play_count_by_month=True,
+                ),
+            ),
+            appearance=GraphAppearanceConfig(
+                annotations=AnnotationsConfig(
+                    enabled_on=EnabledOnConfig(
+                        daily_play_count=True,
+                        play_count_by_dayofweek=True,
+                        play_count_by_hourofday=True,
+                        top_10_platforms=True,
+                        top_10_users=True,
+                        play_count_by_month=True,
+                    ),
+                ),
+            ),
+        ),
+        rate_limiting=RateLimitingConfig(
+            commands=CommandsConfig(
+                config=CommandCooldownConfig(
+                    user_cooldown_minutes=60,
+                    global_cooldown_seconds=300,
+                ),
+                update_graphs=CommandCooldownConfig(
+                    user_cooldown_minutes=60,
+                    global_cooldown_seconds=300,
+                ),
+                my_stats=CommandCooldownConfig(
+                    user_cooldown_minutes=60,
+                    global_cooldown_seconds=300,
+                ),
+            ),
+        ),
     )
 
 
@@ -272,12 +382,21 @@ def temp_config_file() -> Generator[Path, None, None]:
     """
     with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:
         config_content = """
-TAUTULLI_API_KEY: test_api_key
-TAUTULLI_URL: http://localhost:8181/api/v2
-DISCORD_TOKEN: test_discord_token
-CHANNEL_ID: 123456789012345678
-UPDATE_DAYS: 7
-LANGUAGE: en
+services:
+  tautulli:
+    api_key: test_api_key
+    url: http://localhost:8181/api/v2
+  discord:
+    token: test_discord_token
+    channel_id: 123456789012345678
+
+automation:
+  scheduling:
+    update_days: 7
+
+system:
+  localization:
+    language: en
 """
         _ = f.write(config_content)
         f.flush()
@@ -376,8 +495,8 @@ def base_config() -> TGraphBotConfig:
     Returns:
         TGraphBotConfig: A standard test configuration with typical values
     """
-    return TGraphBotConfig(
-        services={
+    return TGraphBotConfig.model_validate({
+        "services": {
             "tautulli": {
                 "api_key": "test_api_key_standard",
                 "url": "http://localhost:8181/api/v2",
@@ -389,7 +508,7 @@ def base_config() -> TGraphBotConfig:
                 "ephemeral_message_delete_after": 30.0,
             },
         },
-        automation={
+        "automation": {
             "scheduling": {
                 "update_days": 7,
                 "fixed_update_time": "XX:XX",
@@ -398,7 +517,7 @@ def base_config() -> TGraphBotConfig:
                 "keep_days": 7,
             },
         },
-        data_collection={
+        "data_collection": {
             "time_ranges": {
                 "days": 30,
                 "months": 12,
@@ -407,12 +526,12 @@ def base_config() -> TGraphBotConfig:
                 "censor_usernames": True,
             },
         },
-        system={
+        "system": {
             "localization": {
                 "language": "en",
             },
         },
-        graphs={
+        "graphs": {
             "features": {
                 "enabled_types": {
                     "daily_play_count": True,
@@ -470,7 +589,7 @@ def base_config() -> TGraphBotConfig:
                 },
             },
         },
-        rate_limiting={
+        "rate_limiting": {
             "commands": {
                 "config": {
                     "user_cooldown_minutes": 0,
@@ -486,7 +605,7 @@ def base_config() -> TGraphBotConfig:
                 },
             },
         },
-    )
+    })
 
 
 @pytest.fixture
@@ -502,8 +621,8 @@ def minimal_config() -> TGraphBotConfig:
     Returns:
         TGraphBotConfig: A minimal configuration with only required fields set
     """
-    return TGraphBotConfig(
-        services={
+    return TGraphBotConfig.model_validate({
+        "services": {
             "tautulli": {
                 "api_key": "test_api_key_minimal",
                 "url": "http://localhost:8181/api/v2",
@@ -514,7 +633,7 @@ def minimal_config() -> TGraphBotConfig:
             },
         },
         # All other sections will use their default values from the schema
-    )
+    })
 
 
 @pytest.fixture
@@ -531,47 +650,91 @@ def comprehensive_config() -> TGraphBotConfig:
         TGraphBotConfig: A comprehensive configuration with all options set
     """
     return TGraphBotConfig(
-        # Essential Settings
-        TAUTULLI_API_KEY="test_api_key_comprehensive_full_featured",
-        TAUTULLI_URL="https://tautulli.example.com:8181/api/v2",
-        DISCORD_TOKEN="test_discord_token_comprehensive_1234567890abcdef",
-        CHANNEL_ID=987654321098765432,
-        # Timing and Retention (non-default values)
-        UPDATE_DAYS=14,
-        FIXED_UPDATE_TIME="02:30",
-        KEEP_DAYS=30,
-        TIME_RANGE_DAYS=90,
-        LANGUAGE="es",
-        # Graph Options (mixed settings for comprehensive testing)
-        CENSOR_USERNAMES=False,
-        ENABLE_GRAPH_GRID=True,
-        ENABLE_DAILY_PLAY_COUNT=True,
-        ENABLE_PLAY_COUNT_BY_DAYOFWEEK=False,
-        ENABLE_PLAY_COUNT_BY_HOUROFDAY=True,
-        ENABLE_TOP_10_PLATFORMS=False,
-        ENABLE_TOP_10_USERS=True,
-        ENABLE_PLAY_COUNT_BY_MONTH=False,
-        # Graph Colors (custom colors for testing)
-        TV_COLOR="#ff4444",
-        MOVIE_COLOR="#44ff44",
-        GRAPH_BACKGROUND_COLOR="#f8f8f8",
-        ANNOTATION_COLOR="#4444ff",
-        ANNOTATION_OUTLINE_COLOR="#222222",
-        ENABLE_ANNOTATION_OUTLINE=False,
-        # Annotation Options (mixed settings)
-        ANNOTATE_DAILY_PLAY_COUNT=False,
-        ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK=True,
-        ANNOTATE_PLAY_COUNT_BY_HOUROFDAY=False,
-        ANNOTATE_TOP_10_PLATFORMS=True,
-        ANNOTATE_TOP_10_USERS=False,
-        ANNOTATE_PLAY_COUNT_BY_MONTH=True,
-        # Command Cooldown Options (realistic values for testing)
-        CONFIG_COOLDOWN_MINUTES=10,
-        CONFIG_GLOBAL_COOLDOWN_SECONDS=30,
-        UPDATE_GRAPHS_COOLDOWN_MINUTES=15,
-        UPDATE_GRAPHS_GLOBAL_COOLDOWN_SECONDS=60,
-        MY_STATS_COOLDOWN_MINUTES=5,
-        MY_STATS_GLOBAL_COOLDOWN_SECONDS=120,
+        services=ServicesConfig(
+            tautulli=TautulliConfig(
+                api_key="test_api_key_comprehensive_full_featured",
+                url="https://tautulli.example.com:8181/api/v2",
+            ),
+            discord=DiscordConfig(
+                token="test_discord_token_comprehensive_1234567890abcdef",
+                channel_id=987654321098765432,
+            ),
+        ),
+        automation=AutomationConfig(
+            scheduling=SchedulingConfig(
+                update_days=14,
+                fixed_update_time="02:30",
+            ),
+            data_retention=DataRetentionConfig(
+                keep_days=30,
+            ),
+        ),
+        data_collection=DataCollectionConfig(
+            time_ranges=TimeRangesConfig(
+                days=90,
+            ),
+            privacy=PrivacyConfig(
+                censor_usernames=False,
+            ),
+        ),
+        system=SystemConfig(
+            localization=LocalizationConfig(
+                language="es",
+            ),
+        ),
+        graphs=GraphsConfig(
+            features=GraphFeaturesConfig(
+                enabled_types=EnabledTypesConfig(
+                    daily_play_count=True,
+                    play_count_by_dayofweek=False,
+                    play_count_by_hourofday=True,
+                    top_10_platforms=False,
+                    top_10_users=True,
+                    play_count_by_month=False,
+                ),
+            ),
+            appearance=GraphAppearanceConfig(
+                colors=ColorsConfig(
+                    tv="#ff4444",
+                    movie="#44ff44",
+                    background="#f8f8f8",
+                ),
+                grid=GridConfig(
+                    enabled=True,
+                ),
+                annotations=AnnotationsConfig(
+                    basic=BasicAnnotationsConfig(
+                        color="#4444ff",
+                        outline_color="#222222",
+                        enable_outline=False,
+                    ),
+                    enabled_on=EnabledOnConfig(
+                        daily_play_count=False,
+                        play_count_by_dayofweek=True,
+                        play_count_by_hourofday=False,
+                        top_10_platforms=True,
+                        top_10_users=False,
+                        play_count_by_month=True,
+                    ),
+                ),
+            ),
+        ),
+        rate_limiting=RateLimitingConfig(
+            commands=CommandsConfig(
+                config=CommandCooldownConfig(
+                    user_cooldown_minutes=10,
+                    global_cooldown_seconds=30,
+                ),
+                update_graphs=CommandCooldownConfig(
+                    user_cooldown_minutes=15,
+                    global_cooldown_seconds=60,
+                ),
+                my_stats=CommandCooldownConfig(
+                    user_cooldown_minutes=5,
+                    global_cooldown_seconds=120,
+                ),
+            ),
+        ),
     )
 
 
