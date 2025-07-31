@@ -22,7 +22,7 @@ from discord.ext import commands
 from src.tgraph_bot.main import TGraphBot, main, setup_logging, setup_signal_handlers
 from src.tgraph_bot.config.manager import ConfigManager
 from src.tgraph_bot.config.schema import TGraphBotConfig
-from tests.utils.test_helpers import create_config_manager_with_config
+from tests.utils.test_helpers import create_config_manager_with_config, create_test_config_with_overrides
 from tests.utils.async_helpers import AsyncTestBase, async_mock_context
 
 if TYPE_CHECKING:

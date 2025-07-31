@@ -13,7 +13,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from src.tgraph_bot.config.schema import TGraphBotConfig
 from src.tgraph_bot.graphs.graph_modules.core.graph_type_registry import (
     GraphTypeRegistry,
 )
@@ -27,7 +26,7 @@ from tests.utils.graph_helpers import (
 from tests.utils.test_helpers import create_test_config_with_overrides
 
 if TYPE_CHECKING:
-    from src.tgraph_bot.config.schema import TGraphBotConfig
+    pass
 
 
 class TestPalettePriorityIntegration:

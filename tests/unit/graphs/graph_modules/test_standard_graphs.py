@@ -30,6 +30,7 @@ from tests.utils.graph_helpers import (
     matplotlib_cleanup,
 )
 from tests.utils.test_helpers import (
+    create_test_config_with_overrides,
     assert_graph_output_valid,
     assert_file_cleanup_successful,
 )
@@ -599,10 +600,8 @@ class TestPlayCountByHourOfDaySeparation:
         }
 
     @pytest.fixture
-    def separation_enabled_config(self) -> "TGraphBotConfig":
+    def separation_enabled_config(self) -> TGraphBotConfig:
         """Configuration with media type separation enabled."""
-        from src.tgraph_bot.config.schema import TGraphBotConfig
-
         return create_test_config_with_overrides(
                 TAUTULLI_API_KEY="test_api_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
@@ -613,10 +612,8 @@ class TestPlayCountByHourOfDaySeparation:
             )
 
     @pytest.fixture
-    def stacked_enabled_config(self) -> "TGraphBotConfig":
+    def stacked_enabled_config(self) -> TGraphBotConfig:
         """Configuration with stacked bar charts enabled."""
-        from src.tgraph_bot.config.schema import TGraphBotConfig
-
         return create_test_config_with_overrides(
                 TAUTULLI_API_KEY="test_api_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
@@ -627,10 +624,8 @@ class TestPlayCountByHourOfDaySeparation:
             )
 
     @pytest.fixture
-    def separation_disabled_config(self) -> "TGraphBotConfig":
+    def separation_disabled_config(self) -> TGraphBotConfig:
         """Configuration with media type separation disabled."""
-        from src.tgraph_bot.config.schema import TGraphBotConfig
-
         return create_test_config_with_overrides(
                 TAUTULLI_API_KEY="test_api_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
@@ -867,10 +862,8 @@ class TestTop10UsersSeparation:
         }
 
     @pytest.fixture
-    def users_separation_enabled_config(self) -> "TGraphBotConfig":
+    def users_separation_enabled_config(self) -> TGraphBotConfig:
         """Configuration with media type separation enabled for users."""
-        from src.tgraph_bot.config.schema import TGraphBotConfig
-
         return create_test_config_with_overrides(
                 TAUTULLI_API_KEY="test_api_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
@@ -882,10 +875,8 @@ class TestTop10UsersSeparation:
             )
 
     @pytest.fixture
-    def users_stacked_enabled_config(self) -> "TGraphBotConfig":
+    def users_stacked_enabled_config(self) -> TGraphBotConfig:
         """Configuration with stacked bar charts enabled for users."""
-        from src.tgraph_bot.config.schema import TGraphBotConfig
-
         return create_test_config_with_overrides(
                 TAUTULLI_API_KEY="test_api_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
@@ -897,10 +888,8 @@ class TestTop10UsersSeparation:
             )
 
     @pytest.fixture
-    def users_separation_disabled_config(self) -> "TGraphBotConfig":
+    def users_separation_disabled_config(self) -> TGraphBotConfig:
         """Configuration with media type separation disabled for users."""
-        from src.tgraph_bot.config.schema import TGraphBotConfig
-
         return create_test_config_with_overrides(
                 TAUTULLI_API_KEY="test_api_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
@@ -1027,8 +1016,6 @@ class TestTop10UsersSeparation:
         self, sample_users_separation_data: dict[str, object]
     ) -> None:
         """Test that annotation handling works with separated user data."""
-        from src.tgraph_bot.config.schema import TGraphBotConfig
-
         config_with_annotations = create_test_config_with_overrides(
                 TAUTULLI_API_KEY="test_api_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
@@ -1196,10 +1183,8 @@ class TestTop10PlatformsSeparation:
         }
 
     @pytest.fixture
-    def platforms_separation_enabled_config(self) -> "TGraphBotConfig":
+    def platforms_separation_enabled_config(self) -> TGraphBotConfig:
         """Configuration with media type separation enabled for platforms."""
-        from src.tgraph_bot.config.schema import TGraphBotConfig
-
         return create_test_config_with_overrides(
                 TAUTULLI_API_KEY="test_api_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
@@ -1210,10 +1195,8 @@ class TestTop10PlatformsSeparation:
             )
 
     @pytest.fixture
-    def platforms_stacked_enabled_config(self) -> "TGraphBotConfig":
+    def platforms_stacked_enabled_config(self) -> TGraphBotConfig:
         """Configuration with stacked bar charts enabled for platforms."""
-        from src.tgraph_bot.config.schema import TGraphBotConfig
-
         return create_test_config_with_overrides(
                 TAUTULLI_API_KEY="test_api_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
@@ -1224,10 +1207,8 @@ class TestTop10PlatformsSeparation:
             )
 
     @pytest.fixture
-    def platforms_separation_disabled_config(self) -> "TGraphBotConfig":
+    def platforms_separation_disabled_config(self) -> TGraphBotConfig:
         """Configuration with media type separation disabled for platforms."""
-        from src.tgraph_bot.config.schema import TGraphBotConfig
-
         return create_test_config_with_overrides(
                 TAUTULLI_API_KEY="test_api_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",
@@ -1367,8 +1348,6 @@ class TestTop10PlatformsSeparation:
         self, sample_platforms_separation_data: dict[str, object]
     ) -> None:
         """Test that annotation handling works with separated platform data."""
-        from src.tgraph_bot.config.schema import TGraphBotConfig
-
         config_with_annotations = create_test_config_with_overrides(
                 TAUTULLI_API_KEY="test_api_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",

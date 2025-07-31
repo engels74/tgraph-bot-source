@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Callable, cast
 from unittest.mock import patch, MagicMock
 import pytest
 
-from tgraph_bot.config.schema import TGraphBotConfig
+
 
 if TYPE_CHECKING:
     from matplotlib.axes import Axes

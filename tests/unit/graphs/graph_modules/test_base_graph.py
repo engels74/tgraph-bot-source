@@ -18,7 +18,6 @@ from unittest.mock import patch
 import pytest
 
 from src.tgraph_bot.graphs.graph_modules.core.base_graph import BaseGraph
-from src.tgraph_bot.config.schema import TGraphBotConfig
 from tests.utils.graph_helpers import (
     matplotlib_cleanup,
     assert_graph_properties,
@@ -322,8 +321,6 @@ class TestBaseGraph:
 
     def test_get_stacked_bar_charts_enabled_with_config(self) -> None:
         """Test get_stacked_bar_charts_enabled with configuration object."""
-        from src.tgraph_bot.config.schema import TGraphBotConfig
-
         # Test with stacked charts enabled
         config_enabled = create_test_config_with_overrides(
                 TAUTULLI_API_KEY="test_api_key",
@@ -354,8 +351,6 @@ class TestBaseGraph:
 
     def test_get_media_type_separation_enabled_with_config(self) -> None:
         """Test get_media_type_separation_enabled with configuration object."""
-        from src.tgraph_bot.config.schema import TGraphBotConfig
-
         # Test with media type separation enabled
         config_enabled = create_test_config_with_overrides(
                 TAUTULLI_API_KEY="test_api_key",
@@ -529,8 +524,6 @@ class TestBaseGraph:
 
     def test_get_time_range_days_from_config_with_config(self) -> None:
         """Test get_time_range_days_from_config with configuration."""
-        from src.tgraph_bot.config.schema import TGraphBotConfig
-
         config = create_test_config_with_overrides(
                 TAUTULLI_API_KEY="test_api_key",
                 TAUTULLI_URL="http://localhost:8181/api/v2",

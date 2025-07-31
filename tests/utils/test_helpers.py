@@ -1,5 +1,3 @@
-from tests.utils.test_helpers import create_test_config_with_overrides
-
 """
 Test helper utilities for TGraph Bot tests.
 
@@ -19,6 +17,24 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 from unittest.mock import AsyncMock, MagicMock
+
+__all__ = [
+    "create_config_manager_with_config",
+    "create_test_config",
+    "create_test_config_with_overrides",
+    "create_temp_config_file",
+    "create_temp_directory",
+    "create_mock_discord_bot",
+    "create_mock_user",
+    "create_mock_guild",
+    "create_mock_interaction",
+    "create_mock_channel",
+    "create_mock_message",
+    "assert_graph_output_valid",
+    "assert_file_cleanup_successful",
+    "assert_config_values_match",
+    "assert_mock_called_with_pattern",
+]
 
 if TYPE_CHECKING:
     import discord
