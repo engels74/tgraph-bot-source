@@ -89,12 +89,12 @@ class TestPaletteResolver:
     def test_graph_type_to_palette_key_mapping(self) -> None:
         """Test that all expected graph types are mapped to palette keys."""
         expected_mappings = {
-            "PlayCountByHourOfDayGraph": "PLAY_COUNT_BY_HOUROFDAY_PALETTE",
-            "Top10UsersGraph": "TOP_10_USERS_PALETTE",
-            "DailyPlayCountGraph": "DAILY_PLAY_COUNT_PALETTE",
-            "PlayCountByDayOfWeekGraph": "PLAY_COUNT_BY_DAYOFWEEK_PALETTE",
-            "Top10PlatformsGraph": "TOP_10_PLATFORMS_PALETTE",
-            "PlayCountByMonthGraph": "PLAY_COUNT_BY_MONTH_PALETTE",
+            "PlayCountByHourOfDayGraph": "graphs.appearance.palettes.play_count_by_hourofday",
+            "Top10UsersGraph": "graphs.appearance.palettes.top_10_users",
+            "DailyPlayCountGraph": "graphs.appearance.palettes.daily_play_count",
+            "PlayCountByDayOfWeekGraph": "graphs.appearance.palettes.play_count_by_dayofweek",
+            "Top10PlatformsGraph": "graphs.appearance.palettes.top_10_platforms",
+            "PlayCountByMonthGraph": "graphs.appearance.palettes.play_count_by_month",
         }
 
         assert PaletteResolver.GRAPH_TYPE_TO_PALETTE_KEY == expected_mappings
@@ -112,8 +112,8 @@ class TestPaletteResolver:
     def test_resolve_color_strategy_palette_priority(self) -> None:
         """Test that custom palette has highest priority."""
         config = create_test_config_comprehensive()
-        config.PLAY_COUNT_BY_HOUROFDAY_PALETTE = "viridis"
-        config.ENABLE_MEDIA_TYPE_SEPARATION = True
+        config.graphs.appearance.palettes.play_count_by_hourofday = "viridis"
+        config.graphs.features.media_type_separation = True
 
         resolver = PaletteResolver(config=config)
 
@@ -133,10 +133,10 @@ class TestPaletteResolver:
     def test_resolve_color_strategy_separation_priority(self) -> None:
         """Test that media type separation has medium priority."""
         config = create_test_config_comprehensive()
-        config.PLAY_COUNT_BY_HOUROFDAY_PALETTE = ""  # Empty palette
-        config.ENABLE_MEDIA_TYPE_SEPARATION = True
-        config.TV_COLOR = "#0000ff"
-        config.MOVIE_COLOR = "#ff0000"
+        config.graphs.appearance.palettes.play_count_by_hourofday = ""  # Empty palette
+        config.graphs.features.media_type_separation = True
+        config.graphs.appearance.colors.tv = "#0000ff"
+        config.graphs.appearance.colors.movie = "#ff0000"
 
         resolver = PaletteResolver(config=config)
         resolution = resolver.resolve_color_strategy("PlayCountByHourOfDayGraph")
@@ -149,8 +149,8 @@ class TestPaletteResolver:
     def test_resolve_color_strategy_default_priority(self) -> None:
         """Test that default colors have lowest priority."""
         config = create_test_config_comprehensive()
-        config.PLAY_COUNT_BY_HOUROFDAY_PALETTE = ""  # Empty palette
-        config.ENABLE_MEDIA_TYPE_SEPARATION = False
+        config.graphs.appearance.palettes.play_count_by_hourofday = ""  # Empty palette
+        config.graphs.features.media_type_separation = False
 
         resolver = PaletteResolver(config=config)
         resolution = resolver.resolve_color_strategy("PlayCountByHourOfDayGraph")
@@ -162,7 +162,7 @@ class TestPaletteResolver:
     def test_should_palette_override_separation_true(self) -> None:
         """Test that palette should override separation when valid palette is configured."""
         config = create_test_config_comprehensive()
-        config.TOP_10_USERS_PALETTE = "plasma"
+        config.graphs.appearance.palettes.top_10_users = "plasma"
 
         resolver = PaletteResolver(config=config)
 
@@ -174,7 +174,7 @@ class TestPaletteResolver:
     def test_should_palette_override_separation_false_empty_palette(self) -> None:
         """Test that empty palette should not override separation."""
         config = create_test_config_comprehensive()
-        config.TOP_10_USERS_PALETTE = ""
+        config.graphs.appearance.palettes.top_10_users = ""
 
         resolver = PaletteResolver(config=config)
         result = resolver.should_palette_override_separation("Top10UsersGraph")
@@ -184,7 +184,7 @@ class TestPaletteResolver:
     def test_should_palette_override_separation_false_invalid_palette(self) -> None:
         """Test that invalid palette should not override separation."""
         config = create_test_config_comprehensive()
-        config.TOP_10_USERS_PALETTE = "invalid_palette"
+        config.graphs.appearance.palettes.top_10_users = "invalid_palette"
 
         resolver = PaletteResolver(config=config)
 
@@ -204,7 +204,7 @@ class TestPaletteResolver:
     def test_get_effective_colors_palette_priority(self) -> None:
         """Test get_effective_colors returns palette colors when palette is configured."""
         config = create_test_config_comprehensive()
-        config.DAILY_PLAY_COUNT_PALETTE = "inferno"
+        config.graphs.appearance.palettes.daily_play_count = "inferno"
 
         resolver = PaletteResolver(config=config)
 
@@ -221,10 +221,10 @@ class TestPaletteResolver:
     def test_get_effective_colors_separation_priority(self) -> None:
         """Test get_effective_colors returns separation colors when no palette."""
         config = create_test_config_comprehensive()
-        config.DAILY_PLAY_COUNT_PALETTE = ""
-        config.ENABLE_MEDIA_TYPE_SEPARATION = True
-        config.TV_COLOR = "#1111ff"
-        config.MOVIE_COLOR = "#ff1111"
+        config.graphs.appearance.palettes.daily_play_count = ""
+        config.graphs.features.media_type_separation = True
+        config.graphs.appearance.colors.tv = "#1111ff"
+        config.graphs.appearance.colors.movie = "#ff1111"
 
         resolver = PaletteResolver(config=config)
         colors = resolver.get_effective_colors("DailyPlayCountGraph")
@@ -241,7 +241,7 @@ class TestPaletteResolver:
     def test_get_palette_for_graph_type_with_tgraph_config(self) -> None:
         """Test _get_palette_for_graph_type with TGraphBotConfig object."""
         config = create_test_config_comprehensive()
-        config.PLAY_COUNT_BY_MONTH_PALETTE = "turbo"
+        config.graphs.appearance.palettes.play_count_by_month = "turbo"
 
         resolver = PaletteResolver(config=config)
         palette = resolver._get_palette_for_graph_type("PlayCountByMonthGraph")  # pyright: ignore[reportPrivateUsage]
@@ -250,7 +250,15 @@ class TestPaletteResolver:
 
     def test_get_palette_for_graph_type_with_dict_config(self) -> None:
         """Test _get_palette_for_graph_type with dictionary config."""
-        config_dict: dict[str, object] = {"TOP_10_PLATFORMS_PALETTE": "cividis"}
+        config_dict: dict[str, object] = {
+            "graphs": {
+                "appearance": {
+                    "palettes": {
+                        "top_10_platforms": "cividis",
+                    },
+                },
+            },
+        }
 
         resolver = PaletteResolver(config=config_dict)
         palette = resolver._get_palette_for_graph_type("Top10PlatformsGraph")  # pyright: ignore[reportPrivateUsage]
@@ -259,7 +267,15 @@ class TestPaletteResolver:
 
     def test_get_palette_for_graph_type_empty_string(self) -> None:
         """Test _get_palette_for_graph_type with empty string returns None."""
-        config_dict: dict[str, object] = {"TOP_10_PLATFORMS_PALETTE": ""}
+        config_dict: dict[str, object] = {
+            "graphs": {
+                "appearance": {
+                    "palettes": {
+                        "top_10_platforms": "",
+                    },
+                },
+            },
+        }
 
         resolver = PaletteResolver(config=config_dict)
         palette = resolver._get_palette_for_graph_type("Top10PlatformsGraph")  # pyright: ignore[reportPrivateUsage]
@@ -268,7 +284,15 @@ class TestPaletteResolver:
 
     def test_get_palette_for_graph_type_whitespace_string(self) -> None:
         """Test _get_palette_for_graph_type with whitespace string returns None."""
-        config_dict: dict[str, object] = {"TOP_10_PLATFORMS_PALETTE": "   "}
+        config_dict: dict[str, object] = {
+            "graphs": {
+                "appearance": {
+                    "palettes": {
+                        "top_10_platforms": "   ",
+                    },
+                },
+            },
+        }
 
         resolver = PaletteResolver(config=config_dict)
         palette = resolver._get_palette_for_graph_type("Top10PlatformsGraph")  # pyright: ignore[reportPrivateUsage]
@@ -286,7 +310,7 @@ class TestPaletteResolver:
     def test_is_media_type_separation_enabled_true(self) -> None:
         """Test _is_media_type_separation_enabled returns True when enabled."""
         config = create_test_config_comprehensive()
-        config.ENABLE_MEDIA_TYPE_SEPARATION = True
+        config.graphs.features.media_type_separation = True
 
         resolver = PaletteResolver(config=config)
         result = resolver._is_media_type_separation_enabled()  # pyright: ignore[reportPrivateUsage]
@@ -296,7 +320,7 @@ class TestPaletteResolver:
     def test_is_media_type_separation_enabled_false(self) -> None:
         """Test _is_media_type_separation_enabled returns False when disabled."""
         config = create_test_config_comprehensive()
-        config.ENABLE_MEDIA_TYPE_SEPARATION = False
+        config.graphs.features.media_type_separation = False
 
         resolver = PaletteResolver(config=config)
         result = resolver._is_media_type_separation_enabled()  # pyright: ignore[reportPrivateUsage]
@@ -322,8 +346,8 @@ class TestPaletteResolver:
     def test_get_media_type_colors_with_custom_colors(self) -> None:
         """Test _get_media_type_colors returns custom configured colors."""
         config = create_test_config_comprehensive()
-        config.TV_COLOR = "#ff1111"
-        config.MOVIE_COLOR = "#22ff22"
+        config.graphs.appearance.colors.tv = "#ff1111"
+        config.graphs.appearance.colors.movie = "#22ff22"
 
         resolver = PaletteResolver(config=config)
         colors = resolver._get_media_type_colors()  # pyright: ignore[reportPrivateUsage]
@@ -346,8 +370,14 @@ class TestPaletteResolver:
     def test_get_media_type_colors_dict_config(self) -> None:
         """Test _get_media_type_colors with dictionary config."""
         config_dict: dict[str, object] = {
-            "TV_COLOR": "#33dd33",
-            "MOVIE_COLOR": "#dd3333",
+            "graphs": {
+                "appearance": {
+                    "colors": {
+                        "tv": "#33dd33",
+                        "movie": "#dd3333",
+                    },
+                },
+            },
         }
 
         resolver = PaletteResolver(config=config_dict)
@@ -361,9 +391,9 @@ class TestPaletteResolver:
     def test_get_fallback_colors_with_separation_enabled(self) -> None:
         """Test _get_fallback_colors returns media type colors when separation is enabled."""
         config = create_test_config_comprehensive()
-        config.ENABLE_MEDIA_TYPE_SEPARATION = True
-        config.TV_COLOR = "#44bb44"
-        config.MOVIE_COLOR = "#bb4444"
+        config.graphs.features.media_type_separation = True
+        config.graphs.appearance.colors.tv = "#44bb44"
+        config.graphs.appearance.colors.movie = "#bb4444"
 
         resolver = PaletteResolver(config=config)
         colors = resolver._get_fallback_colors()  # pyright: ignore[reportPrivateUsage]
@@ -373,7 +403,7 @@ class TestPaletteResolver:
     def test_get_fallback_colors_with_separation_disabled(self) -> None:
         """Test _get_fallback_colors returns default TV color when separation is disabled."""
         config = create_test_config_comprehensive()
-        config.ENABLE_MEDIA_TYPE_SEPARATION = False
+        config.graphs.features.media_type_separation = False
 
         resolver = PaletteResolver(config=config)
         colors = resolver._get_fallback_colors()  # pyright: ignore[reportPrivateUsage]
@@ -408,9 +438,9 @@ class TestPaletteResolver:
         mock_color_palette.side_effect = Exception("Palette not found")
 
         config = create_test_config_comprehensive()
-        config.ENABLE_MEDIA_TYPE_SEPARATION = True
-        config.TV_COLOR = "#ee4444"
-        config.MOVIE_COLOR = "#44ee44"
+        config.graphs.features.media_type_separation = True
+        config.graphs.appearance.colors.tv = "#ee4444"
+        config.graphs.appearance.colors.movie = "#44ee44"
 
         resolver = PaletteResolver(config=config)
         colors = resolver._get_palette_colors("invalid_palette")  # pyright: ignore[reportPrivateUsage]
@@ -458,10 +488,10 @@ class TestPaletteResolverIntegration:
     def test_full_priority_system_palette_wins(self) -> None:
         """Test complete priority system where palette overrides separation."""
         config = create_test_config_comprehensive()
-        config.PLAY_COUNT_BY_DAYOFWEEK_PALETTE = "magma"
-        config.ENABLE_MEDIA_TYPE_SEPARATION = True
-        config.TV_COLOR = "#5555aa"
-        config.MOVIE_COLOR = "#aa5555"
+        config.graphs.appearance.palettes.play_count_by_dayofweek = "magma"
+        config.graphs.features.media_type_separation = True
+        config.graphs.appearance.colors.tv = "#5555aa"
+        config.graphs.appearance.colors.movie = "#aa5555"
 
         resolver = PaletteResolver(config=config)
 
@@ -493,10 +523,10 @@ class TestPaletteResolverIntegration:
     def test_full_priority_system_separation_wins(self) -> None:
         """Test complete priority system where separation is used (no palette)."""
         config = create_test_config_comprehensive()
-        config.PLAY_COUNT_BY_DAYOFWEEK_PALETTE = ""  # No palette
-        config.ENABLE_MEDIA_TYPE_SEPARATION = True
-        config.TV_COLOR = "#6666bb"
-        config.MOVIE_COLOR = "#bb6666"
+        config.graphs.appearance.palettes.play_count_by_dayofweek = ""  # No palette
+        config.graphs.features.media_type_separation = True
+        config.graphs.appearance.colors.tv = "#6666bb"
+        config.graphs.appearance.colors.movie = "#bb6666"
 
         resolver = PaletteResolver(config=config)
 
@@ -519,8 +549,8 @@ class TestPaletteResolverIntegration:
     def test_full_priority_system_default_wins(self) -> None:
         """Test complete priority system where defaults are used."""
         config = create_test_config_comprehensive()
-        config.PLAY_COUNT_BY_DAYOFWEEK_PALETTE = ""  # No palette
-        config.ENABLE_MEDIA_TYPE_SEPARATION = False  # No separation
+        config.graphs.appearance.palettes.play_count_by_dayofweek = ""  # No palette
+        config.graphs.features.media_type_separation = False  # No separation
 
         resolver = PaletteResolver(config=config)
 

@@ -64,11 +64,11 @@ class TestEndToEndCustomization:
                 )
                 config_obj: TGraphBotConfig = graph.config
 
-                assert config_obj.TV_COLOR == "#2e86ab"
-                assert config_obj.MOVIE_COLOR == "#a23b72"
-                assert config_obj.GRAPH_BACKGROUND_COLOR == "#f8f9fa"
-                assert config_obj.ENABLE_GRAPH_GRID is True
-                assert config_obj.CENSOR_USERNAMES is True
+                assert config_obj.graphs.appearance.colors.tv == "#2e86ab"
+                assert config_obj.graphs.appearance.colors.movie == "#a23b72"
+                assert config_obj.graphs.appearance.colors.background == "#f8f9fa"
+                assert config_obj.graphs.appearance.grid.enabled is True
+                assert config_obj.data_collection.privacy.censor_usernames is True
 
                 # Verify graph properties are set correctly using utility
                 assert_graph_properties(graph, expected_background_color="#f8f9fa")
@@ -94,10 +94,10 @@ class TestEndToEndCustomization:
             )
             config_obj: TGraphBotConfig = graph.config
 
-            assert config_obj.TV_COLOR == "#1f77b4"  # Default blue
-            assert config_obj.MOVIE_COLOR == "#ff7f0e"  # Default orange
-            assert config_obj.CENSOR_USERNAMES is True  # Default privacy
-            assert config_obj.ENABLE_GRAPH_GRID is False  # Default no grid
+            assert config_obj.graphs.appearance.colors.tv == "#1f77b4"  # Default blue
+            assert config_obj.graphs.appearance.colors.movie == "#ff7f0e"  # Default orange
+            assert config_obj.data_collection.privacy.censor_usernames is True  # Default privacy
+            assert config_obj.graphs.appearance.grid.enabled is False  # Default no grid
 
     def test_selective_graph_enabling_workflow(self) -> None:
         """Test workflow with selective graph type enabling."""

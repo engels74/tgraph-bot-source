@@ -62,8 +62,8 @@ class UserGraphManager:
 
         # Initialize DataFetcher with async context manager
         self._data_fetcher = DataFetcher(
-            base_url=config.TAUTULLI_URL,
-            api_key=config.TAUTULLI_API_KEY,
+            base_url=config.services.tautulli.url,
+            api_key=config.services.tautulli.api_key,
             timeout=30.0,
             max_retries=3,
         )
@@ -128,7 +128,7 @@ class UserGraphManager:
             config = self.config_manager.get_current_config()
 
             user_data = await self._fetch_user_graph_data_with_retry(
-                user_email, config.TIME_RANGE_DAYS, max_retries, progress_tracker
+                user_email, config.data_collection.time_ranges.days, max_retries, progress_tracker
             )
 
             # Step 3: Validate user data
@@ -712,7 +712,7 @@ class UserGraphManager:
         """
         if keep_days is None:
             config = self.config_manager.get_current_config()
-            keep_days = config.KEEP_DAYS
+            keep_days = config.automation.data_retention.keep_days
 
         logger.info(
             f"Cleaning up user graphs for {user_email} older than {keep_days} days"

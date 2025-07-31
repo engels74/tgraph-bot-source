@@ -94,8 +94,8 @@ class GraphManager:
 
         # Initialize DataFetcher with async context manager
         self._data_fetcher = DataFetcher(
-            base_url=config.TAUTULLI_URL,
-            api_key=config.TAUTULLI_API_KEY,
+            base_url=config.services.tautulli.url,
+            api_key=config.services.tautulli.api_key,
             timeout=30.0,
             max_retries=3,
         )
@@ -162,7 +162,7 @@ class GraphManager:
             config = self.config_manager.get_current_config()
 
             data = await self._fetch_graph_data_with_retry(
-                config.TIME_RANGE_DAYS, max_retries, progress_tracker
+                config.data_collection.time_ranges.days, max_retries, progress_tracker
             )
 
             progress_tracker.update(
@@ -239,7 +239,7 @@ class GraphManager:
             raise RuntimeError("DataFetcher not initialized")
 
         config = self.config_manager.get_current_config()
-        time_range_months = config.TIME_RANGE_MONTHS
+        time_range_months = config.data_collection.time_ranges.months
 
         logger.debug(
             f"Fetching graph data for {time_range_days} days and {time_range_months} months"
@@ -516,7 +516,7 @@ class GraphManager:
         """
         if keep_days is None:
             config = self.config_manager.get_current_config()
-            keep_days = config.KEEP_DAYS
+            keep_days = config.automation.data_retention.keep_days
 
         logger.info(f"Starting cleanup of graphs older than {keep_days} days")
 

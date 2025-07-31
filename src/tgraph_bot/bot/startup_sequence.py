@@ -140,11 +140,11 @@ class StartupSequence:
 
         try:
             config = self.bot.config_manager.get_current_config()
-            channel = self.bot.get_channel(config.CHANNEL_ID)
+            channel = self.bot.get_channel(config.services.discord.channel_id)
 
             if not isinstance(channel, discord.TextChannel):
                 logger.warning(
-                    f"Channel {config.CHANNEL_ID} is not a text channel or not found"
+                    f"Channel {config.services.discord.channel_id} is not a text channel or not found"
                 )
                 return
 
@@ -215,11 +215,11 @@ class StartupSequence:
 
         try:
             config = self.bot.config_manager.get_current_config()
-            channel = self.bot.get_channel(config.CHANNEL_ID)
+            channel = self.bot.get_channel(config.services.discord.channel_id)
 
             if not isinstance(channel, discord.TextChannel):
                 logger.error(
-                    f"Channel {config.CHANNEL_ID} is not a text channel or not found"
+                    f"Channel {config.services.discord.channel_id} is not a text channel or not found"
                 )
                 return
 
@@ -266,9 +266,9 @@ class StartupSequence:
         # Get config values for next update time calculation
         try:
             config = self.bot.config_manager.get_current_config()
-            update_days = config.UPDATE_DAYS
-            fixed_update_time = config.FIXED_UPDATE_TIME
-            timestamp_format = config.DISCORD_TIMESTAMP_FORMAT
+            update_days = config.automation.scheduling.update_days
+            fixed_update_time = config.automation.scheduling.fixed_update_time
+            timestamp_format = config.services.discord.timestamp_format
         except Exception:
             # If we can't get config, just use None values
             update_days = None

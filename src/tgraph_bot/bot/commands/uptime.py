@@ -79,7 +79,7 @@ class UptimeCog(BaseCommandCog):
 
             # Get timestamp format from configuration
             config = self.get_current_config()
-            timestamp_format = config.DISCORD_TIMESTAMP_FORMAT
+            timestamp_format = config.services.discord.timestamp_format
 
             _ = embed.add_field(
                 name=i18n.translate("Started"),

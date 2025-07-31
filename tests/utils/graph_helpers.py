@@ -41,46 +41,84 @@ def create_test_config_comprehensive() -> TGraphBotConfig:
 
     Example:
         >>> config = create_test_config_comprehensive()
-        >>> assert config.ENABLE_DAILY_PLAY_COUNT is True
-        >>> assert config.TV_COLOR == "#2e86ab"
+        >>> assert config.graphs.features.enabled_types.daily_play_count is True
+        >>> assert config.graphs.appearance.colors.tv == "#2E86AB"
     """
-    from src.tgraph_bot.config.schema import TGraphBotConfig
+    from src.tgraph_bot.config.schema import (
+        TGraphBotConfig, ServicesConfig, TautulliConfig, DiscordConfig,
+        AutomationConfig, SchedulingConfig, DataRetentionConfig,
+        DataCollectionConfig, TimeRangesConfig, PrivacyConfig,
+        GraphsConfig, GraphFeaturesConfig, EnabledTypesConfig,
+        GraphAppearanceConfig, ColorsConfig, GridConfig,
+        AnnotationsConfig, BasicAnnotationsConfig, EnabledOnConfig,
+    )
 
     return TGraphBotConfig(
-        TAUTULLI_API_KEY="test_api_key_comprehensive",
-        TAUTULLI_URL="http://localhost:8181/api/v2",
-        DISCORD_TOKEN="test_discord_token_comprehensive",
-        CHANNEL_ID=123456789,
-        # Timing and retention
-        UPDATE_DAYS=14,
-        KEEP_DAYS=21,
-        TIME_RANGE_DAYS=60,
-        # Graph feature toggles
-        ENABLE_DAILY_PLAY_COUNT=True,
-        ENABLE_PLAY_COUNT_BY_DAYOFWEEK=True,
-        ENABLE_PLAY_COUNT_BY_HOUROFDAY=True,
-        ENABLE_PLAY_COUNT_BY_MONTH=True,
-        ENABLE_TOP_10_PLATFORMS=True,
-        ENABLE_TOP_10_USERS=True,
-        # Visual customizations
-        TV_COLOR="#2E86AB",
-        MOVIE_COLOR="#A23B72",
-        GRAPH_BACKGROUND_COLOR="#F8F9FA",
-        ANNOTATION_COLOR="#C73E1D",
-        ANNOTATION_OUTLINE_COLOR="#FFFFFF",
-        # Graph options
-        ENABLE_GRAPH_GRID=True,
-        CENSOR_USERNAMES=True,
-        ENABLE_ANNOTATION_OUTLINE=True,
-        ENABLE_MEDIA_TYPE_SEPARATION=True,
-        ENABLE_STACKED_BAR_CHARTS=True,
-        # Annotation controls
-        ANNOTATE_DAILY_PLAY_COUNT=True,
-        ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK=True,
-        ANNOTATE_PLAY_COUNT_BY_HOUROFDAY=True,
-        ANNOTATE_TOP_10_PLATFORMS=True,
-        ANNOTATE_TOP_10_USERS=True,
-        ANNOTATE_PLAY_COUNT_BY_MONTH=True,
+        services=ServicesConfig(
+            tautulli=TautulliConfig(
+                api_key="test_api_key_comprehensive",
+                url="http://localhost:8181/api/v2",
+            ),
+            discord=DiscordConfig(
+                token="test_discord_token_comprehensive",
+                channel_id=123456789,
+            ),
+        ),
+        automation=AutomationConfig(
+            scheduling=SchedulingConfig(
+                update_days=14,
+            ),
+            data_retention=DataRetentionConfig(
+                keep_days=21,
+            ),
+        ),
+        data_collection=DataCollectionConfig(
+            time_ranges=TimeRangesConfig(
+                days=60,
+            ),
+            privacy=PrivacyConfig(
+                censor_usernames=True,
+            ),
+        ),
+        graphs=GraphsConfig(
+            features=GraphFeaturesConfig(
+                enabled_types=EnabledTypesConfig(
+                    daily_play_count=True,
+                    play_count_by_dayofweek=True,
+                    play_count_by_hourofday=True,
+                    play_count_by_month=True,
+                    top_10_platforms=True,
+                    top_10_users=True,
+                ),
+                media_type_separation=True,
+                stacked_bar_charts=True,
+            ),
+            appearance=GraphAppearanceConfig(
+                colors=ColorsConfig(
+                    tv="#2E86AB",
+                    movie="#A23B72",
+                    background="#F8F9FA",
+                ),
+                grid=GridConfig(
+                    enabled=True,
+                ),
+                annotations=AnnotationsConfig(
+                    basic=BasicAnnotationsConfig(
+                        color="#C73E1D",
+                        outline_color="#FFFFFF",
+                        enable_outline=True,
+                    ),
+                    enabled_on=EnabledOnConfig(
+                        daily_play_count=True,
+                        play_count_by_dayofweek=True,
+                        play_count_by_hourofday=True,
+                        top_10_platforms=True,
+                        top_10_users=True,
+                        play_count_by_month=True,
+                    ),
+                ),
+            ),
+        ),
     )
 
 
@@ -96,16 +134,24 @@ def create_test_config_minimal() -> TGraphBotConfig:
 
     Example:
         >>> config = create_test_config_minimal()
-        >>> assert config.TAUTULLI_API_KEY == "test_api_key_minimal"
-        >>> assert config.TV_COLOR == "#1f77b4"  # Default value
+        >>> assert config.services.tautulli.api_key == "test_api_key_minimal"
+        >>> assert config.graphs.appearance.colors.tv == "#1f77b4"  # Default value
     """
-    from src.tgraph_bot.config.schema import TGraphBotConfig
+    from src.tgraph_bot.config.schema import (
+        TGraphBotConfig, ServicesConfig, TautulliConfig, DiscordConfig,
+    )
 
     return TGraphBotConfig(
-        TAUTULLI_API_KEY="test_api_key_minimal",
-        TAUTULLI_URL="http://localhost:8181/api/v2",
-        DISCORD_TOKEN="test_discord_token_minimal",
-        CHANNEL_ID=123456789,
+        services=ServicesConfig(
+            tautulli=TautulliConfig(
+                api_key="test_api_key_minimal",
+                url="http://localhost:8181/api/v2",
+            ),
+            discord=DiscordConfig(
+                token="test_discord_token_minimal",
+                channel_id=123456789,
+            ),
+        ),
     )
 
 
@@ -140,22 +186,37 @@ def create_test_config_selective(
         ...     enable_top_10_users=False,
         ...     enable_top_10_platforms=True
         ... )
-        >>> assert config.ENABLE_TOP_10_USERS is False
-        >>> assert config.ENABLE_TOP_10_PLATFORMS is True
+        >>> assert config.graphs.features.enabled_types.top_10_users is False
+        >>> assert config.graphs.features.enabled_types.top_10_platforms is True
     """
-    from src.tgraph_bot.config.schema import TGraphBotConfig
+    from src.tgraph_bot.config.schema import (
+        TGraphBotConfig, ServicesConfig, TautulliConfig, DiscordConfig,
+        GraphsConfig, GraphFeaturesConfig, EnabledTypesConfig,
+    )
 
     return TGraphBotConfig(
-        TAUTULLI_API_KEY="test_api_key_selective",
-        TAUTULLI_URL="http://localhost:8181/api/v2",
-        DISCORD_TOKEN="test_discord_token_selective",
-        CHANNEL_ID=123456789,
-        ENABLE_DAILY_PLAY_COUNT=enable_daily_play_count,
-        ENABLE_PLAY_COUNT_BY_DAYOFWEEK=enable_play_count_by_dayofweek,
-        ENABLE_PLAY_COUNT_BY_HOUROFDAY=enable_play_count_by_hourofday,
-        ENABLE_PLAY_COUNT_BY_MONTH=enable_play_count_by_month,
-        ENABLE_TOP_10_PLATFORMS=enable_top_10_platforms,
-        ENABLE_TOP_10_USERS=enable_top_10_users,
+        services=ServicesConfig(
+            tautulli=TautulliConfig(
+                api_key="test_api_key_selective",
+                url="http://localhost:8181/api/v2",
+            ),
+            discord=DiscordConfig(
+                token="test_discord_token_selective",
+                channel_id=123456789,
+            ),
+        ),
+        graphs=GraphsConfig(
+            features=GraphFeaturesConfig(
+                enabled_types=EnabledTypesConfig(
+                    daily_play_count=enable_daily_play_count,
+                    play_count_by_dayofweek=enable_play_count_by_dayofweek,
+                    play_count_by_hourofday=enable_play_count_by_hourofday,
+                    play_count_by_month=enable_play_count_by_month,
+                    top_10_platforms=enable_top_10_platforms,
+                    top_10_users=enable_top_10_users,
+                ),
+            ),
+        ),
     )
 
 
@@ -171,21 +232,46 @@ def create_test_config_privacy_focused() -> TGraphBotConfig:
 
     Example:
         >>> config = create_test_config_privacy_focused()
-        >>> assert config.CENSOR_USERNAMES is True
-        >>> assert config.ENABLE_TOP_10_USERS is False
+        >>> assert config.data_collection.privacy.censor_usernames is True
+        >>> assert config.graphs.features.enabled_types.top_10_users is False
     """
-    from src.tgraph_bot.config.schema import TGraphBotConfig
+    from src.tgraph_bot.config.schema import (
+        TGraphBotConfig, ServicesConfig, TautulliConfig, DiscordConfig,
+        DataCollectionConfig, PrivacyConfig,
+        GraphsConfig, GraphFeaturesConfig, EnabledTypesConfig,
+        GraphAppearanceConfig, AnnotationsConfig, EnabledOnConfig,
+    )
 
     return TGraphBotConfig(
-        TAUTULLI_API_KEY="test_api_key_privacy",
-        TAUTULLI_URL="http://localhost:8181/api/v2",
-        DISCORD_TOKEN="test_discord_token_privacy",
-        CHANNEL_ID=123456789,
-        # Privacy-focused settings
-        CENSOR_USERNAMES=True,
-        ENABLE_TOP_10_USERS=False,  # Disable user-specific graphs
-        # Disable user-related annotations
-        ANNOTATE_TOP_10_USERS=False,
+        services=ServicesConfig(
+            tautulli=TautulliConfig(
+                api_key="test_api_key_privacy",
+                url="http://localhost:8181/api/v2",
+            ),
+            discord=DiscordConfig(
+                token="test_discord_token_privacy",
+                channel_id=123456789,
+            ),
+        ),
+        data_collection=DataCollectionConfig(
+            privacy=PrivacyConfig(
+                censor_usernames=True,
+            ),
+        ),
+        graphs=GraphsConfig(
+            features=GraphFeaturesConfig(
+                enabled_types=EnabledTypesConfig(
+                    top_10_users=False,  # Disable user-specific graphs
+                ),
+            ),
+            appearance=GraphAppearanceConfig(
+                annotations=AnnotationsConfig(
+                    enabled_on=EnabledOnConfig(
+                        top_10_users=False,  # Disable user-related annotations
+                    ),
+                ),
+            ),
+        ),
     )
 
 

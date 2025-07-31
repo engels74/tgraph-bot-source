@@ -141,17 +141,17 @@ class ConfigAccessor:
             # Use direct attribute access for TGraphBotConfig objects
             # This handles the specific graph enable attributes
             if graph_type == "ENABLE_DAILY_PLAY_COUNT":
-                return self.config.ENABLE_DAILY_PLAY_COUNT
+                return self.config.graphs.features.enabled_types.daily_play_count
             elif graph_type == "ENABLE_PLAY_COUNT_BY_DAYOFWEEK":
-                return self.config.ENABLE_PLAY_COUNT_BY_DAYOFWEEK
+                return self.config.graphs.features.enabled_types.play_count_by_dayofweek
             elif graph_type == "ENABLE_PLAY_COUNT_BY_HOUROFDAY":
-                return self.config.ENABLE_PLAY_COUNT_BY_HOUROFDAY
+                return self.config.graphs.features.enabled_types.play_count_by_hourofday
             elif graph_type == "ENABLE_PLAY_COUNT_BY_MONTH":
-                return self.config.ENABLE_PLAY_COUNT_BY_MONTH
+                return self.config.graphs.features.enabled_types.play_count_by_month
             elif graph_type == "ENABLE_TOP_10_PLATFORMS":
-                return self.config.ENABLE_TOP_10_PLATFORMS
+                return self.config.graphs.features.enabled_types.top_10_platforms
             elif graph_type == "ENABLE_TOP_10_USERS":
-                return self.config.ENABLE_TOP_10_USERS
+                return self.config.graphs.features.enabled_types.top_10_users
             elif graph_type == "ENABLE_SAMPLE_GRAPH":
                 # Sample graph is not in the main config schema, default to False
                 return False

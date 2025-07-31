@@ -217,7 +217,7 @@ class UpdateGraphsCog(BaseCommandCog):
             try:
                 config = self.get_current_config()
                 additional_context: dict[str, object] = {
-                    "target_channel_id": config.CHANNEL_ID
+                    "target_channel_id": config.services.discord.channel_id
                 }
             except Exception:
                 additional_context = {}
@@ -322,9 +322,9 @@ class UpdateGraphsCog(BaseCommandCog):
         # Get config values and actual next update time from scheduler
         try:
             config = self.get_current_config()
-            update_days = config.UPDATE_DAYS
-            fixed_update_time = config.FIXED_UPDATE_TIME
-            timestamp_format = config.DISCORD_TIMESTAMP_FORMAT
+            update_days = config.automation.scheduling.update_days
+            fixed_update_time = config.automation.scheduling.fixed_update_time
+            timestamp_format = config.services.discord.timestamp_format
         except Exception:
             # If we can't get config, just use None values
             update_days = None

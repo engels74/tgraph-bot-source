@@ -34,7 +34,7 @@ def get_ephemeral_delete_timeout(config: "TGraphBotConfig | None" = None) -> flo
         Float timeout value in seconds
     """
     if config is not None:
-        return config.EPHEMERAL_MESSAGE_DELETE_AFTER
+        return config.services.discord.ephemeral_message_delete_after
     return DEFAULT_EPHEMERAL_DELETION_TIMEOUT
 
 

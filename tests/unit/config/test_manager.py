@@ -142,21 +142,29 @@ class TestConfigManager:
             # Load again and verify changes
             reloaded_config = ConfigManager.load_config(temp_config_file)
             assert reloaded_config.automation.scheduling.update_days == 21
-            assert reloaded_config.TV_COLOR == "#ff0000"
+            assert reloaded_config.graphs.appearance.colors.tv == "#ff0000"
 
     def test_save_config_preserves_comments(self, base_config: TGraphBotConfig) -> None:
         """Test that saving config preserves comments."""
         # Create config file with comments
         with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:
             content = f"""# Required Configuration (Set These First)
-TAUTULLI_API_KEY: {base_config.TAUTULLI_API_KEY}
-TAUTULLI_URL: {base_config.TAUTULLI_URL}  # Base URL for Tautulli
-DISCORD_TOKEN: {base_config.DISCORD_TOKEN}
-CHANNEL_ID: {base_config.CHANNEL_ID}
+services:
+  tautulli:
+    api_key: {base_config.services.tautulli.api_key}
+    url: {base_config.services.tautulli.url}  # Base URL for Tautulli
+  discord:
+    token: {base_config.services.discord.token}
+    channel_id: {base_config.services.discord.channel_id}
 
 # Graph Options
-UPDATE_DAYS: {base_config.UPDATE_DAYS}  # Number of days between updates
-TV_COLOR: '{base_config.TV_COLOR}'  # Color for TV shows
+automation:
+  scheduling:
+    update_days: {base_config.automation.scheduling.update_days}  # Number of days between updates
+graphs:
+  appearance:
+    colors:
+      tv: '{base_config.graphs.appearance.colors.tv}'  # Color for TV shows
 """
             _ = f.write(content)
             config_with_comments = Path(f.name)
@@ -166,7 +174,7 @@ TV_COLOR: '{base_config.TV_COLOR}'  # Color for TV shows
             config = ConfigManager.load_config(config_with_comments)
 
             # Modify a value
-            config.UPDATE_DAYS = 21
+            config.automation.scheduling.update_days = 21
 
             # Save config
             ConfigManager.save_config(config, config_with_comments)
@@ -176,7 +184,7 @@ TV_COLOR: '{base_config.TV_COLOR}'  # Color for TV shows
             assert "# Required Configuration (Set These First)" in content
             assert "# Base URL for Tautulli" in content
             assert "# Graph Options" in content
-            assert "UPDATE_DAYS: 21" in content
+            assert "update_days: 21" in content
         finally:
             config_with_comments.unlink(missing_ok=True)
 
@@ -186,11 +194,11 @@ TV_COLOR: '{base_config.TV_COLOR}'  # Color for TV shows
 
         assert isinstance(config, TGraphBotConfig)
         # Check some default values
-        assert config.UPDATE_DAYS == 7
-        assert config.FIXED_UPDATE_TIME == "XX:XX"
-        assert config.KEEP_DAYS == 7
-        assert config.CENSOR_USERNAMES is True
-        assert config.TV_COLOR == "#1f77b4"
+        assert config.automation.scheduling.update_days == 7
+        assert config.automation.scheduling.fixed_update_time == "XX:XX"
+        assert config.automation.data_retention.keep_days == 7
+        assert config.data_collection.privacy.censor_usernames is True
+        assert config.graphs.appearance.colors.tv == "#1f77b4"
 
     def test_validate_config_success(self, base_config: TGraphBotConfig) -> None:
         """Test successful configuration validation."""
@@ -202,10 +210,16 @@ TV_COLOR: '{base_config.TV_COLOR}'  # Color for TV shows
         """Test configuration validation failure."""
         # Create invalid config data
         invalid_data: dict[str, object] = {
-            "TAUTULLI_API_KEY": "",  # Empty string should fail validation
-            "TAUTULLI_URL": "invalid_url",  # Invalid URL format
-            "DISCORD_TOKEN": "short",  # Too short
-            "CHANNEL_ID": -1,  # Negative value
+            "services": {
+                "tautulli": {
+                    "api_key": "",  # Empty string should fail validation
+                    "url": "invalid_url",  # Invalid URL format
+                },
+                "discord": {
+                    "token": "short",  # Too short
+                    "channel_id": -1,  # Negative value
+                },
+            },
         }
 
         with pytest.raises(ValidationError):
@@ -222,9 +236,9 @@ TV_COLOR: '{base_config.TV_COLOR}'  # Color for TV shows
 
             # Verify the sample file contains expected content
             content = sample_path.read_text()
-            assert "TAUTULLI_API_KEY:" in content
-            assert "DISCORD_TOKEN:" in content
-            assert "CHANNEL_ID:" in content
+            assert "api_key:" in content
+            assert "token:" in content
+            assert "channel_id:" in content
             assert "# Required Configuration (Set These First)" in content
 
     def test_sample_config_validation(self) -> None:
@@ -243,18 +257,24 @@ TV_COLOR: '{base_config.TV_COLOR}'  # Color for TV shows
             assert isinstance(config, TGraphBotConfig)
 
             # Verify some key fields have the expected placeholder values
-            assert config.TAUTULLI_API_KEY == "your_tautulli_api_key_here"
-            assert config.TAUTULLI_URL == "http://localhost:8181/api/v2"
-            assert config.DISCORD_TOKEN == "your_discord_bot_token_here"
-            assert config.CHANNEL_ID == 123456789012345678
+            assert config.services.tautulli.api_key == "your_tautulli_api_key_here"
+            assert config.services.tautulli.url == "http://localhost:8181/api/v2"
+            assert config.services.discord.token == "your_discord_bot_token_here"
+            assert config.services.discord.channel_id == 123456789012345678
 
     def test_atomic_save_operation(self, base_config: TGraphBotConfig) -> None:
         """Test that config saves are atomic (all-or-nothing)."""
         config_data: dict[str, object] = {
-            "TAUTULLI_API_KEY": base_config.TAUTULLI_API_KEY,
-            "TAUTULLI_URL": base_config.TAUTULLI_URL,
-            "DISCORD_TOKEN": base_config.DISCORD_TOKEN,
-            "CHANNEL_ID": base_config.CHANNEL_ID,
+            "services": {
+                "tautulli": {
+                    "api_key": base_config.services.tautulli.api_key,
+                    "url": base_config.services.tautulli.url,
+                },
+                "discord": {
+                    "token": base_config.services.discord.token,
+                    "channel_id": base_config.services.discord.channel_id,
+                },
+            },
         }
 
         with create_temp_config_file(config_data) as temp_config_file:
@@ -274,7 +294,7 @@ TV_COLOR: '{base_config.TV_COLOR}'  # Color for TV shows
 
             # Verify original config is still intact
             reloaded_config = ConfigManager.load_config(temp_config_file)
-            assert reloaded_config.TAUTULLI_API_KEY == config.TAUTULLI_API_KEY
+            assert reloaded_config.services.tautulli.api_key == config.services.tautulli.api_key
 
     def test_config_parsing_with_match_statement(
         self, comprehensive_config: TGraphBotConfig
@@ -284,13 +304,13 @@ TV_COLOR: '{base_config.TV_COLOR}'  # Color for TV shows
         config = comprehensive_config
 
         # Verify different field types are parsed correctly
-        assert isinstance(config.TAUTULLI_API_KEY, str)
-        assert isinstance(config.CHANNEL_ID, int)
-        assert isinstance(config.CENSOR_USERNAMES, bool)
-        assert isinstance(config.UPDATE_DAYS, int)
-        assert config.UPDATE_DAYS == 14
-        assert config.CENSOR_USERNAMES is False
-        assert config.LANGUAGE == "es"
+        assert isinstance(config.services.tautulli.api_key, str)
+        assert isinstance(config.services.discord.channel_id, int)
+        assert isinstance(config.data_collection.privacy.censor_usernames, bool)
+        assert isinstance(config.automation.scheduling.update_days, int)
+        assert config.automation.scheduling.update_days == 14
+        assert config.data_collection.privacy.censor_usernames is False
+        assert config.system.localization.language == "es"
 
     def test_config_manager_lifecycle(self, base_config: TGraphBotConfig) -> None:
         """Test the configuration manager lifecycle without file monitoring."""
@@ -303,11 +323,11 @@ TV_COLOR: '{base_config.TV_COLOR}'  # Color for TV shows
 
         # Test that we can update runtime config
         modified_config = base_config.model_copy()
-        modified_config.UPDATE_DAYS = 14
+        modified_config.automation.scheduling.update_days = 14
         config_manager.update_runtime_config(modified_config)
 
         updated_config = config_manager.get_current_config()
-        assert updated_config.UPDATE_DAYS == 14
+        assert updated_config.automation.scheduling.update_days == 14
 
         # Test config file path management
         test_path = Path("/test/config.yml")
@@ -339,13 +359,13 @@ TV_COLOR: '{base_config.TV_COLOR}'  # Color for TV shows
 
         # Update config - should trigger callback
         modified_config = base_config.model_copy()
-        modified_config.UPDATE_DAYS = 14
+        modified_config.automation.scheduling.update_days = 14
         config_manager.update_runtime_config(modified_config)
 
         assert callback_called
         assert old_config_received == base_config
         assert new_config_received is not None
-        assert new_config_received.UPDATE_DAYS == 14
+        assert new_config_received.automation.scheduling.update_days == 14
 
         # Unregister callback
         config_manager.unregister_change_callback(test_callback)
@@ -355,7 +375,7 @@ TV_COLOR: '{base_config.TV_COLOR}'  # Color for TV shows
 
         # Update config again - should not trigger callback
         modified_config_2 = modified_config.model_copy()
-        modified_config_2.UPDATE_DAYS = 21
+        modified_config_2.automation.scheduling.update_days = 21
         config_manager.update_runtime_config(modified_config_2)
 
         assert not callback_called

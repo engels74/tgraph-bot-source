@@ -140,8 +140,8 @@ class SchedulerTestCog(BaseCommandCog):
             _ = status_embed.add_field(
                 name=i18n.translate("Configuration"),
                 value=(
-                    f"**Update Interval:** {config.UPDATE_DAYS} day(s)\n"
-                    f"**Fixed Time:** {config.FIXED_UPDATE_TIME}\n"
+                    f"**Update Interval:** {config.automation.scheduling.update_days} day(s)\n"
+                    f"**Fixed Time:** {config.automation.scheduling.fixed_update_time}\n"
                     f"**Scheduler Running:** {status_before.get('is_running', 'Unknown')}"
                 ),
                 inline=False,

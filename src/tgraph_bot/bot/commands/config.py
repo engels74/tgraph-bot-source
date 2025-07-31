@@ -220,9 +220,9 @@ class ConfigCog(BaseCommandCog):
             _ = embed.add_field(
                 name=i18n.translate("📡 Essential Settings"),
                 value=(
-                    f"**{i18n.translate('Tautulli URL')}:** {config.TAUTULLI_URL}\n"
-                    f"**{i18n.translate('Channel ID')}:** {config.CHANNEL_ID}\n"
-                    f"**{i18n.translate('Language')}:** {config.LANGUAGE}"
+                    f"**{i18n.translate('Tautulli URL')}:** {config.services.tautulli.url}\n"
+                    f"**{i18n.translate('Channel ID')}:** {config.services.discord.channel_id}\n"
+                    f"**{i18n.translate('Language')}:** {config.system.localization.language}"
                 ),
                 inline=False,
             )
@@ -231,28 +231,28 @@ class ConfigCog(BaseCommandCog):
             _ = embed.add_field(
                 name=i18n.translate("⏰ Timing & Retention"),
                 value=(
-                    f"**{i18n.translate('Update Days')}:** {config.UPDATE_DAYS}\n"
-                    f"**{i18n.translate('Fixed Update Time')}:** {config.FIXED_UPDATE_TIME}\n"
-                    f"**{i18n.translate('Keep Days')}:** {config.KEEP_DAYS}\n"
-                    f"**{i18n.translate('Time Range Days')}:** {config.TIME_RANGE_DAYS}\n"
-                    f"**{i18n.translate('Time Range Months')}:** {config.TIME_RANGE_MONTHS}"
+                    f"**{i18n.translate('Update Days')}:** {config.automation.scheduling.update_days}\n"
+                    f"**{i18n.translate('Fixed Update Time')}:** {config.automation.scheduling.fixed_update_time}\n"
+                    f"**{i18n.translate('Keep Days')}:** {config.automation.data_retention.keep_days}\n"
+                    f"**{i18n.translate('Time Range Days')}:** {config.data_collection.time_ranges.days}\n"
+                    f"**{i18n.translate('Time Range Months')}:** {config.data_collection.time_ranges.months}"
                 ),
                 inline=True,
             )
 
             # Graph Options
             graph_options: list[str] = []
-            if config.ENABLE_DAILY_PLAY_COUNT:
+            if config.graphs.features.enabled_types.daily_play_count:
                 graph_options.append(i18n.translate("Daily Play Count"))
-            if config.ENABLE_PLAY_COUNT_BY_DAYOFWEEK:
+            if config.graphs.features.enabled_types.play_count_by_dayofweek:
                 graph_options.append(i18n.translate("Play Count by Day of Week"))
-            if config.ENABLE_PLAY_COUNT_BY_HOUROFDAY:
+            if config.graphs.features.enabled_types.play_count_by_hourofday:
                 graph_options.append(i18n.translate("Play Count by Hour of Day"))
-            if config.ENABLE_TOP_10_PLATFORMS:
+            if config.graphs.features.enabled_types.top_10_platforms:
                 graph_options.append(i18n.translate("Top 10 Platforms"))
-            if config.ENABLE_TOP_10_USERS:
+            if config.graphs.features.enabled_types.top_10_users:
                 graph_options.append(i18n.translate("Top 10 Users"))
-            if config.ENABLE_PLAY_COUNT_BY_MONTH:
+            if config.graphs.features.enabled_types.play_count_by_month:
                 graph_options.append(i18n.translate("Play Count by Month"))
 
             _ = embed.add_field(
@@ -267,10 +267,10 @@ class ConfigCog(BaseCommandCog):
             _ = embed.add_field(
                 name=i18n.translate("⚙️ Graph Options"),
                 value=(
-                    f"**{i18n.translate('Censor Usernames')}:** {i18n.translate('Yes') if config.CENSOR_USERNAMES else i18n.translate('No')}\n"
-                    f"**{i18n.translate('Graph Grid')}:** {i18n.translate('Enabled') if config.ENABLE_GRAPH_GRID else i18n.translate('Disabled')}\n"
-                    f"**{i18n.translate('Media Type Separation')}:** {i18n.translate('Enabled') if config.ENABLE_MEDIA_TYPE_SEPARATION else i18n.translate('Disabled')}\n"
-                    f"**{i18n.translate('Annotation Outline')}:** {i18n.translate('Enabled') if config.ENABLE_ANNOTATION_OUTLINE else i18n.translate('Disabled')}"
+                    f"**{i18n.translate('Censor Usernames')}:** {i18n.translate('Yes') if config.data_collection.privacy.censor_usernames else i18n.translate('No')}\n"
+                    f"**{i18n.translate('Graph Grid')}:** {i18n.translate('Enabled') if config.graphs.appearance.grid.enabled else i18n.translate('Disabled')}\n"
+                    f"**{i18n.translate('Media Type Separation')}:** {i18n.translate('Enabled') if config.graphs.features.media_type_separation else i18n.translate('Disabled')}\n"
+                    f"**{i18n.translate('Annotation Outline')}:** {i18n.translate('Enabled') if config.graphs.appearance.annotations.basic.enable_outline else i18n.translate('Disabled')}"
                 ),
                 inline=False,
             )
@@ -279,28 +279,28 @@ class ConfigCog(BaseCommandCog):
             _ = embed.add_field(
                 name=i18n.translate("🎨 Colors"),
                 value=(
-                    f"**{i18n.translate('TV Color')}:** {config.TV_COLOR}\n"
-                    f"**{i18n.translate('Movie Color')}:** {config.MOVIE_COLOR}\n"
-                    f"**{i18n.translate('Background')}:** {config.GRAPH_BACKGROUND_COLOR}\n"
-                    f"**{i18n.translate('Annotation')}:** {config.ANNOTATION_COLOR}\n"
-                    f"**{i18n.translate('Annotation Outline')}:** {config.ANNOTATION_OUTLINE_COLOR}"
+                    f"**{i18n.translate('TV Color')}:** {config.graphs.appearance.colors.tv}\n"
+                    f"**{i18n.translate('Movie Color')}:** {config.graphs.appearance.colors.movie}\n"
+                    f"**{i18n.translate('Background')}:** {config.graphs.appearance.colors.background}\n"
+                    f"**{i18n.translate('Annotation')}:** {config.graphs.appearance.annotations.basic.color}\n"
+                    f"**{i18n.translate('Annotation Outline')}:** {config.graphs.appearance.annotations.basic.outline_color}"
                 ),
                 inline=True,
             )
 
             # Annotation Settings
             annotation_graphs: list[str] = []
-            if config.ANNOTATE_DAILY_PLAY_COUNT:
+            if config.graphs.appearance.annotations.enabled_on.daily_play_count:
                 annotation_graphs.append(i18n.translate("Daily Play Count"))
-            if config.ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK:
+            if config.graphs.appearance.annotations.enabled_on.play_count_by_dayofweek:
                 annotation_graphs.append(i18n.translate("Play Count by Day of Week"))
-            if config.ANNOTATE_PLAY_COUNT_BY_HOUROFDAY:
+            if config.graphs.appearance.annotations.enabled_on.play_count_by_hourofday:
                 annotation_graphs.append(i18n.translate("Play Count by Hour of Day"))
-            if config.ANNOTATE_TOP_10_PLATFORMS:
+            if config.graphs.appearance.annotations.enabled_on.top_10_platforms:
                 annotation_graphs.append(i18n.translate("Top 10 Platforms"))
-            if config.ANNOTATE_TOP_10_USERS:
+            if config.graphs.appearance.annotations.enabled_on.top_10_users:
                 annotation_graphs.append(i18n.translate("Top 10 Users"))
-            if config.ANNOTATE_PLAY_COUNT_BY_MONTH:
+            if config.graphs.appearance.annotations.enabled_on.play_count_by_month:
                 annotation_graphs.append(i18n.translate("Play Count by Month"))
 
             _ = embed.add_field(
@@ -315,10 +315,10 @@ class ConfigCog(BaseCommandCog):
             _ = embed.add_field(
                 name=i18n.translate("🏔️ Peak Annotations"),
                 value=(
-                    f"**{i18n.translate('Enabled')}:** {i18n.translate('Yes') if config.ENABLE_PEAK_ANNOTATIONS else i18n.translate('No')}\n"
-                    f"**{i18n.translate('Color')}:** {config.PEAK_ANNOTATION_COLOR}\n"
-                    f"**{i18n.translate('Text Color')}:** {config.PEAK_ANNOTATION_TEXT_COLOR}\n"
-                    f"**{i18n.translate('Font Size')}:** {config.ANNOTATION_FONT_SIZE}"
+                    f"**{i18n.translate('Enabled')}:** {i18n.translate('Yes') if config.graphs.appearance.annotations.peaks.enabled else i18n.translate('No')}\n"
+                    f"**{i18n.translate('Color')}:** {config.graphs.appearance.annotations.peaks.color}\n"
+                    f"**{i18n.translate('Text Color')}:** {config.graphs.appearance.annotations.peaks.text_color}\n"
+                    f"**{i18n.translate('Font Size')}:** {config.graphs.appearance.annotations.basic.font_size}"
                 ),
                 inline=False,
             )
@@ -327,12 +327,12 @@ class ConfigCog(BaseCommandCog):
             _ = embed.add_field(
                 name=i18n.translate("⏱️ Command Cooldowns"),
                 value=(
-                    f"**{i18n.translate('Config command per-user cooldown')}:** {config.CONFIG_COOLDOWN_MINUTES}min\n"
-                    f"**{i18n.translate('Config command global cooldown')}:** {config.CONFIG_GLOBAL_COOLDOWN_SECONDS}s\n"
-                    f"**{i18n.translate('Update graphs command per-user cooldown')}:** {config.UPDATE_GRAPHS_COOLDOWN_MINUTES}min\n"
-                    f"**{i18n.translate('Update graphs command global cooldown')}:** {config.UPDATE_GRAPHS_GLOBAL_COOLDOWN_SECONDS}s\n"
-                    f"**{i18n.translate('My stats command per-user cooldown')}:** {config.MY_STATS_COOLDOWN_MINUTES}min\n"
-                    f"**{i18n.translate('My stats command global cooldown')}:** {config.MY_STATS_GLOBAL_COOLDOWN_SECONDS}s"
+                    f"**{i18n.translate('Config command per-user cooldown')}:** {config.rate_limiting.commands.config.user_cooldown_minutes}min\n"
+                    f"**{i18n.translate('Config command global cooldown')}:** {config.rate_limiting.commands.config.global_cooldown_seconds}s\n"
+                    f"**{i18n.translate('Update graphs command per-user cooldown')}:** {config.rate_limiting.commands.update_graphs.user_cooldown_minutes}min\n"
+                    f"**{i18n.translate('Update graphs command global cooldown')}:** {config.rate_limiting.commands.update_graphs.global_cooldown_seconds}s\n"
+                    f"**{i18n.translate('My stats command per-user cooldown')}:** {config.rate_limiting.commands.my_stats.user_cooldown_minutes}min\n"
+                    f"**{i18n.translate('My stats command global cooldown')}:** {config.rate_limiting.commands.my_stats.global_cooldown_seconds}s"
                 ),
                 inline=False,
             )

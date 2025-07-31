@@ -229,9 +229,9 @@ class TGraphBot(commands.Bot):
 
             # Setup internationalization
             try:
-                setup_i18n(config.LANGUAGE)
+                setup_i18n(config.system.localization.language)
                 logger.info(
-                    f"Internationalization setup for language: {config.LANGUAGE}"
+                    f"Internationalization setup for language: {config.system.localization.language}"
                 )
             except Exception as e:
                 logger.error(f"Failed to setup internationalization: {e}")
@@ -317,14 +317,14 @@ class TGraphBot(commands.Bot):
             # Start the scheduler with configuration
             fixed_time = (
                 None
-                if config.FIXED_UPDATE_TIME == "XX:XX"
-                else config.FIXED_UPDATE_TIME
+                if config.automation.scheduling.fixed_update_time == "XX:XX"
+                else config.automation.scheduling.fixed_update_time
             )
             await self.update_tracker.start_scheduler(
-                update_days=config.UPDATE_DAYS, fixed_update_time=fixed_time
+                update_days=config.automation.scheduling.update_days, fixed_update_time=fixed_time
             )
 
-            logger.info(f"Update scheduler started (every {config.UPDATE_DAYS} days)")
+            logger.info(f"Update scheduler started (every {config.automation.scheduling.update_days} days)")
             if fixed_time:
                 logger.info(f"Fixed update time: {fixed_time}")
 
@@ -350,16 +350,16 @@ class TGraphBot(commands.Bot):
             config = self.config_manager.get_current_config()
 
             # Find the target channel for posting graphs
-            target_channel = self.get_channel(config.CHANNEL_ID)
+            target_channel = self.get_channel(config.services.discord.channel_id)
             if target_channel is None:
                 logger.error(
-                    f"Could not find Discord channel with ID: {config.CHANNEL_ID}"
+                    f"Could not find Discord channel with ID: {config.services.discord.channel_id}"
                 )
                 return
 
             # Verify channel is a text channel
             if not isinstance(target_channel, discord.TextChannel):
-                logger.error(f"Channel {config.CHANNEL_ID} is not a text channel")
+                logger.error(f"Channel {config.services.discord.channel_id} is not a text channel")
                 return
 
             # Step 1: Clean up previous bot messages
@@ -510,9 +510,9 @@ class TGraphBot(commands.Bot):
         # Get config values and actual next update time from scheduler
         try:
             config = self.config_manager.get_current_config()
-            update_days = config.UPDATE_DAYS
-            fixed_update_time = config.FIXED_UPDATE_TIME
-            timestamp_format = config.DISCORD_TIMESTAMP_FORMAT
+            update_days = config.automation.scheduling.update_days
+            fixed_update_time = config.automation.scheduling.fixed_update_time
+            timestamp_format = config.services.discord.timestamp_format
         except Exception:
             # If we can't get config, just use None values
             update_days = None
@@ -817,7 +817,7 @@ async def main() -> None:
         # Start the bot
         logger.info("Starting TGraph Bot...")
         try:
-            await bot.start(config.DISCORD_TOKEN)
+            await bot.start(config.services.discord.token)
         except discord.LoginFailure as e:
             logger.error(f"Failed to login to Discord: {e}")
             logger.error("Please check your Discord bot token in config.yml")

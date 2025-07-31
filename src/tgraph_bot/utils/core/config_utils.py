@@ -98,7 +98,7 @@ class ConfigurationHelper:
         """
         if channel_id is None:
             config = self.get_config()
-            channel_id = config.CHANNEL_ID
+            channel_id = config.services.discord.channel_id
 
         channel = bot.get_channel(channel_id)
 
@@ -178,16 +178,16 @@ class ConfigurationHelper:
         config = self.get_config()
 
         return {
-            "time_range_days": config.TIME_RANGE_DAYS,
-            "keep_days": config.KEEP_DAYS,
-            "tv_color": config.TV_COLOR,
-            "movie_color": config.MOVIE_COLOR,
-            "background_color": config.GRAPH_BACKGROUND_COLOR,
-            "annotation_color": config.ANNOTATION_COLOR,
-            "annotation_outline_color": config.ANNOTATION_OUTLINE_COLOR,
-            "grid_enabled": config.ENABLE_GRAPH_GRID,
-            "enable_annotation_outline": config.ENABLE_ANNOTATION_OUTLINE,
-            "censor_usernames": config.CENSOR_USERNAMES,
+            "time_range_days": config.data_collection.time_ranges.days,
+            "keep_days": config.automation.data_retention.keep_days,
+            "tv_color": config.graphs.appearance.colors.tv,
+            "movie_color": config.graphs.appearance.colors.movie,
+            "background_color": config.graphs.appearance.colors.background,
+            "annotation_color": config.graphs.appearance.annotations.basic.color,
+            "annotation_outline_color": config.graphs.appearance.annotations.basic.outline_color,
+            "grid_enabled": config.graphs.appearance.grid.enabled,
+            "enable_annotation_outline": config.graphs.appearance.annotations.basic.enable_outline,
+            "censor_usernames": config.data_collection.privacy.censor_usernames,
         }
 
     def get_api_settings(self) -> dict[str, object]:
@@ -200,10 +200,10 @@ class ConfigurationHelper:
         config = self.get_config()
 
         return {
-            "tautulli_url": config.TAUTULLI_URL,
-            "tautulli_api_key": config.TAUTULLI_API_KEY,
-            "discord_token": config.DISCORD_TOKEN,
-            "channel_id": config.CHANNEL_ID,
+            "tautulli_url": config.services.tautulli.url,
+            "tautulli_api_key": config.services.tautulli.api_key,
+            "discord_token": config.services.discord.token,
+            "channel_id": config.services.discord.channel_id,
         }
 
     def is_graph_enabled(self, graph_type: str) -> bool:
