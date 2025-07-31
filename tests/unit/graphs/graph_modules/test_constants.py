@@ -19,7 +19,6 @@ from src.tgraph_bot.graphs.graph_modules.types.constants import (
     GRAPH_TITLES,
     DEFAULT_COLORS,
     COLOR_PALETTES,
-    CONFIG_KEYS,
     FILE_EXTENSIONS,
     FILE_FORMATS,
     PATH_PATTERNS,
@@ -250,62 +249,6 @@ class TestColorPalettes:
         assert COLOR_PALETTES.INFERNO == "inferno"
         assert COLOR_PALETTES.MAGMA == "magma"
 
-
-class TestConfigKeys:
-    """Test cases for configuration key constants."""
-
-    def test_enable_disable_keys(self) -> None:
-        """Test graph enable/disable configuration keys."""
-        assert CONFIG_KEYS.ENABLE_DAILY_PLAY_COUNT == "ENABLE_DAILY_PLAY_COUNT"
-        assert (
-            CONFIG_KEYS.ENABLE_PLAY_COUNT_BY_DAYOFWEEK
-            == "ENABLE_PLAY_COUNT_BY_DAYOFWEEK"
-        )
-        assert (
-            CONFIG_KEYS.ENABLE_PLAY_COUNT_BY_HOUROFDAY
-            == "ENABLE_PLAY_COUNT_BY_HOUROFDAY"
-        )
-        assert CONFIG_KEYS.ENABLE_PLAY_COUNT_BY_MONTH == "ENABLE_PLAY_COUNT_BY_MONTH"
-        assert CONFIG_KEYS.ENABLE_TOP_10_PLATFORMS == "ENABLE_TOP_10_PLATFORMS"
-        assert CONFIG_KEYS.ENABLE_TOP_10_USERS == "ENABLE_TOP_10_USERS"
-
-    def test_color_configuration_keys(self) -> None:
-        """Test color configuration keys."""
-        assert CONFIG_KEYS.TV_COLOR == "TV_COLOR"
-        assert CONFIG_KEYS.MOVIE_COLOR == "MOVIE_COLOR"
-        assert CONFIG_KEYS.GRAPH_BACKGROUND_COLOR == "GRAPH_BACKGROUND_COLOR"
-        assert CONFIG_KEYS.ANNOTATION_COLOR == "ANNOTATION_COLOR"
-        assert CONFIG_KEYS.ANNOTATION_OUTLINE_COLOR == "ANNOTATION_OUTLINE_COLOR"
-        assert CONFIG_KEYS.PEAK_ANNOTATION_COLOR == "PEAK_ANNOTATION_COLOR"
-        assert CONFIG_KEYS.PEAK_ANNOTATION_TEXT_COLOR == "PEAK_ANNOTATION_TEXT_COLOR"
-
-    def test_annotation_keys(self) -> None:
-        """Test annotation configuration keys."""
-        assert CONFIG_KEYS.ANNOTATE_DAILY_PLAY_COUNT == "ANNOTATE_DAILY_PLAY_COUNT"
-        assert (
-            CONFIG_KEYS.ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK
-            == "ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK"
-        )
-        assert (
-            CONFIG_KEYS.ANNOTATE_PLAY_COUNT_BY_HOUROFDAY
-            == "ANNOTATE_PLAY_COUNT_BY_HOUROFDAY"
-        )
-        assert (
-            CONFIG_KEYS.ANNOTATE_PLAY_COUNT_BY_MONTH == "ANNOTATE_PLAY_COUNT_BY_MONTH"
-        )
-        assert CONFIG_KEYS.ANNOTATE_TOP_10_PLATFORMS == "ANNOTATE_TOP_10_PLATFORMS"
-        assert CONFIG_KEYS.ANNOTATE_TOP_10_USERS == "ANNOTATE_TOP_10_USERS"
-
-    def test_other_configuration_keys(self) -> None:
-        """Test other configuration keys."""
-        assert CONFIG_KEYS.TIME_RANGE_DAYS == "TIME_RANGE_DAYS"
-        assert CONFIG_KEYS.TIME_RANGE_MONTHS == "TIME_RANGE_MONTHS"
-        assert CONFIG_KEYS.ENABLE_GRAPH_GRID == "ENABLE_GRAPH_GRID"
-        assert CONFIG_KEYS.ENABLE_STACKED_BAR_CHARTS == "ENABLE_STACKED_BAR_CHARTS"
-        assert (
-            CONFIG_KEYS.ENABLE_MEDIA_TYPE_SEPARATION == "ENABLE_MEDIA_TYPE_SEPARATION"
-        )
-        assert CONFIG_KEYS.CENSOR_USERNAMES == "CENSOR_USERNAMES"
 
 
 class TestFileConstants:

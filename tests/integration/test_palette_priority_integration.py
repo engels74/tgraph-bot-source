@@ -23,7 +23,7 @@ from tests.utils.graph_helpers import (
     create_graph_factory_with_config,
     matplotlib_cleanup,
 )
-from tests.utils.test_helpers import create_test_config_with_nested_overrides
+from tests.utils.test_helpers import create_test_config_custom
 
 if TYPE_CHECKING:
     pass
@@ -36,20 +36,25 @@ class TestPalettePriorityIntegration:
         """Test that custom palettes override media type separation across all graph types."""
         with matplotlib_cleanup():
             # Create config with both palette and media type separation enabled
-            config = create_test_config_with_nested_overrides(
-                DISCORD_TOKEN="test_token",
-                TAUTULLI_API_KEY="test_key",
-                TAUTULLI_URL="http://test.local",
-                CHANNEL_ID=123456789,
-                ENABLE_MEDIA_TYPE_SEPARATION=True,
-                TV_COLOR="#ff0000",  # Red,
-                MOVIE_COLOR="#00ff00",  # Green,
-                DAILY_PLAY_COUNT_PALETTE="viridis",
-                PLAY_COUNT_BY_DAYOFWEEK_PALETTE="plasma",
-                PLAY_COUNT_BY_HOUROFDAY_PALETTE="inferno",
-                PLAY_COUNT_BY_MONTH_PALETTE="magma",
-                TOP_10_PLATFORMS_PALETTE="cividis",
-                TOP_10_USERS_PALETTE="turbo",
+            config = create_test_config_custom(
+                services_overrides={
+                    "tautulli": {"api_key": "test_key", "url": "http://test.local"},
+                    "discord": {"token": "test_token", "channel_id": 123456789}
+                },
+                graphs_overrides={
+                    "features": {"media_type_separation": True},
+                    "appearance": {
+                        "colors": {"tv": "#ff0000", "movie": "#00ff00"},
+                        "palettes": {
+                            "daily_play_count": "viridis",
+                            "play_count_by_dayofweek": "plasma",
+                            "play_count_by_hourofday": "inferno",
+                            "play_count_by_month": "magma",
+                            "top_10_platforms": "cividis",
+                            "top_10_users": "turbo"
+                        }
+                    }
+                }
             )
 
             factory = create_graph_factory_with_config(config)
@@ -107,14 +112,15 @@ class TestPalettePriorityIntegration:
         """Test that media type separation works when no custom palettes are configured."""
         with matplotlib_cleanup():
             # Create config with only media type separation enabled
-            config = create_test_config_with_nested_overrides(
-                DISCORD_TOKEN="test_token",
-                TAUTULLI_API_KEY="test_key",
-                TAUTULLI_URL="http://test.local",
-                CHANNEL_ID=123456789,
-                ENABLE_MEDIA_TYPE_SEPARATION=True,
-                TV_COLOR="#ff0000",  # Red,
-                MOVIE_COLOR="#00ff00",  # Green,
+            config = create_test_config_custom(
+                services_overrides={
+                    "tautulli": {"api_key": "test_key", "url": "http://test.local"},
+                    "discord": {"token": "test_token", "channel_id": 123456789}
+                },
+                graphs_overrides={
+                    "features": {"media_type_separation": True},
+                    "appearance": {"colors": {"tv": "#ff0000", "movie": "#00ff00"}}
+                }
             )
 
             factory = create_graph_factory_with_config(config)
@@ -152,11 +158,11 @@ class TestPalettePriorityIntegration:
         """Test that default colors are used when no palettes or separation are configured."""
         with matplotlib_cleanup():
             # Create minimal config with no color customizations
-            config = create_test_config_with_nested_overrides(
-                DISCORD_TOKEN="test_token",
-                TAUTULLI_API_KEY="test_key",
-                TAUTULLI_URL="http://test.local",
-                CHANNEL_ID=123456789,
+            config = create_test_config_custom(
+                services_overrides={
+                    "tautulli": {"api_key": "test_key", "url": "http://test.local"},
+                    "discord": {"token": "test_token", "channel_id": 123456789}
+                }
             )
 
             factory = create_graph_factory_with_config(config)
@@ -187,18 +193,22 @@ class TestPalettePriorityIntegration:
         """Test that empty/invalid palettes fall back to media type separation."""
         with matplotlib_cleanup():
             # Create config with empty palettes and media type separation
-            config = create_test_config_with_nested_overrides(
-                DISCORD_TOKEN="test_token",
-                TAUTULLI_API_KEY="test_key",
-                TAUTULLI_URL="http://test.local",
-                CHANNEL_ID=123456789,
-                ENABLE_MEDIA_TYPE_SEPARATION=True,
-                TV_COLOR="#ff0000",  # Red,
-                MOVIE_COLOR="#00ff00",  # Green
-                DAILY_PLAY_COUNT_PALETTE="",
-                PLAY_COUNT_BY_DAYOFWEEK_PALETTE="   ",  # Whitespace only
-                PLAY_COUNT_BY_HOUROFDAY_PALETTE="invalid_palette_name",
-                # Leave other palettes unconfigured
+            config = create_test_config_custom(
+                services_overrides={
+                    "tautulli": {"api_key": "test_key", "url": "http://test.local"},
+                    "discord": {"token": "test_token", "channel_id": 123456789}
+                },
+                graphs_overrides={
+                    "features": {"media_type_separation": True},
+                    "appearance": {
+                        "colors": {"tv": "#ff0000", "movie": "#00ff00"},
+                        "palettes": {
+                            "daily_play_count": "",
+                            "play_count_by_dayofweek": "   ",
+                            "play_count_by_hourofday": "invalid_palette_name"
+                        }
+                    }
+                }
             )
 
             factory = create_graph_factory_with_config(config)
@@ -229,13 +239,15 @@ class TestPalettePriorityIntegration:
             invalid_palettes = ["", "   ", "not_a_palette", "123invalid"]
             
             for palette in valid_palettes:
-                config = create_test_config_with_nested_overrides(
-                DISCORD_TOKEN="test_token",
-                TAUTULLI_API_KEY="test_key",
-                TAUTULLI_URL="http://test.local",
-                CHANNEL_ID=123456789,
-                DAILY_PLAY_COUNT_PALETTE=palette,
-            )
+                config = create_test_config_custom(
+                    services_overrides={
+                        "tautulli": {"api_key": "test_key", "url": "http://test.local"},
+                        "discord": {"token": "test_token", "channel_id": 123456789}
+                    },
+                    graphs_overrides={
+                        "appearance": {"palettes": {"daily_play_count": palette}}
+                    }
+                )
                 
                 factory = create_graph_factory_with_config(config)
                 graph = factory.create_graph_by_type("daily_play_count")
@@ -251,14 +263,16 @@ class TestPalettePriorityIntegration:
                 graph.cleanup()
             
             for palette in invalid_palettes:
-                config = create_test_config_with_nested_overrides(
-                DISCORD_TOKEN="test_token",
-                TAUTULLI_API_KEY="test_key",
-                TAUTULLI_URL="http://test.local",
-                CHANNEL_ID=123456789,
-                ENABLE_MEDIA_TYPE_SEPARATION=True,
-                DAILY_PLAY_COUNT_PALETTE=palette,
-            )
+                config = create_test_config_custom(
+                    services_overrides={
+                        "tautulli": {"api_key": "test_key", "url": "http://test.local"},
+                        "discord": {"token": "test_token", "channel_id": 123456789}
+                    },
+                    graphs_overrides={
+                        "features": {"media_type_separation": True},
+                        "appearance": {"palettes": {"daily_play_count": palette}}
+                    }
+                )
                 
                 factory = create_graph_factory_with_config(config)
                 graph = factory.create_graph_by_type("daily_play_count")
@@ -274,14 +288,15 @@ class TestPalettePriorityIntegration:
         """Test that existing configurations without palettes continue to work."""
         with matplotlib_cleanup():
             # Simulate old configuration style (before palette priority system)
-            old_style_config = create_test_config_with_nested_overrides(
-                DISCORD_TOKEN="test_token",
-                TAUTULLI_API_KEY="test_key",
-                TAUTULLI_URL="http://test.local",
-                CHANNEL_ID=123456789,
-                ENABLE_MEDIA_TYPE_SEPARATION=True,
-                TV_COLOR="#1f77b4",  # Default blue
-                MOVIE_COLOR="#ff7f0e",  # Default orange
+            old_style_config = create_test_config_custom(
+                services_overrides={
+                    "tautulli": {"api_key": "test_key", "url": "http://test.local"},
+                    "discord": {"token": "test_token", "channel_id": 123456789}
+                },
+                graphs_overrides={
+                    "features": {"media_type_separation": True},
+                    "appearance": {"colors": {"tv": "#1f77b4", "movie": "#ff7f0e"}}
+                }
             )
             
             factory = create_graph_factory_with_config(old_style_config)
@@ -308,29 +323,34 @@ class TestPalettePriorityIntegration:
             # across different configurations
             
             configs = {
-                "palette": create_test_config_with_nested_overrides(
-                DISCORD_TOKEN="test_token",
-                TAUTULLI_API_KEY="test_key",
-                TAUTULLI_URL="http://test.local",
-                CHANNEL_ID=123456789,
-                DAILY_PLAY_COUNT_PALETTE="Set1",
-            ),
-                "separation": create_test_config_with_nested_overrides(
-                DISCORD_TOKEN="test_token",
-                TAUTULLI_API_KEY="test_key",
-                TAUTULLI_URL="http://test.local",
-                CHANNEL_ID=123456789,
-                ENABLE_MEDIA_TYPE_SEPARATION=True,
-                TV_COLOR="#ff0000",
-                MOVIE_COLOR="#00ff00",
-            ),
-                "default": create_test_config_with_nested_overrides(
-                DISCORD_TOKEN="test_token",
-                TAUTULLI_API_KEY="test_key",
-                TAUTULLI_URL="http://test.local",
-                CHANNEL_ID=123456789,
-                ENABLE_MEDIA_TYPE_SEPARATION=False,
-            ),
+                "palette": create_test_config_custom(
+                    services_overrides={
+                        "tautulli": {"api_key": "test_key", "url": "http://test.local"},
+                        "discord": {"token": "test_token", "channel_id": 123456789}
+                    },
+                    graphs_overrides={
+                        "appearance": {"palettes": {"daily_play_count": "Set1"}}
+                    }
+                ),
+                "separation": create_test_config_custom(
+                    services_overrides={
+                        "tautulli": {"api_key": "test_key", "url": "http://test.local"},
+                        "discord": {"token": "test_token", "channel_id": 123456789}
+                    },
+                    graphs_overrides={
+                        "features": {"media_type_separation": True},
+                        "appearance": {"colors": {"tv": "#ff0000", "movie": "#00ff00"}}
+                    }
+                ),
+                "default": create_test_config_custom(
+                    services_overrides={
+                        "tautulli": {"api_key": "test_key", "url": "http://test.local"},
+                        "discord": {"token": "test_token", "channel_id": 123456789}
+                    },
+                    graphs_overrides={
+                        "features": {"media_type_separation": False}
+                    }
+                ),
             }
             
             for config_type, config in configs.items():

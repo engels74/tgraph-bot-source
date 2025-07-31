@@ -24,7 +24,7 @@ from tests.utils.graph_helpers import (
     create_graph_factory_with_config,
     matplotlib_cleanup,
 )
-from tests.utils.test_helpers import create_test_config_with_nested_overrides
+from tests.utils.test_helpers import create_test_config_custom
 
 if TYPE_CHECKING:
     from src.tgraph_bot.config.schema import TGraphBotConfig
@@ -119,18 +119,26 @@ class TestGraphCustomizationValidation:
         """Test that annotation settings work correctly for all graph types."""
         with matplotlib_cleanup():
             # Test with annotations enabled
-            config_annotations_enabled = create_test_config_with_nested_overrides(
-                TAUTULLI_API_KEY="test_api_key_here",
-                TAUTULLI_URL="http://localhost:8181/api/v2",
-                DISCORD_TOKEN="test_discord_token_1234567890",
-                CHANNEL_ID=123456789,
-                ANNOTATE_DAILY_PLAY_COUNT=True,
-                ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK=True,
-                ANNOTATE_PLAY_COUNT_BY_HOUROFDAY=True,
-                ANNOTATE_TOP_10_PLATFORMS=True,
-                ANNOTATE_TOP_10_USERS=True,
-                ANNOTATE_PLAY_COUNT_BY_MONTH=True,
-                ENABLE_ANNOTATION_OUTLINE=True,
+            config_annotations_enabled = create_test_config_custom(
+                services_overrides={
+                    "tautulli": {"api_key": "test_api_key_here", "url": "http://localhost:8181/api/v2"},
+                    "discord": {"token": "test_discord_token_1234567890", "channel_id": 123456789}
+                },
+                graphs_overrides={
+                    "appearance": {
+                        "annotations": {
+                            "enabled_on": {
+                                "daily_play_count": True,
+                                "play_count_by_dayofweek": True,
+                                "play_count_by_hourofday": True,
+                                "top_10_platforms": True,
+                                "top_10_users": True,
+                                "play_count_by_month": True
+                            },
+                            "basic": {"enable_outline": True}
+                        }
+                    }
+                }
             )
 
             factory = create_graph_factory_with_config(config_annotations_enabled)
@@ -158,12 +166,14 @@ class TestGraphCustomizationValidation:
         """Test that grid settings work correctly."""
         with matplotlib_cleanup():
             # Test with grid enabled
-            config_grid_enabled = create_test_config_with_nested_overrides(
-                TAUTULLI_API_KEY="test_api_key_here",
-                TAUTULLI_URL="http://localhost:8181/api/v2",
-                DISCORD_TOKEN="test_discord_token_1234567890",
-                CHANNEL_ID=123456789,
-                ENABLE_GRAPH_GRID=True,
+            config_grid_enabled = create_test_config_custom(
+                services_overrides={
+                    "tautulli": {"api_key": "test_api_key_here", "url": "http://localhost:8181/api/v2"},
+                    "discord": {"token": "test_discord_token_1234567890", "channel_id": 123456789}
+                },
+                graphs_overrides={
+                    "appearance": {"grid": {"enabled": True}}
+                }
             )
 
             factory = create_graph_factory_with_config(config_grid_enabled)
@@ -180,12 +190,14 @@ class TestGraphCustomizationValidation:
                 graph.cleanup()
 
             # Test with grid disabled
-            config_grid_disabled = create_test_config_with_nested_overrides(
-                TAUTULLI_API_KEY="test_api_key_here",
-                TAUTULLI_URL="http://localhost:8181/api/v2",
-                DISCORD_TOKEN="test_discord_token_1234567890",
-                CHANNEL_ID=123456789,
-                ENABLE_GRAPH_GRID=False,
+            config_grid_disabled = create_test_config_custom(
+                services_overrides={
+                    "tautulli": {"api_key": "test_api_key_here", "url": "http://localhost:8181/api/v2"},
+                    "discord": {"token": "test_discord_token_1234567890", "channel_id": 123456789}
+                },
+                graphs_overrides={
+                    "appearance": {"grid": {"enabled": False}}
+                }
             )
 
             factory = create_graph_factory_with_config(config_grid_disabled)
@@ -205,12 +217,14 @@ class TestGraphCustomizationValidation:
         """Test that username censoring works correctly."""
         with matplotlib_cleanup():
             # Test with censoring enabled
-            config_censor_enabled = create_test_config_with_nested_overrides(
-                TAUTULLI_API_KEY="test_api_key_here",
-                TAUTULLI_URL="http://localhost:8181/api/v2",
-                DISCORD_TOKEN="test_discord_token_1234567890",
-                CHANNEL_ID=123456789,
-                CENSOR_USERNAMES=True,
+            config_censor_enabled = create_test_config_custom(
+                services_overrides={
+                    "tautulli": {"api_key": "test_api_key_here", "url": "http://localhost:8181/api/v2"},
+                    "discord": {"token": "test_discord_token_1234567890", "channel_id": 123456789}
+                },
+                data_collection_overrides={
+                    "privacy": {"censor_usernames": True}
+                }
             )
 
             factory = create_graph_factory_with_config(config_censor_enabled)
@@ -221,12 +235,14 @@ class TestGraphCustomizationValidation:
                 graph.cleanup()
 
             # Test with censoring disabled
-            config_censor_disabled = create_test_config_with_nested_overrides(
-                TAUTULLI_API_KEY="test_api_key_here",
-                TAUTULLI_URL="http://localhost:8181/api/v2",
-                DISCORD_TOKEN="test_discord_token_1234567890",
-                CHANNEL_ID=123456789,
-                CENSOR_USERNAMES=False,
+            config_censor_disabled = create_test_config_custom(
+                services_overrides={
+                    "tautulli": {"api_key": "test_api_key_here", "url": "http://localhost:8181/api/v2"},
+                    "discord": {"token": "test_discord_token_1234567890", "channel_id": 123456789}
+                },
+                data_collection_overrides={
+                    "privacy": {"censor_usernames": False}
+                }
             )
 
             factory = create_graph_factory_with_config(config_censor_disabled)

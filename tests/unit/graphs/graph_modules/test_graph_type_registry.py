@@ -47,22 +47,6 @@ class TestGraphTypeRegistry:
 
         assert set(type_names) == expected_types
 
-    def test_get_all_enable_keys(self) -> None:
-        """Test getting all configuration enable keys."""
-        registry = GraphTypeRegistry()
-        enable_keys = registry.get_all_enable_keys()
-
-        expected_keys = {
-            "ENABLE_DAILY_PLAY_COUNT",
-            "ENABLE_PLAY_COUNT_BY_DAYOFWEEK",
-            "ENABLE_PLAY_COUNT_BY_HOUROFDAY",
-            "ENABLE_PLAY_COUNT_BY_MONTH",
-            "ENABLE_TOP_10_PLATFORMS",
-            "ENABLE_TOP_10_USERS",
-            "ENABLE_SAMPLE_GRAPH",
-        }
-
-        assert set(enable_keys) == expected_keys
 
     def test_get_graph_class_valid_types(self) -> None:
         """Test getting graph classes for valid type names."""
@@ -89,20 +73,7 @@ class TestGraphTypeRegistry:
         with pytest.raises(ValueError, match="Unknown graph type: invalid_type"):
             _ = registry.get_graph_class("invalid_type")
 
-    def test_get_enable_key_valid_types(self) -> None:
-        """Test getting enable keys for valid type names."""
-        registry = GraphTypeRegistry()
 
-        assert registry.get_enable_key("daily_play_count") == "ENABLE_DAILY_PLAY_COUNT"
-        assert registry.get_enable_key("top_10_users") == "ENABLE_TOP_10_USERS"
-        assert registry.get_enable_key("sample_graph") == "ENABLE_SAMPLE_GRAPH"
-
-    def test_get_enable_key_invalid_type(self) -> None:
-        """Test that getting enable key for invalid type raises ValueError."""
-        registry = GraphTypeRegistry()
-
-        with pytest.raises(ValueError, match="Unknown graph type: invalid_type"):
-            _ = registry.get_enable_key("invalid_type")
 
     def test_get_type_name_from_class(self) -> None:
         """Test getting type name from graph class."""
@@ -159,7 +130,6 @@ class TestGraphTypeRegistry:
         info = registry.get_type_info("daily_play_count")
         assert isinstance(info, GraphTypeInfo)
         assert info.type_name == "daily_play_count"
-        assert info.enable_key == "ENABLE_DAILY_PLAY_COUNT"
         assert info.default_enabled is True
         assert "Daily play count" in info.description
 
@@ -262,10 +232,6 @@ class TestGraphTypeRegistry:
         type_names = registry.get_all_type_names()
 
         for type_name in type_names:
-            # Each type should have valid enable key
-            enable_key = registry.get_enable_key(type_name)
-            assert enable_key.startswith("ENABLE_")
-
             # Each type should have valid graph class
             graph_class = registry.get_graph_class(type_name)
             assert graph_class is not None
@@ -283,7 +249,6 @@ class TestGraphTypeRegistry:
             # Type info should be complete
             info = registry.get_type_info(type_name)
             assert info.type_name == type_name
-            assert info.enable_key == enable_key
             assert info.graph_class == graph_class
             assert info.default_enabled == default_enabled
             assert isinstance(info.description, str)

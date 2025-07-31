@@ -12,7 +12,7 @@ import pytest
 
 from src.tgraph_bot.graphs.graph_modules import GraphFactory
 from src.tgraph_bot.config.schema import TGraphBotConfig
-from tests.utils.test_helpers import create_test_config, create_test_config_custom, create_test_config_with_nested_overrides
+from tests.utils.test_helpers import create_test_config, create_test_config_custom
 
 
 
@@ -193,13 +193,19 @@ class TestGraphFactory:
 
     def test_get_enabled_graph_types_all_disabled(self) -> None:
         """Test getting enabled graph types with all disabled."""
-        config = create_test_config_with_nested_overrides(
-            ENABLE_DAILY_PLAY_COUNT=False,
-            ENABLE_PLAY_COUNT_BY_DAYOFWEEK=False,
-            ENABLE_PLAY_COUNT_BY_HOUROFDAY=False,
-            ENABLE_PLAY_COUNT_BY_MONTH=False,
-            ENABLE_TOP_10_PLATFORMS=False,
-            ENABLE_TOP_10_USERS=False,
+        config = create_test_config_custom(
+            graphs_overrides={
+                "features": {
+                    "enabled_types": {
+                        "daily_play_count": False,
+                        "play_count_by_dayofweek": False,
+                        "play_count_by_hourofday": False,
+                        "play_count_by_month": False,
+                        "top_10_platforms": False,
+                        "top_10_users": False
+                    }
+                }
+            }
         )
         factory = GraphFactory(config)
         enabled_types = factory.get_enabled_graph_types()
@@ -208,13 +214,19 @@ class TestGraphFactory:
 
     def test_get_enabled_graph_types_partial_enabled(self) -> None:
         """Test getting enabled graph types with some enabled."""
-        config = create_test_config_with_nested_overrides(
-            ENABLE_DAILY_PLAY_COUNT=True,
-            ENABLE_PLAY_COUNT_BY_DAYOFWEEK=False,
-            ENABLE_PLAY_COUNT_BY_HOUROFDAY=True,
-            ENABLE_PLAY_COUNT_BY_MONTH=False,
-            ENABLE_TOP_10_PLATFORMS=True,
-            ENABLE_TOP_10_USERS=False,
+        config = create_test_config_custom(
+            graphs_overrides={
+                "features": {
+                    "enabled_types": {
+                        "daily_play_count": True,
+                        "play_count_by_dayofweek": False,
+                        "play_count_by_hourofday": True,
+                        "play_count_by_month": False,
+                        "top_10_platforms": True,
+                        "top_10_users": False
+                    }
+                }
+            }
         )
         factory = GraphFactory(config)
         enabled_types = factory.get_enabled_graph_types()
@@ -229,13 +241,19 @@ class TestGraphFactory:
 
     def test_get_enabled_graph_types_mixed_values(self) -> None:
         """Test getting enabled graph types with mixed value types."""
-        config = create_test_config_with_nested_overrides(
-            ENABLE_DAILY_PLAY_COUNT=True,  # Convert truthy to boolean
-            ENABLE_PLAY_COUNT_BY_DAYOFWEEK=False,  # Convert falsy to boolean
-            ENABLE_PLAY_COUNT_BY_HOUROFDAY=True,  # Convert truthy to boolean
-            ENABLE_PLAY_COUNT_BY_MONTH=False,  # Convert falsy to boolean
-            ENABLE_TOP_10_PLATFORMS=False,  # Convert falsy to boolean
-            ENABLE_TOP_10_USERS=True,  # Convert truthy to boolean
+        config = create_test_config_custom(
+            graphs_overrides={
+                "features": {
+                    "enabled_types": {
+                        "daily_play_count": True,
+                        "play_count_by_dayofweek": False,
+                        "play_count_by_hourofday": True,
+                        "play_count_by_month": False,
+                        "top_10_platforms": False,
+                        "top_10_users": True
+                    }
+                }
+            }
         )
         factory = GraphFactory(config)
         enabled_types = factory.get_enabled_graph_types()
@@ -292,9 +310,15 @@ class TestGraphFactory:
 
     def test_factory_config_immutability(self) -> None:
         """Test that factory doesn't modify the original config."""
-        original_config = create_test_config_with_nested_overrides(
-            ENABLE_DAILY_PLAY_COUNT=True,
-            ENABLE_PLAY_COUNT_BY_DAYOFWEEK=False,
+        original_config = create_test_config_custom(
+            graphs_overrides={
+                "features": {
+                    "enabled_types": {
+                        "daily_play_count": True,
+                        "play_count_by_dayofweek": False
+                    }
+                }
+            }
         )
         # Create a copy by serializing and deserializing
         config_copy = TGraphBotConfig.model_validate(original_config.model_dump())

@@ -285,43 +285,6 @@ class ColorPalettes:
 # =============================================================================
 
 
-@final
-@dataclass(frozen=True)
-class ConfigKeys:
-    """Configuration key constants."""
-
-    # Graph enable/disable keys
-    ENABLE_DAILY_PLAY_COUNT: Final[str] = "ENABLE_DAILY_PLAY_COUNT"
-    ENABLE_PLAY_COUNT_BY_DAYOFWEEK: Final[str] = "ENABLE_PLAY_COUNT_BY_DAYOFWEEK"
-    ENABLE_PLAY_COUNT_BY_HOUROFDAY: Final[str] = "ENABLE_PLAY_COUNT_BY_HOUROFDAY"
-    ENABLE_PLAY_COUNT_BY_MONTH: Final[str] = "ENABLE_PLAY_COUNT_BY_MONTH"
-    ENABLE_TOP_10_PLATFORMS: Final[str] = "ENABLE_TOP_10_PLATFORMS"
-    ENABLE_TOP_10_USERS: Final[str] = "ENABLE_TOP_10_USERS"
-
-    # Color configuration keys
-    TV_COLOR: Final[str] = "TV_COLOR"
-    MOVIE_COLOR: Final[str] = "MOVIE_COLOR"
-    GRAPH_BACKGROUND_COLOR: Final[str] = "GRAPH_BACKGROUND_COLOR"
-    ANNOTATION_COLOR: Final[str] = "ANNOTATION_COLOR"
-    ANNOTATION_OUTLINE_COLOR: Final[str] = "ANNOTATION_OUTLINE_COLOR"
-    PEAK_ANNOTATION_COLOR: Final[str] = "PEAK_ANNOTATION_COLOR"
-    PEAK_ANNOTATION_TEXT_COLOR: Final[str] = "PEAK_ANNOTATION_TEXT_COLOR"
-
-    # Annotation enable/disable keys
-    ANNOTATE_DAILY_PLAY_COUNT: Final[str] = "ANNOTATE_DAILY_PLAY_COUNT"
-    ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK: Final[str] = "ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK"
-    ANNOTATE_PLAY_COUNT_BY_HOUROFDAY: Final[str] = "ANNOTATE_PLAY_COUNT_BY_HOUROFDAY"
-    ANNOTATE_PLAY_COUNT_BY_MONTH: Final[str] = "ANNOTATE_PLAY_COUNT_BY_MONTH"
-    ANNOTATE_TOP_10_PLATFORMS: Final[str] = "ANNOTATE_TOP_10_PLATFORMS"
-    ANNOTATE_TOP_10_USERS: Final[str] = "ANNOTATE_TOP_10_USERS"
-
-    # Other configuration keys
-    TIME_RANGE_DAYS: Final[str] = "TIME_RANGE_DAYS"
-    TIME_RANGE_MONTHS: Final[str] = "TIME_RANGE_MONTHS"
-    ENABLE_GRAPH_GRID: Final[str] = "ENABLE_GRAPH_GRID"
-    ENABLE_STACKED_BAR_CHARTS: Final[str] = "ENABLE_STACKED_BAR_CHARTS"
-    ENABLE_MEDIA_TYPE_SEPARATION: Final[str] = "ENABLE_MEDIA_TYPE_SEPARATION"
-    CENSOR_USERNAMES: Final[str] = "CENSOR_USERNAMES"
 
 
 # =============================================================================
@@ -530,7 +493,6 @@ GRAPH_TYPES: Final[GraphTypes] = GraphTypes()
 GRAPH_TITLES: Final[GraphTitles] = GraphTitles()
 DEFAULT_COLORS: Final[DefaultColors] = DefaultColors()
 COLOR_PALETTES: Final[ColorPalettes] = ColorPalettes()
-CONFIG_KEYS: Final[ConfigKeys] = ConfigKeys()
 FILE_EXTENSIONS: Final[FileExtensions] = FileExtensions()
 FILE_FORMATS: Final[FileFormats] = FileFormats()
 PATH_PATTERNS: Final[PathPatterns] = PathPatterns()

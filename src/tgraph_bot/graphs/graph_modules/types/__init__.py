@@ -7,7 +7,6 @@ type-related utilities used throughout the graph generation system.
 
 from .constants import (
     COLOR_PALETTES,
-    CONFIG_KEYS,
     DATETIME_FORMATS,
     DAYS_OF_WEEK,
     DEFAULT_COLORS,
@@ -38,7 +37,6 @@ __all__ = [
     "GRAPH_TITLES",
     "DEFAULT_COLORS",
     "COLOR_PALETTES",
-    "CONFIG_KEYS",
     "FILE_EXTENSIONS",
     "FILE_FORMATS",
     "PATH_PATTERNS",

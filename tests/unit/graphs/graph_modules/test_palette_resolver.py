@@ -17,7 +17,7 @@ from tests.utils.graph_helpers import (
     create_test_config_minimal,
     create_test_config_comprehensive,
 )
-from tests.utils.test_helpers import create_test_config_with_nested_overrides
+from tests.utils.test_helpers import create_test_config_custom
 
 
 class TestColorStrategy:
@@ -81,7 +81,9 @@ class TestPaletteResolver:
 
     def test_initialization_with_dict_config(self) -> None:
         """Test PaletteResolver initialization with TGraphBotConfig."""
-        config = create_test_config_with_nested_overrides(ENABLE_MEDIA_TYPE_SEPARATION=True)
+        config = create_test_config_custom(
+            graphs_overrides={"features": {"media_type_separation": True}}
+        )
         resolver = PaletteResolver(config=config)
         assert resolver.config == config
 
@@ -249,8 +251,10 @@ class TestPaletteResolver:
 
     def test_get_palette_for_graph_type_with_dict_config(self) -> None:
         """Test _get_palette_for_graph_type with TGraphBotConfig."""
-        config = create_test_config_with_nested_overrides(
-            TOP_10_PLATFORMS_PALETTE="cividis"
+        config = create_test_config_custom(
+            graphs_overrides={
+                "appearance": {"palettes": {"top_10_platforms": "cividis"}}
+            }
         )
 
         resolver = PaletteResolver(config=config)
@@ -260,8 +264,10 @@ class TestPaletteResolver:
 
     def test_get_palette_for_graph_type_empty_string(self) -> None:
         """Test _get_palette_for_graph_type with empty string returns None."""
-        config = create_test_config_with_nested_overrides(
-            TOP_10_PLATFORMS_PALETTE=""
+        config = create_test_config_custom(
+            graphs_overrides={
+                "appearance": {"palettes": {"top_10_platforms": ""}}
+            }
         )
 
         resolver = PaletteResolver(config=config)
@@ -271,8 +277,10 @@ class TestPaletteResolver:
 
     def test_get_palette_for_graph_type_whitespace_string(self) -> None:
         """Test _get_palette_for_graph_type with whitespace string returns None."""
-        config = create_test_config_with_nested_overrides(
-            TOP_10_PLATFORMS_PALETTE="   "
+        config = create_test_config_custom(
+            graphs_overrides={
+                "appearance": {"palettes": {"top_10_platforms": "   "}}
+            }
         )
 
         resolver = PaletteResolver(config=config)
@@ -317,7 +325,9 @@ class TestPaletteResolver:
 
     def test_is_media_type_separation_enabled_dict_config(self) -> None:
         """Test _is_media_type_separation_enabled with TGraphBotConfig."""
-        config = create_test_config_with_nested_overrides(ENABLE_MEDIA_TYPE_SEPARATION=True)
+        config = create_test_config_custom(
+            graphs_overrides={"features": {"media_type_separation": True}}
+        )
 
         resolver = PaletteResolver(config=config)
         result = resolver._is_media_type_separation_enabled()  # pyright: ignore[reportPrivateUsage]
@@ -350,9 +360,10 @@ class TestPaletteResolver:
 
     def test_get_media_type_colors_dict_config(self) -> None:
         """Test _get_media_type_colors with TGraphBotConfig."""
-        config = create_test_config_with_nested_overrides(
-            TV_COLOR="#33dd33",
-            MOVIE_COLOR="#dd3333"
+        config = create_test_config_custom(
+            graphs_overrides={
+                "appearance": {"colors": {"tv": "#33dd33", "movie": "#dd3333"}}
+            }
         )
 
         resolver = PaletteResolver(config=config)

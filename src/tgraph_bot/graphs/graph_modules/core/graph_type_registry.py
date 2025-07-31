@@ -22,7 +22,6 @@ class GraphTypeInfo(NamedTuple):
     """Information about a graph type."""
 
     type_name: str
-    enable_key: str
     graph_class: type[BaseGraph]
     default_enabled: bool
     description: str
@@ -70,7 +69,6 @@ class GraphTypeRegistry:
         # Register all graph types
         self._register_graph_type(
             type_name="daily_play_count",
-            enable_key="ENABLE_DAILY_PLAY_COUNT",
             graph_class=DailyPlayCountGraph,
             default_enabled=True,
             description="Daily play count graph showing plays over time",
@@ -78,7 +76,6 @@ class GraphTypeRegistry:
 
         self._register_graph_type(
             type_name="play_count_by_dayofweek",
-            enable_key="ENABLE_PLAY_COUNT_BY_DAYOFWEEK",
             graph_class=PlayCountByDayOfWeekGraph,
             default_enabled=True,
             description="Play count by day of week graph",
@@ -86,7 +83,6 @@ class GraphTypeRegistry:
 
         self._register_graph_type(
             type_name="play_count_by_hourofday",
-            enable_key="ENABLE_PLAY_COUNT_BY_HOUROFDAY",
             graph_class=PlayCountByHourOfDayGraph,
             default_enabled=True,
             description="Play count by hour of day graph",
@@ -94,7 +90,6 @@ class GraphTypeRegistry:
 
         self._register_graph_type(
             type_name="play_count_by_month",
-            enable_key="ENABLE_PLAY_COUNT_BY_MONTH",
             graph_class=PlayCountByMonthGraph,
             default_enabled=True,
             description="Play count by month graph",
@@ -102,7 +97,6 @@ class GraphTypeRegistry:
 
         self._register_graph_type(
             type_name="top_10_platforms",
-            enable_key="ENABLE_TOP_10_PLATFORMS",
             graph_class=Top10PlatformsGraph,
             default_enabled=True,
             description="Top 10 platforms graph",
@@ -110,7 +104,6 @@ class GraphTypeRegistry:
 
         self._register_graph_type(
             type_name="top_10_users",
-            enable_key="ENABLE_TOP_10_USERS",
             graph_class=Top10UsersGraph,
             default_enabled=True,
             description="Top 10 users graph",
@@ -118,7 +111,6 @@ class GraphTypeRegistry:
 
         self._register_graph_type(
             type_name="sample_graph",
-            enable_key="ENABLE_SAMPLE_GRAPH",
             graph_class=SampleGraph,
             default_enabled=False,
             description="Sample graph for demonstration purposes",
@@ -132,7 +124,6 @@ class GraphTypeRegistry:
     def _register_graph_type(
         self,
         type_name: str,
-        enable_key: str,
         graph_class: type[BaseGraph],
         default_enabled: bool,
         description: str,
@@ -142,14 +133,12 @@ class GraphTypeRegistry:
 
         Args:
             type_name: The graph type name (e.g., "daily_play_count")
-            enable_key: The configuration enable key (e.g., "ENABLE_DAILY_PLAY_COUNT")
             graph_class: The graph class
             default_enabled: Whether this graph type is enabled by default
             description: Human-readable description of the graph type
         """
         info = GraphTypeInfo(
             type_name=type_name,
-            enable_key=enable_key,
             graph_class=graph_class,
             default_enabled=default_enabled,
             description=description,
@@ -178,25 +167,6 @@ class GraphTypeRegistry:
 
         return self._registry[type_name].graph_class
 
-    def get_enable_key(self, type_name: str) -> str:
-        """
-        Get the configuration enable key for a given type name.
-
-        Args:
-            type_name: The graph type name
-
-        Returns:
-            The configuration enable key
-
-        Raises:
-            ValueError: If graph type is not registered
-        """
-        self._ensure_initialized()
-
-        if type_name not in self._registry:
-            raise ValueError(f"Unknown graph type: {type_name}")
-
-        return self._registry[type_name].enable_key
 
     def get_type_name_from_class(self, graph_class: type[BaseGraph]) -> str:
         """
@@ -248,15 +218,6 @@ class GraphTypeRegistry:
         self._ensure_initialized()
         return list(self._registry.keys())
 
-    def get_all_enable_keys(self) -> list[str]:
-        """
-        Get all configuration enable keys.
-
-        Returns:
-            List of all enable keys
-        """
-        self._ensure_initialized()
-        return [info.enable_key for info in self._registry.values()]
 
     def get_type_info(self, type_name: str) -> GraphTypeInfo:
         """
