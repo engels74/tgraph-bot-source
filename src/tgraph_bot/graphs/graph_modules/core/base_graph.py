@@ -94,8 +94,12 @@ class BaseGraph(ABC):
         # Use background color from config if not explicitly provided
         if background_color is None:
             if config is not None:
-                bg_color = self.get_config_value("GRAPH_BACKGROUND_COLOR")
-                background_color = str(bg_color) if bg_color is not None else "#ffffff"
+                # Use nested config access for background color
+                try:
+                    bg_color = config.graphs.appearance.colors.background
+                    background_color = str(bg_color)
+                except AttributeError:
+                    background_color = "#ffffff"
             else:
                 background_color = "#ffffff"
 
@@ -165,9 +169,7 @@ class BaseGraph(ABC):
             # Import here to avoid circular imports
             from .palette_resolver import PaletteResolver
 
-            self._palette_resolver = PaletteResolver(
-                config=self.config, config_accessor=self._config_accessor
-            )
+            self._palette_resolver = PaletteResolver(config=self.config)
         return self._palette_resolver
 
     def setup_figure(self) -> tuple[matplotlib.figure.Figure, Axes]:

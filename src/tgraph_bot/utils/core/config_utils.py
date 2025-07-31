@@ -52,12 +52,12 @@ class ConfigurationHelper:
         """
         return self.config_manager.get_current_config()
 
-    def get_config_value(self, key: str, default: object | None = None) -> object:
+    def get_config_value(self, key_path: str, default: object | None = None) -> object:
         """
-        Get a specific configuration value with optional default.
+        Get a specific configuration value using dot notation path with optional default.
 
         Args:
-            key: Configuration key to retrieve
+            key_path: Configuration key path using dot notation (e.g., "services.tautulli.api_key")
             default: Default value if key doesn't exist
 
         Returns:
@@ -68,15 +68,31 @@ class ConfigurationHelper:
         """
         config = self.get_config()
 
-        if hasattr(config, key):
-            return getattr(config, key)  # pyright: ignore[reportAny]
-        elif default is not None:
-            return default
-        else:
+        # Navigate nested configuration using dot notation
+        keys = key_path.split(".")
+        current: object = config
+
+        try:
+            for key in keys:
+                if hasattr(current, key):
+                    current = getattr(current, key)
+                else:
+                    if default is not None:
+                        return default
+                    raise ConfigurationError(
+                        f"Configuration key '{key_path}' not found",
+                        user_message=i18n.translate(
+                            "Configuration setting `{key}` is not available.", key=key_path
+                        ),
+                    )
+            return current
+        except AttributeError:
+            if default is not None:
+                return default
             raise ConfigurationError(
-                f"Configuration key '{key}' not found",
+                f"Configuration key '{key_path}' not found",
                 user_message=i18n.translate(
-                    "Configuration setting `{key}` is not available.", key=key
+                    "Configuration setting `{key}` is not available.", key=key_path
                 ),
             )
 
@@ -211,15 +227,26 @@ class ConfigurationHelper:
         Check if a specific graph type is enabled.
 
         Args:
-            graph_type: Graph type to check (e.g., "DAILY_PLAY_COUNT")
+            graph_type: Graph type to check (e.g., "daily_play_count", "top_10_users")
 
         Returns:
             True if graph type is enabled
         """
-        config = self.get_config()
-        enabled_key = f"{graph_type}_ENABLED"
+        # Map graph types to their nested configuration paths
+        graph_type_mapping = {
+            "DAILY_PLAY_COUNT": "graphs.features.enabled_types.daily_play_count",
+            "PLAY_COUNT_BY_DAYOFWEEK": "graphs.features.enabled_types.play_count_by_dayofweek",
+            "PLAY_COUNT_BY_HOUROFDAY": "graphs.features.enabled_types.play_count_by_hourofday",
+            "TOP_10_PLATFORMS": "graphs.features.enabled_types.top_10_platforms",
+            "TOP_10_USERS": "graphs.features.enabled_types.top_10_users",
+            "PLAY_COUNT_BY_MONTH": "graphs.features.enabled_types.play_count_by_month",
+        }
 
-        return getattr(config, enabled_key, False)
+        config_path = graph_type_mapping.get(graph_type)
+        if config_path is None:
+            return False
+
+        return bool(self.get_config_value(config_path, True))
 
     def get_enabled_graphs(self) -> list[str]:
         """

@@ -12,7 +12,7 @@ import pytest
 
 from src.tgraph_bot.graphs.graph_modules import GraphFactory
 from src.tgraph_bot.config.schema import TGraphBotConfig
-from tests.utils.test_helpers import create_test_config_custom, create_test_config_with_nested_overrides
+from tests.utils.test_helpers import create_test_config, create_test_config_custom
 
 
 
@@ -21,7 +21,13 @@ class TestGraphFactory:
 
     def test_factory_initialization(self) -> None:
         """Test GraphFactory initialization."""
-        config = create_test_config_with_nested_overrides(ENABLE_DAILY_PLAY_COUNT=True)
+        config = create_test_config_custom(
+            graphs_overrides={
+                "features": {
+                    "enabled_types": {"daily_play_count": True}
+                }
+            }
+        )
         factory = GraphFactory(config)
         assert factory.config == config
         assert factory._config_accessor is not None  # pyright: ignore[reportPrivateUsage]
@@ -418,14 +424,20 @@ class TestGraphFactory:
 
     def test_generate_all_graphs_empty_data(self) -> None:
         """Test generate_all_graphs with minimal data structure."""
-        config: dict[str, object] = {
-            "ENABLE_DAILY_PLAY_COUNT": True,
-            "ENABLE_PLAY_COUNT_BY_DAYOFWEEK": False,
-            "ENABLE_PLAY_COUNT_BY_HOUROFDAY": False,
-            "ENABLE_PLAY_COUNT_BY_MONTH": False,
-            "ENABLE_TOP_10_PLATFORMS": False,
-            "ENABLE_TOP_10_USERS": False,
-        }
+        config = create_test_config_custom(
+            graphs_overrides={
+                "features": {
+                    "enabled_types": {
+                        "daily_play_count": True,
+                        "play_count_by_dayofweek": False,
+                        "play_count_by_hourofday": False,
+                        "play_count_by_month": False,
+                        "top_10_platforms": False,
+                        "top_10_users": False,
+                    }
+                }
+            }
+        )
         factory = GraphFactory(config)
 
         # Mock data structure that graphs expect
@@ -446,10 +458,16 @@ class TestGraphFactory:
 
     def test_generate_graphs_with_exclusions(self) -> None:
         """Test generate_graphs_with_exclusions functionality."""
-        config: dict[str, object] = {
-            "ENABLE_DAILY_PLAY_COUNT": True,
-            "ENABLE_TOP_10_USERS": True,
-        }
+        config = create_test_config_custom(
+            graphs_overrides={
+                "features": {
+                    "enabled_types": {
+                        "daily_play_count": True,
+                        "top_10_users": True,
+                    }
+                }
+            }
+        )
         factory = GraphFactory(config)
 
         # Mock data structure
@@ -468,7 +486,8 @@ class TestGraphFactory:
 
     def test_cleanup_all_graph_resources(self) -> None:
         """Test cleanup_all_graph_resources method."""
-        factory = GraphFactory({})
+        config = create_test_config()
+        factory = GraphFactory(config)
 
         # Should not raise exception
         factory.cleanup_all_graph_resources()

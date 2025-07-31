@@ -907,40 +907,58 @@ class TestTop10UsersSeparation:
     @pytest.fixture
     def users_separation_enabled_config(self) -> TGraphBotConfig:
         """Configuration with media type separation enabled for users."""
-        return create_test_config_with_nested_overrides(
-                TAUTULLI_API_KEY="test_api_key",
-                TAUTULLI_URL="http://localhost:8181/api/v2",
-                DISCORD_TOKEN="test_discord_token",
-                CHANNEL_ID=123456789,
-                ENABLE_MEDIA_TYPE_SEPARATION=True,
-                ENABLE_STACKED_BAR_CHARTS=False,
-                CENSOR_USERNAMES=False,  # Disable censoring for easier testing,
-            )
+        return create_test_config_custom(
+            services_overrides={
+                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
+                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+            },
+            graphs_overrides={
+                "features": {
+                    "media_type_separation": True,
+                    "stacked_bar_charts": False
+                }
+            },
+            data_collection_overrides={
+                "privacy": {"censor_usernames": False}
+            }
+        )
 
     @pytest.fixture
     def users_stacked_enabled_config(self) -> TGraphBotConfig:
         """Configuration with stacked bar charts enabled for users."""
-        return create_test_config_with_nested_overrides(
-                TAUTULLI_API_KEY="test_api_key",
-                TAUTULLI_URL="http://localhost:8181/api/v2",
-                DISCORD_TOKEN="test_discord_token",
-                CHANNEL_ID=123456789,
-                ENABLE_MEDIA_TYPE_SEPARATION=True,
-                ENABLE_STACKED_BAR_CHARTS=True,
-                CENSOR_USERNAMES=False,  # Disable censoring for easier testing,
-            )
+        return create_test_config_custom(
+            services_overrides={
+                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
+                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+            },
+            graphs_overrides={
+                "features": {
+                    "media_type_separation": True,
+                    "stacked_bar_charts": True
+                }
+            },
+            data_collection_overrides={
+                "privacy": {"censor_usernames": False}
+            }
+        )
 
     @pytest.fixture
     def users_separation_disabled_config(self) -> TGraphBotConfig:
         """Configuration with media type separation disabled for users."""
-        return create_test_config_with_nested_overrides(
-                TAUTULLI_API_KEY="test_api_key",
-                TAUTULLI_URL="http://localhost:8181/api/v2",
-                DISCORD_TOKEN="test_discord_token",
-                CHANNEL_ID=123456789,
-                ENABLE_MEDIA_TYPE_SEPARATION=False,
-                CENSOR_USERNAMES=False,  # Disable censoring for easier testing,
-            )
+        return create_test_config_custom(
+            services_overrides={
+                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
+                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+            },
+            graphs_overrides={
+                "features": {
+                    "media_type_separation": False
+                }
+            },
+            data_collection_overrides={
+                "privacy": {"censor_usernames": False}
+            }
+        )
 
     def test_users_separated_visualization_method_exists(
         self, users_separation_enabled_config: "TGraphBotConfig"
@@ -1059,15 +1077,23 @@ class TestTop10UsersSeparation:
         self, sample_users_separation_data: dict[str, object]
     ) -> None:
         """Test that annotation handling works with separated user data."""
-        config_with_annotations = create_test_config_with_nested_overrides(
-                TAUTULLI_API_KEY="test_api_key",
-                TAUTULLI_URL="http://localhost:8181/api/v2",
-                DISCORD_TOKEN="test_discord_token",
-                CHANNEL_ID=123456789,
-                ENABLE_MEDIA_TYPE_SEPARATION=True,
-                ANNOTATE_TOP_10_USERS=True,
-                CENSOR_USERNAMES=False,
-            )
+        config_with_annotations = create_test_config_custom(
+            services_overrides={
+                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
+                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+            },
+            graphs_overrides={
+                "features": {"media_type_separation": True},
+                "appearance": {
+                    "annotations": {
+                        "enabled_on": {"top_10_users": True}
+                    }
+                }
+            },
+            data_collection_overrides={
+                "privacy": {"censor_usernames": False}
+            }
+        )
 
         graph = Top10UsersGraph(config=config_with_annotations)
 
@@ -1228,37 +1254,49 @@ class TestTop10PlatformsSeparation:
     @pytest.fixture
     def platforms_separation_enabled_config(self) -> TGraphBotConfig:
         """Configuration with media type separation enabled for platforms."""
-        return create_test_config_with_nested_overrides(
-                TAUTULLI_API_KEY="test_api_key",
-                TAUTULLI_URL="http://localhost:8181/api/v2",
-                DISCORD_TOKEN="test_discord_token",
-                CHANNEL_ID=123456789,
-                ENABLE_MEDIA_TYPE_SEPARATION=True,
-                ENABLE_STACKED_BAR_CHARTS=False,
-            )
+        return create_test_config_custom(
+            services_overrides={
+                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
+                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+            },
+            graphs_overrides={
+                "features": {
+                    "media_type_separation": True,
+                    "stacked_bar_charts": False
+                }
+            }
+        )
 
     @pytest.fixture
     def platforms_stacked_enabled_config(self) -> TGraphBotConfig:
         """Configuration with stacked bar charts enabled for platforms."""
-        return create_test_config_with_nested_overrides(
-                TAUTULLI_API_KEY="test_api_key",
-                TAUTULLI_URL="http://localhost:8181/api/v2",
-                DISCORD_TOKEN="test_discord_token",
-                CHANNEL_ID=123456789,
-                ENABLE_MEDIA_TYPE_SEPARATION=True,
-                ENABLE_STACKED_BAR_CHARTS=True,
-            )
+        return create_test_config_custom(
+            services_overrides={
+                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
+                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+            },
+            graphs_overrides={
+                "features": {
+                    "media_type_separation": True,
+                    "stacked_bar_charts": True
+                }
+            }
+        )
 
     @pytest.fixture
     def platforms_separation_disabled_config(self) -> TGraphBotConfig:
         """Configuration with media type separation disabled for platforms."""
-        return create_test_config_with_nested_overrides(
-                TAUTULLI_API_KEY="test_api_key",
-                TAUTULLI_URL="http://localhost:8181/api/v2",
-                DISCORD_TOKEN="test_discord_token",
-                CHANNEL_ID=123456789,
-                ENABLE_MEDIA_TYPE_SEPARATION=False,
-            )
+        return create_test_config_custom(
+            services_overrides={
+                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
+                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+            },
+            graphs_overrides={
+                "features": {
+                    "media_type_separation": False
+                }
+            }
+        )
 
     def test_platforms_separated_visualization_method_exists(
         self, platforms_separation_enabled_config: "TGraphBotConfig"
@@ -1391,14 +1429,20 @@ class TestTop10PlatformsSeparation:
         self, sample_platforms_separation_data: dict[str, object]
     ) -> None:
         """Test that annotation handling works with separated platform data."""
-        config_with_annotations = create_test_config_with_nested_overrides(
-                TAUTULLI_API_KEY="test_api_key",
-                TAUTULLI_URL="http://localhost:8181/api/v2",
-                DISCORD_TOKEN="test_discord_token",
-                CHANNEL_ID=123456789,
-                ENABLE_MEDIA_TYPE_SEPARATION=True,
-                ANNOTATE_TOP_10_PLATFORMS=True,
-            )
+        config_with_annotations = create_test_config_custom(
+            services_overrides={
+                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
+                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+            },
+            graphs_overrides={
+                "features": {"media_type_separation": True},
+                "appearance": {
+                    "annotations": {
+                        "enabled_on": {"top_10_platforms": True}
+                    }
+                }
+            }
+        )
 
         graph = Top10PlatformsGraph(config=config_with_annotations)
 

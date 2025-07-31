@@ -35,11 +35,11 @@ class MockGraphWithVisualization(VisualizationMixin):
 
     def __init__(
         self,
-        config: "TGraphBotConfig | dict[str, object] | None" = None,
+        config: "TGraphBotConfig | None" = None,
         grid_enabled: bool = True,
     ):
         """Initialize mock graph with optional configuration."""
-        self.config: "TGraphBotConfig | dict[str, object] | None" = config
+        self.config: "TGraphBotConfig | None" = config
         self.figure: Figure | None = None
         self.axes: matplotlib.axes.Axes | None = None
         self._grid_enabled: bool = grid_enabled

@@ -38,7 +38,7 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
 
     def __init__(
         self,
-        config: "TGraphBotConfig | dict[str, object] | None" = None,
+        config: "TGraphBotConfig | None" = None,
         width: int = 12,
         height: int = 8,
         dpi: int = 100,

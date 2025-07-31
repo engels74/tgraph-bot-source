@@ -36,7 +36,7 @@ class SampleGraph(BaseGraph, VisualizationMixin):
 
     def __init__(
         self,
-        config: "TGraphBotConfig | dict[str, object] | None" = None,
+        config: "TGraphBotConfig | None" = None,
         width: int = 10,
         height: int = 6,
         dpi: int = 100,

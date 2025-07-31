@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 class VisualizationProtocol(Protocol):
     """Protocol defining the interface required by VisualizationMixin."""
 
-    config: "TGraphBotConfig | dict[str, object] | None"
+    config: "TGraphBotConfig | None"
     axes: matplotlib.axes.Axes | None
     figure: matplotlib.figure.Figure | None
 
