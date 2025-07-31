@@ -212,6 +212,124 @@ def create_test_config_custom(
     return TGraphBotConfig.model_validate(base_dict)
 
 
+def create_test_config_with_nested_overrides(**kwargs: object) -> TGraphBotConfig:
+    """
+    Create a TGraphBotConfig with nested structure using old flat key names for backwards compatibility.
+
+    This function accepts old flat configuration keys and maps them to the new nested structure.
+    It's designed to help migrate tests from the old flat config system to the new nested system
+    without breaking existing test code during the transition.
+
+    Args:
+        **kwargs: Old flat configuration keys (e.g., TAUTULLI_API_KEY, DISCORD_TOKEN, etc.)
+
+    Returns:
+        TGraphBotConfig: Configuration instance with nested structure
+
+    Example:
+        >>> config = create_test_config_with_nested_overrides(
+        ...     TAUTULLI_API_KEY="test_key",
+        ...     DISCORD_TOKEN="test_token",
+        ...     CHANNEL_ID=123456789,
+        ...     TV_COLOR="#ff0000"
+        ... )
+        >>> assert config.services.tautulli.api_key == "test_key"
+        >>> assert config.graphs.appearance.colors.tv == "#ff0000"
+    """
+    try:
+        from src.tgraph_bot.config.schema import TGraphBotConfig
+    except ImportError as e:
+        msg = f"Failed to import configuration schema: {e}"
+        raise ImportError(msg) from e
+
+    # Start with a base configuration
+    base_config = create_test_config()
+    base_dict = base_config.model_dump()
+
+    # Map old flat keys to nested paths and apply values
+    flat_to_nested_mapping = {
+        # Service configuration
+        "TAUTULLI_API_KEY": ("services", "tautulli", "api_key"),
+        "TAUTULLI_URL": ("services", "tautulli", "url"),
+        "DISCORD_TOKEN": ("services", "discord", "token"),
+        "CHANNEL_ID": ("services", "discord", "channel_id"),
+
+        # Automation configuration
+        "UPDATE_DAYS": ("automation", "scheduling", "update_days"),
+        "FIXED_UPDATE_TIME": ("automation", "scheduling", "fixed_update_time"),
+        "KEEP_DAYS": ("automation", "data_retention", "keep_days"),
+
+        # Data collection configuration
+        "TIME_RANGE_DAYS": ("data_collection", "time_ranges", "days"),
+        "TIME_RANGE_MONTHS": ("data_collection", "time_ranges", "months"),
+        "CENSOR_USERNAMES": ("data_collection", "privacy", "censor_usernames"),
+
+        # System configuration
+        "LANGUAGE": ("system", "localization", "language"),
+
+        # Graph features configuration
+        "ENABLE_DAILY_PLAY_COUNT": ("graphs", "features", "enabled_types", "daily_play_count"),
+        "ENABLE_PLAY_COUNT_BY_DAYOFWEEK": ("graphs", "features", "enabled_types", "play_count_by_dayofweek"),
+        "ENABLE_PLAY_COUNT_BY_HOUROFDAY": ("graphs", "features", "enabled_types", "play_count_by_hourofday"),
+        "ENABLE_TOP_10_PLATFORMS": ("graphs", "features", "enabled_types", "top_10_platforms"),
+        "ENABLE_TOP_10_USERS": ("graphs", "features", "enabled_types", "top_10_users"),
+        "ENABLE_PLAY_COUNT_BY_MONTH": ("graphs", "features", "enabled_types", "play_count_by_month"),
+        "ENABLE_MEDIA_TYPE_SEPARATION": ("graphs", "features", "media_type_separation"),
+        "ENABLE_STACKED_BAR_CHARTS": ("graphs", "features", "stacked_bar_charts"),
+
+        # Graph appearance configuration
+        "GRAPH_WIDTH": ("graphs", "appearance", "dimensions", "width"),
+        "GRAPH_HEIGHT": ("graphs", "appearance", "dimensions", "height"),
+        "GRAPH_DPI": ("graphs", "appearance", "dimensions", "dpi"),
+        "TV_COLOR": ("graphs", "appearance", "colors", "tv"),
+        "MOVIE_COLOR": ("graphs", "appearance", "colors", "movie"),
+        "GRAPH_BACKGROUND_COLOR": ("graphs", "appearance", "colors", "background"),
+        "ENABLE_GRAPH_GRID": ("graphs", "appearance", "grid", "enabled"),
+
+        # Annotation configuration
+        "ANNOTATION_COLOR": ("graphs", "appearance", "annotations", "basic", "color"),
+        "ANNOTATION_OUTLINE_COLOR": ("graphs", "appearance", "annotations", "basic", "outline_color"),
+        "ENABLE_ANNOTATION_OUTLINE": ("graphs", "appearance", "annotations", "basic", "enable_outline"),
+        "ANNOTATE_DAILY_PLAY_COUNT": ("graphs", "appearance", "annotations", "enabled_on", "daily_play_count"),
+        "ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK": ("graphs", "appearance", "annotations", "enabled_on", "play_count_by_dayofweek"),
+        "ANNOTATE_PLAY_COUNT_BY_HOUROFDAY": ("graphs", "appearance", "annotations", "enabled_on", "play_count_by_hourofday"),
+        "ANNOTATE_TOP_10_PLATFORMS": ("graphs", "appearance", "annotations", "enabled_on", "top_10_platforms"),
+        "ANNOTATE_TOP_10_USERS": ("graphs", "appearance", "annotations", "enabled_on", "top_10_users"),
+        "ANNOTATE_PLAY_COUNT_BY_MONTH": ("graphs", "appearance", "annotations", "enabled_on", "play_count_by_month"),
+
+        # Palette configuration
+        "DAILY_PLAY_COUNT_PALETTE": ("graphs", "appearance", "palettes", "daily_play_count"),
+        "PLAY_COUNT_BY_DAYOFWEEK_PALETTE": ("graphs", "appearance", "palettes", "play_count_by_dayofweek"),
+        "PLAY_COUNT_BY_HOUROFDAY_PALETTE": ("graphs", "appearance", "palettes", "play_count_by_hourofday"),
+        "TOP_10_PLATFORMS_PALETTE": ("graphs", "appearance", "palettes", "top_10_platforms"),
+        "TOP_10_USERS_PALETTE": ("graphs", "appearance", "palettes", "top_10_users"),
+        "PLAY_COUNT_BY_MONTH_PALETTE": ("graphs", "appearance", "palettes", "play_count_by_month"),
+    }
+
+    # Apply the flat key overrides to the nested structure
+    for flat_key, value in kwargs.items():
+        if flat_key in flat_to_nested_mapping:
+            path = flat_to_nested_mapping[flat_key]
+            _set_nested_value(base_dict, path, value)
+
+    return TGraphBotConfig.model_validate(base_dict)
+
+
+def _set_nested_value(target: dict[str, object], path: tuple[str, ...], value: object) -> None:
+    """
+    Set a nested value in a dictionary using a tuple path.
+
+    Args:
+        target: Target dictionary to set value in
+        path: Tuple of keys representing the nested path
+        value: Value to set
+    """
+    current = target
+    for key in path[:-1]:
+        if key not in current:
+            current[key] = {}
+        current = cast(dict[str, object], current[key])
+    current[path[-1]] = value
 
 
 def _deep_merge(target: dict[str, object], source: dict[str, object]) -> None:
@@ -225,10 +343,10 @@ def _deep_merge(target: dict[str, object], source: dict[str, object]) -> None:
     for key, value in source.items():
         if (
             key in target
-            and isinstance(target[key], dict)  
+            and isinstance(target[key], dict)
             and isinstance(value, dict)
         ):
-            _deep_merge(cast(dict[str, object], target[key]), value)
+            _deep_merge(cast(dict[str, object], target[key]), cast(dict[str, object], value))
         else:
             target[key] = value
 
@@ -881,13 +999,13 @@ def assert_config_values_match(
     for path, expected_value in expected_values.items():
         current: object = actual_config
         parts = path.split(".")
-        
+
         try:
             for part in parts:
-                current = getattr(current, part)
+                current = getattr(current, part)  # pyright: ignore[reportAny] # dynamic attribute access
         except AttributeError as e:
             raise AssertionError(f"Config path {path} not found: {e}") from e
-        
+
         assert current == expected_value, (
             f"Config path {path}: expected {expected_value}, got {current}"
         )

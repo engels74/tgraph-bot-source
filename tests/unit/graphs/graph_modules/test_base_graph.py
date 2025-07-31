@@ -23,7 +23,7 @@ from tests.utils.graph_helpers import (
     assert_graph_properties,
     assert_graph_cleanup,
 )
-from tests.utils.test_helpers import create_temp_directory, create_test_config_custom
+from tests.utils.test_helpers import create_temp_directory, create_test_config_custom, create_test_config_with_nested_overrides
 
 
 class ConcreteGraph(BaseGraph):

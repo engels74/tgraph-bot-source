@@ -3,7 +3,7 @@ Configuration accessor utility for graph modules.
 
 This module provides a centralized configuration access utility that handles
 TGraphBotConfig objects, providing direct access to nested configuration
-values without backwards compatibility.
+values using the new nested structure.
 """
 
 from __future__ import annotations
@@ -39,83 +39,7 @@ class ConfigAccessor:
         """
         self.config: "TGraphBotConfig" = config
 
-    def _get_nested_path_for_flat_key(self, flat_key: str) -> str | None:
-        """
-        Map old flat configuration keys to new nested paths.
 
-        Args:
-            flat_key: Old flat configuration key
-
-        Returns:
-            Nested path for the key, or None if not found
-        """
-        # Map old flat keys to new nested paths
-        path_mapping = {
-            # Service configuration
-            "TAUTULLI_API_KEY": "services.tautulli.api_key",
-            "TAUTULLI_URL": "services.tautulli.url",
-            "DISCORD_TOKEN": "services.discord.token",
-            "CHANNEL_ID": "services.discord.channel_id",
-            
-            # Automation configuration
-            "UPDATE_DAYS": "automation.scheduling.update_days",
-            "FIXED_UPDATE_TIME": "automation.scheduling.fixed_update_time",
-            "KEEP_DAYS": "automation.data_retention.keep_days",
-            
-            # Data collection configuration
-            "TIME_RANGE_DAYS": "data_collection.time_ranges.days",
-            "TIME_RANGE_MONTHS": "data_collection.time_ranges.months",
-            "CENSOR_USERNAMES": "data_collection.privacy.censor_usernames",
-            
-            # System configuration
-            "LANGUAGE": "system.localization.language",
-            
-            # Graph features configuration
-            "ENABLE_DAILY_PLAY_COUNT": "graphs.features.enabled_types.daily_play_count",
-            "ENABLE_PLAY_COUNT_BY_DAYOFWEEK": "graphs.features.enabled_types.play_count_by_dayofweek",
-            "ENABLE_PLAY_COUNT_BY_HOUROFDAY": "graphs.features.enabled_types.play_count_by_hourofday",
-            "ENABLE_TOP_10_PLATFORMS": "graphs.features.enabled_types.top_10_platforms",
-            "ENABLE_TOP_10_USERS": "graphs.features.enabled_types.top_10_users",
-            "ENABLE_PLAY_COUNT_BY_MONTH": "graphs.features.enabled_types.play_count_by_month",
-            "ENABLE_MEDIA_TYPE_SEPARATION": "graphs.features.media_type_separation",
-            "ENABLE_STACKED_BAR_CHARTS": "graphs.features.stacked_bar_charts",
-            
-            # Graph appearance configuration
-            "GRAPH_WIDTH": "graphs.appearance.dimensions.width",
-            "GRAPH_HEIGHT": "graphs.appearance.dimensions.height",
-            "GRAPH_DPI": "graphs.appearance.dimensions.dpi",
-            "TV_COLOR": "graphs.appearance.colors.tv",
-            "MOVIE_COLOR": "graphs.appearance.colors.movie",
-            "GRAPH_BACKGROUND_COLOR": "graphs.appearance.colors.background",
-            "ENABLE_GRAPH_GRID": "graphs.appearance.grid.enabled",
-            
-            # Annotation configuration
-            "ANNOTATION_COLOR": "graphs.appearance.annotations.basic.color",
-            "ANNOTATION_OUTLINE_COLOR": "graphs.appearance.annotations.basic.outline_color",
-            "ENABLE_ANNOTATION_OUTLINE": "graphs.appearance.annotations.basic.enable_outline",
-            "ANNOTATION_FONT_SIZE": "graphs.appearance.annotations.basic.font_size",
-            "ANNOTATE_DAILY_PLAY_COUNT": "graphs.appearance.annotations.enabled_on.daily_play_count",
-            "ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK": "graphs.appearance.annotations.enabled_on.play_count_by_dayofweek",
-            "ANNOTATE_PLAY_COUNT_BY_HOUROFDAY": "graphs.appearance.annotations.enabled_on.play_count_by_hourofday",
-            "ANNOTATE_TOP_10_PLATFORMS": "graphs.appearance.annotations.enabled_on.top_10_platforms",
-            "ANNOTATE_TOP_10_USERS": "graphs.appearance.annotations.enabled_on.top_10_users",
-            "ANNOTATE_PLAY_COUNT_BY_MONTH": "graphs.appearance.annotations.enabled_on.play_count_by_month",
-            
-            # Peak annotations (if they exist in schema)
-            "ENABLE_PEAK_ANNOTATIONS": "graphs.appearance.annotations.peaks.enabled",
-            "PEAK_ANNOTATION_COLOR": "graphs.appearance.annotations.peaks.color",
-            "PEAK_ANNOTATION_TEXT_COLOR": "graphs.appearance.annotations.peaks.text_color",
-            
-            # Palette configuration
-            "DAILY_PLAY_COUNT_PALETTE": "graphs.appearance.palettes.daily_play_count",
-            "PLAY_COUNT_BY_DAYOFWEEK_PALETTE": "graphs.appearance.palettes.play_count_by_dayofweek",
-            "PLAY_COUNT_BY_HOUROFDAY_PALETTE": "graphs.appearance.palettes.play_count_by_hourofday",
-            "TOP_10_PLATFORMS_PALETTE": "graphs.appearance.palettes.top_10_platforms",
-            "TOP_10_USERS_PALETTE": "graphs.appearance.palettes.top_10_users",
-            "PLAY_COUNT_BY_MONTH_PALETTE": "graphs.appearance.palettes.play_count_by_month",
-        }
-        
-        return path_mapping.get(flat_key)
 
     @overload
     def get_value(self, key: str, default: T) -> T:
@@ -129,13 +53,10 @@ class ConfigAccessor:
 
     def get_value(self, key: str, default: T | None = None) -> T | object:
         """
-        Get a configuration value using either flat key or nested path.
-
-        This method provides backwards compatibility by accepting both old flat keys
-        and new nested paths.
+        Get a configuration value using nested path.
 
         Args:
-            key: Configuration key (flat key like "TV_COLOR" or nested path like "graphs.appearance.colors.tv")
+            key: Configuration nested path (e.g., "graphs.appearance.colors.tv")
             default: Default value if key doesn't exist
 
         Returns:
@@ -144,14 +65,7 @@ class ConfigAccessor:
         Raises:
             ConfigurationError: If key doesn't exist and no default provided
         """
-        # First, try to map flat key to nested path
-        nested_path = self._get_nested_path_for_flat_key(key)
-        if nested_path is not None:
-            # It's a flat key, use the mapped nested path
-            return self.get_nested_value(nested_path, default)
-        else:
-            # Assume it's already a nested path
-            return self.get_nested_value(key, default)
+        return self.get_nested_value(key, default)
 
     @overload
     def get_nested_value(self, path: str, default: T) -> T:
@@ -359,37 +273,3 @@ class ConfigAccessor:
             for graph_type in graph_types
         }
 
-    def get_graph_enable_value(self, graph_type_key: str, default: bool = True) -> bool:
-        """
-        Get the enable status for a specific graph type using old flat key format.
-
-        DEPRECATED: Use is_graph_type_enabled() with proper graph type names instead.
-
-        Args:
-            graph_type_key: Old flat graph enable key (e.g., "ENABLE_DAILY_PLAY_COUNT")
-            default: Default value if key doesn't exist
-
-        Returns:
-            True if graph type is enabled, False otherwise
-        """
-        # Map old enable keys to new graph type names
-        enable_key_mapping = {
-            "ENABLE_DAILY_PLAY_COUNT": "daily_play_count",
-            "ENABLE_PLAY_COUNT_BY_DAYOFWEEK": "play_count_by_dayofweek",
-            "ENABLE_PLAY_COUNT_BY_HOUROFDAY": "play_count_by_hourofday",
-            "ENABLE_PLAY_COUNT_BY_MONTH": "play_count_by_month",
-            "ENABLE_TOP_10_PLATFORMS": "top_10_platforms",
-            "ENABLE_TOP_10_USERS": "top_10_users",
-            "ENABLE_SAMPLE_GRAPH": "sample_graph",  # Special case
-        }
-        
-        graph_type = enable_key_mapping.get(graph_type_key)
-        if graph_type is None:
-            # Unknown key, return default
-            return default
-            
-        if graph_type == "sample_graph":
-            # Sample graph is not in main config, default to False
-            return False
-            
-        return self.is_graph_type_enabled(graph_type)

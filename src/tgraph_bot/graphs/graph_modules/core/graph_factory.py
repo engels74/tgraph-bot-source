@@ -73,10 +73,8 @@ class GraphFactory:
         for type_name in self._graph_registry.get_all_type_names():
             type_info = self._graph_registry.get_type_info(type_name)
 
-            # Check if this graph type is enabled
-            is_enabled = self._config_accessor.get_graph_enable_value(
-                type_info.enable_key, default=type_info.default_enabled
-            )
+            # Check if this graph type is enabled using the type name directly
+            is_enabled = self._config_accessor.is_graph_type_enabled(type_name)
 
             if is_enabled:
                 logger.debug(f"Creating {type_name} graph")
@@ -120,12 +118,8 @@ class GraphFactory:
 
         # Check each graph type using the registry
         for type_name in self._graph_registry.get_all_type_names():
-            type_info = self._graph_registry.get_type_info(type_name)
-
-            # Check if this graph type is enabled
-            is_enabled = self._config_accessor.get_graph_enable_value(
-                type_info.enable_key, default=type_info.default_enabled
-            )
+            # Check if this graph type is enabled using the type name directly
+            is_enabled = self._config_accessor.is_graph_type_enabled(type_name)
 
             if is_enabled:
                 enabled_types.append(type_name)
