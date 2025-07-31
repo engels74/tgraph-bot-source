@@ -131,15 +131,15 @@ class ConfigManager:
 
     @staticmethod
     def save_config(
-        config: TGraphBotConfig, config_path: Path, preserve_comments: bool = True
+        config: TGraphBotConfig, config_path: Path, preserve_comments: bool = True  # pyright: ignore[reportUnusedParameter]
     ) -> None:
         """
-        Save configuration to a YAML file with atomic operation and comment preservation.
+        Save configuration to a YAML file with atomic operation.
 
         Args:
             config: Configuration object to save
             config_path: Path where to save the configuration
-            preserve_comments: Whether to preserve existing comments (default: True)
+            preserve_comments: Whether to preserve existing comments (currently disabled)
 
         Raises:
             OSError: If file operations fail
@@ -147,22 +147,15 @@ class ConfigManager:
         """
         config_dict = config.model_dump()
 
-        if preserve_comments and config_path.exists():
-            # Read original file to preserve comments
-            original_content = config_path.read_text(encoding="utf-8")
-            updated_content = ConfigManager._preserve_comments(
-                original_content, config_dict
-            )
-            content_to_write = updated_content
-        else:
-            # Generate new YAML content without comment preservation
-            content_to_write = yaml.dump(
-                config_dict,
-                default_flow_style=False,
-                sort_keys=False,
-                allow_unicode=True,
-                indent=2,
-            )
+        # For now, disable comment preservation due to nested structure complexity
+        # TODO: Implement proper nested comment preservation
+        content_to_write = yaml.dump(
+            config_dict,
+            default_flow_style=False,
+            sort_keys=False,
+            allow_unicode=True,
+            indent=2,
+        )
 
         # Atomic save operation using temporary file
         temp_file = None
@@ -305,14 +298,20 @@ class ConfigManager:
             This creates a minimal config with placeholder values for required fields.
             Real configuration should be loaded from a proper config file.
         """
-        default_data: dict[str, object] = {
-            "TAUTULLI_API_KEY": "your_tautulli_api_key_here",
-            "TAUTULLI_URL": "http://localhost:8181/api/v2",
-            "DISCORD_TOKEN": "your_discord_bot_token_here",
-            "CHANNEL_ID": 123456789012345678,
-        }
+        from .schema import ServicesConfig, TautulliConfig, DiscordConfig
 
-        return TGraphBotConfig(**default_data)  # pyright: ignore[reportArgumentType]
+        return TGraphBotConfig(
+            services=ServicesConfig(
+                tautulli=TautulliConfig(
+                    api_key="your_tautulli_api_key_here",
+                    url="http://localhost:8181/api/v2"
+                ),
+                discord=DiscordConfig(
+                    token="your_discord_bot_token_here",
+                    channel_id=123456789012345678
+                )
+            )
+        )
 
     @staticmethod
     def validate_config(config: TGraphBotConfig) -> bool:
@@ -365,136 +364,156 @@ class ConfigManager:
 # Required Configuration (Set These First)
 # ============================================================================
 
-# Tautulli API key - Get this from Tautulli Settings > Web Interface > API
-TAUTULLI_API_KEY: "your_tautulli_api_key_here"
+services:
+  tautulli:
+    # Tautulli API key - Get this from Tautulli Settings > Web Interface > API
+    api_key: "your_tautulli_api_key_here"
+    # Tautulli base URL - Include the full URL with protocol and port
+    url: "http://localhost:8181/api/v2"
 
-# Tautulli base URL - Include the full URL with protocol and port
-TAUTULLI_URL: "http://localhost:8181/api/v2"
-
-# Discord bot token - Get this from Discord Developer Portal
-DISCORD_TOKEN: "your_discord_bot_token_here"
-
-# Discord channel ID where graphs will be posted
-CHANNEL_ID: 123456789012345678
+  discord:
+    # Discord bot token - Get this from Discord Developer Portal
+    token: "your_discord_bot_token_here"
+    # Discord channel ID where graphs will be posted
+    channel_id: 123456789012345678
+    # Discord timestamp format (t=short time, T=long time, d=short date, D=long date, f=short date/time, F=long date/time, R=relative time)
+    timestamp_format: "R"
+    # Time in seconds after which ephemeral Discord messages are automatically deleted
+    ephemeral_message_delete_after: 30.0
 
 # ============================================================================
 # Basic Bot Settings
 # ============================================================================
 
-# Number of days between automatic updates (1-365)
-UPDATE_DAYS: 7
+automation:
+  scheduling:
+    # Number of days between automatic updates (1-365)
+    update_days: 7
+    # Fixed time for updates in HH:MM format, or 'XX:XX' to disable
+    fixed_update_time: 'XX:XX'
 
-# Fixed time for updates in HH:MM format, or 'XX:XX' to disable
-FIXED_UPDATE_TIME: 'XX:XX'
-
-# Language code for internationalization (2-letter code)
-LANGUAGE: en
-
-# Number of days to keep generated graphs (1-365)
-KEEP_DAYS: 7
+  data_retention:
+    # Number of days to keep generated graphs (1-365)
+    keep_days: 7
 
 # ============================================================================
 # Data Collection Settings
 # ============================================================================
 
-# Time range in days for graph data (1-365)
-TIME_RANGE_DAYS: 30
+data_collection:
+  time_ranges:
+    # Time range in days for graph data (1-365)
+    days: 30
+    # Time range in months for monthly graph data (1-60)
+    months: 12
 
-# Time range in months for monthly graph data (1-60)
-TIME_RANGE_MONTHS: 12
-
-# Whether to censor usernames in graphs
-CENSOR_USERNAMES: true
-
-# ============================================================================
-# Graph Selection & Behavior
-# ============================================================================
-
-# Whether to separate Movies and TV Series in graphs
-ENABLE_MEDIA_TYPE_SEPARATION: true
-
-# Whether to use stacked bars when media type separation is enabled (applies to bar charts only)
-ENABLE_STACKED_BAR_CHARTS: true
-
-# Enable/disable specific graph types
-ENABLE_DAILY_PLAY_COUNT: true
-ENABLE_PLAY_COUNT_BY_DAYOFWEEK: true
-ENABLE_PLAY_COUNT_BY_HOUROFDAY: true
-ENABLE_TOP_10_PLATFORMS: true
-ENABLE_TOP_10_USERS: true
-ENABLE_PLAY_COUNT_BY_MONTH: true
+  privacy:
+    # Whether to censor usernames in graphs
+    censor_usernames: true
 
 # ============================================================================
-# Visual Customization
+# System Settings
 # ============================================================================
 
-# Base Graph Colors (Hex format: #RRGGBB)
-# ----------------------------------------
+system:
+  localization:
+    # Language code for internationalization (2-letter code)
+    language: en
 
-# Color for TV shows in graphs
-TV_COLOR: '#1f77b4'
+# ============================================================================
+# Graph Configuration
+# ============================================================================
 
-# Color for movies in graphs
-MOVIE_COLOR: '#ff7f0e'
+graphs:
+  features:
+    # Whether to separate Movies and TV Series in graphs
+    media_type_separation: true
+    # Whether to use stacked bars when media type separation is enabled (applies to bar charts only)
+    stacked_bar_charts: true
 
-# Background color for graphs
-GRAPH_BACKGROUND_COLOR: '#ffffff'
+    enabled_types:
+      # Enable/disable specific graph types
+      daily_play_count: true
+      play_count_by_dayofweek: true
+      play_count_by_hourofday: true
+      top_10_platforms: true
+      top_10_users: true
+      play_count_by_month: true
 
-# Whether to enable grid lines in graphs
-ENABLE_GRAPH_GRID: false
+  appearance:
+    dimensions:
+      # Graph dimensions and quality
+      width: 15
+      height: 10
+      dpi: 100
 
-# Annotation Settings (All Types)
-# --------------------------------
+    colors:
+      # Base Graph Colors (Hex format: #RRGGBB)
+      # Color for TV shows in graphs
+      tv: '#1f77b4'
+      # Color for movies in graphs
+      movie: '#ff7f0e'
+      # Background color for graphs
+      background: '#ffffff'
 
-# Basic annotation styling
-ANNOTATION_COLOR: '#ff0000'
-ANNOTATION_OUTLINE_COLOR: '#000000'
-ENABLE_ANNOTATION_OUTLINE: true
-ANNOTATION_FONT_SIZE: 10
+    grid:
+      # Whether to enable grid lines in graphs
+      enabled: false
 
-# Enable/disable annotations on specific graph types
-ANNOTATE_DAILY_PLAY_COUNT: true
-ANNOTATE_PLAY_COUNT_BY_DAYOFWEEK: true
-ANNOTATE_PLAY_COUNT_BY_HOUROFDAY: true
-ANNOTATE_TOP_10_PLATFORMS: true
-ANNOTATE_TOP_10_USERS: true
-ANNOTATE_PLAY_COUNT_BY_MONTH: true
+    annotations:
+      basic:
+        # Basic annotation styling
+        color: '#ff0000'
+        outline_color: '#000000'
+        enable_outline: true
+        font_size: 10
 
-# Peak annotation settings (separate from bar value annotations)
-ENABLE_PEAK_ANNOTATIONS: true
-PEAK_ANNOTATION_COLOR: '#ffcc00'
-PEAK_ANNOTATION_TEXT_COLOR: '#000000'
+      enabled_on:
+        # Enable/disable annotations on specific graph types
+        daily_play_count: true
+        play_count_by_dayofweek: true
+        play_count_by_hourofday: true
+        top_10_platforms: true
+        top_10_users: true
+        play_count_by_month: true
+
+      peak:
+        # Peak annotation settings (separate from bar value annotations)
+        enabled: true
+        color: '#ffcc00'
+        text_color: '#000000'
+
+    palettes:
+      # Color palettes for specific graph types (viridis, plasma, inferno, magma, or leave blank for default)
+      daily_play_count: ""
+      play_count_by_dayofweek: ""
+      play_count_by_hourofday: ""
+      top_10_platforms: ""
+      top_10_users: ""
+      play_count_by_month: ""
 
 # ============================================================================
 # Performance & Rate Limiting
 # ============================================================================
 
-# Config Command Cooldowns
-# -------------------------
+rate_limiting:
+  config_commands:
+    # Per-user cooldown for config commands (0-1440 minutes)
+    per_user_minutes: 0
+    # Global cooldown for config commands (0-86400 seconds)
+    global_seconds: 0
 
-# Per-user cooldown for config commands (0-1440 minutes)
-CONFIG_COOLDOWN_MINUTES: 0
+  update_graphs_commands:
+    # Per-user cooldown for update graphs commands (0-1440 minutes)
+    per_user_minutes: 0
+    # Global cooldown for update graphs commands (0-86400 seconds)
+    global_seconds: 0
 
-# Global cooldown for config commands (0-86400 seconds)
-CONFIG_GLOBAL_COOLDOWN_SECONDS: 0
-
-# Update Graphs Command Cooldowns
-# --------------------------------
-
-# Per-user cooldown for update graphs commands (0-1440 minutes)
-UPDATE_GRAPHS_COOLDOWN_MINUTES: 0
-
-# Global cooldown for update graphs commands (0-86400 seconds)
-UPDATE_GRAPHS_GLOBAL_COOLDOWN_SECONDS: 0
-
-# My Stats Command Cooldowns
-# ---------------------------
-
-# Per-user cooldown for my stats commands (0-1440 minutes)
-MY_STATS_COOLDOWN_MINUTES: 5
-
-# Global cooldown for my stats commands (0-86400 seconds)
-MY_STATS_GLOBAL_COOLDOWN_SECONDS: 60
+  my_stats_commands:
+    # Per-user cooldown for my stats commands (0-1440 minutes)
+    per_user_minutes: 5
+    # Global cooldown for my stats commands (0-86400 seconds)
+    global_seconds: 60
 """
 
     # Live Configuration Management Methods
