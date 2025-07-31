@@ -5,10 +5,14 @@ This module tests the priority-based palette system to ensure that
 user-configured palettes take precedence over automatic media type palettes.
 """
 
+from typing import TYPE_CHECKING
 from unittest.mock import patch, MagicMock
 import pytest
 
 from tgraph_bot.config.schema import TGraphBotConfig
+
+if TYPE_CHECKING:
+    from tgraph_bot.graphs.graph_modules.core.base_graph import BaseGraph
 from tgraph_bot.graphs.graph_modules.implementations.tautulli.daily_play_count_graph import (
     DailyPlayCountGraph,
 )
@@ -417,7 +421,7 @@ class TestPaletteConfiguration:
         ],
     )
     def test_combined_mode_palette_usage_with_palette(
-        self, graph_class: type, palette_config: str
+        self, graph_class: type["BaseGraph"], palette_config: str
     ) -> None:
         """Test that combined modes actually use configured palettes when calling seaborn."""
         # Create config with palette configured - use explicit construction to avoid type issues
@@ -508,10 +512,10 @@ class TestPaletteConfiguration:
             try:
                 if hasattr(graph, "_generate_combined_visualization"):
                     method = getattr(graph, "_generate_combined_visualization")
-                    method(mock_ax, sample_records)  # pyright: ignore[reportAny]
+                    method(mock_ax, sample_records)
                 elif hasattr(graph, "_generate_hourly_visualization"):
                     method = getattr(graph, "_generate_hourly_visualization")
-                    method(mock_ax, sample_records)  # pyright: ignore[reportAny]
+                    method(mock_ax, sample_records)
                 else:
                     # Skip graphs that don't have these methods
                     return
@@ -548,7 +552,7 @@ class TestPaletteConfiguration:
         ],
     )
     def test_combined_mode_palette_usage_without_palette(
-        self, graph_class: type
+        self, graph_class: type["BaseGraph"]
     ) -> None:
         """Test that combined modes use default colors when no palette is configured."""
         # Create config without palette
@@ -586,10 +590,10 @@ class TestPaletteConfiguration:
             try:
                 if hasattr(graph, "_generate_combined_visualization"):
                     method = getattr(graph, "_generate_combined_visualization")
-                    method(mock_ax, sample_records)  # pyright: ignore[reportAny]
+                    method(mock_ax, sample_records)
                 elif hasattr(graph, "_generate_hourly_visualization"):
                     method = getattr(graph, "_generate_hourly_visualization")
-                    method(mock_ax, sample_records)  # pyright: ignore[reportAny]
+                    method(mock_ax, sample_records)
                 else:
                     # Skip graphs that don't have these methods
                     return

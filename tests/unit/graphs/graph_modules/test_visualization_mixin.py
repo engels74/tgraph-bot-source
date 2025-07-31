@@ -23,6 +23,10 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
 from src.tgraph_bot.graphs.graph_modules import VisualizationMixin
+from src.tgraph_bot.graphs.graph_modules.core.palette_resolver import (
+    ColorResolution,
+    ColorStrategy,
+)
 from tests.utils.graph_helpers import matplotlib_cleanup
 
 
@@ -56,6 +60,14 @@ class MockGraphWithVisualization(VisualizationMixin):
     def get_movie_color(self) -> str:
         """Return movie color for testing."""
         return "#ff7f0e"  # Default movie color
+
+    def get_resolved_color_strategy(self) -> ColorResolution:
+        """Return a mock color resolution for testing."""
+        return ColorResolution(
+            strategy=ColorStrategy.DEFAULT,
+            use_palette=False,
+            fallback_colors=["#1f77b4"],  # Default TV color
+        )
 
     def setup_figure(self) -> tuple[Figure, Axes]:
         """Set up matplotlib figure and axes."""
