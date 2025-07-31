@@ -5,14 +5,16 @@ This module tests the priority-based palette system to ensure that
 user-configured palettes take precedence over automatic media type palettes.
 """
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable, cast
 from unittest.mock import patch, MagicMock
 import pytest
 
 from tgraph_bot.config.schema import TGraphBotConfig
 
 if TYPE_CHECKING:
+    from matplotlib.axes import Axes
     from tgraph_bot.graphs.graph_modules.core.base_graph import BaseGraph
+    from tgraph_bot.graphs.graph_modules.utils.utils import ProcessedRecords
 from tgraph_bot.graphs.graph_modules.implementations.tautulli.daily_play_count_graph import (
     DailyPlayCountGraph,
 )
@@ -511,11 +513,11 @@ class TestPaletteConfiguration:
             # Test the visualization methods that should use palettes
             try:
                 if hasattr(graph, "_generate_combined_visualization"):
-                    method = getattr(graph, "_generate_combined_visualization")
-                    method(mock_ax, sample_records)
+                    method = cast(Callable[["Axes", "ProcessedRecords"], None], getattr(graph, "_generate_combined_visualization"))
+                    method(mock_ax, cast("ProcessedRecords", sample_records))
                 elif hasattr(graph, "_generate_hourly_visualization"):
-                    method = getattr(graph, "_generate_hourly_visualization")
-                    method(mock_ax, sample_records)
+                    method = cast(Callable[["Axes", "ProcessedRecords"], None], getattr(graph, "_generate_hourly_visualization"))
+                    method(mock_ax, cast("ProcessedRecords", sample_records))
                 else:
                     # Skip graphs that don't have these methods
                     return
@@ -589,11 +591,11 @@ class TestPaletteConfiguration:
             # Test the visualization methods
             try:
                 if hasattr(graph, "_generate_combined_visualization"):
-                    method = getattr(graph, "_generate_combined_visualization")
-                    method(mock_ax, sample_records)
+                    method = cast(Callable[["Axes", "ProcessedRecords"], None], getattr(graph, "_generate_combined_visualization"))
+                    method(mock_ax, cast("ProcessedRecords", sample_records))
                 elif hasattr(graph, "_generate_hourly_visualization"):
-                    method = getattr(graph, "_generate_hourly_visualization")
-                    method(mock_ax, sample_records)
+                    method = cast(Callable[["Axes", "ProcessedRecords"], None], getattr(graph, "_generate_hourly_visualization"))
+                    method(mock_ax, cast("ProcessedRecords", sample_records))
                 else:
                     # Skip graphs that don't have these methods
                     return
