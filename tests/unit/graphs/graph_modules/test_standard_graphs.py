@@ -469,17 +469,17 @@ class TestGraphSeparationFunctionality:
         assert graph.get_title() == expected_title
 
     @pytest.mark.parametrize(
-        "graph_class,annotation_enabled,old_config_key",
+        "graph_class,annotation_enabled,config_path",
         [
             (
                 PlayCountByHourOfDayGraph,
                 True,
-                "ANNOTATE_PLAY_COUNT_BY_HOUROFDAY",
+                "graphs.appearance.annotations.enabled_on.play_count_by_hourofday",
             ),
             (
                 PlayCountByHourOfDayGraph,
                 False,
-                "ANNOTATE_PLAY_COUNT_BY_HOUROFDAY",
+                "graphs.appearance.annotations.enabled_on.play_count_by_hourofday",
             ),
         ],
     )
@@ -487,7 +487,7 @@ class TestGraphSeparationFunctionality:
         self,
         graph_class: type[BaseGraph],
         annotation_enabled: bool,
-        old_config_key: str,
+        config_path: str,
     ) -> None:
         """Test that graphs can access configuration values correctly."""
         config = create_test_config_custom(
@@ -504,11 +504,7 @@ class TestGraphSeparationFunctionality:
 
         graph = graph_class(config=config)
 
-        # Test configuration access - convert old flat key to nested path
-        config_path_map = {
-            "ANNOTATE_PLAY_COUNT_BY_HOUROFDAY": "graphs.appearance.annotations.enabled_on.play_count_by_hourofday",
-        }
-        config_path = config_path_map.get(old_config_key, old_config_key)
+        # Test configuration access using nested path directly
         actual_value = graph.get_config_value(config_path, not annotation_enabled)
         assert actual_value == annotation_enabled
 

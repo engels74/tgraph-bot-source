@@ -119,7 +119,7 @@ class UserGraphManager:
         progress_tracker = ProgressTracker(progress_callback)
 
         try:
-            # Step 1: Clear cache to ensure fresh data respecting current TIME_RANGE_DAYS
+            # Step 1: Clear cache to ensure fresh data respecting current time_range_days
             self._data_fetcher.clear_cache()
             logger.debug("Cleared DataFetcher cache for fresh user statistics")
 

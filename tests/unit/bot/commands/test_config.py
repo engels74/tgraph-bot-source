@@ -95,7 +95,7 @@ class TestConfigCog:
         _ = await config_cog.config_view.callback(config_cog, mock_interaction)  # pyright: ignore[reportArgumentType]
 
         # Verify interaction response was called
-        mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
+        mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType] # mock method
 
         # Get the embed from the call
         call_args = mock_interaction.response.send_message.call_args  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue,reportUnknownVariableType]
@@ -124,7 +124,7 @@ class TestConfigCog:
             _ = await config_cog.config_view.callback(config_cog, mock_interaction)  # pyright: ignore[reportArgumentType]
 
         # Verify error response was sent via interaction
-        mock_interaction.response.send_message.assert_called_once()
+        mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType] # mock method
 
     @pytest.mark.asyncio
     async def test_config_edit_invalid_setting(self, config_cog: ConfigCog) -> None:
@@ -142,7 +142,7 @@ class TestConfigCog:
         )
 
         # Verify error response was sent via interaction
-        mock_interaction.response.send_message.assert_called_once()
+        mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType] # mock method
 
     @pytest.mark.asyncio
     async def test_config_edit_invalid_value(self, config_cog: ConfigCog) -> None:
@@ -160,7 +160,7 @@ class TestConfigCog:
         )
 
         # Verify error response was sent via interaction
-        mock_interaction.response.send_message.assert_called_once()
+        mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType] # mock method
 
     @pytest.mark.asyncio
     async def test_config_edit_validation_error(self, config_cog: ConfigCog) -> None:
@@ -179,7 +179,7 @@ class TestConfigCog:
         )
 
         # Verify error response was sent via interaction
-        mock_interaction.response.send_message.assert_called_once()
+        mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType] # mock method
 
     @pytest.mark.asyncio
     async def test_config_edit_no_config_file(self, config_cog: ConfigCog) -> None:
@@ -254,7 +254,7 @@ class TestConfigCog:
                 mock_update_runtime.assert_called_once()
 
                 # Verify success response was sent
-                mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
+                mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType] # mock method
 
     @pytest.mark.asyncio
     async def test_config_edit_save_error(self, config_cog: ConfigCog) -> None:
@@ -307,8 +307,7 @@ class TestConfigCog:
         )
 
         # Verify response was sent
-        mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
-
+        mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType] # mock method
         # Get the embed that was sent
         call_args = mock_interaction.response.send_message.call_args  # pyright: ignore[reportAttributeAccessIssue,reportUnknownVariableType,reportUnknownMemberType]
         embed = call_args[1]["embed"]  # pyright: ignore[reportUnknownVariableType]
@@ -333,8 +332,7 @@ class TestConfigCog:
         )
 
         # Verify response was sent
-        mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
-
+        mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType] # mock method
         # Get the embed that was sent
         call_args = mock_interaction.response.send_message.call_args  # pyright: ignore[reportAttributeAccessIssue,reportUnknownVariableType,reportUnknownMemberType]
         embed = call_args[1]["embed"]  # pyright: ignore[reportUnknownVariableType]

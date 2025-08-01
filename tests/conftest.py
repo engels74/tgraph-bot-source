@@ -283,7 +283,7 @@ def mock_validation_error() -> Exception:
         Exception: A validation-related exception for testing
     """
     return ValueError(
-        "Invalid configuration value: CHANNEL_ID must be a positive integer"
+        "Invalid configuration value: channel_id must be a positive integer"
     )
 
 

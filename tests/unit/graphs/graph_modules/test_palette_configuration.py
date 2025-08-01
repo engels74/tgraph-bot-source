@@ -312,8 +312,8 @@ class TestPaletteConfiguration:
         assert platforms_graph.get_user_configured_palette() is None
 
     def test_new_palette_configurations_individual_testing(self) -> None:
-        """Test each new palette configuration individually after Phase 4 implementation."""
-        # Test DAILY_PLAY_COUNT_PALETTE
+        """Test each palette configuration individually using nested config structure."""
+        # Test daily_play_count palette
         daily_config = create_test_config_custom(
             services_overrides={
                 "tautulli": {"api_key": "test_key", "url": "http://test.local"},
@@ -330,7 +330,7 @@ class TestPaletteConfiguration:
         daily_graph = DailyPlayCountGraph(config=daily_config)
         assert daily_graph.get_user_configured_palette() == "inferno"
 
-        # Test PLAY_COUNT_BY_DAYOFWEEK_PALETTE
+        # Test play_count_by_dayofweek palette
         dayofweek_config = create_test_config_custom(
             services_overrides={
                 "tautulli": {"api_key": "test_key", "url": "http://test.local"},
@@ -347,7 +347,7 @@ class TestPaletteConfiguration:
         dayofweek_graph = PlayCountByDayOfWeekGraph(config=dayofweek_config)
         assert dayofweek_graph.get_user_configured_palette() == "magma"
 
-        # Test TOP_10_PLATFORMS_PALETTE
+        # Test top_10_platforms palette
         platforms_config = create_test_config_custom(
             services_overrides={
                 "tautulli": {"api_key": "test_key", "url": "http://test.local"},
@@ -364,7 +364,7 @@ class TestPaletteConfiguration:
         platforms_graph = Top10PlatformsGraph(config=platforms_config)
         assert platforms_graph.get_user_configured_palette() == "cividis"
 
-        # Test PLAY_COUNT_BY_MONTH_PALETTE
+        # Test play_count_by_month palette
         month_config = create_test_config_custom(
             services_overrides={
                 "tautulli": {"api_key": "test_key", "url": "http://test.local"},

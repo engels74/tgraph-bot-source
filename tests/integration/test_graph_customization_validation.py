@@ -286,7 +286,7 @@ class TestGraphCustomizationValidation:
                     assert config_obj.graphs.appearance.colors.tv == "#ff4444"
                     assert config_obj.graphs.appearance.colors.movie == "#44ff44"
                     assert config_obj.graphs.appearance.grid.enabled is True
-                    # comprehensive_config has CENSOR_USERNAMES=False
+                    # comprehensive_config has censor_usernames=False
                     assert config_obj.data_collection.privacy.censor_usernames is False
                 finally:
                     graph.cleanup()

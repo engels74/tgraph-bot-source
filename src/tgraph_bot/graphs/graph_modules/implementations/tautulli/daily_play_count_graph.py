@@ -75,7 +75,7 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
         self, records: ProcessedRecords, time_range_days: int
     ) -> ProcessedRecords:
         """
-        Filter processed records to respect the TIME_RANGE_DAYS configuration.
+        Filter processed records to respect the time_range_days configuration.
 
         Args:
             records: List of processed play history records
@@ -116,7 +116,7 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
 
         # Determine optimal labeling strategy based on number of dates
         if num_dates <= 30:
-            # For TIME_RANGE_DAYS=30 or less: Show every date for perfect alignment
+            # For time_range_days=30 or less: Show every date for perfect alignment
             interval = 1
             date_format = "%m/%d"
         elif num_dates <= 60:
@@ -187,9 +187,9 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
 
             # Step 2: Extract time range configuration
             time_range_days = self.get_time_range_days_from_config()
-            logger.info(f"Using TIME_RANGE_DAYS configuration: {time_range_days} days")
+            logger.info(f"Using time_range_days configuration: {time_range_days} days")
 
-            # Step 3: Filter records to respect TIME_RANGE_DAYS configuration
+            # Step 3: Filter records to respect time_range_days configuration
             filtered_records = self._filter_records_by_time_range(
                 processed_records, time_range_days
             )
