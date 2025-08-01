@@ -25,7 +25,7 @@ requires-python = ">=3.12"
 dependencies = [
     "discord.py>=2.5.2",
     "pydantic>=2.11.7",
-    "matplotlib>=3.10.3",
+    "matplotlib>=3.10.5",
     "seaborn>=0.13.2",
     "httpx>=0.28.1",
     "pyyaml>=6.0.2",
@@ -38,7 +38,7 @@ dev = [
     "pytest-asyncio>=1.1.0",
     "pytest-cov>=6.2.1",
     # Linting and formatting
-    "ruff>=0.12.4",
+    "ruff>=0.12.7",
     # Type checking
     "basedpyright>=1.31.0",
     # Translation/i18n utilities
@@ -46,14 +46,14 @@ dev = [
     # System utilities
     "psutil>=7.0.0",
     # CLI utilities
-    "rich>=14.0.0",
+    "rich>=14.1.0",
     # Workflow utilities
     "semver>=3.0.4",
     "toml>=0.10.2",
     # Type stubs for better type safety
     "pandas-stubs>=2.3.0.250703",
     "types-polib>=1.2.0.20250401",
-    "types-psutil>=7.0.0.20250601",
+    "types-psutil>=7.0.0.20250801",
     "types-pyyaml>=6.0.12.20250516",
     "types-requests>=2.32.4.20250611",
     "matplotlib-stubs>=0.2.0",
