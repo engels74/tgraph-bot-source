@@ -319,8 +319,8 @@ class BaseGraph(ABC):
 
         This method uses the PaletteResolver to determine whether to use custom palettes,
         media type separation colors, or default colors based on the configured priority system:
-        1. Highest Priority: Non-empty *_PALETTE configurations override everything
-        2. Medium Priority: ENABLE_MEDIA_TYPE_SEPARATION with MOVIE_COLOR/TV_COLOR
+        1. Highest Priority: Non-empty palette configurations override everything
+        2. Medium Priority: Media type separation with configured colors
         3. Lowest Priority: Default system colors
 
         Returns:
@@ -550,13 +550,13 @@ class BaseGraph(ABC):
 
         Args:
             base_title: The base title for the graph (e.g., "Daily Play Count")
-            use_months: If True, use TIME_RANGE_MONTHS instead of TIME_RANGE_DAYS
+            use_months: If True, use monthly time range instead of daily time range
 
         Returns:
             Enhanced title with timeframe information (e.g., "Daily Play Count (Last 30 days)")
         """
         if use_months:
-            # Use TIME_RANGE_MONTHS for monthly graphs
+            # Use monthly time range for monthly graphs
             time_range = self.get_config_value("data_collection.time_ranges.months", 12)
             if isinstance(time_range, (int, float)):
                 time_range_int = int(time_range)
@@ -565,7 +565,7 @@ class BaseGraph(ABC):
             else:
                 return base_title
         else:
-            # Use TIME_RANGE_DAYS for daily/weekly/hourly graphs
+            # Use daily time range for daily/weekly/hourly graphs
             time_range = self.get_config_value("data_collection.time_ranges.days", 30)
             if isinstance(time_range, (int, float)):
                 time_range_int = int(time_range)
@@ -880,7 +880,7 @@ class BaseGraph(ABC):
 
     def get_time_range_days_from_config(self) -> int:
         """
-        Extract the TIME_RANGE_DAYS value from the graph's configuration.
+        Extract the daily time range value from the graph's configuration.
 
         This method implements the common pattern found across all graph classes
         for extracting the time range configuration.
@@ -894,13 +894,13 @@ class BaseGraph(ABC):
             return int(time_range)
         else:
             logger.warning(
-                f"Invalid TIME_RANGE_DAYS value: {time_range}, using default 30"
+                f"Invalid daily time range value: {time_range}, using default 30"
             )
             return 30
 
     def get_time_range_months_from_config(self) -> int:
         """
-        Extract the TIME_RANGE_MONTHS value from the graph's configuration.
+        Extract the monthly time range value from the graph's configuration.
 
         This method implements the common pattern found across some graph classes
         for extracting the monthly time range configuration.
@@ -914,7 +914,7 @@ class BaseGraph(ABC):
             return int(time_range)
         else:
             logger.warning(
-                f"Invalid TIME_RANGE_MONTHS value: {time_range}, using default 12"
+                f"Invalid monthly time range value: {time_range}, using default 12"
             )
             return 12
 
