@@ -30,6 +30,30 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def _set_nested_value(data: dict[str, object], path: str, value: object) -> None:
+    """
+    Set a nested value in a configuration dictionary using dot notation.
+    
+    Args:
+        data: Configuration dictionary to modify
+        path: Dot-separated path (e.g., "automation.scheduling.update_days")
+        value: Value to set
+    """
+    keys = path.split(".")
+    current: dict[str, object] = data
+    
+    # Navigate to the parent of the target key
+    for key in keys[:-1]:
+        if key not in current:
+            current[key] = {}
+        if not isinstance(current[key], dict):
+            current[key] = {}
+        current = current[key]  # pyright: ignore[reportAssignmentType] # We ensure it's a dict above
+    
+    # Set the final value
+    current[keys[-1]] = value
+
+
 class ConfigCog(BaseCommandCog):
     """Cog for configuration management commands."""
 
@@ -429,16 +453,16 @@ class ConfigCog(BaseCommandCog):
         try:
             # Get current configuration
             current_config = self.tgraph_bot.config_manager.get_current_config()
+            config_accessor = ConfigAccessor(current_config)
 
-            # Validate that the setting exists
-            if not hasattr(current_config, key):
+            # Validate that the nested path exists and get current value
+            try:
+                current_value: object = config_accessor.get_nested_value(key)
+            except ConfigurationError:
                 raise TGraphValidationError(
                     f"Configuration setting '{key}' does not exist",
                     user_message=f"Configuration setting `{key}` does not exist. Use `/config view` to see all available settings.",
-                )
-
-            # Get the current value and type
-            current_value: object = getattr(current_config, key)  # pyright: ignore[reportAny]
+                ) from None
 
             # Convert the string value to the appropriate type
             try:
@@ -449,9 +473,9 @@ class ConfigCog(BaseCommandCog):
                     user_message=f"Invalid value for `{key}`: {e}. Current value: {current_value!r} (type: {type(current_value).__name__})",
                 )
 
-            # Create updated configuration data
+            # Create updated configuration data with nested path
             config_data = current_config.model_dump()
-            config_data[key] = converted_value
+            _set_nested_value(config_data, key, converted_value)
 
             # Validate the new configuration
             try:

@@ -9,7 +9,7 @@ from src.tgraph_bot.config.schema import TGraphBotConfig
 
 
 class TestGraphDimensionConfiguration:
-    """Test cases for GRAPH_WIDTH, GRAPH_HEIGHT, and GRAPH_DPI configuration fields."""
+    """Test cases for graphs.appearance.dimensions configuration fields (width, height, dpi)."""
 
     def test_graph_dimensions_default_values(self) -> None:
         """Test that graph dimension fields have correct default values."""
@@ -62,7 +62,7 @@ class TestGraphDimensionConfiguration:
         assert config.graphs.appearance.dimensions.dpi == 150
 
     def test_graph_width_validation_minimum(self) -> None:
-        """Test that GRAPH_WIDTH validates minimum value."""
+        """Test that graphs.appearance.dimensions.width validates minimum value."""
         config_data = {
             "services": {
                 "tautulli": {
@@ -90,7 +90,7 @@ class TestGraphDimensionConfiguration:
         assert any(error["loc"] == ("graphs", "appearance", "dimensions", "width") for error in errors)
 
     def test_graph_width_validation_maximum(self) -> None:
-        """Test that GRAPH_WIDTH validates maximum value."""
+        """Test that graphs.appearance.dimensions.width validates maximum value."""
         config_data = {
             "services": {
                 "tautulli": {
@@ -118,7 +118,7 @@ class TestGraphDimensionConfiguration:
         assert any(error["loc"] == ("graphs", "appearance", "dimensions", "width") for error in errors)
 
     def test_graph_height_validation_minimum(self) -> None:
-        """Test that GRAPH_HEIGHT validates minimum value."""
+        """Test that graphs.appearance.dimensions.height validates minimum value."""
         config_data = {
             "services": {
                 "tautulli": {
@@ -146,7 +146,7 @@ class TestGraphDimensionConfiguration:
         assert any(error["loc"] == ("graphs", "appearance", "dimensions", "height") for error in errors)
 
     def test_graph_height_validation_maximum(self) -> None:
-        """Test that GRAPH_HEIGHT validates maximum value."""
+        """Test that graphs.appearance.dimensions.height validates maximum value."""
         config_data = {
             "services": {
                 "tautulli": {

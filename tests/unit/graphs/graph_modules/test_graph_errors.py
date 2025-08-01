@@ -156,14 +156,14 @@ class TestGraphConfigurationError:
 
         error = GraphConfigurationError(
             "Technical config error",
-            config_key="GRAPH_WIDTH",
+            config_key="graphs.appearance.dimensions.width",
             config_value="invalid",
             expected_type="int",
         )
 
         mock_translate.assert_called_once()
         assert error.user_message == "Config key error message"
-        assert error.config_key == "GRAPH_WIDTH"
+        assert error.config_key == "graphs.appearance.dimensions.width"
         assert error.config_value == "invalid"
         assert error.expected_type == "int"
 

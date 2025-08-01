@@ -23,7 +23,7 @@ Usage Examples:
     Configuration error:
         >>> raise GraphConfigurationError(
         ...     "Missing required graph dimension configuration",
-        ...     config_key="GRAPH_WIDTH",
+        ...     config_key="graphs.appearance.dimensions.width",
         ...     graph_type="daily_play_count"
         ... )
 

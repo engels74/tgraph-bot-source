@@ -115,7 +115,7 @@ class SchedulerTestCog(BaseCommandCog):
         _ = embed.add_field(
             name=i18n.translate("What This Tests"),
             value=i18n.translate(
-                "• UPDATE_DAYS configuration\n• FIXED_UPDATE_TIME configuration\n• Complete graph generation workflow\n• Error handling and retry logic\n• Scheduler state updates"
+                "• automation.scheduling.update_days configuration\n• automation.scheduling.fixed_update_time configuration\n• Complete graph generation workflow\n• Error handling and retry logic\n• Scheduler state updates"
             ),
             inline=False,
         )
@@ -187,7 +187,7 @@ class SchedulerTestCog(BaseCommandCog):
             _ = success_embed.add_field(
                 name=i18n.translate("Test Results"),
                 value=i18n.translate(
-                    "✅ UPDATE_DAYS interval calculation working\n✅ FIXED_UPDATE_TIME scheduling working\n✅ Graph generation and posting successful\n✅ Scheduler state updated correctly"
+                    "✅ automation.scheduling.update_days interval calculation working\n✅ automation.scheduling.fixed_update_time scheduling working\n✅ Graph generation and posting successful\n✅ Scheduler state updated correctly"
                 ),
                 inline=False,
             )

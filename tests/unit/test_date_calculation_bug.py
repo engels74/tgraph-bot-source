@@ -1,9 +1,9 @@
 """
-Test for date calculation bug fix with UPDATE_DAYS=1.
+Test for date calculation bug fix with automation.scheduling.update_days=1.
 
 This module contains comprehensive tests that reproduce and verify the fix
 for the bug where both last_update and next_update timestamps are set to
-the same date when UPDATE_DAYS=1 on first launch.
+the same date when automation.scheduling.update_days=1 on first launch.
 
 Following TDD principles:
 1. Write failing tests that demonstrate the bug
@@ -18,21 +18,21 @@ from src.tgraph_bot.utils.time.timezone import get_system_timezone
 
 
 class TestDateCalculationBugFix:
-    """Test cases for the date calculation bug with UPDATE_DAYS=1."""
+    """Test cases for the date calculation bug with automation.scheduling.update_days=1."""
 
     def test_first_run_update_days_1_should_schedule_next_day(self) -> None:
         """
-        Test that first run with UPDATE_DAYS=1 schedules for next day.
+        Test that first run with automation.scheduling.update_days=1 schedules for next day.
 
         This test reproduces the exact bug scenario:
-        - UPDATE_DAYS=1 (daily updates)
+        - automation.scheduling.update_days=1 (daily updates)
         - Fixed time scheduling (23:59)
         - No last_update (first launch)
         - Current time before the fixed time
 
         Expected: next_update should be 1 day later, not same day.
         """
-        # Scenario: Bot starts at 22:20, fixed time is 23:59, UPDATE_DAYS=1
+        # Scenario: Bot starts at 22:20, fixed time is 23:59, automation.scheduling.update_days=1
         current_time = datetime(2025, 7, 25, 22, 20, 12, tzinfo=get_system_timezone())
         fixed_time = time(23, 59)
         update_days = 1
@@ -53,7 +53,7 @@ class TestDateCalculationBugFix:
         assert next_update.time() == fixed_time
 
     def test_first_run_update_days_1_different_times(self) -> None:
-        """Test first run UPDATE_DAYS=1 with different current times."""
+        """Test first run automation.scheduling.update_days=1 with different current times."""
         test_cases = [
             # (current_hour, fixed_hour, fixed_minute)
             (1, 23, 59),  # Very early morning, late evening fixed time
@@ -74,7 +74,7 @@ class TestDateCalculationBugFix:
                 current_time, fixed_time, update_days, last_update
             )
 
-            # Should always be scheduled for next day with UPDATE_DAYS=1
+            # Should always be scheduled for next day with automation.scheduling.update_days=1
             expected_date = current_time.date() + timedelta(days=1)
             expected_next_update = datetime.combine(expected_date, fixed_time).replace(
                 tzinfo=get_system_timezone()
@@ -86,7 +86,7 @@ class TestDateCalculationBugFix:
             )
 
     def test_first_run_update_days_multiple_should_respect_interval(self) -> None:
-        """Test first run with UPDATE_DAYS > 1 respects the interval."""
+        """Test first run with automation.scheduling.update_days > 1 respects the interval."""
         test_cases = [2, 3, 7, 14]  # Different update intervals
 
         for update_days in test_cases:

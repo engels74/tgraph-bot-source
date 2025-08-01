@@ -255,7 +255,7 @@ class TimestampCalculator:
         else:
             # No last update - calculate from current time
             if update_days == 1:
-                # For UPDATE_DAYS=1, always schedule for next day to respect the interval
+                # For automation.scheduling.update_days=1, always schedule for next day to respect the interval
                 next_date = current_time.date() + timedelta(days=1)
                 next_update = datetime.combine(next_date, fixed_time)
 
@@ -267,7 +267,7 @@ class TimestampCalculator:
 
                 return next_update
             else:
-                # For UPDATE_DAYS > 1, ensure we respect the minimum interval from current time
+                # For automation.scheduling.update_days > 1, ensure we respect the minimum interval from current time
                 min_next_update = current_time + timedelta(days=update_days)
 
                 # Find the next occurrence of fixed time on or after the minimum date

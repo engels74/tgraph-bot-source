@@ -53,7 +53,7 @@ manager = create_config_manager_with_config(config)
 ```python
 from tests.utils.test_helpers import create_temp_config_file
 
-with create_temp_config_file({"DISCORD_TOKEN": "test"}) as config_path:
+with create_temp_config_file({"services": {"discord": {"token": "test"}}}) as config_path:
     # Use config_path for testing
     pass
 ```

@@ -166,7 +166,7 @@ class TestConfigCog:
             _ = await config_cog.config_edit.callback(  # pyright: ignore[reportUnknownVariableType]
                 config_cog,
                 mock_interaction,
-                key="UPDATE_DAYS",  # pyright: ignore[reportCallIssue]
+                key="automation.scheduling.update_days",  # pyright: ignore[reportCallIssue]
                 value="not_a_number",
             )
 
@@ -181,14 +181,14 @@ class TestConfigCog:
             command_name="config_edit", user_id=123456, username="TestUser"
         )
 
-        # Try to set UPDATE_DAYS to an invalid value (outside range)
+        # Try to set automation.scheduling.update_days to an invalid value (outside range)
         with patch(
             "src.tgraph_bot.utils.command_utils.safe_interaction_response"
         ) as mock_safe_response:
             _ = await config_cog.config_edit.callback(  # pyright: ignore[reportUnknownVariableType]
                 config_cog,
                 mock_interaction,
-                key="UPDATE_DAYS",  # pyright: ignore[reportCallIssue]
+                key="automation.scheduling.update_days",  # pyright: ignore[reportCallIssue]
                 value="999",
             )
 
@@ -215,7 +215,7 @@ class TestConfigCog:
             _ = await config_cog.config_edit.callback(  # pyright: ignore[reportUnknownVariableType]
                 config_cog,
                 mock_interaction,
-                key="UPDATE_DAYS",  # pyright: ignore[reportCallIssue]
+                key="automation.scheduling.update_days",  # pyright: ignore[reportCallIssue]
                 value="14",
             )
 
@@ -226,7 +226,7 @@ class TestConfigCog:
     async def test_config_edit_success(
         self, config_cog: ConfigCog, base_config: TGraphBotConfig
     ) -> None:
-        """Test configuration editing with nested structure - should fail for old flat keys."""
+        """Test configuration editing with nested structure - should succeed for nested keys."""
         # Create mock interaction using standardized utility
         mock_interaction = create_mock_interaction(
             command_name="config_edit", user_id=123456, username="TestUser"
@@ -249,20 +249,25 @@ class TestConfigCog:
                 patch(
                     "src.tgraph_bot.config.manager.ConfigManager.save_config"
                 ) as mock_save,
+                patch.object(
+                    config_cog.tgraph_bot.config_manager, 
+                    "update_runtime_config"
+                ) as mock_update_runtime,
             ):
-                # The config command currently doesn't support nested structure properly
-                # So it should fail with a validation error for old flat keys like UPDATE_DAYS
+                # The config command now supports nested structure properly
+                # So it should succeed with valid nested keys
                 _ = await config_cog.config_edit.callback(  # pyright: ignore[reportUnknownVariableType]
                     config_cog,
                     mock_interaction,
-                    key="UPDATE_DAYS",  # pyright: ignore[reportCallIssue]
+                    key="automation.scheduling.update_days",  # pyright: ignore[reportCallIssue]
                     value="14",
                 )
 
-                # Verify save was NOT called since the key doesn't exist as a flat attribute
-                mock_save.assert_not_called()
+                # Verify save was called since the nested key exists and is valid
+                mock_save.assert_called_once()
+                mock_update_runtime.assert_called_once()
 
-                # Verify error response was sent
+                # Verify success response was sent
                 mock_interaction.response.send_message.assert_called_once()  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
 
     @pytest.mark.asyncio
@@ -293,7 +298,7 @@ class TestConfigCog:
                 _ = await config_cog.config_edit.callback(  # pyright: ignore[reportUnknownVariableType]
                     config_cog,
                     mock_interaction,
-                    key="UPDATE_DAYS",  # pyright: ignore[reportCallIssue]
+                    key="automation.scheduling.update_days",  # pyright: ignore[reportCallIssue]
                     value="14",
                 )
 
