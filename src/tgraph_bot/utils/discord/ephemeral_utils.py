@@ -18,9 +18,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-# Default timeout for ephemeral message deletion (60 seconds)
-# Note: This is kept for backward compatibility but config value takes precedence
-DEFAULT_EPHEMERAL_DELETION_TIMEOUT: float = 60.0
 
 
 def get_ephemeral_delete_timeout(config: "TGraphBotConfig | None" = None) -> float:
@@ -35,7 +32,7 @@ def get_ephemeral_delete_timeout(config: "TGraphBotConfig | None" = None) -> flo
     """
     if config is not None:
         return config.services.discord.ephemeral_message_delete_after
-    return DEFAULT_EPHEMERAL_DELETION_TIMEOUT
+    return 60.0
 
 
 async def _delete_message_after(

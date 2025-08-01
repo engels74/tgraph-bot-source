@@ -13,13 +13,10 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from src.tgraph_bot.bot.update_tracker import (
-    UpdateTracker,
-    ScheduleState,
-    SchedulingConfig,
-    StateManager,
-    RecoveryManager,
-)
+from src.tgraph_bot.bot.update_tracker import UpdateTracker
+from src.tgraph_bot.bot.scheduling.types import ScheduleState, SchedulingConfig
+from src.tgraph_bot.bot.scheduling.persistence import StateManager
+from src.tgraph_bot.bot.scheduling.recovery import RecoveryManager
 
 
 class TestStateManager:

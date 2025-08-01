@@ -20,7 +20,6 @@ from .scheduling import (
     ErrorMetrics,
     SchedulingConfig,
     ScheduleState,
-    MissedUpdate,
     ErrorClassifier,
     CircuitBreaker,
     BackgroundTaskManager,
@@ -842,23 +841,6 @@ class UpdateTracker:
         return result
 
 
-# Re-export types for backward compatibility
-# TODO: Remove these after updating all test imports
 __all__ = [
     "UpdateTracker",
-    # Re-exported types for backward compatibility
-    "TaskStatus",
-    "ErrorType",
-    "CircuitState",
-    "RetryConfig",
-    "ErrorMetrics",
-    "SchedulingConfig",
-    "ScheduleState",
-    "MissedUpdate",
-    "ErrorClassifier",
-    "CircuitBreaker",
-    "BackgroundTaskManager",
-    "UpdateSchedule",
-    "StateManager",
-    "RecoveryManager",
 ]

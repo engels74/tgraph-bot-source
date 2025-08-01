@@ -9,11 +9,9 @@ import asyncio
 import pytest
 from unittest.mock import MagicMock
 
-from src.tgraph_bot.bot.update_tracker import (
-    BackgroundTaskManager,
-    TaskStatus,
-    UpdateTracker,
-)
+from src.tgraph_bot.bot.update_tracker import UpdateTracker
+from src.tgraph_bot.bot.scheduling.task_manager import BackgroundTaskManager
+from src.tgraph_bot.bot.scheduling.types import TaskStatus
 from tgraph_bot.utils.time import get_system_now
 
 

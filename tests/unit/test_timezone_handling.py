@@ -15,14 +15,11 @@ from zoneinfo import ZoneInfo
 import discord
 import pytest
 
-from tgraph_bot.bot.update_tracker import (
-    BackgroundTaskManager,
-    ScheduleState,
-    StateManager,
-    RecoveryManager,
-    SchedulingConfig,
-    UpdateTracker,
-)
+from tgraph_bot.bot.update_tracker import UpdateTracker
+from tgraph_bot.bot.scheduling.task_manager import BackgroundTaskManager
+from tgraph_bot.bot.scheduling.types import ScheduleState, SchedulingConfig
+from tgraph_bot.bot.scheduling.persistence import StateManager
+from tgraph_bot.bot.scheduling.recovery import RecoveryManager
 from tgraph_bot.utils.discord.discord_file_utils import (
     calculate_next_update_time,
     format_next_update_timestamp,
@@ -232,7 +229,7 @@ class TestTimezoneHandling:
 
     def test_error_metrics_use_timezone_aware_datetimes(self) -> None:
         """Test that ErrorMetrics uses timezone-aware datetimes for all timestamp fields."""
-        from tgraph_bot.bot.update_tracker import ErrorMetrics, ErrorType
+        from tgraph_bot.bot.scheduling.types import ErrorMetrics, ErrorType
 
         with patch("discord.utils.utcnow") as mock_utcnow:
             base_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)

@@ -16,12 +16,10 @@ from datetime import datetime, timedelta
 from unittest.mock import AsyncMock
 from pathlib import Path
 
-from src.tgraph_bot.bot.update_tracker import (
-    UpdateTracker,
-    SchedulingConfig,
-    ScheduleState,
-    StateManager,
-)
+from src.tgraph_bot.bot.update_tracker import UpdateTracker
+from src.tgraph_bot.bot.scheduling.types import SchedulingConfig, ScheduleState
+from src.tgraph_bot.bot.scheduling.persistence import StateManager
+from src.tgraph_bot.bot.scheduling.schedule import UpdateSchedule
 from src.tgraph_bot.utils.time import get_system_timezone
 from tests.utils.test_helpers import create_mock_discord_bot
 
@@ -82,7 +80,6 @@ class TestNextUpdateBugFix:
         update_tracker._state = state  # pyright: ignore[reportPrivateUsage]
 
         # Create the schedule object
-        from src.tgraph_bot.bot.update_tracker import UpdateSchedule
 
         update_tracker._schedule = UpdateSchedule(config, state)  # pyright: ignore[reportPrivateUsage]
 
@@ -155,7 +152,6 @@ class TestNextUpdateBugFix:
         update_tracker._state = state  # pyright: ignore[reportPrivateUsage]
 
         # Create the schedule object
-        from src.tgraph_bot.bot.update_tracker import UpdateSchedule
 
         update_tracker._schedule = UpdateSchedule(config, state)  # pyright: ignore[reportPrivateUsage]
 
@@ -208,7 +204,6 @@ class TestNextUpdateBugFix:
         update_tracker._config = config  # pyright: ignore[reportPrivateUsage]
         update_tracker._state = state  # pyright: ignore[reportPrivateUsage]
 
-        from src.tgraph_bot.bot.update_tracker import UpdateSchedule
 
         update_tracker._schedule = UpdateSchedule(config, state)  # pyright: ignore[reportPrivateUsage]
 
@@ -261,7 +256,6 @@ class TestNextUpdateBugFix:
         update_tracker._config = config  # pyright: ignore[reportPrivateUsage]
         update_tracker._state = state  # pyright: ignore[reportPrivateUsage]
 
-        from src.tgraph_bot.bot.update_tracker import UpdateSchedule
 
         update_tracker._schedule = UpdateSchedule(config, state)  # pyright: ignore[reportPrivateUsage]
 
@@ -300,7 +294,6 @@ class TestNextUpdateBugFix:
 
         update_tracker._config = config  # pyright: ignore[reportPrivateUsage]
 
-        from src.tgraph_bot.bot.update_tracker import UpdateSchedule
 
         # Simulate 3 consecutive updates
         current_time = base_time

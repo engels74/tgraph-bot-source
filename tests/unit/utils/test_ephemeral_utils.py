@@ -261,15 +261,16 @@ class TestEphemeralUtils:
 class TestEphemeralUtilsConstants:
     """Test cases for ephemeral utilities constants and configuration."""
 
-    def test_default_deletion_timeout_constant(self) -> None:
-        """Test that the default deletion timeout constant is correctly set."""
+    def test_default_deletion_timeout_fallback(self) -> None:
+        """Test that the default deletion timeout fallback is correctly set."""
         from src.tgraph_bot.utils.discord.ephemeral_utils import (
-            DEFAULT_EPHEMERAL_DELETION_TIMEOUT,
+            get_ephemeral_delete_timeout,
         )
 
-        # Verify the default timeout is 60 seconds
-        assert DEFAULT_EPHEMERAL_DELETION_TIMEOUT == 60.0
-        assert isinstance(DEFAULT_EPHEMERAL_DELETION_TIMEOUT, float)
+        # Verify the default timeout is 60 seconds when no config is provided
+        timeout = get_ephemeral_delete_timeout(None)
+        assert timeout == 60.0
+        assert isinstance(timeout, float)
 
     def test_deletion_timeout_validation(self) -> None:
         """Test validation of deletion timeout parameter."""

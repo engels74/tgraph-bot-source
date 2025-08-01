@@ -22,17 +22,16 @@ from unittest.mock import AsyncMock
 
 from discord.ext import commands
 
-from src.tgraph_bot.bot.update_tracker import (
+from src.tgraph_bot.bot.update_tracker import UpdateTracker
+from src.tgraph_bot.bot.scheduling.types import (
     SchedulingConfig,
     ScheduleState,
-    UpdateSchedule,
-    UpdateTracker,
     RetryConfig,
     ErrorType,
-    ErrorClassifier,
-    CircuitBreaker,
     CircuitState,
 )
+from src.tgraph_bot.bot.scheduling.schedule import UpdateSchedule
+from src.tgraph_bot.bot.scheduling.error_handling import ErrorClassifier, CircuitBreaker
 from tgraph_bot.utils.time import get_system_timezone
 from tests.utils.test_helpers import create_mock_discord_bot
 

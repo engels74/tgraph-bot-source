@@ -116,20 +116,15 @@ class TestConfigCog:
         )
 
         # Mock the config manager to raise an exception
-        with (
-            patch.object(
-                config_cog.tgraph_bot.config_manager,
-                "get_current_config",
-                side_effect=RuntimeError("Test error"),
-            ),
-            patch(
-                "src.tgraph_bot.utils.command_utils.safe_interaction_response"
-            ) as mock_safe_response,
+        with patch.object(
+            config_cog.tgraph_bot.config_manager,
+            "get_current_config",
+            side_effect=RuntimeError("Test error"),
         ):
             _ = await config_cog.config_view.callback(config_cog, mock_interaction)  # pyright: ignore[reportArgumentType]
 
-        # Verify error response was sent through the new error handling system
-        mock_safe_response.assert_called_once()
+        # Verify error response was sent via interaction
+        mock_interaction.response.send_message.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_config_edit_invalid_setting(self, config_cog: ConfigCog) -> None:
@@ -139,18 +134,15 @@ class TestConfigCog:
             command_name="config_edit", user_id=123456, username="TestUser"
         )
 
-        with patch(
-            "src.tgraph_bot.utils.command_utils.safe_interaction_response"
-        ) as mock_safe_response:
-            _ = await config_cog.config_edit.callback(  # pyright: ignore[reportUnknownVariableType]
-                config_cog,
-                mock_interaction,
-                key="INVALID_SETTING",  # pyright: ignore[reportCallIssue]
-                value="value",
-            )
+        _ = await config_cog.config_edit.callback(  # pyright: ignore[reportUnknownVariableType]
+            config_cog,
+            mock_interaction,
+            key="INVALID_SETTING",  # pyright: ignore[reportCallIssue]
+            value="value",
+        )
 
-        # Verify error response was sent through the new error handling system
-        mock_safe_response.assert_called_once()
+        # Verify error response was sent via interaction
+        mock_interaction.response.send_message.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_config_edit_invalid_value(self, config_cog: ConfigCog) -> None:
@@ -160,18 +152,15 @@ class TestConfigCog:
             command_name="config_edit", user_id=123456, username="TestUser"
         )
 
-        with patch(
-            "src.tgraph_bot.utils.command_utils.safe_interaction_response"
-        ) as mock_safe_response:
-            _ = await config_cog.config_edit.callback(  # pyright: ignore[reportUnknownVariableType]
-                config_cog,
-                mock_interaction,
-                key="automation.scheduling.update_days",  # pyright: ignore[reportCallIssue]
-                value="not_a_number",
-            )
+        _ = await config_cog.config_edit.callback(  # pyright: ignore[reportUnknownVariableType]
+            config_cog,
+            mock_interaction,
+            key="automation.scheduling.update_days",  # pyright: ignore[reportCallIssue]
+            value="not_a_number",
+        )
 
-        # Verify error response was sent through the new error handling system
-        mock_safe_response.assert_called_once()
+        # Verify error response was sent via interaction
+        mock_interaction.response.send_message.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_config_edit_validation_error(self, config_cog: ConfigCog) -> None:
@@ -182,18 +171,15 @@ class TestConfigCog:
         )
 
         # Try to set automation.scheduling.update_days to an invalid value (outside range)
-        with patch(
-            "src.tgraph_bot.utils.command_utils.safe_interaction_response"
-        ) as mock_safe_response:
-            _ = await config_cog.config_edit.callback(  # pyright: ignore[reportUnknownVariableType]
-                config_cog,
-                mock_interaction,
-                key="automation.scheduling.update_days",  # pyright: ignore[reportCallIssue]
-                value="999",
-            )
+        _ = await config_cog.config_edit.callback(  # pyright: ignore[reportUnknownVariableType]
+            config_cog,
+            mock_interaction,
+            key="automation.scheduling.update_days",  # pyright: ignore[reportCallIssue]
+            value="999",
+        )
 
-        # Verify error response was sent through the new error handling system
-        mock_safe_response.assert_called_once()
+        # Verify error response was sent via interaction
+        mock_interaction.response.send_message.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_config_edit_no_config_file(self, config_cog: ConfigCog) -> None:
