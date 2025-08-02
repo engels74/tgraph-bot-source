@@ -189,7 +189,10 @@ class ConfigAccessor:
         # This prevents test/demo graphs from being enabled by default
         schema_graph_types = {
             "daily_play_count", "play_count_by_dayofweek", "play_count_by_hourofday",
-            "top_10_platforms", "top_10_users", "play_count_by_month"
+            "top_10_platforms", "top_10_users", "play_count_by_month",
+            "daily_play_count_by_stream_type", "daily_concurrent_stream_count_by_stream_type",
+            "play_count_by_source_resolution", "play_count_by_stream_resolution",
+            "play_count_by_platform_and_stream_type", "play_count_by_user_and_stream_type"
         }
 
         # Check if the value is explicitly set in the configuration
@@ -284,7 +287,13 @@ class ConfigAccessor:
             "play_count_by_hourofday",
             "play_count_by_month",
             "top_10_platforms",
-            "top_10_users"
+            "top_10_users",
+            "daily_play_count_by_stream_type",
+            "daily_concurrent_stream_count_by_stream_type",
+            "play_count_by_source_resolution",
+            "play_count_by_stream_resolution",
+            "play_count_by_platform_and_stream_type",
+            "play_count_by_user_and_stream_type"
         ]
         
         return {
