@@ -131,7 +131,7 @@ class PlayCountByStreamResolutionGraph(BaseGraph, VisualizationMixin):
 
         if not resolution_aggregates:
             self.handle_empty_data_with_message(
-                ax, "No stream resolution data available for the selected time range."
+                ax, "No stream resolution data available.\nThis may indicate:\n• Tautulli is not collecting transcoded resolution data\n• No transcoding has occurred recently\n• Stream resolution fields are not available in your Tautulli version"
             )
             return
 
@@ -208,7 +208,7 @@ class PlayCountByStreamResolutionGraph(BaseGraph, VisualizationMixin):
             ax: The matplotlib axes to plot on
         """
         self.handle_empty_data_with_message(
-            ax, "No stream resolution data available.\nThis graph requires Tautulli API data with transcoded stream resolution information."
+            ax, "No stream resolution data available.\nThis graph requires Tautulli API data with transcoded stream resolution information.\nCheck your Tautulli configuration and ensure transcoding is occurring."
         )
 
     def _format_resolution_label(self, resolution: str) -> str:
@@ -222,7 +222,7 @@ class PlayCountByStreamResolutionGraph(BaseGraph, VisualizationMixin):
             Formatted resolution label with common names and stream indicator
         """
         if resolution == "unknown" or not resolution:
-            return "Unknown (Stream)"
+            return "Unknown (No transcoded resolution data from Tautulli)"
         
         # Common resolution mappings with stream indication
         resolution_names = {

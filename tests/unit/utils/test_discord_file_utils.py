@@ -714,6 +714,66 @@ class TestCreateGraphSpecificEmbed:
         # Verify the image is set to reference the attachment
         assert embed.image.url == "attachment://play_count_by_dayofweek.png"
 
+    def test_daily_play_count_by_stream_type_embed(self) -> None:
+        """Test embed creation for daily play count by stream type graph."""
+        embed = create_graph_specific_embed("daily_play_count_by_stream_type_20240115.png")
+
+        assert embed.title == "📈 Daily Play Count by Stream Type"
+        assert embed.description is not None
+        assert "transcode decision" in embed.description
+        assert embed.color == discord.Color.blue()
+        assert embed.image.url == "attachment://daily_play_count_by_stream_type_20240115.png"
+
+    def test_daily_concurrent_stream_count_by_stream_type_embed(self) -> None:
+        """Test embed creation for daily concurrent stream count by stream type graph."""
+        embed = create_graph_specific_embed("daily_concurrent_stream_count_by_stream_type.png")
+
+        assert embed.title == "📊 Daily Concurrent Streams by Stream Type"
+        assert embed.description is not None
+        assert "peak concurrent stream counts" in embed.description
+        assert embed.color == discord.Color.blue()
+        assert embed.image.url == "attachment://daily_concurrent_stream_count_by_stream_type.png"
+
+    def test_play_count_by_source_resolution_embed(self) -> None:
+        """Test embed creation for play count by source resolution graph."""
+        embed = create_graph_specific_embed("play_count_by_source_resolution.png")
+
+        assert embed.title == "🎬 Play Count by Source Resolution"
+        assert embed.description is not None
+        assert "original file resolution" in embed.description
+        assert embed.color == discord.Color.blue()
+        assert embed.image.url == "attachment://play_count_by_source_resolution.png"
+
+    def test_play_count_by_stream_resolution_embed(self) -> None:
+        """Test embed creation for play count by stream resolution graph."""
+        embed = create_graph_specific_embed("play_count_by_stream_resolution.png")
+
+        assert embed.title == "📺 Play Count by Stream Resolution"
+        assert embed.description is not None
+        assert "transcoded output resolution" in embed.description
+        assert embed.color == discord.Color.blue()
+        assert embed.image.url == "attachment://play_count_by_stream_resolution.png"
+
+    def test_play_count_by_platform_and_stream_type_embed(self) -> None:
+        """Test embed creation for play count by platform and stream type graph."""
+        embed = create_graph_specific_embed("play_count_by_platform_and_stream_type.png")
+
+        assert embed.title == "💻 Play Count by Platform and Stream Type"
+        assert embed.description is not None
+        assert "platform usage with stream type breakdown" in embed.description
+        assert embed.color == discord.Color.blue()
+        assert embed.image.url == "attachment://play_count_by_platform_and_stream_type.png"
+
+    def test_play_count_by_user_and_stream_type_embed(self) -> None:
+        """Test embed creation for play count by user and stream type graph."""
+        embed = create_graph_specific_embed("play_count_by_user_and_stream_type.png")
+
+        assert embed.title == "👥 Play Count by User and Stream Type"
+        assert embed.description is not None
+        assert "user activity with stream type breakdown" in embed.description
+        assert embed.color == discord.Color.blue()
+        assert embed.image.url == "attachment://play_count_by_user_and_stream_type.png"
+
     def test_unknown_graph_type_embed(self) -> None:
         """Test embed creation for unknown graph types."""
         embed = create_graph_specific_embed("unknown_graph.png")

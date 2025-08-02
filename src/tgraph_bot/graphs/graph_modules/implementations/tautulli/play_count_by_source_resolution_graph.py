@@ -131,7 +131,7 @@ class PlayCountBySourceResolutionGraph(BaseGraph, VisualizationMixin):
 
         if not resolution_aggregates:
             self.handle_empty_data_with_message(
-                ax, "No source resolution data available for the selected time range."
+                ax, "No source resolution data available.\nThis may indicate:\n• Tautulli is not collecting resolution data\n• No media has been played recently\n• Resolution fields are not available in your Tautulli version"
             )
             return
 
@@ -208,7 +208,7 @@ class PlayCountBySourceResolutionGraph(BaseGraph, VisualizationMixin):
             ax: The matplotlib axes to plot on
         """
         self.handle_empty_data_with_message(
-            ax, "No source resolution data available.\nThis graph requires Tautulli API data with video resolution information."
+            ax, "No source resolution data available.\nThis graph requires Tautulli API data with video resolution information.\nCheck your Tautulli configuration and ensure media is being played."
         )
 
     def _format_resolution_label(self, resolution: str) -> str:
@@ -222,7 +222,7 @@ class PlayCountBySourceResolutionGraph(BaseGraph, VisualizationMixin):
             Formatted resolution label with common names
         """
         if resolution == "unknown" or not resolution:
-            return "Unknown"
+            return "Unknown (No resolution data from Tautulli)"
         
         # Common resolution mappings
         resolution_names = {

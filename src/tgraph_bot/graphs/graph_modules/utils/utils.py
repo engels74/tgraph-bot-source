@@ -1161,11 +1161,27 @@ def aggregate_by_resolution(
         Aggregated resolution data sorted by play count
     """
     resolution_counts = defaultdict(int)
+    unknown_count = 0
+    total_records = len(records)
     
     for record in records:
         resolution = record[resolution_field]  # type: ignore[misc]
         if resolution and resolution != "unknown":
             resolution_counts[resolution] += 1
+        else:
+            unknown_count += 1
+    
+    # Log statistics to help with debugging
+    logger.info(f"Resolution aggregation for field '{resolution_field}': " +
+               f"{len(resolution_counts)} unique resolutions, " +
+               f"{unknown_count} unknown values out of {total_records} total records")
+    
+    # If we have no valid resolutions but have unknown values, include them
+    # This helps identify when Tautulli API is not providing resolution data
+    if not resolution_counts and unknown_count > 0:
+        logger.warning(f"No valid {resolution_field} data found, all {unknown_count} records have unknown resolution. " +
+                      f"This may indicate missing resolution data in Tautulli API response.")
+        resolution_counts["unknown"] = unknown_count
     
     # Convert to aggregate records and sort by play count
     aggregates: ResolutionAggregates = []

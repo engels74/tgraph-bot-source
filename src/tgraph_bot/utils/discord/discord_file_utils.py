@@ -112,6 +112,18 @@ def create_graph_specific_embed(
                 "Shows the number of plays per day over the selected time period."
             ),
         },
+        "daily_play_count_by_stream_type": {
+            "title": translate("📈 Daily Play Count by Stream Type"),
+            "description": translate(
+                "Shows daily play counts separated by transcode decision (direct play, transcode, copy)."
+            ),
+        },
+        "daily_concurrent_stream_count_by_stream_type": {
+            "title": translate("📊 Daily Concurrent Streams by Stream Type"),
+            "description": translate(
+                "Shows peak concurrent stream counts per day separated by transcode decision."
+            ),
+        },
         "play_count_by_dayofweek": {
             "title": translate("📊 Play Count by Day of Week"),
             "description": translate(
@@ -127,6 +139,30 @@ def create_graph_specific_embed(
         "play_count_by_month": {
             "title": translate("📅 Play Count by Month"),
             "description": translate("Monthly play activity trends over time."),
+        },
+        "play_count_by_source_resolution": {
+            "title": translate("🎬 Play Count by Source Resolution"),
+            "description": translate(
+                "Shows play counts by original file resolution, helping identify content quality preferences."
+            ),
+        },
+        "play_count_by_stream_resolution": {
+            "title": translate("📺 Play Count by Stream Resolution"),
+            "description": translate(
+                "Shows play counts by transcoded output resolution, revealing delivery quality patterns."
+            ),
+        },
+        "play_count_by_platform_and_stream_type": {
+            "title": translate("💻 Play Count by Platform and Stream Type"),
+            "description": translate(
+                "Shows platform usage with stream type breakdown, revealing how different platforms handle transcoding."
+            ),
+        },
+        "play_count_by_user_and_stream_type": {
+            "title": translate("👥 Play Count by User and Stream Type"),
+            "description": translate(
+                "Shows user activity with stream type breakdown, helping identify transcoding patterns per user."
+            ),
         },
         "top_10_platforms": {
             "title": translate("💻 Top 10 Platforms"),
