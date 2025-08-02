@@ -32,6 +32,13 @@ class ProcessedPlayRecord(TypedDict):
     stopped: int
     paused_counter: int
     datetime: datetime
+    # Stream type fields for new graph types
+    transcode_decision: str  # direct play, copy, transcode
+    video_resolution: str  # source resolution (e.g., "1920x1080")
+    stream_video_resolution: str  # transcoded output resolution
+    video_codec: str  # video codec (h264, hevc, etc.)
+    audio_codec: str  # audio codec (aac, ac3, dts, etc.)
+    container: str  # file container format (mp4, mkv, etc.)
 
 
 class UserAggregateRecord(TypedDict):
@@ -57,15 +64,44 @@ class MediaTypeAggregateRecord(TypedDict):
     color: str
 
 
+class StreamTypeAggregateRecord(TypedDict):
+    """Structure for aggregated stream type data."""
+
+    stream_type: str  # direct play, copy, transcode
+    display_name: str
+    play_count: int
+    color: str
+
+
+class ResolutionAggregateRecord(TypedDict):
+    """Structure for aggregated resolution data."""
+
+    resolution: str  # e.g., "1920x1080", "3840x2160"
+    play_count: int
+
+
+class ConcurrentStreamRecord(TypedDict):
+    """Structure for concurrent stream count data."""
+
+    date: str
+    peak_concurrent: int
+    stream_type_breakdown: dict[str, int]  # concurrent count per stream type
+
+
 # Type aliases for common data structures
 GraphData = dict[str, int] | dict[int, int] | list[dict[str, object]]
 ProcessedRecords = list[ProcessedPlayRecord]
 UserAggregates = list[UserAggregateRecord]
 PlatformAggregates = list[PlatformAggregateRecord]
 MediaTypeAggregates = list[MediaTypeAggregateRecord]
+StreamTypeAggregates = list[StreamTypeAggregateRecord]
+ResolutionAggregates = list[ResolutionAggregateRecord]
+ConcurrentStreamAggregates = list[ConcurrentStreamRecord]
 SeparatedGraphData = dict[str, dict[str, int]]
 SeparatedUserAggregates = dict[str, UserAggregates]
 SeparatedPlatformAggregates = dict[str, PlatformAggregates]
+SeparatedStreamTypeAggregates = dict[str, StreamTypeAggregates]
+SeparatedResolutionAggregates = dict[str, ResolutionAggregates]
 
 logger = logging.getLogger(__name__)
 
@@ -436,6 +472,14 @@ def process_play_history_data(raw_data: Mapping[str, object]) -> ProcessedRecord
             duration_value = safe_get_nested_value(record, ["duration"], 0)  # pyright: ignore[reportUnknownArgumentType]
             stopped_value = safe_get_nested_value(record, ["stopped"], 0)  # pyright: ignore[reportUnknownArgumentType]
             paused_counter_value = safe_get_nested_value(record, ["paused_counter"], 0)  # pyright: ignore[reportUnknownArgumentType]
+            
+            # Extract stream type fields (for new stream type graphs)
+            transcode_decision_value = safe_get_nested_value(record, ["transcode_decision"], "unknown")  # pyright: ignore[reportUnknownArgumentType]
+            video_resolution_value = safe_get_nested_value(record, ["video_resolution"], "unknown")  # pyright: ignore[reportUnknownArgumentType]
+            stream_video_resolution_value = safe_get_nested_value(record, ["stream_video_resolution"], "unknown")  # pyright: ignore[reportUnknownArgumentType]
+            video_codec_value = safe_get_nested_value(record, ["video_codec"], "unknown")  # pyright: ignore[reportUnknownArgumentType]
+            audio_codec_value = safe_get_nested_value(record, ["audio_codec"], "unknown")  # pyright: ignore[reportUnknownArgumentType]
+            container_value = safe_get_nested_value(record, ["container"], "unknown")  # pyright: ignore[reportUnknownArgumentType]
 
             # Convert timestamps to datetime objects if they're valid
             if date_value:
@@ -473,6 +517,13 @@ def process_play_history_data(raw_data: Mapping[str, object]) -> ProcessedRecord
                 if isinstance(paused_counter_value, (int, float))
                 else 0,
                 "datetime": datetime_obj,
+                # Stream type fields for new graph functionality
+                "transcode_decision": str(transcode_decision_value),
+                "video_resolution": str(video_resolution_value),
+                "stream_video_resolution": str(stream_video_resolution_value),
+                "video_codec": str(video_codec_value),
+                "audio_codec": str(audio_codec_value),
+                "container": str(container_value),
             }
 
             # Add to processed records
@@ -1017,3 +1068,342 @@ def apply_modern_seaborn_styling() -> None:
             "legend.framealpha": 0.9,
         }
     )
+
+
+# Stream Type Aggregation Functions
+# ==================================
+
+
+def aggregate_by_stream_type(
+    records: ProcessedRecords, use_separated_visualization: bool = False
+) -> StreamTypeAggregates | SeparatedStreamTypeAggregates:
+    """
+    Aggregate play records by stream type (transcode decision).
+    
+    Args:
+        records: List of processed play history records
+        use_separated_visualization: Whether to separate by media type
+        
+    Returns:
+        Aggregated stream type data, optionally separated by media type
+    """
+    if use_separated_visualization:
+        separated_data: SeparatedStreamTypeAggregates = {
+            "tv": [],
+            "movie": []
+        }
+        
+        # Count by media type and stream type
+        stream_type_counts = {
+            "tv": defaultdict(int),
+            "movie": defaultdict(int)
+        }
+        
+        for record in records:
+            media_type = record["media_type"]
+            stream_type = record["transcode_decision"]
+            
+            if media_type in stream_type_counts:
+                stream_type_counts[media_type][stream_type] += 1
+        
+        # Convert to aggregate records format
+        for media_type, stream_counts in stream_type_counts.items():
+            aggregates: StreamTypeAggregates = []
+            for stream_type, count in stream_counts.items():
+                display_name = _get_stream_type_display_name(stream_type)
+                color = _get_stream_type_color(stream_type)
+                
+                aggregates.append(StreamTypeAggregateRecord(
+                    stream_type=stream_type,
+                    display_name=display_name,
+                    play_count=count,
+                    color=color
+                ))
+            
+            separated_data[media_type] = aggregates
+        
+        return separated_data
+    else:
+        # Simple aggregation without media type separation
+        stream_type_counts = defaultdict(int)
+        
+        for record in records:
+            stream_type = record["transcode_decision"]
+            stream_type_counts[stream_type] += 1
+        
+        aggregates: StreamTypeAggregates = []
+        for stream_type, count in stream_type_counts.items():
+            display_name = _get_stream_type_display_name(stream_type)
+            color = _get_stream_type_color(stream_type)
+            
+            aggregates.append(StreamTypeAggregateRecord(
+                stream_type=stream_type,
+                display_name=display_name,
+                play_count=count,
+                color=color
+            ))
+        
+        return aggregates
+
+
+def aggregate_by_resolution(
+    records: ProcessedRecords, resolution_field: str = "video_resolution"
+) -> ResolutionAggregates:
+    """
+    Aggregate play records by resolution.
+    
+    Args:
+        records: List of processed play history records
+        resolution_field: Field to use for resolution ("video_resolution" for source, 
+                         "stream_video_resolution" for transcoded output)
+        
+    Returns:
+        Aggregated resolution data sorted by play count
+    """
+    resolution_counts = defaultdict(int)
+    
+    for record in records:
+        resolution = record[resolution_field]  # type: ignore[misc]
+        if resolution and resolution != "unknown":
+            resolution_counts[resolution] += 1
+    
+    # Convert to aggregate records and sort by play count
+    aggregates: ResolutionAggregates = []
+    for resolution, count in resolution_counts.items():
+        aggregates.append(ResolutionAggregateRecord(
+            resolution=resolution,
+            play_count=count
+        ))
+    
+    # Sort by play count (descending)
+    aggregates.sort(key=lambda x: x["play_count"], reverse=True)
+    
+    return aggregates
+
+
+def aggregate_by_platform_and_stream_type(
+    records: ProcessedRecords, limit: int = 10
+) -> dict[str, StreamTypeAggregates]:
+    """
+    Aggregate play records by platform with stream type breakdown.
+    
+    Args:
+        records: List of processed play history records
+        limit: Maximum number of platforms to include
+        
+    Returns:
+        Dictionary mapping platform names to stream type aggregates
+    """
+    # First count total plays per platform to determine top platforms
+    platform_totals: dict[str, int] = defaultdict(int)
+    for record in records:
+        platform_totals[record["platform"]] += 1
+    
+    # Get top platforms
+    top_platforms = sorted(platform_totals.items(), key=lambda x: x[1], reverse=True)[:limit]
+    top_platform_names = {platform for platform, _ in top_platforms}
+    
+    # Count stream types for each top platform
+    platform_stream_counts: dict[str, dict[str, int]] = {}
+    for platform in top_platform_names:
+        platform_stream_counts[platform] = defaultdict(int)
+    
+    for record in records:
+        platform = record["platform"]
+        if platform in top_platform_names:
+            stream_type = record["transcode_decision"]
+            platform_stream_counts[platform][stream_type] += 1
+    
+    # Convert to aggregate format
+    result: dict[str, StreamTypeAggregates] = {}
+    for platform, stream_counts in platform_stream_counts.items():
+        aggregates: StreamTypeAggregates = []
+        for stream_type, count in stream_counts.items():
+            display_name = _get_stream_type_display_name(stream_type)
+            color = _get_stream_type_color(stream_type)
+            
+            aggregates.append(StreamTypeAggregateRecord(
+                stream_type=stream_type,
+                display_name=display_name,
+                play_count=count,
+                color=color
+            ))
+        
+        result[platform] = aggregates
+    
+    return result
+
+
+def aggregate_by_user_and_stream_type(
+    records: ProcessedRecords, limit: int = 10
+) -> dict[str, StreamTypeAggregates]:
+    """
+    Aggregate play records by user with stream type breakdown.
+    
+    Args:
+        records: List of processed play history records
+        limit: Maximum number of users to include
+        
+    Returns:
+        Dictionary mapping usernames to stream type aggregates
+    """
+    # First count total plays per user to determine top users
+    user_totals: dict[str, int] = defaultdict(int)
+    for record in records:
+        user_totals[record["user"]] += 1
+    
+    # Get top users
+    top_users = sorted(user_totals.items(), key=lambda x: x[1], reverse=True)[:limit]
+    top_user_names = {user for user, _ in top_users}
+    
+    # Count stream types for each top user
+    user_stream_counts: dict[str, dict[str, int]] = {}
+    for user in top_user_names:
+        user_stream_counts[user] = defaultdict(int)
+    
+    for record in records:
+        user = record["user"]
+        if user in top_user_names:
+            stream_type = record["transcode_decision"]
+            user_stream_counts[user][stream_type] += 1
+    
+    # Convert to aggregate format
+    result: dict[str, StreamTypeAggregates] = {}
+    for user, stream_counts in user_stream_counts.items():
+        aggregates: StreamTypeAggregates = []
+        for stream_type, count in stream_counts.items():
+            display_name = _get_stream_type_display_name(stream_type)
+            color = _get_stream_type_color(stream_type)
+            
+            aggregates.append(StreamTypeAggregateRecord(
+                stream_type=stream_type,
+                display_name=display_name,
+                play_count=count,
+                color=color
+            ))
+        
+        result[user] = aggregates
+    
+    return result
+
+
+def calculate_concurrent_streams_by_date(
+    records: ProcessedRecords, separate_by_stream_type: bool = True
+) -> ConcurrentStreamAggregates:
+    """
+    Calculate peak concurrent streams per date.
+    
+    Args:
+        records: List of processed play history records
+        separate_by_stream_type: Whether to track concurrent streams by stream type
+        
+    Returns:
+        List of concurrent stream records per date
+    """
+    from datetime import timedelta
+    
+    # Group records by date
+    records_by_date: dict[str, list[ProcessedPlayRecord]] = defaultdict(list)
+    for record in records:
+        date_key = record["datetime"].strftime("%Y-%m-%d")
+        records_by_date[date_key].append(record)
+    
+    concurrent_aggregates: ConcurrentStreamAggregates = []
+    
+    for date_str, day_records in records_by_date.items():
+        # Create list of stream events (start and end times)
+        stream_events: list[tuple[datetime, str, str]] = []  # (time, event_type, stream_type)
+        
+        for record in day_records:
+            start_time = record["datetime"]
+            end_time = start_time + timedelta(seconds=record["duration"])
+            stream_type = record["transcode_decision"]
+            
+            stream_events.append((start_time, "start", stream_type))
+            stream_events.append((end_time, "end", stream_type))
+        
+        # Sort events by time
+        stream_events.sort(key=lambda x: x[0])
+        
+        # Calculate peak concurrent streams
+        current_concurrent = 0
+        peak_concurrent = 0
+        stream_type_concurrent: dict[str, int] = defaultdict(int)
+        peak_stream_type_breakdown: dict[str, int] = defaultdict(int)
+        
+        for _, event_type, stream_type in stream_events:
+            if event_type == "start":
+                current_concurrent += 1
+                stream_type_concurrent[stream_type] += 1
+            else:
+                current_concurrent -= 1
+                stream_type_concurrent[stream_type] -= 1
+            
+            # Track peak
+            if current_concurrent > peak_concurrent:
+                peak_concurrent = current_concurrent
+                peak_stream_type_breakdown = dict(stream_type_concurrent)
+        
+        concurrent_aggregates.append(ConcurrentStreamRecord(
+            date=date_str,
+            peak_concurrent=peak_concurrent,
+            stream_type_breakdown=peak_stream_type_breakdown
+        ))
+    
+    # Sort by date
+    concurrent_aggregates.sort(key=lambda x: x["date"])
+    
+    return concurrent_aggregates
+
+
+# Helper functions for stream type display and styling
+# ===================================================
+
+
+def _get_stream_type_display_name(stream_type: str) -> str:
+    """Get user-friendly display name for stream type."""
+    display_names = {
+        "direct play": "Direct Play",
+        "copy": "Direct Stream", 
+        "transcode": "Transcode",
+        "unknown": "Unknown"
+    }
+    return display_names.get(stream_type.lower(), stream_type.title())
+
+
+def _get_stream_type_color(stream_type: str) -> str:
+    """Get color for stream type visualization."""
+    colors = {
+        "direct play": "#2ca02c",  # Green - most efficient
+        "copy": "#ff7f0e",         # Orange - moderate
+        "transcode": "#d62728",    # Red - most resource intensive
+        "unknown": "#7f7f7f"       # Gray - unknown
+    }
+    return colors.get(stream_type.lower(), "#1f77b4")  # Default blue
+
+
+def get_stream_type_display_info() -> dict[str, dict[str, str]]:
+    """
+    Get comprehensive display information for stream types.
+    
+    Returns:
+        Dictionary mapping stream types to display info (name and color)
+    """
+    return {
+        "direct play": {
+            "display_name": "Direct Play",
+            "color": "#2ca02c"
+        },
+        "copy": {
+            "display_name": "Direct Stream", 
+            "color": "#ff7f0e"
+        },
+        "transcode": {
+            "display_name": "Transcode",
+            "color": "#d62728"
+        },
+        "unknown": {
+            "display_name": "Unknown",
+            "color": "#7f7f7f"
+        }
+    }

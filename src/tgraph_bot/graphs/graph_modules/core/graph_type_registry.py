@@ -52,6 +52,12 @@ class GraphTypeRegistry:
         from ..implementations.tautulli.daily_play_count_graph import (
             DailyPlayCountGraph,
         )
+        from ..implementations.tautulli.daily_play_count_by_stream_type_graph import (
+            DailyPlayCountByStreamTypeGraph,
+        )
+        from ..implementations.tautulli.daily_concurrent_stream_count_by_stream_type_graph import (
+            DailyConcurrentStreamCountByStreamTypeGraph,
+        )
         from ..implementations.tautulli.play_count_by_dayofweek_graph import (
             PlayCountByDayOfWeekGraph,
         )
@@ -60,6 +66,18 @@ class GraphTypeRegistry:
         )
         from ..implementations.tautulli.play_count_by_month_graph import (
             PlayCountByMonthGraph,
+        )
+        from ..implementations.tautulli.play_count_by_platform_and_stream_type_graph import (
+            PlayCountByPlatformAndStreamTypeGraph,
+        )
+        from ..implementations.tautulli.play_count_by_source_resolution_graph import (
+            PlayCountBySourceResolutionGraph,
+        )
+        from ..implementations.tautulli.play_count_by_stream_resolution_graph import (
+            PlayCountByStreamResolutionGraph,
+        )
+        from ..implementations.tautulli.play_count_by_user_and_stream_type_graph import (
+            PlayCountByUserAndStreamTypeGraph,
         )
         from ..implementations.tautulli.top_10_platforms_graph import (
             Top10PlatformsGraph,
@@ -107,6 +125,49 @@ class GraphTypeRegistry:
             graph_class=Top10UsersGraph,
             default_enabled=True,
             description="Top 10 users graph",
+        )
+
+        # Register stream type graphs
+        self._register_graph_type(
+            type_name="daily_play_count_by_stream_type",
+            graph_class=DailyPlayCountByStreamTypeGraph,
+            default_enabled=True,
+            description="Daily play count by stream type (direct play, copy, transcode)",
+        )
+
+        self._register_graph_type(
+            type_name="daily_concurrent_stream_count_by_stream_type",
+            graph_class=DailyConcurrentStreamCountByStreamTypeGraph,
+            default_enabled=True,
+            description="Daily concurrent stream count by stream type",
+        )
+
+        self._register_graph_type(
+            type_name="play_count_by_source_resolution",
+            graph_class=PlayCountBySourceResolutionGraph,
+            default_enabled=True,
+            description="Play count by source resolution (original file resolution)",
+        )
+
+        self._register_graph_type(
+            type_name="play_count_by_stream_resolution",
+            graph_class=PlayCountByStreamResolutionGraph,
+            default_enabled=True,
+            description="Play count by stream resolution (transcoded output resolution)",
+        )
+
+        self._register_graph_type(
+            type_name="play_count_by_platform_and_stream_type",
+            graph_class=PlayCountByPlatformAndStreamTypeGraph,
+            default_enabled=True,
+            description="Play count by platform with stream type breakdown",
+        )
+
+        self._register_graph_type(
+            type_name="play_count_by_user_and_stream_type",
+            graph_class=PlayCountByUserAndStreamTypeGraph,
+            default_enabled=True,
+            description="Play count by user with stream type breakdown",
         )
 
         self._register_graph_type(
