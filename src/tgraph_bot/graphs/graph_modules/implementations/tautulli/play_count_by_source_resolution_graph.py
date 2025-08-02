@@ -86,8 +86,40 @@ class PlayCountBySourceResolutionGraph(BaseGraph, VisualizationMixin):
         logger.info("Generating play count by source resolution graph")
 
         try:
-            # Step 1: Extract and process play history data using enhanced DataProcessor
-            _, processed_records = data_processor.extract_and_process_play_history_enhanced(data)
+            # Step 1: Extract and process play history data with resolution metadata lookup
+            import asyncio
+            
+            # Use run_until_complete to handle both cases (existing loop or not)
+            try:
+                # Try to get existing loop
+                loop = asyncio.get_running_loop()
+                # Create a new task in the existing loop
+                task = loop.create_task(
+                    data_processor.extract_and_process_play_history_with_resolution(data)
+                )
+                # For sync context, we need to create a new thread to run this
+                import concurrent.futures
+                import threading
+                
+                def run_in_new_loop():
+                    new_loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(new_loop)
+                    try:
+                        return new_loop.run_until_complete(
+                            data_processor.extract_and_process_play_history_with_resolution(data)
+                        )
+                    finally:
+                        new_loop.close()
+                
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    future = executor.submit(run_in_new_loop)
+                    _, processed_records = future.result()
+                    
+            except RuntimeError:
+                # No event loop running, we can use asyncio.run
+                _, processed_records = asyncio.run(
+                    data_processor.extract_and_process_play_history_with_resolution(data)
+                )
 
             # Step 2: Setup figure with styling using combined utility
             _, ax = self.setup_figure_with_styling()

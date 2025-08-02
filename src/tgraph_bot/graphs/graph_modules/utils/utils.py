@@ -606,6 +606,26 @@ def process_play_history_data_enhanced(raw_data: Mapping[str, object]) -> Proces
 
     processed_records: ProcessedRecords = []
 
+    # Debug: Log the fields available in the first record to understand the API structure
+    if history_data and isinstance(history_data, list) and len(history_data) > 0:
+        first_record = history_data[0]
+        if isinstance(first_record, dict):
+            available_fields = list(first_record.keys())
+            logger.debug(f"Available fields in Tautulli API response: {available_fields}")
+            
+            # Log resolution-related fields specifically
+            resolution_fields = [f for f in available_fields if 'resolution' in f.lower() or 'width' in f.lower() or 'height' in f.lower()]
+            logger.info(f"Resolution-related fields found: {resolution_fields}")
+            
+            # Log a sample of the first few field values for debugging
+            sample_fields = ['video_resolution', 'stream_video_resolution', 'width', 'height', 
+                           'stream_video_width', 'stream_video_height', 'transcode_width', 'transcode_height']
+            sample_values = {}
+            for field in sample_fields:
+                if field in first_record:
+                    sample_values[field] = first_record[field]
+            logger.info(f"Sample resolution field values: {sample_values}")
+
     for record in history_data:  # pyright: ignore[reportUnknownVariableType]
         if not isinstance(record, dict):
             logger.warning("Skipping invalid record: not a dictionary")
