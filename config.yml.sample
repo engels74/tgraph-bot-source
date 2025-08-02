@@ -134,28 +134,27 @@ graphs:
   # This provides finer control than the global settings above
   per_graph:
     daily_play_count:
-      media_type_separation: true         # Separate Movies/TV in daily activity graph
-      stacked_bar_charts: true           # Use stacked bars (line graph - color separation only)
+      media_type_separation: true         # Separate Movies/TV as different colored lines
     
     play_count_by_dayofweek:
       media_type_separation: true         # Separate Movies/TV in day-of-week graph
-      stacked_bar_charts: true           # Use stacked bars vs side-by-side
+      stacked_bar_charts: true           # Use stacked bars vs side-by-side grouped bars
     
     play_count_by_hourofday:
       media_type_separation: true         # Separate Movies/TV in hour-of-day graph
-      stacked_bar_charts: true           # Use stacked bars vs side-by-side
+      stacked_bar_charts: true           # Use stacked bars vs side-by-side grouped bars
     
     top_10_platforms:
       media_type_separation: true         # Separate Movies/TV in platforms graph
-      stacked_bar_charts: true           # Use stacked bars vs side-by-side
+      stacked_bar_charts: true           # Use stacked bars vs side-by-side grouped bars
     
     top_10_users:
       media_type_separation: true         # Separate Movies/TV in users graph
-      stacked_bar_charts: true           # Use stacked bars vs side-by-side
+      stacked_bar_charts: true           # Use stacked bars vs side-by-side grouped bars
     
     play_count_by_month:
       media_type_separation: true         # Separate Movies/TV in monthly graph
-      stacked_bar_charts: true           # Use stacked bars vs side-by-side
+      stacked_bar_charts: true           # Use stacked bars vs side-by-side grouped bars
 
   # Visual Styling
   # --------------
