@@ -86,8 +86,8 @@ class PlayCountBySourceResolutionGraph(BaseGraph, VisualizationMixin):
         logger.info("Generating play count by source resolution graph")
 
         try:
-            # Step 1: Extract and process play history data using DataProcessor
-            _, processed_records = data_processor.extract_and_process_play_history(data)
+            # Step 1: Extract and process play history data using enhanced DataProcessor
+            _, processed_records = data_processor.extract_and_process_play_history_enhanced(data)
 
             # Step 2: Setup figure with styling using combined utility
             _, ax = self.setup_figure_with_styling()

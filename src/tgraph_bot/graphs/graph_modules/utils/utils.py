@@ -539,6 +539,160 @@ def process_play_history_data(raw_data: Mapping[str, object]) -> ProcessedRecord
     return processed_records
 
 
+def _extract_resolution_with_fallback(
+    record: dict[str, object], 
+    resolution_field: str, 
+    width_field: str, 
+    height_field: str
+) -> str:
+    """
+    Extract resolution from a record with fallback to width/height combination.
+    
+    Args:
+        record: The play history record dictionary
+        resolution_field: Primary resolution field name (e.g., "video_resolution")
+        width_field: Fallback width field name (e.g., "width")
+        height_field: Fallback height field name (e.g., "height")
+        
+    Returns:
+        Resolution string (e.g., "1920x1080") or "unknown" if not available
+    """
+    # Try primary resolution field first
+    resolution_value = safe_get_nested_value(record, [resolution_field], "unknown")
+    if resolution_value and str(resolution_value) != "unknown":
+        return str(resolution_value)
+    
+    # Fallback to width/height combination
+    width_value = safe_get_nested_value(record, [width_field], None)
+    height_value = safe_get_nested_value(record, [height_field], None)
+    
+    # Validate width and height values
+    try:
+        if width_value is not None and height_value is not None:
+            width = int(width_value) if isinstance(width_value, (int, float, str)) else None
+            height = int(height_value) if isinstance(height_value, (int, float, str)) else None
+            
+            # Check for valid dimensions (must be positive integers)
+            if width and height and width > 0 and height > 0:
+                return f"{width}x{height}"
+    except (ValueError, TypeError):
+        # Invalid width/height values, fallback to unknown
+        pass
+    
+    return "unknown"
+
+
+def process_play_history_data_enhanced(raw_data: Mapping[str, object]) -> ProcessedRecords:
+    """
+    Enhanced version of process_play_history_data with resolution field fallback logic.
+    
+    This function provides fallback support for resolution fields by attempting to
+    combine width/height fields when the primary resolution fields are not available.
+    
+    Args:
+        raw_data: Raw data from Tautulli API
+        
+    Returns:
+        List of processed play history records with enhanced resolution handling
+        
+    Raises:
+        ValueError: If data format is invalid
+    """
+    # Extract the actual data from the API response
+    history_data = safe_get_nested_value(raw_data, ["data"], [])
+
+    if not isinstance(history_data, list):
+        raise ValueError("Play history data must be a list")
+
+    processed_records: ProcessedRecords = []
+
+    for record in history_data:  # pyright: ignore[reportUnknownVariableType]
+        if not isinstance(record, dict):
+            logger.warning("Skipping invalid record: not a dictionary")
+            continue
+
+        try:
+            # Extract and validate required fields with proper type conversion
+            date_value = safe_get_nested_value(record, ["date"], "")  # pyright: ignore[reportUnknownArgumentType]
+            user_value = safe_get_nested_value(record, ["user"], "")  # pyright: ignore[reportUnknownArgumentType]
+            platform_value = safe_get_nested_value(record, ["platform"], "")  # pyright: ignore[reportUnknownArgumentType]
+            media_type_value = safe_get_nested_value(record, ["media_type"], "")  # pyright: ignore[reportUnknownArgumentType]
+            duration_value = safe_get_nested_value(record, ["duration"], 0)  # pyright: ignore[reportUnknownArgumentType]
+            stopped_value = safe_get_nested_value(record, ["stopped"], 0)  # pyright: ignore[reportUnknownArgumentType]
+            paused_counter_value = safe_get_nested_value(record, ["paused_counter"], 0)  # pyright: ignore[reportUnknownArgumentType]
+            
+            # Extract stream type fields
+            transcode_decision_value = safe_get_nested_value(record, ["transcode_decision"], "unknown")  # pyright: ignore[reportUnknownArgumentType]
+            video_codec_value = safe_get_nested_value(record, ["video_codec"], "unknown")  # pyright: ignore[reportUnknownArgumentType]
+            audio_codec_value = safe_get_nested_value(record, ["audio_codec"], "unknown")  # pyright: ignore[reportUnknownArgumentType]
+            container_value = safe_get_nested_value(record, ["container"], "unknown")  # pyright: ignore[reportUnknownArgumentType]
+            
+            # Enhanced resolution extraction with fallback logic
+            video_resolution_value = _extract_resolution_with_fallback(
+                record, "video_resolution", "width", "height"
+            )
+            stream_video_resolution_value = _extract_resolution_with_fallback(
+                record, "stream_video_resolution", "stream_video_width", "stream_video_height"
+            )
+
+            # Convert timestamps to datetime objects if they're valid
+            if date_value:
+                try:
+                    # Safely convert to int, handling various input types
+                    if isinstance(date_value, (int, float)):
+                        timestamp = int(date_value)
+                    elif isinstance(date_value, str):
+                        timestamp = int(date_value)
+                    else:
+                        logger.warning(f"Invalid timestamp type: {type(date_value)}")
+                        continue
+
+                    datetime_obj = datetime.fromtimestamp(timestamp)
+                except (ValueError, TypeError) as e:
+                    logger.warning(f"Invalid timestamp: {date_value}, error: {e}")
+                    continue
+            else:
+                logger.warning("Missing date in record")
+                continue
+
+            # Construct a properly typed ProcessedPlayRecord
+            processed_record: ProcessedPlayRecord = {
+                "date": str(date_value),
+                "user": str(user_value),
+                "platform": str(platform_value),
+                "media_type": str(media_type_value),
+                "duration": int(duration_value)
+                if isinstance(duration_value, (int, float))
+                else 0,
+                "stopped": int(stopped_value)
+                if isinstance(stopped_value, (int, float))
+                else 0,
+                "paused_counter": int(paused_counter_value)
+                if isinstance(paused_counter_value, (int, float))
+                else 0,
+                "datetime": datetime_obj,
+                # Enhanced stream type fields with fallback resolution logic
+                "transcode_decision": str(transcode_decision_value),
+                "video_resolution": video_resolution_value,
+                "stream_video_resolution": stream_video_resolution_value,
+                "video_codec": str(video_codec_value),
+                "audio_codec": str(audio_codec_value),
+                "container": str(container_value),
+            }
+
+            # Add to processed records
+            processed_records.append(processed_record)
+
+        except Exception as e:
+            logger.warning(f"Error processing record: {e}")
+            continue
+
+    logger.info(
+        f"Enhanced processing completed: {len(processed_records)} valid records from {len(history_data)} total"  # pyright: ignore[reportUnknownArgumentType]
+    )
+    return processed_records
+
+
 def aggregate_by_date(
     records: ProcessedRecords,
     fill_missing_dates: bool = True,

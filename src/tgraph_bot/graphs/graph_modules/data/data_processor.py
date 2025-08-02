@@ -285,6 +285,120 @@ class DataProcessor:
 
         return records, processed_records  # pyright: ignore[reportUnknownVariableType] # validated sequence return
 
+    def extract_and_process_play_history_enhanced(
+        self, data: Mapping[str, object] | PlayHistoryData
+    ) -> tuple[Sequence[Mapping[str, object]], ProcessedRecords]:
+        """
+        Enhanced version of extract_and_process_play_history with resolution field fallback logic.
+        
+        This method provides fallback support for resolution fields by attempting to
+        combine width/height fields when the primary resolution fields are not available.
+        
+        Args:
+            data: API response data or PlayHistoryData
+            
+        Returns:
+            Tuple of (raw_records, processed_records) with enhanced resolution handling
+        """
+        if hasattr(data, "data"):  # PlayHistoryData type
+            data_dict = cast(dict[str, object], data)
+            if "data" in data_dict:
+                raw_data = data_dict["data"]
+                if isinstance(raw_data, list):
+                    # Cast to list[object] after validation
+                    list_data = cast(list[object], raw_data)
+                    records = self.validate_list_data(
+                        list_data, context="play history records", min_length=0
+                    )
+                else:
+                    records = []
+            else:
+                records = []
+        else:  # Regular dict
+            data_mapping = cast(Mapping[str, object], data)
+            if "data" not in data_mapping:
+                # Check for alternative data structures that Tautulli API might return
+                possible_keys = [
+                    "response",
+                    "result",
+                    "play_history",
+                    "history",
+                    "records",
+                ]
+                found_key = None
+                for key in possible_keys:
+                    if key in data_mapping:
+                        found_key = key
+                        break
+
+                if found_key:
+                    logger.warning(f"'data' key not found, using '{found_key}' instead")
+                    raw_data = data_mapping[found_key]
+                else:
+                    # If no data is found, return empty records instead of raising an error
+                    logger.warning(
+                        "No data found in API response, returning empty records"
+                    )
+                    records = []
+                    raw_data = []
+            else:
+                raw_data = data_mapping["data"]
+
+            if raw_data and isinstance(raw_data, list):
+                # Cast to list[object] after validation
+                list_data = cast(list[object], raw_data)
+                records = self.validate_list_data(
+                    list_data, context="play history records", min_length=0
+                )
+            elif raw_data and not isinstance(raw_data, list):
+                # If raw_data is a dict, try to extract a list from it
+                if isinstance(raw_data, dict):
+                    # Try common keys that might contain the actual list data
+                    for list_key in ["data", "records", "history", "play_history"]:
+                        if list_key in raw_data:
+                            nested_data: object = raw_data[list_key]  # pyright: ignore[reportUnknownVariableType]
+                            if isinstance(nested_data, list):
+                                logger.info(
+                                    f"Found list data nested under '{list_key}' key"
+                                )
+                                list_data = cast(list[object], nested_data)
+                                records = self.validate_list_data(
+                                    list_data,
+                                    context="play history records",
+                                    min_length=0,
+                                )
+                                break
+                    else:
+                        # No valid list found in nested structure
+                        logger.warning(
+                            "No list data found in nested structure, returning empty records"
+                        )
+                        records = []
+                else:
+                    # raw_data is neither list nor dict
+                    raise ValueError(
+                        "Invalid format for data in play history extraction: expected list or dict containing list"
+                    )
+            else:
+                # Empty or None data
+                records = []
+
+        # Process raw records into properly typed ProcessedPlayRecord objects using enhanced function
+        from ..utils.utils import process_play_history_data_enhanced
+
+        # Convert records back to dict format for the utility function
+        record_dicts: list[dict[str, object]] = []
+        for record in records:  # pyright: ignore[reportUnknownVariableType] # validated sequence
+            if isinstance(record, Mapping):
+                # Cast to proper type after validation
+                record_mapping = cast(Mapping[str, object], record)
+                record_dicts.append(dict(record_mapping))
+
+        raw_data_dict: dict[str, list[dict[str, object]]] = {"data": record_dicts}
+        processed_records = process_play_history_data_enhanced(raw_data_dict)
+
+        return records, processed_records  # pyright: ignore[reportUnknownVariableType] # validated sequence return
+
     def validate_extracted_data(
         self,
         data: Mapping[str, object],
