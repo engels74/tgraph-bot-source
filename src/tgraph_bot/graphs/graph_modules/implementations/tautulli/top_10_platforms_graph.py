@@ -437,26 +437,15 @@ class Top10PlatformsGraph(BaseGraph, VisualizationMixin):
             )
 
         # Add value annotations if enabled (for total values)
-        # Use AnnotationHelper for consistent styling
-        x_data = []
-        y_data = []
-        for i, (platform_name, data) in enumerate(sorted_platforms):
-            total = data["total"]
-            if total > 0:
-                x_data.append(float(total))
-                y_data.append(float(i))
-        
-        if x_data and y_data:
-            self.annotation_helper.annotate_line_points(
-                ax=ax,
-                config_key="graphs.appearance.annotations.enabled_on.top_10_platforms",
-                x_data=x_data,
-                y_data=y_data,
-                ha="left",
-                va="center",
-                offset_x=3,
-                fontweight="bold",
-            )
+        # Use AnnotationHelper for consistent styling with proper horizontal bar positioning
+        self.annotation_helper.annotate_horizontal_bar_patches(
+            ax=ax,
+            config_key="graphs.appearance.annotations.enabled_on.top_10_platforms",
+            offset_x_ratio=0.02,  # 2% of max width for offset
+            ha="left",
+            va="center",
+            fontweight="bold",
+        )
 
         logger.info(
             f"Created stacked top 10 platforms graph with {len(platform_names)} platforms across {len(media_types)} media types"
