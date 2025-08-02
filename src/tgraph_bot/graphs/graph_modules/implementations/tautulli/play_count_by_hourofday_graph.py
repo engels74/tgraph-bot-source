@@ -379,18 +379,25 @@ class PlayCountByHourOfDayGraph(BaseGraph, VisualizationMixin):
         )
 
         # Add bar value annotations if enabled (for total values)
-        if self.get_config_value("graphs.appearance.annotations.enabled_on.play_count_by_hourofday", False):
-            for i, total_value in enumerate(bottom):  # pyright: ignore[reportAny] # numpy array element type inference limitation
-                total_int = int(total_value)  # pyright: ignore[reportAny]
-                if total_int > 0:
-                    _ = ax.annotate(  # pyright: ignore[reportUnknownMemberType] # matplotlib stubs incomplete
-                        str(total_int),
-                        (i, float(total_value)),  # pyright: ignore[reportAny]
-                        ha="center",
-                        va="bottom",
-                        fontweight="bold",
-                        xytext=(0, 1),
-                        textcoords="offset points",
-                    )
+        # Use AnnotationHelper for consistent styling
+        x_data = []
+        y_data = []
+        for i, total_value in enumerate(bottom):  # pyright: ignore[reportAny] # numpy array element type inference limitation
+            total_int = int(total_value)  # pyright: ignore[reportAny]
+            if total_int > 0:
+                x_data.append(float(i))
+                y_data.append(float(total_value))
+        
+        if x_data and y_data:
+            self.annotation_helper.annotate_line_points(
+                ax=ax,
+                config_key="graphs.appearance.annotations.enabled_on.play_count_by_hourofday",
+                x_data=x_data,
+                y_data=y_data,
+                ha="center",
+                va="bottom",
+                offset_y=1,
+                fontweight="bold",
+            )
 
         logger.info(f"Created stacked hour of day graph with {len(labels)} media types")

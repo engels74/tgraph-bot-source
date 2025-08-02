@@ -325,14 +325,31 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
             fontsize=12,
         )
 
-        # Add bar value annotations if enabled
-        self.annotation_helper.annotate_bar_patches(
-            ax=ax,
-            config_key="graphs.appearance.annotations.enabled_on.daily_play_count",
-            ha="center",
-            va="bottom",
-            offset_y=2,
-        )
+        # Add line value annotations if enabled
+        # Collect all data points from all plotted lines
+        all_x_data: list[float] = []
+        all_y_data: list[float] = []
+        
+        for media_type in media_types_plotted:
+            if media_type in separated_data:
+                media_data = separated_data[media_type]
+                counts = [media_data.get(date, 0) for date in sorted_dates]
+                x_positions = list(range(len(sorted_dates)))
+                
+                # Add data points from this line
+                all_x_data.extend(x_positions)
+                all_y_data.extend(counts)
+        
+        if all_x_data and all_y_data:
+            self.annotation_helper.annotate_line_points(
+                ax=ax,
+                config_key="graphs.appearance.annotations.enabled_on.daily_play_count",
+                x_data=all_x_data,
+                y_data=all_y_data,
+                ha="center",
+                va="bottom",
+                offset_y=2,
+            )
 
         # Add peak annotations if enabled (separate feature)
         if self.is_peak_annotations_enabled():
@@ -415,10 +432,15 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
             num_dates = len(sorted_dates)
             self._setup_aligned_date_axis(ax, sorted_dates, num_dates)
 
-            # Add bar value annotations if enabled
-            self.annotation_helper.annotate_bar_patches(
-                ax,
-                "graphs.appearance.annotations.enabled_on.daily_play_count",
+            # Add line value annotations if enabled
+            x_positions = list(range(len(sorted_dates)))
+            self.annotation_helper.annotate_line_points(
+                ax=ax,
+                config_key="graphs.appearance.annotations.enabled_on.daily_play_count",
+                x_data=x_positions,
+                y_data=sorted_counts,
+                ha="center",
+                va="bottom",
                 offset_y=2,
             )
 

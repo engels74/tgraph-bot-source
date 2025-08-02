@@ -330,3 +330,157 @@ class TestAnnotationHelper:
         # Should log warning
         mock_logger.warning.assert_called_once()
         assert "Failed to annotate bar patches" in str(mock_logger.warning.call_args)
+
+    def test_annotate_line_points_disabled(self) -> None:
+        """Test line points annotation when disabled in config."""
+        self.mock_graph.config_values["TEST_ANNOTATION"] = False
+        
+        x_data = [0, 1, 2, 3]
+        y_data = [10, 20, 15, 25]
+
+        with patch.object(self.helper, "_add_text_annotation") as mock_add_text:
+            self.helper.annotate_line_points(
+                self.mock_ax, "TEST_ANNOTATION", x_data, y_data
+            )
+
+            # Should not call _add_text_annotation when disabled
+            mock_add_text.assert_not_called()
+
+    def test_annotate_line_points_enabled_valid_data(self) -> None:
+        """Test line points annotation with valid data."""
+        self.mock_graph.config_values["TEST_ANNOTATION"] = True
+        
+        x_data = [0, 1, 2, 3]
+        y_data = [10, 20, 15, 25]
+
+        with patch.object(self.helper, "_add_text_annotation") as mock_add_text:
+            self.helper.annotate_line_points(
+                self.mock_ax, "TEST_ANNOTATION", x_data, y_data, offset_y=3.0
+            )
+
+            # Should call _add_text_annotation for each data point
+            assert mock_add_text.call_count == 4
+            
+            # Check the first call
+            first_call = mock_add_text.call_args_list[0]
+            args, kwargs = first_call
+            assert len(args) == 1  # Only ax as positional arg
+            assert kwargs["x"] == 0.0  # x position
+            assert kwargs["y"] == 10.0  # y position
+            assert kwargs["value"] == 10  # value
+            assert kwargs["offset_y"] == 3.0
+
+    def test_annotate_line_points_with_threshold(self) -> None:
+        """Test line points annotation with minimum value threshold."""
+        self.mock_graph.config_values["TEST_ANNOTATION"] = True
+        
+        x_data = [0, 1, 2, 3]
+        y_data = [1, 20, 5, 25]  # First and third values below threshold
+
+        with patch.object(self.helper, "_add_text_annotation") as mock_add_text:
+            self.helper.annotate_line_points(
+                self.mock_ax, "TEST_ANNOTATION", x_data, y_data, 
+                min_value_threshold=10.0
+            )
+
+            # Should only annotate values above threshold (20 and 25)
+            assert mock_add_text.call_count == 2
+            
+            # Check that only values > 10 were annotated
+            call_values = [call[1]["value"] for call in mock_add_text.call_args_list]
+            assert call_values == [20, 25]
+
+    def test_annotate_line_points_mismatched_data_length(self) -> None:
+        """Test line points annotation with mismatched x and y data lengths."""
+        self.mock_graph.config_values["TEST_ANNOTATION"] = True
+        
+        x_data = [0, 1, 2]
+        y_data = [10, 20]  # Different length
+
+        with patch.object(self.helper, "_add_text_annotation") as mock_add_text:
+            with patch("src.tgraph_bot.graphs.graph_modules.utils.annotation_helper.logger") as mock_logger:
+                self.helper.annotate_line_points(
+                    self.mock_ax, "TEST_ANNOTATION", x_data, y_data
+                )
+
+                # Should not call _add_text_annotation and log warning
+                mock_add_text.assert_not_called()
+                mock_logger.warning.assert_called_once()
+
+    def test_annotate_line_points_with_zero_values(self) -> None:
+        """Test line points annotation with zero values."""
+        self.mock_graph.config_values["TEST_ANNOTATION"] = True
+        
+        x_data = [0, 1, 2, 3]
+        y_data = [0, 20, 0, 25]  # Include zero values
+
+        with patch.object(self.helper, "_add_text_annotation") as mock_add_text:
+            self.helper.annotate_line_points(
+                self.mock_ax, "TEST_ANNOTATION", x_data, y_data
+            )
+
+            # Should only annotate non-zero values (20 and 25)
+            assert mock_add_text.call_count == 2
+            
+            # Check that only non-zero values were annotated
+            call_values = [call[1]["value"] for call in mock_add_text.call_args_list]
+            assert call_values == [20, 25]
+
+    def test_annotate_line_points_float_conversion(self) -> None:
+        """Test line points annotation with float values that should be converted to integers."""
+        self.mock_graph.config_values["TEST_ANNOTATION"] = True
+        
+        x_data = [0, 1, 2]
+        y_data = [10.0, 20.5, 15.0]  # Mix of integer floats and decimal floats
+
+        with patch.object(self.helper, "_add_text_annotation") as mock_add_text:
+            self.helper.annotate_line_points(
+                self.mock_ax, "TEST_ANNOTATION", x_data, y_data
+            )
+
+            # Should convert integer floats to int, keep decimal floats as-is
+            assert mock_add_text.call_count == 3
+            
+            call_values = [call[1]["value"] for call in mock_add_text.call_args_list]
+            assert call_values == [10, 20.5, 15]  # 10.0 -> 10, 15.0 -> 15
+
+    @patch("src.tgraph_bot.graphs.graph_modules.utils.annotation_helper.logger")
+    def test_annotate_line_points_error_handling(self, mock_logger: Mock) -> None:
+        """Test error handling in annotate_line_points method."""
+        self.mock_graph.config_values["TEST_ANNOTATION"] = True
+        
+        x_data = [0, 1, 2]
+        y_data = [10, 20, 15]
+
+        # Mock _add_text_annotation to raise an exception
+        with patch.object(self.helper, "_add_text_annotation", side_effect=Exception("Test error")):
+            self.helper.annotate_line_points(
+                self.mock_ax, "TEST_ANNOTATION", x_data, y_data
+            )
+
+            # Should log warning
+            mock_logger.warning.assert_called_once()
+            assert "Failed to annotate line points" in str(mock_logger.warning.call_args)
+
+    def test_annotate_line_points_with_offset_x(self) -> None:
+        """Test line points annotation with x-offset for horizontal annotations."""
+        self.mock_graph.config_values["TEST_ANNOTATION"] = True
+        
+        x_data = [10, 20, 30]
+        y_data = [1, 2, 3]  # Horizontal bar chart style coordinates (non-zero)
+
+        with patch.object(self.helper, "_add_text_annotation") as mock_add_text:
+            self.helper.annotate_line_points(
+                self.mock_ax, "TEST_ANNOTATION", x_data, y_data, 
+                offset_x=5.0, ha="left", va="center"
+            )
+
+            # Should call _add_text_annotation with correct offset_x
+            assert mock_add_text.call_count == 3
+            
+            # Check the first call has offset_x
+            first_call = mock_add_text.call_args_list[0]
+            _, kwargs = first_call
+            assert kwargs["offset_x"] == 5.0
+            assert kwargs["ha"] == "left"
+            assert kwargs["va"] == "center"

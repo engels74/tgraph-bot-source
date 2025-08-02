@@ -320,6 +320,65 @@ class AnnotationHelper:
         except Exception as e:
             logger.warning(f"Failed to add peak annotation: {e}")
 
+    def annotate_line_points(
+        self,
+        ax: Axes,
+        config_key: str,
+        x_data: "Sequence[float]",
+        y_data: "Sequence[float]",
+        offset_y: float = 2.0,
+        offset_x: float = 0.0,
+        ha: str = "center",
+        va: str = "bottom",
+        fontweight: str = "normal",
+        min_value_threshold: float = 0.0,
+    ) -> None:
+        """
+        Annotate line graph data points with their values.
+
+        This method handles annotation of line graphs where data points are represented
+        by x,y coordinates rather than bar patches.
+
+        Args:
+            ax: Matplotlib axes containing line graph
+            config_key: Configuration key to check if annotations are enabled
+            x_data: X-coordinates of the data points
+            y_data: Y-coordinates of the data points (values to annotate)
+            offset_y: Y-offset for annotation positioning
+            offset_x: X-offset for annotation positioning
+            ha: Horizontal alignment for text
+            va: Vertical alignment for text
+            fontweight: Font weight for text
+            min_value_threshold: Minimum value to annotate (skip smaller values)
+        """
+        annotate_enabled = self.graph.get_config_value(config_key, False)
+        if not annotate_enabled:
+            return
+
+        try:
+            # Ensure both sequences have the same length
+            if len(x_data) != len(y_data):
+                logger.warning("x_data and y_data must have the same length for line annotation")
+                return
+
+            # Annotate each data point
+            for x, y in zip(x_data, y_data):
+                # Skip values below threshold
+                if y and y > min_value_threshold:
+                    self._add_text_annotation(
+                        ax,
+                        x=float(x),
+                        y=float(y),
+                        value=int(y) if isinstance(y, float) and y.is_integer() else y,
+                        ha=ha,
+                        va=va,
+                        offset_x=offset_x,
+                        offset_y=offset_y,
+                        fontweight=fontweight,
+                    )
+        except Exception as e:
+            logger.warning(f"Failed to annotate line points: {e}")
+
     def _add_text_annotation(
         self,
         ax: Axes,
