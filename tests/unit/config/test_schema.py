@@ -476,3 +476,103 @@ class TestTGraphBotConfig:
             error["loc"] == ("services", "discord", "ephemeral_message_delete_after")
             for error in errors
         )
+
+    def test_per_graph_settings_configuration(self) -> None:
+        """Test per-graph settings configuration structure."""
+        config_data = {
+            "services": {
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {
+                    "token": "test_discord_token",
+                    "channel_id": 123456789012345678,
+                },
+            },
+            "graphs": {
+                "per_graph": {
+                    "daily_play_count": {
+                        "media_type_separation": True,
+                        "stacked_bar_charts": False,
+                    },
+                    "play_count_by_dayofweek": {
+                        "media_type_separation": False,
+                        "stacked_bar_charts": True,
+                    },
+                },
+            },
+        }
+        config = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
+
+        # Test per-graph settings are accessible
+        assert config.graphs.per_graph.daily_play_count.media_type_separation is True
+        assert config.graphs.per_graph.daily_play_count.stacked_bar_charts is False
+        assert config.graphs.per_graph.play_count_by_dayofweek.media_type_separation is False
+        assert config.graphs.per_graph.play_count_by_dayofweek.stacked_bar_charts is True
+
+    def test_per_graph_settings_defaults(self) -> None:
+        """Test that per-graph settings use proper defaults when not specified."""
+        config_data = {
+            "services": {
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {
+                    "token": "test_discord_token",
+                    "channel_id": 123456789012345678,
+                },
+            },
+        }
+        config = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
+
+        # Test default values for per-graph settings
+        assert config.graphs.per_graph.daily_play_count.media_type_separation is True
+        assert config.graphs.per_graph.daily_play_count.stacked_bar_charts is True
+        assert config.graphs.per_graph.play_count_by_dayofweek.media_type_separation is True
+        assert config.graphs.per_graph.play_count_by_dayofweek.stacked_bar_charts is True
+        assert config.graphs.per_graph.play_count_by_hourofday.media_type_separation is True
+        assert config.graphs.per_graph.play_count_by_hourofday.stacked_bar_charts is True
+        assert config.graphs.per_graph.top_10_platforms.media_type_separation is True
+        assert config.graphs.per_graph.top_10_platforms.stacked_bar_charts is True
+        assert config.graphs.per_graph.top_10_users.media_type_separation is True
+        assert config.graphs.per_graph.top_10_users.stacked_bar_charts is True
+        assert config.graphs.per_graph.play_count_by_month.media_type_separation is True
+        assert config.graphs.per_graph.play_count_by_month.stacked_bar_charts is True
+
+    def test_per_graph_partial_configuration(self) -> None:
+        """Test per-graph configuration with only some graphs specified."""
+        config_data = {
+            "services": {
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {
+                    "token": "test_discord_token",
+                    "channel_id": 123456789012345678,
+                },
+            },
+            "graphs": {
+                "per_graph": {
+                    "daily_play_count": {
+                        "media_type_separation": False,
+                    },
+                    "top_10_users": {
+                        "stacked_bar_charts": False,
+                    },
+                },
+            },
+        }
+        config = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
+
+        # Test explicitly configured settings
+        assert config.graphs.per_graph.daily_play_count.media_type_separation is False
+        assert config.graphs.per_graph.daily_play_count.stacked_bar_charts is True  # Default
+        assert config.graphs.per_graph.top_10_users.media_type_separation is True  # Default
+        assert config.graphs.per_graph.top_10_users.stacked_bar_charts is False
+
+        # Test non-configured graphs use defaults
+        assert config.graphs.per_graph.play_count_by_dayofweek.media_type_separation is True
+        assert config.graphs.per_graph.play_count_by_dayofweek.stacked_bar_charts is True

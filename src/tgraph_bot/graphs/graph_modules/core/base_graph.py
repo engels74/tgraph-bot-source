@@ -398,6 +398,26 @@ class BaseGraph(ABC):
         grid_enabled = self.get_config_value("graphs.appearance.grid.enabled", False)
         return bool(grid_enabled)
 
+    def _get_graph_type_key(self) -> str:
+        """
+        Get the graph type key for this graph class to use in per-graph settings.
+
+        Returns:
+            Graph type key string (e.g., "daily_play_count", "top_10_users") or the class name for unknown types
+        """
+        # Mapping from class names to graph type keys
+        class_to_graph_type = {
+            "DailyPlayCountGraph": "daily_play_count",
+            "PlayCountByDayOfWeekGraph": "play_count_by_dayofweek",
+            "PlayCountByHourOfDayGraph": "play_count_by_hourofday",
+            "Top10PlatformsGraph": "top_10_platforms",
+            "Top10UsersGraph": "top_10_users",
+            "PlayCountByMonthGraph": "play_count_by_month",
+        }
+        
+        current_class = self.__class__.__name__
+        return class_to_graph_type.get(current_class, current_class.lower())  # Return class name for unknown types
+
     def get_media_type_separation_enabled(self) -> bool:
         """
         Get whether media type separation should be enabled for this graph.
@@ -405,6 +425,11 @@ class BaseGraph(ABC):
         Returns:
             True if media type separation should be enabled, False otherwise
         """
+        if self._config_accessor is not None:
+            graph_type = self._get_graph_type_key()
+            return self._config_accessor.get_per_graph_media_type_separation(graph_type)
+        
+        # Fallback to global setting for backwards compatibility
         separation_enabled = self.get_config_value("graphs.features.media_type_separation", True)
         return bool(separation_enabled)
 
@@ -415,6 +440,11 @@ class BaseGraph(ABC):
         Returns:
             True if stacked bar charts should be enabled, False otherwise
         """
+        if self._config_accessor is not None:
+            graph_type = self._get_graph_type_key()
+            return self._config_accessor.get_per_graph_stacked_bar_charts(graph_type)
+        
+        # Fallback to global setting for backwards compatibility
         stacked_enabled = self.get_config_value("graphs.features.stacked_bar_charts", False)
         return bool(stacked_enabled)
 

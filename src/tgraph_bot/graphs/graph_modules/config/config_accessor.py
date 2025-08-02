@@ -292,3 +292,61 @@ class ConfigAccessor:
             for graph_type in graph_types
         }
 
+    def get_per_graph_media_type_separation(self, graph_type: str) -> bool:
+        """
+        Get media type separation setting for a specific graph type.
+
+        Args:
+            graph_type: Graph type name (e.g., "daily_play_count", "top_10_users")
+
+        Returns:
+            True if media type separation is enabled for this graph type, False otherwise
+        """
+        # Valid graph types that have per-graph configuration
+        valid_graph_types = {
+            "daily_play_count", "play_count_by_dayofweek", "play_count_by_hourofday",
+            "top_10_platforms", "top_10_users", "play_count_by_month"
+        }
+        
+        # For valid graph types, try per-graph setting first
+        if graph_type in valid_graph_types:
+            per_graph_path = f"graphs.per_graph.{graph_type}.media_type_separation"
+            try:
+                value = self.get_nested_value(per_graph_path)
+                return bool(value)
+            except ConfigurationError:
+                pass  # Fall through to global setting
+        
+        # Fall back to global setting for unknown/test graph types
+        global_path = "graphs.features.media_type_separation"
+        return self.get_bool_value(global_path, default=True)
+
+    def get_per_graph_stacked_bar_charts(self, graph_type: str) -> bool:
+        """
+        Get stacked bar charts setting for a specific graph type.
+
+        Args:
+            graph_type: Graph type name (e.g., "daily_play_count", "top_10_users")
+
+        Returns:
+            True if stacked bar charts are enabled for this graph type, False otherwise
+        """
+        # Valid graph types that have per-graph configuration
+        valid_graph_types = {
+            "daily_play_count", "play_count_by_dayofweek", "play_count_by_hourofday",
+            "top_10_platforms", "top_10_users", "play_count_by_month"
+        }
+        
+        # For valid graph types, try per-graph setting first
+        if graph_type in valid_graph_types:
+            per_graph_path = f"graphs.per_graph.{graph_type}.stacked_bar_charts"
+            try:
+                value = self.get_nested_value(per_graph_path)
+                return bool(value)
+            except ConfigurationError:
+                pass  # Fall through to global setting
+        
+        # Fall back to global setting for unknown/test graph types
+        global_path = "graphs.features.stacked_bar_charts"
+        return self.get_bool_value(global_path, default=False)
+

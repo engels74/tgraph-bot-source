@@ -119,13 +119,43 @@ graphs:
       top_10_users: true                  # Most active users
       play_count_by_month: true           # Monthly trends over time
 
-    # Media Type Handling
-    # Whether to separate Movies and TV Shows with different colors/sections
+    # DEPRECATED: Global Media Type Settings
+    # These settings are deprecated - use per_graph settings below for finer control
+    # Whether to separate Movies and TV Shows with different colors/sections (globally)
     media_type_separation: true
 
-    # Whether to use stacked bars (vs side-by-side) when media separation is enabled
+    # Whether to use stacked bars (vs side-by-side) when media separation is enabled (globally)
     # Only affects bar chart graphs - line graphs always separate by color
     stacked_bar_charts: true
+
+  # Per-Graph Settings
+  # ------------------
+  # Configure media type separation and stacked bar charts per individual graph
+  # This provides finer control than the global settings above
+  per_graph:
+    daily_play_count:
+      media_type_separation: true         # Separate Movies/TV in daily activity graph
+      stacked_bar_charts: true           # Use stacked bars (line graph - color separation only)
+    
+    play_count_by_dayofweek:
+      media_type_separation: true         # Separate Movies/TV in day-of-week graph
+      stacked_bar_charts: true           # Use stacked bars vs side-by-side
+    
+    play_count_by_hourofday:
+      media_type_separation: true         # Separate Movies/TV in hour-of-day graph
+      stacked_bar_charts: true           # Use stacked bars vs side-by-side
+    
+    top_10_platforms:
+      media_type_separation: true         # Separate Movies/TV in platforms graph
+      stacked_bar_charts: true           # Use stacked bars vs side-by-side
+    
+    top_10_users:
+      media_type_separation: true         # Separate Movies/TV in users graph
+      stacked_bar_charts: true           # Use stacked bars vs side-by-side
+    
+    play_count_by_month:
+      media_type_separation: true         # Separate Movies/TV in monthly graph
+      stacked_bar_charts: true           # Use stacked bars vs side-by-side
 
   # Visual Styling
   # --------------

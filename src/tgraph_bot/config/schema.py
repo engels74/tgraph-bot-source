@@ -177,17 +177,41 @@ class EnabledTypesConfig(BaseModel):
     )
 
 
+class PerGraphSettingsConfig(BaseModel):
+    """Configuration for individual graph settings."""
+    
+    media_type_separation: bool = Field(
+        default=True,
+        description="Whether to separate Movies and TV Series in this graph",
+    )
+    stacked_bar_charts: bool = Field(
+        default=True,
+        description="Whether to use stacked bars when media type separation is enabled (applies to bar charts only)",
+    )
+
+
+class PerGraphConfig(BaseModel):
+    """Per-graph configuration settings."""
+    
+    daily_play_count: PerGraphSettingsConfig = Field(default_factory=PerGraphSettingsConfig)
+    play_count_by_dayofweek: PerGraphSettingsConfig = Field(default_factory=PerGraphSettingsConfig)
+    play_count_by_hourofday: PerGraphSettingsConfig = Field(default_factory=PerGraphSettingsConfig)
+    top_10_platforms: PerGraphSettingsConfig = Field(default_factory=PerGraphSettingsConfig)
+    top_10_users: PerGraphSettingsConfig = Field(default_factory=PerGraphSettingsConfig)
+    play_count_by_month: PerGraphSettingsConfig = Field(default_factory=PerGraphSettingsConfig)
+
+
 class GraphFeaturesConfig(BaseModel):
     """Graph features configuration."""
     
     enabled_types: EnabledTypesConfig = Field(default_factory=EnabledTypesConfig)
     media_type_separation: bool = Field(
         default=True,
-        description="Whether to separate Movies and TV Series in graphs",
+        description="Whether to separate Movies and TV Series in graphs (deprecated - use per_graph settings)",
     )
     stacked_bar_charts: bool = Field(
         default=True,
-        description="Whether to use stacked bars when media type separation is enabled (applies to bar charts only)",
+        description="Whether to use stacked bars when media type separation is enabled (deprecated - use per_graph settings)",
     )
 
 
@@ -381,6 +405,7 @@ class GraphsConfig(BaseModel):
     
     features: GraphFeaturesConfig = Field(default_factory=GraphFeaturesConfig)
     appearance: GraphAppearanceConfig = Field(default_factory=GraphAppearanceConfig)
+    per_graph: PerGraphConfig = Field(default_factory=PerGraphConfig)
 
 
 class CommandCooldownConfig(BaseModel):

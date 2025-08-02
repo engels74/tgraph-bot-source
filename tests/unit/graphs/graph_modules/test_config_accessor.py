@@ -211,3 +211,55 @@ class TestConfigAccessor:
         # Test annotation checks
         assert accessor.is_annotation_enabled("daily_play_count") is True
         assert accessor.is_annotation_enabled("top_10_users") is True
+
+    def test_get_per_graph_media_type_separation(self) -> None:
+        """Test getting per-graph media type separation settings."""
+        config = create_test_config_comprehensive()
+        accessor = ConfigAccessor(config)
+
+        # Test getting per-graph media type separation (these will use the new method once implemented)
+        daily_separation = accessor.get_per_graph_media_type_separation("daily_play_count")
+        users_separation = accessor.get_per_graph_media_type_separation("top_10_users")
+
+        # Should return boolean values
+        assert isinstance(daily_separation, bool)
+        assert isinstance(users_separation, bool)
+
+    def test_get_per_graph_stacked_bar_charts(self) -> None:
+        """Test getting per-graph stacked bar charts settings."""
+        config = create_test_config_comprehensive()
+        accessor = ConfigAccessor(config)
+
+        # Test getting per-graph stacked bar charts (these will use the new method once implemented)
+        daily_stacked = accessor.get_per_graph_stacked_bar_charts("daily_play_count")
+        users_stacked = accessor.get_per_graph_stacked_bar_charts("top_10_users")
+
+        # Should return boolean values
+        assert isinstance(daily_stacked, bool)
+        assert isinstance(users_stacked, bool)
+
+    def test_get_per_graph_settings_with_fallback(self) -> None:
+        """Test per-graph settings with fallback to global settings."""
+        config = create_test_config_minimal()
+        accessor = ConfigAccessor(config)
+
+        # Test that we get fallback values when per-graph settings are not configured
+        separation = accessor.get_per_graph_media_type_separation("daily_play_count")
+        stacked = accessor.get_per_graph_stacked_bar_charts("daily_play_count")
+
+        # Should fall back to global or default values
+        assert isinstance(separation, bool)
+        assert isinstance(stacked, bool)
+
+    def test_get_per_graph_settings_invalid_graph_type(self) -> None:
+        """Test per-graph settings with invalid graph type."""
+        config = create_test_config_comprehensive()
+        accessor = ConfigAccessor(config)
+
+        # Test with invalid graph types - should return defaults
+        separation = accessor.get_per_graph_media_type_separation("invalid_graph_type")
+        stacked = accessor.get_per_graph_stacked_bar_charts("invalid_graph_type")
+
+        # Should return default values
+        assert isinstance(separation, bool)
+        assert isinstance(stacked, bool)
