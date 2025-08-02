@@ -118,6 +118,15 @@ graphs:
       top_10_platforms: true              # Most used streaming platforms/players
       top_10_users: true                  # Most active users
       play_count_by_month: true           # Monthly trends over time
+      
+      # Stream Type Graphs
+      # These graphs analyze transcoding behavior and server resource usage
+      daily_play_count_by_stream_type: true              # Daily activity by stream type (direct play, copy, transcode)
+      daily_concurrent_stream_count_by_stream_type: true  # Peak concurrent streams by stream type
+      play_count_by_source_resolution: true              # Activity by original file resolution
+      play_count_by_stream_resolution: true              # Activity by transcoded output resolution
+      play_count_by_platform_and_stream_type: true       # Platforms with stream type breakdown
+      play_count_by_user_and_stream_type: true           # Users with stream type breakdown
 
     # DEPRECATED: Global Media Type Settings
     # These settings are deprecated - use per_graph settings below for finer control
@@ -155,6 +164,38 @@ graphs:
     play_count_by_month:
       media_type_separation: true         # Separate Movies/TV in monthly graph
       stacked_bar_charts: true           # Use stacked bars vs side-by-side grouped bars
+    
+    # Stream Type Graphs Configuration
+    # --------------------------------
+    # Fine-grained control for stream type analysis graphs
+    
+    daily_play_count_by_stream_type:
+      stream_type_separation: true        # Show separate lines for direct play, copy, transcode
+      show_totals_line: false            # Include a combined total line alongside stream types
+    
+    daily_concurrent_stream_count_by_stream_type:
+      stream_type_separation: true        # Show separate lines for different stream types
+      peak_highlighting: true            # Highlight peak concurrent usage periods
+    
+    play_count_by_source_resolution:
+      resolution_grouping: 'standard'     # How to group resolutions: 'standard', 'detailed', 'simplified'
+      # standard: 4K, 1440p, 1080p, 720p, etc.
+      # detailed: Show exact resolutions (1920x1080, 3840x2160, etc.)
+      # simplified: Group into SD, HD, FHD, UHD categories
+    
+    play_count_by_stream_resolution:
+      resolution_grouping: 'standard'     # Same options as source resolution
+      transcoding_focus: true            # Emphasize transcoded vs non-transcoded content
+    
+    play_count_by_platform_and_stream_type:
+      platform_limit: 10                 # Maximum number of platforms to show (3-20)
+      stacked_bar_charts: true           # Use stacked bars for stream type breakdown
+      platform_grouping: true           # Group similar platform names (e.g., "Plex for Android" -> "Android")
+    
+    play_count_by_user_and_stream_type:
+      user_limit: 10                     # Maximum number of users to show (3-20)
+      stacked_bar_charts: true           # Use stacked bars for stream type breakdown
+      privacy_mode: 'auto'               # Privacy handling: 'auto' (uses global setting), 'always', 'never'
 
   # Visual Styling
   # --------------
@@ -196,6 +237,14 @@ graphs:
         top_10_platforms: true
         top_10_users: true
         play_count_by_month: true
+        
+        # Stream Type Graphs
+        daily_play_count_by_stream_type: true
+        daily_concurrent_stream_count_by_stream_type: true
+        play_count_by_source_resolution: true
+        play_count_by_stream_resolution: true
+        play_count_by_platform_and_stream_type: true
+        play_count_by_user_and_stream_type: true
 
       # Peak Highlights
       # Special highlighting for peak values (highest bars/points)
@@ -221,6 +270,14 @@ graphs:
       play_count_by_dayofweek: ''          # Palette for day of week graph
       top_10_platforms: ''                 # Palette for top platforms graph
       play_count_by_month: ''              # Palette for monthly activity graph
+      
+      # Stream Type Graphs
+      daily_play_count_by_stream_type: ''               # Palette for daily stream type activity
+      daily_concurrent_stream_count_by_stream_type: ''  # Palette for concurrent stream counts
+      play_count_by_source_resolution: 'plasma'        # Palette for source resolution analysis
+      play_count_by_stream_resolution: 'inferno'       # Palette for stream resolution analysis
+      play_count_by_platform_and_stream_type: ''       # Palette for platform stream type breakdown
+      play_count_by_user_and_stream_type: ''           # Palette for user stream type breakdown
 
 
 # ============================================================================
