@@ -388,6 +388,7 @@ class Top10PlatformsGraph(BaseGraph, VisualizationMixin):
         # Create stacked horizontal bars
         y_positions = np.arange(len(platform_names))
         left_positions = np.zeros(len(platform_names))
+        bar_containers: list[tuple[object, str, np.ndarray[object, np.dtype[np.int64]]]] = []
 
         for media_type in media_types:
             counts = [
@@ -398,7 +399,7 @@ class Top10PlatformsGraph(BaseGraph, VisualizationMixin):
             if any(count > 0 for count in counts):
                 label, color = self.get_media_type_display_info(media_type)
 
-                _ = ax.barh(  # pyright: ignore[reportUnknownMemberType]
+                bars = ax.barh(  # pyright: ignore[reportUnknownMemberType]
                     y_positions,
                     counts,
                     left=left_positions,
@@ -407,6 +408,8 @@ class Top10PlatformsGraph(BaseGraph, VisualizationMixin):
                     alpha=0.8,
                 )
 
+                # Store bar container data for annotations
+                bar_containers.append((bars, media_type, np.array(counts)))
                 left_positions += np.array(counts)
 
         # Customize the plot
@@ -436,15 +439,16 @@ class Top10PlatformsGraph(BaseGraph, VisualizationMixin):
                 fontsize=12,
             )
 
-        # Add value annotations if enabled (for total values)
+        # Add value annotations if enabled (for segments and totals)
         # Use AnnotationHelper for consistent styling with proper horizontal bar positioning
-        self.annotation_helper.annotate_horizontal_bar_patches(
+        self.annotation_helper.annotate_stacked_horizontal_bar_segments(
             ax=ax,
             config_key="graphs.appearance.annotations.enabled_on.top_10_platforms",
-            offset_x_ratio=0.02,  # 2% of max width for offset
-            ha="left",
-            va="center",
-            fontweight="bold",
+            bar_containers=bar_containers,
+            categories=platform_names,
+            include_totals=True,
+            segment_fontsize=9,
+            total_fontsize=11,
         )
 
         logger.info(

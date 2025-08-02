@@ -320,6 +320,100 @@ class AnnotationHelper:
         except Exception as e:
             logger.warning(f"Failed to add peak annotation: {e}")
 
+    def annotate_stacked_horizontal_bar_segments(
+        self,
+        ax: Axes,
+        config_key: str,
+        bar_containers: "Sequence[tuple[object, str, object]]",
+        categories: "Sequence[str]",
+        include_totals: bool = True,
+        segment_fontsize: int = 9,
+        total_fontsize: int = 11,
+        segment_ha: str = "center",
+        total_ha: str = "left",
+        total_offset_x_ratio: float = 0.02,
+    ) -> None:
+        """
+        Annotate stacked horizontal bar chart segments and optionally totals.
+
+        This method handles the complex case of stacked horizontal bar charts where each
+        segment needs annotation and optionally a total at the end of the bar.
+
+        Args:
+            ax: Matplotlib axes containing stacked horizontal bars
+            config_key: Configuration key to check if annotations are enabled
+            bar_containers: List of (bars, media_type, values) tuples
+            categories: List of category names for y-axis positioning
+            include_totals: Whether to include total annotations at end
+            segment_fontsize: Font size for segment annotations
+            total_fontsize: Font size for total annotations
+            segment_ha: Horizontal alignment for segment text
+            total_ha: Horizontal alignment for total text
+            total_offset_x_ratio: X-offset ratio for total annotations
+        """
+        annotate_enabled = self.graph.get_config_value(config_key, False)
+        if not annotate_enabled:
+            return
+
+        try:
+            # Calculate maximum total width for offset positioning
+            max_total_width = 0.0
+            for i, _ in enumerate(categories):
+                cumulative_width = 0.0
+                for _, _, values in bar_containers:
+                    if hasattr(values, "__getitem__"):
+                        indexable_values = cast("Sequence[float]", values)
+                        value = float(indexable_values[i])
+                    else:
+                        value = 0.0
+                    cumulative_width += value
+                if cumulative_width > max_total_width:
+                    max_total_width = cumulative_width
+
+            total_offset_x = max_total_width * total_offset_x_ratio
+
+            for i, _ in enumerate(categories):
+                cumulative_width = 0.0
+
+                # Annotate each segment
+                for _, media_type, values in bar_containers:
+                    # Avoid unused variable warnings
+                    _ = media_type
+                    if hasattr(values, "__getitem__"):
+                        indexable_values = cast("Sequence[float]", values)
+                        value = float(indexable_values[i])
+                    else:
+                        value = 0.0
+                    if value > 0:
+                        # Position annotation in the middle of this segment
+                        self._add_text_annotation(
+                            ax,
+                            x=cumulative_width + value / 2,
+                            y=float(i),
+                            value=int(value),
+                            ha=segment_ha,
+                            va="center",
+                            fontsize=segment_fontsize,
+                            fontweight="normal",
+                        )
+                    cumulative_width += value
+
+                # Add total annotation at the end if requested
+                if include_totals and cumulative_width > 0:
+                    self._add_text_annotation(
+                        ax,
+                        x=cumulative_width,
+                        y=float(i),
+                        value=int(cumulative_width),
+                        ha=total_ha,
+                        va="center",
+                        offset_x=total_offset_x,
+                        fontsize=total_fontsize,
+                        fontweight="bold",
+                    )
+        except Exception as e:
+            logger.warning(f"Failed to annotate stacked horizontal bar segments: {e}")
+
     def annotate_line_points(
         self,
         ax: Axes,
