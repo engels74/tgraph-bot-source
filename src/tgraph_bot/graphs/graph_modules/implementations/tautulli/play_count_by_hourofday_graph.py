@@ -380,13 +380,13 @@ class PlayCountByHourOfDayGraph(BaseGraph, VisualizationMixin):
 
         # Add bar value annotations if enabled (for total values)
         # Use AnnotationHelper for consistent styling
-        x_data = []
-        y_data = []
+        x_data: list[float] = []
+        y_data: list[float] = []
         for i, total_value in enumerate(bottom):  # pyright: ignore[reportAny] # numpy array element type inference limitation
             total_int = int(total_value)  # pyright: ignore[reportAny]
             if total_int > 0:
                 x_data.append(float(i))
-                y_data.append(float(total_value))
+                y_data.append(float(total_value))  # pyright: ignore[reportAny] # numpy array element type inference limitation
         
         if x_data and y_data:
             self.annotation_helper.annotate_line_points(
