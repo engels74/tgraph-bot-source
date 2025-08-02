@@ -128,15 +128,6 @@ graphs:
       play_count_by_platform_and_stream_type: true       # Platforms with stream type breakdown
       play_count_by_user_and_stream_type: true           # Users with stream type breakdown
 
-    # DEPRECATED: Global Media Type Settings
-    # These settings are deprecated - use per_graph settings below for finer control
-    # Whether to separate Movies and TV Shows with different colors/sections (globally)
-    media_type_separation: true
-
-    # Whether to use stacked bars (vs side-by-side) when media separation is enabled (globally)
-    # Only affects bar chart graphs - line graphs always separate by color
-    stacked_bar_charts: true
-
   # Per-Graph Settings
   # ------------------
   # Configure media type separation and stacked bar charts per individual graph
