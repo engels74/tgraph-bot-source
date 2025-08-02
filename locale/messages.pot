@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TGraph Bot 1.0.0\n"
 "Report-Msgid-Bugs-To: https://github.com/engels74/tgraph-bot-source/issues\n"
-"POT-Creation-Date: 2025-08-02 02:28\n"
+"POT-Creation-Date: 2025-08-02 10:42\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: engels74 <141435164+engels74@users.noreply.github.com>\n"
 "Language-Team: LANGUAGE <https://weblate.engels74.net/projects/tgraph-bot/main/LANG/>\n"
@@ -64,11 +64,11 @@ msgstr ""
 msgid "Bot Uptime"
 msgstr ""
 
-#: scripts/i18n/dev-helpers.py:140
 #: tests/unit/test_i18n.py:113
 #: tests/integration/test_locale_structure.py:176
 #: tests/integration/test_locale_structure.py:187
 #: tests/integration/test_locale_structure.py:198
+#: scripts/i18n/dev-helpers.py:140
 msgid "Bot is online and ready!"
 msgstr ""
 
@@ -166,10 +166,10 @@ msgstr ""
 msgid "Direct Message (DM)"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/command_utils.py:128
 #: src/tgraph_bot/bot/commands/config.py:351
 #: src/tgraph_bot/bot/commands/config.py:352
 #: src/tgraph_bot/bot/commands/config.py:353
+#: src/tgraph_bot/utils/discord/command_utils.py:128
 msgid "Disabled"
 msgstr ""
 
@@ -201,11 +201,11 @@ msgstr ""
 msgid "Empty"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/command_utils.py:126
 #: src/tgraph_bot/bot/commands/config.py:351
 #: src/tgraph_bot/bot/commands/config.py:352
 #: src/tgraph_bot/bot/commands/config.py:353
 #: src/tgraph_bot/bot/commands/config.py:398
+#: src/tgraph_bot/utils/discord/command_utils.py:126
 msgid "Enabled"
 msgstr ""
 
@@ -898,43 +898,43 @@ msgstr ""
 msgid "{count} personal graphs"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/command_utils.py:209
 #: src/tgraph_bot/bot/commands/uptime.py:62
+#: src/tgraph_bot/utils/discord/command_utils.py:209
 msgid "{n} day"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/command_utils.py:209
 #: src/tgraph_bot/bot/commands/uptime.py:62
+#: src/tgraph_bot/utils/discord/command_utils.py:209
 msgid "{n} days"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/command_utils.py:211
 #: src/tgraph_bot/bot/commands/uptime.py:64
+#: src/tgraph_bot/utils/discord/command_utils.py:211
 msgid "{n} hour"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/command_utils.py:211
 #: src/tgraph_bot/bot/commands/uptime.py:64
+#: src/tgraph_bot/utils/discord/command_utils.py:211
 msgid "{n} hours"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/command_utils.py:213
 #: src/tgraph_bot/bot/commands/uptime.py:66
+#: src/tgraph_bot/utils/discord/command_utils.py:213
 msgid "{n} minute"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/command_utils.py:213
 #: src/tgraph_bot/bot/commands/uptime.py:66
+#: src/tgraph_bot/utils/discord/command_utils.py:213
 msgid "{n} minutes"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/command_utils.py:215
 #: src/tgraph_bot/bot/commands/uptime.py:68
+#: src/tgraph_bot/utils/discord/command_utils.py:215
 msgid "{n} second"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/command_utils.py:215
 #: src/tgraph_bot/bot/commands/uptime.py:68
+#: src/tgraph_bot/utils/discord/command_utils.py:215
 msgid "{n} seconds"
 msgstr ""
 
