@@ -176,12 +176,13 @@ def create_graph_specific_embed(
         },
     }
 
-    # Find the best match for the filename
+    # Find the best match for the filename (longest match wins for specificity)
     info = None
+    best_match = ""
     for key, value in graph_info.items():
-        if key in filename:
+        if key in filename and len(key) > len(best_match):
             info = value
-            break
+            best_match = key
 
     # Fallback for unknown graph types
     if not info:

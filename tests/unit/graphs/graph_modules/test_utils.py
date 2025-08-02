@@ -31,6 +31,7 @@ from src.tgraph_bot.graphs.graph_modules.utils.utils import (
     validate_color,
     aggregate_top_users_separated,  # Implemented in Phase 2
     aggregate_top_platforms_separated,  # Implemented in Phase 2
+    aggregate_by_resolution,
     ProcessedRecords,
 )
 
@@ -783,3 +784,300 @@ class TestSeparationUtilityFunctions:
         # Should return valid structure
         assert isinstance(users_result_negative, dict)
         assert isinstance(platforms_result_negative, dict)
+
+
+class TestResolutionAggregation:
+    """Test cases for resolution aggregation functions."""
+
+    def create_sample_records_with_resolution(self) -> ProcessedRecords:
+        """Create sample processed records with resolution data for testing."""
+        return [
+            {
+                "date": "2023-12-25",
+                "user": "test_user1",
+                "platform": "Plex Web",
+                "media_type": "movie",
+                "datetime": datetime(2023, 12, 25, 14, 30),
+                "duration": 7200,
+                "stopped": 1703516200,
+                "paused_counter": 0,
+                "transcode_decision": "direct play",
+                "video_resolution": "1920x1080",
+                "stream_video_resolution": "1920x1080",
+                "video_codec": "h264",
+                "audio_codec": "aac",
+                "container": "mp4",
+            },
+            {
+                "date": "2023-12-25",
+                "user": "test_user2",
+                "platform": "Plex Mobile",
+                "media_type": "episode",
+                "datetime": datetime(2023, 12, 25, 16, 0),
+                "duration": 2400,
+                "stopped": 1703521600,
+                "paused_counter": 1,
+                "transcode_decision": "transcode",
+                "video_resolution": "3840x2160",
+                "stream_video_resolution": "1280x720",
+                "video_codec": "hevc",
+                "audio_codec": "ac3",
+                "container": "mkv",
+            },
+            {
+                "date": "2023-12-25",
+                "user": "test_user1",
+                "platform": "Plex Web",
+                "media_type": "movie",
+                "datetime": datetime(2023, 12, 25, 18, 0),
+                "duration": 5400,
+                "stopped": 1703528400,
+                "paused_counter": 0,
+                "transcode_decision": "direct play",
+                "video_resolution": "1920x1080",
+                "stream_video_resolution": "1920x1080",
+                "video_codec": "h264",
+                "audio_codec": "aac",
+                "container": "mp4",
+            },
+            {
+                "date": "2023-12-25",
+                "user": "test_user3",
+                "platform": "Plex TV",
+                "media_type": "movie",
+                "datetime": datetime(2023, 12, 25, 20, 0),
+                "duration": 6000,
+                "stopped": 1703535600,
+                "paused_counter": 0,
+                "transcode_decision": "unknown",
+                "video_resolution": "unknown",
+                "stream_video_resolution": "unknown",
+                "video_codec": "unknown",
+                "audio_codec": "unknown",
+                "container": "unknown",
+            },
+        ]
+
+    def test_aggregate_by_resolution_source_resolution(self) -> None:
+        """Test aggregation by source resolution (video_resolution field)."""
+        records = self.create_sample_records_with_resolution()
+
+        result = aggregate_by_resolution(records, resolution_field="video_resolution")
+
+        assert isinstance(result, list)
+        assert len(result) == 2  # 1920x1080 and 3840x2160 (unknown filtered out)
+
+        # Should be sorted by play count (descending)
+        assert result[0]["play_count"] >= result[1]["play_count"]
+
+        # Check the aggregation is correct
+        resolution_counts = {item["resolution"]: item["play_count"] for item in result}
+        assert resolution_counts["1920x1080"] == 2  # Two 1080p plays
+        assert resolution_counts["3840x2160"] == 1  # One 4K play
+
+    def test_aggregate_by_resolution_stream_resolution(self) -> None:
+        """Test aggregation by stream resolution (stream_video_resolution field)."""
+        records = self.create_sample_records_with_resolution()
+
+        result = aggregate_by_resolution(records, resolution_field="stream_video_resolution")
+
+        assert isinstance(result, list)
+        assert len(result) == 2  # 1920x1080 and 1280x720 (unknown filtered out)
+
+        # Check the aggregation is correct
+        resolution_counts = {item["resolution"]: item["play_count"] for item in result}
+        assert resolution_counts["1920x1080"] == 2  # Two 1080p streams
+        assert resolution_counts["1280x720"] == 1  # One 720p stream
+
+    def test_aggregate_by_resolution_all_unknown(self) -> None:
+        """Test aggregation when all resolutions are unknown."""
+        records: ProcessedRecords = [
+            {
+                "date": "2023-12-25",
+                "user": "test_user1",
+                "platform": "Plex Web",
+                "media_type": "movie",
+                "datetime": datetime(2023, 12, 25, 14, 30),
+                "duration": 7200,
+                "stopped": 1703516200,
+                "paused_counter": 0,
+                "transcode_decision": "unknown",
+                "video_resolution": "unknown",
+                "stream_video_resolution": "unknown",
+                "video_codec": "unknown",
+                "audio_codec": "unknown",
+                "container": "unknown",
+            },
+            {
+                "date": "2023-12-25",
+                "user": "test_user2",
+                "platform": "Plex Mobile",
+                "media_type": "episode",
+                "datetime": datetime(2023, 12, 25, 16, 0),
+                "duration": 2400,
+                "stopped": 1703521600,
+                "paused_counter": 1,
+                "transcode_decision": "unknown",
+                "video_resolution": "unknown",
+                "stream_video_resolution": "unknown",
+                "video_codec": "unknown",
+                "audio_codec": "unknown",
+                "container": "unknown",
+            },
+        ]
+
+        result = aggregate_by_resolution(records, resolution_field="video_resolution")
+
+        # With our improved function, should include unknown values when no valid data exists
+        assert isinstance(result, list)
+        assert len(result) == 1
+        assert result[0]["resolution"] == "unknown"
+        assert result[0]["play_count"] == 2
+
+    def test_aggregate_by_resolution_empty_data(self) -> None:
+        """Test aggregation with empty data."""
+        empty_records: ProcessedRecords = []
+
+        result = aggregate_by_resolution(empty_records, resolution_field="video_resolution")
+
+        assert isinstance(result, list)
+        assert len(result) == 0
+
+    def test_aggregate_by_resolution_missing_field(self) -> None:
+        """Test aggregation when resolution field is missing from records."""
+        # Create records without the resolution fields but with other required fields
+        records: ProcessedRecords = [
+            {
+                "date": "2023-12-25",
+                "user": "test_user1",
+                "platform": "Plex Web",
+                "media_type": "movie",
+                "datetime": datetime(2023, 12, 25, 14, 30),
+                "duration": 7200,
+                "stopped": 1703516200,
+                "paused_counter": 0,
+                "transcode_decision": "direct play",
+                "video_codec": "h264",
+                "audio_codec": "aac",
+                "container": "mp4",
+                # video_resolution and stream_video_resolution will be missing
+                # but we need to provide them as "unknown" to match the type
+                "video_resolution": "unknown",
+                "stream_video_resolution": "unknown",
+            },
+        ]
+
+        # This should not crash but log the missing data
+        with patch("src.tgraph_bot.graphs.graph_modules.utils.utils.logger") as mock_logger:
+            result = aggregate_by_resolution(records, resolution_field="video_resolution")
+
+            # Should log warnings about missing data
+            assert mock_logger.info.called
+            assert mock_logger.warning.called
+
+            # Should return unknown resolution when all records have missing fields
+            assert isinstance(result, list)
+            assert len(result) == 1
+            assert result[0]["resolution"] == "unknown"
+            assert result[0]["play_count"] == 1
+
+    def test_aggregate_by_resolution_mixed_data(self) -> None:
+        """Test aggregation with mixed valid and unknown resolution data."""
+        records: ProcessedRecords = [
+            {
+                "date": "2023-12-25",
+                "user": "test_user1",
+                "platform": "Plex Web",
+                "media_type": "movie",
+                "datetime": datetime(2023, 12, 25, 14, 30),
+                "duration": 7200,
+                "stopped": 1703516200,
+                "paused_counter": 0,
+                "transcode_decision": "direct play",
+                "video_resolution": "1920x1080",
+                "stream_video_resolution": "1920x1080",
+                "video_codec": "h264",
+                "audio_codec": "aac",
+                "container": "mp4",
+            },
+            {
+                "date": "2023-12-25",
+                "user": "test_user2",
+                "platform": "Plex Mobile",
+                "media_type": "episode",
+                "datetime": datetime(2023, 12, 25, 16, 0),
+                "duration": 2400,
+                "stopped": 1703521600,
+                "paused_counter": 1,
+                "transcode_decision": "unknown",
+                "video_resolution": "unknown",
+                "stream_video_resolution": "unknown",
+                "video_codec": "unknown",
+                "audio_codec": "unknown",
+                "container": "unknown",
+            },
+            {
+                "date": "2023-12-25",
+                "user": "test_user3",
+                "platform": "Plex TV",
+                "media_type": "movie",
+                "datetime": datetime(2023, 12, 25, 18, 0),
+                "duration": 5400,
+                "stopped": 1703528400,
+                "paused_counter": 0,
+                "transcode_decision": "direct play",
+                "video_resolution": "1920x1080",
+                "stream_video_resolution": "1920x1080",
+                "video_codec": "h264",
+                "audio_codec": "aac",
+                "container": "mp4",
+            },
+        ]
+
+        result = aggregate_by_resolution(records, resolution_field="video_resolution")
+
+        # Should only include valid resolutions, exclude unknown
+        assert isinstance(result, list)
+        assert len(result) == 1
+        assert result[0]["resolution"] == "1920x1080"
+        assert result[0]["play_count"] == 2
+
+    def test_aggregate_by_resolution_sorting(self) -> None:
+        """Test that results are properly sorted by play count (descending)."""
+        records: ProcessedRecords = [
+            {
+                "date": "2023-12-25",
+                "user": f"user{i}",
+                "platform": "Plex Web",
+                "media_type": "movie",
+                "datetime": datetime(2023, 12, 25, 14, 30),
+                "duration": 7200,
+                "stopped": 1703516200,
+                "paused_counter": 0,
+                "transcode_decision": "direct play",
+                "video_resolution": "1920x1080" if i < 5 else "1280x720" if i < 8 else "3840x2160",
+                "stream_video_resolution": "1920x1080" if i < 5 else "1280x720" if i < 8 else "3840x2160",
+                "video_codec": "h264",
+                "audio_codec": "aac",
+                "container": "mp4",
+            }
+            for i in range(10)
+        ]
+
+        result = aggregate_by_resolution(records, resolution_field="video_resolution")
+
+        # Should be sorted by play count descending
+        assert isinstance(result, list)
+        assert len(result) == 3
+
+        # Verify sorting: 1920x1080 (5 plays) > 1280x720 (3 plays) > 3840x2160 (2 plays)
+        assert result[0]["resolution"] == "1920x1080"
+        assert result[0]["play_count"] == 5
+        assert result[1]["resolution"] == "1280x720"
+        assert result[1]["play_count"] == 3
+        assert result[2]["resolution"] == "3840x2160"
+        assert result[2]["play_count"] == 2
+
+        # Verify sorting order
+        for i in range(len(result) - 1):
+            assert result[i]["play_count"] >= result[i + 1]["play_count"]
