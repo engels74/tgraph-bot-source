@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TGraph Bot 1.0.0\n"
 "Report-Msgid-Bugs-To: https://github.com/engels74/tgraph-bot-source/issues\n"
-"POT-Creation-Date: 2025-08-02 11:19\n"
+"POT-Creation-Date: 2025-08-03 11:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: engels74 <141435164+engels74@users.noreply.github.com>\n"
 "Language-Team: LANGUAGE <https://weblate.engels74.net/projects/tgraph-bot/main/LANG/>\n"
@@ -185,7 +185,7 @@ msgstr ""
 msgid "Display information about the bot"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:117
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:129
 msgid "Displays play activity patterns across different days of the week."
 msgstr ""
 
@@ -231,8 +231,8 @@ msgstr ""
 msgid "Examples"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:384
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:477
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:421
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:514
 msgid "Failed to create Discord file for: {file_path}"
 msgstr ""
 
@@ -244,15 +244,15 @@ msgstr ""
 msgid "Failed to generate the {graph_type} graph. This may be a temporary issue - please try again."
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:228
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:265
 msgid "File does not exist: {file_path}"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:249
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:286
 msgid "File is empty: {file_path}"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:266
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:303
 msgid "File too large: {actual_mb:.1f}MB exceeds {limit_mb:.0f}MB limit"
 msgstr ""
 
@@ -354,15 +354,15 @@ msgstr ""
 msgid "Media Type Separation"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:129
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:141
 msgid "Monthly play activity trends over time."
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:139
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:175
 msgid "Most active users in the selected time period."
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:133
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:169
 msgid "Most popular platforms used for media consumption."
 msgstr ""
 
@@ -409,8 +409,8 @@ msgstr ""
 msgid "No content provided"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:365
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:458
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:402
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:495
 msgid "No files provided for upload"
 msgstr ""
 
@@ -422,8 +422,8 @@ msgstr ""
 msgid "No graphs enabled"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:405
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:498
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:442
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:535
 msgid "No valid files to upload. Errors: {errors}"
 msgstr ""
 
@@ -444,7 +444,7 @@ msgstr ""
 msgid "Partial Success"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:237
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:274
 msgid "Path is not a file: {file_path}"
 msgstr ""
 
@@ -531,11 +531,35 @@ msgstr ""
 msgid "Show bot uptime"
 msgstr ""
 
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:117
+msgid "Shows daily play counts separated by transcode decision (direct play, transcode, copy)."
+msgstr ""
+
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:123
+msgid "Shows peak concurrent stream counts per day separated by transcode decision."
+msgstr ""
+
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:157
+msgid "Shows platform usage with stream type breakdown, revealing how different platforms handle transcoding."
+msgstr ""
+
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:145
+msgid "Shows play counts by original file resolution, helping identify content quality preferences."
+msgstr ""
+
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:151
+msgid "Shows play counts by transcoded output resolution, revealing delivery quality patterns."
+msgstr ""
+
 #: src/tgraph_bot/utils/discord/discord_file_utils.py:111
 msgid "Shows the number of plays per day over the selected time period."
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:123
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:163
+msgid "Shows user activity with stream type breakdown, helping identify transcoding patterns per user."
+msgstr ""
+
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:135
 msgid "Shows when users are most active throughout the day."
 msgstr ""
 
@@ -551,7 +575,7 @@ msgstr ""
 msgid "State Updates"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:154
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:191
 msgid "Statistical visualization of Plex activity data."
 msgstr ""
 
@@ -747,7 +771,7 @@ msgstr ""
 msgid "Unknown upload error occurred"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:280
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:317
 msgid "Unsupported file format: {file_format}. Supported: {supported_formats}"
 msgstr ""
 
@@ -990,19 +1014,31 @@ msgstr ""
 msgid "🎨 Colors"
 msgstr ""
 
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:144
+msgid "🎬 Play Count by Source Resolution"
+msgstr ""
+
 #: src/tgraph_bot/bot/commands/config.py:396
 msgid "🏔️ Peak Annotations"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:138
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:162
+msgid "👥 Play Count by User and Stream Type"
+msgstr ""
+
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:174
 msgid "👥 Top 10 Users"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:132
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:156
+msgid "💻 Play Count by Platform and Stream Type"
+msgstr ""
+
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:168
 msgid "💻 Top 10 Platforms"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:128
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:140
 msgid "📅 Play Count by Month"
 msgstr ""
 
@@ -1010,11 +1046,19 @@ msgstr ""
 msgid "📈 Daily Play Count"
 msgstr ""
 
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:116
+msgid "📈 Daily Play Count by Stream Type"
+msgstr ""
+
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:122
+msgid "📊 Daily Concurrent Streams by Stream Type"
+msgstr ""
+
 #: src/tgraph_bot/bot/commands/config.py:339
 msgid "📊 Enabled Graphs"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:153
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:190
 msgid "📊 Graph"
 msgstr ""
 
@@ -1022,7 +1066,7 @@ msgstr ""
 msgid "📊 Personal Statistics - Upload Issue"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:116
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:128
 msgid "📊 Play Count by Day of Week"
 msgstr ""
 
@@ -1038,6 +1082,10 @@ msgstr ""
 msgid "📡 Essential Settings"
 msgstr ""
 
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:150
+msgid "📺 Play Count by Stream Resolution"
+msgstr ""
+
 #: src/tgraph_bot/bot/commands/update_graphs.py:128
 msgid "🔄 Initializing graph generation"
 msgstr ""
@@ -1050,7 +1098,7 @@ msgstr ""
 msgid "🔧 Configuration: {key}"
 msgstr ""
 
-#: src/tgraph_bot/utils/discord/discord_file_utils.py:122
+#: src/tgraph_bot/utils/discord/discord_file_utils.py:134
 msgid "🕐 Play Count by Hour of Day"
 msgstr ""
 
