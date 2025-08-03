@@ -88,6 +88,16 @@ class ConcurrentStreamRecord(TypedDict):
     stream_type_breakdown: dict[str, int]  # concurrent count per stream type
 
 
+class ResolutionStreamTypeAggregateRecord(TypedDict):
+    """Structure for aggregated resolution and stream type data."""
+
+    resolution: str  # e.g., "1920x1080", "3840x2160"
+    stream_type: str  # direct play, copy, transcode
+    display_name: str  # formatted display name for stream type
+    play_count: int
+    color: str  # color for this stream type
+
+
 # Type aliases for common data structures
 GraphData = dict[str, int] | dict[int, int] | list[dict[str, object]]
 ProcessedRecords = list[ProcessedPlayRecord]
@@ -97,6 +107,7 @@ MediaTypeAggregates = list[MediaTypeAggregateRecord]
 StreamTypeAggregates = list[StreamTypeAggregateRecord]
 ResolutionAggregates = list[ResolutionAggregateRecord]
 ConcurrentStreamAggregates = list[ConcurrentStreamRecord]
+ResolutionStreamTypeAggregates = dict[str, list[ResolutionStreamTypeAggregateRecord]]
 SeparatedGraphData = dict[str, dict[str, int]]
 SeparatedUserAggregates = dict[str, UserAggregates]
 SeparatedPlatformAggregates = dict[str, PlatformAggregates]
@@ -1369,6 +1380,80 @@ def aggregate_by_resolution(
     aggregates.sort(key=lambda x: x["play_count"], reverse=True)
     
     return aggregates
+
+
+def aggregate_by_resolution_and_stream_type(
+    records: ProcessedRecords, resolution_field: str = "video_resolution"
+) -> ResolutionStreamTypeAggregates:
+    """
+    Aggregate play records by resolution with stream type breakdown.
+
+    Args:
+        records: List of processed play history records
+        resolution_field: Field to use for resolution ("video_resolution" for source,
+                         "stream_video_resolution" for transcoded output)
+
+    Returns:
+        Dictionary mapping resolution to list of stream type aggregates
+    """
+    # Count by resolution and stream type
+    resolution_stream_counts = defaultdict(lambda: defaultdict(int))
+    unknown_count = 0
+    total_records = len(records)
+
+    for record in records:
+        resolution = record[resolution_field]  # type: ignore[misc]
+        stream_type = record["transcode_decision"]
+
+        if resolution and resolution != "unknown":
+            resolution_stream_counts[resolution][stream_type] += 1
+        else:
+            unknown_count += 1
+
+    # Log statistics to help with debugging
+    logger.info(f"Resolution and stream type aggregation for field '{resolution_field}': " +
+               f"{len(resolution_stream_counts)} unique resolutions, " +
+               f"{unknown_count} unknown values out of {total_records} total records")
+
+    # If we have no valid resolutions but have unknown values, include them
+    if not resolution_stream_counts and unknown_count > 0:
+        logger.warning(f"No valid {resolution_field} data found, all {unknown_count} records have unknown resolution. " +
+                      f"This may indicate missing resolution data in Tautulli API response.")
+        # Add unknown resolution with stream type breakdown
+        for record in records:
+            if not record[resolution_field] or record[resolution_field] == "unknown":  # type: ignore[misc]
+                stream_type = record["transcode_decision"]
+                resolution_stream_counts["unknown"][stream_type] += 1
+
+    # Convert to aggregate format
+    result: ResolutionStreamTypeAggregates = {}
+    for resolution, stream_counts in resolution_stream_counts.items():
+        aggregates: list[ResolutionStreamTypeAggregateRecord] = []
+        for stream_type, count in stream_counts.items():
+            display_name = _get_stream_type_display_name(stream_type)
+            color = _get_stream_type_color(stream_type)
+
+            aggregates.append(ResolutionStreamTypeAggregateRecord(
+                resolution=resolution,
+                stream_type=stream_type,
+                display_name=display_name,
+                play_count=count,
+                color=color
+            ))
+
+        # Sort by play count (descending)
+        aggregates.sort(key=lambda x: x["play_count"], reverse=True)
+        result[resolution] = aggregates
+
+    # Sort resolutions by total play count (descending)
+    resolution_totals = {
+        resolution: sum(agg["play_count"] for agg in aggregates)
+        for resolution, aggregates in result.items()
+    }
+    sorted_resolutions = sorted(resolution_totals.keys(), key=lambda x: resolution_totals[x], reverse=True)
+
+    # Return sorted result
+    return {resolution: result[resolution] for resolution in sorted_resolutions}
 
 
 def aggregate_by_platform_and_stream_type(

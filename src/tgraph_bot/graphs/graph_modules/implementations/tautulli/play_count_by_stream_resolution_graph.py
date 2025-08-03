@@ -19,8 +19,10 @@ from ...data.data_processor import data_processor
 from ...utils.utils import (
     ProcessedRecords,
     aggregate_by_resolution,
+    aggregate_by_resolution_and_stream_type,
     filter_records_by_stream_type,
     get_available_stream_types,
+    get_stream_type_display_info,
 )
 from ...visualization.visualization_mixin import VisualizationMixin
 
@@ -190,66 +192,123 @@ class PlayCountByStreamResolutionGraph(BaseGraph, VisualizationMixin):
         self, ax: Axes, processed_records: ProcessedRecords
     ) -> None:
         """
-        Generate resolution visualization showing play counts by stream resolution.
+        Generate resolution visualization showing play counts by stream resolution with stream type breakdown.
 
         Args:
             ax: The matplotlib axes to plot on
             processed_records: List of processed play history records
         """
-        # Aggregate data by stream resolution (transcoded output)
-        resolution_aggregates = aggregate_by_resolution(
+        # Aggregate data by stream resolution with stream type breakdown
+        resolution_stream_data = aggregate_by_resolution_and_stream_type(
             processed_records, resolution_field="stream_video_resolution"
         )
 
-        if not resolution_aggregates:
+        if not resolution_stream_data:
             self.handle_empty_data_with_message(
                 ax, "No stream resolution data available.\nThis may indicate:\n• Tautulli is not collecting transcoded resolution data\n• No transcoding has occurred recently\n• Stream resolution fields are not available in your Tautulli version"
             )
             return
 
         # Limit to top 15 resolutions for readability
-        top_resolutions = resolution_aggregates[:15]
-        
-        if not top_resolutions:
+        sorted_resolutions = list(resolution_stream_data.keys())[:15]
+
+        if not sorted_resolutions:
             self.handle_empty_data_with_message(
                 ax, "No stream resolution data available for the selected time range."
             )
             return
 
-        # Prepare data for plotting
-        resolutions = [res["resolution"] for res in top_resolutions]
-        counts = [res["play_count"] for res in top_resolutions]
+        # Get stream type display info for colors and labels
+        stream_type_info = get_stream_type_display_info()
+
+        # Get all unique stream types across all resolutions
+        all_stream_types = set()
+        for resolution in sorted_resolutions:
+            for stream_record in resolution_stream_data[resolution]:
+                all_stream_types.add(stream_record["stream_type"])
+
+        stream_types = sorted(all_stream_types)
+
+        if not stream_types:
+            self.handle_empty_data_with_message(
+                ax, "No stream type data available for the selected time range."
+            )
+            return
+
+        # Prepare data matrix for stacked bars
+        data_matrix = []
+        colors = []
+        labels = []
+
+        for stream_type in stream_types:
+            # Get counts for this stream type across all resolutions
+            counts = []
+            for resolution in sorted_resolutions:
+                resolution_data = resolution_stream_data[resolution]
+                count = 0
+                for record in resolution_data:
+                    if record["stream_type"] == stream_type:
+                        count = record["play_count"]
+                        break
+                counts.append(count)
+
+            data_matrix.append(counts)
+
+            # Get display info for this stream type
+            display_info = stream_type_info.get(stream_type, {
+                "display_name": stream_type.title(),
+                "color": "#1f77b4"
+            })
+            colors.append(display_info["color"])
+            labels.append(display_info["display_name"])
 
         # Format resolution labels for better display
-        formatted_resolutions = [self._format_resolution_label(res) for res in resolutions]
+        formatted_resolutions = [self._format_resolution_label(res) for res in sorted_resolutions]
 
-        # Create color palette based on resolution quality (different from source resolution)
-        colors = [self._get_stream_resolution_color(res) for res in resolutions]
-
-        # Create horizontal bar chart (better for resolution labels)
+        # Create stacked horizontal bar chart (better for resolution labels)
         y_positions = np.arange(len(formatted_resolutions))
-        bars = ax.barh(  # pyright: ignore[reportUnknownMemberType] # matplotlib method
-            y_positions,
-            counts,
-            color=colors,
-            alpha=0.8,
-            edgecolor="white",
-            linewidth=1.2,
-        )
+
+        # Calculate cumulative positions for stacking
+        left_positions = np.zeros(len(sorted_resolutions))
+        bars_list = []
+
+        for i, (counts, color, label) in enumerate(zip(data_matrix, colors, labels)):
+            bars = ax.barh(  # pyright: ignore[reportUnknownMemberType] # matplotlib method
+                y_positions,
+                counts,
+                left=left_positions,
+                color=color,
+                alpha=0.8,
+                label=label,
+                edgecolor="white",
+                linewidth=0.8,
+            )
+            bars_list.append(bars)
+            left_positions += np.array(counts)
 
         # Customize the plot
         self.setup_title_and_axes_with_ax(
-            ax, 
-            xlabel="Play Count", 
+            ax,
+            xlabel="Play Count",
             ylabel="Stream Resolution (Transcoded Output)"
         )
 
         # Set y-axis labels and positioning
         ax.set_yticks(y_positions)  # pyright: ignore[reportAny] # matplotlib method returns Any
         ax.set_yticklabels(formatted_resolutions)  # pyright: ignore[reportAny] # matplotlib method returns Any
-        
+
         # Invert y-axis so highest resolution is at top
         ax.invert_yaxis()  # pyright: ignore[reportUnknownMemberType] # matplotlib method
+
+        # Add legend for stream types
+        ax.legend(  # pyright: ignore[reportUnknownMemberType] # matplotlib method
+            loc="lower right",
+            frameon=True,
+            fancybox=True,
+            shadow=True,
+            ncol=1,
+            fontsize="small"
+        )
 
         # Add value annotations on bars if enabled
         self.annotation_helper.annotate_horizontal_bar_patches(
@@ -270,7 +329,7 @@ class PlayCountByStreamResolutionGraph(BaseGraph, VisualizationMixin):
         # Optimize layout
         ax.margins(y=0.01)  # pyright: ignore[reportUnknownMemberType] # matplotlib method with **kwargs
 
-        logger.info(f"Created stream resolution graph with {len(top_resolutions)} resolutions")
+        logger.info(f"Created stream resolution graph with {len(sorted_resolutions)} resolutions and {len(stream_types)} stream types")
 
     def _generate_no_data_visualization(self, ax: Axes) -> None:
         """

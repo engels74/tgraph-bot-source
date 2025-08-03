@@ -158,6 +158,10 @@ def setup_logging() -> None:
     logging.getLogger("discord.gateway").setLevel(logging.INFO)
     logging.getLogger("asyncio").setLevel(logging.WARNING)
 
+    # Reduce HTTP client logging verbosity
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
+
     # Set our application loggers to INFO
     logging.getLogger("bot").setLevel(logging.INFO)
     logging.getLogger("config").setLevel(logging.INFO)
