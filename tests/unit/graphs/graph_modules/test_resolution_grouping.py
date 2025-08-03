@@ -73,7 +73,7 @@ class TestResolutionGrouping:
         
         # Test fallback to "Other" for truly unmapped resolutions
         assert group_resolution_by_strategy("1024x768", "standard") == "Other"   # XGA - not a standard TV/movie resolution
-        assert group_resolution_by_strategy("unknown", "standard") == "unknown"  # Handle unknown specially
+        assert group_resolution_by_strategy("unknown", "standard") == "Other"    # Unknown should be merged into Other category
 
     def test_group_resolution_by_strategy_detailed(self) -> None:
         """Test detailed grouping strategy (exact resolutions with friendly names)."""
@@ -239,15 +239,15 @@ class TestResolutionGrouping:
         """Test that unknown resolution values are handled properly in grouping."""
         from src.tgraph_bot.graphs.graph_modules.utils.resolution_grouping import group_resolution_by_strategy
         
-        # Test that unknown values are preserved appropriately in each strategy
+        # Test that unknown values are mapped to Other in all strategies for cleaner graphs
         assert group_resolution_by_strategy("unknown", "simplified") == "Other"
-        assert group_resolution_by_strategy("unknown", "standard") == "unknown"
-        assert group_resolution_by_strategy("unknown", "detailed") == "Unknown (No resolution data from Tautulli)"
+        assert group_resolution_by_strategy("unknown", "standard") == "Other"
+        assert group_resolution_by_strategy("unknown", "detailed") == "Other"
         
-        # Test empty/None values
+        # Test empty/None values (should be consistent across strategies)
         assert group_resolution_by_strategy("", "simplified") == "Other"
-        assert group_resolution_by_strategy("", "standard") == ""
-        assert group_resolution_by_strategy("", "detailed") == ""
+        assert group_resolution_by_strategy("", "standard") == "Other"
+        assert group_resolution_by_strategy("", "detailed") == "Other"
 
     def test_invalid_grouping_strategy_fallback(self) -> None:
         """Test fallback behavior for invalid grouping strategies."""
@@ -256,3 +256,91 @@ class TestResolutionGrouping:
         # Should fallback to detailed strategy for invalid strategy names
         result = group_resolution_by_strategy("1920x1080", "invalid_strategy")
         assert result == "1080p (1920×1080)"  # detailed format
+
+    def test_unknown_resolution_merging_in_aggregation(self) -> None:
+        """Test that unknown resolutions are merged into Other category during aggregation."""
+        from src.tgraph_bot.graphs.graph_modules.utils.resolution_grouping import aggregate_by_resolution_grouped
+        
+        # Create test records with unknown resolutions and some that should group to Other
+        test_records: ProcessedRecords = [
+            {
+                "date": "2024-01-01",
+                "datetime": datetime(2024, 1, 1),
+                "user": "user1",
+                "platform": "web",
+                "media_type": "movie",
+                "duration": 7200,
+                "stopped": 7200,
+                "paused_counter": 0,
+                "transcode_decision": "direct play",
+                "video_resolution": "unknown",  # Should group to Other
+                "stream_video_resolution": "unknown",
+                "video_codec": "h264",
+                "audio_codec": "aac",
+                "container": "mp4",
+            },
+            {
+                "date": "2024-01-02",
+                "datetime": datetime(2024, 1, 2),
+                "user": "user2",
+                "platform": "web",
+                "media_type": "movie",
+                "duration": 7200,
+                "stopped": 7200,
+                "paused_counter": 0,
+                "transcode_decision": "direct play",
+                "video_resolution": "unknown",  # Should group to Other
+                "stream_video_resolution": "unknown",
+                "video_codec": "h264",
+                "audio_codec": "aac",
+                "container": "mp4",
+            },
+            {
+                "date": "2024-01-03",
+                "datetime": datetime(2024, 1, 3),
+                "user": "user3",
+                "platform": "web", 
+                "media_type": "movie",
+                "duration": 7200,
+                "stopped": 7200,
+                "paused_counter": 0,
+                "transcode_decision": "direct play",
+                "video_resolution": "1024x768",  # Should group to Other
+                "stream_video_resolution": "1024x768",
+                "video_codec": "h264",
+                "audio_codec": "aac",
+                "container": "mp4",
+            },
+            {
+                "date": "2024-01-04",
+                "datetime": datetime(2024, 1, 4),
+                "user": "user4",
+                "platform": "web",
+                "media_type": "movie",
+                "duration": 7200,
+                "stopped": 7200,
+                "paused_counter": 0,
+                "transcode_decision": "direct play",
+                "video_resolution": "1920x1080",  # Should group to 1080p
+                "stream_video_resolution": "1920x1080",
+                "video_codec": "h264",
+                "audio_codec": "aac",
+                "container": "mp4",
+            },
+        ]
+        
+        # Aggregate using standard strategy
+        result = aggregate_by_resolution_grouped(test_records, "video_resolution", "standard")
+        
+        # Extract resolution names from result
+        resolution_names = [agg["resolution"] for agg in result]
+        
+        # Unknown should be merged into Other, not appear as separate entry
+        assert "unknown" not in resolution_names
+        assert "Unknown (No resolution data from Tautulli)" not in resolution_names
+        assert "Other" in resolution_names
+        assert "1080p" in resolution_names
+        
+        # Count should be correct - Other should have 3 plays (2 unknown + 1 from 1024x768)
+        other_agg = next(agg for agg in result if agg["resolution"] == "Other")
+        assert other_agg["play_count"] == 3

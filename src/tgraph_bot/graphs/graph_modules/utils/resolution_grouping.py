@@ -141,12 +141,9 @@ def _group_standard(resolution: str) -> str:
     Returns:
         Standard resolution name (4K, 1440p, 1080p, 720p, etc.) or "Other"/"unknown"
     """
-    if not resolution:
-        return resolution
-    
-    # Handle special cases
-    if resolution == "unknown":
-        return resolution
+    # Handle special cases - merge unknown and empty into Other for cleaner graphs
+    if not resolution or resolution == "unknown":
+        return "Other"
     
     # First check exact mappings for standard formats
     exact_mapping = {
@@ -223,8 +220,8 @@ def _format_detailed(resolution: str) -> str:
     Returns:
         Detailed resolution string with friendly names
     """
-    if resolution == "unknown" or not resolution:
-        return "Unknown (No resolution data from Tautulli)" if resolution == "unknown" else resolution
+    if not resolution or resolution == "unknown":
+        return "Other"
     
     # Detailed resolution mappings with friendly names
     detailed_mapping = {
