@@ -19,6 +19,8 @@ from ...data.data_processor import data_processor
 from ...utils.utils import (
     ProcessedRecords,
     aggregate_by_resolution,
+    filter_records_by_stream_type,
+    get_available_stream_types,
 )
 from ...visualization.visualization_mixin import VisualizationMixin
 
@@ -127,9 +129,12 @@ class PlayCountBySourceResolutionGraph(BaseGraph, VisualizationMixin):
             # Step 3: Configure styling for bar charts
             self.configure_seaborn_style_with_grid()
 
-            # Step 4: Generate resolution visualization
-            if processed_records:
-                self._generate_resolution_visualization(ax, processed_records)
+            # Step 4: Apply stream type filtering if configured
+            filtered_records = self._apply_stream_type_filtering(processed_records)
+
+            # Step 5: Generate resolution visualization
+            if filtered_records:
+                self._generate_resolution_visualization(ax, filtered_records)
             else:
                 # Show message that no data is available
                 self._generate_no_data_visualization(ax)
@@ -145,6 +150,46 @@ class PlayCountBySourceResolutionGraph(BaseGraph, VisualizationMixin):
             raise
         finally:
             self.cleanup()
+
+    def _apply_stream_type_filtering(self, processed_records: ProcessedRecords) -> ProcessedRecords:
+        """
+        Apply stream type filtering to processed records based on configuration.
+
+        This method allows filtering by specific stream types (direct play, copy, transcode)
+        to focus the resolution analysis on particular streaming scenarios.
+
+        Args:
+            processed_records: List of processed play history records
+
+        Returns:
+            Filtered list of records based on stream type configuration
+        """
+        # Check if stream type filtering is configured
+        # For now, we'll include all stream types by default
+        # This can be extended to read from configuration in the future
+
+        # Get available stream types in the data
+        available_types = get_available_stream_types(processed_records)
+
+        if not available_types:
+            logger.warning("No stream type data available in records")
+            return processed_records
+
+        logger.info(f"Available stream types: {', '.join(available_types)}")
+
+        # For now, include all stream types (no filtering)
+        # Future enhancement: Add configuration option to filter specific types
+        # Example: filter_records_by_stream_type(processed_records, ["direct play", "copy"])
+
+        filtered_records = filter_records_by_stream_type(
+            processed_records,
+            stream_types=None,  # Include all types
+            exclude_unknown=True  # Exclude unknown stream types for cleaner data
+        )
+
+        logger.info(f"Stream type filtering: {len(filtered_records)} records after filtering (excluded unknown types)")
+
+        return filtered_records
 
     def _generate_resolution_visualization(
         self, ax: Axes, processed_records: ProcessedRecords

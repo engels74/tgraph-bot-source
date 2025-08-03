@@ -1546,6 +1546,124 @@ def calculate_concurrent_streams_by_date(
     return concurrent_aggregates
 
 
+# Stream Type Filtering Functions
+# ===============================
+
+
+def filter_records_by_stream_type(
+    records: ProcessedRecords,
+    stream_types: list[str] | str | None = None,
+    exclude_unknown: bool = True
+) -> ProcessedRecords:
+    """
+    Filter processed records by stream type (transcode decision).
+
+    Args:
+        records: List of processed play history records
+        stream_types: Stream type(s) to include. Can be:
+            - None: Include all stream types (default)
+            - str: Single stream type (e.g., "direct play")
+            - list[str]: Multiple stream types (e.g., ["direct play", "copy"])
+        exclude_unknown: Whether to exclude records with unknown stream types
+
+    Returns:
+        Filtered list of records matching the specified stream types
+
+    Examples:
+        # Filter for only direct play streams
+        direct_play_records = filter_records_by_stream_type(records, "direct play")
+
+        # Filter for direct play and direct stream
+        efficient_streams = filter_records_by_stream_type(
+            records, ["direct play", "copy"]
+        )
+
+        # Get all records including unknown
+        all_records = filter_records_by_stream_type(records, exclude_unknown=False)
+    """
+    if not records:
+        return []
+
+    # Normalize stream_types to a list
+    if stream_types is None:
+        target_types = None  # Include all types
+    elif isinstance(stream_types, str):
+        target_types = [stream_types.lower()]
+    else:
+        target_types = [st.lower() for st in stream_types]
+
+    filtered_records: ProcessedRecords = []
+
+    for record in records:
+        stream_type = record["transcode_decision"].lower()
+
+        # Skip unknown types if requested
+        if exclude_unknown and stream_type == "unknown":
+            continue
+
+        # Include all types if no specific types requested
+        if target_types is None:
+            filtered_records.append(record)
+        # Include only if stream type matches
+        elif stream_type in target_types:
+            filtered_records.append(record)
+
+    return filtered_records
+
+
+def get_available_stream_types(records: ProcessedRecords) -> list[str]:
+    """
+    Get list of unique stream types present in the records.
+
+    Args:
+        records: List of processed play history records
+
+    Returns:
+        Sorted list of unique stream types found in the data
+    """
+    if not records:
+        return []
+
+    stream_types: set[str] = set()
+    for record in records:
+        stream_type = record["transcode_decision"]
+        if stream_type:  # Skip empty/None values
+            stream_types.add(stream_type)
+
+    return sorted(list(stream_types))
+
+
+def get_stream_type_statistics(records: ProcessedRecords) -> dict[str, dict[str, int | float]]:
+    """
+    Get statistics about stream type distribution in the records.
+
+    Args:
+        records: List of processed play history records
+
+    Returns:
+        Dictionary with stream type statistics including counts and percentages
+    """
+    if not records:
+        return {}
+
+    total_records = len(records)
+    stream_type_counts: dict[str, int] = defaultdict(int)
+
+    for record in records:
+        stream_type = record["transcode_decision"]
+        stream_type_counts[stream_type] += 1
+
+    statistics: dict[str, dict[str, int | float]] = {}
+    for stream_type, count in stream_type_counts.items():
+        percentage = (count / total_records) * 100
+        statistics[stream_type] = {
+            "count": count,
+            "percentage": round(percentage, 2)
+        }
+
+    return statistics
+
+
 # Helper functions for stream type display and styling
 # ===================================================
 

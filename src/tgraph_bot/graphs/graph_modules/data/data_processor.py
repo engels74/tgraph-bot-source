@@ -12,7 +12,7 @@ from typing import Callable, TypeVar, TYPE_CHECKING, cast
 from collections.abc import Mapping, Sequence
 
 if TYPE_CHECKING:
-    from .data_fetcher import PlayHistoryData
+    from .data_fetcher import PlayHistoryData, DataFetcher
     from ..utils.utils import ProcessedRecords
 
 T = TypeVar("T")
@@ -403,160 +403,55 @@ class DataProcessor:
         self, data: Mapping[str, object] | PlayHistoryData
     ) -> tuple[Sequence[Mapping[str, object]], ProcessedRecords]:
         """
-        Enhanced version that fetches resolution data from media metadata and joins with play history.
-        
+        Optimized version that efficiently fetches resolution data from media metadata.
+
         This method:
         1. Extracts play history (same as standard method)
         2. Identifies unique rating_keys from the play data
-        3. Fetches media metadata for those items to get resolution info
+        3. Efficiently fetches media metadata with caching and batching
         4. Joins resolution data with play records
-        
+
+        Optimizations:
+        - Deduplicates rating_keys to avoid redundant API calls
+        - Uses proper caching to avoid repeated requests
+        - Implements concurrent fetching for better performance
+        - Reduces logging verbosity
+
         Args:
             data: API response data or PlayHistoryData
-            
+
         Returns:
             Tuple of (raw_records, processed_records) with resolution data from metadata
         """
         # Step 1: Get the basic play history data (without resolution)
         records, _ = self.extract_and_process_play_history(data)
-        
-        # Step 2: Extract unique rating_keys from play records
+
+        # Step 2: Extract unique rating_keys from play records (deduplicated)
         rating_keys: set[str] = set()
         for record in records:
             if isinstance(record, dict) and "rating_key" in record:
                 rating_key = record["rating_key"]
                 if rating_key:
                     rating_keys.add(str(rating_key))
-        
-        logger.info(f"Found {len(rating_keys)} unique media items in play history")
-        
-        # Step 3: Fetch media metadata for resolution information
-        from .data_fetcher import DataFetcher
-        from tgraph_bot.config.manager import ConfigManager
-        from tgraph_bot.utils.cli.paths import PathConfig
-        
-        resolution_cache: dict[str, dict[str, str]] = {}
-        
-        try:
-            # Load config to get Tautulli connection details
-            path_config = PathConfig()
-            config_path = path_config.config_file
-            config_manager = ConfigManager()
-            config = config_manager.load_config(config_path)
-            
-            # Fetch resolution data for each unique rating_key
-            async with DataFetcher(
-                base_url=config.services.tautulli.url,
-                api_key=config.services.tautulli.api_key
-            ) as fetcher:
-                
-                # Batch process rating keys (limit API calls)
-                for rating_key in list(rating_keys)[:100]:  # Limit to avoid too many API calls
-                    try:
-                        metadata = await fetcher.get_media_metadata(int(rating_key))
-                        
-                        # Extract resolution info from metadata
-                        video_resolution = "unknown"
-                        stream_video_resolution = "unknown"
-                        
-                        if isinstance(metadata, dict):
-                            # Check media_info field which contains the actual resolution data
-                            media_info = metadata.get("media_info")
-                            if media_info and isinstance(media_info, list) and media_info:
-                                # Get the first media info item (there may be multiple parts)
-                                media_data = media_info[0]
-                                if isinstance(media_data, dict):
-                                    # Extract source resolution from media_info
-                                    for field_name in ["video_resolution", "video_full_resolution"]:
-                                        if field_name in media_data:
-                                            resolution_value = media_data[field_name]
-                                            if resolution_value and str(resolution_value) != "unknown":
-                                                # Convert to standard format (e.g., "1080" -> "1920x1080")
-                                                if str(resolution_value) == "1080":
-                                                    width = media_data.get("width", 1920)
-                                                    height = media_data.get("height", 1080)
-                                                    video_resolution = f"{width}x{height}"
-                                                elif str(resolution_value) == "720":
-                                                    width = media_data.get("width", 1280)
-                                                    height = media_data.get("height", 720)
-                                                    video_resolution = f"{width}x{height}"
-                                                elif str(resolution_value) == "480":
-                                                    width = media_data.get("width", 720)
-                                                    height = media_data.get("height", 480)
-                                                    video_resolution = f"{width}x{height}"
-                                                elif str(resolution_value) == "2160":
-                                                    width = media_data.get("width", 3840)
-                                                    height = media_data.get("height", 2160)
-                                                    video_resolution = f"{width}x{height}"
-                                                else:
-                                                    # Use width x height directly
-                                                    width = media_data.get("width")
-                                                    height = media_data.get("height")
-                                                    if width and height:
-                                                        video_resolution = f"{width}x{height}"
-                                                    else:
-                                                        video_resolution = str(resolution_value)
-                                                break
-                                    
-                                    # For stream resolution, use the same as source resolution for now
-                                    # (stream resolution would come from active session data, not historical metadata)
-                                    stream_video_resolution = video_resolution
-                            
-                            # Fallback: try direct fields in metadata (unlikely to have data based on our testing)
-                            if video_resolution == "unknown":
-                                for field_name in ["video_resolution", "resolution", "video_full_resolution"]:
-                                    if field_name in metadata:
-                                        resolution_value = metadata[field_name]
-                                        if resolution_value and str(resolution_value) != "unknown":
-                                            video_resolution = str(resolution_value)
-                                            break
-                                
-                                # Try to construct from width/height in main metadata
-                                if video_resolution == "unknown":
-                                    width = metadata.get("width")
-                                    height = metadata.get("height")
-                                    if width and height:
-                                        try:
-                                            w = int(width)
-                                            h = int(height)
-                                            if w > 0 and h > 0:
-                                                video_resolution = f"{w}x{h}"
-                                        except (ValueError, TypeError):
-                                            pass
-                        
-                        resolution_cache[rating_key] = {
-                            "video_resolution": video_resolution,
-                            "stream_video_resolution": stream_video_resolution
-                        }
-                        
-                    except Exception as e:
-                        logger.warning(f"Failed to fetch metadata for rating_key {rating_key}: {e}")
-                        resolution_cache[rating_key] = {
-                            "video_resolution": "unknown",
-                            "stream_video_resolution": "unknown"
-                        }
-                        
-        except Exception as e:
-            logger.error(f"Failed to fetch resolution metadata: {e}")
-            # Fall back to using unknown values
-            for rating_key in rating_keys:
-                resolution_cache[rating_key] = {
-                    "video_resolution": "unknown", 
-                    "stream_video_resolution": "unknown"
-                }
-        
-        logger.info(f"Fetched resolution data for {len(resolution_cache)} media items")
-        
+
+        unique_count = len(rating_keys)
+        logger.info(f"Processing resolution data for {unique_count} unique media items")
+
+        # Step 3: Efficiently fetch media metadata for resolution information
+        resolution_cache = await self._fetch_resolution_metadata_optimized(rating_keys)
+
+        logger.info(f"Successfully cached resolution data for {len(resolution_cache)} items")
+
         # Step 4: Process records with enhanced resolution data
         from ..utils.utils import process_play_history_data_enhanced
-        
+
         # Convert records to dict format and add resolution data
         enriched_record_dicts: list[dict[str, object]] = []
         for record in records:
             if isinstance(record, dict):
                 # Copy the original record
                 enriched_record = dict(record)
-                
+
                 # Add resolution data from metadata cache
                 rating_key = str(record.get("rating_key", ""))
                 if rating_key in resolution_cache:
@@ -566,16 +461,218 @@ class DataProcessor:
                         "video_resolution": "unknown",
                         "stream_video_resolution": "unknown"
                     })
-                
+
                 enriched_record_dicts.append(enriched_record)
-        
+
         # Process the enriched data
         enriched_raw_data = {"data": enriched_record_dicts}
         processed_records = process_play_history_data_enhanced(enriched_raw_data)
-        
-        logger.info(f"Enhanced processing with resolution data completed: {len(processed_records)} records")
-        
+
+        logger.info(f"Enhanced processing completed: {len(processed_records)} records with resolution data")
+
         return records, processed_records
+
+    async def _fetch_resolution_metadata_optimized(
+        self, rating_keys: set[str]
+    ) -> dict[str, dict[str, str]]:
+        """
+        Optimized metadata fetching with caching, batching, and concurrency.
+
+        Args:
+            rating_keys: Set of unique rating keys to fetch metadata for
+
+        Returns:
+            Dictionary mapping rating_keys to resolution data
+        """
+        import asyncio
+        from .data_fetcher import DataFetcher
+        from tgraph_bot.config.manager import ConfigManager
+        from tgraph_bot.utils.cli.paths import PathConfig
+
+        resolution_cache: dict[str, dict[str, str]] = {}
+
+        if not rating_keys:
+            return resolution_cache
+
+        try:
+            # Load config to get Tautulli connection details
+            path_config = PathConfig()
+            config_path = path_config.config_file
+            config_manager = ConfigManager()
+            config = config_manager.load_config(config_path)
+
+            async with DataFetcher(
+                base_url=config.services.tautulli.url,
+                api_key=config.services.tautulli.api_key
+            ) as fetcher:
+
+                # Process in batches to avoid overwhelming the API
+                batch_size = 50  # Reasonable batch size
+                rating_keys_list = list(rating_keys)
+
+                for i in range(0, len(rating_keys_list), batch_size):
+                    batch = rating_keys_list[i:i + batch_size]
+                    batch_results = await self._fetch_metadata_batch(fetcher, batch)
+                    resolution_cache.update(batch_results)
+
+                    # Small delay between batches to be respectful to the API
+                    if i + batch_size < len(rating_keys_list):
+                        await asyncio.sleep(0.1)
+
+        except Exception as e:
+            logger.error(f"Failed to fetch resolution metadata: {e}")
+            # Fall back to using unknown values for all rating keys
+            for rating_key in rating_keys:
+                resolution_cache[rating_key] = {
+                    "video_resolution": "unknown",
+                    "stream_video_resolution": "unknown"
+                }
+
+        return resolution_cache
+
+    async def _fetch_metadata_batch(
+        self, fetcher: DataFetcher, rating_keys_batch: list[str]
+    ) -> dict[str, dict[str, str]]:
+        """
+        Fetch metadata for a batch of rating keys concurrently.
+
+        Args:
+            fetcher: DataFetcher instance
+            rating_keys_batch: List of rating keys to fetch
+
+        Returns:
+            Dictionary mapping rating_keys to resolution data for this batch
+        """
+        import asyncio
+
+        batch_cache: dict[str, dict[str, str]] = {}
+
+        # Create concurrent tasks for the batch
+        tasks = []
+        for rating_key in rating_keys_batch:
+            task = self._fetch_single_metadata(fetcher, rating_key)
+            tasks.append(task)
+
+        # Execute all tasks concurrently
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        # Process results
+        for rating_key, result in zip(rating_keys_batch, results):
+            if isinstance(result, dict):
+                batch_cache[rating_key] = result
+            else:
+                # Handle exceptions or failed requests
+                batch_cache[rating_key] = {
+                    "video_resolution": "unknown",
+                    "stream_video_resolution": "unknown"
+                }
+
+        return batch_cache
+
+    async def _fetch_single_metadata(
+        self, fetcher: DataFetcher, rating_key: str
+    ) -> dict[str, str]:
+        """
+        Fetch metadata for a single rating key with error handling.
+
+        Args:
+            fetcher: DataFetcher instance
+            rating_key: Rating key to fetch metadata for
+
+        Returns:
+            Dictionary with resolution data
+        """
+        try:
+            metadata = await fetcher.get_media_metadata(int(rating_key))
+
+            # Extract resolution info from metadata
+            video_resolution = "unknown"
+            stream_video_resolution = "unknown"
+
+            if isinstance(metadata, dict):
+                # Check media_info field which contains the actual resolution data
+                media_info = metadata.get("media_info")
+                if media_info and isinstance(media_info, list) and media_info:
+                    # Get the first media info item (there may be multiple parts)
+                    media_data = media_info[0]
+                    if isinstance(media_data, dict):
+                        # Extract source resolution from media_info
+                        for field_name in ["video_resolution", "video_full_resolution"]:
+                            if field_name in media_data:
+                                resolution_value = media_data[field_name]
+                                if resolution_value and str(resolution_value) != "unknown":
+                                    # Convert to standard format (e.g., "1080" -> "1920x1080")
+                                    if str(resolution_value) == "1080":
+                                        width = media_data.get("width", 1920)
+                                        height = media_data.get("height", 1080)
+                                        video_resolution = f"{width}x{height}"
+                                    elif str(resolution_value) == "720":
+                                        width = media_data.get("width", 1280)
+                                        height = media_data.get("height", 720)
+                                        video_resolution = f"{width}x{height}"
+                                    elif str(resolution_value) == "480":
+                                        width = media_data.get("width", 720)
+                                        height = media_data.get("height", 480)
+                                        video_resolution = f"{width}x{height}"
+                                    elif str(resolution_value) == "2160":
+                                        width = media_data.get("width", 3840)
+                                        height = media_data.get("height", 2160)
+                                        video_resolution = f"{width}x{height}"
+                                    else:
+                                        # Use width x height directly
+                                        width = media_data.get("width")
+                                        height = media_data.get("height")
+                                        if width and height:
+                                            try:
+                                                w = int(width)  # pyright: ignore[reportUnknownArgumentType]
+                                                h = int(height)  # pyright: ignore[reportUnknownArgumentType]
+                                                if w > 0 and h > 0:
+                                                    video_resolution = f"{w}x{h}"
+                                            except (ValueError, TypeError):
+                                                video_resolution = str(resolution_value)  # pyright: ignore[reportUnknownArgumentType]
+                                        else:
+                                            video_resolution = str(resolution_value)  # pyright: ignore[reportUnknownArgumentType]
+                                    break
+
+                        # For stream resolution, use the same as source resolution for now
+                        # (stream resolution would come from active session data, not historical metadata)
+                        stream_video_resolution = video_resolution
+
+                # Fallback: try direct fields in metadata
+                if video_resolution == "unknown":
+                    for field_name in ["video_resolution", "resolution", "video_full_resolution"]:
+                        if field_name in metadata:
+                            resolution_value = metadata[field_name]
+                            if resolution_value and str(resolution_value) != "unknown":
+                                video_resolution = str(resolution_value)
+                                break
+
+                    # Try to construct from width/height in main metadata
+                    if video_resolution == "unknown":
+                        width = metadata.get("width")
+                        height = metadata.get("height")
+                        if width and height:
+                            try:
+                                w = int(width)  # pyright: ignore[reportArgumentType]
+                                h = int(height)  # pyright: ignore[reportArgumentType]
+                                if w > 0 and h > 0:
+                                    video_resolution = f"{w}x{h}"
+                                    stream_video_resolution = video_resolution
+                            except (ValueError, TypeError):
+                                pass
+
+            return {
+                "video_resolution": video_resolution,
+                "stream_video_resolution": stream_video_resolution
+            }
+
+        except Exception as e:
+            # Log warning but don't fail the entire process
+            logger.debug(f"Failed to fetch metadata for rating_key {rating_key}: {e}")
+            return {
+                "video_resolution": "unknown",
+                "stream_video_resolution": "unknown"
+            }
 
     def validate_extracted_data(
         self,
