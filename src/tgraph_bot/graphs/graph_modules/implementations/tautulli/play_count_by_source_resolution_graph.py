@@ -19,11 +19,11 @@ from ...data.data_processor import data_processor
 from ...utils.utils import (
     ProcessedRecords,
     aggregate_by_resolution,
-    aggregate_by_resolution_and_stream_type,
     filter_records_by_stream_type,
     get_available_stream_types,
     get_stream_type_display_info,
 )
+from ...utils.resolution_grouping import aggregate_by_resolution_and_stream_type_grouped
 from ...visualization.visualization_mixin import VisualizationMixin
 
 if TYPE_CHECKING:
@@ -203,9 +203,18 @@ class PlayCountBySourceResolutionGraph(BaseGraph, VisualizationMixin):
             ax: The matplotlib axes to plot on
             processed_records: List of processed play history records
         """
-        # Aggregate data by source resolution with stream type breakdown
-        resolution_stream_data = aggregate_by_resolution_and_stream_type(
-            processed_records, resolution_field="video_resolution"
+        # Get resolution grouping strategy from configuration
+        grouping_strategy = "standard"  # Default fallback
+        if self.config:
+            from ...config.config_accessor import ConfigAccessor
+            config_accessor = ConfigAccessor(self.config)
+            grouping_strategy = config_accessor.get_resolution_grouping_strategy("play_count_by_source_resolution")
+
+        # Aggregate data by source resolution with stream type breakdown using grouping
+        resolution_stream_data = aggregate_by_resolution_and_stream_type_grouped(
+            processed_records,
+            resolution_field="video_resolution",
+            grouping_strategy=grouping_strategy
         )
 
         if not resolution_stream_data:
@@ -227,12 +236,12 @@ class PlayCountBySourceResolutionGraph(BaseGraph, VisualizationMixin):
         stream_type_info = get_stream_type_display_info()
 
         # Get all unique stream types across all resolutions
-        all_stream_types = set()
+        all_stream_types: set[str] = set()
         for resolution in sorted_resolutions:
             for stream_record in resolution_stream_data[resolution]:
                 all_stream_types.add(stream_record["stream_type"])
 
-        stream_types = sorted(all_stream_types)
+        stream_types: list[str] = sorted(all_stream_types)
 
         if not stream_types:
             self.handle_empty_data_with_message(

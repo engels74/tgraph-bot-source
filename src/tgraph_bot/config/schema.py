@@ -190,15 +190,41 @@ class PerGraphSettingsConfig(BaseModel):
     )
 
 
+class ResolutionGroupingConfig(BaseModel):
+    """Configuration for resolution grouping in analytics graphs."""
+
+    resolution_grouping: str = Field(
+        default="standard",
+        description="How to group resolutions: 'standard', 'detailed', 'simplified'",
+        pattern=r"^(standard|detailed|simplified)$",
+    )
+
+
+class PlayCountBySourceResolutionConfig(ResolutionGroupingConfig):
+    """Configuration for Play Count by Source Resolution graph."""
+    pass
+
+
+class PlayCountByStreamResolutionConfig(ResolutionGroupingConfig):
+    """Configuration for Play Count by Stream Resolution graph."""
+
+    transcoding_focus: bool = Field(
+        default=True,
+        description="Emphasize transcoded vs non-transcoded content",
+    )
+
+
 class PerGraphConfig(BaseModel):
     """Per-graph configuration settings."""
-    
+
     daily_play_count: PerGraphSettingsConfig = Field(default_factory=PerGraphSettingsConfig)
     play_count_by_dayofweek: PerGraphSettingsConfig = Field(default_factory=PerGraphSettingsConfig)
     play_count_by_hourofday: PerGraphSettingsConfig = Field(default_factory=PerGraphSettingsConfig)
     top_10_platforms: PerGraphSettingsConfig = Field(default_factory=PerGraphSettingsConfig)
     top_10_users: PerGraphSettingsConfig = Field(default_factory=PerGraphSettingsConfig)
     play_count_by_month: PerGraphSettingsConfig = Field(default_factory=PerGraphSettingsConfig)
+    play_count_by_source_resolution: PlayCountBySourceResolutionConfig = Field(default_factory=PlayCountBySourceResolutionConfig)
+    play_count_by_stream_resolution: PlayCountByStreamResolutionConfig = Field(default_factory=PlayCountByStreamResolutionConfig)
 
 
 class GraphFeaturesConfig(BaseModel):

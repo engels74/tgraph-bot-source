@@ -316,7 +316,7 @@ class ConfigAccessor:
             "daily_play_count", "play_count_by_dayofweek", "play_count_by_hourofday",
             "top_10_platforms", "top_10_users", "play_count_by_month"
         }
-        
+
         # For valid graph types, try per-graph setting first
         if graph_type in valid_graph_types:
             per_graph_path = f"graphs.per_graph.{graph_type}.media_type_separation"
@@ -325,10 +325,37 @@ class ConfigAccessor:
                 return bool(value)
             except ConfigurationError:
                 pass  # Fall through to global setting
-        
+
         # Fall back to global setting for unknown/test graph types
         global_path = "graphs.features.media_type_separation"
         return self.get_bool_value(global_path, default=True)
+
+    def get_resolution_grouping_strategy(self, graph_type: str) -> str:
+        """
+        Get resolution grouping strategy for a specific graph type.
+
+        Args:
+            graph_type: Graph type name (e.g., "play_count_by_source_resolution", "play_count_by_stream_resolution")
+
+        Returns:
+            Resolution grouping strategy ("standard", "detailed", "simplified")
+        """
+        # Valid resolution graph types that have resolution grouping configuration
+        valid_graph_types = {
+            "play_count_by_source_resolution", "play_count_by_stream_resolution"
+        }
+
+        # For valid graph types, try per-graph setting
+        if graph_type in valid_graph_types:
+            per_graph_path = f"graphs.per_graph.{graph_type}.resolution_grouping"
+            try:
+                value = self.get_nested_value(per_graph_path)
+                return str(value)
+            except ConfigurationError:
+                pass  # Fall through to default
+
+        # Default to "standard" grouping strategy
+        return "standard"
 
     def get_per_graph_stacked_bar_charts(self, graph_type: str) -> bool:
         """
