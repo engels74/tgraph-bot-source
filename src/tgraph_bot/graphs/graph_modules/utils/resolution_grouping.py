@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .utils import ProcessedRecords, ResolutionAggregates, ResolutionStreamTypeAggregates
-    from .utils import ResolutionAggregateRecord, ResolutionStreamTypeAggregateRecord
+    from .utils import ResolutionStreamTypeAggregateRecord
 
 logger = logging.getLogger(__name__)
 
@@ -81,35 +81,133 @@ def _group_simplified(resolution: str) -> str:
         return "Other"
 
 
+def _is_reasonable_video_aspect_ratio(width: int, height: int) -> bool:
+    """
+    Check if the aspect ratio is reasonable for video content.
+    
+    Video content typically has aspect ratios like:
+    - 16:9 (1.78) - most common for modern video
+    - 21:9 (2.33) - ultrawide/cinema 
+    - 4:3 (1.33) - older TV content
+    - 2.35:1, 2.4:1 - cinema formats
+    
+    Computer display ratios like 5:4 (1024x768 = 1.33) should be excluded
+    even though they match 4:3, because they're not video resolutions.
+    
+    Args:
+        width: Width in pixels
+        height: Height in pixels
+        
+    Returns:
+        True if this looks like a video aspect ratio, False otherwise
+    """
+    if height == 0:
+        return False
+        
+    aspect_ratio = width / height
+    
+    # Common video aspect ratios (with some tolerance)
+    video_ratios = [
+        (16/9, 0.1),    # 1.78 ± 0.1 (covers 1.68-1.88, includes anamorphic variants)
+        (21/9, 0.15),   # 2.33 ± 0.15 (covers 2.18-2.48, ultrawide/cinema)
+        (4/3, 0.05),    # 1.33 ± 0.05 (covers 1.28-1.38, older TV, but be restrictive)
+        (2.35, 0.1),    # Cinema format
+        (2.4, 0.1),     # Cinema format
+    ]
+    
+    for target_ratio, tolerance in video_ratios:
+        if abs(aspect_ratio - target_ratio) <= tolerance:
+            # Additional check: 4:3 ratio should only apply to clearly video-sized content
+            if abs(target_ratio - 4/3) < 0.01:  # This is 4:3 ratio
+                # For 4:3, be more restrictive - exclude common computer display resolutions
+                # Only allow typical video 4:3 resolutions like 720x480, 640x480, etc.
+                return width <= 720 and height <= 576  # Exclude XGA and higher computer resolutions
+            return True
+    
+    return False
+
+
 def _group_standard(resolution: str) -> str:
     """
     Group into standard resolution names (4K, 1440p, 1080p, etc.).
     
-    This follows Tautulli's approach of using common resolution names
-    while falling back to original resolution for unmapped values.
+    This implements intelligent width-based categorization that handles
+    anamorphic, letterbox, and other aspect ratio variations commonly
+    found in real-world media files.
     
     Args:
-        resolution: Raw resolution string
+        resolution: Raw resolution string (e.g., "1920x1080", "1920x816")
         
     Returns:
-        Standard resolution name or original resolution
+        Standard resolution name (4K, 1440p, 1080p, 720p, etc.) or "Other"/"unknown"
     """
     if not resolution:
         return resolution
     
-    # Standard resolution mappings based on Tautulli research
-    standard_mapping = {
-        "3840x2160": "4K",
-        "4096x2160": "4K", 
-        "2560x1440": "1440p",
-        "1920x1080": "1080p",
-        "1280x720": "720p",
-        "854x480": "480p",
+    # Handle special cases
+    if resolution == "unknown":
+        return resolution
+    
+    # First check exact mappings for standard formats
+    exact_mapping = {
         "720x480": "NTSC",
         "720x576": "PAL",
     }
     
-    return standard_mapping.get(resolution, resolution)
+    if resolution in exact_mapping:
+        return exact_mapping[resolution]
+    
+    # Parse width and height from resolution string
+    try:
+        if 'x' not in resolution:
+            return "Other"
+        
+        width_str, height_str = resolution.split('x', 1)
+        width = int(width_str)
+        height = int(height_str)
+    except (ValueError, IndexError):
+        return "Other"
+    
+    # Intelligent width-based categorization with specific handling
+    # This handles anamorphic, letterbox, and different aspect ratios
+    
+    # 4K category (3840+ width or 4096+ width for cinema)
+    if width >= 3840:
+        return "4K"
+    
+    # Special handling for common 1440p widths (2560, and some variants around 1440)
+    # But exclude computer display ratios like 1600x1200 
+    elif width >= 2560 or (1440 <= width <= 1600 and _is_reasonable_video_aspect_ratio(width, height)):
+        return "1440p"
+    
+    # 1080p category (1800-2559 width range, covers 1920 and anamorphic variants)
+    elif 1800 <= width < 2560:
+        return "1080p"
+    
+    # 720p category (1200-1799 width range, covers 1280 and similar)  
+    elif 1200 <= width < 1800:
+        return "720p"
+    
+    # 480p category (800-1199 width range, covers 854 and similar, but height should be reasonable for video content)
+    elif 800 <= width < 1200 and height <= 600:
+        return "480p"
+    
+    # Handle height-based categorization for edge cases and vertical content
+    # But only for reasonable aspect ratios (not too square/unusual)
+    elif height >= 2160 and _is_reasonable_video_aspect_ratio(width, height):
+        return "4K"
+    elif height >= 1440 and _is_reasonable_video_aspect_ratio(width, height):
+        return "1440p"
+    elif height >= 1080 and _is_reasonable_video_aspect_ratio(width, height):
+        return "1080p"
+    elif height >= 720 and _is_reasonable_video_aspect_ratio(width, height):
+        return "720p"
+    elif height >= 480 and _is_reasonable_video_aspect_ratio(width, height):
+        return "480p"
+    
+    # Anything smaller falls into Other
+    else:
+        return "Other"
 
 
 def _format_detailed(resolution: str) -> str:

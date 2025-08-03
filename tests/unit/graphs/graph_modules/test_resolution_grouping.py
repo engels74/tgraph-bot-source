@@ -55,9 +55,25 @@ class TestResolutionGrouping:
         assert group_resolution_by_strategy("720x480", "standard") == "NTSC"
         assert group_resolution_by_strategy("720x576", "standard") == "PAL"
         
-        # Test fallback to original resolution for unmapped values
-        assert group_resolution_by_strategy("1024x768", "standard") == "1024x768"
-        assert group_resolution_by_strategy("unknown", "standard") == "unknown"
+        # Test intelligent width-based grouping for anamorphic and letterbox content
+        # These resolutions should be grouped by their width dimension
+        assert group_resolution_by_strategy("1920x816", "standard") == "1080p"   # Anamorphic 1080p
+        assert group_resolution_by_strategy("1920x804", "standard") == "1080p"   # Letterbox 1080p
+        assert group_resolution_by_strategy("1920x1040", "standard") == "1080p"  # Different aspect ratio 1080p
+        assert group_resolution_by_strategy("1920x1036", "standard") == "1080p"  # Different aspect ratio 1080p
+        assert group_resolution_by_strategy("1440x1080", "standard") == "1440p"  # 1440p variant
+        assert group_resolution_by_strategy("1458x1080", "standard") == "1440p"  # 1440p variant
+        
+        # Test 4K variants
+        assert group_resolution_by_strategy("3840x1600", "standard") == "4K"     # Ultrawide 4K
+        assert group_resolution_by_strategy("4096x1716", "standard") == "4K"     # Cinema 4K variant
+        
+        # Test 720p variants  
+        assert group_resolution_by_strategy("1280x536", "standard") == "720p"    # Letterbox 720p
+        
+        # Test fallback to "Other" for truly unmapped resolutions
+        assert group_resolution_by_strategy("1024x768", "standard") == "Other"   # XGA - not a standard TV/movie resolution
+        assert group_resolution_by_strategy("unknown", "standard") == "unknown"  # Handle unknown specially
 
     def test_group_resolution_by_strategy_detailed(self) -> None:
         """Test detailed grouping strategy (exact resolutions with friendly names)."""
