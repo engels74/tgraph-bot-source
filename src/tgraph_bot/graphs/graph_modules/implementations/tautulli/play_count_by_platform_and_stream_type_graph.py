@@ -243,7 +243,7 @@ class PlayCountByPlatformAndStreamTypeGraph(BaseGraph, VisualizationMixin):
 
         # Add legend for stream types
         _ = ax.legend(  # pyright: ignore[reportUnknownMemberType]
-            loc="lower right",
+            loc="upper right",
             frameon=True,
             fancybox=True,
             shadow=True,

@@ -326,7 +326,7 @@ class PlayCountBySourceResolutionGraph(BaseGraph, VisualizationMixin):
 
         # Add legend for stream types
         ax.legend(  # pyright: ignore[reportUnknownMemberType] # matplotlib method
-            loc="lower right",
+            loc="upper right",
             frameon=True,
             fancybox=True,
             shadow=True,
