@@ -290,13 +290,13 @@ class DataProcessor:
     ) -> tuple[Sequence[Mapping[str, object]], ProcessedRecords]:
         """
         Enhanced version of extract_and_process_play_history with resolution field fallback logic.
-        
+
         This method provides fallback support for resolution fields by attempting to
         combine width/height fields when the primary resolution fields are not available.
-        
+
         Args:
             data: API response data or PlayHistoryData
-            
+
         Returns:
             Tuple of (raw_records, processed_records) with enhanced resolution handling
         """
@@ -440,7 +440,9 @@ class DataProcessor:
         # Step 3: Efficiently fetch media metadata for resolution information
         resolution_cache = await self._fetch_resolution_metadata_optimized(rating_keys)
 
-        logger.info(f"Successfully cached resolution data for {len(resolution_cache)} items")
+        logger.info(
+            f"Successfully cached resolution data for {len(resolution_cache)} items"
+        )
 
         # Step 4: Process records with enhanced resolution data
         from ..utils.utils import process_play_history_data_enhanced
@@ -457,10 +459,12 @@ class DataProcessor:
                 if rating_key in resolution_cache:
                     enriched_record.update(resolution_cache[rating_key])
                 else:
-                    enriched_record.update({
-                        "video_resolution": "unknown",
-                        "stream_video_resolution": "unknown"
-                    })
+                    enriched_record.update(
+                        {
+                            "video_resolution": "unknown",
+                            "stream_video_resolution": "unknown",
+                        }
+                    )
 
                 enriched_record_dicts.append(enriched_record)
 
@@ -468,7 +472,9 @@ class DataProcessor:
         enriched_raw_data = {"data": enriched_record_dicts}
         processed_records = process_play_history_data_enhanced(enriched_raw_data)
 
-        logger.info(f"Enhanced processing completed: {len(processed_records)} records with resolution data")
+        logger.info(
+            f"Enhanced processing completed: {len(processed_records)} records with resolution data"
+        )
 
         return records, processed_records
 
@@ -503,15 +509,14 @@ class DataProcessor:
 
             async with DataFetcher(
                 base_url=config.services.tautulli.url,
-                api_key=config.services.tautulli.api_key
+                api_key=config.services.tautulli.api_key,
             ) as fetcher:
-
                 # Process in batches to avoid overwhelming the API
                 batch_size = 50  # Reasonable batch size
                 rating_keys_list = list(rating_keys)
 
                 for i in range(0, len(rating_keys_list), batch_size):
-                    batch = rating_keys_list[i:i + batch_size]
+                    batch = rating_keys_list[i : i + batch_size]
                     batch_results = await self._fetch_metadata_batch(fetcher, batch)
                     resolution_cache.update(batch_results)
 
@@ -525,7 +530,7 @@ class DataProcessor:
             for rating_key in rating_keys:
                 resolution_cache[rating_key] = {
                     "video_resolution": "unknown",
-                    "stream_video_resolution": "unknown"
+                    "stream_video_resolution": "unknown",
                 }
 
         return resolution_cache
@@ -564,7 +569,7 @@ class DataProcessor:
                 # Handle exceptions or failed requests
                 batch_cache[rating_key] = {
                     "video_resolution": "unknown",
-                    "stream_video_resolution": "unknown"
+                    "stream_video_resolution": "unknown",
                 }
 
         return batch_cache
@@ -600,7 +605,10 @@ class DataProcessor:
                         for field_name in ["video_resolution", "video_full_resolution"]:
                             if field_name in media_data:
                                 resolution_value = media_data[field_name]
-                                if resolution_value and str(resolution_value) != "unknown":
+                                if (
+                                    resolution_value
+                                    and str(resolution_value) != "unknown"
+                                ):
                                     # Convert to standard format (e.g., "1080" -> "1920x1080")
                                     if str(resolution_value) == "1080":
                                         width = media_data.get("width", 1920)
@@ -640,7 +648,11 @@ class DataProcessor:
 
                 # Fallback: try direct fields in metadata
                 if video_resolution == "unknown":
-                    for field_name in ["video_resolution", "resolution", "video_full_resolution"]:
+                    for field_name in [
+                        "video_resolution",
+                        "resolution",
+                        "video_full_resolution",
+                    ]:
                         if field_name in metadata:
                             resolution_value = metadata[field_name]
                             if resolution_value and str(resolution_value) != "unknown":
@@ -663,16 +675,13 @@ class DataProcessor:
 
             return {
                 "video_resolution": video_resolution,
-                "stream_video_resolution": stream_video_resolution
+                "stream_video_resolution": stream_video_resolution,
             }
 
         except Exception as e:
             # Log warning but don't fail the entire process
             logger.debug(f"Failed to fetch metadata for rating_key {rating_key}: {e}")
-            return {
-                "video_resolution": "unknown",
-                "stream_video_resolution": "unknown"
-            }
+            return {"video_resolution": "unknown", "stream_video_resolution": "unknown"}
 
     def validate_extracted_data(
         self,

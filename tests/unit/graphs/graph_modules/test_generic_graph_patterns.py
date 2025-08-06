@@ -141,7 +141,8 @@ class TestGenericGraphPatterns:
         # Test that configuration is accessible
         assert graph_minimal.config is minimal_config
         assert (
-            graph_minimal.get_config_value("services.tautulli.api_key") == "test_api_key_minimal"
+            graph_minimal.get_config_value("services.tautulli.api_key")
+            == "test_api_key_minimal"
         )
 
         # Test with comprehensive configuration
@@ -149,15 +150,24 @@ class TestGenericGraphPatterns:
         graph_comprehensive = GenericTestGraph(config=comprehensive_config)
 
         assert graph_comprehensive.config is comprehensive_config
-        assert graph_comprehensive.get_config_value("graphs.appearance.colors.tv") == "#2e86ab"
-        assert graph_comprehensive.get_config_value("graphs.appearance.colors.movie") == "#a23b72"
+        assert (
+            graph_comprehensive.get_config_value("graphs.appearance.colors.tv")
+            == "#2e86ab"
+        )
+        assert (
+            graph_comprehensive.get_config_value("graphs.appearance.colors.movie")
+            == "#a23b72"
+        )
 
         # Test with privacy-focused configuration
         privacy_config = create_test_config_privacy_focused()
         graph_privacy = GenericTestGraph(config=privacy_config)
 
         assert graph_privacy.config is privacy_config
-        assert graph_privacy.get_config_value("data_collection.privacy.censor_usernames") is True
+        assert (
+            graph_privacy.get_config_value("data_collection.privacy.censor_usernames")
+            is True
+        )
 
     def test_selective_configuration_patterns(self) -> None:
         """Test graphs with selective configuration options."""
@@ -169,9 +179,19 @@ class TestGenericGraphPatterns:
 
         graph = GenericTestGraph(config=selective_config)
 
-        assert graph.get_config_value("graphs.features.enabled_types.daily_play_count") is True
-        assert graph.get_config_value("graphs.features.enabled_types.play_count_by_dayofweek") is False
-        assert graph.get_config_value("graphs.features.enabled_types.top_10_users") is True
+        assert (
+            graph.get_config_value("graphs.features.enabled_types.daily_play_count")
+            is True
+        )
+        assert (
+            graph.get_config_value(
+                "graphs.features.enabled_types.play_count_by_dayofweek"
+            )
+            is False
+        )
+        assert (
+            graph.get_config_value("graphs.features.enabled_types.top_10_users") is True
+        )
 
     def test_graph_lifecycle_patterns(self) -> None:
         """Test standard graph lifecycle patterns."""

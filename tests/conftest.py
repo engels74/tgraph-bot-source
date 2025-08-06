@@ -495,77 +495,46 @@ def base_config() -> TGraphBotConfig:
     Returns:
         TGraphBotConfig: A standard test configuration with typical values
     """
-    return TGraphBotConfig.model_validate({
-        "services": {
-            "tautulli": {
-                "api_key": "test_api_key_standard",
-                "url": "http://localhost:8181/api/v2",
-            },
-            "discord": {
-                "token": "test_discord_token_1234567890",
-                "channel_id": 123456789012345678,
-                "timestamp_format": "R",
-                "ephemeral_message_delete_after": 30.0,
-            },
-        },
-        "automation": {
-            "scheduling": {
-                "update_days": 7,
-                "fixed_update_time": "XX:XX",
-            },
-            "data_retention": {
-                "keep_days": 7,
-            },
-        },
-        "data_collection": {
-            "time_ranges": {
-                "days": 30,
-                "months": 12,
-            },
-            "privacy": {
-                "censor_usernames": True,
-            },
-        },
-        "system": {
-            "localization": {
-                "language": "en",
-            },
-        },
-        "graphs": {
-            "features": {
-                "enabled_types": {
-                    "daily_play_count": True,
-                    "play_count_by_dayofweek": True,
-                    "play_count_by_hourofday": True,
-                    "top_10_platforms": True,
-                    "top_10_users": True,
-                    "play_count_by_month": True,
+    return TGraphBotConfig.model_validate(
+        {
+            "services": {
+                "tautulli": {
+                    "api_key": "test_api_key_standard",
+                    "url": "http://localhost:8181/api/v2",
                 },
-                "media_type_separation": True,
-                "stacked_bar_charts": True,
+                "discord": {
+                    "token": "test_discord_token_1234567890",
+                    "channel_id": 123456789012345678,
+                    "timestamp_format": "R",
+                    "ephemeral_message_delete_after": 30.0,
+                },
             },
-            "appearance": {
-                "dimensions": {
-                    "width": 14,
-                    "height": 8,
-                    "dpi": 100,
+            "automation": {
+                "scheduling": {
+                    "update_days": 7,
+                    "fixed_update_time": "XX:XX",
                 },
-                "colors": {
-                    "tv": "#1f77b4",
-                    "movie": "#ff7f0e",
-                    "background": "#ffffff",
+                "data_retention": {
+                    "keep_days": 7,
                 },
-                "grid": {
-                    "enabled": False,
+            },
+            "data_collection": {
+                "time_ranges": {
+                    "days": 30,
+                    "months": 12,
                 },
-                "annotations": {
-                    "basic": {
-                        "color": "#ff0000",
-                        "outline_color": "#000000",
-                        "enable_outline": True,
-                        "font_size": 10,
-                    },
-                    "enabled_on": {
+                "privacy": {
+                    "censor_usernames": True,
+                },
+            },
+            "system": {
+                "localization": {
+                    "language": "en",
+                },
+            },
+            "graphs": {
+                "features": {
+                    "enabled_types": {
                         "daily_play_count": True,
                         "play_count_by_dayofweek": True,
                         "play_count_by_hourofday": True,
@@ -573,39 +542,72 @@ def base_config() -> TGraphBotConfig:
                         "top_10_users": True,
                         "play_count_by_month": True,
                     },
-                    "peaks": {
-                        "enabled": True,
-                        "color": "#ffcc00",
-                        "text_color": "#000000",
+                    "media_type_separation": True,
+                    "stacked_bar_charts": True,
+                },
+                "appearance": {
+                    "dimensions": {
+                        "width": 14,
+                        "height": 8,
+                        "dpi": 100,
+                    },
+                    "colors": {
+                        "tv": "#1f77b4",
+                        "movie": "#ff7f0e",
+                        "background": "#ffffff",
+                    },
+                    "grid": {
+                        "enabled": False,
+                    },
+                    "annotations": {
+                        "basic": {
+                            "color": "#ff0000",
+                            "outline_color": "#000000",
+                            "enable_outline": True,
+                            "font_size": 10,
+                        },
+                        "enabled_on": {
+                            "daily_play_count": True,
+                            "play_count_by_dayofweek": True,
+                            "play_count_by_hourofday": True,
+                            "top_10_platforms": True,
+                            "top_10_users": True,
+                            "play_count_by_month": True,
+                        },
+                        "peaks": {
+                            "enabled": True,
+                            "color": "#ffcc00",
+                            "text_color": "#000000",
+                        },
+                    },
+                    "palettes": {
+                        "play_count_by_hourofday": "",
+                        "top_10_users": "",
+                        "daily_play_count": "",
+                        "play_count_by_dayofweek": "",
+                        "top_10_platforms": "",
+                        "play_count_by_month": "",
                     },
                 },
-                "palettes": {
-                    "play_count_by_hourofday": "",
-                    "top_10_users": "",
-                    "daily_play_count": "",
-                    "play_count_by_dayofweek": "",
-                    "top_10_platforms": "",
-                    "play_count_by_month": "",
+            },
+            "rate_limiting": {
+                "commands": {
+                    "config": {
+                        "user_cooldown_minutes": 0,
+                        "global_cooldown_seconds": 0,
+                    },
+                    "update_graphs": {
+                        "user_cooldown_minutes": 0,
+                        "global_cooldown_seconds": 0,
+                    },
+                    "my_stats": {
+                        "user_cooldown_minutes": 0,
+                        "global_cooldown_seconds": 0,
+                    },
                 },
             },
-        },
-        "rate_limiting": {
-            "commands": {
-                "config": {
-                    "user_cooldown_minutes": 0,
-                    "global_cooldown_seconds": 0,
-                },
-                "update_graphs": {
-                    "user_cooldown_minutes": 0,
-                    "global_cooldown_seconds": 0,
-                },
-                "my_stats": {
-                    "user_cooldown_minutes": 0,
-                    "global_cooldown_seconds": 0,
-                },
-            },
-        },
-    })
+        }
+    )
 
 
 @pytest.fixture
@@ -621,19 +623,21 @@ def minimal_config() -> TGraphBotConfig:
     Returns:
         TGraphBotConfig: A minimal configuration with only required fields set
     """
-    return TGraphBotConfig.model_validate({
-        "services": {
-            "tautulli": {
-                "api_key": "test_api_key_minimal",
-                "url": "http://localhost:8181/api/v2",
+    return TGraphBotConfig.model_validate(
+        {
+            "services": {
+                "tautulli": {
+                    "api_key": "test_api_key_minimal",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {
+                    "token": "test_discord_token_minimal",
+                    "channel_id": 123456789,
+                },
             },
-            "discord": {
-                "token": "test_discord_token_minimal",
-                "channel_id": 123456789,
-            },
-        },
-        # All other sections will use their default values from the schema
-    })
+            # All other sections will use their default values from the schema
+        }
+    )
 
 
 @pytest.fixture

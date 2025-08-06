@@ -31,8 +31,12 @@ class TestConfigAccessor:
         accessor = ConfigAccessor(config)
 
         # Test that nested paths work correctly
-        assert accessor.get_value("graphs.features.enabled_types.daily_play_count") is True
-        assert accessor.get_value("graphs.appearance.colors.tv") == "#2e86ab"  # Colors are normalized to lowercase
+        assert (
+            accessor.get_value("graphs.features.enabled_types.daily_play_count") is True
+        )
+        assert (
+            accessor.get_value("graphs.appearance.colors.tv") == "#2e86ab"
+        )  # Colors are normalized to lowercase
         assert accessor.get_value("graphs.appearance.colors.movie") == "#a23b72"
 
     def test_get_nested_value_with_dot_notation(self) -> None:
@@ -41,9 +45,17 @@ class TestConfigAccessor:
         accessor = ConfigAccessor(config)
 
         # Test direct nested path access
-        assert accessor.get_nested_value("graphs.features.enabled_types.daily_play_count") is True
-        assert accessor.get_nested_value("graphs.appearance.colors.tv") == "#2e86ab"  # Colors are normalized to lowercase
-        assert accessor.get_nested_value("services.tautulli.api_key") == "test_api_key_comprehensive"
+        assert (
+            accessor.get_nested_value("graphs.features.enabled_types.daily_play_count")
+            is True
+        )
+        assert (
+            accessor.get_nested_value("graphs.appearance.colors.tv") == "#2e86ab"
+        )  # Colors are normalized to lowercase
+        assert (
+            accessor.get_nested_value("services.tautulli.api_key")
+            == "test_api_key_comprehensive"
+        )
 
     def test_get_value_with_defaults(self) -> None:
         """Test getting values with defaults from TGraphBotConfig."""
@@ -51,7 +63,10 @@ class TestConfigAccessor:
         accessor = ConfigAccessor(config)
 
         # Test existing values using nested paths
-        assert accessor.get_value("services.tautulli.api_key", "default") == "test_api_key_minimal"
+        assert (
+            accessor.get_value("services.tautulli.api_key", "default")
+            == "test_api_key_minimal"
+        )
 
         # Test non-existent values with defaults
         assert accessor.get_value("nonexistent.key", "default") == "default"
@@ -63,7 +78,10 @@ class TestConfigAccessor:
         accessor = ConfigAccessor(config)
 
         # Test existing nested path
-        assert accessor.get_nested_value("services.tautulli.api_key", "default") == "test_api_key_minimal"
+        assert (
+            accessor.get_nested_value("services.tautulli.api_key", "default")
+            == "test_api_key_minimal"
+        )
 
         # Test non-existent nested path with default
         assert accessor.get_nested_value("nonexistent.path", "default") == "default"
@@ -89,8 +107,13 @@ class TestConfigAccessor:
         accessor = ConfigAccessor(config)
 
         # Test nested path access
-        assert accessor.get_bool_value("graphs.features.enabled_types.daily_play_count") is True
-        assert accessor.get_bool_value("data_collection.privacy.censor_usernames") is True
+        assert (
+            accessor.get_bool_value("graphs.features.enabled_types.daily_play_count")
+            is True
+        )
+        assert (
+            accessor.get_bool_value("data_collection.privacy.censor_usernames") is True
+        )
         assert accessor.get_bool_value("graphs.appearance.grid.enabled") is True
 
         # Test with defaults
@@ -218,7 +241,9 @@ class TestConfigAccessor:
         accessor = ConfigAccessor(config)
 
         # Test getting per-graph media type separation (these will use the new method once implemented)
-        daily_separation = accessor.get_per_graph_media_type_separation("daily_play_count")
+        daily_separation = accessor.get_per_graph_media_type_separation(
+            "daily_play_count"
+        )
         users_separation = accessor.get_per_graph_media_type_separation("top_10_users")
 
         # Should return boolean values

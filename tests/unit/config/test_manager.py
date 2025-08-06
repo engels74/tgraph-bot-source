@@ -48,12 +48,24 @@ class TestConfigManager:
             config = ConfigManager.load_config(temp_config_file)
 
             assert isinstance(config, TGraphBotConfig)
-            assert config.services.tautulli.api_key == base_config.services.tautulli.api_key
+            assert (
+                config.services.tautulli.api_key
+                == base_config.services.tautulli.api_key
+            )
             assert config.services.tautulli.url == base_config.services.tautulli.url
             assert config.services.discord.token == base_config.services.discord.token
-            assert config.services.discord.channel_id == base_config.services.discord.channel_id
-            assert config.automation.scheduling.update_days == base_config.automation.scheduling.update_days
-            assert config.graphs.appearance.colors.tv == base_config.graphs.appearance.colors.tv
+            assert (
+                config.services.discord.channel_id
+                == base_config.services.discord.channel_id
+            )
+            assert (
+                config.automation.scheduling.update_days
+                == base_config.automation.scheduling.update_days
+            )
+            assert (
+                config.graphs.appearance.colors.tv
+                == base_config.graphs.appearance.colors.tv
+            )
 
     def test_load_config_file_not_found(self) -> None:
         """Test loading config when file doesn't exist."""
@@ -296,7 +308,10 @@ graphs:
 
             # Verify original config is still intact
             reloaded_config = ConfigManager.load_config(temp_config_file)
-            assert reloaded_config.services.tautulli.api_key == config.services.tautulli.api_key
+            assert (
+                reloaded_config.services.tautulli.api_key
+                == config.services.tautulli.api_key
+            )
 
     def test_config_parsing_with_match_statement(
         self, comprehensive_config: TGraphBotConfig

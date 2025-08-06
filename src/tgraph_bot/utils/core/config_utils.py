@@ -82,7 +82,8 @@ class ConfigurationHelper:
                     raise ConfigurationError(
                         f"Configuration key '{key_path}' not found",
                         user_message=i18n.translate(
-                            "Configuration setting `{key}` is not available.", key=key_path
+                            "Configuration setting `{key}` is not available.",
+                            key=key_path,
                         ),
                     )
             return current
@@ -137,8 +138,6 @@ class ConfigurationHelper:
             )
 
         return channel
-
-
 
     def validate_setting_exists(self, setting: str) -> bool:
         """

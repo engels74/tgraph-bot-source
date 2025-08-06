@@ -47,7 +47,6 @@ class TestGraphTypeRegistry:
 
         assert set(type_names) == expected_types
 
-
     def test_get_graph_class_valid_types(self) -> None:
         """Test getting graph classes for valid type names."""
         from src.tgraph_bot.graphs.graph_modules.implementations.tautulli.daily_play_count_graph import (
@@ -72,8 +71,6 @@ class TestGraphTypeRegistry:
 
         with pytest.raises(ValueError, match="Unknown graph type: invalid_type"):
             _ = registry.get_graph_class("invalid_type")
-
-
 
     def test_get_type_name_from_class(self) -> None:
         """Test getting type name from graph class."""

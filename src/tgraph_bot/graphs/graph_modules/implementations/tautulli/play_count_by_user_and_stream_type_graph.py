@@ -1,7 +1,7 @@
 """
 Play count by user and stream type graph for TGraph Bot.
 
-This module inherits from BaseGraph and uses Seaborn to plot play counts 
+This module inherits from BaseGraph and uses Seaborn to plot play counts
 by user with stream type breakdown. This helps administrators understand which
 users are consuming the most server resources through transcoding.
 """
@@ -68,7 +68,9 @@ class PlayCountByUserAndStreamTypeGraph(BaseGraph, VisualizationMixin):
         Returns:
             The graph title with timeframe information
         """
-        return self.get_enhanced_title_with_timeframe("Play Count by User and Stream Type")
+        return self.get_enhanced_title_with_timeframe(
+            "Play Count by User and Stream Type"
+        )
 
     @override
     def generate(self, data: Mapping[str, object]) -> str:
@@ -111,7 +113,9 @@ class PlayCountByUserAndStreamTypeGraph(BaseGraph, VisualizationMixin):
             return output_path
 
         except Exception as e:
-            logger.exception(f"Error generating play count by user and stream type graph: {e}")
+            logger.exception(
+                f"Error generating play count by user and stream type graph: {e}"
+            )
             raise
         finally:
             self.cleanup()
@@ -133,16 +137,18 @@ class PlayCountByUserAndStreamTypeGraph(BaseGraph, VisualizationMixin):
 
         if not user_stream_data:
             self.handle_empty_data_with_message(
-                ax, "No user and stream type data available for the selected time range."
+                ax,
+                "No user and stream type data available for the selected time range.",
             )
             return
 
         # Prepare data for stacked bar chart
         users = list(user_stream_data.keys())
-        
+
         if not users:
             self.handle_empty_data_with_message(
-                ax, "No user and stream type data available for the selected time range."
+                ax,
+                "No user and stream type data available for the selected time range.",
             )
             return
 
@@ -151,9 +157,9 @@ class PlayCountByUserAndStreamTypeGraph(BaseGraph, VisualizationMixin):
         for stream_aggregates in user_stream_data.values():
             for stream_record in stream_aggregates:
                 all_stream_types.add(stream_record["stream_type"])
-        
+
         stream_types = sorted(all_stream_types)
-        
+
         if not stream_types:
             self.handle_empty_data_with_message(
                 ax, "No stream type data available for the selected time range."
@@ -167,7 +173,7 @@ class PlayCountByUserAndStreamTypeGraph(BaseGraph, VisualizationMixin):
         data_matrix = []
         colors = []
         labels = []
-        
+
         for stream_type in stream_types:
             # Get counts for this stream type across all users
             counts = []
@@ -179,24 +185,23 @@ class PlayCountByUserAndStreamTypeGraph(BaseGraph, VisualizationMixin):
                         count = record["play_count"]
                         break
                 counts.append(count)
-            
+
             data_matrix.append(counts)
-            
+
             # Get display info for this stream type
-            display_info = stream_type_info.get(stream_type, {
-                "display_name": stream_type.title(),
-                "color": "#1f77b4"
-            })
+            display_info = stream_type_info.get(
+                stream_type, {"display_name": stream_type.title(), "color": "#1f77b4"}
+            )
             colors.append(display_info["color"])
             labels.append(display_info["display_name"])
 
         # Create stacked horizontal bar chart (better for usernames)
         y_positions = np.arange(len(users))
-        
+
         # Calculate cumulative positions for stacking
         left_positions = np.zeros(len(users))
         bars_list = []
-        
+
         for i, (counts, color, label) in enumerate(zip(data_matrix, colors, labels)):
             bars = ax.barh(  # pyright: ignore[reportUnknownMemberType] # matplotlib method
                 y_positions,
@@ -212,24 +217,20 @@ class PlayCountByUserAndStreamTypeGraph(BaseGraph, VisualizationMixin):
             left_positions += np.array(counts)
 
         # Customize the plot
-        self.setup_title_and_axes_with_ax(
-            ax, 
-            xlabel="Play Count", 
-            ylabel="User"
-        )
+        self.setup_title_and_axes_with_ax(ax, xlabel="Play Count", ylabel="User")
 
         # Set y-axis labels and positioning with username censoring
         ax.set_yticks(y_positions)  # pyright: ignore[reportAny] # matplotlib method returns Any
-        
+
         # Censor usernames based on configuration
         censored_users = []
         censor_enabled = self.get_config_value("graphs.privacy.censor_usernames", True)
         for user in users:
             censored_user = censor_username(user, bool(censor_enabled))
             censored_users.append(censored_user)
-        
+
         ax.set_yticklabels(censored_users)  # pyright: ignore[reportAny] # matplotlib method returns Any
-        
+
         # Invert y-axis so top user is at top
         ax.invert_yaxis()  # pyright: ignore[reportUnknownMemberType] # matplotlib method
 
@@ -263,7 +264,9 @@ class PlayCountByUserAndStreamTypeGraph(BaseGraph, VisualizationMixin):
         # Optimize layout
         ax.margins(y=0.01)  # pyright: ignore[reportUnknownMemberType] # matplotlib method with **kwargs
 
-        logger.info(f"Created user and stream type graph with {len(users)} users and {len(stream_types)} stream types")
+        logger.info(
+            f"Created user and stream type graph with {len(users)} users and {len(stream_types)} stream types"
+        )
 
     def _generate_no_data_visualization(self, ax: Axes) -> None:
         """
@@ -273,5 +276,6 @@ class PlayCountByUserAndStreamTypeGraph(BaseGraph, VisualizationMixin):
             ax: The matplotlib axes to plot on
         """
         self.handle_empty_data_with_message(
-            ax, "No user and stream type data available.\nThis graph requires Tautulli API data with user and transcode decision information."
+            ax,
+            "No user and stream type data available.\nThis graph requires Tautulli API data with user and transcode decision information.",
         )

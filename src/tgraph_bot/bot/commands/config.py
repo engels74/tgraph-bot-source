@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 def _set_nested_value(data: dict[str, object], path: str, value: object) -> None:
     """
     Set a nested value in a configuration dictionary using dot notation.
-    
+
     Args:
         data: Configuration dictionary to modify
         path: Dot-separated path (e.g., "automation.scheduling.update_days")
@@ -41,7 +41,7 @@ def _set_nested_value(data: dict[str, object], path: str, value: object) -> None
     """
     keys = path.split(".")
     current: dict[str, object] = data
-    
+
     # Navigate to the parent of the target key
     for key in keys[:-1]:
         if key not in current:
@@ -49,7 +49,7 @@ def _set_nested_value(data: dict[str, object], path: str, value: object) -> None
         if not isinstance(current[key], dict):
             current[key] = {}
         current = current[key]  # pyright: ignore[reportAssignmentType] # We ensure it's a dict above
-    
+
     # Set the final value
     current[keys[-1]] = value
 
@@ -85,20 +85,16 @@ class ConfigCog(BaseCommandCog):
             "services.tautulli.url",
             "services.discord.token",
             "services.discord.channel_id",
-
             # Automation configuration
             "automation.scheduling.update_days",
             "automation.scheduling.fixed_update_time",
             "automation.data_retention.keep_days",
-
             # Data collection configuration
             "data_collection.time_ranges.days",
             "data_collection.time_ranges.months",
             "data_collection.privacy.censor_usernames",
-
             # System configuration
             "system.localization.language",
-
             # Graph features configuration
             "graphs.features.enabled_types.daily_play_count",
             "graphs.features.enabled_types.play_count_by_dayofweek",
@@ -108,7 +104,6 @@ class ConfigCog(BaseCommandCog):
             "graphs.features.enabled_types.play_count_by_month",
             "graphs.features.media_type_separation",
             "graphs.features.stacked_bar_charts",
-
             # Graph appearance configuration
             "graphs.appearance.dimensions.width",
             "graphs.appearance.dimensions.height",
@@ -117,7 +112,6 @@ class ConfigCog(BaseCommandCog):
             "graphs.appearance.colors.movie",
             "graphs.appearance.colors.background",
             "graphs.appearance.grid.enabled",
-
             # Annotation configuration
             "graphs.appearance.annotations.basic.color",
             "graphs.appearance.annotations.basic.outline_color",
@@ -128,7 +122,6 @@ class ConfigCog(BaseCommandCog):
             "graphs.appearance.annotations.enabled_on.top_10_platforms",
             "graphs.appearance.annotations.enabled_on.top_10_users",
             "graphs.appearance.annotations.enabled_on.play_count_by_month",
-
             # Palette configuration
             "graphs.appearance.palettes.daily_play_count",
             "graphs.appearance.palettes.play_count_by_dayofweek",

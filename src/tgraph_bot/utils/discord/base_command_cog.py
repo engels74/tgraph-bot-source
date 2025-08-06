@@ -136,6 +136,7 @@ class BaseCommandCog(commands.Cog):
 
         # Check global cooldown
         from ...graphs.graph_modules.config.config_accessor import ConfigAccessor
+
         config_accessor = ConfigAccessor(config)
         global_cooldown_seconds = config_accessor.get_int_value(
             self.cooldown_config.global_cooldown_config_key, 0
@@ -173,6 +174,7 @@ class BaseCommandCog(commands.Cog):
         config = self.get_current_config()
 
         from ...graphs.graph_modules.config.config_accessor import ConfigAccessor
+
         config_accessor = ConfigAccessor(config)
 
         # Update global cooldown

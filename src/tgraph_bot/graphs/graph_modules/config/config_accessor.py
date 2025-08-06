@@ -39,8 +39,6 @@ class ConfigAccessor:
         """
         self.config: "TGraphBotConfig" = config
 
-
-
     @overload
     def get_value(self, key: str, default: T) -> T:
         """Get configuration value with typed default (handles both flat keys and nested paths)."""
@@ -188,11 +186,18 @@ class ConfigAccessor:
         # For graph types not in the schema (like sample_graph), use False as default
         # This prevents test/demo graphs from being enabled by default
         schema_graph_types = {
-            "daily_play_count", "play_count_by_dayofweek", "play_count_by_hourofday",
-            "top_10_platforms", "top_10_users", "play_count_by_month",
-            "daily_play_count_by_stream_type", "daily_concurrent_stream_count_by_stream_type",
-            "play_count_by_source_resolution", "play_count_by_stream_resolution",
-            "play_count_by_platform_and_stream_type", "play_count_by_user_and_stream_type"
+            "daily_play_count",
+            "play_count_by_dayofweek",
+            "play_count_by_hourofday",
+            "top_10_platforms",
+            "top_10_users",
+            "play_count_by_month",
+            "daily_play_count_by_stream_type",
+            "daily_concurrent_stream_count_by_stream_type",
+            "play_count_by_source_resolution",
+            "play_count_by_stream_resolution",
+            "play_count_by_platform_and_stream_type",
+            "play_count_by_user_and_stream_type",
         }
 
         # Check if the value is explicitly set in the configuration
@@ -218,11 +223,7 @@ class ConfigAccessor:
             Color value as hex string
         """
         path = f"graphs.appearance.colors.{color_type}"
-        defaults = {
-            "tv": "#1f77b4",
-            "movie": "#ff7f0e", 
-            "background": "#ffffff"
-        }
+        defaults = {"tv": "#1f77b4", "movie": "#ff7f0e", "background": "#ffffff"}
         return self.get_str_value(path, defaults.get(color_type, "#000000"))
 
     def get_palette_value(self, graph_type: str) -> str:
@@ -262,16 +263,16 @@ class ConfigAccessor:
             "services.tautulli",
             "services.discord",
             "graphs.features",
-            "graphs.appearance"
+            "graphs.appearance",
         ]
-        
+
         for section in required_sections:
             try:
                 _ = self.get_nested_value(section)
             except ConfigurationError as e:
                 raise ConfigurationError(
                     f"Configuration missing required section: {section}",
-                    user_message=f"Configuration section `{section}` is required but missing."
+                    user_message=f"Configuration section `{section}` is required but missing.",
                 ) from e
 
     def get_all_enabled_graph_types(self) -> dict[str, bool]:
@@ -283,7 +284,7 @@ class ConfigAccessor:
         """
         graph_types = [
             "daily_play_count",
-            "play_count_by_dayofweek", 
+            "play_count_by_dayofweek",
             "play_count_by_hourofday",
             "play_count_by_month",
             "top_10_platforms",
@@ -293,9 +294,9 @@ class ConfigAccessor:
             "play_count_by_source_resolution",
             "play_count_by_stream_resolution",
             "play_count_by_platform_and_stream_type",
-            "play_count_by_user_and_stream_type"
+            "play_count_by_user_and_stream_type",
         ]
-        
+
         return {
             graph_type: self.is_graph_type_enabled(graph_type)
             for graph_type in graph_types
@@ -313,8 +314,12 @@ class ConfigAccessor:
         """
         # Valid graph types that have per-graph configuration
         valid_graph_types = {
-            "daily_play_count", "play_count_by_dayofweek", "play_count_by_hourofday",
-            "top_10_platforms", "top_10_users", "play_count_by_month"
+            "daily_play_count",
+            "play_count_by_dayofweek",
+            "play_count_by_hourofday",
+            "top_10_platforms",
+            "top_10_users",
+            "play_count_by_month",
         }
 
         # For valid graph types, try per-graph setting first
@@ -342,7 +347,8 @@ class ConfigAccessor:
         """
         # Valid resolution graph types that have resolution grouping configuration
         valid_graph_types = {
-            "play_count_by_source_resolution", "play_count_by_stream_resolution"
+            "play_count_by_source_resolution",
+            "play_count_by_stream_resolution",
         }
 
         # For valid graph types, try per-graph setting
@@ -369,10 +375,14 @@ class ConfigAccessor:
         """
         # Valid graph types that have per-graph configuration
         valid_graph_types = {
-            "daily_play_count", "play_count_by_dayofweek", "play_count_by_hourofday",
-            "top_10_platforms", "top_10_users", "play_count_by_month"
+            "daily_play_count",
+            "play_count_by_dayofweek",
+            "play_count_by_hourofday",
+            "top_10_platforms",
+            "top_10_users",
+            "play_count_by_month",
         }
-        
+
         # For valid graph types, try per-graph setting first
         if graph_type in valid_graph_types:
             per_graph_path = f"graphs.per_graph.{graph_type}.stacked_bar_charts"
@@ -381,8 +391,7 @@ class ConfigAccessor:
                 return bool(value)
             except ConfigurationError:
                 pass  # Fall through to global setting
-        
+
         # Fall back to global setting for unknown/test graph types
         global_path = "graphs.features.stacked_bar_charts"
         return self.get_bool_value(global_path, default=False)
-

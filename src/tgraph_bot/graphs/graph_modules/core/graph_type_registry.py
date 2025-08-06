@@ -228,7 +228,6 @@ class GraphTypeRegistry:
 
         return self._registry[type_name].graph_class
 
-
     def get_type_name_from_class(self, graph_class: type[BaseGraph]) -> str:
         """
         Get the type name for a given graph class.
@@ -278,7 +277,6 @@ class GraphTypeRegistry:
         """
         self._ensure_initialized()
         return list(self._registry.keys())
-
 
     def get_type_info(self, type_name: str) -> GraphTypeInfo:
         """

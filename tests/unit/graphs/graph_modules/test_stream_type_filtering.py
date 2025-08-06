@@ -99,7 +99,7 @@ class TestStreamTypeFiltering:
         direct_play_records = filter_records_by_stream_type(
             sample_records_with_stream_types, "direct play"
         )
-        
+
         assert len(direct_play_records) == 1
         assert direct_play_records[0]["transcode_decision"] == "direct play"
         assert direct_play_records[0]["user"] == "alice"
@@ -108,7 +108,7 @@ class TestStreamTypeFiltering:
         transcode_records = filter_records_by_stream_type(
             sample_records_with_stream_types, "transcode"
         )
-        
+
         assert len(transcode_records) == 1
         assert transcode_records[0]["transcode_decision"] == "transcode"
         assert transcode_records[0]["user"] == "bob"
@@ -121,7 +121,7 @@ class TestStreamTypeFiltering:
         efficient_records = filter_records_by_stream_type(
             sample_records_with_stream_types, ["direct play", "copy"]
         )
-        
+
         assert len(efficient_records) == 2
         stream_types = [record["transcode_decision"] for record in efficient_records]
         assert "direct play" in stream_types
@@ -136,7 +136,7 @@ class TestStreamTypeFiltering:
         all_records = filter_records_by_stream_type(
             sample_records_with_stream_types, stream_types=None, exclude_unknown=True
         )
-        
+
         assert len(all_records) == 3  # Excludes the unknown record
         stream_types = [record["transcode_decision"] for record in all_records]
         assert "unknown" not in stream_types
@@ -149,7 +149,7 @@ class TestStreamTypeFiltering:
         all_records = filter_records_by_stream_type(
             sample_records_with_stream_types, stream_types=None, exclude_unknown=False
         )
-        
+
         assert len(all_records) == 4  # Includes all records
         stream_types = [record["transcode_decision"] for record in all_records]
         assert "unknown" in stream_types
@@ -159,13 +159,13 @@ class TestStreamTypeFiltering:
     ) -> None:
         """Test getting available stream types from records."""
         available_types = get_available_stream_types(sample_records_with_stream_types)
-        
+
         assert len(available_types) == 4
         assert "copy" in available_types
         assert "direct play" in available_types
         assert "transcode" in available_types
         assert "unknown" in available_types
-        
+
         # Should be sorted
         assert available_types == sorted(available_types)
 
@@ -174,9 +174,9 @@ class TestStreamTypeFiltering:
     ) -> None:
         """Test getting stream type statistics."""
         stats = get_stream_type_statistics(sample_records_with_stream_types)
-        
+
         assert len(stats) == 4
-        
+
         # Each stream type should have count of 1 (25% each)
         for stream_type in ["direct play", "transcode", "copy", "unknown"]:
             assert stream_type in stats
@@ -186,13 +186,13 @@ class TestStreamTypeFiltering:
     def test_filter_empty_records(self) -> None:
         """Test filtering with empty record list."""
         empty_records: ProcessedRecords = []
-        
+
         result = filter_records_by_stream_type(empty_records, "direct play")
         assert len(result) == 0
-        
+
         available_types = get_available_stream_types(empty_records)
         assert len(available_types) == 0
-        
+
         stats = get_stream_type_statistics(empty_records)
         assert len(stats) == 0
 
@@ -205,12 +205,12 @@ class TestStreamTypeFiltering:
             sample_records_with_stream_types, "DIRECT PLAY"
         )
         assert len(direct_play_records) == 1
-        
+
         transcode_records = filter_records_by_stream_type(
             sample_records_with_stream_types, "Transcode"
         )
         assert len(transcode_records) == 1
-        
+
         copy_records = filter_records_by_stream_type(
             sample_records_with_stream_types, "COPY"
         )
@@ -255,7 +255,7 @@ class TestOptimizedDataProcessor:
 
         batches: list[list[str]] = []
         for i in range(0, len(rating_keys), batch_size):
-            batch = rating_keys[i:i + batch_size]
+            batch = rating_keys[i : i + batch_size]
             batches.append(batch)
 
         assert len(batches) == 3  # 50, 50, 25
@@ -267,19 +267,10 @@ class TestOptimizedDataProcessor:
         """Test metadata extraction with fallback logic."""
         # Mock metadata response structure
         metadata_with_media_info = {
-            "media_info": [
-                {
-                    "video_resolution": "1080",
-                    "width": 1920,
-                    "height": 1080
-                }
-            ]
+            "media_info": [{"video_resolution": "1080", "width": 1920, "height": 1080}]
         }
 
-        metadata_with_direct_fields = {
-            "width": 3840,
-            "height": 2160
-        }
+        metadata_with_direct_fields = {"width": 3840, "height": 2160}
 
         metadata_empty = {}
 
@@ -309,7 +300,7 @@ class TestOptimizedDataProcessor:
             await asyncio.sleep(0.01)  # Simulate API delay
             return {
                 "video_resolution": f"resolution_{rating_key}",
-                "stream_video_resolution": f"stream_{rating_key}"
+                "stream_video_resolution": f"stream_{rating_key}",
             }
 
         async def test_concurrent_fetch():
@@ -327,13 +318,14 @@ class TestOptimizedDataProcessor:
 
     def test_error_handling_in_batch_processing(self) -> None:
         """Test error handling during batch processing."""
+
         # Simulate mixed success/failure scenarios
         def simulate_api_call(rating_key: str) -> Dict[str, str]:
             if rating_key == "error_key":
                 raise Exception("API Error")
             return {
                 "video_resolution": f"resolution_{rating_key}",
-                "stream_video_resolution": f"stream_{rating_key}"
+                "stream_video_resolution": f"stream_{rating_key}",
             }
 
         rating_keys = ["1001", "error_key", "1003"]
@@ -345,7 +337,7 @@ class TestOptimizedDataProcessor:
             except Exception:
                 results[key] = {
                     "video_resolution": "unknown",
-                    "stream_video_resolution": "unknown"
+                    "stream_video_resolution": "unknown",
                 }
 
         assert len(results) == 3

@@ -398,7 +398,9 @@ class Top10UsersGraph(BaseGraph, VisualizationMixin):
         # Create stacked horizontal bars
         y_positions = np.arange(len(usernames))
         left_positions = np.zeros(len(usernames))
-        bar_containers: list[tuple[object, str, np.ndarray[object, np.dtype[np.int64]]]] = []
+        bar_containers: list[
+            tuple[object, str, np.ndarray[object, np.dtype[np.int64]]]
+        ] = []
 
         for media_type in media_types:
             counts = [sorted_users[i][1][media_type] for i in range(len(usernames))]

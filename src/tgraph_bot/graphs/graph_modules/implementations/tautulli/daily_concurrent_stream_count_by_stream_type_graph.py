@@ -70,7 +70,9 @@ class DailyConcurrentStreamCountByStreamTypeGraph(BaseGraph, VisualizationMixin)
         Returns:
             The graph title with timeframe information
         """
-        return self.get_enhanced_title_with_timeframe("Daily Concurrent Stream Count by Stream Type")
+        return self.get_enhanced_title_with_timeframe(
+            "Daily Concurrent Stream Count by Stream Type"
+        )
 
     def _filter_records_by_time_range(
         self, records: ProcessedRecords, time_range_days: int
@@ -221,7 +223,9 @@ class DailyConcurrentStreamCountByStreamTypeGraph(BaseGraph, VisualizationMixin)
             return output_path
 
         except Exception as e:
-            logger.exception(f"Error generating daily concurrent stream count by stream type graph: {e}")
+            logger.exception(
+                f"Error generating daily concurrent stream count by stream type graph: {e}"
+            )
             raise
         finally:
             self.cleanup()
@@ -287,10 +291,9 @@ class DailyConcurrentStreamCountByStreamTypeGraph(BaseGraph, VisualizationMixin)
                 continue
 
             # Get display information
-            display_info = stream_type_info.get(stream_type, {
-                "display_name": stream_type.title(),
-                "color": "#1f77b4"
-            })
+            display_info = stream_type_info.get(
+                stream_type, {"display_name": stream_type.title(), "color": "#1f77b4"}
+            )
             label = display_info["display_name"]
             color = display_info["color"]
 
@@ -321,7 +324,9 @@ class DailyConcurrentStreamCountByStreamTypeGraph(BaseGraph, VisualizationMixin)
             return
 
         # Customize the plot
-        self.setup_title_and_axes_with_ax(ax, xlabel="Date", ylabel="Peak Concurrent Streams")
+        self.setup_title_and_axes_with_ax(
+            ax, xlabel="Date", ylabel="Peak Concurrent Streams"
+        )
 
         # Setup aligned date axis
         num_dates = len(sorted_dates)
@@ -341,17 +346,17 @@ class DailyConcurrentStreamCountByStreamTypeGraph(BaseGraph, VisualizationMixin)
         # Collect all data points from all plotted lines
         all_x_data: list[float] = []
         all_y_data: list[float] = []
-        
+
         for stream_type in stream_types_plotted:
             if stream_type in stream_type_data:
                 date_data = stream_type_data[stream_type]
                 counts = [date_data.get(date, 0) for date in sorted_dates]
                 x_positions = list(range(len(sorted_dates)))
-                
+
                 # Add data points from this line
                 all_x_data.extend(x_positions)
                 all_y_data.extend(counts)
-        
+
         if all_x_data and all_y_data:
             self.annotation_helper.annotate_line_points(
                 ax=ax,
@@ -379,7 +384,8 @@ class DailyConcurrentStreamCountByStreamTypeGraph(BaseGraph, VisualizationMixin)
             ax: The matplotlib axes to plot on
         """
         self.handle_empty_data_with_message(
-            ax, "No concurrent stream data available.\nThis graph requires Tautulli API data with duration and timing information."
+            ax,
+            "No concurrent stream data available.\nThis graph requires Tautulli API data with duration and timing information.",
         )
 
     def _prepare_stream_type_concurrent_data(
@@ -399,13 +405,13 @@ class DailyConcurrentStreamCountByStreamTypeGraph(BaseGraph, VisualizationMixin)
         for record in concurrent_data:
             date_str = str(record["date"])
             stream_breakdown = record.get("stream_type_breakdown", {})
-            
+
             if isinstance(stream_breakdown, dict):
                 for stream_type, count in stream_breakdown.items():
                     if isinstance(count, (int, float)):
                         if stream_type not in stream_type_data:
                             stream_type_data[stream_type] = {}
-                        
+
                         stream_type_data[stream_type][date_str] = int(count)
 
         # Fill missing dates with zeros for all stream types for consistency
@@ -413,7 +419,7 @@ class DailyConcurrentStreamCountByStreamTypeGraph(BaseGraph, VisualizationMixin)
             all_dates = set()
             for date_data in stream_type_data.values():
                 all_dates.update(date_data.keys())
-            
+
             for stream_type in stream_type_data:
                 for date_str in all_dates:
                     if date_str not in stream_type_data[stream_type]:
@@ -436,7 +442,7 @@ class DailyConcurrentStreamCountByStreamTypeGraph(BaseGraph, VisualizationMixin)
             sorted_dates: List of sorted date strings
         """
         stream_type_info = get_stream_type_display_info()
-        
+
         for stream_type, date_data in stream_type_data.items():
             if not date_data:
                 continue
@@ -450,9 +456,9 @@ class DailyConcurrentStreamCountByStreamTypeGraph(BaseGraph, VisualizationMixin)
                 max_idx = counts.index(max_count)
 
                 # Get label for this stream type
-                display_info = stream_type_info.get(stream_type, {
-                    "display_name": stream_type.title()
-                })
+                display_info = stream_type_info.get(
+                    stream_type, {"display_name": stream_type.title()}
+                )
                 label = display_info["display_name"]
 
                 self.annotation_helper.annotate_peak_value(

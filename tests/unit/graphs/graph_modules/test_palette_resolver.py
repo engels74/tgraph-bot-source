@@ -265,9 +265,7 @@ class TestPaletteResolver:
     def test_get_palette_for_graph_type_empty_string(self) -> None:
         """Test _get_palette_for_graph_type with empty string returns None."""
         config = create_test_config_custom(
-            graphs_overrides={
-                "appearance": {"palettes": {"top_10_platforms": ""}}
-            }
+            graphs_overrides={"appearance": {"palettes": {"top_10_platforms": ""}}}
         )
 
         resolver = PaletteResolver(config=config)
@@ -278,9 +276,7 @@ class TestPaletteResolver:
     def test_get_palette_for_graph_type_whitespace_string(self) -> None:
         """Test _get_palette_for_graph_type with whitespace string returns None."""
         config = create_test_config_custom(
-            graphs_overrides={
-                "appearance": {"palettes": {"top_10_platforms": "   "}}
-            }
+            graphs_overrides={"appearance": {"palettes": {"top_10_platforms": "   "}}}
         )
 
         resolver = PaletteResolver(config=config)

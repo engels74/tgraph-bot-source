@@ -45,12 +45,25 @@ def create_test_config_comprehensive() -> TGraphBotConfig:
         >>> assert config.graphs.appearance.colors.tv == "#2E86AB"
     """
     from src.tgraph_bot.config.schema import (
-        TGraphBotConfig, ServicesConfig, TautulliConfig, DiscordConfig,
-        AutomationConfig, SchedulingConfig, DataRetentionConfig,
-        DataCollectionConfig, TimeRangesConfig, PrivacyConfig,
-        GraphsConfig, GraphFeaturesConfig, EnabledTypesConfig,
-        GraphAppearanceConfig, ColorsConfig, GridConfig,
-        AnnotationsConfig, BasicAnnotationsConfig, EnabledOnConfig,
+        TGraphBotConfig,
+        ServicesConfig,
+        TautulliConfig,
+        DiscordConfig,
+        AutomationConfig,
+        SchedulingConfig,
+        DataRetentionConfig,
+        DataCollectionConfig,
+        TimeRangesConfig,
+        PrivacyConfig,
+        GraphsConfig,
+        GraphFeaturesConfig,
+        EnabledTypesConfig,
+        GraphAppearanceConfig,
+        ColorsConfig,
+        GridConfig,
+        AnnotationsConfig,
+        BasicAnnotationsConfig,
+        EnabledOnConfig,
     )
 
     return TGraphBotConfig(
@@ -138,7 +151,10 @@ def create_test_config_minimal() -> TGraphBotConfig:
         >>> assert config.graphs.appearance.colors.tv == "#1f77b4"  # Default value
     """
     from src.tgraph_bot.config.schema import (
-        TGraphBotConfig, ServicesConfig, TautulliConfig, DiscordConfig,
+        TGraphBotConfig,
+        ServicesConfig,
+        TautulliConfig,
+        DiscordConfig,
     )
 
     return TGraphBotConfig(
@@ -190,8 +206,13 @@ def create_test_config_selective(
         >>> assert config.graphs.features.enabled_types.top_10_platforms is True
     """
     from src.tgraph_bot.config.schema import (
-        TGraphBotConfig, ServicesConfig, TautulliConfig, DiscordConfig,
-        GraphsConfig, GraphFeaturesConfig, EnabledTypesConfig,
+        TGraphBotConfig,
+        ServicesConfig,
+        TautulliConfig,
+        DiscordConfig,
+        GraphsConfig,
+        GraphFeaturesConfig,
+        EnabledTypesConfig,
     )
 
     return TGraphBotConfig(
@@ -236,10 +257,18 @@ def create_test_config_privacy_focused() -> TGraphBotConfig:
         >>> assert config.graphs.features.enabled_types.top_10_users is False
     """
     from src.tgraph_bot.config.schema import (
-        TGraphBotConfig, ServicesConfig, TautulliConfig, DiscordConfig,
-        DataCollectionConfig, PrivacyConfig,
-        GraphsConfig, GraphFeaturesConfig, EnabledTypesConfig,
-        GraphAppearanceConfig, AnnotationsConfig, EnabledOnConfig,
+        TGraphBotConfig,
+        ServicesConfig,
+        TautulliConfig,
+        DiscordConfig,
+        DataCollectionConfig,
+        PrivacyConfig,
+        GraphsConfig,
+        GraphFeaturesConfig,
+        EnabledTypesConfig,
+        GraphAppearanceConfig,
+        AnnotationsConfig,
+        EnabledOnConfig,
     )
 
     return TGraphBotConfig(

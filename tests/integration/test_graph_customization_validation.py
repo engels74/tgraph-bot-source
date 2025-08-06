@@ -63,7 +63,10 @@ class TestGraphCustomizationValidation:
                 assert config_obj.graphs.appearance.colors.movie == "#44ff44"
                 assert config_obj.graphs.appearance.colors.background == "#f8f8f8"
                 assert config_obj.graphs.appearance.annotations.basic.color == "#4444ff"
-                assert config_obj.graphs.appearance.annotations.basic.outline_color == "#222222"
+                assert (
+                    config_obj.graphs.appearance.annotations.basic.outline_color
+                    == "#222222"
+                )
 
                 # Verify graph can be instantiated with custom colors
                 assert graph.background_color == "#f8f8f8"
@@ -121,8 +124,14 @@ class TestGraphCustomizationValidation:
             # Test with annotations enabled
             config_annotations_enabled = create_test_config_custom(
                 services_overrides={
-                    "tautulli": {"api_key": "test_api_key_here", "url": "http://localhost:8181/api/v2"},
-                    "discord": {"token": "test_discord_token_1234567890", "channel_id": 123456789}
+                    "tautulli": {
+                        "api_key": "test_api_key_here",
+                        "url": "http://localhost:8181/api/v2",
+                    },
+                    "discord": {
+                        "token": "test_discord_token_1234567890",
+                        "channel_id": 123456789,
+                    },
                 },
                 graphs_overrides={
                     "appearance": {
@@ -133,12 +142,12 @@ class TestGraphCustomizationValidation:
                                 "play_count_by_hourofday": True,
                                 "top_10_platforms": True,
                                 "top_10_users": True,
-                                "play_count_by_month": True
+                                "play_count_by_month": True,
                             },
-                            "basic": {"enable_outline": True}
+                            "basic": {"enable_outline": True},
                         }
                     }
-                }
+                },
             )
 
             factory = create_graph_factory_with_config(config_annotations_enabled)
@@ -158,7 +167,10 @@ class TestGraphCustomizationValidation:
                     )
                     annotation_config_obj: TGraphBotConfig = graph.config
 
-                    assert annotation_config_obj.graphs.appearance.annotations.basic.enable_outline is True
+                    assert (
+                        annotation_config_obj.graphs.appearance.annotations.basic.enable_outline
+                        is True
+                    )
                 finally:
                     graph.cleanup()
 
@@ -168,12 +180,16 @@ class TestGraphCustomizationValidation:
             # Test with grid enabled
             config_grid_enabled = create_test_config_custom(
                 services_overrides={
-                    "tautulli": {"api_key": "test_api_key_here", "url": "http://localhost:8181/api/v2"},
-                    "discord": {"token": "test_discord_token_1234567890", "channel_id": 123456789}
+                    "tautulli": {
+                        "api_key": "test_api_key_here",
+                        "url": "http://localhost:8181/api/v2",
+                    },
+                    "discord": {
+                        "token": "test_discord_token_1234567890",
+                        "channel_id": 123456789,
+                    },
                 },
-                graphs_overrides={
-                    "appearance": {"grid": {"enabled": True}}
-                }
+                graphs_overrides={"appearance": {"grid": {"enabled": True}}},
             )
 
             factory = create_graph_factory_with_config(config_grid_enabled)
@@ -192,12 +208,16 @@ class TestGraphCustomizationValidation:
             # Test with grid disabled
             config_grid_disabled = create_test_config_custom(
                 services_overrides={
-                    "tautulli": {"api_key": "test_api_key_here", "url": "http://localhost:8181/api/v2"},
-                    "discord": {"token": "test_discord_token_1234567890", "channel_id": 123456789}
+                    "tautulli": {
+                        "api_key": "test_api_key_here",
+                        "url": "http://localhost:8181/api/v2",
+                    },
+                    "discord": {
+                        "token": "test_discord_token_1234567890",
+                        "channel_id": 123456789,
+                    },
                 },
-                graphs_overrides={
-                    "appearance": {"grid": {"enabled": False}}
-                }
+                graphs_overrides={"appearance": {"grid": {"enabled": False}}},
             )
 
             factory = create_graph_factory_with_config(config_grid_disabled)
@@ -219,12 +239,16 @@ class TestGraphCustomizationValidation:
             # Test with censoring enabled
             config_censor_enabled = create_test_config_custom(
                 services_overrides={
-                    "tautulli": {"api_key": "test_api_key_here", "url": "http://localhost:8181/api/v2"},
-                    "discord": {"token": "test_discord_token_1234567890", "channel_id": 123456789}
+                    "tautulli": {
+                        "api_key": "test_api_key_here",
+                        "url": "http://localhost:8181/api/v2",
+                    },
+                    "discord": {
+                        "token": "test_discord_token_1234567890",
+                        "channel_id": 123456789,
+                    },
                 },
-                data_collection_overrides={
-                    "privacy": {"censor_usernames": True}
-                }
+                data_collection_overrides={"privacy": {"censor_usernames": True}},
             )
 
             factory = create_graph_factory_with_config(config_censor_enabled)
@@ -237,12 +261,16 @@ class TestGraphCustomizationValidation:
             # Test with censoring disabled
             config_censor_disabled = create_test_config_custom(
                 services_overrides={
-                    "tautulli": {"api_key": "test_api_key_here", "url": "http://localhost:8181/api/v2"},
-                    "discord": {"token": "test_discord_token_1234567890", "channel_id": 123456789}
+                    "tautulli": {
+                        "api_key": "test_api_key_here",
+                        "url": "http://localhost:8181/api/v2",
+                    },
+                    "discord": {
+                        "token": "test_discord_token_1234567890",
+                        "channel_id": 123456789,
+                    },
                 },
-                data_collection_overrides={
-                    "privacy": {"censor_usernames": False}
-                }
+                data_collection_overrides={"privacy": {"censor_usernames": False}},
             )
 
             factory = create_graph_factory_with_config(config_censor_disabled)
@@ -525,8 +553,12 @@ class TestGraphCustomizationValidation:
                 )
                 config_obj: TGraphBotConfig = graph.config
 
-                assert config_obj.graphs.appearance.colors.tv == "#ff6b6b"  # Normalized to lowercase
-                assert config_obj.graphs.appearance.colors.movie == "#4ecdc4"  # Normalized to lowercase
+                assert (
+                    config_obj.graphs.appearance.colors.tv == "#ff6b6b"
+                )  # Normalized to lowercase
+                assert (
+                    config_obj.graphs.appearance.colors.movie == "#4ecdc4"
+                )  # Normalized to lowercase
                 assert config_obj.graphs.appearance.grid.enabled is True
                 assert config_obj.data_collection.privacy.censor_usernames is True
 
@@ -544,7 +576,9 @@ class TestGraphCustomizationValidation:
         with matplotlib_cleanup():
             config = create_test_config_minimal()
             # Set annotation customizations with valid colors
-            config.graphs.appearance.annotations.basic.color = "#ff0000"  # Valid red color
+            config.graphs.appearance.annotations.basic.color = (
+                "#ff0000"  # Valid red color
+            )
             config.graphs.appearance.annotations.basic.outline_color = "#000000"
             config.graphs.appearance.annotations.basic.enable_outline = True
 

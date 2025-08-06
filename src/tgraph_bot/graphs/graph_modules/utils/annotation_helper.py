@@ -452,7 +452,9 @@ class AnnotationHelper:
         try:
             # Ensure both sequences have the same length
             if len(x_data) != len(y_data):
-                logger.warning("x_data and y_data must have the same length for line annotation")
+                logger.warning(
+                    "x_data and y_data must have the same length for line annotation"
+                )
                 return
 
             # Annotate each data point

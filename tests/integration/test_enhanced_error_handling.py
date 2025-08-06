@@ -17,7 +17,10 @@ import pytest
 from src.tgraph_bot.graphs.graph_manager import GraphManager, GraphGenerationError
 from src.tgraph_bot.graphs.graph_modules.utils.progress_tracker import ProgressTracker
 from src.tgraph_bot.graphs.user_graph_manager import UserGraphManager
-from tests.utils.test_helpers import create_test_config, create_config_manager_with_config
+from tests.utils.test_helpers import (
+    create_test_config,
+    create_config_manager_with_config,
+)
 
 
 class TestProgressTracker:

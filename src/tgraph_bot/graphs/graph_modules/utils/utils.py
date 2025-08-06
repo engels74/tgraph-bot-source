@@ -483,13 +483,23 @@ def process_play_history_data(raw_data: Mapping[str, object]) -> ProcessedRecord
             duration_value = safe_get_nested_value(record, ["duration"], 0)  # pyright: ignore[reportUnknownArgumentType]
             stopped_value = safe_get_nested_value(record, ["stopped"], 0)  # pyright: ignore[reportUnknownArgumentType]
             paused_counter_value = safe_get_nested_value(record, ["paused_counter"], 0)  # pyright: ignore[reportUnknownArgumentType]
-            
+
             # Extract stream type fields (for new stream type graphs)
-            transcode_decision_value = safe_get_nested_value(record, ["transcode_decision"], "unknown")  # pyright: ignore[reportUnknownArgumentType]
-            video_resolution_value = safe_get_nested_value(record, ["video_resolution"], "unknown")  # pyright: ignore[reportUnknownArgumentType]
-            stream_video_resolution_value = safe_get_nested_value(record, ["stream_video_resolution"], "unknown")  # pyright: ignore[reportUnknownArgumentType]
-            video_codec_value = safe_get_nested_value(record, ["video_codec"], "unknown")  # pyright: ignore[reportUnknownArgumentType]
-            audio_codec_value = safe_get_nested_value(record, ["audio_codec"], "unknown")  # pyright: ignore[reportUnknownArgumentType]
+            transcode_decision_value = safe_get_nested_value(
+                record, ["transcode_decision"], "unknown"
+            )  # pyright: ignore[reportUnknownArgumentType]
+            video_resolution_value = safe_get_nested_value(
+                record, ["video_resolution"], "unknown"
+            )  # pyright: ignore[reportUnknownArgumentType]
+            stream_video_resolution_value = safe_get_nested_value(
+                record, ["stream_video_resolution"], "unknown"
+            )  # pyright: ignore[reportUnknownArgumentType]
+            video_codec_value = safe_get_nested_value(
+                record, ["video_codec"], "unknown"
+            )  # pyright: ignore[reportUnknownArgumentType]
+            audio_codec_value = safe_get_nested_value(
+                record, ["audio_codec"], "unknown"
+            )  # pyright: ignore[reportUnknownArgumentType]
             container_value = safe_get_nested_value(record, ["container"], "unknown")  # pyright: ignore[reportUnknownArgumentType]
 
             # Convert timestamps to datetime objects if they're valid
@@ -551,20 +561,20 @@ def process_play_history_data(raw_data: Mapping[str, object]) -> ProcessedRecord
 
 
 def _extract_resolution_with_fallback(
-    record: dict[str, object], 
-    resolution_field: str, 
-    width_field: str, 
-    height_field: str
+    record: dict[str, object],
+    resolution_field: str,
+    width_field: str,
+    height_field: str,
 ) -> str:
     """
     Extract resolution from a record with fallback to width/height combination.
-    
+
     Args:
         record: The play history record dictionary
         resolution_field: Primary resolution field name (e.g., "video_resolution")
         width_field: Fallback width field name (e.g., "width")
         height_field: Fallback height field name (e.g., "height")
-        
+
     Returns:
         Resolution string (e.g., "1920x1080") or "unknown" if not available
     """
@@ -572,40 +582,48 @@ def _extract_resolution_with_fallback(
     resolution_value = safe_get_nested_value(record, [resolution_field], "unknown")
     if resolution_value and str(resolution_value) != "unknown":
         return str(resolution_value)
-    
+
     # Fallback to width/height combination
     width_value = safe_get_nested_value(record, [width_field], None)
     height_value = safe_get_nested_value(record, [height_field], None)
-    
+
     # Validate width and height values
     try:
         if width_value is not None and height_value is not None:
-            width = int(width_value) if isinstance(width_value, (int, float, str)) else None
-            height = int(height_value) if isinstance(height_value, (int, float, str)) else None
-            
+            width = (
+                int(width_value) if isinstance(width_value, (int, float, str)) else None
+            )
+            height = (
+                int(height_value)
+                if isinstance(height_value, (int, float, str))
+                else None
+            )
+
             # Check for valid dimensions (must be positive integers)
             if width and height and width > 0 and height > 0:
                 return f"{width}x{height}"
     except (ValueError, TypeError):
         # Invalid width/height values, fallback to unknown
         pass
-    
+
     return "unknown"
 
 
-def process_play_history_data_enhanced(raw_data: Mapping[str, object]) -> ProcessedRecords:
+def process_play_history_data_enhanced(
+    raw_data: Mapping[str, object],
+) -> ProcessedRecords:
     """
     Enhanced version of process_play_history_data with resolution field fallback logic.
-    
+
     This function provides fallback support for resolution fields by attempting to
     combine width/height fields when the primary resolution fields are not available.
-    
+
     Args:
         raw_data: Raw data from Tautulli API
-        
+
     Returns:
         List of processed play history records with enhanced resolution handling
-        
+
     Raises:
         ValueError: If data format is invalid
     """
@@ -622,15 +640,31 @@ def process_play_history_data_enhanced(raw_data: Mapping[str, object]) -> Proces
         first_record = history_data[0]
         if isinstance(first_record, dict):
             available_fields = list(first_record.keys())
-            logger.debug(f"Available fields in Tautulli API response: {available_fields}")
-            
+            logger.debug(
+                f"Available fields in Tautulli API response: {available_fields}"
+            )
+
             # Log resolution-related fields specifically
-            resolution_fields = [f for f in available_fields if 'resolution' in f.lower() or 'width' in f.lower() or 'height' in f.lower()]
+            resolution_fields = [
+                f
+                for f in available_fields
+                if "resolution" in f.lower()
+                or "width" in f.lower()
+                or "height" in f.lower()
+            ]
             logger.info(f"Resolution-related fields found: {resolution_fields}")
-            
+
             # Log a sample of the first few field values for debugging
-            sample_fields = ['video_resolution', 'stream_video_resolution', 'width', 'height', 
-                           'stream_video_width', 'stream_video_height', 'transcode_width', 'transcode_height']
+            sample_fields = [
+                "video_resolution",
+                "stream_video_resolution",
+                "width",
+                "height",
+                "stream_video_width",
+                "stream_video_height",
+                "transcode_width",
+                "transcode_height",
+            ]
             sample_values = {}
             for field in sample_fields:
                 if field in first_record:
@@ -651,19 +685,28 @@ def process_play_history_data_enhanced(raw_data: Mapping[str, object]) -> Proces
             duration_value = safe_get_nested_value(record, ["duration"], 0)  # pyright: ignore[reportUnknownArgumentType]
             stopped_value = safe_get_nested_value(record, ["stopped"], 0)  # pyright: ignore[reportUnknownArgumentType]
             paused_counter_value = safe_get_nested_value(record, ["paused_counter"], 0)  # pyright: ignore[reportUnknownArgumentType]
-            
+
             # Extract stream type fields
-            transcode_decision_value = safe_get_nested_value(record, ["transcode_decision"], "unknown")  # pyright: ignore[reportUnknownArgumentType]
-            video_codec_value = safe_get_nested_value(record, ["video_codec"], "unknown")  # pyright: ignore[reportUnknownArgumentType]
-            audio_codec_value = safe_get_nested_value(record, ["audio_codec"], "unknown")  # pyright: ignore[reportUnknownArgumentType]
+            transcode_decision_value = safe_get_nested_value(
+                record, ["transcode_decision"], "unknown"
+            )  # pyright: ignore[reportUnknownArgumentType]
+            video_codec_value = safe_get_nested_value(
+                record, ["video_codec"], "unknown"
+            )  # pyright: ignore[reportUnknownArgumentType]
+            audio_codec_value = safe_get_nested_value(
+                record, ["audio_codec"], "unknown"
+            )  # pyright: ignore[reportUnknownArgumentType]
             container_value = safe_get_nested_value(record, ["container"], "unknown")  # pyright: ignore[reportUnknownArgumentType]
-            
+
             # Enhanced resolution extraction with fallback logic
             video_resolution_value = _extract_resolution_with_fallback(
                 record, "video_resolution", "width", "height"
             )
             stream_video_resolution_value = _extract_resolution_with_fallback(
-                record, "stream_video_resolution", "stream_video_width", "stream_video_height"
+                record,
+                "stream_video_resolution",
+                "stream_video_width",
+                "stream_video_height",
             )
 
             # Convert timestamps to datetime objects if they're valid
@@ -1264,70 +1307,68 @@ def aggregate_by_stream_type(
 ) -> StreamTypeAggregates | SeparatedStreamTypeAggregates:
     """
     Aggregate play records by stream type (transcode decision).
-    
+
     Args:
         records: List of processed play history records
         use_separated_visualization: Whether to separate by media type
-        
+
     Returns:
         Aggregated stream type data, optionally separated by media type
     """
     if use_separated_visualization:
-        separated_data: SeparatedStreamTypeAggregates = {
-            "tv": [],
-            "movie": []
-        }
-        
+        separated_data: SeparatedStreamTypeAggregates = {"tv": [], "movie": []}
+
         # Count by media type and stream type
-        stream_type_counts = {
-            "tv": defaultdict(int),
-            "movie": defaultdict(int)
-        }
-        
+        stream_type_counts = {"tv": defaultdict(int), "movie": defaultdict(int)}
+
         for record in records:
             media_type = record["media_type"]
             stream_type = record["transcode_decision"]
-            
+
             if media_type in stream_type_counts:
                 stream_type_counts[media_type][stream_type] += 1
-        
+
         # Convert to aggregate records format
         for media_type, stream_counts in stream_type_counts.items():
             aggregates: StreamTypeAggregates = []
             for stream_type, count in stream_counts.items():
                 display_name = _get_stream_type_display_name(stream_type)
                 color = _get_stream_type_color(stream_type)
-                
-                aggregates.append(StreamTypeAggregateRecord(
-                    stream_type=stream_type,
-                    display_name=display_name,
-                    play_count=count,
-                    color=color
-                ))
-            
+
+                aggregates.append(
+                    StreamTypeAggregateRecord(
+                        stream_type=stream_type,
+                        display_name=display_name,
+                        play_count=count,
+                        color=color,
+                    )
+                )
+
             separated_data[media_type] = aggregates
-        
+
         return separated_data
     else:
         # Simple aggregation without media type separation
         stream_type_counts = defaultdict(int)
-        
+
         for record in records:
             stream_type = record["transcode_decision"]
             stream_type_counts[stream_type] += 1
-        
+
         aggregates: StreamTypeAggregates = []
         for stream_type, count in stream_type_counts.items():
             display_name = _get_stream_type_display_name(stream_type)
             color = _get_stream_type_color(stream_type)
-            
-            aggregates.append(StreamTypeAggregateRecord(
-                stream_type=stream_type,
-                display_name=display_name,
-                play_count=count,
-                color=color
-            ))
-        
+
+            aggregates.append(
+                StreamTypeAggregateRecord(
+                    stream_type=stream_type,
+                    display_name=display_name,
+                    play_count=count,
+                    color=color,
+                )
+            )
+
         return aggregates
 
 
@@ -1336,49 +1377,52 @@ def aggregate_by_resolution(
 ) -> ResolutionAggregates:
     """
     Aggregate play records by resolution.
-    
+
     Args:
         records: List of processed play history records
-        resolution_field: Field to use for resolution ("video_resolution" for source, 
+        resolution_field: Field to use for resolution ("video_resolution" for source,
                          "stream_video_resolution" for transcoded output)
-        
+
     Returns:
         Aggregated resolution data sorted by play count
     """
     resolution_counts = defaultdict(int)
     unknown_count = 0
     total_records = len(records)
-    
+
     for record in records:
         resolution = record[resolution_field]  # type: ignore[misc]
         if resolution and resolution != "unknown":
             resolution_counts[resolution] += 1
         else:
             unknown_count += 1
-    
+
     # Log statistics to help with debugging
-    logger.info(f"Resolution aggregation for field '{resolution_field}': " +
-               f"{len(resolution_counts)} unique resolutions, " +
-               f"{unknown_count} unknown values out of {total_records} total records")
-    
+    logger.info(
+        f"Resolution aggregation for field '{resolution_field}': "
+        + f"{len(resolution_counts)} unique resolutions, "
+        + f"{unknown_count} unknown values out of {total_records} total records"
+    )
+
     # If we have no valid resolutions but have unknown values, include them
     # This helps identify when Tautulli API is not providing resolution data
     if not resolution_counts and unknown_count > 0:
-        logger.warning(f"No valid {resolution_field} data found, all {unknown_count} records have unknown resolution. " +
-                      f"This may indicate missing resolution data in Tautulli API response.")
+        logger.warning(
+            f"No valid {resolution_field} data found, all {unknown_count} records have unknown resolution. "
+            + "This may indicate missing resolution data in Tautulli API response."
+        )
         resolution_counts["unknown"] = unknown_count
-    
+
     # Convert to aggregate records and sort by play count
     aggregates: ResolutionAggregates = []
     for resolution, count in resolution_counts.items():
-        aggregates.append(ResolutionAggregateRecord(
-            resolution=resolution,
-            play_count=count
-        ))
-    
+        aggregates.append(
+            ResolutionAggregateRecord(resolution=resolution, play_count=count)
+        )
+
     # Sort by play count (descending)
     aggregates.sort(key=lambda x: x["play_count"], reverse=True)
-    
+
     return aggregates
 
 
@@ -1411,14 +1455,18 @@ def aggregate_by_resolution_and_stream_type(
             unknown_count += 1
 
     # Log statistics to help with debugging
-    logger.info(f"Resolution and stream type aggregation for field '{resolution_field}': " +
-               f"{len(resolution_stream_counts)} unique resolutions, " +
-               f"{unknown_count} unknown values out of {total_records} total records")
+    logger.info(
+        f"Resolution and stream type aggregation for field '{resolution_field}': "
+        + f"{len(resolution_stream_counts)} unique resolutions, "
+        + f"{unknown_count} unknown values out of {total_records} total records"
+    )
 
     # If we have no valid resolutions but have unknown values, include them
     if not resolution_stream_counts and unknown_count > 0:
-        logger.warning(f"No valid {resolution_field} data found, all {unknown_count} records have unknown resolution. " +
-                      f"This may indicate missing resolution data in Tautulli API response.")
+        logger.warning(
+            f"No valid {resolution_field} data found, all {unknown_count} records have unknown resolution. "
+            + "This may indicate missing resolution data in Tautulli API response."
+        )
         # Add unknown resolution with stream type breakdown
         for record in records:
             if not record[resolution_field] or record[resolution_field] == "unknown":  # type: ignore[misc]
@@ -1433,13 +1481,15 @@ def aggregate_by_resolution_and_stream_type(
             display_name = _get_stream_type_display_name(stream_type)
             color = _get_stream_type_color(stream_type)
 
-            aggregates.append(ResolutionStreamTypeAggregateRecord(
-                resolution=resolution,
-                stream_type=stream_type,
-                display_name=display_name,
-                play_count=count,
-                color=color
-            ))
+            aggregates.append(
+                ResolutionStreamTypeAggregateRecord(
+                    resolution=resolution,
+                    stream_type=stream_type,
+                    display_name=display_name,
+                    play_count=count,
+                    color=color,
+                )
+            )
 
         # Sort by play count (descending)
         aggregates.sort(key=lambda x: x["play_count"], reverse=True)
@@ -1450,7 +1500,9 @@ def aggregate_by_resolution_and_stream_type(
         resolution: sum(agg["play_count"] for agg in aggregates)
         for resolution, aggregates in result.items()
     }
-    sorted_resolutions = sorted(resolution_totals.keys(), key=lambda x: resolution_totals[x], reverse=True)
+    sorted_resolutions = sorted(
+        resolution_totals.keys(), key=lambda x: resolution_totals[x], reverse=True
+    )
 
     # Return sorted result
     return {resolution: result[resolution] for resolution in sorted_resolutions}
@@ -1461,11 +1513,11 @@ def aggregate_by_platform_and_stream_type(
 ) -> dict[str, StreamTypeAggregates]:
     """
     Aggregate play records by platform with stream type breakdown.
-    
+
     Args:
         records: List of processed play history records
         limit: Maximum number of platforms to include
-        
+
     Returns:
         Dictionary mapping platform names to stream type aggregates
     """
@@ -1473,22 +1525,24 @@ def aggregate_by_platform_and_stream_type(
     platform_totals: dict[str, int] = defaultdict(int)
     for record in records:
         platform_totals[record["platform"]] += 1
-    
+
     # Get top platforms
-    top_platforms = sorted(platform_totals.items(), key=lambda x: x[1], reverse=True)[:limit]
+    top_platforms = sorted(platform_totals.items(), key=lambda x: x[1], reverse=True)[
+        :limit
+    ]
     top_platform_names = {platform for platform, _ in top_platforms}
-    
+
     # Count stream types for each top platform
     platform_stream_counts: dict[str, dict[str, int]] = {}
     for platform in top_platform_names:
         platform_stream_counts[platform] = defaultdict(int)
-    
+
     for record in records:
         platform = record["platform"]
         if platform in top_platform_names:
             stream_type = record["transcode_decision"]
             platform_stream_counts[platform][stream_type] += 1
-    
+
     # Convert to aggregate format
     result: dict[str, StreamTypeAggregates] = {}
     for platform, stream_counts in platform_stream_counts.items():
@@ -1496,16 +1550,18 @@ def aggregate_by_platform_and_stream_type(
         for stream_type, count in stream_counts.items():
             display_name = _get_stream_type_display_name(stream_type)
             color = _get_stream_type_color(stream_type)
-            
-            aggregates.append(StreamTypeAggregateRecord(
-                stream_type=stream_type,
-                display_name=display_name,
-                play_count=count,
-                color=color
-            ))
-        
+
+            aggregates.append(
+                StreamTypeAggregateRecord(
+                    stream_type=stream_type,
+                    display_name=display_name,
+                    play_count=count,
+                    color=color,
+                )
+            )
+
         result[platform] = aggregates
-    
+
     return result
 
 
@@ -1514,11 +1570,11 @@ def aggregate_by_user_and_stream_type(
 ) -> dict[str, StreamTypeAggregates]:
     """
     Aggregate play records by user with stream type breakdown.
-    
+
     Args:
         records: List of processed play history records
         limit: Maximum number of users to include
-        
+
     Returns:
         Dictionary mapping usernames to stream type aggregates
     """
@@ -1526,22 +1582,22 @@ def aggregate_by_user_and_stream_type(
     user_totals: dict[str, int] = defaultdict(int)
     for record in records:
         user_totals[record["user"]] += 1
-    
+
     # Get top users
     top_users = sorted(user_totals.items(), key=lambda x: x[1], reverse=True)[:limit]
     top_user_names = {user for user, _ in top_users}
-    
+
     # Count stream types for each top user
     user_stream_counts: dict[str, dict[str, int]] = {}
     for user in top_user_names:
         user_stream_counts[user] = defaultdict(int)
-    
+
     for record in records:
         user = record["user"]
         if user in top_user_names:
             stream_type = record["transcode_decision"]
             user_stream_counts[user][stream_type] += 1
-    
+
     # Convert to aggregate format
     result: dict[str, StreamTypeAggregates] = {}
     for user, stream_counts in user_stream_counts.items():
@@ -1549,16 +1605,18 @@ def aggregate_by_user_and_stream_type(
         for stream_type, count in stream_counts.items():
             display_name = _get_stream_type_display_name(stream_type)
             color = _get_stream_type_color(stream_type)
-            
-            aggregates.append(StreamTypeAggregateRecord(
-                stream_type=stream_type,
-                display_name=display_name,
-                play_count=count,
-                color=color
-            ))
-        
+
+            aggregates.append(
+                StreamTypeAggregateRecord(
+                    stream_type=stream_type,
+                    display_name=display_name,
+                    play_count=count,
+                    color=color,
+                )
+            )
+
         result[user] = aggregates
-    
+
     return result
 
 
@@ -1567,45 +1625,47 @@ def calculate_concurrent_streams_by_date(
 ) -> ConcurrentStreamAggregates:
     """
     Calculate peak concurrent streams per date.
-    
+
     Args:
         records: List of processed play history records
         separate_by_stream_type: Whether to track concurrent streams by stream type
-        
+
     Returns:
         List of concurrent stream records per date
     """
     from datetime import timedelta
-    
+
     # Group records by date
     records_by_date: dict[str, list[ProcessedPlayRecord]] = defaultdict(list)
     for record in records:
         date_key = record["datetime"].strftime("%Y-%m-%d")
         records_by_date[date_key].append(record)
-    
+
     concurrent_aggregates: ConcurrentStreamAggregates = []
-    
+
     for date_str, day_records in records_by_date.items():
         # Create list of stream events (start and end times)
-        stream_events: list[tuple[datetime, str, str]] = []  # (time, event_type, stream_type)
-        
+        stream_events: list[
+            tuple[datetime, str, str]
+        ] = []  # (time, event_type, stream_type)
+
         for record in day_records:
             start_time = record["datetime"]
             end_time = start_time + timedelta(seconds=record["duration"])
             stream_type = record["transcode_decision"]
-            
+
             stream_events.append((start_time, "start", stream_type))
             stream_events.append((end_time, "end", stream_type))
-        
+
         # Sort events by time
         stream_events.sort(key=lambda x: x[0])
-        
+
         # Calculate peak concurrent streams
         current_concurrent = 0
         peak_concurrent = 0
         stream_type_concurrent: dict[str, int] = defaultdict(int)
         peak_stream_type_breakdown: dict[str, int] = defaultdict(int)
-        
+
         for _, event_type, stream_type in stream_events:
             if event_type == "start":
                 current_concurrent += 1
@@ -1613,21 +1673,23 @@ def calculate_concurrent_streams_by_date(
             else:
                 current_concurrent -= 1
                 stream_type_concurrent[stream_type] -= 1
-            
+
             # Track peak
             if current_concurrent > peak_concurrent:
                 peak_concurrent = current_concurrent
                 peak_stream_type_breakdown = dict(stream_type_concurrent)
-        
-        concurrent_aggregates.append(ConcurrentStreamRecord(
-            date=date_str,
-            peak_concurrent=peak_concurrent,
-            stream_type_breakdown=peak_stream_type_breakdown
-        ))
-    
+
+        concurrent_aggregates.append(
+            ConcurrentStreamRecord(
+                date=date_str,
+                peak_concurrent=peak_concurrent,
+                stream_type_breakdown=peak_stream_type_breakdown,
+            )
+        )
+
     # Sort by date
     concurrent_aggregates.sort(key=lambda x: x["date"])
-    
+
     return concurrent_aggregates
 
 
@@ -1638,7 +1700,7 @@ def calculate_concurrent_streams_by_date(
 def filter_records_by_stream_type(
     records: ProcessedRecords,
     stream_types: list[str] | str | None = None,
-    exclude_unknown: bool = True
+    exclude_unknown: bool = True,
 ) -> ProcessedRecords:
     """
     Filter processed records by stream type (transcode decision).
@@ -1718,7 +1780,9 @@ def get_available_stream_types(records: ProcessedRecords) -> list[str]:
     return sorted(list(stream_types))
 
 
-def get_stream_type_statistics(records: ProcessedRecords) -> dict[str, dict[str, int | float]]:
+def get_stream_type_statistics(
+    records: ProcessedRecords,
+) -> dict[str, dict[str, int | float]]:
     """
     Get statistics about stream type distribution in the records.
 
@@ -1741,10 +1805,7 @@ def get_stream_type_statistics(records: ProcessedRecords) -> dict[str, dict[str,
     statistics: dict[str, dict[str, int | float]] = {}
     for stream_type, count in stream_type_counts.items():
         percentage = (count / total_records) * 100
-        statistics[stream_type] = {
-            "count": count,
-            "percentage": round(percentage, 2)
-        }
+        statistics[stream_type] = {"count": count, "percentage": round(percentage, 2)}
 
     return statistics
 
@@ -1757,9 +1818,9 @@ def _get_stream_type_display_name(stream_type: str) -> str:
     """Get user-friendly display name for stream type."""
     display_names = {
         "direct play": "Direct Play",
-        "copy": "Direct Stream", 
+        "copy": "Direct Stream",
         "transcode": "Transcode",
-        "unknown": "Unknown"
+        "unknown": "Unknown",
     }
     return display_names.get(stream_type.lower(), stream_type.title())
 
@@ -1768,9 +1829,9 @@ def _get_stream_type_color(stream_type: str) -> str:
     """Get color for stream type visualization."""
     colors = {
         "direct play": "#2ca02c",  # Green - most efficient
-        "copy": "#ff7f0e",         # Orange - moderate
-        "transcode": "#d62728",    # Red - most resource intensive
-        "unknown": "#7f7f7f"       # Gray - unknown
+        "copy": "#ff7f0e",  # Orange - moderate
+        "transcode": "#d62728",  # Red - most resource intensive
+        "unknown": "#7f7f7f",  # Gray - unknown
     }
     return colors.get(stream_type.lower(), "#1f77b4")  # Default blue
 
@@ -1778,25 +1839,13 @@ def _get_stream_type_color(stream_type: str) -> str:
 def get_stream_type_display_info() -> dict[str, dict[str, str]]:
     """
     Get comprehensive display information for stream types.
-    
+
     Returns:
         Dictionary mapping stream types to display info (name and color)
     """
     return {
-        "direct play": {
-            "display_name": "Direct Play",
-            "color": "#2ca02c"
-        },
-        "copy": {
-            "display_name": "Direct Stream", 
-            "color": "#ff7f0e"
-        },
-        "transcode": {
-            "display_name": "Transcode",
-            "color": "#d62728"
-        },
-        "unknown": {
-            "display_name": "Unknown",
-            "color": "#7f7f7f"
-        }
+        "direct play": {"display_name": "Direct Play", "color": "#2ca02c"},
+        "copy": {"display_name": "Direct Stream", "color": "#ff7f0e"},
+        "transcode": {"display_name": "Transcode", "color": "#d62728"},
+        "unknown": {"display_name": "Unknown", "color": "#7f7f7f"},
     }

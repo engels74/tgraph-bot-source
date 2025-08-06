@@ -23,7 +23,11 @@ from tests.utils.graph_helpers import (
     assert_graph_properties,
     assert_graph_cleanup,
 )
-from tests.utils.test_helpers import create_temp_directory, create_test_config_custom, create_test_config
+from tests.utils.test_helpers import (
+    create_temp_directory,
+    create_test_config_custom,
+    create_test_config,
+)
 
 
 class ConcreteGraph(BaseGraph):
@@ -324,12 +328,13 @@ class TestBaseGraph:
         # Test with stacked charts enabled
         config_enabled = create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_discord_token", "channel_id": 123456789},
             },
-            graphs_overrides={
-                "features": {"stacked_bar_charts": True}
-            }
+            graphs_overrides={"features": {"stacked_bar_charts": True}},
         )
         graph_enabled = ConcreteGraph(config=config_enabled)
         assert graph_enabled.get_stacked_bar_charts_enabled() is True
@@ -337,12 +342,13 @@ class TestBaseGraph:
         # Test with stacked charts disabled
         config_disabled = create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_discord_token", "channel_id": 123456789},
             },
-            graphs_overrides={
-                "features": {"stacked_bar_charts": False}
-            }
+            graphs_overrides={"features": {"stacked_bar_charts": False}},
         )
         graph_disabled = ConcreteGraph(config=config_disabled)
         assert graph_disabled.get_stacked_bar_charts_enabled() is False
@@ -358,12 +364,13 @@ class TestBaseGraph:
         # Test with media type separation enabled
         config_enabled = create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_discord_token", "channel_id": 123456789},
             },
-            graphs_overrides={
-                "features": {"media_type_separation": True}
-            }
+            graphs_overrides={"features": {"media_type_separation": True}},
         )
         graph_enabled = ConcreteGraph(config=config_enabled)
         assert graph_enabled.get_media_type_separation_enabled() is True
@@ -371,12 +378,13 @@ class TestBaseGraph:
         # Test with media type separation disabled
         config_disabled = create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_discord_token", "channel_id": 123456789},
             },
-            graphs_overrides={
-                "features": {"media_type_separation": False}
-            }
+            graphs_overrides={"features": {"media_type_separation": False}},
         )
         graph_disabled = ConcreteGraph(config=config_disabled)
         assert graph_disabled.get_media_type_separation_enabled() is False
@@ -534,12 +542,13 @@ class TestBaseGraph:
         """Test get_time_range_days_from_config with configuration."""
         config = create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_discord_token", "channel_id": 123456789},
             },
-            data_collection_overrides={
-                "time_ranges": {"days": 60}
-            }
+            data_collection_overrides={"time_ranges": {"days": 60}},
         )
         graph = ConcreteGraph(config=config)
 
@@ -567,12 +576,13 @@ class TestBaseGraph:
         """Test get_time_range_months_from_config with configuration."""
         config = create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_discord_token", "channel_id": 123456789},
             },
-            data_collection_overrides={
-                "time_ranges": {"months": 24}
-            }
+            data_collection_overrides={"time_ranges": {"months": 24}},
         )
         graph = ConcreteGraph(config=config)
 
@@ -583,12 +593,13 @@ class TestBaseGraph:
         """Test that time range days methods are consistent and don't have unnecessary wrappers."""
         config = create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_discord_token", "channel_id": 123456789},
             },
-            data_collection_overrides={
-                "time_ranges": {"days": 45}
-            }
+            data_collection_overrides={"time_ranges": {"days": 45}},
         )
         graph = ConcreteGraph(config=config)
 
@@ -631,12 +642,15 @@ class TestBaseGraph:
         """Test ConfigAccessor integration in BaseGraph."""
         config = create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_discord_token", "channel_id": 123456789},
             },
             graphs_overrides={
                 "features": {"media_type_separation": True, "stacked_bar_charts": False}
-            }
+            },
         )
         graph = ConcreteGraph(config=config)
 
@@ -660,8 +674,11 @@ class TestBaseGraph:
         """Test MediaTypeProcessor lazy initialization."""
         config = create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_discord_token", "channel_id": 123456789},
             }
         )
         graph = ConcreteGraph(config=config)
@@ -682,12 +699,13 @@ class TestBaseGraph:
         """Test apply_seaborn_style with grid enabled."""
         config = create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_discord_token", "channel_id": 123456789},
             },
-            graphs_overrides={
-                "appearance": {"grid": {"enabled": True}}
-            }
+            graphs_overrides={"appearance": {"grid": {"enabled": True}}},
         )
         graph = ConcreteGraph(config=config)
         _ = graph.setup_figure()
@@ -702,12 +720,13 @@ class TestBaseGraph:
         """Test apply_seaborn_style with grid disabled."""
         config = create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_discord_token", "channel_id": 123456789},
             },
-            graphs_overrides={
-                "appearance": {"grid": {"enabled": False}}
-            }
+            graphs_overrides={"appearance": {"grid": {"enabled": False}}},
         )
         graph = ConcreteGraph(config=config)
         _ = graph.setup_figure()
@@ -723,12 +742,13 @@ class TestBaseGraph:
         # Test with grid enabled
         config_enabled = create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_discord_token", "channel_id": 123456789},
             },
-            graphs_overrides={
-                "appearance": {"grid": {"enabled": True}}
-            }
+            graphs_overrides={"appearance": {"grid": {"enabled": True}}},
         )
         graph_enabled = ConcreteGraph(config=config_enabled)
         assert graph_enabled.get_grid_enabled() is True
@@ -736,12 +756,13 @@ class TestBaseGraph:
         # Test with grid disabled
         config_disabled = create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_discord_token", "channel_id": 123456789},
             },
-            graphs_overrides={
-                "appearance": {"grid": {"enabled": False}}
-            }
+            graphs_overrides={"appearance": {"grid": {"enabled": False}}},
         )
         graph_disabled = ConcreteGraph(config=config_disabled)
         assert graph_disabled.get_grid_enabled() is False
@@ -789,8 +810,11 @@ class TestBaseGraph:
         # Test with peak annotations enabled
         config_enabled = create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_discord_token", "channel_id": 123456789},
             },
             graphs_overrides={
                 "appearance": {
@@ -798,17 +822,15 @@ class TestBaseGraph:
                         "peaks": {
                             "enabled": True,
                             "color": "#ffcc00",
-                            "text_color": "#000000"
+                            "text_color": "#000000",
                         },
-                        "basic": {
-                            "font_size": 12
-                        }
+                        "basic": {"font_size": 12},
                     }
                 }
-            }
+            },
         )
         graph_enabled = ConcreteGraph(config=config_enabled)
-        
+
         # Test peak annotations enabled
         assert graph_enabled.is_peak_annotations_enabled() is True
         assert graph_enabled.get_peak_annotation_color() == "#ffcc00"
@@ -818,8 +840,11 @@ class TestBaseGraph:
         # Test with peak annotations disabled
         config_disabled = create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_discord_token", "channel_id": 123456789},
             },
             graphs_overrides={
                 "appearance": {
@@ -827,14 +852,14 @@ class TestBaseGraph:
                         "peaks": {
                             "enabled": False,
                             "color": "#ff0000",
-                            "text_color": "#ffffff"
+                            "text_color": "#ffffff",
                         }
                     }
                 }
-            }
+            },
         )
         graph_disabled = ConcreteGraph(config=config_disabled)
-        
+
         # Test peak annotations disabled
         assert graph_disabled.is_peak_annotations_enabled() is False
         assert graph_disabled.get_peak_annotation_color() == "#ff0000"
@@ -844,8 +869,11 @@ class TestBaseGraph:
         """Test annotation enabled_on settings with nested configuration."""
         config = create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_discord_token", "channel_id": 123456789},
             },
             graphs_overrides={
                 "appearance": {
@@ -853,29 +881,46 @@ class TestBaseGraph:
                         "enabled_on": {
                             "top_10_users": True,
                             "top_10_platforms": False,
-                            "play_count_by_hourofday": True
+                            "play_count_by_hourofday": True,
                         }
                     }
                 }
-            }
+            },
         )
         graph = ConcreteGraph(config=config)
-        
+
         # Test specific graph annotation settings
-        assert graph.get_config_value("graphs.appearance.annotations.enabled_on.top_10_users", False) is True
-        assert graph.get_config_value("graphs.appearance.annotations.enabled_on.top_10_platforms", True) is False
-        assert graph.get_config_value("graphs.appearance.annotations.enabled_on.play_count_by_hourofday", False) is True
+        assert (
+            graph.get_config_value(
+                "graphs.appearance.annotations.enabled_on.top_10_users", False
+            )
+            is True
+        )
+        assert (
+            graph.get_config_value(
+                "graphs.appearance.annotations.enabled_on.top_10_platforms", True
+            )
+            is False
+        )
+        assert (
+            graph.get_config_value(
+                "graphs.appearance.annotations.enabled_on.play_count_by_hourofday",
+                False,
+            )
+            is True
+        )
 
     def test_enhanced_title_with_timeframe_days(self) -> None:
         """Test enhanced title generation with days timeframe."""
         config = create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_discord_token", "channel_id": 123456789},
             },
-            data_collection_overrides={
-                "time_ranges": {"days": 7}
-            }
+            data_collection_overrides={"time_ranges": {"days": 7}},
         )
         graph = ConcreteGraph(config=config)
 
@@ -887,12 +932,13 @@ class TestBaseGraph:
         # Test singular form
         config_singular = create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_discord_token", "channel_id": 123456789},
             },
-            data_collection_overrides={
-                "time_ranges": {"days": 1}
-            }
+            data_collection_overrides={"time_ranges": {"days": 1}},
         )
         graph_singular = ConcreteGraph(config=config_singular)
 
@@ -905,12 +951,13 @@ class TestBaseGraph:
         """Test enhanced title generation with months timeframe."""
         config = create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_discord_token", "channel_id": 123456789},
             },
-            data_collection_overrides={
-                "time_ranges": {"months": 6}
-            }
+            data_collection_overrides={"time_ranges": {"months": 6}},
         )
         graph = ConcreteGraph(config=config)
 
@@ -922,12 +969,13 @@ class TestBaseGraph:
         # Test singular form
         config_singular = create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_discord_token", "channel_id": 123456789},
             },
-            data_collection_overrides={
-                "time_ranges": {"months": 1}
-            }
+            data_collection_overrides={"time_ranges": {"months": 1}},
         )
         graph_singular = ConcreteGraph(config=config_singular)
 
@@ -940,12 +988,15 @@ class TestBaseGraph:
         """Test add_bar_value_annotation with outline enabled."""
         config = create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_discord_token", "channel_id": 123456789},
             },
             graphs_overrides={
                 "appearance": {"annotations": {"basic": {"enable_outline": True}}}
-            }
+            },
         )
         graph = ConcreteGraph(config=config)
         _ = graph.setup_figure()
@@ -963,12 +1014,15 @@ class TestBaseGraph:
         """Test add_bar_value_annotation with outline disabled."""
         config = create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_discord_token", "channel_id": 123456789},
             },
             graphs_overrides={
                 "appearance": {"annotations": {"basic": {"enable_outline": False}}}
-            }
+            },
         )
         graph = ConcreteGraph(config=config)
         _ = graph.setup_figure()

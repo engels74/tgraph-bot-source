@@ -250,7 +250,6 @@ class TestColorPalettes:
         assert COLOR_PALETTES.MAGMA == "magma"
 
 
-
 class TestFileConstants:
     """Test cases for file and path constants."""
 

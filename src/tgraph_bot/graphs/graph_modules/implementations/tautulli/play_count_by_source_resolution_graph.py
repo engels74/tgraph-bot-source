@@ -1,7 +1,7 @@
 """
 Play count by source resolution graph for TGraph Bot.
 
-This module inherits from BaseGraph and uses Seaborn to plot play counts 
+This module inherits from BaseGraph and uses Seaborn to plot play counts
 by source resolution (original file resolution). This helps users understand
 what resolutions their content is stored in and which resolutions are most popular.
 """
@@ -18,7 +18,6 @@ from ...core.base_graph import BaseGraph
 from ...data.data_processor import data_processor
 from ...utils.utils import (
     ProcessedRecords,
-    aggregate_by_resolution,
     filter_records_by_stream_type,
     get_available_stream_types,
     get_stream_type_display_info,
@@ -92,37 +91,42 @@ class PlayCountBySourceResolutionGraph(BaseGraph, VisualizationMixin):
         try:
             # Step 1: Extract and process play history data with resolution metadata lookup
             import asyncio
-            
+
             # Use run_until_complete to handle both cases (existing loop or not)
             try:
                 # Try to get existing loop
                 loop = asyncio.get_running_loop()
                 # Create a new task in the existing loop
-                task = loop.create_task(
-                    data_processor.extract_and_process_play_history_with_resolution(data)
+                _ = loop.create_task(
+                    data_processor.extract_and_process_play_history_with_resolution(
+                        data
+                    )
                 )
                 # For sync context, we need to create a new thread to run this
                 import concurrent.futures
-                import threading
-                
+
                 def run_in_new_loop():
                     new_loop = asyncio.new_event_loop()
                     asyncio.set_event_loop(new_loop)
                     try:
                         return new_loop.run_until_complete(
-                            data_processor.extract_and_process_play_history_with_resolution(data)
+                            data_processor.extract_and_process_play_history_with_resolution(
+                                data
+                            )
                         )
                     finally:
                         new_loop.close()
-                
+
                 with concurrent.futures.ThreadPoolExecutor() as executor:
                     future = executor.submit(run_in_new_loop)
                     _, processed_records = future.result()
-                    
+
             except RuntimeError:
                 # No event loop running, we can use asyncio.run
                 _, processed_records = asyncio.run(
-                    data_processor.extract_and_process_play_history_with_resolution(data)
+                    data_processor.extract_and_process_play_history_with_resolution(
+                        data
+                    )
                 )
 
             # Step 2: Setup figure with styling using combined utility
@@ -148,12 +152,16 @@ class PlayCountBySourceResolutionGraph(BaseGraph, VisualizationMixin):
             return output_path
 
         except Exception as e:
-            logger.exception(f"Error generating play count by source resolution graph: {e}")
+            logger.exception(
+                f"Error generating play count by source resolution graph: {e}"
+            )
             raise
         finally:
             self.cleanup()
 
-    def _apply_stream_type_filtering(self, processed_records: ProcessedRecords) -> ProcessedRecords:
+    def _apply_stream_type_filtering(
+        self, processed_records: ProcessedRecords
+    ) -> ProcessedRecords:
         """
         Apply stream type filtering to processed records based on configuration.
 
@@ -186,10 +194,12 @@ class PlayCountBySourceResolutionGraph(BaseGraph, VisualizationMixin):
         filtered_records = filter_records_by_stream_type(
             processed_records,
             stream_types=None,  # Include all types
-            exclude_unknown=True  # Exclude unknown stream types for cleaner data
+            exclude_unknown=True,  # Exclude unknown stream types for cleaner data
         )
 
-        logger.info(f"Stream type filtering: {len(filtered_records)} records after filtering (excluded unknown types)")
+        logger.info(
+            f"Stream type filtering: {len(filtered_records)} records after filtering (excluded unknown types)"
+        )
 
         return filtered_records
 
@@ -207,19 +217,23 @@ class PlayCountBySourceResolutionGraph(BaseGraph, VisualizationMixin):
         grouping_strategy = "standard"  # Default fallback
         if self.config:
             from ...config.config_accessor import ConfigAccessor
+
             config_accessor = ConfigAccessor(self.config)
-            grouping_strategy = config_accessor.get_resolution_grouping_strategy("play_count_by_source_resolution")
+            grouping_strategy = config_accessor.get_resolution_grouping_strategy(
+                "play_count_by_source_resolution"
+            )
 
         # Aggregate data by source resolution with stream type breakdown using grouping
         resolution_stream_data = aggregate_by_resolution_and_stream_type_grouped(
             processed_records,
             resolution_field="video_resolution",
-            grouping_strategy=grouping_strategy
+            grouping_strategy=grouping_strategy,
         )
 
         if not resolution_stream_data:
             self.handle_empty_data_with_message(
-                ax, "No source resolution data available.\nThis may indicate:\n• Tautulli is not collecting resolution data\n• No media has been played recently\n• Resolution fields are not available in your Tautulli version"
+                ax,
+                "No source resolution data available.\nThis may indicate:\n• Tautulli is not collecting resolution data\n• No media has been played recently\n• Resolution fields are not available in your Tautulli version",
             )
             return
 
@@ -269,28 +283,29 @@ class PlayCountBySourceResolutionGraph(BaseGraph, VisualizationMixin):
             data_matrix.append(counts)
 
             # Get display info for this stream type
-            display_info = stream_type_info.get(stream_type, {
-                "display_name": stream_type.title(),
-                "color": "#1f77b4"
-            })
+            display_info = stream_type_info.get(
+                stream_type, {"display_name": stream_type.title(), "color": "#1f77b4"}
+            )
             colors.append(display_info["color"])
             labels.append(display_info["display_name"])
 
         # Format resolution labels for better display
-        formatted_resolutions = [self._format_resolution_label(res) for res in sorted_resolutions]
+        formatted_resolutions = [
+            self._format_resolution_label(res) for res in sorted_resolutions
+        ]
 
-        # Create stacked horizontal bar chart (better for resolution labels)
-        y_positions = np.arange(len(formatted_resolutions))
+        # Create stacked vertical bar chart (swapped axes)
+        x_positions = np.arange(len(formatted_resolutions))
 
         # Calculate cumulative positions for stacking
-        left_positions = np.zeros(len(sorted_resolutions))
+        bottom_positions = np.zeros(len(sorted_resolutions))
         bars_list = []
 
         for i, (counts, color, label) in enumerate(zip(data_matrix, colors, labels)):
-            bars = ax.barh(  # pyright: ignore[reportUnknownMemberType] # matplotlib method
-                y_positions,
+            bars = ax.bar(  # pyright: ignore[reportUnknownMemberType] # matplotlib method
+                x_positions,
                 counts,
-                left=left_positions,
+                bottom=bottom_positions,
                 color=color,
                 alpha=0.8,
                 label=label,
@@ -298,21 +313,16 @@ class PlayCountBySourceResolutionGraph(BaseGraph, VisualizationMixin):
                 linewidth=0.8,
             )
             bars_list.append(bars)
-            left_positions += np.array(counts)
+            bottom_positions += np.array(counts)
 
-        # Customize the plot
+        # Customize the plot (swapped axis labels)
         self.setup_title_and_axes_with_ax(
-            ax,
-            xlabel="Play Count",
-            ylabel="Source Resolution"
+            ax, xlabel="Source Resolution", ylabel="Play Count"
         )
 
-        # Set y-axis labels and positioning
-        ax.set_yticks(y_positions)  # pyright: ignore[reportAny] # matplotlib method returns Any
-        ax.set_yticklabels(formatted_resolutions)  # pyright: ignore[reportAny] # matplotlib method returns Any
-
-        # Invert y-axis so highest resolution is at top
-        ax.invert_yaxis()  # pyright: ignore[reportUnknownMemberType] # matplotlib method
+        # Set x-axis labels and positioning (swapped axes)
+        ax.set_xticks(x_positions)  # pyright: ignore[reportAny] # matplotlib method returns Any
+        ax.set_xticklabels(formatted_resolutions, rotation=45, ha="right")  # pyright: ignore[reportAny] # matplotlib method returns Any
 
         # Add legend for stream types
         ax.legend(  # pyright: ignore[reportUnknownMemberType] # matplotlib method
@@ -321,29 +331,34 @@ class PlayCountBySourceResolutionGraph(BaseGraph, VisualizationMixin):
             fancybox=True,
             shadow=True,
             ncol=1,
-            fontsize="small"
+            fontsize="small",
         )
 
-        # Add value annotations on bars if enabled
-        self.annotation_helper.annotate_horizontal_bar_patches(
+        # Add value annotations on bars if enabled (using stacked bar annotation for vertical bars)
+        # Create bar containers for stacked annotation
+        bar_containers = [
+            (bars_list[i], labels[i], data_matrix[i]) for i in range(len(labels))
+        ]
+        self.annotation_helper.annotate_stacked_bar_segments(
             ax=ax,
             config_key="graphs.appearance.annotations.enabled_on.play_count_by_source_resolution",
-            offset_x_ratio=0.01,
-            ha="left",
-            va="center",
-            fontweight="bold",
+            bar_containers=bar_containers,
+            categories=formatted_resolutions,
+            include_totals=True,
         )
 
-        # Add grid for better readability
+        # Add grid for better readability (swapped axis)
         if self.get_grid_enabled():
-            ax.grid(True, axis="x", alpha=0.3, linewidth=0.5)  # pyright: ignore[reportUnknownMemberType] # matplotlib method with **kwargs
+            ax.grid(True, axis="y", alpha=0.3, linewidth=0.5)  # pyright: ignore[reportUnknownMemberType] # matplotlib method with **kwargs
         else:
             ax.grid(False)  # pyright: ignore[reportUnknownMemberType] # matplotlib method with **kwargs
 
-        # Optimize layout
-        ax.margins(y=0.01)  # pyright: ignore[reportUnknownMemberType] # matplotlib method with **kwargs
+        # Optimize layout (swapped margin)
+        ax.margins(x=0.01)  # pyright: ignore[reportUnknownMemberType] # matplotlib method with **kwargs
 
-        logger.info(f"Created source resolution graph with {len(sorted_resolutions)} resolutions and {len(stream_types)} stream types")
+        logger.info(
+            f"Created source resolution graph with {len(sorted_resolutions)} resolutions and {len(stream_types)} stream types"
+        )
 
     def _generate_no_data_visualization(self, ax: Axes) -> None:
         """
@@ -353,7 +368,8 @@ class PlayCountBySourceResolutionGraph(BaseGraph, VisualizationMixin):
             ax: The matplotlib axes to plot on
         """
         self.handle_empty_data_with_message(
-            ax, "No source resolution data available.\nThis graph requires Tautulli API data with video resolution information.\nCheck your Tautulli configuration and ensure media is being played."
+            ax,
+            "No source resolution data available.\nThis graph requires Tautulli API data with video resolution information.\nCheck your Tautulli configuration and ensure media is being played.",
         )
 
     def _format_resolution_label(self, resolution: str) -> str:
@@ -368,11 +384,11 @@ class PlayCountBySourceResolutionGraph(BaseGraph, VisualizationMixin):
         """
         if resolution == "unknown" or not resolution:
             return "Unknown (No resolution data from Tautulli)"
-        
+
         # Common resolution mappings
         resolution_names = {
             "3840x2160": "4K UHD (3840×2160)",
-            "4096x2160": "4K DCI (4096×2160)", 
+            "4096x2160": "4K DCI (4096×2160)",
             "2560x1440": "1440p (2560×1440)",
             "1920x1080": "1080p (1920×1080)",
             "1680x1050": "WSXGA+ (1680×1050)",
@@ -384,7 +400,7 @@ class PlayCountBySourceResolutionGraph(BaseGraph, VisualizationMixin):
             "720x480": "NTSC (720×480)",
             "720x576": "PAL (720×576)",
         }
-        
+
         return resolution_names.get(resolution, resolution)
 
     def _get_resolution_color(self, resolution: str) -> str:
@@ -399,7 +415,7 @@ class PlayCountBySourceResolutionGraph(BaseGraph, VisualizationMixin):
         """
         if resolution == "unknown" or not resolution:
             return "#95a5a6"  # Gray for unknown
-        
+
         # Extract height for categorization
         try:
             if "x" in resolution:
@@ -416,10 +432,9 @@ class PlayCountBySourceResolutionGraph(BaseGraph, VisualizationMixin):
             return "#f39c12"  # Orange - high quality
         elif height >= 1080:  # 1080p
             return "#27ae60"  # Green - standard HD
-        elif height >= 720:   # 720p
+        elif height >= 720:  # 720p
             return "#3498db"  # Blue - HD
-        elif height >= 480:   # SD
+        elif height >= 480:  # SD
             return "#9b59b6"  # Purple - standard definition
         else:
             return "#95a5a6"  # Gray - unknown/low quality
-

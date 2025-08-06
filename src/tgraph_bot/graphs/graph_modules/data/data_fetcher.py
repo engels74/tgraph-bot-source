@@ -328,42 +328,42 @@ class DataFetcher:
     async def get_media_metadata(self, rating_key: int) -> Mapping[str, object]:
         """
         Fetch media metadata including resolution information for a specific item.
-        
+
         Args:
             rating_key: The Plex rating key for the media item
-            
+
         Returns:
             Media metadata including resolution, codec, and other technical details
         """
         return await self._make_request("get_metadata", {"rating_key": rating_key})
-    
+
     async def get_library_media_info(
-        self, 
+        self,
         section_id: int | None = None,
         order_column: str = "video_resolution",
         order_dir: str = "desc",
-        length: int = 1000
+        length: int = 1000,
     ) -> Mapping[str, object]:
         """
         Fetch library media information including resolution data.
-        
+
         Args:
             section_id: Optional library section ID to filter by
-            order_column: Column to order by (default: video_resolution)  
+            order_column: Column to order by (default: video_resolution)
             order_dir: Order direction (asc/desc, default: desc)
             length: Number of items to fetch (default: 1000)
-            
+
         Returns:
             Library media information with resolution and technical metadata
         """
         params: APIParams = {
             "order_column": order_column,
             "order_dir": order_dir,
-            "length": length
+            "length": length,
         }
         if section_id is not None:
             params["section_id"] = section_id
-            
+
         return await self._make_request("get_library_media_info", params)
 
     def clear_cache(self) -> None:

@@ -19,7 +19,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-
 def get_ephemeral_delete_timeout(config: "TGraphBotConfig | None" = None) -> float:
     """
     Get the ephemeral message deletion timeout from config or default.

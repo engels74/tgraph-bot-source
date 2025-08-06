@@ -236,8 +236,7 @@ class TestConfigCog:
                     "src.tgraph_bot.config.manager.ConfigManager.save_config"
                 ) as mock_save,
                 patch.object(
-                    config_cog.tgraph_bot.config_manager, 
-                    "update_runtime_config"
+                    config_cog.tgraph_bot.config_manager, "update_runtime_config"
                 ) as mock_update_runtime,
             ):
                 # The config command now supports nested structure properly
@@ -357,7 +356,9 @@ class TestConfigCog:
         assert all(choice.name in config_cog._get_config_keys() for choice in choices)  # pyright: ignore[reportPrivateUsage]
 
         # Test autocomplete with partial input
-        choices = await config_cog._config_key_autocomplete(mock_interaction, "automation")  # pyright: ignore[reportPrivateUsage]
+        choices = await config_cog._config_key_autocomplete(
+            mock_interaction, "automation"
+        )  # pyright: ignore[reportPrivateUsage]
 
         # Should return filtered keys
         assert all("automation" in choice.name for choice in choices)

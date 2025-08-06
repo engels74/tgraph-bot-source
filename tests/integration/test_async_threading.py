@@ -13,7 +13,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from src.tgraph_bot.graphs.graph_manager import GraphManager
 from src.tgraph_bot.graphs.user_graph_manager import UserGraphManager
-from tests.utils.test_helpers import create_test_config, create_config_manager_with_config
+from tests.utils.test_helpers import (
+    create_test_config,
+    create_config_manager_with_config,
+)
 
 
 class TestAsyncThreading:
@@ -24,8 +27,7 @@ class TestAsyncThreading:
         """Test that GraphManager uses async threading for CPU-bound operations."""
         # Create proper config with test values
         config = create_test_config(
-            tautulli_url="http://localhost:8181",
-            tautulli_api_key="test_key"
+            tautulli_url="http://localhost:8181", tautulli_api_key="test_key"
         )
         mock_config_manager = create_config_manager_with_config(config)
 
@@ -86,8 +88,7 @@ class TestAsyncThreading:
         """Test that UserGraphManager uses async threading for CPU-bound operations."""
         # Create proper config with test values
         config = create_test_config(
-            tautulli_url="http://localhost:8181",
-            tautulli_api_key="test_key"
+            tautulli_url="http://localhost:8181", tautulli_api_key="test_key"
         )
         mock_config_manager = create_config_manager_with_config(config)
 
@@ -180,8 +181,7 @@ class TestAsyncThreading:
 
         # Create proper config with test values
         config = create_test_config(
-            tautulli_url="http://localhost:8181",
-            tautulli_api_key="test_key"
+            tautulli_url="http://localhost:8181", tautulli_api_key="test_key"
         )
         mock_config_manager = create_config_manager_with_config(config)
 

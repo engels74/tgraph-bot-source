@@ -95,8 +95,12 @@ class TestEndToEndCustomization:
             config_obj: TGraphBotConfig = graph.config
 
             assert config_obj.graphs.appearance.colors.tv == "#1f77b4"  # Default blue
-            assert config_obj.graphs.appearance.colors.movie == "#ff7f0e"  # Default orange
-            assert config_obj.data_collection.privacy.censor_usernames is True  # Default privacy
+            assert (
+                config_obj.graphs.appearance.colors.movie == "#ff7f0e"
+            )  # Default orange
+            assert (
+                config_obj.data_collection.privacy.censor_usernames is True
+            )  # Default privacy
             assert config_obj.graphs.appearance.grid.enabled is False  # Default no grid
 
     def test_selective_graph_enabling_workflow(self) -> None:

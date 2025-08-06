@@ -15,18 +15,13 @@ from src.tgraph_bot.config.schema import TGraphBotConfig
 from tests.utils.test_helpers import create_test_config, create_test_config_custom
 
 
-
 class TestGraphFactory:
     """Test cases for the GraphFactory class."""
 
     def test_factory_initialization(self) -> None:
         """Test GraphFactory initialization."""
         config = create_test_config_custom(
-            graphs_overrides={
-                "features": {
-                    "enabled_types": {"daily_play_count": True}
-                }
-            }
+            graphs_overrides={"features": {"enabled_types": {"daily_play_count": True}}}
         )
         factory = GraphFactory(config)
         assert factory.config == config
@@ -202,7 +197,7 @@ class TestGraphFactory:
                         "play_count_by_hourofday": False,
                         "play_count_by_month": False,
                         "top_10_platforms": False,
-                        "top_10_users": False
+                        "top_10_users": False,
                     }
                 }
             }
@@ -223,7 +218,7 @@ class TestGraphFactory:
                         "play_count_by_hourofday": True,
                         "play_count_by_month": False,
                         "top_10_platforms": True,
-                        "top_10_users": False
+                        "top_10_users": False,
                     }
                 }
             }
@@ -250,7 +245,7 @@ class TestGraphFactory:
                         "play_count_by_hourofday": True,
                         "play_count_by_month": False,
                         "top_10_platforms": False,
-                        "top_10_users": True
+                        "top_10_users": True,
                     }
                 }
             }
@@ -270,18 +265,15 @@ class TestGraphFactory:
         """Test graph dimensions extraction from configuration."""
         config = create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_discord_token", "channel_id": 123456789},
             },
             graphs_overrides={
-                "appearance": {
-                    "dimensions": {
-                        "width": 15,
-                        "height": 10,
-                        "dpi": 150
-                    }
-                }
-            }
+                "appearance": {"dimensions": {"width": 15, "height": 10, "dpi": 150}}
+            },
         )
         factory = GraphFactory(config)
 
@@ -315,7 +307,7 @@ class TestGraphFactory:
                 "features": {
                     "enabled_types": {
                         "daily_play_count": True,
-                        "play_count_by_dayofweek": False
+                        "play_count_by_dayofweek": False,
                     }
                 }
             }
@@ -356,7 +348,9 @@ class TestGraphFactory:
 
     def test_sample_graph_integration(self) -> None:
         """Test that sample graph can be created through factory."""
-        config = create_test_config()  # Sample graph not in our mapping, use default config
+        config = (
+            create_test_config()
+        )  # Sample graph not in our mapping, use default config
         factory = GraphFactory(config)
 
         # Test creating sample graph by type
@@ -403,7 +397,9 @@ class TestGraphFactory:
             SampleGraph,
         )
 
-        config = create_test_config()  # Sample graph not in our mapping, use default config
+        config = (
+            create_test_config()
+        )  # Sample graph not in our mapping, use default config
         factory = GraphFactory(config)
 
         # Create graph through factory
@@ -548,17 +544,17 @@ class TestGraphFactory:
         """Test that ConfigAccessor is properly integrated."""
         config = create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_discord_token", "channel_id": 123456789},
             },
             graphs_overrides={
                 "features": {
-                    "enabled_types": {
-                        "daily_play_count": True,
-                        "top_10_users": False
-                    }
+                    "enabled_types": {"daily_play_count": True, "top_10_users": False}
                 }
-            }
+            },
         )
         factory = GraphFactory(config)
 
@@ -590,18 +586,15 @@ class TestGraphFactory:
         """Test that created graphs receive proper dimensions from config."""
         config = create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_discord_token", "channel_id": 123456789},
             },
             graphs_overrides={
-                "appearance": {
-                    "dimensions": {
-                        "width": 15,
-                        "height": 10,
-                        "dpi": 150
-                    }
-                }
-            }
+                "appearance": {"dimensions": {"width": 15, "height": 10, "dpi": 150}}
+            },
         )
         factory = GraphFactory(config)
 
@@ -615,8 +608,11 @@ class TestGraphFactory:
         """Test that enabled graphs receive proper dimensions from config."""
         config = create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_discord_token", "channel_id": 123456789},
             },
             graphs_overrides={
                 "features": {
@@ -626,17 +622,11 @@ class TestGraphFactory:
                         "play_count_by_hourofday": False,
                         "play_count_by_month": False,
                         "top_10_platforms": False,
-                        "top_10_users": False
+                        "top_10_users": False,
                     }
                 },
-                "appearance": {
-                    "dimensions": {
-                        "width": 20,
-                        "height": 12,
-                        "dpi": 200
-                    }
-                }
-            }
+                "appearance": {"dimensions": {"width": 20, "height": 12, "dpi": 200}},
+            },
         )
         factory = GraphFactory(config)
 

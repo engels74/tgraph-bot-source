@@ -12,7 +12,10 @@ import pytest
 
 from src.tgraph_bot.graphs.graph_manager import GraphManager
 from src.tgraph_bot.config.schema import TGraphBotConfig
-from tests.utils.test_helpers import create_config_manager_with_config, create_test_config_custom
+from tests.utils.test_helpers import (
+    create_config_manager_with_config,
+    create_test_config_custom,
+)
 
 
 class TestGraphManagerArchitecture:
@@ -34,8 +37,11 @@ class TestGraphManagerArchitecture:
         # Create a mock config using utility
         mock_config = create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_token", "channel_id": 123456789},
             }
         )
         config_manager = create_config_manager_with_config(mock_config)
@@ -81,12 +87,13 @@ class TestGraphManagerArchitecture:
         # Create a mock config using utility
         mock_config = create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_token", "channel_id": 123456789},
             },
-            data_collection_overrides={
-                "time_ranges": {"days": 30}
-            }
+            data_collection_overrides={"time_ranges": {"days": 30}},
         )
         config_manager = create_config_manager_with_config(mock_config)
 
@@ -160,8 +167,11 @@ class TestGraphManagerArchitecture:
         # Create a mock config using utility
         mock_config = create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_token", "channel_id": 123456789},
             }
         )
         config_manager = create_config_manager_with_config(mock_config)

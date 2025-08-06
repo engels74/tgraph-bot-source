@@ -14,7 +14,10 @@ from src.tgraph_bot.utils.time.timestamp_calculator import TimestampCalculator
 from src.tgraph_bot.utils.discord.discord_file_utils import create_graph_specific_embed
 from src.tgraph_bot.bot.update_tracker import UpdateTracker
 from src.tgraph_bot.config.manager import ConfigManager
-from tests.utils.test_helpers import create_test_config, create_config_manager_with_config
+from tests.utils.test_helpers import (
+    create_test_config,
+    create_config_manager_with_config,
+)
 
 
 @pytest.fixture

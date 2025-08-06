@@ -387,7 +387,7 @@ class PlayCountByHourOfDayGraph(BaseGraph, VisualizationMixin):
             if total_int > 0:
                 x_data.append(float(i))
                 y_data.append(float(total_value))  # pyright: ignore[reportAny] # numpy array element type inference limitation
-        
+
         if x_data and y_data:
             self.annotation_helper.annotate_line_points(
                 ax=ax,

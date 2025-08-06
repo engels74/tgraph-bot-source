@@ -102,9 +102,13 @@ class TestConfigurationValidation:
         assert minimal_config.automation.scheduling.update_days == 7  # Default value
         assert minimal_config.automation.data_retention.keep_days == 7  # Default value
         assert minimal_config.data_collection.time_ranges.days == 30  # Default value
-        assert minimal_config.graphs.features.enabled_types.daily_play_count is True  # Default value
+        assert (
+            minimal_config.graphs.features.enabled_types.daily_play_count is True
+        )  # Default value
         assert minimal_config.graphs.appearance.colors.tv == "#1f77b4"  # Default value
-        assert minimal_config.graphs.appearance.colors.movie == "#ff7f0e"  # Default value
+        assert (
+            minimal_config.graphs.appearance.colors.movie == "#ff7f0e"
+        )  # Default value
 
     def test_configuration_access_patterns(self) -> None:
         """Test different patterns of accessing configuration values."""
@@ -119,13 +123,18 @@ class TestConfigurationValidation:
         accessor = ConfigAccessor(config)
         assert accessor.get_value("graphs.appearance.colors.tv") == "#2e86ab"
         assert accessor.get_value("graphs.appearance.colors.movie") == "#a23b72"
-        assert accessor.get_value("graphs.features.enabled_types.daily_play_count") is True
+        assert (
+            accessor.get_value("graphs.features.enabled_types.daily_play_count") is True
+        )
 
         # Test through BaseGraph
         graph = ConfigTestGraph(config=config)
         assert graph.get_config_value("graphs.appearance.colors.tv") == "#2e86ab"
         assert graph.get_config_value("graphs.appearance.colors.movie") == "#a23b72"
-        assert graph.get_config_value("graphs.features.enabled_types.daily_play_count") is True
+        assert (
+            graph.get_config_value("graphs.features.enabled_types.daily_play_count")
+            is True
+        )
 
     def test_configuration_inheritance_patterns(self) -> None:
         """Test configuration inheritance and override patterns."""
@@ -180,11 +189,16 @@ class TestConfigurationValidation:
         # Test privacy settings
         assert privacy_config.data_collection.privacy.censor_usernames is True
         assert privacy_config.graphs.features.enabled_types.top_10_users is False
-        assert privacy_config.graphs.appearance.annotations.enabled_on.top_10_users is False
+        assert (
+            privacy_config.graphs.appearance.annotations.enabled_on.top_10_users
+            is False
+        )
 
         # Test that privacy config works with graphs
         graph = ConfigTestGraph(config=privacy_config)
-        assert graph.get_config_value("data_collection.privacy.censor_usernames") is True
+        assert (
+            graph.get_config_value("data_collection.privacy.censor_usernames") is True
+        )
 
     def test_configuration_edge_cases(self) -> None:
         """Test edge cases in configuration handling."""
@@ -286,11 +300,19 @@ class TestConfigurationValidation:
 
         # Test individual graph annotation settings
         assert config.graphs.appearance.annotations.enabled_on.daily_play_count is True
-        assert config.graphs.appearance.annotations.enabled_on.play_count_by_dayofweek is True
-        assert config.graphs.appearance.annotations.enabled_on.play_count_by_hourofday is True
+        assert (
+            config.graphs.appearance.annotations.enabled_on.play_count_by_dayofweek
+            is True
+        )
+        assert (
+            config.graphs.appearance.annotations.enabled_on.play_count_by_hourofday
+            is True
+        )
         assert config.graphs.appearance.annotations.enabled_on.top_10_platforms is True
         assert config.graphs.appearance.annotations.enabled_on.top_10_users is True
-        assert config.graphs.appearance.annotations.enabled_on.play_count_by_month is True
+        assert (
+            config.graphs.appearance.annotations.enabled_on.play_count_by_month is True
+        )
 
     def test_media_type_configuration_validation(self) -> None:
         """Test validation of media type-related configuration."""

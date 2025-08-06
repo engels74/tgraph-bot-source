@@ -152,12 +152,6 @@ def create_test_config(
     return config
 
 
-
-
-
-
-
-
 def create_test_config_custom(
     *,
     services_overrides: dict[str, object] | None = None,
@@ -205,15 +199,22 @@ def create_test_config_custom(
     if services_overrides:
         _deep_merge(cast(dict[str, object], base_dict["services"]), services_overrides)
     if automation_overrides:
-        _deep_merge(cast(dict[str, object], base_dict["automation"]), automation_overrides)
+        _deep_merge(
+            cast(dict[str, object], base_dict["automation"]), automation_overrides
+        )
     if data_collection_overrides:
-        _deep_merge(cast(dict[str, object], base_dict["data_collection"]), data_collection_overrides)
+        _deep_merge(
+            cast(dict[str, object], base_dict["data_collection"]),
+            data_collection_overrides,
+        )
     if system_overrides:
         _deep_merge(cast(dict[str, object], base_dict["system"]), system_overrides)
     if graphs_overrides:
         _deep_merge(cast(dict[str, object], base_dict["graphs"]), graphs_overrides)
     if rate_limiting_overrides:
-        _deep_merge(cast(dict[str, object], base_dict["rate_limiting"]), rate_limiting_overrides)
+        _deep_merge(
+            cast(dict[str, object], base_dict["rate_limiting"]), rate_limiting_overrides
+        )
 
     return TGraphBotConfig.model_validate(base_dict)
 
@@ -227,12 +228,10 @@ def _deep_merge(target: dict[str, object], source: dict[str, object]) -> None:
         source: Source dictionary to merge from
     """
     for key, value in source.items():
-        if (
-            key in target
-            and isinstance(target[key], dict)
-            and isinstance(value, dict)
-        ):
-            _deep_merge(cast(dict[str, object], target[key]), cast(dict[str, object], value))
+        if key in target and isinstance(target[key], dict) and isinstance(value, dict):
+            _deep_merge(
+                cast(dict[str, object], target[key]), cast(dict[str, object], value)
+            )
         else:
             target[key] = value
 

@@ -5,9 +5,7 @@ This module tests the resolution grouping strategies that reduce visual clutter
 in resolution analytics by categorizing resolutions into meaningful groups.
 """
 
-import pytest
 from datetime import datetime
-from collections.abc import Mapping
 
 from src.tgraph_bot.graphs.graph_modules.utils.utils import ProcessedRecords
 
@@ -17,34 +15,38 @@ class TestResolutionGrouping:
 
     def test_group_resolution_by_strategy_simplified(self) -> None:
         """Test simplified grouping strategy (SD, HD, FHD, UHD)."""
-        from src.tgraph_bot.graphs.graph_modules.utils.resolution_grouping import group_resolution_by_strategy
-        
+        from src.tgraph_bot.graphs.graph_modules.utils.resolution_grouping import (
+            group_resolution_by_strategy,
+        )
+
         # Test SD grouping
         assert group_resolution_by_strategy("720x480", "simplified") == "SD"
         assert group_resolution_by_strategy("720x576", "simplified") == "SD"
         assert group_resolution_by_strategy("854x480", "simplified") == "SD"
-        
+
         # Test HD grouping
         assert group_resolution_by_strategy("1280x720", "simplified") == "HD"
         assert group_resolution_by_strategy("1366x768", "simplified") == "HD"
-        
+
         # Test FHD grouping
         assert group_resolution_by_strategy("1920x1080", "simplified") == "FHD"
         assert group_resolution_by_strategy("1680x1050", "simplified") == "FHD"
-        
+
         # Test UHD grouping
         assert group_resolution_by_strategy("3840x2160", "simplified") == "UHD"
         assert group_resolution_by_strategy("4096x2160", "simplified") == "UHD"
         assert group_resolution_by_strategy("2560x1440", "simplified") == "UHD"
-        
+
         # Test Other category
         assert group_resolution_by_strategy("1024x768", "simplified") == "Other"
         assert group_resolution_by_strategy("unknown", "simplified") == "Other"
 
     def test_group_resolution_by_strategy_standard(self) -> None:
         """Test standard grouping strategy (4K, 1440p, 1080p, etc.)."""
-        from src.tgraph_bot.graphs.graph_modules.utils.resolution_grouping import group_resolution_by_strategy
-        
+        from src.tgraph_bot.graphs.graph_modules.utils.resolution_grouping import (
+            group_resolution_by_strategy,
+        )
+
         # Test standard mappings following Tautulli approach
         assert group_resolution_by_strategy("3840x2160", "standard") == "4K"
         assert group_resolution_by_strategy("4096x2160", "standard") == "4K"
@@ -54,52 +56,89 @@ class TestResolutionGrouping:
         assert group_resolution_by_strategy("854x480", "standard") == "480p"
         assert group_resolution_by_strategy("720x480", "standard") == "NTSC"
         assert group_resolution_by_strategy("720x576", "standard") == "PAL"
-        
+
         # Test intelligent width-based grouping for anamorphic and letterbox content
         # These resolutions should be grouped by their width dimension
-        assert group_resolution_by_strategy("1920x816", "standard") == "1080p"   # Anamorphic 1080p
-        assert group_resolution_by_strategy("1920x804", "standard") == "1080p"   # Letterbox 1080p
-        assert group_resolution_by_strategy("1920x1040", "standard") == "1080p"  # Different aspect ratio 1080p
-        assert group_resolution_by_strategy("1920x1036", "standard") == "1080p"  # Different aspect ratio 1080p
-        assert group_resolution_by_strategy("1440x1080", "standard") == "1440p"  # 1440p variant
-        assert group_resolution_by_strategy("1458x1080", "standard") == "1440p"  # 1440p variant
-        
+        assert (
+            group_resolution_by_strategy("1920x816", "standard") == "1080p"
+        )  # Anamorphic 1080p
+        assert (
+            group_resolution_by_strategy("1920x804", "standard") == "1080p"
+        )  # Letterbox 1080p
+        assert (
+            group_resolution_by_strategy("1920x1040", "standard") == "1080p"
+        )  # Different aspect ratio 1080p
+        assert (
+            group_resolution_by_strategy("1920x1036", "standard") == "1080p"
+        )  # Different aspect ratio 1080p
+        assert (
+            group_resolution_by_strategy("1440x1080", "standard") == "1440p"
+        )  # 1440p variant
+        assert (
+            group_resolution_by_strategy("1458x1080", "standard") == "1440p"
+        )  # 1440p variant
+
         # Test 4K variants
-        assert group_resolution_by_strategy("3840x1600", "standard") == "4K"     # Ultrawide 4K
-        assert group_resolution_by_strategy("4096x1716", "standard") == "4K"     # Cinema 4K variant
-        
-        # Test 720p variants  
-        assert group_resolution_by_strategy("1280x536", "standard") == "720p"    # Letterbox 720p
-        
+        assert (
+            group_resolution_by_strategy("3840x1600", "standard") == "4K"
+        )  # Ultrawide 4K
+        assert (
+            group_resolution_by_strategy("4096x1716", "standard") == "4K"
+        )  # Cinema 4K variant
+
+        # Test 720p variants
+        assert (
+            group_resolution_by_strategy("1280x536", "standard") == "720p"
+        )  # Letterbox 720p
+
         # Test fallback to "Other" for truly unmapped resolutions
-        assert group_resolution_by_strategy("1024x768", "standard") == "Other"   # XGA - not a standard TV/movie resolution
-        assert group_resolution_by_strategy("unknown", "standard") == "Other"    # Unknown should be merged into Other category
+        assert (
+            group_resolution_by_strategy("1024x768", "standard") == "Other"
+        )  # XGA - not a standard TV/movie resolution
+        assert (
+            group_resolution_by_strategy("unknown", "standard") == "Other"
+        )  # Unknown should be merged into Other category
 
     def test_group_resolution_by_strategy_detailed(self) -> None:
         """Test detailed grouping strategy (exact resolutions with friendly names)."""
-        from src.tgraph_bot.graphs.graph_modules.utils.resolution_grouping import group_resolution_by_strategy
-        
+        from src.tgraph_bot.graphs.graph_modules.utils.resolution_grouping import (
+            group_resolution_by_strategy,
+        )
+
         # Test detailed formatting with friendly names
-        assert group_resolution_by_strategy("3840x2160", "detailed") == "4K UHD (3840×2160)"
-        assert group_resolution_by_strategy("4096x2160", "detailed") == "4K DCI (4096×2160)"
-        assert group_resolution_by_strategy("1920x1080", "detailed") == "1080p (1920×1080)"
+        assert (
+            group_resolution_by_strategy("3840x2160", "detailed")
+            == "4K UHD (3840×2160)"
+        )
+        assert (
+            group_resolution_by_strategy("4096x2160", "detailed")
+            == "4K DCI (4096×2160)"
+        )
+        assert (
+            group_resolution_by_strategy("1920x1080", "detailed") == "1080p (1920×1080)"
+        )
         assert group_resolution_by_strategy("1280x720", "detailed") == "720p (1280×720)"
-        
+
         # Test mapped resolutions
         assert group_resolution_by_strategy("1024x768", "detailed") == "XGA (1024×768)"
 
         # Test fallback for unmapped resolutions
         assert group_resolution_by_strategy("1600x1200", "detailed") == "1600x1200"
-        assert group_resolution_by_strategy("unknown", "detailed") == "Unknown (No resolution data from Tautulli)"
+        assert (
+            group_resolution_by_strategy("unknown", "detailed")
+            == "Unknown (No resolution data from Tautulli)"
+        )
 
     def test_sort_resolutions_by_quality(self) -> None:
         """Test resolution sorting by quality (highest to lowest)."""
-        from src.tgraph_bot.graphs.graph_modules.utils.resolution_grouping import sort_resolutions_by_quality
-        
+        from src.tgraph_bot.graphs.graph_modules.utils.resolution_grouping import (
+            sort_resolutions_by_quality,
+        )
+
         # Test sorting with mixed quality resolutions
         unsorted_resolutions = ["720p", "4K", "1080p", "480p", "1440p", "Other", "NTSC"]
         expected_order = ["4K", "1440p", "1080p", "720p", "480p", "NTSC", "Other"]
-        
+
         sorted_resolutions = sort_resolutions_by_quality(unsorted_resolutions)
         assert sorted_resolutions == expected_order
 
@@ -158,22 +197,22 @@ class TestResolutionGrouping:
         ]
 
         # Test with standard grouping strategy
-        from src.tgraph_bot.graphs.graph_modules.utils.resolution_grouping import aggregate_by_resolution_grouped
-        
-        result = aggregate_by_resolution_grouped(
-            records, 
-            resolution_field="video_resolution", 
-            grouping_strategy="standard"
+        from src.tgraph_bot.graphs.graph_modules.utils.resolution_grouping import (
+            aggregate_by_resolution_grouped,
         )
-        
+
+        result = aggregate_by_resolution_grouped(
+            records, resolution_field="video_resolution", grouping_strategy="standard"
+        )
+
         # Should have 2 groups: "4K" (2 plays) and "1080p" (1 play)
         assert len(result) == 2
-        
+
         # Check that resolutions are grouped correctly
         resolution_counts = {item["resolution"]: item["play_count"] for item in result}
         assert resolution_counts["4K"] == 2  # Both 3840x2160 and 4096x2160
         assert resolution_counts["1080p"] == 1  # One 1920x1080
-        
+
         # Should be sorted by play count (descending)
         assert result[0]["play_count"] >= result[1]["play_count"]
 
@@ -215,35 +254,37 @@ class TestResolutionGrouping:
             },
         ]
 
-        from src.tgraph_bot.graphs.graph_modules.utils.resolution_grouping import aggregate_by_resolution_and_stream_type_grouped
-        
-        result = aggregate_by_resolution_and_stream_type_grouped(
-            records,
-            resolution_field="video_resolution",
-            grouping_strategy="standard"
+        from src.tgraph_bot.graphs.graph_modules.utils.resolution_grouping import (
+            aggregate_by_resolution_and_stream_type_grouped,
         )
-        
+
+        result = aggregate_by_resolution_and_stream_type_grouped(
+            records, resolution_field="video_resolution", grouping_strategy="standard"
+        )
+
         # Should have 1 group: "4K" with both direct play and transcode
         assert len(result) == 1
         assert "4K" in result
-        
+
         # Check stream type breakdown within the 4K group
         four_k_aggregates = result["4K"]
         assert len(four_k_aggregates) == 2  # direct play and transcode
-        
+
         stream_types = {agg["stream_type"] for agg in four_k_aggregates}
         assert "direct play" in stream_types
         assert "transcode" in stream_types
 
     def test_resolution_grouping_preserves_unknown_values(self) -> None:
         """Test that unknown resolution values are handled properly in grouping."""
-        from src.tgraph_bot.graphs.graph_modules.utils.resolution_grouping import group_resolution_by_strategy
-        
+        from src.tgraph_bot.graphs.graph_modules.utils.resolution_grouping import (
+            group_resolution_by_strategy,
+        )
+
         # Test that unknown values are mapped to Other in all strategies for cleaner graphs
         assert group_resolution_by_strategy("unknown", "simplified") == "Other"
         assert group_resolution_by_strategy("unknown", "standard") == "Other"
         assert group_resolution_by_strategy("unknown", "detailed") == "Other"
-        
+
         # Test empty/None values (should be consistent across strategies)
         assert group_resolution_by_strategy("", "simplified") == "Other"
         assert group_resolution_by_strategy("", "standard") == "Other"
@@ -251,16 +292,20 @@ class TestResolutionGrouping:
 
     def test_invalid_grouping_strategy_fallback(self) -> None:
         """Test fallback behavior for invalid grouping strategies."""
-        from src.tgraph_bot.graphs.graph_modules.utils.resolution_grouping import group_resolution_by_strategy
-        
+        from src.tgraph_bot.graphs.graph_modules.utils.resolution_grouping import (
+            group_resolution_by_strategy,
+        )
+
         # Should fallback to detailed strategy for invalid strategy names
         result = group_resolution_by_strategy("1920x1080", "invalid_strategy")
         assert result == "1080p (1920×1080)"  # detailed format
 
     def test_unknown_resolution_merging_in_aggregation(self) -> None:
         """Test that unknown resolutions are merged into Other category during aggregation."""
-        from src.tgraph_bot.graphs.graph_modules.utils.resolution_grouping import aggregate_by_resolution_grouped
-        
+        from src.tgraph_bot.graphs.graph_modules.utils.resolution_grouping import (
+            aggregate_by_resolution_grouped,
+        )
+
         # Create test records with unknown resolutions and some that should group to Other
         test_records: ProcessedRecords = [
             {
@@ -299,7 +344,7 @@ class TestResolutionGrouping:
                 "date": "2024-01-03",
                 "datetime": datetime(2024, 1, 3),
                 "user": "user3",
-                "platform": "web", 
+                "platform": "web",
                 "media_type": "movie",
                 "duration": 7200,
                 "stopped": 7200,
@@ -328,19 +373,21 @@ class TestResolutionGrouping:
                 "container": "mp4",
             },
         ]
-        
+
         # Aggregate using standard strategy
-        result = aggregate_by_resolution_grouped(test_records, "video_resolution", "standard")
-        
+        result = aggregate_by_resolution_grouped(
+            test_records, "video_resolution", "standard"
+        )
+
         # Extract resolution names from result
         resolution_names = [agg["resolution"] for agg in result]
-        
+
         # Unknown should be merged into Other, not appear as separate entry
         assert "unknown" not in resolution_names
         assert "Unknown (No resolution data from Tautulli)" not in resolution_names
         assert "Other" in resolution_names
         assert "1080p" in resolution_names
-        
+
         # Count should be correct - Other should have 3 plays (2 unknown + 1 from 1024x768)
         other_agg = next(agg for agg in result if agg["resolution"] == "Other")
         assert other_agg["play_count"] == 3

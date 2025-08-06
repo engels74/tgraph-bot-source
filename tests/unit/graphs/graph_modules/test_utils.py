@@ -879,7 +879,9 @@ class TestResolutionAggregation:
         """Test aggregation by stream resolution (stream_video_resolution field)."""
         records = self.create_sample_records_with_resolution()
 
-        result = aggregate_by_resolution(records, resolution_field="stream_video_resolution")
+        result = aggregate_by_resolution(
+            records, resolution_field="stream_video_resolution"
+        )
 
         assert isinstance(result, list)
         assert len(result) == 2  # 1920x1080 and 1280x720 (unknown filtered out)
@@ -938,7 +940,9 @@ class TestResolutionAggregation:
         """Test aggregation with empty data."""
         empty_records: ProcessedRecords = []
 
-        result = aggregate_by_resolution(empty_records, resolution_field="video_resolution")
+        result = aggregate_by_resolution(
+            empty_records, resolution_field="video_resolution"
+        )
 
         assert isinstance(result, list)
         assert len(result) == 0
@@ -968,8 +972,12 @@ class TestResolutionAggregation:
         ]
 
         # This should not crash but log the missing data
-        with patch("src.tgraph_bot.graphs.graph_modules.utils.utils.logger") as mock_logger:
-            result = aggregate_by_resolution(records, resolution_field="video_resolution")
+        with patch(
+            "src.tgraph_bot.graphs.graph_modules.utils.utils.logger"
+        ) as mock_logger:
+            result = aggregate_by_resolution(
+                records, resolution_field="video_resolution"
+            )
 
             # Should log warnings about missing data
             assert mock_logger.info.called
@@ -1055,8 +1063,16 @@ class TestResolutionAggregation:
                 "stopped": 1703516200,
                 "paused_counter": 0,
                 "transcode_decision": "direct play",
-                "video_resolution": "1920x1080" if i < 5 else "1280x720" if i < 8 else "3840x2160",
-                "stream_video_resolution": "1920x1080" if i < 5 else "1280x720" if i < 8 else "3840x2160",
+                "video_resolution": "1920x1080"
+                if i < 5
+                else "1280x720"
+                if i < 8
+                else "3840x2160",
+                "stream_video_resolution": "1920x1080"
+                if i < 5
+                else "1280x720"
+                if i < 8
+                else "3840x2160",
                 "video_codec": "h264",
                 "audio_codec": "aac",
                 "container": "mp4",

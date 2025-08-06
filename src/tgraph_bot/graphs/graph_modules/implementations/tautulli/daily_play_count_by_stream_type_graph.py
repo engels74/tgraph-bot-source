@@ -10,7 +10,7 @@ transcoded, or copied on a daily basis.
 import logging
 from collections.abc import Mapping
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, cast, override
+from typing import TYPE_CHECKING, override
 
 import pandas as pd
 from matplotlib.axes import Axes
@@ -20,11 +20,7 @@ from ...core.base_graph import BaseGraph
 from ...data.data_processor import data_processor
 from ...utils.utils import (
     ProcessedRecords,
-    aggregate_by_date,
-    aggregate_by_date_separated,
-    aggregate_by_stream_type,
     get_stream_type_display_info,
-    handle_empty_data,
 )
 from ...visualization.visualization_mixin import VisualizationMixin
 
@@ -215,7 +211,9 @@ class DailyPlayCountByStreamTypeGraph(BaseGraph, VisualizationMixin):
 
             if use_separation and processed_records:
                 # Generate stream type separated visualization
-                self._generate_stream_type_separated_visualization(ax, processed_records)
+                self._generate_stream_type_separated_visualization(
+                    ax, processed_records
+                )
             else:
                 # Fallback: show message that no stream type data is available
                 self._generate_no_stream_data_visualization(ax)
@@ -227,7 +225,9 @@ class DailyPlayCountByStreamTypeGraph(BaseGraph, VisualizationMixin):
             return output_path
 
         except Exception as e:
-            logger.exception(f"Error generating daily play count by stream type graph: {e}")
+            logger.exception(
+                f"Error generating daily play count by stream type graph: {e}"
+            )
             raise
         finally:
             self.cleanup()
@@ -287,10 +287,9 @@ class DailyPlayCountByStreamTypeGraph(BaseGraph, VisualizationMixin):
                 continue
 
             # Get display information
-            display_info = stream_type_info.get(stream_type, {
-                "display_name": stream_type.title(),
-                "color": "#1f77b4"
-            })
+            display_info = stream_type_info.get(
+                stream_type, {"display_name": stream_type.title(), "color": "#1f77b4"}
+            )
             label = display_info["display_name"]
             color = display_info["color"]
 
@@ -341,17 +340,17 @@ class DailyPlayCountByStreamTypeGraph(BaseGraph, VisualizationMixin):
         # Collect all data points from all plotted lines
         all_x_data: list[float] = []
         all_y_data: list[float] = []
-        
+
         for stream_type in stream_types_plotted:
             if stream_type in daily_stream_type_data:
                 stream_data = daily_stream_type_data[stream_type]
                 counts = [stream_data.get(date, 0) for date in sorted_dates]
                 x_positions = list(range(len(sorted_dates)))
-                
+
                 # Add data points from this line
                 all_x_data.extend(x_positions)
                 all_y_data.extend(counts)
-        
+
         if all_x_data and all_y_data:
             self.annotation_helper.annotate_line_points(
                 ax=ax,
@@ -379,7 +378,8 @@ class DailyPlayCountByStreamTypeGraph(BaseGraph, VisualizationMixin):
             ax: The matplotlib axes to plot on
         """
         self.handle_empty_data_with_message(
-            ax, "No stream type data available.\nThis graph requires Tautulli API data with transcode decision information."
+            ax,
+            "No stream type data available.\nThis graph requires Tautulli API data with transcode decision information.",
         )
 
     def _aggregate_by_date_and_stream_type(
@@ -399,31 +399,31 @@ class DailyPlayCountByStreamTypeGraph(BaseGraph, VisualizationMixin):
 
         # Group records by date and stream type
         date_stream_counts: dict[str, dict[str, int]] = {}
-        
+
         for record in records:
             date_str = record["datetime"].strftime("%Y-%m-%d")
             stream_type = record["transcode_decision"]
-            
+
             if stream_type not in date_stream_counts:
                 date_stream_counts[stream_type] = {}
-            
+
             if date_str not in date_stream_counts[stream_type]:
                 date_stream_counts[stream_type][date_str] = 0
-            
+
             date_stream_counts[stream_type][date_str] += 1
 
         # Fill missing dates with zeros for consistency
         end_date = date.today()
         start_date = end_date - timedelta(days=time_range_days - 1)
-        
+
         current_date = start_date
         while current_date <= end_date:
             date_str = current_date.strftime("%Y-%m-%d")
-            
+
             for stream_type in date_stream_counts:
                 if date_str not in date_stream_counts[stream_type]:
                     date_stream_counts[stream_type][date_str] = 0
-            
+
             current_date += timedelta(days=1)
 
         return date_stream_counts
@@ -443,7 +443,7 @@ class DailyPlayCountByStreamTypeGraph(BaseGraph, VisualizationMixin):
             sorted_dates: List of sorted date strings
         """
         stream_type_info = get_stream_type_display_info()
-        
+
         for stream_type, date_data in stream_type_data.items():
             if not date_data:
                 continue
@@ -457,9 +457,9 @@ class DailyPlayCountByStreamTypeGraph(BaseGraph, VisualizationMixin):
                 max_idx = counts.index(max_count)
 
                 # Get label for this stream type
-                display_info = stream_type_info.get(stream_type, {
-                    "display_name": stream_type.title()
-                })
+                display_info = stream_type_info.get(
+                    stream_type, {"display_name": stream_type.title()}
+                )
                 label = display_info["display_name"]
 
                 self.annotation_helper.annotate_peak_value(

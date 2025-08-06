@@ -414,9 +414,11 @@ class BaseGraph(ABC):
             "Top10UsersGraph": "top_10_users",
             "PlayCountByMonthGraph": "play_count_by_month",
         }
-        
+
         current_class = self.__class__.__name__
-        return class_to_graph_type.get(current_class, current_class.lower())  # Return class name for unknown types
+        return class_to_graph_type.get(
+            current_class, current_class.lower()
+        )  # Return class name for unknown types
 
     def get_media_type_separation_enabled(self) -> bool:
         """
@@ -428,9 +430,11 @@ class BaseGraph(ABC):
         if self._config_accessor is not None:
             graph_type = self._get_graph_type_key()
             return self._config_accessor.get_per_graph_media_type_separation(graph_type)
-        
+
         # Fallback to global setting for backwards compatibility
-        separation_enabled = self.get_config_value("graphs.features.media_type_separation", True)
+        separation_enabled = self.get_config_value(
+            "graphs.features.media_type_separation", True
+        )
         return bool(separation_enabled)
 
     def get_stacked_bar_charts_enabled(self) -> bool:
@@ -443,9 +447,11 @@ class BaseGraph(ABC):
         if self._config_accessor is not None:
             graph_type = self._get_graph_type_key()
             return self._config_accessor.get_per_graph_stacked_bar_charts(graph_type)
-        
+
         # Fallback to global setting for backwards compatibility
-        stacked_enabled = self.get_config_value("graphs.features.stacked_bar_charts", False)
+        stacked_enabled = self.get_config_value(
+            "graphs.features.stacked_bar_charts", False
+        )
         return bool(stacked_enabled)
 
     def get_tv_color(self) -> str:
@@ -473,7 +479,9 @@ class BaseGraph(ABC):
         Returns:
             Hex color string for annotations
         """
-        annotation_color = self.get_config_value("graphs.appearance.annotations.basic.color", "#ff0000")
+        annotation_color = self.get_config_value(
+            "graphs.appearance.annotations.basic.color", "#ff0000"
+        )
         return str(annotation_color)
 
     def get_annotation_outline_color(self) -> str:
@@ -483,7 +491,9 @@ class BaseGraph(ABC):
         Returns:
             Hex color string for annotation outlines
         """
-        outline_color = self.get_config_value("graphs.appearance.annotations.basic.outline_color", "#000000")
+        outline_color = self.get_config_value(
+            "graphs.appearance.annotations.basic.outline_color", "#000000"
+        )
         return str(outline_color)
 
     def is_annotation_outline_enabled(self) -> bool:
@@ -493,7 +503,9 @@ class BaseGraph(ABC):
         Returns:
             True if annotation outlines should be enabled, False otherwise
         """
-        outline_enabled = self.get_config_value("graphs.appearance.annotations.basic.enable_outline", True)
+        outline_enabled = self.get_config_value(
+            "graphs.appearance.annotations.basic.enable_outline", True
+        )
         return bool(outline_enabled)
 
     def is_peak_annotations_enabled(self) -> bool:
@@ -503,7 +515,9 @@ class BaseGraph(ABC):
         Returns:
             True if peak annotations should be enabled, False otherwise
         """
-        peak_enabled = self.get_config_value("graphs.appearance.annotations.peaks.enabled", True)
+        peak_enabled = self.get_config_value(
+            "graphs.appearance.annotations.peaks.enabled", True
+        )
         return bool(peak_enabled)
 
     def get_peak_annotation_color(self) -> str:
@@ -513,7 +527,9 @@ class BaseGraph(ABC):
         Returns:
             Hex color string for peak annotation background
         """
-        peak_color = self.get_config_value("graphs.appearance.annotations.peaks.color", "#ffcc00")
+        peak_color = self.get_config_value(
+            "graphs.appearance.annotations.peaks.color", "#ffcc00"
+        )
         return str(peak_color)
 
     def get_peak_annotation_text_color(self) -> str:
@@ -523,7 +539,9 @@ class BaseGraph(ABC):
         Returns:
             Hex color string for peak annotation text
         """
-        text_color = self.get_config_value("graphs.appearance.annotations.peaks.text_color", "#000000")
+        text_color = self.get_config_value(
+            "graphs.appearance.annotations.peaks.text_color", "#000000"
+        )
         return str(text_color)
 
     def should_censor_usernames(self) -> bool:
@@ -533,7 +551,9 @@ class BaseGraph(ABC):
         Returns:
             True if usernames should be censored, False otherwise
         """
-        censor_usernames = self.get_config_value("data_collection.privacy.censor_usernames", True)
+        censor_usernames = self.get_config_value(
+            "data_collection.privacy.censor_usernames", True
+        )
         return bool(censor_usernames)
 
     def get_annotation_font_size(self) -> int:
@@ -543,7 +563,9 @@ class BaseGraph(ABC):
         Returns:
             Font size for annotations
         """
-        font_size = self.get_config_value("graphs.appearance.annotations.basic.font_size", 10)
+        font_size = self.get_config_value(
+            "graphs.appearance.annotations.basic.font_size", 10
+        )
         if isinstance(font_size, (int, float)):
             return int(font_size)
         else:

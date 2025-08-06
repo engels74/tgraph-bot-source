@@ -22,7 +22,10 @@ from discord.ext import commands
 from src.tgraph_bot.main import TGraphBot, main, setup_logging, setup_signal_handlers
 from src.tgraph_bot.config.manager import ConfigManager
 from src.tgraph_bot.config.schema import TGraphBotConfig
-from tests.utils.test_helpers import create_config_manager_with_config, create_test_config_custom
+from tests.utils.test_helpers import (
+    create_config_manager_with_config,
+    create_test_config_custom,
+)
 from tests.utils.async_helpers import AsyncTestBase, async_mock_context
 
 if TYPE_CHECKING:
@@ -83,7 +86,9 @@ class TestTGraphBot:
                 await bot.setup_hook()
 
                 # Verify i18n setup was called with correct language
-                mock_setup_i18n.assert_called_once_with(base_config.system.localization.language)
+                mock_setup_i18n.assert_called_once_with(
+                    base_config.system.localization.language
+                )
 
                 # Verify extensions loading was called with bot instance
                 mock_load_extensions.assert_called_once_with(bot)
@@ -158,7 +163,9 @@ class TestTGraphBot:
                 await bot.setup_hook()
 
                 # Verify other steps still completed
-                mock_setup_i18n.assert_called_once_with(base_config.system.localization.language)
+                mock_setup_i18n.assert_called_once_with(
+                    base_config.system.localization.language
+                )
                 mock_load_extensions.assert_called_once_with(bot)
                 mock_sync.assert_called_once()
                 mock_setup_tasks.assert_called_once()
@@ -169,12 +176,13 @@ class TestTGraphBot:
         config_manager = ConfigManager()
         mock_config = create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_token", "channel_id": 123456789},
             },
-            system_overrides={
-                "localization": {"language": "en"}
-            }
+            system_overrides={"localization": {"language": "en"}},
         )
         config_manager.set_current_config(mock_config)
         bot = TGraphBot(config_manager)
@@ -344,8 +352,11 @@ class TestMainFunction:
         # Create a mock config
         mock_config = create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_token", "channel_id": 123456789},
             }
         )
 
@@ -374,8 +385,11 @@ class TestMainFunction:
 
         mock_config = create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_token", "channel_id": 123456789},
             }
         )
 
@@ -407,8 +421,11 @@ class TestMainFunction:
 
         mock_config = create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_token", "channel_id": 123456789},
             }
         )
 
@@ -761,8 +778,11 @@ class TestMainFunctionEnhancements:
 
         mock_config = create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_token", "channel_id": 123456789},
             }
         )
 
@@ -804,8 +824,11 @@ class TestMainFunctionEnhancements:
 
         mock_config = create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "invalid_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "invalid_token", "channel_id": 123456789},
             }
         )
 
@@ -845,8 +868,11 @@ class TestMainFunctionEnhancements:
 
         mock_config = create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_token", "channel_id": 123456789},
             }
         )
 
@@ -881,8 +907,11 @@ class TestMainFunctionEnhancements:
         """Test that main() properly cleans up in finally block."""
         mock_config = create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_token", "channel_id": 123456789},
             }
         )
 

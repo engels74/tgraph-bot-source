@@ -200,7 +200,7 @@ class VisualizationMixin:
                 try:
                     # Get the resolved color strategy using our priority system
                     resolution = self.get_resolved_color_strategy()
-                    
+
                     # If using palette strategy, get color from palette
                     if resolution.use_palette and resolution.palette_colors:
                         # Use palette colors - for separated visualization, we'll use
@@ -211,7 +211,10 @@ class VisualizationMixin:
                         else:
                             # Fallback to first palette color if not enough colors
                             color = resolution.palette_colors[0]
-                    elif resolution.media_type_colors and media_type in resolution.media_type_colors:
+                    elif (
+                        resolution.media_type_colors
+                        and media_type in resolution.media_type_colors
+                    ):
                         # Use media type separation colors
                         color = resolution.media_type_colors[media_type]
                     elif resolution.fallback_colors:
@@ -227,9 +230,11 @@ class VisualizationMixin:
                             color = self.get_tv_color()
                         elif media_type == "movie":
                             color = self.get_movie_color()
-                            
+
                 except Exception as e:
-                    logger.warning(f"Error in priority color resolution for {media_type}: {e}, using fallback")
+                    logger.warning(
+                        f"Error in priority color resolution for {media_type}: {e}, using fallback"
+                    )
                     # Fallback to traditional method on any error
                     if media_type == "tv":
                         color = self.get_tv_color()

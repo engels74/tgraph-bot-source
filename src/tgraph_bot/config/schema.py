@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field, field_validator, ConfigDict
 
 class TautulliConfig(BaseModel):
     """Tautulli service configuration."""
-    
+
     api_key: str = Field(
         ...,
         description="API key for Tautulli access",
@@ -31,7 +31,7 @@ class TautulliConfig(BaseModel):
 
 class DiscordConfig(BaseModel):
     """Discord service configuration."""
-    
+
     token: str = Field(
         ...,
         description="Discord bot token",
@@ -62,14 +62,14 @@ class DiscordConfig(BaseModel):
 
 class ServicesConfig(BaseModel):
     """External services configuration."""
-    
+
     tautulli: TautulliConfig
     discord: DiscordConfig
 
 
 class SchedulingConfig(BaseModel):
     """Scheduling configuration for automation."""
-    
+
     update_days: Annotated[int, Field(ge=1, le=365)] = Field(
         default=7,
         description="Number of days between automatic updates",
@@ -83,7 +83,7 @@ class SchedulingConfig(BaseModel):
 
 class DataRetentionConfig(BaseModel):
     """Data retention configuration."""
-    
+
     keep_days: Annotated[int, Field(ge=1, le=365)] = Field(
         default=7,
         description="Number of days to keep generated graphs",
@@ -92,14 +92,14 @@ class DataRetentionConfig(BaseModel):
 
 class AutomationConfig(BaseModel):
     """Automation and scheduling configuration."""
-    
+
     scheduling: SchedulingConfig = Field(default_factory=SchedulingConfig)
     data_retention: DataRetentionConfig = Field(default_factory=DataRetentionConfig)
 
 
 class TimeRangesConfig(BaseModel):
     """Time range configuration for data collection."""
-    
+
     days: Annotated[int, Field(ge=1, le=365)] = Field(
         default=30,
         description="Time range in days for graph data",
@@ -112,7 +112,7 @@ class TimeRangesConfig(BaseModel):
 
 class PrivacyConfig(BaseModel):
     """Privacy configuration for data collection."""
-    
+
     censor_usernames: bool = Field(
         default=True,
         description="Whether to censor usernames in graphs",
@@ -121,14 +121,14 @@ class PrivacyConfig(BaseModel):
 
 class DataCollectionConfig(BaseModel):
     """Data collection configuration."""
-    
+
     time_ranges: TimeRangesConfig = Field(default_factory=TimeRangesConfig)
     privacy: PrivacyConfig = Field(default_factory=PrivacyConfig)
 
 
 class LocalizationConfig(BaseModel):
     """Localization configuration."""
-    
+
     language: str = Field(
         default="en",
         description="Language code for internationalization",
@@ -144,13 +144,13 @@ class LocalizationConfig(BaseModel):
 
 class SystemConfig(BaseModel):
     """System configuration."""
-    
+
     localization: LocalizationConfig = Field(default_factory=LocalizationConfig)
 
 
 class EnabledTypesConfig(BaseModel):
     """Configuration for enabled graph types."""
-    
+
     daily_play_count: bool = Field(
         default=True,
         description="Enable daily play count graph generation",
@@ -179,7 +179,7 @@ class EnabledTypesConfig(BaseModel):
 
 class PerGraphSettingsConfig(BaseModel):
     """Configuration for individual graph settings."""
-    
+
     media_type_separation: bool = Field(
         default=True,
         description="Whether to separate Movies and TV Series in this graph",
@@ -202,6 +202,7 @@ class ResolutionGroupingConfig(BaseModel):
 
 class PlayCountBySourceResolutionConfig(ResolutionGroupingConfig):
     """Configuration for Play Count by Source Resolution graph."""
+
     pass
 
 
@@ -217,19 +218,33 @@ class PlayCountByStreamResolutionConfig(ResolutionGroupingConfig):
 class PerGraphConfig(BaseModel):
     """Per-graph configuration settings."""
 
-    daily_play_count: PerGraphSettingsConfig = Field(default_factory=PerGraphSettingsConfig)
-    play_count_by_dayofweek: PerGraphSettingsConfig = Field(default_factory=PerGraphSettingsConfig)
-    play_count_by_hourofday: PerGraphSettingsConfig = Field(default_factory=PerGraphSettingsConfig)
-    top_10_platforms: PerGraphSettingsConfig = Field(default_factory=PerGraphSettingsConfig)
+    daily_play_count: PerGraphSettingsConfig = Field(
+        default_factory=PerGraphSettingsConfig
+    )
+    play_count_by_dayofweek: PerGraphSettingsConfig = Field(
+        default_factory=PerGraphSettingsConfig
+    )
+    play_count_by_hourofday: PerGraphSettingsConfig = Field(
+        default_factory=PerGraphSettingsConfig
+    )
+    top_10_platforms: PerGraphSettingsConfig = Field(
+        default_factory=PerGraphSettingsConfig
+    )
     top_10_users: PerGraphSettingsConfig = Field(default_factory=PerGraphSettingsConfig)
-    play_count_by_month: PerGraphSettingsConfig = Field(default_factory=PerGraphSettingsConfig)
-    play_count_by_source_resolution: PlayCountBySourceResolutionConfig = Field(default_factory=PlayCountBySourceResolutionConfig)
-    play_count_by_stream_resolution: PlayCountByStreamResolutionConfig = Field(default_factory=PlayCountByStreamResolutionConfig)
+    play_count_by_month: PerGraphSettingsConfig = Field(
+        default_factory=PerGraphSettingsConfig
+    )
+    play_count_by_source_resolution: PlayCountBySourceResolutionConfig = Field(
+        default_factory=PlayCountBySourceResolutionConfig
+    )
+    play_count_by_stream_resolution: PlayCountByStreamResolutionConfig = Field(
+        default_factory=PlayCountByStreamResolutionConfig
+    )
 
 
 class GraphFeaturesConfig(BaseModel):
     """Graph features configuration."""
-    
+
     enabled_types: EnabledTypesConfig = Field(default_factory=EnabledTypesConfig)
     media_type_separation: bool = Field(
         default=True,
@@ -243,7 +258,7 @@ class GraphFeaturesConfig(BaseModel):
 
 class DimensionsConfig(BaseModel):
     """Graph dimensions configuration."""
-    
+
     width: Annotated[int, Field(ge=6, le=20)] = Field(
         default=14,
         description="Width of graphs in inches",
@@ -289,7 +304,7 @@ class ColorsConfig(BaseModel):
 
 class GridConfig(BaseModel):
     """Graph grid configuration."""
-    
+
     enabled: bool = Field(
         default=False,
         description="Whether to enable grid lines in graphs",
@@ -298,7 +313,7 @@ class GridConfig(BaseModel):
 
 class BasicAnnotationsConfig(BaseModel):
     """Basic annotations configuration."""
-    
+
     color: str = Field(
         default="#ff0000",
         description="Color for graph annotations",
@@ -327,7 +342,7 @@ class BasicAnnotationsConfig(BaseModel):
 
 class EnabledOnConfig(BaseModel):
     """Configuration for which graphs have annotations enabled."""
-    
+
     daily_play_count: bool = Field(
         default=True,
         description="Enable annotations on daily play count graphs",
@@ -356,7 +371,7 @@ class EnabledOnConfig(BaseModel):
 
 class PeaksConfig(BaseModel):
     """Peak annotations configuration."""
-    
+
     enabled: bool = Field(
         default=True,
         description="Whether to enable peak value annotations on graphs",
@@ -381,7 +396,7 @@ class PeaksConfig(BaseModel):
 
 class AnnotationsConfig(BaseModel):
     """Annotations configuration."""
-    
+
     basic: BasicAnnotationsConfig = Field(default_factory=BasicAnnotationsConfig)
     enabled_on: EnabledOnConfig = Field(default_factory=EnabledOnConfig)
     peaks: PeaksConfig = Field(default_factory=PeaksConfig)
@@ -389,7 +404,7 @@ class AnnotationsConfig(BaseModel):
 
 class PalettesConfig(BaseModel):
     """Graph color palettes configuration."""
-    
+
     play_count_by_hourofday: str = Field(
         default="",
         description="Color palette for hourly play count graph (viridis, plasma, inferno, magma, or leave blank for default)",
@@ -418,7 +433,7 @@ class PalettesConfig(BaseModel):
 
 class GraphAppearanceConfig(BaseModel):
     """Graph appearance configuration."""
-    
+
     dimensions: DimensionsConfig = Field(default_factory=DimensionsConfig)
     colors: ColorsConfig = Field(default_factory=ColorsConfig)
     grid: GridConfig = Field(default_factory=GridConfig)
@@ -428,7 +443,7 @@ class GraphAppearanceConfig(BaseModel):
 
 class GraphsConfig(BaseModel):
     """Graphs configuration."""
-    
+
     features: GraphFeaturesConfig = Field(default_factory=GraphFeaturesConfig)
     appearance: GraphAppearanceConfig = Field(default_factory=GraphAppearanceConfig)
     per_graph: PerGraphConfig = Field(default_factory=PerGraphConfig)
@@ -436,7 +451,7 @@ class GraphsConfig(BaseModel):
 
 class CommandCooldownConfig(BaseModel):
     """Individual command cooldown configuration."""
-    
+
     user_cooldown_minutes: Annotated[int, Field(ge=0, le=1440)] = Field(
         default=0,
         description="Per-user cooldown in minutes",
@@ -449,7 +464,7 @@ class CommandCooldownConfig(BaseModel):
 
 class CommandsConfig(BaseModel):
     """Commands cooldown configuration."""
-    
+
     config: CommandCooldownConfig = Field(default_factory=CommandCooldownConfig)
     update_graphs: CommandCooldownConfig = Field(default_factory=CommandCooldownConfig)
     my_stats: CommandCooldownConfig = Field(
@@ -462,7 +477,7 @@ class CommandsConfig(BaseModel):
 
 class RateLimitingConfig(BaseModel):
     """Rate limiting configuration."""
-    
+
     commands: CommandsConfig = Field(default_factory=CommandsConfig)
 
 

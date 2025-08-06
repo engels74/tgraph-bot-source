@@ -325,10 +325,13 @@ class TGraphBot(commands.Bot):
                 else config.automation.scheduling.fixed_update_time
             )
             await self.update_tracker.start_scheduler(
-                update_days=config.automation.scheduling.update_days, fixed_update_time=fixed_time
+                update_days=config.automation.scheduling.update_days,
+                fixed_update_time=fixed_time,
             )
 
-            logger.info(f"Update scheduler started (every {config.automation.scheduling.update_days} days)")
+            logger.info(
+                f"Update scheduler started (every {config.automation.scheduling.update_days} days)"
+            )
             if fixed_time:
                 logger.info(f"Fixed update time: {fixed_time}")
 
@@ -363,7 +366,9 @@ class TGraphBot(commands.Bot):
 
             # Verify channel is a text channel
             if not isinstance(target_channel, discord.TextChannel):
-                logger.error(f"Channel {config.services.discord.channel_id} is not a text channel")
+                logger.error(
+                    f"Channel {config.services.discord.channel_id} is not a text channel"
+                )
                 return
 
             # Step 1: Clean up previous bot messages

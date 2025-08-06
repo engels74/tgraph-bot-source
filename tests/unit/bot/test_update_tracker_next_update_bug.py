@@ -204,7 +204,6 @@ class TestNextUpdateBugFix:
         update_tracker._config = config  # pyright: ignore[reportPrivateUsage]
         update_tracker._state = state  # pyright: ignore[reportPrivateUsage]
 
-
         update_tracker._schedule = UpdateSchedule(config, state)  # pyright: ignore[reportPrivateUsage]
 
         # Act: Trigger update
@@ -256,7 +255,6 @@ class TestNextUpdateBugFix:
         update_tracker._config = config  # pyright: ignore[reportPrivateUsage]
         update_tracker._state = state  # pyright: ignore[reportPrivateUsage]
 
-
         update_tracker._schedule = UpdateSchedule(config, state)  # pyright: ignore[reportPrivateUsage]
 
         # Act: Execute the update (simulate the scheduler loop execution)
@@ -293,7 +291,6 @@ class TestNextUpdateBugFix:
         )  # Daily interval
 
         update_tracker._config = config  # pyright: ignore[reportPrivateUsage]
-
 
         # Simulate 3 consecutive updates
         current_time = base_time

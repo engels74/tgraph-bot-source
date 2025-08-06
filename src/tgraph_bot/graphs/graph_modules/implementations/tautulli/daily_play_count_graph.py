@@ -329,17 +329,17 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
         # Collect all data points from all plotted lines
         all_x_data: list[float] = []
         all_y_data: list[float] = []
-        
+
         for media_type in media_types_plotted:
             if media_type in separated_data:
                 media_data = separated_data[media_type]
                 counts = [media_data.get(date, 0) for date in sorted_dates]
                 x_positions = list(range(len(sorted_dates)))
-                
+
                 # Add data points from this line
                 all_x_data.extend(x_positions)
                 all_y_data.extend(counts)
-        
+
         if all_x_data and all_y_data:
             self.annotation_helper.annotate_line_points(
                 ax=ax,

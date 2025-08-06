@@ -201,8 +201,7 @@ class TestTGraphBotConfig:
 
         errors = exc_info.value.errors()
         assert any(
-            error["loc"] == ("graphs", "appearance", "colors", "tv")
-            for error in errors
+            error["loc"] == ("graphs", "appearance", "colors", "tv") for error in errors
         )
 
     def test_invalid_time_format(self) -> None:
@@ -508,8 +507,13 @@ class TestTGraphBotConfig:
         # Test per-graph settings are accessible
         assert config.graphs.per_graph.daily_play_count.media_type_separation is True
         assert config.graphs.per_graph.daily_play_count.stacked_bar_charts is False
-        assert config.graphs.per_graph.play_count_by_dayofweek.media_type_separation is False
-        assert config.graphs.per_graph.play_count_by_dayofweek.stacked_bar_charts is True
+        assert (
+            config.graphs.per_graph.play_count_by_dayofweek.media_type_separation
+            is False
+        )
+        assert (
+            config.graphs.per_graph.play_count_by_dayofweek.stacked_bar_charts is True
+        )
 
     def test_per_graph_settings_defaults(self) -> None:
         """Test that per-graph settings use proper defaults when not specified."""
@@ -530,10 +534,20 @@ class TestTGraphBotConfig:
         # Test default values for per-graph settings
         assert config.graphs.per_graph.daily_play_count.media_type_separation is True
         assert config.graphs.per_graph.daily_play_count.stacked_bar_charts is True
-        assert config.graphs.per_graph.play_count_by_dayofweek.media_type_separation is True
-        assert config.graphs.per_graph.play_count_by_dayofweek.stacked_bar_charts is True
-        assert config.graphs.per_graph.play_count_by_hourofday.media_type_separation is True
-        assert config.graphs.per_graph.play_count_by_hourofday.stacked_bar_charts is True
+        assert (
+            config.graphs.per_graph.play_count_by_dayofweek.media_type_separation
+            is True
+        )
+        assert (
+            config.graphs.per_graph.play_count_by_dayofweek.stacked_bar_charts is True
+        )
+        assert (
+            config.graphs.per_graph.play_count_by_hourofday.media_type_separation
+            is True
+        )
+        assert (
+            config.graphs.per_graph.play_count_by_hourofday.stacked_bar_charts is True
+        )
         assert config.graphs.per_graph.top_10_platforms.media_type_separation is True
         assert config.graphs.per_graph.top_10_platforms.stacked_bar_charts is True
         assert config.graphs.per_graph.top_10_users.media_type_separation is True
@@ -569,10 +583,19 @@ class TestTGraphBotConfig:
 
         # Test explicitly configured settings
         assert config.graphs.per_graph.daily_play_count.media_type_separation is False
-        assert config.graphs.per_graph.daily_play_count.stacked_bar_charts is True  # Default
-        assert config.graphs.per_graph.top_10_users.media_type_separation is True  # Default
+        assert (
+            config.graphs.per_graph.daily_play_count.stacked_bar_charts is True
+        )  # Default
+        assert (
+            config.graphs.per_graph.top_10_users.media_type_separation is True
+        )  # Default
         assert config.graphs.per_graph.top_10_users.stacked_bar_charts is False
 
         # Test non-configured graphs use defaults
-        assert config.graphs.per_graph.play_count_by_dayofweek.media_type_separation is True
-        assert config.graphs.per_graph.play_count_by_dayofweek.stacked_bar_charts is True
+        assert (
+            config.graphs.per_graph.play_count_by_dayofweek.media_type_separation
+            is True
+        )
+        assert (
+            config.graphs.per_graph.play_count_by_dayofweek.stacked_bar_charts is True
+        )

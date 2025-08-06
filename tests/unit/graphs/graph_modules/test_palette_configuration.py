@@ -12,7 +12,6 @@ from unittest.mock import patch, MagicMock
 import pytest
 
 
-
 if TYPE_CHECKING:
     from matplotlib.axes import Axes
     from tgraph_bot.graphs.graph_modules.core.base_graph import BaseGraph
@@ -46,17 +45,17 @@ class TestPaletteConfiguration:
         config = create_test_config_custom(
             services_overrides={
                 "tautulli": {"api_key": "test_key", "url": "http://test.local"},
-                "discord": {"token": "test_token", "channel_id": 123456789}
+                "discord": {"token": "test_token", "channel_id": 123456789},
             },
             graphs_overrides={
                 "features": {"media_type_separation": True},
                 "appearance": {
                     "palettes": {
                         "play_count_by_hourofday": "viridis",
-                        "top_10_users": "plasma"
+                        "top_10_users": "plasma",
                     }
-                }
-            }
+                },
+            },
         )
 
         # Test hourly graph returns viridis
@@ -73,17 +72,17 @@ class TestPaletteConfiguration:
         config = create_test_config_custom(
             services_overrides={
                 "tautulli": {"api_key": "test_key", "url": "http://test.local"},
-                "discord": {"token": "test_token", "channel_id": 123456789}
+                "discord": {"token": "test_token", "channel_id": 123456789},
             },
             graphs_overrides={
                 "features": {"media_type_separation": True},
                 "appearance": {
                     "palettes": {
                         "play_count_by_hourofday": "viridis",
-                        "top_10_users": ""  # Empty - no palette configured
+                        "top_10_users": "",  # Empty - no palette configured
                     }
-                }
-            }
+                },
+            },
         )
 
         # Hourly graph should return viridis
@@ -100,15 +99,11 @@ class TestPaletteConfiguration:
         config_with_palette = create_test_config_custom(
             services_overrides={
                 "tautulli": {"api_key": "test_key", "url": "http://test.local"},
-                "discord": {"token": "test_token", "channel_id": 123456789}
+                "discord": {"token": "test_token", "channel_id": 123456789},
             },
             graphs_overrides={
-                "appearance": {
-                    "palettes": {
-                        "play_count_by_hourofday": "viridis"
-                    }
-                }
-            }
+                "appearance": {"palettes": {"play_count_by_hourofday": "viridis"}}
+            },
         )
         graph_with_palette = PlayCountByHourOfDayGraph(config=config_with_palette)
         assert graph_with_palette.get_user_configured_palette() == "viridis"
@@ -117,15 +112,11 @@ class TestPaletteConfiguration:
         config_no_palette = create_test_config_custom(
             services_overrides={
                 "tautulli": {"api_key": "test_key", "url": "http://test.local"},
-                "discord": {"token": "test_token", "channel_id": 123456789}
+                "discord": {"token": "test_token", "channel_id": 123456789},
             },
             graphs_overrides={
-                "appearance": {
-                    "palettes": {
-                        "play_count_by_hourofday": ""
-                    }
-                }
-            }
+                "appearance": {"palettes": {"play_count_by_hourofday": ""}}
+            },
         )
         graph_no_palette = PlayCountByHourOfDayGraph(config=config_no_palette)
         assert graph_no_palette.get_user_configured_palette() is None
@@ -140,7 +131,7 @@ class TestPaletteConfiguration:
         config = create_test_config_custom(
             services_overrides={
                 "tautulli": {"api_key": "test_key", "url": "http://test.local"},
-                "discord": {"token": "test_token", "channel_id": 123456789}
+                "discord": {"token": "test_token", "channel_id": 123456789},
             },
             graphs_overrides={
                 "appearance": {
@@ -150,10 +141,10 @@ class TestPaletteConfiguration:
                         "daily_play_count": "inferno",
                         "play_count_by_dayofweek": "magma",
                         "top_10_platforms": "cividis",
-                        "play_count_by_month": "turbo"
+                        "play_count_by_month": "turbo",
                     }
                 }
-            }
+            },
         )
 
         # Test all graph types return their configured palettes
@@ -181,23 +172,19 @@ class TestPaletteConfiguration:
         config_with_palette = create_test_config_custom(
             services_overrides={
                 "tautulli": {"api_key": "test_key", "url": "http://test.local"},
-                "discord": {"token": "test_token", "channel_id": 123456789}
+                "discord": {"token": "test_token", "channel_id": 123456789},
             },
             graphs_overrides={
                 "features": {"media_type_separation": True},
-                "appearance": {
-                    "palettes": {
-                        "play_count_by_hourofday": "viridis"
-                    }
-                }
-            }
+                "appearance": {"palettes": {"play_count_by_hourofday": "viridis"}},
+            },
         )
 
         # Test without palette configured
         config_without_palette = create_test_config_custom(
             services_overrides={
                 "tautulli": {"api_key": "test_key", "url": "http://test.local"},
-                "discord": {"token": "test_token", "channel_id": 123456789}
+                "discord": {"token": "test_token", "channel_id": 123456789},
             },
             graphs_overrides={
                 "features": {"media_type_separation": True},
@@ -205,8 +192,8 @@ class TestPaletteConfiguration:
                     "palettes": {
                         "play_count_by_hourofday": ""  # Empty palette
                     }
-                }
-            }
+                },
+            },
         )
 
         # Graph with palette should return the configured palette
@@ -230,16 +217,16 @@ class TestPaletteConfiguration:
             config = create_test_config_custom(
                 services_overrides={
                     "tautulli": {"api_key": "test_key", "url": "http://test.local"},
-                    "discord": {"token": "test_token", "channel_id": 123456789}
+                    "discord": {"token": "test_token", "channel_id": 123456789},
                 },
                 graphs_overrides={
                     "appearance": {
                         "palettes": {
                             "play_count_by_hourofday": empty_value,
-                            "top_10_users": empty_value
+                            "top_10_users": empty_value,
                         }
                     }
-                }
+                },
             )
 
             # All graphs should return None for empty palette values
@@ -258,16 +245,16 @@ class TestPaletteConfiguration:
             config = create_test_config_custom(
                 services_overrides={
                     "tautulli": {"api_key": "test_key", "url": "http://test.local"},
-                    "discord": {"token": "test_token", "channel_id": 123456789}
+                    "discord": {"token": "test_token", "channel_id": 123456789},
                 },
                 graphs_overrides={
                     "appearance": {
                         "palettes": {
                             "play_count_by_hourofday": palette,
-                            "top_10_users": palette
+                            "top_10_users": palette,
                         }
                     }
-                }
+                },
             )
 
             # Should return the configured palette
@@ -283,16 +270,16 @@ class TestPaletteConfiguration:
         config = create_test_config_custom(
             services_overrides={
                 "tautulli": {"api_key": "test_key", "url": "http://test.local"},
-                "discord": {"token": "test_token", "channel_id": 123456789}
+                "discord": {"token": "test_token", "channel_id": 123456789},
             },
             graphs_overrides={
                 "appearance": {
                     "palettes": {
                         "play_count_by_hourofday": "viridis",
-                        "top_10_users": "plasma"
+                        "top_10_users": "plasma",
                     }
                 }
-            }
+            },
         )
 
         # Each graph should only return its own palette, not others
@@ -317,15 +304,11 @@ class TestPaletteConfiguration:
         daily_config = create_test_config_custom(
             services_overrides={
                 "tautulli": {"api_key": "test_key", "url": "http://test.local"},
-                "discord": {"token": "test_token", "channel_id": 123456789}
+                "discord": {"token": "test_token", "channel_id": 123456789},
             },
             graphs_overrides={
-                "appearance": {
-                    "palettes": {
-                        "daily_play_count": "inferno"
-                    }
-                }
-            }
+                "appearance": {"palettes": {"daily_play_count": "inferno"}}
+            },
         )
         daily_graph = DailyPlayCountGraph(config=daily_config)
         assert daily_graph.get_user_configured_palette() == "inferno"
@@ -334,15 +317,11 @@ class TestPaletteConfiguration:
         dayofweek_config = create_test_config_custom(
             services_overrides={
                 "tautulli": {"api_key": "test_key", "url": "http://test.local"},
-                "discord": {"token": "test_token", "channel_id": 123456789}
+                "discord": {"token": "test_token", "channel_id": 123456789},
             },
             graphs_overrides={
-                "appearance": {
-                    "palettes": {
-                        "play_count_by_dayofweek": "magma"
-                    }
-                }
-            }
+                "appearance": {"palettes": {"play_count_by_dayofweek": "magma"}}
+            },
         )
         dayofweek_graph = PlayCountByDayOfWeekGraph(config=dayofweek_config)
         assert dayofweek_graph.get_user_configured_palette() == "magma"
@@ -351,15 +330,11 @@ class TestPaletteConfiguration:
         platforms_config = create_test_config_custom(
             services_overrides={
                 "tautulli": {"api_key": "test_key", "url": "http://test.local"},
-                "discord": {"token": "test_token", "channel_id": 123456789}
+                "discord": {"token": "test_token", "channel_id": 123456789},
             },
             graphs_overrides={
-                "appearance": {
-                    "palettes": {
-                        "top_10_platforms": "cividis"
-                    }
-                }
-            }
+                "appearance": {"palettes": {"top_10_platforms": "cividis"}}
+            },
         )
         platforms_graph = Top10PlatformsGraph(config=platforms_config)
         assert platforms_graph.get_user_configured_palette() == "cividis"
@@ -368,15 +343,11 @@ class TestPaletteConfiguration:
         month_config = create_test_config_custom(
             services_overrides={
                 "tautulli": {"api_key": "test_key", "url": "http://test.local"},
-                "discord": {"token": "test_token", "channel_id": 123456789}
+                "discord": {"token": "test_token", "channel_id": 123456789},
             },
             graphs_overrides={
-                "appearance": {
-                    "palettes": {
-                        "play_count_by_month": "turbo"
-                    }
-                }
-            }
+                "appearance": {"palettes": {"play_count_by_month": "turbo"}}
+            },
         )
         month_graph = PlayCountByMonthGraph(config=month_config)
         assert month_graph.get_user_configured_palette() == "turbo"
@@ -387,7 +358,7 @@ class TestPaletteConfiguration:
         config = create_test_config_custom(
             services_overrides={
                 "tautulli": {"api_key": "test_key", "url": "http://test.local"},
-                "discord": {"token": "test_token", "channel_id": 123456789}
+                "discord": {"token": "test_token", "channel_id": 123456789},
             },
             graphs_overrides={
                 "appearance": {
@@ -395,10 +366,10 @@ class TestPaletteConfiguration:
                         "daily_play_count": "",
                         "play_count_by_dayofweek": "   ",
                         "top_10_platforms": "",
-                        "play_count_by_month": ""
+                        "play_count_by_month": "",
                     }
                 }
-            }
+            },
         )
 
         # All graphs should return None for empty palette values
@@ -419,15 +390,11 @@ class TestPaletteConfiguration:
         config = create_test_config_custom(
             services_overrides={
                 "tautulli": {"api_key": "test_key", "url": "http://test.local"},
-                "discord": {"token": "test_token", "channel_id": 123456789}
+                "discord": {"token": "test_token", "channel_id": 123456789},
             },
             graphs_overrides={
-                "appearance": {
-                    "palettes": {
-                        "daily_play_count": "viridis"
-                    }
-                }
-            }
+                "appearance": {"palettes": {"daily_play_count": "viridis"}}
+            },
         )
 
         graph = DailyPlayCountGraph(config=config)
@@ -441,15 +408,9 @@ class TestPaletteConfiguration:
         config = create_test_config_custom(
             services_overrides={
                 "tautulli": {"api_key": "test_key", "url": "http://test.local"},
-                "discord": {"token": "test_token", "channel_id": 123456789}
+                "discord": {"token": "test_token", "channel_id": 123456789},
             },
-            graphs_overrides={
-                "appearance": {
-                    "palettes": {
-                        "daily_play_count": ""
-                    }
-                }
-            }
+            graphs_overrides={"appearance": {"palettes": {"daily_play_count": ""}}},
         )
 
         graph = DailyPlayCountGraph(config=config)
@@ -463,15 +424,11 @@ class TestPaletteConfiguration:
         config = create_test_config_custom(
             services_overrides={
                 "tautulli": {"api_key": "test_key", "url": "http://test.local"},
-                "discord": {"token": "test_token", "channel_id": 123456789}
+                "discord": {"token": "test_token", "channel_id": 123456789},
             },
             graphs_overrides={
-                "appearance": {
-                    "palettes": {
-                        "daily_play_count": "invalid_palette_name"
-                    }
-                }
-            }
+                "appearance": {"palettes": {"daily_play_count": "invalid_palette_name"}}
+            },
         )
 
         graph = DailyPlayCountGraph(config=config)
@@ -485,7 +442,7 @@ class TestPaletteConfiguration:
         config = create_test_config_custom(
             services_overrides={
                 "tautulli": {"api_key": "test_key", "url": "http://test.local"},
-                "discord": {"token": "test_token", "channel_id": 123456789}
+                "discord": {"token": "test_token", "channel_id": 123456789},
             },
             graphs_overrides={
                 "appearance": {
@@ -495,10 +452,10 @@ class TestPaletteConfiguration:
                         "daily_play_count": "inferno",
                         "play_count_by_dayofweek": "magma",
                         "top_10_platforms": "cividis",
-                        "play_count_by_month": "turbo"
+                        "play_count_by_month": "turbo",
                     }
                 }
-            }
+            },
         )
 
         # Test all graph types return correct palette and color
@@ -545,15 +502,9 @@ class TestPaletteConfiguration:
         config = create_test_config_custom(
             services_overrides={
                 "tautulli": {"api_key": "test_key", "url": "http://test.local"},
-                "discord": {"token": "test_token", "channel_id": 123456789}
+                "discord": {"token": "test_token", "channel_id": 123456789},
             },
-            graphs_overrides={
-                "appearance": {
-                    "palettes": {
-                        palette_key: "viridis"
-                    }
-                }
-            }
+            graphs_overrides={"appearance": {"palettes": {palette_key: "viridis"}}},
         )
 
         graph = graph_class(config=config)
@@ -593,10 +544,16 @@ class TestPaletteConfiguration:
             # Test the visualization methods that should use palettes
             try:
                 if hasattr(graph, "_generate_combined_visualization"):
-                    method = cast(Callable[["Axes", "ProcessedRecords"], None], getattr(graph, "_generate_combined_visualization"))
+                    method = cast(
+                        Callable[["Axes", "ProcessedRecords"], None],
+                        getattr(graph, "_generate_combined_visualization"),
+                    )
                     method(mock_ax, cast("ProcessedRecords", sample_records))
                 elif hasattr(graph, "_generate_hourly_visualization"):
-                    method = cast(Callable[["Axes", "ProcessedRecords"], None], getattr(graph, "_generate_hourly_visualization"))
+                    method = cast(
+                        Callable[["Axes", "ProcessedRecords"], None],
+                        getattr(graph, "_generate_hourly_visualization"),
+                    )
                     method(mock_ax, cast("ProcessedRecords", sample_records))
                 else:
                     # Skip graphs that don't have these methods
@@ -641,7 +598,7 @@ class TestPaletteConfiguration:
         config = create_test_config_custom(
             services_overrides={
                 "tautulli": {"api_key": "test_key", "url": "http://test.local"},
-                "discord": {"token": "test_token", "channel_id": 123456789}
+                "discord": {"token": "test_token", "channel_id": 123456789},
             }
         )
 
@@ -671,10 +628,16 @@ class TestPaletteConfiguration:
             # Test the visualization methods
             try:
                 if hasattr(graph, "_generate_combined_visualization"):
-                    method = cast(Callable[["Axes", "ProcessedRecords"], None], getattr(graph, "_generate_combined_visualization"))
+                    method = cast(
+                        Callable[["Axes", "ProcessedRecords"], None],
+                        getattr(graph, "_generate_combined_visualization"),
+                    )
                     method(mock_ax, cast("ProcessedRecords", sample_records))
                 elif hasattr(graph, "_generate_hourly_visualization"):
-                    method = cast(Callable[["Axes", "ProcessedRecords"], None], getattr(graph, "_generate_hourly_visualization"))
+                    method = cast(
+                        Callable[["Axes", "ProcessedRecords"], None],
+                        getattr(graph, "_generate_hourly_visualization"),
+                    )
                     method(mock_ax, cast("ProcessedRecords", sample_records))
                 else:
                     # Skip graphs that don't have these methods

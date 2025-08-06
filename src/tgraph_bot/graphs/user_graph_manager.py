@@ -128,7 +128,10 @@ class UserGraphManager:
             config = self.config_manager.get_current_config()
 
             user_data = await self._fetch_user_graph_data_with_retry(
-                user_email, config.data_collection.time_ranges.days, max_retries, progress_tracker
+                user_email,
+                config.data_collection.time_ranges.days,
+                max_retries,
+                progress_tracker,
             )
 
             # Step 3: Validate user data

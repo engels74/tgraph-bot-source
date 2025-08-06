@@ -87,7 +87,10 @@ class TestGraphDimensionConfiguration:
             _ = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
 
         errors = exc_info.value.errors()
-        assert any(error["loc"] == ("graphs", "appearance", "dimensions", "width") for error in errors)
+        assert any(
+            error["loc"] == ("graphs", "appearance", "dimensions", "width")
+            for error in errors
+        )
 
     def test_graph_width_validation_maximum(self) -> None:
         """Test that graphs.appearance.dimensions.width validates maximum value."""
@@ -115,7 +118,10 @@ class TestGraphDimensionConfiguration:
             _ = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
 
         errors = exc_info.value.errors()
-        assert any(error["loc"] == ("graphs", "appearance", "dimensions", "width") for error in errors)
+        assert any(
+            error["loc"] == ("graphs", "appearance", "dimensions", "width")
+            for error in errors
+        )
 
     def test_graph_height_validation_minimum(self) -> None:
         """Test that graphs.appearance.dimensions.height validates minimum value."""
@@ -143,7 +149,10 @@ class TestGraphDimensionConfiguration:
             _ = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
 
         errors = exc_info.value.errors()
-        assert any(error["loc"] == ("graphs", "appearance", "dimensions", "height") for error in errors)
+        assert any(
+            error["loc"] == ("graphs", "appearance", "dimensions", "height")
+            for error in errors
+        )
 
     def test_graph_height_validation_maximum(self) -> None:
         """Test that graphs.appearance.dimensions.height validates maximum value."""
@@ -171,7 +180,10 @@ class TestGraphDimensionConfiguration:
             _ = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
 
         errors = exc_info.value.errors()
-        assert any(error["loc"] == ("graphs", "appearance", "dimensions", "height") for error in errors)
+        assert any(
+            error["loc"] == ("graphs", "appearance", "dimensions", "height")
+            for error in errors
+        )
 
     def test_graph_dpi_validation_minimum(self) -> None:
         """Test that GRAPH_DPI validates minimum value."""
@@ -199,7 +211,10 @@ class TestGraphDimensionConfiguration:
             _ = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
 
         errors = exc_info.value.errors()
-        assert any(error["loc"] == ("graphs", "appearance", "dimensions", "dpi") for error in errors)
+        assert any(
+            error["loc"] == ("graphs", "appearance", "dimensions", "dpi")
+            for error in errors
+        )
 
     def test_graph_dpi_validation_maximum(self) -> None:
         """Test that GRAPH_DPI validates maximum value."""
@@ -227,7 +242,10 @@ class TestGraphDimensionConfiguration:
             _ = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
 
         errors = exc_info.value.errors()
-        assert any(error["loc"] == ("graphs", "appearance", "dimensions", "dpi") for error in errors)
+        assert any(
+            error["loc"] == ("graphs", "appearance", "dimensions", "dpi")
+            for error in errors
+        )
 
     def test_graph_dimensions_boundary_values(self) -> None:
         """Test that boundary values are accepted for graph dimensions."""
@@ -370,7 +388,10 @@ class TestGraphDimensionConfiguration:
             _ = TGraphBotConfig(**config_data)  # pyright: ignore[reportArgumentType]
 
         errors = exc_info.value.errors()
-        assert any(error["loc"] == ("graphs", "appearance", "dimensions", "width") for error in errors)
+        assert any(
+            error["loc"] == ("graphs", "appearance", "dimensions", "width")
+            for error in errors
+        )
 
     def test_graph_dimensions_common_use_cases(self) -> None:
         """Test common use cases for graph dimensions."""

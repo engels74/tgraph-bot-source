@@ -235,7 +235,9 @@ class PaletteResolver:
 
         return None
 
-    def _get_nested_config_value(self, config: "TGraphBotConfig", key_path: str) -> object:
+    def _get_nested_config_value(
+        self, config: "TGraphBotConfig", key_path: str
+    ) -> object:
         """
         Get value from nested TGraphBotConfig using dot notation path.
 
@@ -268,7 +270,9 @@ class PaletteResolver:
             return False
 
         # Navigate nested TGraphBotConfig structure
-        value = self._get_nested_config_value(self.config, "graphs.features.media_type_separation")
+        value = self._get_nested_config_value(
+            self.config, "graphs.features.media_type_separation"
+        )
         return bool(value if value is not None else True)
 
     def _get_media_type_colors(self) -> dict[str, str]:
@@ -285,10 +289,16 @@ class PaletteResolver:
             }
 
         # Navigate nested TGraphBotConfig structure
-        tv_color = self._get_nested_config_value(self.config, "graphs.appearance.colors.tv")
-        movie_color = self._get_nested_config_value(self.config, "graphs.appearance.colors.movie")
+        tv_color = self._get_nested_config_value(
+            self.config, "graphs.appearance.colors.tv"
+        )
+        movie_color = self._get_nested_config_value(
+            self.config, "graphs.appearance.colors.movie"
+        )
         tv_color = tv_color if tv_color is not None else DEFAULT_COLORS.TV_COLOR
-        movie_color = movie_color if movie_color is not None else DEFAULT_COLORS.MOVIE_COLOR
+        movie_color = (
+            movie_color if movie_color is not None else DEFAULT_COLORS.MOVIE_COLOR
+        )
 
         return {
             "tv": str(tv_color),

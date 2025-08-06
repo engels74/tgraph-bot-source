@@ -2,7 +2,12 @@
 
 import pytest
 
-from src.tgraph_bot.config.schema import TGraphBotConfig, ServicesConfig, TautulliConfig, DiscordConfig
+from src.tgraph_bot.config.schema import (
+    TGraphBotConfig,
+    ServicesConfig,
+    TautulliConfig,
+    DiscordConfig,
+)
 
 
 class TestTimestampFormatConfig:
@@ -13,13 +18,9 @@ class TestTimestampFormatConfig:
         config = TGraphBotConfig(
             services=ServicesConfig(
                 tautulli=TautulliConfig(
-                    api_key="test_key",
-                    url="http://localhost:8181/api/v2"
+                    api_key="test_key", url="http://localhost:8181/api/v2"
                 ),
-                discord=DiscordConfig(
-                    token="test_token_12345",
-                    channel_id=123456789
-                )
+                discord=DiscordConfig(token="test_token_12345", channel_id=123456789),
             )
         )
         assert config.services.discord.timestamp_format == "R"
@@ -32,14 +33,13 @@ class TestTimestampFormatConfig:
             config = TGraphBotConfig(
                 services=ServicesConfig(
                     tautulli=TautulliConfig(
-                        api_key="test_key",
-                        url="http://localhost:8181/api/v2"
+                        api_key="test_key", url="http://localhost:8181/api/v2"
                     ),
                     discord=DiscordConfig(
                         token="test_token_12345",
                         channel_id=123456789,
-                        timestamp_format=format_option  # pyright: ignore[reportArgumentType]
-                    )
+                        timestamp_format=format_option,  # pyright: ignore[reportArgumentType]
+                    ),
                 )
             )
             assert config.services.discord.timestamp_format == format_option
@@ -53,14 +53,13 @@ class TestTimestampFormatConfig:
                 _ = TGraphBotConfig(
                     services=ServicesConfig(
                         tautulli=TautulliConfig(
-                            api_key="test_key",
-                            url="http://localhost:8181/api/v2"
+                            api_key="test_key", url="http://localhost:8181/api/v2"
                         ),
                         discord=DiscordConfig(
                             token="test_token_12345",
                             channel_id=123456789,
-                            timestamp_format=invalid_format  # pyright: ignore[reportArgumentType]
-                        )
+                            timestamp_format=invalid_format,  # pyright: ignore[reportArgumentType]
+                        ),
                     )
                 )
 
@@ -70,14 +69,11 @@ class TestTimestampFormatConfig:
         config = TGraphBotConfig(
             services=ServicesConfig(
                 tautulli=TautulliConfig(
-                    api_key="test_key",
-                    url="http://localhost:8181/api/v2"
+                    api_key="test_key", url="http://localhost:8181/api/v2"
                 ),
                 discord=DiscordConfig(
-                    token="test_token_12345",
-                    channel_id=123456789,
-                    timestamp_format="f"
-                )
+                    token="test_token_12345", channel_id=123456789, timestamp_format="f"
+                ),
             )
         )
         assert config.services.discord.timestamp_format == "f"
@@ -86,14 +82,11 @@ class TestTimestampFormatConfig:
         config = TGraphBotConfig(
             services=ServicesConfig(
                 tautulli=TautulliConfig(
-                    api_key="test_key",
-                    url="http://localhost:8181/api/v2"
+                    api_key="test_key", url="http://localhost:8181/api/v2"
                 ),
                 discord=DiscordConfig(
-                    token="test_token_12345",
-                    channel_id=123456789,
-                    timestamp_format="F"
-                )
+                    token="test_token_12345", channel_id=123456789, timestamp_format="F"
+                ),
             )
         )
         assert config.services.discord.timestamp_format == "F"
@@ -102,6 +95,7 @@ class TestTimestampFormatConfig:
         """Test that the field has an appropriate description."""
         # Access field info through Pydantic's model fields for the nested structure
         from src.tgraph_bot.config.schema import DiscordConfig
+
         field_info = DiscordConfig.model_fields["timestamp_format"]
         assert field_info.description is not None
         assert "Discord timestamp format" in field_info.description

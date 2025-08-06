@@ -36,8 +36,6 @@ from tests.utils.test_helpers import (
 )
 
 
-
-
 class TestStandardGraphs:
     """Consolidated tests for graphs that follow standard patterns."""
 
@@ -167,14 +165,11 @@ class TestGraphSeparationFunctionality:
         return create_test_config_custom(
             services_overrides={
                 "discord": {"token": "test_token", "channel_id": 123456789},
-                "tautulli": {"api_key": "test_key", "url": "http://test.local"}
+                "tautulli": {"api_key": "test_key", "url": "http://test.local"},
             },
             graphs_overrides={
-                "features": {
-                    "media_type_separation": True,
-                    "stacked_bar_charts": True
-                }
-            }
+                "features": {"media_type_separation": True, "stacked_bar_charts": True}
+            },
         )
 
     @pytest.fixture
@@ -183,14 +178,14 @@ class TestGraphSeparationFunctionality:
         return create_test_config_custom(
             services_overrides={
                 "discord": {"token": "test_token", "channel_id": 123456789},
-                "tautulli": {"api_key": "test_key", "url": "http://test.local"}
+                "tautulli": {"api_key": "test_key", "url": "http://test.local"},
             },
             graphs_overrides={
                 "features": {
                     "media_type_separation": False,
-                    "stacked_bar_charts": False
+                    "stacked_bar_charts": False,
                 }
-            }
+            },
         )
 
     @pytest.fixture
@@ -334,17 +329,17 @@ class TestGraphSeparationFunctionality:
         palette_config = create_test_config_custom(
             services_overrides={
                 "discord": {"token": "test_token", "channel_id": 123456789},
-                "tautulli": {"api_key": "test_key", "url": "http://test.local"}
+                "tautulli": {"api_key": "test_key", "url": "http://test.local"},
             },
             graphs_overrides={
                 "features": {"media_type_separation": True},
                 "appearance": {
                     "palettes": {
                         "play_count_by_hourofday": "viridis",
-                        "top_10_users": "plasma"
+                        "top_10_users": "plasma",
                     }
-                }
-            }
+                },
+            },
         )
 
         # Test PlayCountByHourOfDayGraph with palette
@@ -398,28 +393,22 @@ class TestGraphSeparationFunctionality:
         stacked_config = create_test_config_custom(
             services_overrides={
                 "discord": {"token": "test_token", "channel_id": 123456789},
-                "tautulli": {"api_key": "test_key", "url": "http://test.local"}
+                "tautulli": {"api_key": "test_key", "url": "http://test.local"},
             },
             graphs_overrides={
-                "features": {
-                    "media_type_separation": True,
-                    "stacked_bar_charts": True
-                }
-            }
+                "features": {"media_type_separation": True, "stacked_bar_charts": True}
+            },
         )
 
         # Test with stacked mode disabled
         grouped_config = create_test_config_custom(
             services_overrides={
                 "discord": {"token": "test_token", "channel_id": 123456789},
-                "tautulli": {"api_key": "test_key", "url": "http://test.local"}
+                "tautulli": {"api_key": "test_key", "url": "http://test.local"},
             },
             graphs_overrides={
-                "features": {
-                    "media_type_separation": True,
-                    "stacked_bar_charts": False
-                }
-            }
+                "features": {"media_type_separation": True, "stacked_bar_charts": False}
+            },
         )
 
         # Test graphs with both configurations
@@ -460,9 +449,7 @@ class TestGraphSeparationFunctionality:
     ) -> None:
         """Test that graphs generate correct titles based on configuration."""
         config = create_test_config_custom(
-            data_collection_overrides={
-                "time_ranges": {"days": time_range_days}
-            }
+            data_collection_overrides={"time_ranges": {"days": time_range_days}}
         )
 
         graph = graph_class(config=config)
@@ -494,9 +481,7 @@ class TestGraphSeparationFunctionality:
             graphs_overrides={
                 "appearance": {
                     "annotations": {
-                        "enabled_on": {
-                            "play_count_by_hourofday": annotation_enabled
-                        }
+                        "enabled_on": {"play_count_by_hourofday": annotation_enabled}
                     }
                 }
             }
@@ -637,15 +622,15 @@ class TestPlayCountByHourOfDaySeparation:
         """Configuration with media type separation enabled."""
         return create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_discord_token", "channel_id": 123456789},
             },
             graphs_overrides={
-                "features": {
-                    "media_type_separation": True,
-                    "stacked_bar_charts": False
-                }
-            }
+                "features": {"media_type_separation": True, "stacked_bar_charts": False}
+            },
         )
 
     @pytest.fixture
@@ -653,15 +638,15 @@ class TestPlayCountByHourOfDaySeparation:
         """Configuration with stacked bar charts enabled."""
         return create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_discord_token", "channel_id": 123456789},
             },
             graphs_overrides={
-                "features": {
-                    "media_type_separation": True,
-                    "stacked_bar_charts": True
-                }
-            }
+                "features": {"media_type_separation": True, "stacked_bar_charts": True}
+            },
         )
 
     @pytest.fixture
@@ -669,12 +654,13 @@ class TestPlayCountByHourOfDaySeparation:
         """Configuration with media type separation disabled."""
         return create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_discord_token", "channel_id": 123456789},
             },
-            graphs_overrides={
-                "features": {"media_type_separation": False}
-            }
+            graphs_overrides={"features": {"media_type_separation": False}},
         )
 
     def test_separated_visualization_method_exists(
@@ -909,18 +895,16 @@ class TestTop10UsersSeparation:
         """Configuration with media type separation enabled for users."""
         return create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_discord_token", "channel_id": 123456789},
             },
             graphs_overrides={
-                "features": {
-                    "media_type_separation": True,
-                    "stacked_bar_charts": False
-                }
+                "features": {"media_type_separation": True, "stacked_bar_charts": False}
             },
-            data_collection_overrides={
-                "privacy": {"censor_usernames": False}
-            }
+            data_collection_overrides={"privacy": {"censor_usernames": False}},
         )
 
     @pytest.fixture
@@ -928,18 +912,16 @@ class TestTop10UsersSeparation:
         """Configuration with stacked bar charts enabled for users."""
         return create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_discord_token", "channel_id": 123456789},
             },
             graphs_overrides={
-                "features": {
-                    "media_type_separation": True,
-                    "stacked_bar_charts": True
-                }
+                "features": {"media_type_separation": True, "stacked_bar_charts": True}
             },
-            data_collection_overrides={
-                "privacy": {"censor_usernames": False}
-            }
+            data_collection_overrides={"privacy": {"censor_usernames": False}},
         )
 
     @pytest.fixture
@@ -947,17 +929,14 @@ class TestTop10UsersSeparation:
         """Configuration with media type separation disabled for users."""
         return create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_discord_token", "channel_id": 123456789},
             },
-            graphs_overrides={
-                "features": {
-                    "media_type_separation": False
-                }
-            },
-            data_collection_overrides={
-                "privacy": {"censor_usernames": False}
-            }
+            graphs_overrides={"features": {"media_type_separation": False}},
+            data_collection_overrides={"privacy": {"censor_usernames": False}},
         )
 
     def test_users_separated_visualization_method_exists(
@@ -1079,20 +1058,17 @@ class TestTop10UsersSeparation:
         """Test that annotation handling works with separated user data."""
         config_with_annotations = create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_discord_token", "channel_id": 123456789},
             },
             graphs_overrides={
                 "features": {"media_type_separation": True},
-                "appearance": {
-                    "annotations": {
-                        "enabled_on": {"top_10_users": True}
-                    }
-                }
+                "appearance": {"annotations": {"enabled_on": {"top_10_users": True}}},
             },
-            data_collection_overrides={
-                "privacy": {"censor_usernames": False}
-            }
+            data_collection_overrides={"privacy": {"censor_usernames": False}},
         )
 
         graph = Top10UsersGraph(config=config_with_annotations)
@@ -1256,15 +1232,15 @@ class TestTop10PlatformsSeparation:
         """Configuration with media type separation enabled for platforms."""
         return create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_discord_token", "channel_id": 123456789},
             },
             graphs_overrides={
-                "features": {
-                    "media_type_separation": True,
-                    "stacked_bar_charts": False
-                }
-            }
+                "features": {"media_type_separation": True, "stacked_bar_charts": False}
+            },
         )
 
     @pytest.fixture
@@ -1272,15 +1248,15 @@ class TestTop10PlatformsSeparation:
         """Configuration with stacked bar charts enabled for platforms."""
         return create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_discord_token", "channel_id": 123456789},
             },
             graphs_overrides={
-                "features": {
-                    "media_type_separation": True,
-                    "stacked_bar_charts": True
-                }
-            }
+                "features": {"media_type_separation": True, "stacked_bar_charts": True}
+            },
         )
 
     @pytest.fixture
@@ -1288,14 +1264,13 @@ class TestTop10PlatformsSeparation:
         """Configuration with media type separation disabled for platforms."""
         return create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_discord_token", "channel_id": 123456789},
             },
-            graphs_overrides={
-                "features": {
-                    "media_type_separation": False
-                }
-            }
+            graphs_overrides={"features": {"media_type_separation": False}},
         )
 
     def test_platforms_separated_visualization_method_exists(
@@ -1431,17 +1406,18 @@ class TestTop10PlatformsSeparation:
         """Test that annotation handling works with separated platform data."""
         config_with_annotations = create_test_config_custom(
             services_overrides={
-                "tautulli": {"api_key": "test_api_key", "url": "http://localhost:8181/api/v2"},
-                "discord": {"token": "test_discord_token", "channel_id": 123456789}
+                "tautulli": {
+                    "api_key": "test_api_key",
+                    "url": "http://localhost:8181/api/v2",
+                },
+                "discord": {"token": "test_discord_token", "channel_id": 123456789},
             },
             graphs_overrides={
                 "features": {"media_type_separation": True},
                 "appearance": {
-                    "annotations": {
-                        "enabled_on": {"top_10_platforms": True}
-                    }
-                }
-            }
+                    "annotations": {"enabled_on": {"top_10_platforms": True}}
+                },
+            },
         )
 
         graph = Top10PlatformsGraph(config=config_with_annotations)
@@ -1548,7 +1524,13 @@ class TestSpecificGraphBehaviors:
         assert graph.get_title() == "Play Count by Hour of Day (Last 14 days)"
 
         # Test hour-specific configuration access
-        assert graph.get_config_value("graphs.appearance.annotations.enabled_on.play_count_by_hourofday", False) is True
+        assert (
+            graph.get_config_value(
+                "graphs.appearance.annotations.enabled_on.play_count_by_hourofday",
+                False,
+            )
+            is True
+        )
 
     def test_sample_graph_custom_parameters(self) -> None:
         """Test SampleGraph with custom initialization parameters."""

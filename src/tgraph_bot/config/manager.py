@@ -77,10 +77,11 @@ class ConfigManager:
             # Re-raise the original ValidationError with additional context
             raise e
 
-
     @staticmethod
     def save_config(
-        config: TGraphBotConfig, config_path: Path, preserve_comments: bool = True  # pyright: ignore[reportUnusedParameter]
+        config: TGraphBotConfig,
+        config_path: Path,
+        preserve_comments: bool = True,  # pyright: ignore[reportUnusedParameter]
     ) -> None:
         """
         Save configuration to a YAML file with atomic operation.
@@ -253,12 +254,11 @@ class ConfigManager:
             services=ServicesConfig(
                 tautulli=TautulliConfig(
                     api_key="your_tautulli_api_key_here",
-                    url="http://localhost:8181/api/v2"
+                    url="http://localhost:8181/api/v2",
                 ),
                 discord=DiscordConfig(
-                    token="your_discord_bot_token_here",
-                    channel_id=123456789012345678
-                )
+                    token="your_discord_bot_token_here", channel_id=123456789012345678
+                ),
             )
         )
 
