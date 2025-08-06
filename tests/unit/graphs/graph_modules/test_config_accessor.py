@@ -181,6 +181,12 @@ class TestConfigAccessor:
             "play_count_by_month",
             "top_10_platforms",
             "top_10_users",
+            "daily_play_count_by_stream_type",
+            "daily_concurrent_stream_count_by_stream_type",
+            "play_count_by_source_resolution",
+            "play_count_by_stream_resolution",
+            "play_count_by_platform_and_stream_type",
+            "play_count_by_user_and_stream_type",
         ]
 
         assert set(enabled_types.keys()) == set(expected_types)

@@ -367,6 +367,32 @@ class EnabledOnConfig(BaseModel):
         default=True,
         description="Enable annotations on monthly graphs",
     )
+    
+    # Stream Type Graphs
+    daily_play_count_by_stream_type: bool = Field(
+        default=True,
+        description="Enable annotations on daily play count by stream type graphs",
+    )
+    daily_concurrent_stream_count_by_stream_type: bool = Field(
+        default=True,
+        description="Enable annotations on daily concurrent stream count by stream type graphs",
+    )
+    play_count_by_source_resolution: bool = Field(
+        default=True,
+        description="Enable annotations on play count by source resolution graphs",
+    )
+    play_count_by_stream_resolution: bool = Field(
+        default=True,
+        description="Enable annotations on play count by stream resolution graphs",
+    )
+    play_count_by_platform_and_stream_type: bool = Field(
+        default=True,
+        description="Enable annotations on play count by platform and stream type graphs",
+    )
+    play_count_by_user_and_stream_type: bool = Field(
+        default=True,
+        description="Enable annotations on play count by user and stream type graphs",
+    )
 
 
 class PeaksConfig(BaseModel):
