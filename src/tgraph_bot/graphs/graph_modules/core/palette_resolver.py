@@ -334,7 +334,7 @@ class PaletteResolver:
             import matplotlib.colors as mcolors
 
             # Get palette colors
-            palette_colors = sns.color_palette(palette_name, n_colors=n_colors)  # pyright: ignore[reportUnknownMemberType]
+            palette_colors = sns.color_palette(palette_name, n_colors=n_colors)
 
             # Convert to hex strings
             hex_colors = [mcolors.to_hex(color) for color in palette_colors]
@@ -409,7 +409,7 @@ class PaletteResolver:
         try:
             import seaborn as sns
 
-            _ = sns.color_palette(palette_name, n_colors=1)  # pyright: ignore[reportUnknownMemberType]
+            _ = sns.color_palette(palette_name, n_colors=1)
             return True
         except Exception:
             logger.warning(f"Invalid or unsupported palette: '{palette_name}'")

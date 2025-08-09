@@ -15,7 +15,7 @@ expected behavior and ensure code quality.
 
 import logging
 import pytest
-from typing import Dict, Any
+from typing import Any
 
 from tests.utils.graph_helpers import (
     create_test_config_minimal,
@@ -34,7 +34,7 @@ class TestStreamTypeGraphs:
     # ==================
 
     @pytest.fixture
-    def sample_stream_type_data(self) -> Dict[str, Any]:
+    def sample_stream_type_data(self) -> dict[str, Any]:  # pyright: ignore[reportExplicitAny]
         """
         Sample data with stream type information for testing.
 
@@ -138,12 +138,12 @@ class TestStreamTypeGraphs:
         }
 
     @pytest.fixture
-    def sample_empty_stream_data(self) -> Dict[str, Any]:
+    def sample_empty_stream_data(self) -> dict[str, Any]:  # pyright: ignore[reportExplicitAny]
         """Empty data fixture for testing empty data scenarios."""
         return {"data": []}
 
     @pytest.fixture
-    def sample_concurrent_stream_data(self) -> Dict[str, Any]:
+    def sample_concurrent_stream_data(self) -> dict[str, Any]:  # pyright: ignore[reportExplicitAny]
         """
         Sample data specifically designed for concurrent stream testing.
 
@@ -206,7 +206,7 @@ class TestStreamTypeGraphs:
 
 
     def test_daily_play_count_by_stream_type_separation(
-        self, sample_stream_type_data: dict[str, object]
+        self, sample_stream_type_data: dict[str, Any]  # pyright: ignore[reportExplicitAny]
     ) -> None:
         """
         Test stream type separation in daily play count graph.
@@ -255,7 +255,7 @@ class TestStreamTypeGraphs:
         # assert_graph_output_valid(output_path)
 
     def test_concurrent_stream_counting_logic(
-        self, sample_concurrent_stream_data: Dict[str, Any]
+        self, sample_concurrent_stream_data: dict[str, Any]  # pyright: ignore[reportExplicitAny]
     ) -> None:
         """
         Test concurrent stream counting algorithm.
@@ -292,7 +292,7 @@ class TestStreamTypeGraphs:
         # - Separate by stream type (direct play vs transcode)
 
     def test_resolution_aggregation_source_vs_stream(
-        self, sample_stream_type_data: Dict[str, Any]
+        self, sample_stream_type_data: dict[str, Any]  # pyright: ignore[reportExplicitAny]
     ) -> None:
         """
         Test that source and stream resolution graphs show different data.
@@ -345,7 +345,7 @@ class TestStreamTypeGraphs:
         # - Different counts when transcoding occurs
 
     def test_platform_and_stream_type_combination(
-        self, sample_stream_type_data: Dict[str, Any]
+        self, sample_stream_type_data: dict[str, Any]  # pyright: ignore[reportExplicitAny]
     ) -> None:
         """
         Test platform + stream type combination graph.
@@ -376,7 +376,7 @@ class TestStreamTypeGraphs:
             graph.cleanup()
 
     def test_user_and_stream_type_combination(
-        self, sample_stream_type_data: Dict[str, Any]
+        self, sample_stream_type_data: dict[str, Any]  # pyright: ignore[reportExplicitAny]
     ) -> None:
         """
         Test user + stream type combination graph.
@@ -408,7 +408,7 @@ class TestStreamTypeGraphs:
     # Helper Methods (for future use)
     # ===============================
 
-    def _validate_stream_type_data_fields(self, data: Dict[str, Any]) -> bool:
+    def _validate_stream_type_data_fields(self, data: dict[str, Any]) -> bool:  # pyright: ignore[reportExplicitAny]
         """Validate that data contains required stream type fields."""
         required_fields = [
             "transcode_decision",
@@ -429,16 +429,16 @@ class TestStreamTypeGraphs:
         return True
 
     def _extract_concurrent_streams_by_date(
-        self, data: Dict[str, Any]
-    ) -> Dict[str, int]:
+        self, _data: dict[str, Any]  # pyright: ignore[reportExplicitAny]
+    ) -> dict[str, int]:
         """Extract peak concurrent streams per date from sample data."""
         # Future implementation for concurrent stream counting logic
         # This will be used by the actual implementation
         return {}
 
     def _extract_resolution_counts(
-        self, data: Dict[str, Any], resolution_field: str
-    ) -> Dict[str, int]:
+        self, _data: dict[str, Any]  # pyright: ignore[reportExplicitAny], _resolution_field: str
+    ) -> dict[str, int]:
         """Extract resolution counts from data using specified field."""
         # Future helper for resolution-based aggregation
         return {}

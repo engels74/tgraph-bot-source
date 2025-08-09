@@ -553,13 +553,13 @@ class DataProcessor:
         batch_cache: dict[str, dict[str, str]] = {}
 
         # Create concurrent tasks for the batch
-        tasks = []
+        tasks: list[asyncio.Task[dict[str, str]]] = []
         for rating_key in rating_keys_batch:
-            task = self._fetch_single_metadata(fetcher, rating_key)
+            task = asyncio.create_task(self._fetch_single_metadata(fetcher, rating_key))
             tasks.append(task)
 
         # Execute all tasks concurrently
-        results = await asyncio.gather(*tasks, return_exceptions=True)
+        results: list[dict[str, str] | BaseException] = await asyncio.gather(*tasks, return_exceptions=True)
 
         # Process results
         for rating_key, result in zip(rating_keys_batch, results):
@@ -601,6 +601,7 @@ class DataProcessor:
                     # Get the first media info item (there may be multiple parts)
                     media_data = media_info[0]
                     if isinstance(media_data, dict):
+                        media_data = cast(dict[str, object], media_data)
                         # Extract source resolution from media_info
                         for field_name in ["video_resolution", "video_full_resolution"]:
                             if field_name in media_data:
@@ -611,35 +612,35 @@ class DataProcessor:
                                 ):
                                     # Convert to standard format (e.g., "1080" -> "1920x1080")
                                     if str(resolution_value) == "1080":
-                                        width = media_data.get("width", 1920)
-                                        height = media_data.get("height", 1080)
+                                        width = cast(int, media_data.get("width", 1920))
+                                        height = cast(int, media_data.get("height", 1080))
                                         video_resolution = f"{width}x{height}"
                                     elif str(resolution_value) == "720":
-                                        width = media_data.get("width", 1280)
-                                        height = media_data.get("height", 720)
+                                        width = cast(int, media_data.get("width", 1280))
+                                        height = cast(int, media_data.get("height", 720))
                                         video_resolution = f"{width}x{height}"
                                     elif str(resolution_value) == "480":
-                                        width = media_data.get("width", 720)
-                                        height = media_data.get("height", 480)
+                                        width = cast(int, media_data.get("width", 720))
+                                        height = cast(int, media_data.get("height", 480))
                                         video_resolution = f"{width}x{height}"
                                     elif str(resolution_value) == "2160":
-                                        width = media_data.get("width", 3840)
-                                        height = media_data.get("height", 2160)
+                                        width = cast(int, media_data.get("width", 3840))
+                                        height = cast(int, media_data.get("height", 2160))
                                         video_resolution = f"{width}x{height}"
                                     else:
                                         # Use width x height directly
-                                        width = media_data.get("width")
-                                        height = media_data.get("height")
-                                        if width and height:
+                                        width_val = media_data.get("width")
+                                        height_val = media_data.get("height")
+                                        if width_val is not None and height_val is not None:
                                             try:
-                                                w = int(width)  # pyright: ignore[reportUnknownArgumentType]
-                                                h = int(height)  # pyright: ignore[reportUnknownArgumentType]
+                                                w = int(cast(str | int, width_val))
+                                                h = int(cast(str | int, height_val))
                                                 if w > 0 and h > 0:
                                                     video_resolution = f"{w}x{h}"
                                             except (ValueError, TypeError):
-                                                video_resolution = str(resolution_value)  # pyright: ignore[reportUnknownArgumentType]
+                                                video_resolution = str(resolution_value)
                                         else:
-                                            video_resolution = str(resolution_value)  # pyright: ignore[reportUnknownArgumentType]
+                                            video_resolution = str(resolution_value)
                                     break
 
                         # For stream resolution, use the same as source resolution for now

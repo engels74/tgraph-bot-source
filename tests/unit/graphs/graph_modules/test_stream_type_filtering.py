@@ -7,7 +7,7 @@ with resolution graphs to ensure proper filtering by transcode decision.
 
 import pytest
 from datetime import datetime
-from typing import Dict, Any
+from typing import Any
 
 from src.tgraph_bot.graphs.graph_modules.utils.utils import (
     ProcessedPlayRecord,
@@ -275,7 +275,7 @@ class TestOptimizedDataProcessor:
         metadata_empty = {}
 
         # Test extraction logic (simplified)
-        def extract_resolution(metadata: Dict[str, Any]) -> str:
+        def extract_resolution(metadata: dict[str, Any]) -> str:  # pyright: ignore[reportExplicitAny]
             if "media_info" in metadata and metadata["media_info"]:
                 media_data = metadata["media_info"][0]
                 if "video_resolution" in media_data:
@@ -295,7 +295,7 @@ class TestOptimizedDataProcessor:
         """Test concurrent processing simulation."""
         import asyncio
 
-        async def mock_fetch_metadata(rating_key: str) -> Dict[str, str]:
+        async def mock_fetch_metadata(rating_key: str) -> dict[str, str]:
             """Mock async metadata fetch."""
             await asyncio.sleep(0.01)  # Simulate API delay
             return {
@@ -320,7 +320,7 @@ class TestOptimizedDataProcessor:
         """Test error handling during batch processing."""
 
         # Simulate mixed success/failure scenarios
-        def simulate_api_call(rating_key: str) -> Dict[str, str]:
+        def simulate_api_call(rating_key: str) -> dict[str, str]:
             if rating_key == "error_key":
                 raise Exception("API Error")
             return {

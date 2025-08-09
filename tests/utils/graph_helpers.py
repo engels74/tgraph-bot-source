@@ -462,7 +462,7 @@ def matplotlib_cleanup() -> Generator[None, None, None]:
 
         for fig_num in new_figures:
             try:
-                plt.close(fig_num)  # pyright: ignore[reportUnknownMemberType] # matplotlib cleanup
+                plt.close(fig_num)
             except Exception:
                 # Ignore cleanup errors - figure might already be closed
                 pass

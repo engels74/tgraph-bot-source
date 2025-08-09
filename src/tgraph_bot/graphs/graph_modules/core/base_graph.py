@@ -236,7 +236,7 @@ class BaseGraph(ABC):
                     self.media_type_processor.get_color_for_type(media_type)
                     for media_type in preferred_order
                 ]
-                sns.set_palette(custom_palette)  # pyright: ignore[reportUnknownMemberType]
+                sns.set_palette(custom_palette)
             # If palette should override, let individual graph methods handle coloring
 
     def get_user_configured_palette(self) -> str | None:
@@ -778,7 +778,7 @@ class BaseGraph(ABC):
         if self.figure is not None:
             try:
                 # Close the specific figure to free memory
-                plt.close(self.figure)  # pyright: ignore[reportUnknownMemberType]
+                plt.close(self.figure)
                 logger.debug(f"Closed matplotlib figure for {self.__class__.__name__}")
             except Exception as e:
                 logger.warning(f"Error closing figure: {e}")
@@ -793,7 +793,7 @@ class BaseGraph(ABC):
             # Use non-interactive cleanup methods that are thread-safe
             if hasattr(plt, "get_fignums") and plt.get_fignums():
                 # Close all figures instead of clearing current figure
-                plt.close("all")  # pyright: ignore[reportUnknownMemberType]
+                plt.close("all")
         except Exception as e:
             logger.debug(f"Minor cleanup warning: {e}")
 
@@ -806,7 +806,7 @@ class BaseGraph(ABC):
         useful when generating multiple graphs in sequence.
         """
         try:
-            plt.close("all")  # pyright: ignore[reportUnknownMemberType]
+            plt.close("all")
             logger.debug("Closed all matplotlib figures")
         except Exception as e:
             logger.warning(f"Error during bulk figure cleanup: {e}")

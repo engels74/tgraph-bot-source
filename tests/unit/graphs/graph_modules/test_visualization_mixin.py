@@ -77,7 +77,7 @@ class MockGraphWithVisualization(VisualizationMixin):
     def cleanup(self) -> None:
         """Clean up matplotlib resources."""
         if self.figure is not None:
-            plt.close(self.figure)  # pyright: ignore[reportUnknownMemberType] # matplotlib close method typing
+            plt.close(self.figure)
             self.figure = None
             self.axes = None
 
