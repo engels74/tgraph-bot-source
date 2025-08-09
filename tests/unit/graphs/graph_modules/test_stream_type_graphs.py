@@ -13,18 +13,18 @@ Following TDD principles, these tests are written before implementation to defin
 expected behavior and ensure code quality.
 """
 
-import pytest
 import logging
+import pytest
 from typing import Dict, Any
 
-
-logger = logging.getLogger(__name__)
 from tests.utils.graph_helpers import (
     create_test_config_minimal,
 )
 from tests.utils.test_helpers import (
     assert_graph_output_valid,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class TestStreamTypeGraphs:
@@ -204,74 +204,6 @@ class TestStreamTypeGraphs:
     # Stream Type Graph Tests (TDD - Write Tests First)
     # ================================================
 
-    @pytest.mark.parametrize(
-        "graph_class_name,expected_title_contains,sample_data_fixture",
-        [
-            (
-                "DailyPlayCountByStreamTypeGraph",
-                "Daily Play Count by Stream Type",
-                "sample_stream_type_data",
-            ),
-            (
-                "DailyConcurrentStreamCountByStreamTypeGraph",
-                "Daily Concurrent Stream Count by Stream Type",
-                "sample_concurrent_stream_data",
-            ),
-            (
-                "PlayCountBySourceResolutionGraph",
-                "Play Count by Source Resolution",
-                "sample_stream_type_data",
-            ),
-            (
-                "PlayCountByStreamResolutionGraph",
-                "Play Count by Stream Resolution",
-                "sample_stream_type_data",
-            ),
-            (
-                "PlayCountByPlatformAndStreamTypeGraph",
-                "Play Count by Platform and Stream Type",
-                "sample_stream_type_data",
-            ),
-            (
-                "PlayCountByUserAndStreamTypeGraph",
-                "Play Count by User and Stream Type",
-                "sample_stream_type_data",
-            ),
-        ],
-    )
-    def test_stream_type_graph_basic_functionality(
-        self,
-        graph_class_name: str,
-        expected_title_contains: str,
-        sample_data_fixture: str,
-        request: pytest.FixtureRequest,
-    ) -> None:
-        """
-        Test basic functionality for all stream type graphs.
-
-        This test will initially fail as the graph classes don't exist yet (TDD).
-        Once implemented, it validates:
-        - Graph can be instantiated
-        - Title is correct
-        - Graph can process sample data
-        - Output file is generated
-        """
-        # This test will fail initially - that's expected with TDD
-        pytest.skip("Graph classes not yet implemented - TDD placeholder")
-
-        # Future implementation will look like:
-        # sample_data = request.getfixturevalue(sample_data_fixture)
-        # config = create_test_config_minimal()
-        #
-        # # Import will fail initially
-        # graph_module = __import__(f"src.tgraph_bot.graphs.graph_modules.implementations.tautulli.{graph_class_name.lower()}", fromlist=[graph_class_name])
-        # graph_class = getattr(graph_module, graph_class_name)
-        #
-        # graph = graph_class(config=config)
-        # assert expected_title_contains in graph.get_title()
-        #
-        # output_path = graph.generate(sample_data)
-        # assert_graph_output_valid(output_path)
 
     def test_daily_play_count_by_stream_type_separation(
         self, sample_stream_type_data: dict[str, object]
@@ -472,46 +404,6 @@ class TestStreamTypeGraphs:
             # Ensure cleanup
             graph.cleanup()
 
-    # Edge Cases and Error Handling
-    # =============================
-
-    def test_empty_stream_data_handling(
-        self, sample_empty_stream_data: Dict[str, Any]
-    ) -> None:
-        """Test that all stream type graphs handle empty data gracefully."""
-        pytest.skip("Stream type graphs not yet implemented - TDD placeholder")
-
-    def test_missing_stream_fields_handling(self) -> None:
-        """Test handling of data missing stream type fields."""
-        pytest.skip("Stream type graphs not yet implemented - TDD placeholder")
-
-        # Future test with data missing transcode_decision, resolutions, etc.
-
-    def test_invalid_stream_data_validation(self) -> None:
-        """Test validation of invalid stream type data."""
-        pytest.skip("Stream type graphs not yet implemented - TDD placeholder")
-
-    # Configuration Tests
-    # ===================
-
-    def test_stream_type_separation_config(self) -> None:
-        """Test stream type separation configuration option."""
-        pytest.skip("Stream type graphs not yet implemented - TDD placeholder")
-
-    def test_stacked_vs_grouped_bar_config(self) -> None:
-        """Test stacked vs grouped bar chart configuration."""
-        pytest.skip("Stream type graphs not yet implemented - TDD placeholder")
-
-    def test_palette_configuration_for_stream_graphs(self) -> None:
-        """Test custom palette configuration for stream type graphs."""
-        pytest.skip("Stream type graphs not yet implemented - TDD placeholder")
-
-    # Cleanup Tests
-    # =============
-
-    def test_matplotlib_cleanup_after_stream_graphs(self) -> None:
-        """Test proper matplotlib resource cleanup."""
-        pytest.skip("Stream type graphs not yet implemented - TDD placeholder")
 
     # Helper Methods (for future use)
     # ===============================
@@ -552,41 +444,3 @@ class TestStreamTypeGraphs:
         return {}
 
 
-# Integration Tests for Stream Type Features
-# ==========================================
-
-
-class TestStreamTypeIntegration:
-    """Integration tests for stream type functionality across the system."""
-
-    def test_graph_factory_creates_stream_type_graphs(self) -> None:
-        """Test that GraphFactory can create all stream type graphs."""
-        pytest.skip("Integration not yet implemented - TDD placeholder")
-
-    def test_graph_registry_recognizes_stream_type_graphs(self) -> None:
-        """Test that GraphTypeRegistry includes all stream type graphs."""
-        pytest.skip("Integration not yet implemented - TDD placeholder")
-
-    def test_config_schema_supports_stream_type_options(self) -> None:
-        """Test that configuration schema supports stream type graph options."""
-        pytest.skip("Integration not yet implemented - TDD placeholder")
-
-    def test_data_processor_handles_stream_fields(self) -> None:
-        """Test that DataProcessor can extract stream type fields."""
-        pytest.skip("Integration not yet implemented - TDD placeholder")
-
-
-# Performance Tests
-# =================
-
-
-class TestStreamTypePerformance:
-    """Performance tests for stream type graph generation."""
-
-    def test_large_dataset_performance(self) -> None:
-        """Test performance with large datasets (1000+ records)."""
-        pytest.skip("Performance tests not yet implemented - TDD placeholder")
-
-    def test_concurrent_stream_calculation_performance(self) -> None:
-        """Test performance of concurrent stream counting algorithm."""
-        pytest.skip("Performance tests not yet implemented - TDD placeholder")
