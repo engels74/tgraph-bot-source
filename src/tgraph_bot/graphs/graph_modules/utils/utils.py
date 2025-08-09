@@ -12,7 +12,7 @@ from collections import defaultdict
 from collections.abc import Mapping
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import TYPE_CHECKING, TypedDict, TypeVar
+from typing import TYPE_CHECKING, TypedDict, TypeVar, cast
 from typing_extensions import NotRequired
 
 from ....utils.cli.paths import get_path_config
@@ -474,34 +474,36 @@ def process_play_history_data(raw_data: Mapping[str, object]) -> ProcessedRecord
         if not isinstance(record, dict):
             logger.warning("Skipping invalid record: not a dictionary")
             continue
+        
+        # After isinstance check, we know record is a dict
+        record = cast(dict[str, object], record)
 
         try:
             # Extract and validate required fields with proper type conversion
-            date_value = safe_get_nested_value(record, ["date"], "")  # pyright: ignore[reportUnknownArgumentType]
-            user_value = safe_get_nested_value(record, ["user"], "")  # pyright: ignore[reportUnknownArgumentType]
-            platform_value = safe_get_nested_value(record, ["platform"], "")  # pyright: ignore[reportUnknownArgumentType]
-            media_type_value = safe_get_nested_value(record, ["media_type"], "")  # pyright: ignore[reportUnknownArgumentType]
-            duration_value = safe_get_nested_value(record, ["duration"], 0)  # pyright: ignore[reportUnknownArgumentType]
-            stopped_value = safe_get_nested_value(record, ["stopped"], 0)  # pyright: ignore[reportUnknownArgumentType]
-            paused_counter_value = safe_get_nested_value(record, ["paused_counter"], 0)  # pyright: ignore[reportUnknownArgumentType]
-
+            date_value = safe_get_nested_value(record, ["date"], "")
+            user_value = safe_get_nested_value(record, ["user"], "")
+            platform_value = safe_get_nested_value(record, ["platform"], "")
+            media_type_value = safe_get_nested_value(record, ["media_type"], "")
+            duration_value = safe_get_nested_value(record, ["duration"], 0)
+            stopped_value = safe_get_nested_value(record, ["stopped"], 0)
+            paused_counter_value = safe_get_nested_value(record, ["paused_counter"], 0)
             # Extract stream type fields (for new stream type graphs)
             transcode_decision_value = safe_get_nested_value(
                 record, ["transcode_decision"], "unknown"
-            )  # pyright: ignore[reportUnknownArgumentType]
+            )
             video_resolution_value = safe_get_nested_value(
                 record, ["video_resolution"], "unknown"
-            )  # pyright: ignore[reportUnknownArgumentType]
+            )
             stream_video_resolution_value = safe_get_nested_value(
                 record, ["stream_video_resolution"], "unknown"
-            )  # pyright: ignore[reportUnknownArgumentType]
+            )
             video_codec_value = safe_get_nested_value(
                 record, ["video_codec"], "unknown"
-            )  # pyright: ignore[reportUnknownArgumentType]
+            )
             audio_codec_value = safe_get_nested_value(
                 record, ["audio_codec"], "unknown"
-            )  # pyright: ignore[reportUnknownArgumentType]
-            container_value = safe_get_nested_value(record, ["container"], "unknown")  # pyright: ignore[reportUnknownArgumentType]
+            )
+            container_value = safe_get_nested_value(record, ["container"], "unknown")
 
             # Convert timestamps to datetime objects if they're valid
             if date_value:
@@ -556,8 +558,7 @@ def process_play_history_data(raw_data: Mapping[str, object]) -> ProcessedRecord
             continue
 
     logger.info(
-        f"Processed {len(processed_records)} valid records from {len(history_data)} total"  # pyright: ignore[reportUnknownArgumentType]
-    )
+        f"Processed {len(processed_records)} valid records from {len(history_data)} total"    )
     return processed_records
 
 
@@ -676,28 +677,30 @@ def process_play_history_data_enhanced(
         if not isinstance(record, dict):
             logger.warning("Skipping invalid record: not a dictionary")
             continue
+        
+        # After isinstance check, we know record is a dict
+        record = cast(dict[str, object], record)
 
         try:
             # Extract and validate required fields with proper type conversion
-            date_value = safe_get_nested_value(record, ["date"], "")  # pyright: ignore[reportUnknownArgumentType]
-            user_value = safe_get_nested_value(record, ["user"], "")  # pyright: ignore[reportUnknownArgumentType]
-            platform_value = safe_get_nested_value(record, ["platform"], "")  # pyright: ignore[reportUnknownArgumentType]
-            media_type_value = safe_get_nested_value(record, ["media_type"], "")  # pyright: ignore[reportUnknownArgumentType]
-            duration_value = safe_get_nested_value(record, ["duration"], 0)  # pyright: ignore[reportUnknownArgumentType]
-            stopped_value = safe_get_nested_value(record, ["stopped"], 0)  # pyright: ignore[reportUnknownArgumentType]
-            paused_counter_value = safe_get_nested_value(record, ["paused_counter"], 0)  # pyright: ignore[reportUnknownArgumentType]
-
+            date_value = safe_get_nested_value(record, ["date"], "")
+            user_value = safe_get_nested_value(record, ["user"], "")
+            platform_value = safe_get_nested_value(record, ["platform"], "")
+            media_type_value = safe_get_nested_value(record, ["media_type"], "")
+            duration_value = safe_get_nested_value(record, ["duration"], 0)
+            stopped_value = safe_get_nested_value(record, ["stopped"], 0)
+            paused_counter_value = safe_get_nested_value(record, ["paused_counter"], 0)
             # Extract stream type fields
             transcode_decision_value = safe_get_nested_value(
                 record, ["transcode_decision"], "unknown"
-            )  # pyright: ignore[reportUnknownArgumentType]
+            )
             video_codec_value = safe_get_nested_value(
                 record, ["video_codec"], "unknown"
-            )  # pyright: ignore[reportUnknownArgumentType]
+            )
             audio_codec_value = safe_get_nested_value(
                 record, ["audio_codec"], "unknown"
-            )  # pyright: ignore[reportUnknownArgumentType]
-            container_value = safe_get_nested_value(record, ["container"], "unknown")  # pyright: ignore[reportUnknownArgumentType]
+            )
+            container_value = safe_get_nested_value(record, ["container"], "unknown")
 
             # Enhanced resolution extraction with fallback logic
             video_resolution_value = _extract_resolution_with_fallback(
@@ -763,8 +766,7 @@ def process_play_history_data_enhanced(
             continue
 
     logger.info(
-        f"Enhanced processing completed: {len(processed_records)} valid records from {len(history_data)} total"  # pyright: ignore[reportUnknownArgumentType]
-    )
+        f"Enhanced processing completed: {len(processed_records)} valid records from {len(history_data)} total"    )
     return processed_records
 
 
@@ -1278,7 +1280,7 @@ def apply_modern_seaborn_styling() -> None:
 
     # Set modern color palette
     colors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b"]
-    sns.set_palette(colors)  # pyright: ignore[reportUnknownMemberType]
+    sns.set_palette(colors)
 
     # Configure matplotlib parameters for better appearance
     plt.rcParams.update(  # pyright: ignore[reportUnknownMemberType]
@@ -1442,7 +1444,7 @@ def aggregate_by_resolution_and_stream_type(
         Dictionary mapping resolution to list of stream type aggregates
     """
     # Count by resolution and stream type
-    resolution_stream_counts = defaultdict(lambda: defaultdict(int))
+    resolution_stream_counts: defaultdict[str, defaultdict[str, int]] = defaultdict(lambda: defaultdict(int))
     unknown_count = 0
     total_records = len(records)
 
@@ -1670,21 +1672,24 @@ def calculate_concurrent_streams_by_date(
         for _, event_type, stream_type in stream_events:
             if event_type == "start":
                 current_concurrent += 1
-                stream_type_concurrent[stream_type] += 1
+                if separate_by_stream_type:
+                    stream_type_concurrent[stream_type] += 1
             else:
                 current_concurrent -= 1
-                stream_type_concurrent[stream_type] -= 1
+                if separate_by_stream_type:
+                    stream_type_concurrent[stream_type] -= 1
 
             # Track peak
             if current_concurrent > peak_concurrent:
                 peak_concurrent = current_concurrent
-                peak_stream_type_breakdown = dict(stream_type_concurrent)
+                if separate_by_stream_type:
+                    peak_stream_type_breakdown = dict(stream_type_concurrent)
 
         concurrent_aggregates.append(
             ConcurrentStreamRecord(
                 date=date_str,
                 peak_concurrent=peak_concurrent,
-                stream_type_breakdown=peak_stream_type_breakdown,
+                stream_type_breakdown=peak_stream_type_breakdown if separate_by_stream_type else {},
             )
         )
 

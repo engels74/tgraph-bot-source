@@ -148,9 +148,9 @@ class TestMemoryManagement:
     def test_cleanup_all_figures_method(self) -> None:
         """Test the cleanup_all_figures class method."""
         # Create some figures manually
-        _ = plt.figure()  # pyright: ignore[reportUnknownMemberType]
-        _ = plt.figure()  # pyright: ignore[reportUnknownMemberType]
-        _ = plt.figure()  # pyright: ignore[reportUnknownMemberType]
+        _ = plt.figure()
+        _ = plt.figure()
+        _ = plt.figure()
 
         initial_count = len(plt.get_fignums())
         assert initial_count >= 3
@@ -246,8 +246,8 @@ class TestMemoryManagement:
         factory = create_graph_factory_with_config(config)
 
         # Create some figures
-        _ = plt.figure()  # pyright: ignore[reportUnknownMemberType]
-        _ = plt.figure()  # pyright: ignore[reportUnknownMemberType]
+        _ = plt.figure()
+        _ = plt.figure()
 
         initial_count = len(plt.get_fignums())
         assert initial_count >= 2

@@ -399,7 +399,7 @@ class VisualizationMixin:
         Args:
             palette: Seaborn palette name to apply
         """
-        sns.set_palette(palette)  # pyright: ignore[reportUnknownMemberType]
+        sns.set_palette(palette)
 
     def configure_tick_parameters(
         self: VisualizationProtocol,

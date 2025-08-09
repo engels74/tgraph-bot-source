@@ -159,7 +159,7 @@ class PlayCountByHourOfDayGraph(BaseGraph, VisualizationMixin):
 
             if user_palette:
                 # Use the configured palette with hue to apply different colors to each bar
-                _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
+                _ = sns.barplot(
                     data=df,
                     x="hour",
                     y="count",
@@ -170,7 +170,7 @@ class PlayCountByHourOfDayGraph(BaseGraph, VisualizationMixin):
                 )
             else:
                 # Use default single color when no palette is configured
-                _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
+                _ = sns.barplot(
                     data=df, x="hour", y="count", color=fallback_color, ax=ax
                 )
 
@@ -252,7 +252,7 @@ class PlayCountByHourOfDayGraph(BaseGraph, VisualizationMixin):
             # Create the bar plot for this media type
             import seaborn as sns
 
-            _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType]
+            _ = sns.barplot(
                 data=df, x="hour", y="count", color=color, alpha=0.8, ax=ax, label=label
             )
 
@@ -382,11 +382,11 @@ class PlayCountByHourOfDayGraph(BaseGraph, VisualizationMixin):
         # Use AnnotationHelper for consistent styling
         x_data: list[float] = []
         y_data: list[float] = []
-        for i, total_value in enumerate(bottom):  # pyright: ignore[reportAny] # numpy array element type inference limitation
-            total_int = int(total_value)  # pyright: ignore[reportAny]
+        for i, total_value in enumerate(bottom):
+            total_int = int(total_value)
             if total_int > 0:
                 x_data.append(float(i))
-                y_data.append(float(total_value))  # pyright: ignore[reportAny] # numpy array element type inference limitation
+                y_data.append(float(total_value))
 
         if x_data and y_data:
             self.annotation_helper.annotate_line_points(

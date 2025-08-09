@@ -241,7 +241,7 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
         colors: list[str] = [color_mapping[mt] for mt in unique_media_types_list]
 
         # Create grouped bar plot with proper spacing
-        _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
+        _ = sns.barplot(
             data=df,
             x="month",
             y="count",
@@ -511,7 +511,7 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
 
         if user_palette:
             # Use palette with hue for multiple colors
-            _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
+            _ = sns.barplot(
                 data=df,
                 x="month",
                 y="count",
@@ -525,7 +525,7 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
             )
         else:
             # Use single default color
-            _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
+            _ = sns.barplot(
                 data=df,
                 x="month",
                 y="count",
@@ -639,11 +639,11 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
         colors: list[str] = [color_mapping[mt] for mt in unique_media_types_list]
 
         # Sort months chronologically for proper x-axis ordering
-        df["month_sort"] = pd.to_datetime(df["month"], format="%Y-%m")  # pyright: ignore[reportUnknownMemberType] # pandas method overloads
-        df = df.sort_values("month_sort")  # pyright: ignore[reportUnknownMemberType] # pandas method overloads
+        df["month_sort"] = pd.to_datetime(df["month"], format="%Y-%m")
+        df = df.sort_values("month_sort")
 
         # Create grouped bar plot
-        _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
+        _ = sns.barplot(
             data=df,
             x="month",
             y="count",
@@ -714,7 +714,7 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
             df: DataFrame = pd.DataFrame(sorted_months, columns=["month", "count"])
 
             # Create bar plot with modern styling
-            _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
+            _ = sns.barplot(
                 data=df,
                 x="month",
                 y="count",

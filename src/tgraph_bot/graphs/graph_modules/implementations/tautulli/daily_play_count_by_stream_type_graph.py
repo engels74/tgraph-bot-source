@@ -148,7 +148,7 @@ class DailyPlayCountByStreamTypeGraph(BaseGraph, VisualizationMixin):
 
         # Set the tick labels using the selected dates
         selected_dates = [sorted_dates[i] for i in selected_indices]
-        selected_date_objects = [pd.to_datetime(date) for date in selected_dates]  # pyright: ignore[reportUnknownMemberType] # pandas method overloads
+        selected_date_objects = [pd.to_datetime(date) for date in selected_dates]
 
         # Format the labels
         formatted_labels = [

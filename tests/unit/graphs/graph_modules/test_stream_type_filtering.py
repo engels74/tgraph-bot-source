@@ -277,7 +277,7 @@ class TestOptimizedDataProcessor:
         # Test extraction logic (simplified)
         def extract_resolution(metadata: dict[str, Any]) -> str:  # pyright: ignore[reportExplicitAny]
             if "media_info" in metadata and metadata["media_info"]:
-                media_data = metadata["media_info"][0]
+                media_data: dict[str, Any] = metadata["media_info"][0]
                 if "video_resolution" in media_data:
                     if media_data["video_resolution"] == "1080":
                         return f"{media_data.get('width', 1920)}x{media_data.get('height', 1080)}"

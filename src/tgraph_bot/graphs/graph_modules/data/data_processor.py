@@ -599,9 +599,11 @@ class DataProcessor:
                 media_info = metadata.get("media_info")
                 if media_info and isinstance(media_info, list) and media_info:
                     # Get the first media info item (there may be multiple parts)
-                    media_data = media_info[0]
-                    if isinstance(media_data, dict):
-                        media_data = cast(dict[str, object], media_data)
+                    # media_info is now known to be a list due to isinstance check
+                    media_info = cast(list[object], media_info)
+                    media_data_raw = media_info[0]
+                    if isinstance(media_data_raw, dict):
+                        media_data = cast(dict[str, object], media_data_raw)
                         # Extract source resolution from media_info
                         for field_name in ["video_resolution", "video_full_resolution"]:
                             if field_name in media_data:

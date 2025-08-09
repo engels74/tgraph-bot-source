@@ -211,7 +211,7 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
 
         colors: list[str] = [color_mapping[mt] for mt in unique_media_types_list]
 
-        _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
+        _ = sns.barplot(
             data=df,
             x="day",
             y="count",
@@ -428,7 +428,7 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
 
             if user_palette:
                 # Use palette with hue for multiple colors
-                _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
+                _ = sns.barplot(
                     data=df,
                     x="day",
                     y="count",
@@ -440,7 +440,7 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
                 )
             else:
                 # Use single default color
-                _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
+                _ = sns.barplot(
                     data=df,
                     x="day",
                     y="count",

@@ -406,17 +406,15 @@ class DailyConcurrentStreamCountByStreamTypeGraph(BaseGraph, VisualizationMixin)
             date_str = str(record["date"])
             stream_breakdown = record.get("stream_type_breakdown", {})
 
-            if isinstance(stream_breakdown, dict):
-                for stream_type, count in stream_breakdown.items():
-                    if isinstance(count, (int, float)):
-                        if stream_type not in stream_type_data:
-                            stream_type_data[stream_type] = {}
+            for stream_type, count in stream_breakdown.items():
+                if stream_type not in stream_type_data:
+                    stream_type_data[stream_type] = {}
 
-                        stream_type_data[stream_type][date_str] = int(count)
+                stream_type_data[stream_type][date_str] = int(count)
 
         # Fill missing dates with zeros for all stream types for consistency
         if stream_type_data:
-            all_dates = set()
+            all_dates: set[str] = set()
             for date_data in stream_type_data.values():
                 all_dates.update(date_data.keys())
 

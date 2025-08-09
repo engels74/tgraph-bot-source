@@ -264,13 +264,13 @@ class PlayCountBySourceResolutionGraph(BaseGraph, VisualizationMixin):
             return
 
         # Prepare data matrix for stacked bars
-        data_matrix = []
-        colors = []
-        labels = []
+        data_matrix: list[list[int]] = []
+        colors: list[str] = []
+        labels: list[str] = []
 
         for stream_type in stream_types:
             # Get counts for this stream type across all resolutions
-            counts = []
+            counts: list[int] = []
             for resolution in sorted_resolutions:
                 resolution_data = resolution_stream_data[resolution]
                 count = 0

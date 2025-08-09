@@ -149,7 +149,7 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
 
         # Set the tick labels using the selected dates
         selected_dates = [sorted_dates[i] for i in selected_indices]
-        selected_date_objects = [pd.to_datetime(date) for date in selected_dates]  # pyright: ignore[reportUnknownMemberType] # pandas method overloads
+        selected_date_objects = [pd.to_datetime(date) for date in selected_dates]
 
         # Format the labels
         formatted_labels = [
@@ -406,7 +406,7 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
                 # Use first color from palette for line plots
                 import seaborn as sns
 
-                palette_colors = sns.color_palette(user_palette, n_colors=1)  # pyright: ignore[reportUnknownMemberType] # seaborn typing
+                palette_colors = sns.color_palette(user_palette, n_colors=1)
                 line_color = palette_colors[0]
             else:
                 line_color = fallback_color

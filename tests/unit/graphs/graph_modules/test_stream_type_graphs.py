@@ -15,7 +15,7 @@ expected behavior and ensure code quality.
 
 import logging
 import pytest
-from typing import Any
+from typing import Any, cast
 
 from tests.utils.graph_helpers import (
     create_test_config_minimal,
@@ -422,6 +422,7 @@ class TestStreamTypeGraphs:
             return False
 
         for record in data["data"]:
+            record = cast(dict[str, object], record)
             for field in required_fields:
                 if field not in record:
                     return False

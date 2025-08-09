@@ -152,7 +152,7 @@ class PlayCountByPlatformAndStreamTypeGraph(BaseGraph, VisualizationMixin):
             return
 
         # Get all unique stream types across all platforms
-        all_stream_types = set()
+        all_stream_types: set[str] = set()
         for stream_aggregates in platform_stream_data.values():
             for stream_record in stream_aggregates:
                 all_stream_types.add(stream_record["stream_type"])
@@ -169,13 +169,13 @@ class PlayCountByPlatformAndStreamTypeGraph(BaseGraph, VisualizationMixin):
         stream_type_info = get_stream_type_display_info()
 
         # Prepare data matrix for stacked bars
-        data_matrix = []
-        colors = []
-        labels = []
+        data_matrix: list[list[int]] = []
+        colors: list[str] = []
+        labels: list[str] = []
 
         for stream_type in stream_types:
             # Get counts for this stream type across all platforms
-            counts = []
+            counts: list[int] = []
             for platform in platforms:
                 platform_data = platform_stream_data[platform]
                 count = 0
@@ -199,9 +199,9 @@ class PlayCountByPlatformAndStreamTypeGraph(BaseGraph, VisualizationMixin):
 
         # Calculate cumulative positions for stacking
         left_positions = np.zeros(len(platforms))
-        bars_list = []
+        bars_list: list[object] = []
 
-        for i, (counts, color, label) in enumerate(zip(data_matrix, colors, labels)):
+        for _, (counts, color, label) in enumerate(zip(data_matrix, colors, labels)):
             bars = ax.barh(  # pyright: ignore[reportUnknownMemberType] # matplotlib method
                 y_positions,
                 counts,
@@ -228,7 +228,7 @@ class PlayCountByPlatformAndStreamTypeGraph(BaseGraph, VisualizationMixin):
         ax.set_yticklabels(formatted_platforms)  # pyright: ignore[reportAny] # matplotlib method returns Any
 
         # Invert y-axis so top platform is at top
-        ax.invert_yaxis()  # pyright: ignore[reportUnknownMemberType] # matplotlib method
+        ax.invert_yaxis()
 
         # Add value annotations on bars if enabled (using basic horizontal bar annotation)
         self.annotation_helper.annotate_horizontal_bar_patches(
@@ -258,7 +258,7 @@ class PlayCountByPlatformAndStreamTypeGraph(BaseGraph, VisualizationMixin):
             ax.grid(False)  # pyright: ignore[reportUnknownMemberType] # matplotlib method with **kwargs
 
         # Optimize layout
-        ax.margins(y=0.01)  # pyright: ignore[reportUnknownMemberType] # matplotlib method with **kwargs
+        _ = ax.margins(y=0.01)  # pyright: ignore[reportUnknownMemberType] # matplotlib method with **kwargs
 
         logger.info(
             f"Created platform and stream type graph with {len(platforms)} platforms and {len(stream_types)} stream types"
