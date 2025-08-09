@@ -146,7 +146,7 @@ class Top10PlatformsGraph(BaseGraph, VisualizationMixin):
 
             if user_palette:
                 # Use palette with hue for multiple colors
-                _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
+                _ = sns.barplot(
                     data=df,
                     x="play_count",
                     y="platform",
@@ -159,7 +159,7 @@ class Top10PlatformsGraph(BaseGraph, VisualizationMixin):
                 )
             else:
                 # Use single default color
-                _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
+                _ = sns.barplot(
                     data=df,
                     x="play_count",
                     y="platform",
@@ -266,7 +266,7 @@ class Top10PlatformsGraph(BaseGraph, VisualizationMixin):
         )  # Preserves order while removing duplicates
 
         # Create horizontal bar plot
-        _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType]
+        _ = sns.barplot(
             data=df,
             x="play_count",
             y="platform",
@@ -388,7 +388,7 @@ class Top10PlatformsGraph(BaseGraph, VisualizationMixin):
         # Create stacked horizontal bars
         y_positions = np.arange(len(platform_names))
         left_positions = np.zeros(len(platform_names))
-        bar_containers: list[tuple[object, str, object]] = []  # pyright: ignore[reportAny]
+        bar_containers: list[tuple[object, str, object]] = []
 
         for media_type in media_types:
             counts = [

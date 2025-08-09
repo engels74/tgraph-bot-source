@@ -15,7 +15,7 @@ expected behavior and ensure code quality.
 
 import logging
 import pytest
-from typing import Any, cast
+from typing import Any
 
 from tests.utils.graph_helpers import (
     create_test_config_minimal,
@@ -421,8 +421,8 @@ class TestStreamTypeGraphs:
         if "data" not in data or not data["data"]:
             return False
 
-        for record in data["data"]:
-            record_typed = cast(dict[str, object], record)
+        for record in data["data"]:  # pyright: ignore[reportAny]
+            record_typed = record  # pyright: ignore[reportAny]
             for field in required_fields:
                 if field not in record_typed:
                     return False

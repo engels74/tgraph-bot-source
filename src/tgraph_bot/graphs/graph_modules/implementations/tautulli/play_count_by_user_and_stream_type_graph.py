@@ -170,13 +170,13 @@ class PlayCountByUserAndStreamTypeGraph(BaseGraph, VisualizationMixin):
         stream_type_info = get_stream_type_display_info()
 
         # Prepare data matrix for stacked bars
-        data_matrix = []
-        colors = []
-        labels = []
+        data_matrix: list[list[int]] = []
+        colors: list[str] = []
+        labels: list[str] = []
 
         for stream_type in stream_types:
             # Get counts for this stream type across all users
-            counts = []
+            counts: list[int] = []
             for user in users:
                 user_data = user_stream_data[user]
                 count = 0
@@ -184,26 +184,26 @@ class PlayCountByUserAndStreamTypeGraph(BaseGraph, VisualizationMixin):
                     if record["stream_type"] == stream_type:
                         count = record["play_count"]
                         break
-                counts.append(count)  # pyright: ignore[reportUnknownMemberType] # list append method
+                counts.append(count)
 
-            data_matrix.append(counts)  # pyright: ignore[reportUnknownMemberType] # list append method
+            data_matrix.append(counts)
 
             # Get display info for this stream type
             display_info = stream_type_info.get(
                 stream_type, {"display_name": stream_type.title(), "color": "#1f77b4"}
             )
-            colors.append(display_info["color"])  # pyright: ignore[reportUnknownMemberType] # list append method
-            labels.append(display_info["display_name"])  # pyright: ignore[reportUnknownMemberType] # list append method
+            colors.append(display_info["color"])
+            labels.append(display_info["display_name"])
 
         # Create stacked horizontal bar chart (better for usernames)
         y_positions = np.arange(len(users))
 
         # Calculate cumulative positions for stacking
         left_positions = np.zeros(len(users))
-        bars_list = []
+        bars_list: list[object] = []
 
-        for _, (counts, color, label) in enumerate(zip(data_matrix, colors, labels)):  # pyright: ignore[reportUnknownArgumentType,reportUnknownVariableType] # matplotlib data
-            bars = ax.barh(  # pyright: ignore[reportUnknownMemberType] # matplotlib method
+        for _, (counts, color, label) in enumerate(zip(data_matrix, colors, labels)):
+            bars = ax.barh(  # pyright: ignore[reportUnknownMemberType]
                 y_positions,
                 counts,
                 left=left_positions,
@@ -223,7 +223,7 @@ class PlayCountByUserAndStreamTypeGraph(BaseGraph, VisualizationMixin):
         ax.set_yticks(y_positions)  # pyright: ignore[reportAny] # matplotlib method returns Any
 
         # Censor usernames based on configuration
-        censored_users = []
+        censored_users: list[str] = []
         censor_enabled = self.get_config_value("graphs.privacy.censor_usernames", True)
         for user in users:
             censored_user = censor_username(user, bool(censor_enabled))
@@ -232,7 +232,7 @@ class PlayCountByUserAndStreamTypeGraph(BaseGraph, VisualizationMixin):
         ax.set_yticklabels(censored_users)  # pyright: ignore[reportAny] # matplotlib method returns Any
 
         # Invert y-axis so top user is at top
-        ax.invert_yaxis()  # pyright: ignore[reportUnknownMemberType] # matplotlib method
+        ax.invert_yaxis()
 
         # Add value annotations on bars if enabled (using basic horizontal bar annotation)
         self.annotation_helper.annotate_horizontal_bar_patches(
@@ -262,7 +262,7 @@ class PlayCountByUserAndStreamTypeGraph(BaseGraph, VisualizationMixin):
             ax.grid(False)  # pyright: ignore[reportUnknownMemberType] # matplotlib method with **kwargs
 
         # Optimize layout
-        ax.margins(y=0.01)  # pyright: ignore[reportUnknownMemberType] # matplotlib method with **kwargs
+        _ = ax.margins(y=0.01)  # pyright: ignore[reportUnknownMemberType]
 
         logger.info(
             f"Created user and stream type graph with {len(users)} users and {len(stream_types)} stream types"

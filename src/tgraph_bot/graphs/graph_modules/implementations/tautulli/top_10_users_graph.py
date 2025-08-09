@@ -156,7 +156,7 @@ class Top10UsersGraph(BaseGraph, VisualizationMixin):
 
             if user_palette:
                 # Use the configured palette with hue to apply different colors to each bar
-                _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
+                _ = sns.barplot(
                     data=df,
                     x="play_count",
                     y="username",
@@ -168,7 +168,7 @@ class Top10UsersGraph(BaseGraph, VisualizationMixin):
                 )
             else:
                 # Use default single color when no palette is configured
-                _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType] # seaborn method overloads
+                _ = sns.barplot(
                     data=df,
                     x="play_count",
                     y="username",
@@ -279,7 +279,7 @@ class Top10UsersGraph(BaseGraph, VisualizationMixin):
         )  # Preserves order while removing duplicates
 
         # Create horizontal bar plot
-        _ = sns.barplot(  # pyright: ignore[reportUnknownMemberType]
+        _ = sns.barplot(
             data=df,
             x="play_count",
             y="username",
@@ -398,7 +398,7 @@ class Top10UsersGraph(BaseGraph, VisualizationMixin):
         # Create stacked horizontal bars
         y_positions = np.arange(len(usernames))
         left_positions = np.zeros(len(usernames))
-        bar_containers: list[tuple[object, str, object]] = []  # pyright: ignore[reportAny]
+        bar_containers: list[tuple[object, str, object]] = []
 
         for media_type in media_types:
             counts = [sorted_users[i][1][media_type] for i in range(len(usernames))]

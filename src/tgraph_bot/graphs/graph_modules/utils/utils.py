@@ -12,7 +12,7 @@ from collections import defaultdict
 from collections.abc import Mapping
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import TYPE_CHECKING, TypedDict, TypeVar, cast
+from typing import TYPE_CHECKING, TypedDict, TypeVar
 from typing_extensions import NotRequired
 
 from ....utils.cli.paths import get_path_config
@@ -443,12 +443,13 @@ def safe_get_nested_value(
     current: Mapping[str, object] | object = data
     for key in keys:
         if isinstance(current, dict) and key in current:
-            current = current[key]  # pyright: ignore[reportUnknownVariableType]
+            current = current[key]
         else:
             return default
-    return current  # pyright: ignore[reportUnknownVariableType]
+    return current
 
 
+# pyright: reportUnknownVariableType=false, reportUnknownArgumentType=false  
 def process_play_history_data(raw_data: Mapping[str, object]) -> ProcessedRecords:
     """
     Process raw play history data from Tautulli API into a standardized format.
@@ -470,13 +471,10 @@ def process_play_history_data(raw_data: Mapping[str, object]) -> ProcessedRecord
 
     processed_records: ProcessedRecords = []
 
-    for record in history_data:  # pyright: ignore[reportUnknownVariableType]
+    for record in history_data:
         if not isinstance(record, dict):
             logger.warning("Skipping invalid record: not a dictionary")
             continue
-        
-        # After isinstance check, we know record is a dict
-        record = cast(dict[str, object], record)
 
         try:
             # Extract and validate required fields with proper type conversion
@@ -611,6 +609,7 @@ def _extract_resolution_with_fallback(
     return "unknown"
 
 
+# pyright: reportUnknownVariableType=false, reportUnknownArgumentType=false, reportUnknownMemberType=false
 def process_play_history_data_enhanced(
     raw_data: Mapping[str, object],
 ) -> ProcessedRecords:
@@ -631,14 +630,14 @@ def process_play_history_data_enhanced(
     """
     # Extract the actual data from the API response
     history_data = safe_get_nested_value(raw_data, ["data"], [])
-
+    
     if not isinstance(history_data, list):
         raise ValueError("Play history data must be a list")
 
     processed_records: ProcessedRecords = []
 
     # Debug: Log the fields available in the first record to understand the API structure
-    if history_data and isinstance(history_data, list) and len(history_data) > 0:
+    if history_data and len(history_data) > 0:
         first_record = history_data[0]
         if isinstance(first_record, dict):
             available_fields = list(first_record.keys())
@@ -673,13 +672,10 @@ def process_play_history_data_enhanced(
                     sample_values[field] = first_record[field]
             logger.info(f"Sample resolution field values: {sample_values}")
 
-    for record in history_data:  # pyright: ignore[reportUnknownVariableType]
+    for record in history_data:
         if not isinstance(record, dict):
             logger.warning("Skipping invalid record: not a dictionary")
             continue
-        
-        # After isinstance check, we know record is a dict
-        record = cast(dict[str, object], record)
 
         try:
             # Extract and validate required fields with proper type conversion
@@ -1283,7 +1279,7 @@ def apply_modern_seaborn_styling() -> None:
     sns.set_palette(colors)
 
     # Configure matplotlib parameters for better appearance
-    plt.rcParams.update(  # pyright: ignore[reportUnknownMemberType]
+    plt.rcParams.update(
         {
             "font.size": 11,
             "axes.titlesize": 16,
@@ -1333,12 +1329,12 @@ def aggregate_by_stream_type(
 
         # Convert to aggregate records format
         for media_type, stream_counts in stream_type_counts.items():
-            aggregates: StreamTypeAggregates = []
+            media_aggregates: StreamTypeAggregates = []
             for stream_type, count in stream_counts.items():
-                display_name = _get_stream_type_display_name(stream_type)
-                color = _get_stream_type_color(stream_type)
+                display_name = get_stream_type_display_name(stream_type)
+                color = get_stream_type_color(stream_type)
 
-                aggregates.append(
+                media_aggregates.append(
                     StreamTypeAggregateRecord(
                         stream_type=stream_type,
                         display_name=display_name,
@@ -1347,7 +1343,7 @@ def aggregate_by_stream_type(
                     )
                 )
 
-            separated_data[media_type] = aggregates
+            separated_data[media_type] = media_aggregates
 
         return separated_data
     else:
@@ -1360,8 +1356,8 @@ def aggregate_by_stream_type(
 
         aggregates: StreamTypeAggregates = []
         for stream_type, count in stream_type_counts_simple.items():
-            display_name = _get_stream_type_display_name(stream_type)
-            color = _get_stream_type_color(stream_type)
+            display_name = get_stream_type_display_name(stream_type)
+            color = get_stream_type_color(stream_type)
 
             aggregates.append(
                 StreamTypeAggregateRecord(
@@ -1481,8 +1477,8 @@ def aggregate_by_resolution_and_stream_type(
     for resolution, stream_counts in resolution_stream_counts.items():
         aggregates: list[ResolutionStreamTypeAggregateRecord] = []
         for stream_type, count in stream_counts.items():
-            display_name = _get_stream_type_display_name(stream_type)
-            color = _get_stream_type_color(stream_type)
+            display_name = get_stream_type_display_name(stream_type)
+            color = get_stream_type_color(stream_type)
 
             aggregates.append(
                 ResolutionStreamTypeAggregateRecord(
@@ -1551,8 +1547,8 @@ def aggregate_by_platform_and_stream_type(
     for platform, stream_counts in platform_stream_counts.items():
         aggregates: StreamTypeAggregates = []
         for stream_type, count in stream_counts.items():
-            display_name = _get_stream_type_display_name(stream_type)
-            color = _get_stream_type_color(stream_type)
+            display_name = get_stream_type_display_name(stream_type)
+            color = get_stream_type_color(stream_type)
 
             aggregates.append(
                 StreamTypeAggregateRecord(
@@ -1606,8 +1602,8 @@ def aggregate_by_user_and_stream_type(
     for user, stream_counts in user_stream_counts.items():
         aggregates: StreamTypeAggregates = []
         for stream_type, count in stream_counts.items():
-            display_name = _get_stream_type_display_name(stream_type)
-            color = _get_stream_type_color(stream_type)
+            display_name = get_stream_type_display_name(stream_type)
+            color = get_stream_type_color(stream_type)
 
             aggregates.append(
                 StreamTypeAggregateRecord(
@@ -1820,7 +1816,7 @@ def get_stream_type_statistics(
 # ===================================================
 
 
-def _get_stream_type_display_name(stream_type: str) -> str:
+def get_stream_type_display_name(stream_type: str) -> str:
     """Get user-friendly display name for stream type."""
     display_names = {
         "direct play": "Direct Play",
@@ -1831,7 +1827,7 @@ def _get_stream_type_display_name(stream_type: str) -> str:
     return display_names.get(stream_type.lower(), stream_type.title())
 
 
-def _get_stream_type_color(stream_type: str) -> str:
+def get_stream_type_color(stream_type: str) -> str:
     """Get color for stream type visualization."""
     colors = {
         "direct play": "#2ca02c",  # Green - most efficient

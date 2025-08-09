@@ -282,7 +282,9 @@ class TestOptimizedDataProcessor:
                     media_data = media_info[0]  # pyright: ignore[reportUnknownVariableType] # test data
                     if isinstance(media_data, dict) and "video_resolution" in media_data:
                         if media_data["video_resolution"] == "1080":
-                            return f"{media_data.get('width', 1920)}x{media_data.get('height', 1080)}"
+                            width = media_data.get('width', 1920)  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+                            height = media_data.get('height', 1080)  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+                            return f"{width}x{height}"
 
             if "width" in metadata and "height" in metadata:
                 return f"{metadata['width']}x{metadata['height']}"
@@ -291,7 +293,7 @@ class TestOptimizedDataProcessor:
 
         assert extract_resolution(metadata_with_media_info) == "1920x1080"
         assert extract_resolution(metadata_with_direct_fields) == "3840x2160"
-        assert extract_resolution(metadata_empty) == "unknown"
+        assert extract_resolution(metadata_empty) == "unknown"  # pyright: ignore[reportUnknownArgumentType]
 
     def test_concurrent_processing_simulation(self) -> None:
         """Test concurrent processing simulation."""

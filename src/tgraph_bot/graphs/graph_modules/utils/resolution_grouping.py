@@ -327,10 +327,10 @@ def aggregate_by_resolution_grouped(
     total_records = len(records)
 
     for record in records:
-        resolution = record[resolution_field]  # type: ignore[misc]
+        resolution: str | None = record.get(resolution_field)
         if resolution and resolution != "unknown":
             grouped_resolution = group_resolution_by_strategy(
-                str(resolution), grouping_strategy
+                resolution, grouping_strategy
             )
             grouped_counts[grouped_resolution] += 1
         else:
@@ -377,8 +377,8 @@ def aggregate_by_resolution_and_stream_type_grouped(
     """
     from .utils import (
         ResolutionStreamTypeAggregateRecord,
-        _get_stream_type_display_name,
-        _get_stream_type_color,
+        get_stream_type_display_name,
+        get_stream_type_color,
     )
 
     # Count by grouped resolution and stream type
@@ -389,12 +389,12 @@ def aggregate_by_resolution_and_stream_type_grouped(
     total_records = len(records)
 
     for record in records:
-        resolution = record[resolution_field]  # type: ignore[misc]
-        stream_type: str = record.get("transcode_decision", "unknown")  # type: ignore[misc]
+        resolution: str | None = record.get(resolution_field)
+        stream_type: str = record.get("transcode_decision", "unknown")
 
         if resolution and resolution != "unknown":
             grouped_resolution = group_resolution_by_strategy(
-                str(resolution), grouping_strategy
+                resolution, grouping_strategy
             )
             resolution_stream_counts[grouped_resolution][stream_type] += 1
         else:
@@ -418,8 +418,8 @@ def aggregate_by_resolution_and_stream_type_grouped(
     for resolution, stream_counts in resolution_stream_counts.items():
         aggregates: list["ResolutionStreamTypeAggregateRecord"] = []
         for stream_type, count in stream_counts.items():
-            display_name = _get_stream_type_display_name(stream_type)
-            color = _get_stream_type_color(stream_type)
+            display_name = get_stream_type_display_name(stream_type)
+            color = get_stream_type_color(stream_type)
 
             aggregates.append(
                 ResolutionStreamTypeAggregateRecord(
