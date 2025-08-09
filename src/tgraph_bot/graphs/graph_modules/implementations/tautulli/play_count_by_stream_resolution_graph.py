@@ -272,16 +272,16 @@ class PlayCountByStreamResolutionGraph(BaseGraph, VisualizationMixin):
                     if record["stream_type"] == stream_type:
                         count = record["play_count"]
                         break
-                counts.append(count)
+                counts.append(count)  # pyright: ignore[reportUnknownMemberType] # list append method
 
-            data_matrix.append(counts)
+            data_matrix.append(counts)  # pyright: ignore[reportUnknownMemberType] # list append method
 
             # Get display info for this stream type
             display_info = stream_type_info.get(
                 stream_type, {"display_name": stream_type.title(), "color": "#1f77b4"}
             )
-            colors.append(display_info["color"])
-            labels.append(display_info["display_name"])
+            colors.append(display_info["color"])  # pyright: ignore[reportUnknownMemberType] # list append method
+            labels.append(display_info["display_name"])  # pyright: ignore[reportUnknownMemberType] # list append method
 
         # Format resolution labels for better display
         formatted_resolutions = [
@@ -295,19 +295,19 @@ class PlayCountByStreamResolutionGraph(BaseGraph, VisualizationMixin):
         bottom_positions = np.zeros(len(sorted_resolutions))
         bars_list = []
 
-        for i, (counts, color, label) in enumerate(zip(data_matrix, colors, labels)):
+        for _, (counts, color, label) in enumerate(zip(data_matrix, colors, labels)):  # pyright: ignore[reportUnknownArgumentType,reportUnknownVariableType] # matplotlib data types
             bars = ax.bar(  # pyright: ignore[reportUnknownMemberType] # matplotlib method
                 x_positions,
-                counts,
+                counts,  # pyright: ignore[reportUnknownArgumentType] # matplotlib data
                 bottom=bottom_positions,
-                color=color,
+                color=color,  # pyright: ignore[reportUnknownArgumentType] # matplotlib color
                 alpha=0.8,
-                label=label,
+                label=label,  # pyright: ignore[reportUnknownArgumentType] # matplotlib label
                 edgecolor="white",
                 linewidth=0.8,
             )
-            bars_list.append(bars)
-            bottom_positions += np.array(counts)
+            bars_list.append(bars)  # pyright: ignore[reportUnknownMemberType] # matplotlib returns bars container
+            bottom_positions += np.array(counts)  # pyright: ignore[reportUnknownArgumentType] # numpy array conversion
 
         # Customize the plot (swapped axis labels)
         self.setup_title_and_axes_with_ax(
@@ -319,7 +319,7 @@ class PlayCountByStreamResolutionGraph(BaseGraph, VisualizationMixin):
         ax.set_xticklabels(formatted_resolutions, rotation=45, ha="right")  # pyright: ignore[reportAny] # matplotlib method returns Any
 
         # Add legend for stream types
-        ax.legend(  # pyright: ignore[reportUnknownMemberType] # matplotlib method
+        _ = ax.legend(  # pyright: ignore[reportUnknownMemberType] # matplotlib method
             loc="upper right",
             frameon=True,
             fancybox=True,
@@ -330,8 +330,8 @@ class PlayCountByStreamResolutionGraph(BaseGraph, VisualizationMixin):
 
         # Add value annotations on bars if enabled (using stacked bar annotation for vertical bars)
         # Create bar containers for stacked annotation
-        bar_containers = [
-            (bars_list[i], labels[i], data_matrix[i]) for i in range(len(labels))
+        bar_containers: list[tuple[object, str, list[int]]] = [
+            (bars_list[i], labels[i], data_matrix[i]) for i in range(len(labels))  # pyright: ignore[reportUnknownArgumentType] # matplotlib data structures
         ]
         self.annotation_helper.annotate_stacked_bar_segments(
             ax=ax,
@@ -348,7 +348,7 @@ class PlayCountByStreamResolutionGraph(BaseGraph, VisualizationMixin):
             ax.grid(False)  # pyright: ignore[reportUnknownMemberType] # matplotlib method with **kwargs
 
         # Optimize layout (swapped margin)
-        ax.margins(x=0.01)  # pyright: ignore[reportUnknownMemberType] # matplotlib method with **kwargs
+        _ = ax.margins(x=0.01)  # pyright: ignore[reportUnknownMemberType] # matplotlib method with **kwargs
 
         logger.info(
             f"Created stream resolution graph with {len(sorted_resolutions)} resolutions and {len(stream_types)} stream types"

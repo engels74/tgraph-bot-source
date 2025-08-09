@@ -153,12 +153,12 @@ class PlayCountByUserAndStreamTypeGraph(BaseGraph, VisualizationMixin):
             return
 
         # Get all unique stream types across all users
-        all_stream_types = set()
+        all_stream_types: set[str] = set()
         for stream_aggregates in user_stream_data.values():
             for stream_record in stream_aggregates:
                 all_stream_types.add(stream_record["stream_type"])
 
-        stream_types = sorted(all_stream_types)
+        stream_types: list[str] = sorted(all_stream_types)
 
         if not stream_types:
             self.handle_empty_data_with_message(
@@ -184,16 +184,16 @@ class PlayCountByUserAndStreamTypeGraph(BaseGraph, VisualizationMixin):
                     if record["stream_type"] == stream_type:
                         count = record["play_count"]
                         break
-                counts.append(count)
+                counts.append(count)  # pyright: ignore[reportUnknownMemberType] # list append method
 
-            data_matrix.append(counts)
+            data_matrix.append(counts)  # pyright: ignore[reportUnknownMemberType] # list append method
 
             # Get display info for this stream type
             display_info = stream_type_info.get(
                 stream_type, {"display_name": stream_type.title(), "color": "#1f77b4"}
             )
-            colors.append(display_info["color"])
-            labels.append(display_info["display_name"])
+            colors.append(display_info["color"])  # pyright: ignore[reportUnknownMemberType] # list append method
+            labels.append(display_info["display_name"])  # pyright: ignore[reportUnknownMemberType] # list append method
 
         # Create stacked horizontal bar chart (better for usernames)
         y_positions = np.arange(len(users))
@@ -202,7 +202,7 @@ class PlayCountByUserAndStreamTypeGraph(BaseGraph, VisualizationMixin):
         left_positions = np.zeros(len(users))
         bars_list = []
 
-        for i, (counts, color, label) in enumerate(zip(data_matrix, colors, labels)):
+        for _, (counts, color, label) in enumerate(zip(data_matrix, colors, labels)):  # pyright: ignore[reportUnknownArgumentType,reportUnknownVariableType] # matplotlib data
             bars = ax.barh(  # pyright: ignore[reportUnknownMemberType] # matplotlib method
                 y_positions,
                 counts,

@@ -1322,7 +1322,7 @@ def aggregate_by_stream_type(
         separated_data: SeparatedStreamTypeAggregates = {"tv": [], "movie": []}
 
         # Count by media type and stream type
-        stream_type_counts = {"tv": defaultdict(int), "movie": defaultdict(int)}
+        stream_type_counts: dict[str, defaultdict[str, int]] = {"tv": defaultdict(int), "movie": defaultdict(int)}
 
         for record in records:
             media_type = record["media_type"]
@@ -1352,14 +1352,14 @@ def aggregate_by_stream_type(
         return separated_data
     else:
         # Simple aggregation without media type separation
-        stream_type_counts = defaultdict(int)
+        stream_type_counts_simple: defaultdict[str, int] = defaultdict(int)
 
         for record in records:
-            stream_type = record.get("transcode_decision", "unknown")
-            stream_type_counts[stream_type] += 1
+            stream_type: str = record.get("transcode_decision", "unknown")
+            stream_type_counts_simple[stream_type] += 1
 
         aggregates: StreamTypeAggregates = []
-        for stream_type, count in stream_type_counts.items():
+        for stream_type, count in stream_type_counts_simple.items():
             display_name = _get_stream_type_display_name(stream_type)
             color = _get_stream_type_color(stream_type)
 
@@ -1389,12 +1389,12 @@ def aggregate_by_resolution(
     Returns:
         Aggregated resolution data sorted by play count
     """
-    resolution_counts = defaultdict(int)
+    resolution_counts: defaultdict[str, int] = defaultdict(int)
     unknown_count = 0
     total_records = len(records)
 
     for record in records:
-        resolution = record[resolution_field]  # type: ignore[misc]
+        resolution: str | None = record.get(resolution_field)
         if resolution and resolution != "unknown":
             resolution_counts[resolution] += 1
         else:
@@ -1449,8 +1449,8 @@ def aggregate_by_resolution_and_stream_type(
     total_records = len(records)
 
     for record in records:
-        resolution = record[resolution_field]  # type: ignore[misc]
-        stream_type = record.get("transcode_decision", "unknown")
+        resolution: str | None = record.get(resolution_field)
+        stream_type: str = record.get("transcode_decision", "unknown")
 
         if resolution and resolution != "unknown":
             resolution_stream_counts[resolution][stream_type] += 1

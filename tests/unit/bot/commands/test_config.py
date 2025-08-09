@@ -38,7 +38,7 @@ class TestConfigCog:
 
     def test_convert_config_value_string(self, config_cog: ConfigCog) -> None:
         """Test string value conversion."""
-        result = config_cog._convert_config_value("test_value", str)
+        result = config_cog._convert_config_value("test_value", str)  # pyright: ignore[reportPrivateUsage] # testing protected method
         assert result == "test_value"
         assert isinstance(result, str)
 
@@ -356,7 +356,7 @@ class TestConfigCog:
         assert all(choice.name in config_cog._get_config_keys() for choice in choices)  # pyright: ignore[reportPrivateUsage]
 
         # Test autocomplete with partial input
-        choices = await config_cog._config_key_autocomplete(
+        choices = await config_cog._config_key_autocomplete(  # pyright: ignore[reportPrivateUsage] # testing protected method
             mock_interaction, "automation"
         )
 

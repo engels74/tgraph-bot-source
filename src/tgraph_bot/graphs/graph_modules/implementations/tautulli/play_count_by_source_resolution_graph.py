@@ -301,7 +301,7 @@ class PlayCountBySourceResolutionGraph(BaseGraph, VisualizationMixin):
         bottom_positions = np.zeros(len(sorted_resolutions))
         bars_list = []
 
-        for i, (counts, color, label) in enumerate(zip(data_matrix, colors, labels)):
+        for _, (counts, color, label) in enumerate(zip(data_matrix, colors, labels)):
             bars = ax.bar(  # pyright: ignore[reportUnknownMemberType] # matplotlib method
                 x_positions,
                 counts,
@@ -312,7 +312,7 @@ class PlayCountBySourceResolutionGraph(BaseGraph, VisualizationMixin):
                 edgecolor="white",
                 linewidth=0.8,
             )
-            bars_list.append(bars)
+            bars_list.append(bars)  # pyright: ignore[reportUnknownMemberType] # matplotlib returns bars container
             bottom_positions += np.array(counts)
 
         # Customize the plot (swapped axis labels)
@@ -325,7 +325,7 @@ class PlayCountBySourceResolutionGraph(BaseGraph, VisualizationMixin):
         ax.set_xticklabels(formatted_resolutions, rotation=45, ha="right")  # pyright: ignore[reportAny] # matplotlib method returns Any
 
         # Add legend for stream types
-        ax.legend(  # pyright: ignore[reportUnknownMemberType] # matplotlib method
+        _ = ax.legend(  # pyright: ignore[reportUnknownMemberType] # matplotlib method
             loc="upper right",
             frameon=True,
             fancybox=True,
@@ -336,7 +336,7 @@ class PlayCountBySourceResolutionGraph(BaseGraph, VisualizationMixin):
 
         # Add value annotations on bars if enabled (using stacked bar annotation for vertical bars)
         # Create bar containers for stacked annotation
-        bar_containers = [
+        bar_containers: list[tuple[object, str, list[int]]] = [
             (bars_list[i], labels[i], data_matrix[i]) for i in range(len(labels))
         ]
         self.annotation_helper.annotate_stacked_bar_segments(
@@ -354,7 +354,7 @@ class PlayCountBySourceResolutionGraph(BaseGraph, VisualizationMixin):
             ax.grid(False)  # pyright: ignore[reportUnknownMemberType] # matplotlib method with **kwargs
 
         # Optimize layout (swapped margin)
-        ax.margins(x=0.01)  # pyright: ignore[reportUnknownMemberType] # matplotlib method with **kwargs
+        _ = ax.margins(x=0.01)  # pyright: ignore[reportUnknownMemberType] # matplotlib method with **kwargs
 
         logger.info(
             f"Created source resolution graph with {len(sorted_resolutions)} resolutions and {len(stream_types)} stream types"

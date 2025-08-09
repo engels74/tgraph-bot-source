@@ -980,8 +980,8 @@ class TestResolutionAggregation:
             )
 
             # Should log warnings about missing data
-            assert mock_logger.info.called
-            assert mock_logger.warning.called
+            assert mock_logger.info.called  # pyright: ignore[reportAny] # mock assertion
+            assert mock_logger.warning.called  # pyright: ignore[reportAny] # mock assertion
 
             # Should return unknown resolution when all records have missing fields
             assert isinstance(result, list)

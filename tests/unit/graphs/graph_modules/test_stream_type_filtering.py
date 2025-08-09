@@ -7,7 +7,7 @@ with resolution graphs to ensure proper filtering by transcode decision.
 
 import pytest
 from datetime import datetime
-from typing import Any
+from collections.abc import Mapping
 
 from src.tgraph_bot.graphs.graph_modules.utils.utils import (
     ProcessedPlayRecord,
@@ -275,12 +275,14 @@ class TestOptimizedDataProcessor:
         metadata_empty = {}
 
         # Test extraction logic (simplified)
-        def extract_resolution(metadata: dict[str, Any]) -> str:  # pyright: ignore[reportExplicitAny]
+        def extract_resolution(metadata: Mapping[str, object]) -> str:
             if "media_info" in metadata and metadata["media_info"]:
-                media_data: dict[str, Any] = metadata["media_info"][0]
-                if "video_resolution" in media_data:
-                    if media_data["video_resolution"] == "1080":
-                        return f"{media_data.get('width', 1920)}x{media_data.get('height', 1080)}"
+                media_info = metadata["media_info"]
+                if isinstance(media_info, list) and media_info:
+                    media_data = media_info[0]  # pyright: ignore[reportUnknownVariableType] # test data
+                    if isinstance(media_data, dict) and "video_resolution" in media_data:
+                        if media_data["video_resolution"] == "1080":
+                            return f"{media_data.get('width', 1920)}x{media_data.get('height', 1080)}"
 
             if "width" in metadata and "height" in metadata:
                 return f"{metadata['width']}x{metadata['height']}"
@@ -329,7 +331,7 @@ class TestOptimizedDataProcessor:
             }
 
         rating_keys = ["1001", "error_key", "1003"]
-        results = {}
+        results: dict[str, dict[str, str]] = {}
 
         for key in rating_keys:
             try:

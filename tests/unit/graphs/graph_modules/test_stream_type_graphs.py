@@ -422,9 +422,9 @@ class TestStreamTypeGraphs:
             return False
 
         for record in data["data"]:
-            record = cast(dict[str, object], record)
+            record_typed = cast(dict[str, object], record)
             for field in required_fields:
-                if field not in record:
+                if field not in record_typed:
                     return False
 
         return True
