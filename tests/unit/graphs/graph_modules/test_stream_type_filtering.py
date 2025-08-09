@@ -101,7 +101,7 @@ class TestStreamTypeFiltering:
         )
 
         assert len(direct_play_records) == 1
-        assert direct_play_records[0]["transcode_decision"] == "direct play"
+        assert direct_play_records[0].get("transcode_decision") == "direct play"
         assert direct_play_records[0]["user"] == "alice"
 
         # Filter for transcode only
@@ -110,7 +110,7 @@ class TestStreamTypeFiltering:
         )
 
         assert len(transcode_records) == 1
-        assert transcode_records[0]["transcode_decision"] == "transcode"
+        assert transcode_records[0].get("transcode_decision") == "transcode"
         assert transcode_records[0]["user"] == "bob"
 
     def test_filter_records_by_multiple_stream_types(
@@ -123,7 +123,7 @@ class TestStreamTypeFiltering:
         )
 
         assert len(efficient_records) == 2
-        stream_types = [record["transcode_decision"] for record in efficient_records]
+        stream_types = [record.get("transcode_decision") for record in efficient_records]
         assert "direct play" in stream_types
         assert "copy" in stream_types
         assert "transcode" not in stream_types
@@ -138,7 +138,7 @@ class TestStreamTypeFiltering:
         )
 
         assert len(all_records) == 3  # Excludes the unknown record
-        stream_types = [record["transcode_decision"] for record in all_records]
+        stream_types = [record.get("transcode_decision") for record in all_records]
         assert "unknown" not in stream_types
 
     def test_filter_records_include_unknown(
@@ -151,7 +151,7 @@ class TestStreamTypeFiltering:
         )
 
         assert len(all_records) == 4  # Includes all records
-        stream_types = [record["transcode_decision"] for record in all_records]
+        stream_types = [record.get("transcode_decision") for record in all_records]
         assert "unknown" in stream_types
 
     def test_get_available_stream_types(

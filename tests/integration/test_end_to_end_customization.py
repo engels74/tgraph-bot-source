@@ -83,7 +83,7 @@ class TestEndToEndCustomization:
 
             # With minimal config, all graphs should be enabled by default
             enabled_types = factory.get_enabled_graph_types()
-            assert len(enabled_types) == 6  # All 6 graph types
+            assert len(enabled_types) == 12  # All 12 graph types (6 original + 6 stream types)
 
             # Test that default values are applied correctly
             graph = factory.create_graph_by_type("daily_play_count")

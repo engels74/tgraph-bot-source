@@ -45,7 +45,7 @@ class TestGraphFactory:
 
         # With default config, all graphs are enabled by default (True is the default)
         assert isinstance(graphs, list)
-        assert len(graphs) == 6  # All 6 graph types should be created
+        assert len(graphs) == 12  # All 12 graph types should be created (6 original + 6 stream types)
 
     def test_create_enabled_graphs_all_disabled(self) -> None:
         """Test creating graphs with all graph types disabled."""
@@ -59,6 +59,13 @@ class TestGraphFactory:
                         "play_count_by_month": False,
                         "top_10_platforms": False,
                         "top_10_users": False,
+                        # Stream Type Graphs
+                        "daily_play_count_by_stream_type": False,
+                        "daily_concurrent_stream_count_by_stream_type": False,
+                        "play_count_by_source_resolution": False,
+                        "play_count_by_stream_resolution": False,
+                        "play_count_by_platform_and_stream_type": False,
+                        "play_count_by_user_and_stream_type": False,
                     }
                 }
             }
@@ -81,6 +88,13 @@ class TestGraphFactory:
                         "play_count_by_month": True,
                         "top_10_platforms": True,
                         "top_10_users": True,
+                        # Stream Type Graphs
+                        "daily_play_count_by_stream_type": True,
+                        "daily_concurrent_stream_count_by_stream_type": True,
+                        "play_count_by_source_resolution": True,
+                        "play_count_by_stream_resolution": True,
+                        "play_count_by_platform_and_stream_type": True,
+                        "play_count_by_user_and_stream_type": True,
                     }
                 }
             }
@@ -88,9 +102,9 @@ class TestGraphFactory:
         factory = GraphFactory(config)
         graphs = factory.create_enabled_graphs()
 
-        # All graph types are enabled, so all 6 should be created
+        # All graph types are enabled, so all 12 should be created
         assert isinstance(graphs, list)
-        assert len(graphs) == 6
+        assert len(graphs) == 12
 
     def test_create_enabled_graphs_partial_enabled(self) -> None:
         """Test creating graphs with some graph types enabled."""
@@ -182,6 +196,13 @@ class TestGraphFactory:
             "play_count_by_month",
             "top_10_platforms",
             "top_10_users",
+            # Stream Type Graphs
+            "daily_play_count_by_stream_type",
+            "daily_concurrent_stream_count_by_stream_type",
+            "play_count_by_source_resolution",
+            "play_count_by_stream_resolution",
+            "play_count_by_platform_and_stream_type",
+            "play_count_by_user_and_stream_type",
         ]
 
         assert set(enabled_types) == set(expected_types)
@@ -341,6 +362,13 @@ class TestGraphFactory:
             "play_count_by_month",
             "top_10_platforms",
             "top_10_users",
+            # Stream Type Graphs
+            "daily_play_count_by_stream_type",
+            "daily_concurrent_stream_count_by_stream_type",
+            "play_count_by_source_resolution",
+            "play_count_by_stream_resolution",
+            "play_count_by_platform_and_stream_type",
+            "play_count_by_user_and_stream_type",
         }
 
         # When all are enabled by default, we should get all types
@@ -370,8 +398,8 @@ class TestGraphFactory:
         assert "sample_graph" not in enabled_types
 
         enabled_graphs = factory.create_enabled_graphs()
-        # Should have only the 6 default graphs (sample graph is disabled by default)
-        assert len(enabled_graphs) == 6
+        # Should have only the 12 default graphs (sample graph is disabled by default)
+        assert len(enabled_graphs) == 12
 
         # Sample graph should still be creatable by type even if not enabled by default
         sample_graph = factory.create_graph_by_type("sample_graph")
@@ -388,8 +416,8 @@ class TestGraphFactory:
         assert "sample_graph" not in enabled_types
 
         enabled_graphs = factory.create_enabled_graphs()
-        # Should have only the 6 default graphs
-        assert len(enabled_graphs) == 6
+        # Should have only the 12 default graphs
+        assert len(enabled_graphs) == 12
 
     def test_end_to_end_sample_graph_workflow(self) -> None:
         """Test complete workflow: factory -> graph -> generation."""
@@ -579,6 +607,13 @@ class TestGraphFactory:
             "play_count_by_month",
             "top_10_platforms",
             "top_10_users",
+            # Stream Type Graphs
+            "daily_play_count_by_stream_type",
+            "daily_concurrent_stream_count_by_stream_type",
+            "play_count_by_source_resolution",
+            "play_count_by_stream_resolution",
+            "play_count_by_platform_and_stream_type",
+            "play_count_by_user_and_stream_type",
         }
         assert set(enabled_types) == expected_types
 

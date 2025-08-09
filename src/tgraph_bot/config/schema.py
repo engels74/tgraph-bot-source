@@ -176,6 +176,32 @@ class EnabledTypesConfig(BaseModel):
         description="Enable play count by month graph generation",
     )
 
+    # Stream Type Graphs
+    daily_play_count_by_stream_type: bool = Field(
+        default=True,
+        description="Enable daily play count by stream type graph generation",
+    )
+    daily_concurrent_stream_count_by_stream_type: bool = Field(
+        default=True,
+        description="Enable daily concurrent stream count by stream type graph generation",
+    )
+    play_count_by_source_resolution: bool = Field(
+        default=True,
+        description="Enable play count by source resolution graph generation",
+    )
+    play_count_by_stream_resolution: bool = Field(
+        default=True,
+        description="Enable play count by stream resolution graph generation",
+    )
+    play_count_by_platform_and_stream_type: bool = Field(
+        default=True,
+        description="Enable play count by platform and stream type graph generation",
+    )
+    play_count_by_user_and_stream_type: bool = Field(
+        default=True,
+        description="Enable play count by user and stream type graph generation",
+    )
+
 
 class PerGraphSettingsConfig(BaseModel):
     """Configuration for individual graph settings."""

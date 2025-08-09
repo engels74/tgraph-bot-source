@@ -140,10 +140,10 @@ class TestResolutionFieldMapping:
 
         # The enhanced function should create resolution strings from width/height
         assert len(processed_records) == 2
-        assert processed_records[0]["video_resolution"] == "1920x1080"
-        assert processed_records[0]["stream_video_resolution"] == "1920x1080"
-        assert processed_records[1]["video_resolution"] == "3840x2160"
-        assert processed_records[1]["stream_video_resolution"] == "1280x720"
+        assert processed_records[0].get("video_resolution") == "1920x1080"
+        assert processed_records[0].get("stream_video_resolution") == "1920x1080"
+        assert processed_records[1].get("video_resolution") == "3840x2160"
+        assert processed_records[1].get("stream_video_resolution") == "1280x720"
 
         # Test aggregation with the enhanced data
         source_result = aggregate_by_resolution(
@@ -222,16 +222,16 @@ class TestResolutionFieldMapping:
         # Should handle both types of records correctly
         assert len(processed_records) == 2
         assert (
-            processed_records[0]["video_resolution"] == "1920x1080"
+            processed_records[0].get("video_resolution") == "1920x1080"
         )  # From primary field
         assert (
-            processed_records[0]["stream_video_resolution"] == "1920x1080"
+            processed_records[0].get("stream_video_resolution") == "1920x1080"
         )  # From primary field
         assert (
-            processed_records[1]["video_resolution"] == "3840x2160"
+            processed_records[1].get("video_resolution") == "3840x2160"
         )  # From width/height fallback
         assert (
-            processed_records[1]["stream_video_resolution"] == "1280x720"
+            processed_records[1].get("stream_video_resolution") == "1280x720"
         )  # From width/height fallback
 
     def test_no_resolution_data_available(self) -> None:
@@ -266,8 +266,8 @@ class TestResolutionFieldMapping:
 
         # Should fall back to "unknown" when no resolution data is available
         assert len(processed_records) == 1
-        assert processed_records[0]["video_resolution"] == "unknown"
-        assert processed_records[0]["stream_video_resolution"] == "unknown"
+        assert processed_records[0].get("video_resolution") == "unknown"
+        assert processed_records[0].get("stream_video_resolution") == "unknown"
 
         # Aggregation should still work and include the unknown entries
         source_result = aggregate_by_resolution(
@@ -311,7 +311,7 @@ class TestResolutionFieldMapping:
 
         # Should fallback to unknown for invalid width/height combinations
         assert len(processed_records) == 1
-        assert processed_records[0]["video_resolution"] == "unknown"  # Missing height
+        assert processed_records[0].get("video_resolution") == "unknown"  # Missing height
         assert (
-            processed_records[0]["stream_video_resolution"] == "unknown"
+            processed_records[0].get("stream_video_resolution") == "unknown"
         )  # Invalid width (0)

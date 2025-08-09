@@ -13,6 +13,7 @@ from collections.abc import Mapping
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, TypedDict, TypeVar
+from typing_extensions import NotRequired
 
 from ....utils.cli.paths import get_path_config
 
@@ -32,13 +33,13 @@ class ProcessedPlayRecord(TypedDict):
     stopped: int
     paused_counter: int
     datetime: datetime
-    # Stream type fields for new graph types
-    transcode_decision: str  # direct play, copy, transcode
-    video_resolution: str  # source resolution (e.g., "1920x1080")
-    stream_video_resolution: str  # transcoded output resolution
-    video_codec: str  # video codec (h264, hevc, etc.)
-    audio_codec: str  # audio codec (aac, ac3, dts, etc.)
-    container: str  # file container format (mp4, mkv, etc.)
+    # Stream type fields for new graph types (optional for backward compatibility)
+    transcode_decision: NotRequired[str]  # direct play, copy, transcode
+    video_resolution: NotRequired[str]  # source resolution (e.g., "1920x1080")
+    stream_video_resolution: NotRequired[str]  # transcoded output resolution
+    video_codec: NotRequired[str]  # video codec (h264, hevc, etc.)
+    audio_codec: NotRequired[str]  # audio codec (aac, ac3, dts, etc.)
+    container: NotRequired[str]  # file container format (mp4, mkv, etc.)
 
 
 class UserAggregateRecord(TypedDict):
@@ -1323,7 +1324,7 @@ def aggregate_by_stream_type(
 
         for record in records:
             media_type = record["media_type"]
-            stream_type = record["transcode_decision"]
+            stream_type = record.get("transcode_decision", "unknown")
 
             if media_type in stream_type_counts:
                 stream_type_counts[media_type][stream_type] += 1
@@ -1352,7 +1353,7 @@ def aggregate_by_stream_type(
         stream_type_counts = defaultdict(int)
 
         for record in records:
-            stream_type = record["transcode_decision"]
+            stream_type = record.get("transcode_decision", "unknown")
             stream_type_counts[stream_type] += 1
 
         aggregates: StreamTypeAggregates = []
@@ -1447,7 +1448,7 @@ def aggregate_by_resolution_and_stream_type(
 
     for record in records:
         resolution = record[resolution_field]  # type: ignore[misc]
-        stream_type = record["transcode_decision"]
+        stream_type = record.get("transcode_decision", "unknown")
 
         if resolution and resolution != "unknown":
             resolution_stream_counts[resolution][stream_type] += 1
@@ -1470,7 +1471,7 @@ def aggregate_by_resolution_and_stream_type(
         # Add unknown resolution with stream type breakdown
         for record in records:
             if not record[resolution_field] or record[resolution_field] == "unknown":  # type: ignore[misc]
-                stream_type = record["transcode_decision"]
+                stream_type = record.get("transcode_decision", "unknown")
                 resolution_stream_counts["unknown"][stream_type] += 1
 
     # Convert to aggregate format
@@ -1540,7 +1541,7 @@ def aggregate_by_platform_and_stream_type(
     for record in records:
         platform = record["platform"]
         if platform in top_platform_names:
-            stream_type = record["transcode_decision"]
+            stream_type = record.get("transcode_decision", "unknown")
             platform_stream_counts[platform][stream_type] += 1
 
     # Convert to aggregate format
@@ -1595,7 +1596,7 @@ def aggregate_by_user_and_stream_type(
     for record in records:
         user = record["user"]
         if user in top_user_names:
-            stream_type = record["transcode_decision"]
+            stream_type = record.get("transcode_decision", "unknown")
             user_stream_counts[user][stream_type] += 1
 
     # Convert to aggregate format
@@ -1652,7 +1653,7 @@ def calculate_concurrent_streams_by_date(
         for record in day_records:
             start_time = record["datetime"]
             end_time = start_time + timedelta(seconds=record["duration"])
-            stream_type = record["transcode_decision"]
+            stream_type = record.get("transcode_decision", "unknown")
 
             stream_events.append((start_time, "start", stream_type))
             stream_events.append((end_time, "end", stream_type))
@@ -1742,7 +1743,7 @@ def filter_records_by_stream_type(
     filtered_records: ProcessedRecords = []
 
     for record in records:
-        stream_type = record["transcode_decision"].lower()
+        stream_type = record.get("transcode_decision", "unknown").lower()
 
         # Skip unknown types if requested
         if exclude_unknown and stream_type == "unknown":
@@ -1773,7 +1774,7 @@ def get_available_stream_types(records: ProcessedRecords) -> list[str]:
 
     stream_types: set[str] = set()
     for record in records:
-        stream_type = record["transcode_decision"]
+        stream_type = record.get("transcode_decision", "unknown")
         if stream_type:  # Skip empty/None values
             stream_types.add(stream_type)
 
@@ -1799,7 +1800,7 @@ def get_stream_type_statistics(
     stream_type_counts: dict[str, int] = defaultdict(int)
 
     for record in records:
-        stream_type = record["transcode_decision"]
+        stream_type = record.get("transcode_decision", "unknown")
         stream_type_counts[stream_type] += 1
 
     statistics: dict[str, dict[str, int | float]] = {}

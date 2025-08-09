@@ -390,7 +390,7 @@ def aggregate_by_resolution_and_stream_type_grouped(
 
     for record in records:
         resolution = record[resolution_field]  # type: ignore[misc]
-        stream_type: str = record["transcode_decision"]  # type: ignore[misc]
+        stream_type: str = record.get("transcode_decision", "unknown")  # type: ignore[misc]
 
         if resolution and resolution != "unknown":
             grouped_resolution = group_resolution_by_strategy(

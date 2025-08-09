@@ -388,9 +388,7 @@ class Top10PlatformsGraph(BaseGraph, VisualizationMixin):
         # Create stacked horizontal bars
         y_positions = np.arange(len(platform_names))
         left_positions = np.zeros(len(platform_names))
-        bar_containers: list[
-            tuple[object, str, np.ndarray[object, np.dtype[np.int64]]]
-        ] = []
+        bar_containers: list[tuple[object, str, object]] = []  # pyright: ignore[reportAny]
 
         for media_type in media_types:
             counts = [

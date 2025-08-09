@@ -402,7 +402,7 @@ class DailyPlayCountByStreamTypeGraph(BaseGraph, VisualizationMixin):
 
         for record in records:
             date_str = record["datetime"].strftime("%Y-%m-%d")
-            stream_type = record["transcode_decision"]
+            stream_type = record.get("transcode_decision", "unknown")
 
             if stream_type not in date_stream_counts:
                 date_stream_counts[stream_type] = {}

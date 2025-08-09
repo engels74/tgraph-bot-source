@@ -43,6 +43,13 @@ class TestGraphTypeRegistry:
             "top_10_platforms",
             "top_10_users",
             "sample_graph",
+            # Stream Type Graphs
+            "daily_play_count_by_stream_type",
+            "daily_concurrent_stream_count_by_stream_type",
+            "play_count_by_source_resolution",
+            "play_count_by_stream_resolution",
+            "play_count_by_platform_and_stream_type",
+            "play_count_by_user_and_stream_type",
         }
 
         assert set(type_names) == expected_types
@@ -143,7 +150,7 @@ class TestGraphTypeRegistry:
 
         all_info = registry.get_all_type_info()
         assert isinstance(all_info, dict)
-        assert len(all_info) == 7  # All registered graph types
+        assert len(all_info) == 13  # All registered graph types (6 original + 6 stream types + 1 sample)
 
         # Check that all expected types are present
         expected_types = {
@@ -154,6 +161,13 @@ class TestGraphTypeRegistry:
             "top_10_platforms",
             "top_10_users",
             "sample_graph",
+            # Stream Type Graphs
+            "daily_play_count_by_stream_type",
+            "daily_concurrent_stream_count_by_stream_type",
+            "play_count_by_source_resolution",
+            "play_count_by_stream_resolution",
+            "play_count_by_platform_and_stream_type",
+            "play_count_by_user_and_stream_type",
         }
         assert set(all_info.keys()) == expected_types
 
