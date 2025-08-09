@@ -473,6 +473,10 @@ class TestGraphCustomizationValidation:
             config_disabled = create_test_config_minimal()
             config_disabled.graphs.features.media_type_separation = True
             config_disabled.graphs.features.stacked_bar_charts = False
+            
+            # Also disable per-graph stacked bar charts (per-graph settings take precedence)
+            config_disabled.graphs.per_graph.play_count_by_dayofweek.stacked_bar_charts = False
+            config_disabled.graphs.per_graph.play_count_by_month.stacked_bar_charts = False
 
             factory_disabled = create_graph_factory_with_config(config_disabled)
 

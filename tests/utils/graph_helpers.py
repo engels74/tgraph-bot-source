@@ -102,6 +102,13 @@ def create_test_config_comprehensive() -> TGraphBotConfig:
                     play_count_by_month=True,
                     top_10_platforms=True,
                     top_10_users=True,
+                    # Stream Type Graphs
+                    daily_play_count_by_stream_type=True,
+                    daily_concurrent_stream_count_by_stream_type=True,
+                    play_count_by_source_resolution=True,
+                    play_count_by_stream_resolution=True,
+                    play_count_by_platform_and_stream_type=True,
+                    play_count_by_user_and_stream_type=True,
                 ),
                 media_type_separation=True,
                 stacked_bar_charts=True,
@@ -179,6 +186,13 @@ def create_test_config_selective(
     enable_play_count_by_month: bool = True,
     enable_top_10_platforms: bool = False,
     enable_top_10_users: bool = True,
+    # Stream Type Graphs (disabled by default for selective testing)
+    enable_daily_play_count_by_stream_type: bool = False,
+    enable_daily_concurrent_stream_count_by_stream_type: bool = False,
+    enable_play_count_by_source_resolution: bool = False,
+    enable_play_count_by_stream_resolution: bool = False,
+    enable_play_count_by_platform_and_stream_type: bool = False,
+    enable_play_count_by_user_and_stream_type: bool = False,
 ) -> TGraphBotConfig:
     """
     Create a test configuration with selective graph enabling.
@@ -193,6 +207,12 @@ def create_test_config_selective(
         enable_play_count_by_month: Enable monthly graph
         enable_top_10_platforms: Enable top platforms graph
         enable_top_10_users: Enable top users graph
+        enable_daily_play_count_by_stream_type: Enable daily play count by stream type graph
+        enable_daily_concurrent_stream_count_by_stream_type: Enable daily concurrent stream count by stream type graph
+        enable_play_count_by_source_resolution: Enable play count by source resolution graph
+        enable_play_count_by_stream_resolution: Enable play count by stream resolution graph
+        enable_play_count_by_platform_and_stream_type: Enable play count by platform and stream type graph
+        enable_play_count_by_user_and_stream_type: Enable play count by user and stream type graph
 
     Returns:
         TGraphBotConfig: Configuration with selective graph enabling
@@ -235,6 +255,13 @@ def create_test_config_selective(
                     play_count_by_month=enable_play_count_by_month,
                     top_10_platforms=enable_top_10_platforms,
                     top_10_users=enable_top_10_users,
+                    # Stream Type Graphs
+                    daily_play_count_by_stream_type=enable_daily_play_count_by_stream_type,
+                    daily_concurrent_stream_count_by_stream_type=enable_daily_concurrent_stream_count_by_stream_type,
+                    play_count_by_source_resolution=enable_play_count_by_source_resolution,
+                    play_count_by_stream_resolution=enable_play_count_by_stream_resolution,
+                    play_count_by_platform_and_stream_type=enable_play_count_by_platform_and_stream_type,
+                    play_count_by_user_and_stream_type=enable_play_count_by_user_and_stream_type,
                 ),
             ),
         ),

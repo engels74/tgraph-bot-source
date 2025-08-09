@@ -118,6 +118,13 @@ class TestGraphFactory:
                         "play_count_by_month": False,
                         "top_10_platforms": True,
                         "top_10_users": False,
+                        # Stream Type Graphs (explicitly disabled)
+                        "daily_play_count_by_stream_type": False,
+                        "daily_concurrent_stream_count_by_stream_type": False,
+                        "play_count_by_source_resolution": False,
+                        "play_count_by_stream_resolution": False,
+                        "play_count_by_platform_and_stream_type": False,
+                        "play_count_by_user_and_stream_type": False,
                     }
                 }
             }
@@ -219,6 +226,13 @@ class TestGraphFactory:
                         "play_count_by_month": False,
                         "top_10_platforms": False,
                         "top_10_users": False,
+                        # Stream Type Graphs (explicitly disabled)
+                        "daily_play_count_by_stream_type": False,
+                        "daily_concurrent_stream_count_by_stream_type": False,
+                        "play_count_by_source_resolution": False,
+                        "play_count_by_stream_resolution": False,
+                        "play_count_by_platform_and_stream_type": False,
+                        "play_count_by_user_and_stream_type": False,
                     }
                 }
             }
@@ -240,6 +254,13 @@ class TestGraphFactory:
                         "play_count_by_month": False,
                         "top_10_platforms": True,
                         "top_10_users": False,
+                        # Stream Type Graphs (explicitly disabled)
+                        "daily_play_count_by_stream_type": False,
+                        "daily_concurrent_stream_count_by_stream_type": False,
+                        "play_count_by_source_resolution": False,
+                        "play_count_by_stream_resolution": False,
+                        "play_count_by_platform_and_stream_type": False,
+                        "play_count_by_user_and_stream_type": False,
                     }
                 }
             }
@@ -267,6 +288,13 @@ class TestGraphFactory:
                         "play_count_by_month": False,
                         "top_10_platforms": False,
                         "top_10_users": True,
+                        # Stream Type Graphs (explicitly disabled)
+                        "daily_play_count_by_stream_type": False,
+                        "daily_concurrent_stream_count_by_stream_type": False,
+                        "play_count_by_source_resolution": False,
+                        "play_count_by_stream_resolution": False,
+                        "play_count_by_platform_and_stream_type": False,
+                        "play_count_by_user_and_stream_type": False,
                     }
                 }
             }
@@ -658,6 +686,13 @@ class TestGraphFactory:
                         "play_count_by_month": False,
                         "top_10_platforms": False,
                         "top_10_users": False,
+                        # Stream Type Graphs (explicitly disabled)
+                        "daily_play_count_by_stream_type": False,
+                        "daily_concurrent_stream_count_by_stream_type": False,
+                        "play_count_by_source_resolution": False,
+                        "play_count_by_stream_resolution": False,
+                        "play_count_by_platform_and_stream_type": False,
+                        "play_count_by_user_and_stream_type": False,
                     }
                 },
                 "appearance": {"dimensions": {"width": 20, "height": 12, "dpi": 200}},

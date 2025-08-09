@@ -48,6 +48,13 @@ class TestEndToEndCustomization:
                 "play_count_by_month",
                 "top_10_platforms",
                 "top_10_users",
+                # Stream Type Graphs
+                "daily_play_count_by_stream_type",
+                "daily_concurrent_stream_count_by_stream_type",
+                "play_count_by_source_resolution",
+                "play_count_by_stream_resolution",
+                "play_count_by_platform_and_stream_type",
+                "play_count_by_user_and_stream_type",
             }
             assert_factory_enabled_graphs(factory, expected_types)
 
