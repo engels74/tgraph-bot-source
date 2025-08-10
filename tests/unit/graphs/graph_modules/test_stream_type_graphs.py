@@ -404,6 +404,58 @@ class TestStreamTypeGraphs:
             # Ensure cleanup
             graph.cleanup()
 
+    def test_platform_graph_uses_stacked_horizontal_annotations(
+        self, sample_stream_type_data: dict[str, Any]  # pyright: ignore[reportExplicitAny]
+    ) -> None:
+        """
+        Ensure platform+stream type graph uses stacked horizontal segment annotations
+        (segment labels + totals) instead of simple horizontal bar patch annotations.
+        """
+        from src.tgraph_bot.graphs.graph_modules.implementations.tautulli.play_count_by_platform_and_stream_type_graph import (
+            PlayCountByPlatformAndStreamTypeGraph,
+        )
+        from src.tgraph_bot.graphs.graph_modules.utils.annotation_helper import AnnotationHelper
+        from unittest.mock import patch
+
+        config = create_test_config_minimal()
+        graph = PlayCountByPlatformAndStreamTypeGraph(config=config)
+
+        with (
+            patch.object(AnnotationHelper, "annotate_stacked_horizontal_bar_segments") as mock_stacked,
+            patch.object(AnnotationHelper, "annotate_horizontal_bar_patches") as mock_simple,
+        ):
+            output_path = graph.generate(sample_stream_type_data)
+            assert_graph_output_valid(output_path)
+            # Stacked annotations should be used, simple should not
+            assert mock_stacked.call_count == 1
+            assert mock_simple.call_count == 0
+
+    def test_user_graph_uses_stacked_horizontal_annotations(
+        self, sample_stream_type_data: dict[str, Any]  # pyright: ignore[reportExplicitAny]
+    ) -> None:
+        """
+        Ensure user+stream type graph uses stacked horizontal segment annotations
+        (segment labels + totals) instead of simple horizontal bar patch annotations.
+        """
+        from src.tgraph_bot.graphs.graph_modules.implementations.tautulli.play_count_by_user_and_stream_type_graph import (
+            PlayCountByUserAndStreamTypeGraph,
+        )
+        from src.tgraph_bot.graphs.graph_modules.utils.annotation_helper import AnnotationHelper
+        from unittest.mock import patch
+
+        config = create_test_config_minimal()
+        graph = PlayCountByUserAndStreamTypeGraph(config=config)
+
+        with (
+            patch.object(AnnotationHelper, "annotate_stacked_horizontal_bar_segments") as mock_stacked,
+            patch.object(AnnotationHelper, "annotate_horizontal_bar_patches") as mock_simple,
+        ):
+            output_path = graph.generate(sample_stream_type_data)
+            assert_graph_output_valid(output_path)
+            # Stacked annotations should be used, simple should not
+            assert mock_stacked.call_count == 1
+            assert mock_simple.call_count == 0
+
 
     # Helper Methods (for future use)
     # ===============================

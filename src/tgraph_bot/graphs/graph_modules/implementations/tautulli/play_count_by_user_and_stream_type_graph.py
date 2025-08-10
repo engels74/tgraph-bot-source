@@ -169,7 +169,7 @@ class PlayCountByUserAndStreamTypeGraph(BaseGraph, VisualizationMixin):
         # Get stream type display info for colors and labels
         stream_type_info = get_stream_type_display_info()
 
-        # Prepare data matrix for stacked bars
+        # Prepare data matrix for stacked bars and metadata
         data_matrix: list[list[int]] = []
         colors: list[str] = []
         labels: list[str] = []
@@ -200,7 +200,7 @@ class PlayCountByUserAndStreamTypeGraph(BaseGraph, VisualizationMixin):
 
         # Calculate cumulative positions for stacking
         left_positions = np.zeros(len(users))
-        bars_list: list[object] = []
+        bar_containers: list[tuple[object, str, object]] = []
 
         for _, (counts, color, label) in enumerate(zip(data_matrix, colors, labels)):
             bars = ax.barh(  # pyright: ignore[reportUnknownMemberType]
@@ -213,7 +213,8 @@ class PlayCountByUserAndStreamTypeGraph(BaseGraph, VisualizationMixin):
                 edgecolor="white",
                 linewidth=0.8,
             )
-            bars_list.append(bars)
+            # Store bar container data for annotations
+            bar_containers.append((bars, label, np.array(counts)))
             left_positions += np.array(counts)
 
         # Customize the plot
@@ -234,15 +235,15 @@ class PlayCountByUserAndStreamTypeGraph(BaseGraph, VisualizationMixin):
         # Invert y-axis so top user is at top
         ax.invert_yaxis()
 
-        # Add value annotations on bars if enabled (using basic horizontal bar annotation)
-        self.annotation_helper.annotate_horizontal_bar_patches(
+        # Add value annotations for stacked segments and totals using AnnotationHelper
+        self.annotation_helper.annotate_stacked_horizontal_bar_segments(
             ax=ax,
             config_key="graphs.appearance.annotations.enabled_on.play_count_by_user_and_stream_type",
-            offset_x_ratio=0.01,
-            ha="left",
-            va="center",
-            fontweight="normal",
-            min_value_threshold=1.0,
+            bar_containers=bar_containers,
+            categories=users,
+            include_totals=True,
+            segment_fontsize=9,
+            total_fontsize=11,
         )
 
         # Add legend for stream types
