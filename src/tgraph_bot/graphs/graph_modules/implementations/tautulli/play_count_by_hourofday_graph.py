@@ -189,6 +189,14 @@ class PlayCountByHourOfDayGraph(BaseGraph, VisualizationMixin):
                 fontweight="bold",
             )
 
+            # Ensure space for bar annotations with adaptive spacing
+            self.annotation_helper.ensure_space_for_vertical_bar_annotations(
+                ax=ax,
+                offset_ratio=0.05,
+                min_padding=0.5,
+                max_padding=10.0,
+            )
+
             logger.info("Created hour of day graph with data for 24 hours")
 
         else:
@@ -285,6 +293,14 @@ class PlayCountByHourOfDayGraph(BaseGraph, VisualizationMixin):
             "graphs.appearance.annotations.enabled_on.play_count_by_hourofday",
             offset_y=1,
             fontweight="bold",
+        )
+
+        # Ensure space for bar annotations with adaptive spacing
+        self.annotation_helper.ensure_space_for_vertical_bar_annotations(
+            ax=ax,
+            offset_ratio=0.05,
+            min_padding=0.5,
+            max_padding=10.0,
         )
 
         logger.info(

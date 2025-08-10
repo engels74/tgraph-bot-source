@@ -444,6 +444,15 @@ class DailyPlayCountGraph(BaseGraph, VisualizationMixin):
                 offset_y=2,
             )
 
+            # Ensure space for line annotations based on adaptive offset
+            self.annotation_helper.ensure_space_for_line_annotations(
+                ax=ax,
+                y_data=sorted_counts,
+                percentage=0.05,
+                min_padding=0.5,
+                max_padding=10.0,
+            )
+
             # Add peak annotations if enabled (separate feature)
             if self.is_peak_annotations_enabled():
                 # Find peak for annotation

@@ -196,6 +196,11 @@ class Top10UsersGraph(BaseGraph, VisualizationMixin):
                 fontweight="normal",
             )
 
+            # Ensure horizontal bar annotations have space to render
+            self.annotation_helper.ensure_space_for_horizontal_bar_annotations(
+                ax=ax, offset_ratio=0.05, min_padding=0.5, max_padding=10.0
+            )
+
             logger.info(f"Created top 10 users graph with {len(top_users)} users")
 
         else:
@@ -312,6 +317,10 @@ class Top10UsersGraph(BaseGraph, VisualizationMixin):
             ha="left",
             va="center",
             fontweight="normal",
+        )
+        # Ensure space for horizontal bar annotations
+        self.annotation_helper.ensure_space_for_horizontal_bar_annotations(
+            ax=ax, offset_ratio=0.05, min_padding=0.5, max_padding=10.0
         )
 
         logger.info(

@@ -243,6 +243,14 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
             fontweight="bold",
         )
 
+        # Ensure space for bar annotations with adaptive spacing
+        self.annotation_helper.ensure_space_for_vertical_bar_annotations(
+            ax=ax,
+            offset_ratio=0.05,
+            min_padding=0.5,
+            max_padding=10.0,
+        )
+
         logger.info(
             f"Created separated day of week graph with {len(unique_media_types_list)} media types"
         )
@@ -374,6 +382,16 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
             total_fontsize=11,
         )
 
+        # Ensure space for stacked bar annotations with adaptive spacing
+        self.annotation_helper.ensure_space_for_stacked_vertical_bars(
+            ax=ax,
+            bar_containers=bar_containers,
+            categories=day_order,
+            offset_ratio=0.05,
+            min_padding=0.5,
+            max_padding=10.0,
+        )
+
         logger.info(
             f"Created stacked day of week graph with {len(ordered_media_types)} media types"
         )
@@ -460,6 +478,14 @@ class PlayCountByDayOfWeekGraph(BaseGraph, VisualizationMixin):
                 "graphs.appearance.annotations.enabled_on.play_count_by_dayofweek",
                 offset_y=1,
                 fontweight="bold",
+            )
+
+            # Ensure space for bar annotations with adaptive spacing
+            self.annotation_helper.ensure_space_for_vertical_bar_annotations(
+                ax=ax,
+                offset_ratio=0.05,
+                min_padding=0.5,
+                max_padding=10.0,
             )
 
             logger.info(f"Created combined day of week graph with {len(days)} days")

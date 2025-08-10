@@ -367,6 +367,15 @@ class DailyConcurrentStreamCountByStreamTypeGraph(BaseGraph, VisualizationMixin)
                 va="bottom",
             )
 
+            # Ensure space for line annotations with adaptive spacing
+            self.annotation_helper.ensure_space_for_line_annotations(
+                ax=ax,
+                y_data=all_y_data,
+                percentage=0.05,
+                min_padding=0.5,
+                max_padding=10.0,
+            )
+
         # Add peak annotations if enabled (separate feature)
         if self.is_peak_annotations_enabled():
             self._add_peak_annotations(ax, stream_type_data, sorted_dates)

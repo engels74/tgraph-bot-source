@@ -279,6 +279,14 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
             fontweight="bold",
         )
 
+        # Ensure space for bar annotations with adaptive spacing
+        self.annotation_helper.ensure_space_for_vertical_bar_annotations(
+            ax=ax,
+            offset_ratio=0.05,
+            min_padding=0.5,
+            max_padding=10.0,
+        )
+
         logger.info(
             f"Created separated monthly play count graph with {len(unique_media_types_list)} media types and {len(categories)} months"  # pyright: ignore[reportUnknownArgumentType] # external API data
         )
@@ -430,6 +438,16 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
             total_fontsize=11,
         )
 
+        # Ensure space for stacked bar annotations with adaptive spacing
+        self.annotation_helper.ensure_space_for_stacked_vertical_bars(
+            ax=ax,
+            bar_containers=bar_containers,
+            categories=categories,
+            offset_ratio=0.05,
+            min_padding=0.5,
+            max_padding=10.0,
+        )
+
         logger.info(
             f"Created stacked monthly play count graph with {len(ordered_media_types)} media types and {len(categories)} months"
         )
@@ -551,6 +569,14 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
             va="bottom",
             offset_y=2,
             fontweight="bold",
+        )
+
+        # Ensure space for bar annotations with adaptive spacing
+        self.annotation_helper.ensure_space_for_vertical_bar_annotations(
+            ax=ax,
+            offset_ratio=0.05,
+            min_padding=0.5,
+            max_padding=10.0,
         )
 
         logger.info(
@@ -681,6 +707,14 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
             fontweight="bold",
         )
 
+        # Ensure space for bar annotations with adaptive spacing
+        self.annotation_helper.ensure_space_for_vertical_bar_annotations(
+            ax=ax,
+            offset_ratio=0.05,
+            min_padding=0.5,
+            max_padding=10.0,
+        )
+
         logger.info(
             f"Created separated monthly play count graph with {len(unique_media_types_list)} media types"
         )
@@ -738,6 +772,14 @@ class PlayCountByMonthGraph(BaseGraph, VisualizationMixin):
                 va="bottom",
                 offset_y=2,
                 fontweight="bold",
+            )
+
+            # Ensure space for bar annotations with adaptive spacing
+            self.annotation_helper.ensure_space_for_vertical_bar_annotations(
+                ax=ax,
+                offset_ratio=0.05,
+                min_padding=0.5,
+                max_padding=10.0,
             )
 
             logger.info(

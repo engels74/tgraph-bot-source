@@ -13,6 +13,24 @@ from typing import Protocol, cast, runtime_checkable
 from matplotlib.axes import Axes
 from matplotlib.patches import Rectangle
 
+from typing import TypeGuard
+
+
+class HasHeight(Protocol):
+    def get_height(self) -> float: ...
+
+
+class HasWidth(Protocol):
+    def get_width(self) -> float: ...
+
+
+def _has_height(obj: object) -> TypeGuard[Rectangle | HasHeight]:
+    return isinstance(obj, Rectangle) or hasattr(obj, "get_height")
+
+
+def _has_width(obj: object) -> TypeGuard[Rectangle | HasWidth]:
+    return isinstance(obj, Rectangle) or hasattr(obj, "get_width")
+
 logger = logging.getLogger(__name__)
 
 
@@ -320,6 +338,134 @@ class AnnotationHelper:
         except Exception as e:
             logger.warning(f"Failed to add peak annotation: {e}")
 
+    # --- Adaptive spacing helpers -------------------------------------------------
+
+    def ensure_space_for_vertical_bar_annotations(
+        self,
+        ax: Axes,
+        *,
+        offset_ratio: float = 0.05,
+        min_padding: float = 0.5,
+        max_padding: float = 10.0,
+        baseline: float = 0.0,
+    ) -> None:
+        """
+        Expand y-limits to provide room for vertical bar value annotations.
+
+        This inspects ax.patches to find the maximum bar height and adds padding
+        based on a ratio of that height. Ensures at least min_padding and caps
+        at max_padding to avoid runaway limits.
+        """
+        try:
+            max_height = 0.0
+            patches_obj = getattr(ax, "patches", [])
+            for patch in cast(Sequence[object], patches_obj):
+                if _has_height(patch):
+                    h = float(patch.get_height())
+                    if h > max_height:
+                        max_height = h
+
+            if max_height <= 0:
+                return
+
+            padding = max(min_padding, min(max_padding, max_height * offset_ratio))
+            _ = ax.set_ylim(baseline, max_height + padding)
+        except Exception as e:
+            logger.debug(f"Failed to ensure vertical bar annotation space: {e}")
+
+    def ensure_space_for_horizontal_bar_annotations(
+        self,
+        ax: Axes,
+        *,
+        offset_ratio: float = 0.05,
+        min_padding: float = 0.5,
+        max_padding: float = 10.0,
+        baseline: float = 0.0,
+    ) -> None:
+        """
+        Expand x-limits to provide room for horizontal bar value annotations.
+        """
+        try:
+            max_width = 0.0
+            patches_obj = getattr(ax, "patches", [])
+            for patch in cast(Sequence[object], patches_obj):
+                if _has_width(patch):
+                    w = float(patch.get_width())
+                    if w > max_width:
+                        max_width = w
+
+            if max_width <= 0:
+                return
+
+            padding = max(min_padding, min(max_padding, max_width * offset_ratio))
+            _ = ax.set_xlim(baseline, max_width + padding)
+        except Exception as e:
+            logger.debug(f"Failed to ensure horizontal bar annotation space: {e}")
+
+    def ensure_space_for_stacked_vertical_bars(
+        self,
+        ax: Axes,
+        bar_containers: Sequence[tuple[object, str, object]],
+        categories: Sequence[str],
+        *,
+        offset_ratio: float = 0.05,
+        min_padding: float = 0.5,
+        max_padding: float = 10.0,
+        baseline: float = 0.0,
+    ) -> None:
+        """
+        Expand y-limits for stacked vertical bars using category totals.
+        """
+        try:
+            max_total = 0.0
+            for i, _ in enumerate(categories):
+                cumulative = 0.0
+                for _, _media_type, values in bar_containers:
+                    _ = _media_type  # avoid unused
+                    if hasattr(values, "__getitem__"):
+                        try:
+                            v = float(cast(Sequence[float], values)[i])
+                        except Exception:
+                            v = 0.0
+                    else:
+                        v = 0.0
+                    cumulative += v
+                if cumulative > max_total:
+                    max_total = cumulative
+
+            if max_total <= 0:
+                return
+
+            padding = max(min_padding, min(max_padding, max_total * offset_ratio))
+            _ = ax.set_ylim(baseline, max_total + padding)
+        except Exception as e:
+            logger.debug(f"Failed to ensure stacked vertical bar space: {e}")
+
+    def ensure_space_for_line_annotations(
+        self,
+        ax: Axes,
+        y_data: Sequence[float],
+        *,
+        percentage: float = 0.05,
+        min_padding: float = 0.5,
+        max_padding: float = 10.0,
+        baseline: float = 0.0,
+    ) -> None:
+        """
+        Expand y-limits to include padding for line point annotations using the
+        same adaptive offset logic used by annotate_line_points_adaptive.
+        """
+        try:
+            if not y_data:
+                return
+            y_max = max(y_data)
+            offset = self.calculate_adaptive_annotation_offset(
+                y_data, percentage=percentage, min_offset=min_padding, max_offset=max_padding
+            )
+            _ = ax.set_ylim(baseline, float(y_max) + float(offset))
+        except Exception as e:
+            logger.debug(f"Failed to ensure line annotation space: {e}")
+
     def annotate_stacked_horizontal_bar_segments(
         self,
         ax: Axes,
@@ -583,7 +729,7 @@ class AnnotationHelper:
                 fontweight=fontweight,
                 min_value_threshold=min_value_threshold,
             )
-            
+
             logger.debug(
                 f"Applied adaptive annotation offset: {adaptive_offset_y:.2f} " +
                 f"(data range: {min(y_data) if y_data else 0:.1f}-{max(y_data) if y_data else 0:.1f})"

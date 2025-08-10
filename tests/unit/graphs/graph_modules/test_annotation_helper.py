@@ -514,7 +514,7 @@ class TestAnnotationHelper:
 
             # Should use adaptive offset relative to data range
             assert mock_add_text.call_count == 4
-            
+
             # Check that offset is relative to data range (max=10)
             # Expected adaptive offset should be ~5% of range = 0.5
             first_call = mock_add_text.call_args_list[0]
@@ -537,7 +537,7 @@ class TestAnnotationHelper:
 
             # Should use adaptive offset relative to data range
             assert mock_add_text.call_count == 4
-            
+
             # Check that offset is relative to data range (range=100-20=80)
             # Expected adaptive offset should be ~5% of range = 4.0
             first_call = mock_add_text.call_args_list[0]
@@ -580,7 +580,7 @@ class TestAnnotationHelper:
     def test_calculate_adaptive_annotation_offset_configuration(self) -> None:
         """Test adaptive offset calculation with configurable parameters."""
         y_data = [0, 20, 40, 60, 80, 100]
-        
+
         # Test with custom percentage
         offset = self.helper.calculate_adaptive_annotation_offset(
             y_data, percentage=0.03  # 3% instead of default 5%
@@ -613,3 +613,84 @@ class TestAnnotationHelper:
             first_call = mock_add_text.call_args_list[0]
             _, kwargs = first_call
             assert kwargs["offset_y"] == 2.0  # Should use explicit offset
+
+
+    def test_ensure_space_for_vertical_bar_annotations(self) -> None:
+        """Ensure ylim is expanded to accommodate bar value annotations."""
+        self.mock_graph.config_values["TEST_ANNOTATION"] = True
+
+        # Create mock patches with heights
+        patch1 = Mock()
+        patch1.get_height.return_value = 10.0
+        patch1.get_x.return_value = 0.0
+        patch1.get_width.return_value = 1.0
+        patch2 = Mock()
+        patch2.get_height.return_value = 20.0
+        patch2.get_x.return_value = 1.0
+        patch2.get_width.return_value = 1.0
+
+        self.mock_ax.patches = [patch1, patch2]
+
+        with patch.object(self.mock_ax, "set_ylim") as mock_set_ylim:
+            self.helper.ensure_space_for_vertical_bar_annotations(
+                self.mock_ax, offset_ratio=0.1, min_padding=1.0
+            )
+            # max height = 20; padding = max(1.0, 2.0) = 2.0; new top = 22.0
+            args, _ = mock_set_ylim.call_args
+            assert args == (0, 22.0)
+
+    def test_ensure_space_for_horizontal_bar_annotations(self) -> None:
+        """Ensure xlim is expanded to accommodate horizontal bar annotations."""
+        self.mock_graph.config_values["TEST_ANNOTATION"] = True
+
+        patch1 = Mock()
+        patch1.get_width.return_value = 5.0
+        patch1.get_y.return_value = 0.0
+        patch1.get_height.return_value = 1.0
+        patch2 = Mock()
+        patch2.get_width.return_value = 30.0
+        patch2.get_y.return_value = 1.0
+        patch2.get_height.return_value = 1.0
+
+        self.mock_ax.patches = [patch1, patch2]
+
+        with patch.object(self.mock_ax, "set_xlim") as mock_set_xlim:
+            self.helper.ensure_space_for_horizontal_bar_annotations(
+                self.mock_ax, offset_ratio=0.1, min_padding=1.0
+            )
+            # max width = 30; padding = max(1.0, 3.0) = 3.0; new right = 33.0
+            args, _ = mock_set_xlim.call_args
+            assert args == (0, 33.0)
+
+    def test_ensure_space_for_stacked_vertical_bars(self) -> None:
+        """Ensure ylim accounts for stacked totals for vertical bars."""
+        self.mock_graph.config_values["TEST_ANNOTATION"] = True
+
+        # Two categories, values stacked
+        bar_containers = [
+            (Mock(), "movies", [10.0, 5.0]),
+            (Mock(), "tv", [15.0, 8.0]),
+        ]
+        categories = ["Cat1", "Cat2"]
+
+        with patch.object(self.mock_ax, "set_ylim") as mock_set_ylim:
+            self.helper.ensure_space_for_stacked_vertical_bars(
+                self.mock_ax, bar_containers, categories, offset_ratio=0.1, min_padding=1.0
+            )
+            # Totals: Cat1=25, Cat2=13; max_total=25; padding=max(1.0, 2.5)=2.5; top=27.5
+            args, _ = mock_set_ylim.call_args
+            assert args == (0, 27.5)
+
+    def test_ensure_space_for_line_annotations(self) -> None:
+        """Ensure ylim accounts for adaptive offset above line peaks."""
+        self.mock_graph.config_values["TEST_ANNOTATION"] = True
+
+        y_data = [2.0, 5.0, 8.0, 10.0]
+
+        with patch.object(self.mock_ax, "set_ylim") as mock_set_ylim:
+            self.helper.ensure_space_for_line_annotations(
+                self.mock_ax, y_data, percentage=0.05, min_padding=0.5, max_padding=10.0
+            )
+            # range=8; pct=0.4 -> min_padding=0.5; top = 10.0 + 0.5 = 10.5
+            args, _ = mock_set_ylim.call_args
+            assert args == (0, 10.5)

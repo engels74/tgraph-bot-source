@@ -341,6 +341,17 @@ class PlayCountByStreamResolutionGraph(BaseGraph, VisualizationMixin):
             include_totals=True,
         )
 
+        # Ensure space for stacked vertical bar annotations
+        self.annotation_helper.ensure_space_for_stacked_vertical_bars(
+            ax=ax,
+            bar_containers=bar_containers,
+            categories=formatted_resolutions,
+            offset_ratio=0.05,
+            min_padding=0.5,
+            max_padding=15.0,
+        )
+
+
         # Add grid for better readability (swapped axis)
         if self.get_grid_enabled():
             ax.grid(True, axis="y", alpha=0.3, linewidth=0.5)  # pyright: ignore[reportUnknownMemberType] # matplotlib method with **kwargs

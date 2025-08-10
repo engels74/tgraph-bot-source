@@ -242,6 +242,14 @@ class PlayCountByPlatformAndStreamTypeGraph(BaseGraph, VisualizationMixin):
             total_fontsize=11,
         )
 
+        # Ensure space for stacked horizontal bar annotations with adaptive spacing
+        self.annotation_helper.ensure_space_for_horizontal_bar_annotations(
+            ax=ax,
+            offset_ratio=0.05,
+            min_padding=0.5,
+            max_padding=10.0,
+        )
+
         # Add legend for stream types
         _ = ax.legend(  # pyright: ignore[reportUnknownMemberType]
             loc="upper right",

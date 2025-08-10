@@ -190,6 +190,14 @@ class Top10PlatformsGraph(BaseGraph, VisualizationMixin):
                 va="center",
                 fontweight="bold",
             )
+
+            # Ensure space for horizontal bar annotations with adaptive spacing
+            self.annotation_helper.ensure_space_for_horizontal_bar_annotations(
+                ax=ax,
+                offset_ratio=0.05,
+                min_padding=0.5,
+                max_padding=10.0,
+            )
         else:
             # Handle empty data case using mixin utility
             self.display_no_data_message(message="No platform data available")
@@ -305,6 +313,14 @@ class Top10PlatformsGraph(BaseGraph, VisualizationMixin):
             ha="left",
             va="center",
             fontweight="bold",
+        )
+
+        # Ensure space for horizontal bar annotations with adaptive spacing
+        self.annotation_helper.ensure_space_for_horizontal_bar_annotations(
+            ax=ax,
+            offset_ratio=0.05,
+            min_padding=0.5,
+            max_padding=10.0,
         )
 
         logger.info(
@@ -449,6 +465,14 @@ class Top10PlatformsGraph(BaseGraph, VisualizationMixin):
             include_totals=True,
             segment_fontsize=9,
             total_fontsize=11,
+        )
+
+        # Ensure space for stacked horizontal bar annotations with adaptive spacing
+        self.annotation_helper.ensure_space_for_horizontal_bar_annotations(
+            ax=ax,
+            offset_ratio=0.05,
+            min_padding=0.5,
+            max_padding=10.0,
         )
 
         logger.info(
