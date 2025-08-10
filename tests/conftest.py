@@ -437,6 +437,43 @@ def temp_graph_output_directory() -> Generator[Path, None, None]:
         yield output_path
 
 
+@pytest.fixture(autouse=True)
+def setup_test_paths() -> Generator[None, None, None]:
+    """
+    Automatically configure PathConfig for all tests to use temporary directories.
+    
+    This prevents tests from creating directories in the project root and ensures
+    all graph-related operations use temporary paths appropriate for testing.
+    """
+    from src.tgraph_bot.utils.cli.paths import get_path_config
+    
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_path = Path(temp_dir)
+        config = get_path_config()
+        
+        # Store original paths to restore later
+        original_config_file = config.config_file
+        original_data_folder = config.data_folder  
+        original_log_folder = config.log_folder
+        
+        # Set test paths
+        config.set_paths(
+            config_file=temp_path / "config" / "config.yml",
+            data_folder=temp_path / "data",
+            log_folder=temp_path / "logs"
+        )
+        
+        try:
+            yield
+        finally:
+            # Restore original paths after test completes
+            config.set_paths(
+                config_file=original_config_file,
+                data_folder=original_data_folder,
+                log_folder=original_log_folder
+            )
+
+
 @pytest.fixture
 def mock_state_file(temp_data_directory: Path) -> Path:
     """

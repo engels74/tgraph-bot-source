@@ -498,3 +498,118 @@ class TestAnnotationHelper:
             assert kwargs["offset_x"] == 5.0
             assert kwargs["ha"] == "left"
             assert kwargs["va"] == "center"
+
+    def test_annotate_line_points_with_adaptive_offset(self) -> None:
+        """Test line points annotation with adaptive Y-offset based on data range."""
+        self.mock_graph.config_values["TEST_ANNOTATION"] = True
+
+        # Test case 1: Small Y-range (0-10) - should use smaller relative offset
+        x_data = [0, 1, 2, 3]
+        y_data = [2, 5, 8, 10]
+
+        with patch.object(self.helper, "_add_text_annotation") as mock_add_text:
+            self.helper.annotate_line_points_adaptive(
+                self.mock_ax, "TEST_ANNOTATION", x_data, y_data
+            )
+
+            # Should use adaptive offset relative to data range
+            assert mock_add_text.call_count == 4
+            
+            # Check that offset is relative to data range (max=10)
+            # Expected adaptive offset should be ~5% of range = 0.5
+            first_call = mock_add_text.call_args_list[0]
+            _, kwargs = first_call
+            expected_offset = 0.5  # 5% of 10
+            assert abs(kwargs["offset_y"] - expected_offset) < 0.1
+
+    def test_annotate_line_points_with_adaptive_offset_large_range(self) -> None:
+        """Test line points annotation with adaptive Y-offset for large data range."""
+        self.mock_graph.config_values["TEST_ANNOTATION"] = True
+
+        # Test case 2: Large Y-range (20-100) - should use larger absolute offset
+        x_data = [0, 1, 2, 3]
+        y_data = [20, 50, 80, 100]
+
+        with patch.object(self.helper, "_add_text_annotation") as mock_add_text:
+            self.helper.annotate_line_points_adaptive(
+                self.mock_ax, "TEST_ANNOTATION", x_data, y_data
+            )
+
+            # Should use adaptive offset relative to data range
+            assert mock_add_text.call_count == 4
+            
+            # Check that offset is relative to data range (range=100-20=80)
+            # Expected adaptive offset should be ~5% of range = 4.0
+            first_call = mock_add_text.call_args_list[0]
+            _, kwargs = first_call
+            expected_offset = 4.0  # 5% of 80
+            assert abs(kwargs["offset_y"] - expected_offset) < 0.1
+
+    def test_calculate_adaptive_annotation_offset(self) -> None:
+        """Test calculation of adaptive annotation offset based on data range."""
+        # Test case 1: Small range
+        y_data = [2, 5, 8, 10]
+        offset = self.helper.calculate_adaptive_annotation_offset(y_data)
+        expected = 0.5  # 5% of range (10-2=8), min 0.5
+        assert abs(offset - expected) < 0.1
+
+        # Test case 2: Large range
+        y_data = [0, 25, 50, 75, 100]
+        offset = self.helper.calculate_adaptive_annotation_offset(y_data)
+        expected = 5.0  # 5% of range (100-0=100)
+        assert abs(offset - expected) < 0.1
+
+        # Test case 3: Very small range
+        y_data = [1.0, 1.5, 2.0]
+        offset = self.helper.calculate_adaptive_annotation_offset(y_data)
+        expected = 0.5  # Should use minimum offset
+        assert abs(offset - expected) < 0.1
+
+        # Test case 4: Empty data
+        y_data = []
+        offset = self.helper.calculate_adaptive_annotation_offset(y_data)
+        expected = 2.0  # Should use default fallback
+        assert abs(offset - expected) < 0.1
+
+        # Test case 5: Single value
+        y_data = [42.0]
+        offset = self.helper.calculate_adaptive_annotation_offset(y_data)
+        expected = 2.0  # Should use default fallback
+        assert abs(offset - expected) < 0.1
+
+    def test_calculate_adaptive_annotation_offset_configuration(self) -> None:
+        """Test adaptive offset calculation with configurable parameters."""
+        y_data = [0, 20, 40, 60, 80, 100]
+        
+        # Test with custom percentage
+        offset = self.helper.calculate_adaptive_annotation_offset(
+            y_data, percentage=0.03  # 3% instead of default 5%
+        )
+        expected = 3.0  # 3% of range (100-0=100)
+        assert abs(offset - expected) < 0.1
+
+        # Test with custom min/max values
+        offset = self.helper.calculate_adaptive_annotation_offset(
+            y_data, min_offset=1.0, max_offset=3.0
+        )
+        expected = 3.0  # Should be capped at max_offset
+        assert abs(offset - expected) < 0.1
+
+    def test_annotate_line_points_backward_compatibility(self) -> None:
+        """Test that existing annotate_line_points method still works as before."""
+        self.mock_graph.config_values["TEST_ANNOTATION"] = True
+
+        x_data = [0, 1, 2, 3]
+        y_data = [10, 20, 15, 25]
+
+        with patch.object(self.helper, "_add_text_annotation") as mock_add_text:
+            # Call the original method with explicit offset
+            self.helper.annotate_line_points(
+                self.mock_ax, "TEST_ANNOTATION", x_data, y_data, offset_y=2.0
+            )
+
+            # Should work exactly as before
+            assert mock_add_text.call_count == 4
+            first_call = mock_add_text.call_args_list[0]
+            _, kwargs = first_call
+            assert kwargs["offset_y"] == 2.0  # Should use explicit offset

@@ -105,7 +105,7 @@ class TestDirectoryUtilities:
 
                 _ = ensure_graph_directory()
 
-                mock_path.assert_called_once_with("graphs")
+                mock_path.assert_called_once_with("data/graphs")
                 mock_path_instance.mkdir.assert_called_once_with(  # pyright: ignore[reportAny]
                     parents=True, exist_ok=True
                 )

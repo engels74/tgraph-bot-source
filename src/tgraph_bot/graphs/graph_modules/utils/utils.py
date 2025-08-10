@@ -163,7 +163,7 @@ def get_date_range(days: int) -> tuple[datetime, datetime]:
     return start_date, end_date
 
 
-def ensure_graph_directory(base_path: str = "graphs") -> Path:
+def ensure_graph_directory(base_path: str = "data/graphs") -> Path:
     """
     Ensure the graph output directory exists.
 

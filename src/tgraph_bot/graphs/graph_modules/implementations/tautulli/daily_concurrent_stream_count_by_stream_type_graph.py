@@ -358,14 +358,13 @@ class DailyConcurrentStreamCountByStreamTypeGraph(BaseGraph, VisualizationMixin)
                 all_y_data.extend(counts)
 
         if all_x_data and all_y_data:
-            self.annotation_helper.annotate_line_points(
+            self.annotation_helper.annotate_line_points_adaptive(
                 ax=ax,
                 config_key="graphs.appearance.annotations.enabled_on.daily_concurrent_stream_count_by_stream_type",
                 x_data=all_x_data,
                 y_data=all_y_data,
                 ha="center",
                 va="bottom",
-                offset_y=2,
             )
 
         # Add peak annotations if enabled (separate feature)

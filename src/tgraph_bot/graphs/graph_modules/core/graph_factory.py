@@ -126,7 +126,7 @@ class GraphFactory:
 
         return enabled_types
 
-    def setup_graph_environment(self, base_path: str = "graphs") -> Path:
+    def setup_graph_environment(self, base_path: str = "data/graphs") -> Path:
         """
         Setup the graph environment by ensuring directories exist.
 

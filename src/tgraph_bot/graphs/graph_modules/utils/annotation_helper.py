@@ -475,6 +475,123 @@ class AnnotationHelper:
         except Exception as e:
             logger.warning(f"Failed to annotate line points: {e}")
 
+    def calculate_adaptive_annotation_offset(
+        self,
+        y_data: "Sequence[float]",
+        percentage: float = 0.05,
+        min_offset: float = 0.5,
+        max_offset: float = 10.0,
+        default_offset: float = 2.0,
+    ) -> float:
+        """
+        Calculate adaptive annotation offset based on data range.
+
+        This method calculates an appropriate Y-offset for annotations based on the
+        range of Y-values in the data, ensuring consistent visual spacing regardless
+        of the axis scale.
+
+        Args:
+            y_data: Y-coordinates of the data points
+            percentage: Percentage of data range to use as offset (default: 5%)
+            min_offset: Minimum offset value to ensure readability
+            max_offset: Maximum offset value to prevent excessive spacing
+            default_offset: Default offset for edge cases (empty/single value data)
+
+        Returns:
+            Calculated offset value appropriate for the data range
+        """
+        try:
+            # Handle edge cases
+            if not y_data or len(y_data) < 2:
+                return default_offset
+
+            # Calculate data range
+            y_min = min(y_data)
+            y_max = max(y_data)
+            data_range = y_max - y_min
+
+            # Handle zero or very small ranges
+            if data_range <= 0:
+                return default_offset
+
+            # Calculate percentage-based offset
+            calculated_offset = data_range * percentage
+
+            # Clamp to min/max bounds
+            return max(min_offset, min(calculated_offset, max_offset))
+
+        except Exception as e:
+            logger.warning(f"Failed to calculate adaptive offset: {e}")
+            return default_offset
+
+    def annotate_line_points_adaptive(
+        self,
+        ax: Axes,
+        config_key: str,
+        x_data: "Sequence[float]",
+        y_data: "Sequence[float]",
+        percentage: float = 0.05,
+        min_offset: float = 0.5,
+        max_offset: float = 10.0,
+        offset_x: float = 0.0,
+        ha: str = "center",
+        va: str = "bottom",
+        fontweight: str = "normal",
+        min_value_threshold: float = 0.0,
+    ) -> None:
+        """
+        Annotate line graph data points with adaptive Y-offset based on data range.
+
+        This method automatically calculates an appropriate Y-offset based on the
+        data range to ensure consistent annotation positioning across different
+        graph types and scales.
+
+        Args:
+            ax: Matplotlib axes containing line graph
+            config_key: Configuration key to check if annotations are enabled
+            x_data: X-coordinates of the data points
+            y_data: Y-coordinates of the data points (values to annotate)
+            percentage: Percentage of data range to use as offset (default: 5%)
+            min_offset: Minimum offset value to ensure readability
+            max_offset: Maximum offset value to prevent excessive spacing
+            offset_x: X-offset for annotation positioning
+            ha: Horizontal alignment for text
+            va: Vertical alignment for text
+            fontweight: Font weight for text
+            min_value_threshold: Minimum value to annotate (skip smaller values)
+        """
+        annotate_enabled = self.graph.get_config_value(config_key, False)
+        if not annotate_enabled:
+            return
+
+        try:
+            # Calculate adaptive offset based on data range
+            adaptive_offset_y = self.calculate_adaptive_annotation_offset(
+                y_data, percentage, min_offset, max_offset
+            )
+
+            # Use the existing annotate_line_points method with calculated offset
+            self.annotate_line_points(
+                ax=ax,
+                config_key=config_key,
+                x_data=x_data,
+                y_data=y_data,
+                offset_y=adaptive_offset_y,
+                offset_x=offset_x,
+                ha=ha,
+                va=va,
+                fontweight=fontweight,
+                min_value_threshold=min_value_threshold,
+            )
+            
+            logger.debug(
+                f"Applied adaptive annotation offset: {adaptive_offset_y:.2f} " +
+                f"(data range: {min(y_data) if y_data else 0:.1f}-{max(y_data) if y_data else 0:.1f})"
+            )
+
+        except Exception as e:
+            logger.warning(f"Failed to annotate line points with adaptive offset: {e}")
+
     def _add_text_annotation(
         self,
         ax: Axes,
