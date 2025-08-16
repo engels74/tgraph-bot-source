@@ -38,9 +38,9 @@ dev = [
     "pytest-asyncio>=1.1.0",
     "pytest-cov>=6.2.1",
     # Linting and formatting
-    "ruff>=0.12.7",
+    "ruff>=0.12.9",
     # Type checking
-    "basedpyright>=1.31.1",
+    "basedpyright>=1.31.2",
     # Translation/i18n utilities
     "polib>=1.2.0",
     # System utilities
@@ -54,9 +54,9 @@ dev = [
     "pandas-stubs>=2.3.0.250703",
     "types-polib>=1.2.0.20250401",
     "types-psutil>=7.0.0.20250801",
-    "types-pyyaml>=6.0.12.20250516",
-    "types-requests>=2.32.4.20250611",
-    "matplotlib-stubs>=0.3.0",
+    "types-pyyaml>=6.0.12.20250809",
+    "types-requests>=2.32.4.20250809",
+    "matplotlib-stubs>=0.3.2",
 ]
 
 [project.urls]
