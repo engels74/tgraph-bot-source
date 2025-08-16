@@ -1307,8 +1307,8 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "basedpyright", specifier = ">=1.31.1" },
-    { name = "matplotlib-stubs", specifier = ">=0.3.0" },
+    { name = "basedpyright", specifier = ">=1.31.2" },
+    { name = "matplotlib-stubs", specifier = ">=0.3.2" },
     { name = "pandas-stubs", specifier = ">=2.3.0.250703" },
     { name = "polib", specifier = ">=1.2.0" },
     { name = "psutil", specifier = ">=7.0.0" },
@@ -1316,13 +1316,13 @@ dev = [
     { name = "pytest-asyncio", specifier = ">=1.1.0" },
     { name = "pytest-cov", specifier = ">=6.2.1" },
     { name = "rich", specifier = ">=14.1.0" },
-    { name = "ruff", specifier = ">=0.12.7" },
+    { name = "ruff", specifier = ">=0.12.9" },
     { name = "semver", specifier = ">=3.0.4" },
     { name = "toml", specifier = ">=0.10.2" },
     { name = "types-polib", specifier = ">=1.2.0.20250401" },
     { name = "types-psutil", specifier = ">=7.0.0.20250801" },
-    { name = "types-pyyaml", specifier = ">=6.0.12.20250516" },
-    { name = "types-requests", specifier = ">=2.32.4.20250611" },
+    { name = "types-pyyaml", specifier = ">=6.0.12.20250809" },
+    { name = "types-requests", specifier = ">=2.32.4.20250809" },
 ]
 
 [[package]]
