@@ -120,12 +120,12 @@ class TestMaskSensitiveDict:
 
         services = result["services"]
         assert isinstance(services, dict)
-        discord = services["discord"]
+        discord = services["discord"]  # pyright: ignore[reportUnknownVariableType]
         assert isinstance(discord, dict)
         # "discord_token_12345" is 19 chars, last 4: "2345"
         assert discord["token"] == "*" * 15 + "2345"
         assert discord["channel_id"] == 123
-        tautulli = services["tautulli"]
+        tautulli = services["tautulli"]  # pyright: ignore[reportUnknownVariableType]
         assert isinstance(tautulli, dict)
         # "tautulli_key_67890" is 18 chars, last 4: "7890"
         assert tautulli["api_key"] == "*" * 14 + "7890"
@@ -143,11 +143,11 @@ class TestMaskSensitiveDict:
 
         credentials_list = result["credentials"]
         assert isinstance(credentials_list, list)
-        cred0 = credentials_list[0]
+        cred0 = credentials_list[0]  # pyright: ignore[reportUnknownVariableType]
         assert isinstance(cred0, dict)
         assert cred0["api_key"] == "****"
         assert cred0["name"] == "service1"
-        cred1 = credentials_list[1]
+        cred1 = credentials_list[1]  # pyright: ignore[reportUnknownVariableType]
         assert isinstance(cred1, dict)
         assert cred1["api_key"] == "****"
 

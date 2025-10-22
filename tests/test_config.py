@@ -10,9 +10,12 @@ This test suite validates the configuration system including:
 Requirements tested: 3.2, 3.3, 3.4
 """
 
+# pyright: reportArgumentType=false, reportUnusedCallResult=false
+
 import os
 import tempfile
 from pathlib import Path
+from typing import Any
 
 import pytest
 from pydantic import ValidationError
@@ -24,16 +27,10 @@ from tgraph_bot.config.models import (
     CommandLimits,
     DataCollectionConfig,
     DiscordConfig,
-    GraphAppearanceConfig,
     GraphColors,
-    GraphConfig,
     GraphDimensions,
-    GraphsConfig,
-    GridConfig,
     PrivacyConfig,
-    RateLimitingConfig,
     SeabornConfig,
-    ServicesConfig,
     SystemConfig,
     TautulliConfig,
 )
@@ -41,7 +38,7 @@ from tgraph_bot.utils.errors import ConfigurationError
 
 
 @pytest.fixture
-def valid_tautulli_config_dict() -> dict[str, object]:
+def valid_tautulli_config_dict() -> dict[str, Any]:  # pyright: ignore[reportExplicitAny]
     """Fixture providing valid Tautulli configuration dictionary."""
     return {
         "api_key": "a" * 32,  # Min length 32
@@ -50,7 +47,7 @@ def valid_tautulli_config_dict() -> dict[str, object]:
 
 
 @pytest.fixture
-def valid_discord_config_dict() -> dict[str, object]:
+def valid_discord_config_dict() -> dict[str, Any]:  # pyright: ignore[reportExplicitAny]
     """Fixture providing valid Discord configuration dictionary."""
     return {
         "token": "x" * 70,  # Discord tokens are ~70 chars
@@ -62,9 +59,9 @@ def valid_discord_config_dict() -> dict[str, object]:
 
 @pytest.fixture
 def valid_services_config_dict(
-    valid_tautulli_config_dict: dict[str, object],
-    valid_discord_config_dict: dict[str, object],
-) -> dict[str, object]:
+    valid_tautulli_config_dict: dict[str, Any],  # pyright: ignore[reportExplicitAny]
+    valid_discord_config_dict: dict[str, Any],  # pyright: ignore[reportExplicitAny]
+) -> dict[str, Any]:  # pyright: ignore[reportExplicitAny]
     """Fixture providing valid services configuration dictionary."""
     return {
         "tautulli": valid_tautulli_config_dict,
@@ -73,7 +70,7 @@ def valid_services_config_dict(
 
 
 @pytest.fixture
-def valid_automation_config_dict() -> dict[str, object]:
+def valid_automation_config_dict() -> dict[str, Any]:  # pyright: ignore[reportExplicitAny]
     """Fixture providing valid automation configuration dictionary."""
     return {
         "enabled": True,
@@ -83,7 +80,7 @@ def valid_automation_config_dict() -> dict[str, object]:
 
 
 @pytest.fixture
-def valid_data_collection_config_dict() -> dict[str, object]:
+def valid_data_collection_config_dict() -> dict[str, Any]:  # pyright: ignore[reportExplicitAny]
     """Fixture providing valid data collection configuration dictionary."""
     return {
         "history_days": 30,
@@ -92,7 +89,7 @@ def valid_data_collection_config_dict() -> dict[str, object]:
 
 
 @pytest.fixture
-def valid_privacy_config_dict() -> dict[str, object]:
+def valid_privacy_config_dict() -> dict[str, Any]:  # pyright: ignore[reportExplicitAny]
     """Fixture providing valid privacy configuration dictionary."""
     return {
         "censor_usernames": False,
@@ -101,8 +98,8 @@ def valid_privacy_config_dict() -> dict[str, object]:
 
 @pytest.fixture
 def valid_system_config_dict(
-    valid_privacy_config_dict: dict[str, object],
-) -> dict[str, object]:
+    valid_privacy_config_dict: dict[str, Any],  # pyright: ignore[reportExplicitAny]
+) -> dict[str, Any]:  # pyright: ignore[reportExplicitAny]
     """Fixture providing valid system configuration dictionary."""
     return {
         "language": "en",
@@ -114,7 +111,7 @@ def valid_system_config_dict(
 
 
 @pytest.fixture
-def valid_graph_dimensions_dict() -> dict[str, object]:
+def valid_graph_dimensions_dict() -> dict[str, Any]:  # pyright: ignore[reportExplicitAny]
     """Fixture providing valid graph dimensions dictionary."""
     return {
         "width": 12,
@@ -124,7 +121,7 @@ def valid_graph_dimensions_dict() -> dict[str, object]:
 
 
 @pytest.fixture
-def valid_graph_colors_dict() -> dict[str, object]:
+def valid_graph_colors_dict() -> dict[str, Any]:  # pyright: ignore[reportExplicitAny]
     """Fixture providing valid graph colors dictionary."""
     return {
         "tv": "#1f77b4",
@@ -134,7 +131,7 @@ def valid_graph_colors_dict() -> dict[str, object]:
 
 
 @pytest.fixture
-def valid_grid_config_dict() -> dict[str, object]:
+def valid_grid_config_dict() -> dict[str, Any]:  # pyright: ignore[reportExplicitAny]
     """Fixture providing valid grid configuration dictionary."""
     return {
         "enabled": True,
@@ -143,7 +140,7 @@ def valid_grid_config_dict() -> dict[str, object]:
 
 
 @pytest.fixture
-def valid_annotation_config_dict() -> dict[str, object]:
+def valid_annotation_config_dict() -> dict[str, Any]:  # pyright: ignore[reportExplicitAny]
     """Fixture providing valid annotation configuration dictionary."""
     return {
         "color": "#000000",
@@ -154,7 +151,7 @@ def valid_annotation_config_dict() -> dict[str, object]:
 
 
 @pytest.fixture
-def valid_seaborn_config_dict() -> dict[str, object]:
+def valid_seaborn_config_dict() -> dict[str, Any]:  # pyright: ignore[reportExplicitAny]
     """Fixture providing valid seaborn configuration dictionary."""
     return {
         "style": "darkgrid",
@@ -165,12 +162,12 @@ def valid_seaborn_config_dict() -> dict[str, object]:
 
 @pytest.fixture
 def valid_graph_appearance_config_dict(
-    valid_graph_dimensions_dict: dict[str, object],
-    valid_graph_colors_dict: dict[str, object],
-    valid_grid_config_dict: dict[str, object],
-    valid_annotation_config_dict: dict[str, object],
-    valid_seaborn_config_dict: dict[str, object],
-) -> dict[str, object]:
+    valid_graph_dimensions_dict: dict[str, Any],  # pyright: ignore[reportExplicitAny]
+    valid_graph_colors_dict: dict[str, Any],  # pyright: ignore[reportExplicitAny]
+    valid_grid_config_dict: dict[str, Any],  # pyright: ignore[reportExplicitAny]
+    valid_annotation_config_dict: dict[str, Any],  # pyright: ignore[reportExplicitAny]
+    valid_seaborn_config_dict: dict[str, Any],  # pyright: ignore[reportExplicitAny]
+) -> dict[str, Any]:  # pyright: ignore[reportExplicitAny]
     """Fixture providing valid graph appearance configuration dictionary."""
     return {
         "dimensions": valid_graph_dimensions_dict,
@@ -183,7 +180,7 @@ def valid_graph_appearance_config_dict(
 
 
 @pytest.fixture
-def valid_graph_config_dict() -> dict[str, object]:
+def valid_graph_config_dict() -> dict[str, Any]:  # pyright: ignore[reportExplicitAny]
     """Fixture providing valid individual graph configuration dictionary."""
     return {
         "enabled": True,
@@ -197,9 +194,9 @@ def valid_graph_config_dict() -> dict[str, object]:
 
 @pytest.fixture
 def valid_graphs_config_dict(
-    valid_graph_appearance_config_dict: dict[str, object],
-    valid_graph_config_dict: dict[str, object],
-) -> dict[str, object]:
+    valid_graph_appearance_config_dict: dict[str, Any],  # pyright: ignore[reportExplicitAny]
+    valid_graph_config_dict: dict[str, Any],  # pyright: ignore[reportExplicitAny]
+) -> dict[str, Any]:  # pyright: ignore[reportExplicitAny]
     """Fixture providing valid graphs configuration dictionary."""
     return {
         "appearance": valid_graph_appearance_config_dict,
@@ -219,7 +216,7 @@ def valid_graphs_config_dict(
 
 
 @pytest.fixture
-def valid_command_limits_dict() -> dict[str, object]:
+def valid_command_limits_dict() -> dict[str, Any]:  # pyright: ignore[reportExplicitAny]
     """Fixture providing valid command limits dictionary."""
     return {
         "user_cooldown_minutes": 5,
@@ -229,8 +226,8 @@ def valid_command_limits_dict() -> dict[str, object]:
 
 @pytest.fixture
 def valid_rate_limiting_config_dict(
-    valid_command_limits_dict: dict[str, object],
-) -> dict[str, object]:
+    valid_command_limits_dict: dict[str, Any],  # pyright: ignore[reportExplicitAny]
+) -> dict[str, Any]:  # pyright: ignore[reportExplicitAny]
     """Fixture providing valid rate limiting configuration dictionary."""
     return {
         "config": valid_command_limits_dict,
@@ -241,13 +238,13 @@ def valid_rate_limiting_config_dict(
 
 @pytest.fixture
 def valid_full_config_dict(
-    valid_services_config_dict: dict[str, object],
-    valid_automation_config_dict: dict[str, object],
-    valid_data_collection_config_dict: dict[str, object],
-    valid_system_config_dict: dict[str, object],
-    valid_graphs_config_dict: dict[str, object],
-    valid_rate_limiting_config_dict: dict[str, object],
-) -> dict[str, object]:
+    valid_services_config_dict: dict[str, Any],  # pyright: ignore[reportExplicitAny]
+    valid_automation_config_dict: dict[str, Any],  # pyright: ignore[reportExplicitAny]
+    valid_data_collection_config_dict: dict[str, Any],  # pyright: ignore[reportExplicitAny]
+    valid_system_config_dict: dict[str, Any],  # pyright: ignore[reportExplicitAny]
+    valid_graphs_config_dict: dict[str, Any],  # pyright: ignore[reportExplicitAny]
+    valid_rate_limiting_config_dict: dict[str, Any],  # pyright: ignore[reportExplicitAny]
+) -> dict[str, Any]:  # pyright: ignore[reportExplicitAny]
     """Fixture providing complete valid configuration dictionary."""
     return {
         "services": valid_services_config_dict,
@@ -446,7 +443,7 @@ class TestTautulliConfig:
     def test_tautulli_config_missing_api_key(self) -> None:
         """Test TautulliConfig rejects missing api_key field."""
         with pytest.raises(ValidationError) as exc_info:
-            TautulliConfig(url="https://example.com")  # type: ignore[call-arg]
+            TautulliConfig(url="https://example.com")  # pyright: ignore[reportCallIssue]
 
         errors = exc_info.value.errors()
         assert any(
@@ -457,7 +454,7 @@ class TestTautulliConfig:
     def test_tautulli_config_missing_url(self) -> None:
         """Test TautulliConfig rejects missing url field."""
         with pytest.raises(ValidationError) as exc_info:
-            TautulliConfig(api_key="a" * 32)  # type: ignore[call-arg]
+            TautulliConfig(api_key="a" * 32)  # pyright: ignore[reportCallIssue]
 
         errors = exc_info.value.errors()
         assert any(
@@ -581,7 +578,7 @@ class TestDiscordConfig:
     def test_discord_config_missing_required_fields(self) -> None:
         """Test DiscordConfig rejects missing required fields."""
         with pytest.raises(ValidationError) as exc_info:
-            DiscordConfig()  # type: ignore[call-arg]
+            DiscordConfig()  # pyright: ignore[reportCallIssue]
 
         errors = exc_info.value.errors()
         missing_fields = {error["loc"][0] for error in errors if error["type"] == "missing"}
@@ -963,7 +960,7 @@ class TestBotConfigIntegration:
     def test_bot_config_missing_services_section(self) -> None:
         """Test BotConfig rejects missing services section."""
         with pytest.raises(ValidationError) as exc_info:
-            BotConfig(
+            BotConfig(  # pyright: ignore[reportCallIssue]
                 automation=AutomationConfig(
                     enabled=True, update_interval_days=7, fixed_update_time="12:00"
                 ),
@@ -977,9 +974,9 @@ class TestBotConfigIntegration:
                     keep_graphs_days=7,
                     privacy=PrivacyConfig(censor_usernames=False),
                 ),
-                graphs={},  # type: ignore[arg-type]
-                rate_limiting={},  # type: ignore[arg-type]
-            )  # type: ignore[call-arg]
+                graphs={},
+                rate_limiting={},
+            )
 
         errors = exc_info.value.errors()
         assert any(
@@ -1320,7 +1317,7 @@ class TestConfigurationErrorMessages:
     def test_missing_field_error_message(self) -> None:
         """Test error message for missing required field is clear."""
         with pytest.raises(ValidationError) as exc_info:
-            TautulliConfig(url="https://example.com")  # type: ignore[call-arg]
+            TautulliConfig(url="https://example.com")  # pyright: ignore[reportCallIssue]
 
         errors = exc_info.value.errors()
         missing_error = next(
@@ -1334,7 +1331,7 @@ class TestConfigurationErrorMessages:
         with pytest.raises(ValidationError) as exc_info:
             DiscordConfig(
                 token="x" * 70,
-                channel_id="not_an_int",  # type: ignore[arg-type]
+                channel_id="not_an_int",  # type: ignore
                 timestamp_format="f",
                 ephemeral_message_delete_after=30.0,
             )

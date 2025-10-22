@@ -12,6 +12,7 @@ import logging
 import re
 from collections.abc import Mapping
 from datetime import datetime
+from typing import override
 
 # Context variables for operation tracking
 operation_id: contextvars.ContextVar[str | None] = contextvars.ContextVar(
@@ -99,15 +100,17 @@ def mask_sensitive_dict(
         if is_sensitive_field(key) and isinstance(value, str):
             masked[key] = mask_sensitive_value(value, show_last=show_last)
         elif recursive and isinstance(value, dict):
+            # Type narrowing: value is confirmed to be dict here
+            dict_value: dict[str, object] = value  # pyright: ignore[reportUnknownVariableType]
             masked[key] = mask_sensitive_dict(
-                value, show_last=show_last, recursive=recursive
+                dict_value, show_last=show_last, recursive=recursive
             )
         elif recursive and isinstance(value, list):
             masked[key] = [
-                mask_sensitive_dict(item, show_last=show_last, recursive=recursive)
+                mask_sensitive_dict(item, show_last=show_last, recursive=recursive)  # pyright: ignore[reportUnknownArgumentType]
                 if isinstance(item, dict)
                 else item
-                for item in value
+                for item in value  # pyright: ignore[reportUnknownVariableType]
             ]
         else:
             masked[key] = value
@@ -122,6 +125,7 @@ class ContextFilter(logging.Filter):
     enabling correlation of log messages across operations.
     """
 
+    @override
     def filter(self, record: logging.LogRecord) -> bool:
         """Add context variables to the log record.
 
