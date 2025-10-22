@@ -1,7 +1,17 @@
 [project]
-name = "TGraph Bot"
+name = "tgraph-bot"
 version = "0.1.0"
-description = "Discord Bot for creating graphs based on data from Tautulli"
+description = "Add your description here"
 readme = "README.md"
+authors = [
+    { name = "engels74", email = "141435164+engels74@users.noreply.github.com" }
+]
 requires-python = ">=3.14"
 dependencies = []
+
+[project.scripts]
+tgraph-bot = "tgraph_bot:main"
+
+[build-system]
+requires = ["uv_build>=0.9.5,<0.10.0"]
+build-backend = "uv_build"
