@@ -13,7 +13,7 @@
   <a href="https://deepwiki.com/engels74/tgraph-bot-source"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
 </p>
 
-TGraph Bot is a modern Discord bot that automatically generates and posts beautiful Tautulli graphs to your Discord channels. Built with Python 3.13, it provides insights into your Plex Media Server's activity and performance with customizable visualizations and user-specific statistics.
+TGraph Bot is a modern Discord bot that automatically generates and posts beautiful Tautulli graphs to your Discord channels. Built with Python 3.14, it provides insights into your Plex Media Server's activity and performance with customizable visualizations and user-specific statistics.
 
 ## ⚖️ License
 
