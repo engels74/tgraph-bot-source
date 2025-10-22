@@ -1,0 +1,7 @@
+[project]
+name = "TGraph Bot"
+version = "0.1.0"
+description = "Discord Bot for creating graphs based on data from Tautulli"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = []
