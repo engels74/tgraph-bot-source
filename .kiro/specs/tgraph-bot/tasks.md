@@ -58,7 +58,7 @@
   - Use pytest-asyncio for async test support
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
 
-- [ ] 8. Implement Tautulli API client
+- [x] 8. Implement Tautulli API client
   - Implement async HTTP client using httpx with timeout configuration
   - Create TypedDict models for Tautulli API responses with ReadOnly fields
   - Implement get_history method with days parameter
@@ -68,7 +68,7 @@
   - Verify all tests pass
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 19.4, 20.4_
 
-- [ ] 9. Write tests for rate limiting system
+- [x] 9. Write tests for rate limiting system
   - Write tests for user cooldown tracking and expiration
   - Write tests for global cooldown tracking
   - Write tests for cooldown calculations with various time intervals
