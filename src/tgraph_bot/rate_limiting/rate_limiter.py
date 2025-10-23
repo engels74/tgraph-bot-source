@@ -3,16 +3,26 @@
 This module implements rate limiting for Discord commands with both
 user-specific and global cooldowns to prevent spam and server overload.
 
-Requirements implemented: 11.1, 11.2, 11.3, 11.4
+Requirements implemented: 11.1, 11.2, 11.3, 11.4, 11.5, 23.1, 23.2, 23.3, 23.4, 23.5
 """
 
 from __future__ import annotations
 
+import asyncio
+import contextvars
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import TypedDict
 
 from tgraph_bot.config.models import RateLimitingConfig
+
+# Context variable for tracking the current user making a request
+# This enables automatic user tracking across async operations without
+# explicit parameter passing. Defaults to None when no user is set.
+# Requirements: 23.1, 23.3, 23.4, 23.5
+current_user_id: contextvars.ContextVar[int | None] = contextvars.ContextVar(
+    "current_user_id", default=None
+)
 
 
 class CooldownInfo(TypedDict):
@@ -39,13 +49,15 @@ class RateLimiter:
         config: Rate limiting configuration for all commands
         _user_cooldowns: Dict mapping (command, user_id) to expiration time
         _global_cooldowns: Dict mapping command to expiration time
+        _cleanup_task: Background task for periodic cooldown cleanup
     """
 
     config: RateLimitingConfig
     _user_cooldowns: dict[tuple[str, int], datetime] = field(default_factory=dict)
     _global_cooldowns: dict[str, datetime] = field(default_factory=dict)
+    _cleanup_task: asyncio.Task[None] | None = field(default=None, init=False)
 
-    def check_cooldown(self, command: str, user_id: int) -> CooldownInfo | None:
+    def check_cooldown(self, command: str, user_id: int | None = None) -> CooldownInfo | None:
         """Check if a command is on cooldown for a user.
 
         Checks both user-specific and global cooldowns. If either is active,
@@ -54,11 +66,22 @@ class RateLimiter:
 
         Args:
             command: The command name to check
-            user_id: The Discord user ID
+            user_id: The Discord user ID. If None, uses current_user_id context variable.
 
         Returns:
             CooldownInfo if on cooldown, None if command can be used
+
+        Raises:
+            ValueError: If user_id is None and current_user_id context variable is not set
         """
+        # Get user_id from context variable if not provided
+        if user_id is None:
+            user_id = current_user_id.get()
+            if user_id is None:
+                raise ValueError(
+                    "user_id must be provided or current_user_id context variable must be set"
+                )
+
         now = datetime.now()
 
         # Get cooldown configuration for this command
@@ -91,7 +114,7 @@ class RateLimiter:
 
         return None
 
-    def record_usage(self, command: str, user_id: int) -> None:
+    def record_usage(self, command: str, user_id: int | None = None) -> None:
         """Record command usage and set cooldowns.
 
         Records the current time as the start of cooldown periods for
@@ -100,8 +123,19 @@ class RateLimiter:
 
         Args:
             command: The command name that was used
-            user_id: The Discord user ID who used the command
+            user_id: The Discord user ID who used the command. If None, uses current_user_id context variable.
+
+        Raises:
+            ValueError: If user_id is None and current_user_id context variable is not set
         """
+        # Get user_id from context variable if not provided
+        if user_id is None:
+            user_id = current_user_id.get()
+            if user_id is None:
+                raise ValueError(
+                    "user_id must be provided or current_user_id context variable must be set"
+                )
+
         now = datetime.now()
 
         # Get cooldown configuration for this command
@@ -144,6 +178,51 @@ class RateLimiter:
         ]
         for command in expired_global_keys:
             del self._global_cooldowns[command]
+
+    async def start_periodic_cleanup(self, *, interval_seconds: float = 3600.0) -> None:
+        """Start a background task that periodically cleans up expired cooldowns.
+
+        This method starts an asyncio task that runs cleanup_expired() every
+        interval_seconds. By default, cleanup runs every hour (3600.0 seconds).
+
+        Args:
+            interval_seconds: How often to run cleanup (default: 3600.0 = 1 hour)
+
+        Note:
+            This task runs continuously until stop_periodic_cleanup() is called.
+            Requirements: 23.2 (automatic context inheritance in async tasks)
+        """
+        if self._cleanup_task is not None and not self._cleanup_task.done():
+            # Task already running
+            return
+
+        self._cleanup_task = asyncio.create_task(
+            self._periodic_cleanup_loop(interval_seconds)
+        )
+
+    async def stop_periodic_cleanup(self) -> None:
+        """Stop the periodic cleanup background task.
+
+        This method cancels the background cleanup task and waits for it
+        to complete gracefully.
+        """
+        if self._cleanup_task is not None and not self._cleanup_task.done():
+            _ = self._cleanup_task.cancel()
+            try:
+                await self._cleanup_task
+            except asyncio.CancelledError:
+                pass  # Expected when cancelling
+            self._cleanup_task = None
+
+    async def _periodic_cleanup_loop(self, interval_seconds: float) -> None:
+        """Internal method that runs the periodic cleanup loop.
+
+        Args:
+            interval_seconds: How often to run cleanup
+        """
+        while True:
+            await asyncio.sleep(interval_seconds)
+            self.cleanup_expired()
 
     def _get_command_config(self, command: str):
         """Get the CommandLimits config for a given command.

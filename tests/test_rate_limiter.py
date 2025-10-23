@@ -14,6 +14,7 @@ Requirements tested: 11.1, 11.2, 11.3, 11.4
 
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime, timedelta
 from typing import Any
 from unittest.mock import patch
@@ -21,7 +22,7 @@ from unittest.mock import patch
 import pytest
 
 from tgraph_bot.config.models import CommandLimits, RateLimitingConfig
-from tgraph_bot.rate_limiting.rate_limiter import RateLimiter
+from tgraph_bot.rate_limiting.rate_limiter import CooldownInfo, RateLimiter
 
 
 @pytest.fixture
@@ -843,3 +844,239 @@ class TestEdgeCases:
         # Cleanup should not affect active cooldowns
         rate_limiter.cleanup_expired()
         assert len(rate_limiter._user_cooldowns) == 100
+
+
+class TestPeriodicCleanup:
+    """Tests for periodic cleanup task functionality.
+
+    Requirements tested: 23.2 (async task creation and context inheritance)
+    """
+
+    @pytest.mark.asyncio
+    async def test_start_periodic_cleanup(
+        self, basic_rate_limiting_config: RateLimitingConfig
+    ) -> None:
+        """Test that periodic cleanup task can be started."""
+        limiter = RateLimiter(config=basic_rate_limiting_config)
+
+        # Start periodic cleanup with short interval for testing
+        await limiter.start_periodic_cleanup(interval_seconds=1)
+
+        assert limiter._cleanup_task is not None
+        assert not limiter._cleanup_task.done()
+
+        # Clean up
+        await limiter.stop_periodic_cleanup()
+
+    @pytest.mark.asyncio
+    async def test_stop_periodic_cleanup(
+        self, basic_rate_limiting_config: RateLimitingConfig
+    ) -> None:
+        """Test that periodic cleanup task can be stopped."""
+        limiter = RateLimiter(config=basic_rate_limiting_config)
+
+        # Start and then stop
+        await limiter.start_periodic_cleanup(interval_seconds=1)
+        assert limiter._cleanup_task is not None
+
+        await limiter.stop_periodic_cleanup()
+        assert limiter._cleanup_task is None
+
+    @pytest.mark.asyncio
+    async def test_periodic_cleanup_actually_cleans(
+        self, basic_rate_limiting_config: RateLimitingConfig
+    ) -> None:
+        """Test that periodic cleanup actually removes expired entries."""
+        limiter = RateLimiter(config=basic_rate_limiting_config)
+
+        now = datetime.now()
+
+        with patch("tgraph_bot.rate_limiting.rate_limiter.datetime") as mock_datetime:
+            # Record usage at T=0
+            mock_datetime.now.return_value = now
+            limiter.record_usage("my_stats", user_id=100)  # 3 minute cooldown
+
+            # Verify cooldown exists
+            assert len(limiter._user_cooldowns) == 1
+
+            # Move to T=4 minutes (expired)
+            mock_datetime.now.return_value = now + timedelta(minutes=4)
+
+            # Start periodic cleanup with very short interval
+            await limiter.start_periodic_cleanup(interval_seconds=0.1)
+
+            # Wait for cleanup to run
+            await asyncio.sleep(0.2)
+
+            # Cooldown should be cleaned up
+            assert len(limiter._user_cooldowns) == 0
+
+            # Clean up
+            await limiter.stop_periodic_cleanup()
+
+    @pytest.mark.asyncio
+    async def test_start_periodic_cleanup_already_running(
+        self, basic_rate_limiting_config: RateLimitingConfig
+    ) -> None:
+        """Test that starting periodic cleanup twice doesn't create duplicate tasks."""
+        limiter = RateLimiter(config=basic_rate_limiting_config)
+
+        # Start first time
+        await limiter.start_periodic_cleanup(interval_seconds=1)
+        first_task = limiter._cleanup_task
+
+        # Start second time (should be ignored)
+        await limiter.start_periodic_cleanup(interval_seconds=1)
+        second_task = limiter._cleanup_task
+
+        # Should be the same task
+        assert first_task is second_task
+
+        # Clean up
+        await limiter.stop_periodic_cleanup()
+
+    @pytest.mark.asyncio
+    async def test_stop_periodic_cleanup_when_not_running(
+        self, basic_rate_limiting_config: RateLimitingConfig
+    ) -> None:
+        """Test that stopping cleanup when not running doesn't raise error."""
+        limiter = RateLimiter(config=basic_rate_limiting_config)
+
+        # Should not raise any errors
+        await limiter.stop_periodic_cleanup()
+
+
+class TestContextVariableSupport:
+    """Tests for context variable support for user tracking.
+
+    Requirements tested: 23.1, 23.2, 23.3, 23.4, 23.5
+    """
+
+    def test_check_cooldown_with_context_variable(
+        self, rate_limiter: RateLimiter
+    ) -> None:
+        """Test check_cooldown using context variable for user_id."""
+        from tgraph_bot.rate_limiting.rate_limiter import current_user_id
+
+        command = "config"
+        user_id = 123
+
+        # Set context variable
+        _ = current_user_id.set(user_id)
+
+        # Record usage explicitly
+        rate_limiter.record_usage(command, user_id)
+
+        # Check cooldown without passing user_id (should use context variable)
+        result = rate_limiter.check_cooldown(command)
+
+        assert result is not None
+        assert result["is_user_cooldown"] is True
+
+    def test_record_usage_with_context_variable(
+        self, rate_limiter: RateLimiter
+    ) -> None:
+        """Test record_usage using context variable for user_id."""
+        from tgraph_bot.rate_limiting.rate_limiter import current_user_id
+
+        command = "config"
+        user_id = 456
+
+        # Set context variable
+        _ = current_user_id.set(user_id)
+
+        # Record usage without passing user_id (should use context variable)
+        rate_limiter.record_usage(command)
+
+        # Verify cooldown was recorded
+        result = rate_limiter.check_cooldown(command, user_id)
+        assert result is not None
+
+    def test_check_cooldown_without_user_id_or_context_raises_error(
+        self, rate_limiter: RateLimiter
+    ) -> None:
+        """Test that check_cooldown raises ValueError when user_id not provided and context not set."""
+        from tgraph_bot.rate_limiting.rate_limiter import current_user_id
+
+        # Ensure context variable is None (default)
+        _ = current_user_id.set(None)
+
+        with pytest.raises(ValueError, match="user_id must be provided"):
+            _ = rate_limiter.check_cooldown("config")
+
+    def test_record_usage_without_user_id_or_context_raises_error(
+        self, rate_limiter: RateLimiter
+    ) -> None:
+        """Test that record_usage raises ValueError when user_id not provided and context not set."""
+        from tgraph_bot.rate_limiting.rate_limiter import current_user_id
+
+        # Ensure context variable is None (default)
+        _ = current_user_id.set(None)
+
+        with pytest.raises(ValueError, match="user_id must be provided"):
+            rate_limiter.record_usage("config")
+
+    def test_context_variable_has_default_none(self) -> None:
+        """Test that current_user_id context variable has default value of None."""
+        from tgraph_bot.rate_limiting.rate_limiter import current_user_id
+
+        # Get without setting should return None
+        assert current_user_id.get() is None
+
+    @pytest.mark.asyncio
+    async def test_context_variable_inherited_in_async_tasks(
+        self, rate_limiter: RateLimiter
+    ) -> None:
+        """Test that context variable is automatically inherited in async tasks.
+
+        Requirements tested: 23.2
+        """
+        from tgraph_bot.rate_limiting.rate_limiter import current_user_id
+
+        user_id = 789
+        command = "config"
+        results: list[CooldownInfo | None] = []
+
+        async def check_in_task() -> None:
+            """Helper function that runs in separate task."""
+            # Record usage using context variable
+            rate_limiter.record_usage(command)
+            # Check cooldown using context variable
+            result = rate_limiter.check_cooldown(command)
+            results.append(result)
+
+        # Set context variable in parent task
+        _ = current_user_id.set(user_id)
+
+        # Create child task (should inherit context)
+        task = asyncio.create_task(check_in_task())
+        await task
+
+        # Verify the child task used the inherited context variable
+        assert len(results) == 1
+        assert results[0] is not None
+        assert results[0]["is_user_cooldown"] is True
+
+    def test_explicit_user_id_takes_precedence_over_context(
+        self, rate_limiter: RateLimiter
+    ) -> None:
+        """Test that explicit user_id parameter takes precedence over context variable."""
+        from tgraph_bot.rate_limiting.rate_limiter import current_user_id
+
+        command = "config"
+        context_user_id = 100
+        explicit_user_id = 200
+
+        # Set context variable
+        _ = current_user_id.set(context_user_id)
+
+        # Record usage for context user
+        rate_limiter.record_usage(command, context_user_id)
+
+        # Check cooldown with explicit user_id (different from context)
+        result = rate_limiter.check_cooldown(command, explicit_user_id)
+
+        # Should not be on cooldown (different user)
+        # But will have global cooldown
+        assert result is not None
+        assert result["is_user_cooldown"] is False  # Global, not user cooldown
