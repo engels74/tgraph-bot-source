@@ -10,7 +10,7 @@ import asyncio
 import logging
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Any, Final
+from typing import Final, NotRequired, ReadOnly, TypedDict, cast
 
 import httpx
 
@@ -22,6 +22,41 @@ logger = logging.getLogger(__name__)
 MAX_RETRIES: Final[int] = 3
 INITIAL_RETRY_DELAY: Final[float] = 1.0
 MAX_RETRY_DELAY: Final[float] = 10.0
+
+
+# TypedDict models for Tautulli API responses
+class TautulliStreamRecord(TypedDict):
+    """Structure of a stream record returned from Tautulli API."""
+
+    date: ReadOnly[int]
+    media_type: ReadOnly[str]
+    stream_type: ReadOnly[str]
+    platform: ReadOnly[str]
+    user: ReadOnly[str]
+    stream_video_resolution: ReadOnly[str]
+    stream_video_full_resolution: ReadOnly[str]
+
+
+class TautulliDataSection(TypedDict):
+    """Structure of the data section in Tautulli API response."""
+
+    recordsFiltered: NotRequired[int]
+    recordsTotal: NotRequired[int]
+    data: list[dict[str, object]]
+
+
+class TautulliResponseSection(TypedDict):
+    """Structure of the response section in Tautulli API response."""
+
+    result: NotRequired[str]
+    message: NotRequired[str | None]
+    data: TautulliDataSection
+
+
+class TautulliAPIResponse(TypedDict):
+    """Top-level structure of Tautulli API response."""
+
+    response: TautulliResponseSection
 
 
 @dataclass(slots=True, frozen=True)
@@ -53,12 +88,36 @@ class TautulliClient:
     base_url: str
     timeout: float = 30.0
 
+    def build_url(self, params: Mapping[str, object]) -> str:
+        """Build the full API URL with query parameters.
+
+        Args:
+            params: Query parameters to include in the URL
+
+        Returns:
+            Full URL with encoded query parameters
+        """
+        # Remove trailing slash from base_url if present
+        base = self.base_url.rstrip("/")
+
+        # Build query string
+        query_parts: list[str] = []
+        for key, value in params.items():
+            # Don't log the API key
+            if key == "apikey":
+                query_parts.append(f"{key}=****")
+            else:
+                query_parts.append(f"{key}={value}")
+
+        query_string = "&".join(query_parts)
+        return f"{base}/api/v2?{query_string}"
+
     async def get_history(
         self,
         *,
         days: int,
         length: int = 1000,
-    ) -> list[dict[str, Any]]:  # pyright: ignore[reportExplicitAny]  # API boundary
+    ) -> list[dict[str, object]]:
         """Retrieve play history for the specified number of days.
 
         Fetches streaming history from Tautulli for all users within
@@ -113,7 +172,7 @@ class TautulliClient:
             )
             raise TautulliAPIError(
                 f"Failed to retrieve history: {e}",
-                url=self._build_url(params),
+                url=self.build_url(params),
             ) from e
 
     async def get_user_history(
@@ -122,7 +181,7 @@ class TautulliClient:
         username: str,
         days: int,
         length: int = 1000,
-    ) -> list[dict[str, Any]]:  # pyright: ignore[reportExplicitAny]  # API boundary
+    ) -> list[dict[str, object]]:
         """Retrieve play history for a specific user.
 
         Fetches streaming history from Tautulli for a single user within
@@ -174,13 +233,13 @@ class TautulliClient:
             )
             raise TautulliAPIError(
                 f"Failed to retrieve user history: {e}",
-                url=self._build_url(params),
+                url=self.build_url(params),
             ) from e
 
     async def _make_request(
         self,
         params: Mapping[str, object],
-    ) -> Mapping[str, Any]:  # pyright: ignore[reportExplicitAny]  # API boundary
+    ) -> TautulliAPIResponse:
         """Make an HTTP request to the Tautulli API with retry logic.
 
         Implements exponential backoff retry logic for transient failures
@@ -200,7 +259,7 @@ class TautulliClient:
             - 2.3: Log error details
             - 2.5: Validate responses
         """
-        url = self._build_url(params)
+        url = self.build_url(params)
         retry_delay = INITIAL_RETRY_DELAY
 
         for attempt in range(MAX_RETRIES):
@@ -251,7 +310,7 @@ class TautulliClient:
 
                     # Parse JSON response
                     try:
-                        data = response.json()
+                        raw_data: object = response.json()  # pyright: ignore[reportAny]  # httpx returns Any
                     except Exception as e:
                         raise TautulliAPIError(
                             f"Failed to parse JSON response: {e}",
@@ -259,34 +318,50 @@ class TautulliClient:
                             url=url,
                         ) from e
 
-                    # Validate response structure
-                    if not isinstance(data, dict):
+                    # Validate response structure with type narrowing
+                    if not isinstance(raw_data, dict):
                         raise TautulliAPIError(
-                            f"Invalid response structure: expected dict, got {type(data)}",
+                            f"Invalid response structure: expected dict, got {type(raw_data).__name__}",
+                            status_code=response.status_code,
+                            url=url,
+                        )
+
+                    # Check for required 'response' key
+                    if "response" not in raw_data:
+                        raise TautulliAPIError(
+                            "Invalid response structure: missing 'response' key",
+                            status_code=response.status_code,
+                            url=url,
+                        )
+
+                    # Validate response section is a dict
+                    response_section_raw: object = raw_data["response"]  # pyright: ignore[reportUnknownVariableType]  # validated below
+                    if not isinstance(response_section_raw, dict):
+                        raise TautulliAPIError(
+                            "Invalid response structure: 'response' is not a dict",
                             status_code=response.status_code,
                             url=url,
                         )
 
                     # Check for Tautulli-specific error in response
-                    if "response" in data:
-                        response_data = data["response"]
-                        if isinstance(response_data, dict):
-                            if response_data.get("result") == "error":
-                                error_msg = response_data.get(
-                                    "message", "Unknown error"
-                                )
-                                raise TautulliAPIError(
-                                    f"Tautulli API error: {error_msg}",
-                                    status_code=response.status_code,
-                                    url=url,
-                                )
+                    result_raw: object = response_section_raw.get("result")  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]  # dict access
+                    if result_raw == "error":
+                        message_raw: object = response_section_raw.get("message")  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]  # dict access
+                        error_msg = message_raw if isinstance(message_raw, str) else "Unknown error"
+                        raise TautulliAPIError(
+                            f"Tautulli API error: {error_msg}",
+                            status_code=response.status_code,
+                            url=url,
+                        )
 
                     logger.debug(
                         "Tautulli API request successful",
                         extra={"url": url, "status_code": response.status_code},
                     )
 
-                    return data
+                    # Cast to TautulliAPIResponse after validation
+                    # We've validated the structure, so this cast is safe
+                    return cast(TautulliAPIResponse, cast(object, raw_data))
 
             except httpx.TimeoutException as e:
                 error_msg = f"Request timeout after {self.timeout}s"
@@ -333,34 +408,10 @@ class TautulliClient:
         # Should never reach here, but just in case
         raise TautulliAPIError("Unexpected error: max retries reached", url=url)
 
-    def _build_url(self, params: Mapping[str, object]) -> str:
-        """Build the full API URL with query parameters.
-
-        Args:
-            params: Query parameters to include in the URL
-
-        Returns:
-            Full URL with encoded query parameters
-        """
-        # Remove trailing slash from base_url if present
-        base = self.base_url.rstrip("/")
-
-        # Build query string
-        query_parts: list[str] = []
-        for key, value in params.items():
-            # Don't log the API key
-            if key == "apikey":
-                query_parts.append(f"{key}=****")
-            else:
-                query_parts.append(f"{key}={value}")
-
-        query_string = "&".join(query_parts)
-        return f"{base}/api/v2?{query_string}"
-
     def _extract_history_records(
         self,
-        response_data: Mapping[str, Any],  # pyright: ignore[reportExplicitAny]  # API boundary
-    ) -> list[dict[str, Any]]:  # pyright: ignore[reportExplicitAny]  # API boundary
+        response_data: TautulliAPIResponse,
+    ) -> list[dict[str, object]]:
         """Extract and validate history records from API response.
 
         Args:
@@ -377,37 +428,32 @@ class TautulliClient:
             - 2.5: Validate API responses before processing
         """
         try:
-            # Navigate to the data array
-            if "response" not in response_data:
-                raise TautulliAPIError(
-                    "Invalid response structure: missing 'response' key"
-                )
+            # Navigate to the data array with validation
+            response_section = response_data["response"]
 
-            response = response_data["response"]
-            if not isinstance(response, dict):
-                raise TautulliAPIError(
-                    f"Invalid response structure: 'response' is not a dict"
-                )
-
-            if "data" not in response:
+            # Check for required 'data' key
+            if "data" not in response_section:
                 raise TautulliAPIError(
                     "Invalid response structure: missing 'data' key"
                 )
 
-            data = response["data"]
-            if not isinstance(data, dict):
-                raise TautulliAPIError(
-                    f"Invalid response structure: 'data' is not a dict"
+            data_section_raw: object = response_section["data"]
+            if not isinstance(data_section_raw, dict):  # pyright: ignore[reportUnnecessaryIsInstance]  # runtime validation
+                raise TautulliAPIError(  # pyright: ignore[reportUnreachable]  # runtime validation needed
+                    "Invalid response structure: 'data' is not a dict"
                 )
 
-            records = data.get("data", [])
-            if not isinstance(records, list):
+            # Cast after validation
+            data_section: TautulliDataSection = cast(TautulliDataSection, cast(object, data_section_raw))
+
+            raw_records = data_section["data"]
+            if not isinstance(raw_records, list):  # pyright: ignore[reportUnnecessaryIsInstance]  # runtime validation
                 raise TautulliAPIError(
-                    f"Invalid response structure: 'data.data' is not a list"
+                    "Invalid response structure: 'data.data' is not a list"
                 )
 
             # Validate required fields in each record
-            validated_records: list[dict[str, Any]] = []  # pyright: ignore[reportExplicitAny]  # API boundary
+            validated_records: list[dict[str, object]] = []
             required_fields = {
                 "date",
                 "media_type",
@@ -418,29 +464,30 @@ class TautulliClient:
                 "stream_video_full_resolution",
             }
 
-            for i, record in enumerate(records):
-                if not isinstance(record, dict):
+            for i, raw_record in enumerate(raw_records):
+                # Check for required fields
+                # Note: raw_record is dict[str, object] from TypedDict
+                if not isinstance(raw_record, dict):  # pyright: ignore[reportUnnecessaryIsInstance]  # runtime check
                     logger.warning(
                         f"Skipping invalid record at index {i}: not a dict",
-                        extra={"record": record},
+                        extra={"record_type": type(raw_record).__name__},
                     )
                     continue
 
-                # Check for required fields
-                missing_fields = required_fields - set(record.keys())
+                missing_fields = required_fields - raw_record.keys()
                 if missing_fields:
                     logger.warning(
                         f"Skipping record at index {i}: missing fields {missing_fields}",
-                        extra={"record_keys": list(record.keys())},
+                        extra={"record_keys": list(raw_record.keys())},
                     )
                     continue
 
-                validated_records.append(record)
+                validated_records.append(raw_record)
 
             logger.info(
                 f"Extracted {len(validated_records)} valid records from Tautulli API",
                 extra={
-                    "total_records": len(records),
+                    "total_records": len(raw_records),
                     "valid_records": len(validated_records),
                 },
             )

@@ -11,6 +11,11 @@ Requirements tested: 2.1, 2.2, 2.3, 2.4, 2.5
 """
 
 # pyright: reportExplicitAny=false
+# pyright: reportAny=false
+# pyright: reportUnknownMemberType=false
+# pyright: reportUnknownVariableType=false
+# pyright: reportUnknownArgumentType=false
+# pyright: reportUnusedCallResult=false
 
 from typing import Any
 from unittest.mock import AsyncMock, patch
@@ -458,7 +463,7 @@ class TestAPIErrorHandling:
             mock_client.get.return_value = mock_response
             mock_client_class.return_value.__aenter__.return_value = mock_client
 
-            with patch("asyncio.sleep") as mock_sleep:
+            with patch("asyncio.sleep"):
                 with pytest.raises(TautulliAPIError) as exc_info:
                     await tautulli_client.get_history(days=7)
 
@@ -496,7 +501,7 @@ class TestAPIErrorHandling:
             mock_client.get.side_effect = httpx.NetworkError("Connection refused")
             mock_client_class.return_value.__aenter__.return_value = mock_client
 
-            with patch("asyncio.sleep") as mock_sleep:
+            with patch("asyncio.sleep"):
                 with pytest.raises(TautulliAPIError) as exc_info:
                     await tautulli_client.get_history(days=7)
 
@@ -789,7 +794,7 @@ class TestURLBuilding:
         )
 
         params = {"cmd": "get_history", "apikey": "test_key"}
-        url = client._build_url(params)
+        url = client.build_url(params)
 
         # Should not have double slashes
         assert "//" not in url.replace("http://", "")
@@ -804,7 +809,7 @@ class TestURLBuilding:
             "apikey": "test_key",
             "length": 100,
         }
-        url = tautulli_client._build_url(params)
+        url = tautulli_client.build_url(params)
 
         assert "cmd=get_history" in url
         assert "length=100" in url
