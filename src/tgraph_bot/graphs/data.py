@@ -60,6 +60,44 @@ class StreamRecord:
     stream_resolution: str
 
 
+@dataclass(slots=True)
+class AggregatedData:
+    """Aggregated data for graph generation.
+
+    This dataclass holds aggregated stream data ready for visualization.
+    Uses slots for memory efficiency.
+
+    Attributes:
+        dates: List of datetime values for time-series data
+        counts: List of count values corresponding to dates/labels
+        labels: List of string labels for categorical data
+    """
+
+    dates: list[datetime]
+    counts: list[int]
+    labels: list[str]
+
+
+@dataclass(slots=True)
+class GraphMetadata:
+    """Metadata about a generated graph.
+
+    This dataclass contains information about a graph that was generated.
+    Uses slots for memory efficiency.
+
+    Attributes:
+        graph_type: Type of graph (e.g., "daily_play_count", "top_platforms")
+        file_path: Path to the generated graph image file
+        generated_at: When the graph was generated (UTC)
+        data_range_days: Number of days of data included in the graph
+    """
+
+    graph_type: str
+    file_path: str
+    generated_at: datetime
+    data_range_days: int
+
+
 def create_stream_record(tautulli_record: Mapping[str, object]) -> StreamRecord:
     """Create a StreamRecord from a Tautulli API response.
 
