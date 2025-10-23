@@ -94,7 +94,7 @@
   - Write tests for handling missing localization files
   - _Requirements: 14.1, 14.2, 14.4_
 
-- [ ] 12. Implement localization system (it should work with Weblate later on)
+- [x] 12. Implement localization system (it should work with Weblate later on)
   - Create Localizer class with language loading from JSON files
   - Implement LocalizedStrings TypedDict for type-safe string access
   - Create English (en) localization file with all required strings
