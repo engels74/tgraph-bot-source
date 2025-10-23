@@ -104,7 +104,7 @@
   - Verify all tests pass
   - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5, 28.1, 28.2_
 
-- [ ] 13. Write tests for task scheduler
+- [x] 13. Write tests for task scheduler
   - Write tests for schedule calculation (fixed time vs random time)
   - Write tests for next run time calculation
   - Write tests for graceful shutdown and task cancellation
