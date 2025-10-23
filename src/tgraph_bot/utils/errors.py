@@ -132,3 +132,33 @@ class RateLimitError(TGraphBotError):
         super().__init__(message)
         self.retry_after: float = retry_after
         self.is_user_cooldown: bool = is_user_cooldown
+
+
+class LocalizationError(TGraphBotError):
+    """Localization loading or processing errors.
+
+    Raised when localization files cannot be loaded, parsed, or when required
+    locale files are missing.
+
+    Attributes:
+        language: Language code that failed to load
+        locale_file: Path to the locale file that caused the error
+    """
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        language: str | None = None,
+        locale_file: str | None = None,
+    ) -> None:
+        """Initialize LocalizationError with optional locale details.
+
+        Args:
+            message: Error message describing the localization issue
+            language: Language code that failed to load (e.g., 'en', 'da')
+            locale_file: Path to the locale file that caused the error
+        """
+        super().__init__(message)
+        self.language: str | None = language
+        self.locale_file: str | None = locale_file

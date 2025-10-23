@@ -87,14 +87,14 @@
   - Verify all tests pass
   - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5, 23.1, 23.2, 23.3_
 
-- [ ] 11. Write tests for localization system
+- [x] 11. Write tests for localization system (it should work with Weblate later on)
   - Write tests for loading English and Danish localization files
   - Write tests for fallback to English when translation missing
   - Write tests for string formatting with keyword arguments
   - Write tests for handling missing localization files
   - _Requirements: 14.1, 14.2, 14.4_
 
-- [ ] 12. Implement localization system
+- [ ] 12. Implement localization system (it should work with Weblate later on)
   - Create Localizer class with language loading from JSON files
   - Implement LocalizedStrings TypedDict for type-safe string access
   - Create English (en) localization file with all required strings
