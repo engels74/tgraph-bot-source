@@ -7,8 +7,6 @@ Requirements: 1.2, 1.5, 8.1, 8.2, 8.3, 8.4, 8.5, 9.1, 9.2, 9.3, 9.4, 9.5,
               10.1, 10.2, 10.3, 10.4, 10.5, 19.2, 19.4, 22.1, 22.3, 27.1, 27.2
 """
 
-from __future__ import annotations
-
 import asyncio
 from datetime import UTC, datetime
 from pathlib import Path
@@ -39,6 +37,11 @@ logger = get_logger(__name__)
 
 # Discord message character limit
 DISCORD_MESSAGE_LIMIT = 2000
+
+# Type aliases using PEP 695 syntax
+type GraphMetadataList = list[GraphMetadata]
+type MessageChunks = list[str]
+type ConfigDict = dict[str, object]
 
 
 class GraphCommands(commands.Cog):
@@ -74,9 +77,7 @@ class GraphCommands(commands.Cog):
         name="update-graphs",
         description="Generate and post new graphs with current data",
     )
-    async def update_graphs(
-        self, interaction: nextcord.Interaction[nextcord.Client]
-    ) -> None:
+    async def update_graphs(self, interaction: nextcord.Interaction[TGraphBot]) -> None:
         """Manually trigger graph generation and posting.
 
         This command:
@@ -241,9 +242,7 @@ class GraphCommands(commands.Cog):
         name="my-stats",
         description="View your personal viewing statistics",
     )
-    async def my_stats(
-        self, interaction: nextcord.Interaction[nextcord.Client]
-    ) -> None:
+    async def my_stats(self, interaction: nextcord.Interaction[TGraphBot]) -> None:
         """Generate personal statistics for the requesting user.
 
         This command:
@@ -425,7 +424,7 @@ class GraphCommands(commands.Cog):
         name="config",
         description="View current bot configuration",
     )
-    async def config(self, interaction: nextcord.Interaction[nextcord.Client]) -> None:
+    async def config(self, interaction: nextcord.Interaction[TGraphBot]) -> None:
         """Display current bot configuration with sensitive values masked.
 
         This command:
@@ -559,7 +558,7 @@ class GraphCommands(commands.Cog):
 
     async def _generate_and_post_graphs(
         self, *, username_filter: str | None = None
-    ) -> list[GraphMetadata]:
+    ) -> GraphMetadataList:
         """Generate graphs and post them to the configured Discord channel.
 
         This method:
@@ -632,7 +631,7 @@ class GraphCommands(commands.Cog):
 
         return metadata_list
 
-    async def _generate_personal_stats(self, *, username: str) -> list[GraphMetadata]:
+    async def _generate_personal_stats(self, *, username: str) -> GraphMetadataList:
         """Generate personal statistics graphs for a specific user.
 
         Args:
@@ -646,7 +645,7 @@ class GraphCommands(commands.Cog):
         # Generate graphs with username filter
         return await self._generate_and_post_graphs(username_filter=username)
 
-    async def _post_graphs_to_channel(self, metadata_list: list[GraphMetadata]) -> None:
+    async def _post_graphs_to_channel(self, metadata_list: GraphMetadataList) -> None:
         """Post generated graphs to the configured Discord channel.
 
         Args:
@@ -718,7 +717,7 @@ class GraphCommands(commands.Cog):
                 f"Failed to send graph {metadata.graph_type}: {e}"
             ) from e
 
-    def _format_config_dict(self, config: dict[str, object], *, indent: int = 0) -> str:
+    def _format_config_dict(self, config: ConfigDict, *, indent: int = 0) -> str:
         """Format configuration dictionary as readable text.
 
         Args:
@@ -750,7 +749,7 @@ class GraphCommands(commands.Cog):
 
     def _split_message(
         self, text: str, *, limit: int = DISCORD_MESSAGE_LIMIT
-    ) -> list[str]:
+    ) -> MessageChunks:
         """Split a long message into chunks that fit Discord's message limit.
 
         Args:

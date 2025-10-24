@@ -16,6 +16,10 @@ from tgraph_bot.graphs.data import GraphMetadata, StreamRecord
 from tgraph_bot.graphs.factory import GraphFactory
 from tgraph_bot.graphs.styling import GraphStyling
 
+# Type aliases using PEP 695 syntax
+type GraphMetadataList = list[GraphMetadata]
+type EnabledGraphsList = list[tuple[str, GraphConfig]]
+
 
 @dataclass(slots=True)
 class GraphRenderer:
@@ -52,7 +56,7 @@ class GraphRenderer:
         *,
         config: GraphsConfig,
         output_dir: str | Path,
-    ) -> list[GraphMetadata]:
+    ) -> GraphMetadataList:
         """Generate all enabled graphs and save to disk.
 
         This method:
@@ -140,9 +144,7 @@ class GraphRenderer:
 
         return metadata_list
 
-    def _get_enabled_graphs(
-        self, config: GraphsConfig
-    ) -> list[tuple[str, GraphConfig]]:
+    def _get_enabled_graphs(self, config: GraphsConfig) -> EnabledGraphsList:
         """Get list of enabled graph configurations.
 
         Extracts all graph configurations that have enabled=True.

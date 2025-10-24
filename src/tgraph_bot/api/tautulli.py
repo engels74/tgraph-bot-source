@@ -23,6 +23,10 @@ MAX_RETRIES: Final[int] = 3
 INITIAL_RETRY_DELAY: Final[float] = 1.0
 MAX_RETRY_DELAY: Final[float] = 10.0
 
+# Type aliases using PEP 695 syntax
+type StreamRecordList = list[dict[str, object]]
+type QueryParams = Mapping[str, object]
+
 
 # TypedDict models for Tautulli API responses
 class TautulliStreamRecord(TypedDict):
@@ -88,7 +92,7 @@ class TautulliClient:
     base_url: str
     timeout: float = 30.0
 
-    def build_url(self, params: Mapping[str, object]) -> str:
+    def build_url(self, params: QueryParams) -> str:
         """Build the full API URL with query parameters.
 
         Args:
@@ -117,7 +121,7 @@ class TautulliClient:
         *,
         days: int,
         length: int = 1000,
-    ) -> list[dict[str, object]]:
+    ) -> StreamRecordList:
         """Retrieve play history for the specified number of days.
 
         Fetches streaming history from Tautulli for all users within
@@ -181,7 +185,7 @@ class TautulliClient:
         username: str,
         days: int,
         length: int = 1000,
-    ) -> list[dict[str, object]]:
+    ) -> StreamRecordList:
         """Retrieve play history for a specific user.
 
         Fetches streaming history from Tautulli for a single user within
@@ -238,7 +242,7 @@ class TautulliClient:
 
     async def _make_request(
         self,
-        params: Mapping[str, object],
+        params: QueryParams,
     ) -> TautulliAPIResponse:
         """Make an HTTP request to the Tautulli API with retry logic.
 
@@ -415,7 +419,7 @@ class TautulliClient:
     def _extract_history_records(
         self,
         response_data: TautulliAPIResponse,
-    ) -> list[dict[str, object]]:
+    ) -> StreamRecordList:
         """Extract and validate history records from API response.
 
         Args:

@@ -23,6 +23,9 @@ from tgraph_bot.utils.logging import (
     log_operation_start,
 )
 
+# Type aliases using PEP 695 syntax
+type ValidationErrors = list[str]
+
 logger = get_logger(__name__)
 
 
@@ -299,7 +302,9 @@ class TGraphBot(commands.Bot):
 
             # Validate configuration before applying
             if self.config_loader is not None:
-                validation_errors = self.config_loader.validate(config_to_apply)
+                validation_errors: ValidationErrors = self.config_loader.validate(
+                    config_to_apply
+                )
                 if validation_errors:
                     error_msg = f"Configuration validation failed: {'; '.join(validation_errors)}"
                     logger.error(

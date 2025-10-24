@@ -6,8 +6,6 @@ signal handling, and graceful shutdown for the Discord bot.
 Requirements: 1.1, 1.4, 15.1, 15.2, 22.4, 22.5
 """
 
-from __future__ import annotations
-
 import asyncio
 import signal
 import sys

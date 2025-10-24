@@ -13,6 +13,9 @@ from matplotlib.figure import Figure
 from tgraph_bot.config.models import GraphAppearanceConfig, GraphConfig
 from tgraph_bot.graphs.data import StreamRecord
 
+# Type alias using PEP 695 syntax
+type StreamRecordList = list[StreamRecord]
+
 
 class GraphGenerator(Protocol):
     """Protocol for graph generation implementations.
@@ -27,7 +30,7 @@ class GraphGenerator(Protocol):
 
     def generate(
         self,
-        data: list[StreamRecord],
+        data: StreamRecordList,
         *,
         config: GraphConfig,
         appearance: GraphAppearanceConfig,

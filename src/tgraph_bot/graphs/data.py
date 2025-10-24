@@ -13,8 +13,11 @@ from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from typing import TypedDict
 
-# Type alias for aggregation results
+# Type aliases using PEP 695 syntax
 type AggregationResult[T] = dict[T, int]
+type StreamRecordList = list[StreamRecord]
+type StreamRecordSequence = Sequence[StreamRecord]
+type TautulliRecordMapping = Mapping[str, object]
 
 
 class TautulliStreamRecord(TypedDict):
@@ -98,7 +101,7 @@ class GraphMetadata:
     data_range_days: int
 
 
-def create_stream_record(tautulli_record: Mapping[str, object]) -> StreamRecord:
+def create_stream_record(tautulli_record: TautulliRecordMapping) -> StreamRecord:
     """Create a StreamRecord from a Tautulli API response.
 
     This function transforms raw Tautulli API data into a normalized,
@@ -146,8 +149,8 @@ def create_stream_record(tautulli_record: Mapping[str, object]) -> StreamRecord:
 
 
 def transform_tautulli_records(
-    tautulli_records: Sequence[Mapping[str, object]],
-) -> list[StreamRecord]:
+    tautulli_records: Sequence[TautulliRecordMapping],
+) -> StreamRecordList:
     """Transform a sequence of Tautulli API records into StreamRecord objects.
 
     This function batch-processes raw Tautulli API responses into normalized,
@@ -168,7 +171,7 @@ def transform_tautulli_records(
 
 
 def aggregate_by_date(
-    records: Sequence[StreamRecord],
+    records: StreamRecordSequence,
 ) -> AggregationResult[date]:
     """Aggregate stream records by date.
 
@@ -197,7 +200,7 @@ def aggregate_by_date(
 
 
 def aggregate_by_day_of_week(
-    records: Sequence[StreamRecord],
+    records: StreamRecordSequence,
 ) -> AggregationResult[str]:
     """Aggregate stream records by day of week.
 
@@ -235,7 +238,7 @@ def aggregate_by_day_of_week(
 
 
 def aggregate_by_hour(
-    records: Sequence[StreamRecord],
+    records: StreamRecordSequence,
 ) -> AggregationResult[int]:
     """Aggregate stream records by hour of day.
 
@@ -262,7 +265,7 @@ def aggregate_by_hour(
 
 
 def aggregate_by_platform(
-    records: Sequence[StreamRecord],
+    records: StreamRecordSequence,
 ) -> AggregationResult[str]:
     """Aggregate stream records by platform.
 
@@ -291,7 +294,7 @@ def aggregate_by_platform(
 
 
 def aggregate_by_user(
-    records: Sequence[StreamRecord],
+    records: StreamRecordSequence,
 ) -> AggregationResult[str]:
     """Aggregate stream records by user.
 
@@ -320,7 +323,7 @@ def aggregate_by_user(
 
 
 def aggregate_by_month(
-    records: Sequence[StreamRecord],
+    records: StreamRecordSequence,
 ) -> AggregationResult[date]:
     """Aggregate stream records by month.
 
@@ -350,7 +353,7 @@ def aggregate_by_month(
 
 
 def aggregate_by_stream_type(
-    records: Sequence[StreamRecord],
+    records: StreamRecordSequence,
 ) -> AggregationResult[str]:
     """Aggregate stream records by stream type.
 
@@ -379,7 +382,7 @@ def aggregate_by_stream_type(
 
 
 def aggregate_by_date_and_stream_type(
-    records: Sequence[StreamRecord],
+    records: StreamRecordSequence,
 ) -> dict[date, dict[str, int]]:
     """Aggregate stream records by date and stream type.
 
@@ -460,7 +463,7 @@ def group_resolution(resolution: str, *, grouping: str = "standard") -> str:
 
 
 def aggregate_by_resolution(
-    records: Sequence[StreamRecord],
+    records: StreamRecordSequence,
     *,
     resolution_field: str = "stream_resolution",
     grouping: str = "standard",
@@ -500,7 +503,7 @@ def aggregate_by_resolution(
 
 
 def aggregate_by_platform_and_stream_type(
-    records: Sequence[StreamRecord],
+    records: StreamRecordSequence,
 ) -> dict[str, dict[str, int]]:
     """Aggregate stream records by platform and stream type.
 
@@ -541,7 +544,7 @@ def aggregate_by_platform_and_stream_type(
 
 
 def aggregate_by_user_and_stream_type(
-    records: Sequence[StreamRecord],
+    records: StreamRecordSequence,
 ) -> dict[str, dict[str, int]]:
     """Aggregate stream records by user and stream type.
 
@@ -580,8 +583,8 @@ def aggregate_by_user_and_stream_type(
 
 
 def anonymize_usernames(
-    records: Sequence[StreamRecord],
-) -> list[StreamRecord]:
+    records: StreamRecordSequence,
+) -> StreamRecordList:
     """Anonymize usernames with consistent labels.
 
     Replaces usernames with anonymized labels ("User 1", "User 2", etc.)

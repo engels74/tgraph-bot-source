@@ -14,6 +14,10 @@ from ruamel.yaml.error import YAMLError
 from tgraph_bot.config.models import BotConfig
 from tgraph_bot.utils.errors import ConfigurationError
 
+# Type aliases using PEP 695 syntax
+type ValidationErrors = list[str]
+type ConfigDict = dict[str, object]
+
 
 class ConfigLoader:
     """Handles loading and saving configuration files."""
@@ -185,7 +189,7 @@ class ConfigLoader:
             ) from e
 
     def _merge_preserving_structure(
-        self, target: dict[str, object], source: dict[str, object]
+        self, target: ConfigDict, source: ConfigDict
     ) -> None:
         """Merge source dictionary into target while preserving target's structure.
 
@@ -208,7 +212,7 @@ class ConfigLoader:
                 # Update or add the value
                 target[key] = value
 
-    def validate(self, config: BotConfig) -> list[str]:
+    def validate(self, config: BotConfig) -> ValidationErrors:
         """Validate configuration and return list of error messages.
 
         Args:
