@@ -325,9 +325,7 @@ class TestTautulliAPIIntegration:
     """Test Tautulli API integration (Requirement 2.1, 2.3, 15.1)."""
 
     @patch("httpx.AsyncClient")
-    async def test_successful_api_call(
-        self, mock_client_class: MagicMock
-    ) -> None:
+    async def test_successful_api_call(self, mock_client_class: MagicMock) -> None:
         """Test successful Tautulli API call with mocked response."""
         from tgraph_bot.api.tautulli import TautulliClient
 
@@ -501,7 +499,7 @@ class TestConfigurationReload:
             assert config1.automation.update_interval_days == 7
 
             # Modify YAML file
-            with open(config_path, "r") as f:
+            with open(config_path) as f:
                 config_dict = yaml.safe_load(f)
 
             config_dict["automation"]["update_interval_days"] = 14
@@ -709,7 +707,7 @@ async def test_full_integration_workflow(
             plt.close(fig)
 
         # 5. Test configuration reload
-        with open(config_path, "r") as f:
+        with open(config_path) as f:
             config_dict = yaml.safe_load(f)
 
         config_dict["automation"]["update_interval_days"] = 14

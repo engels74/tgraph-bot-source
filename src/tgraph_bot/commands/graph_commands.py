@@ -7,6 +7,8 @@ Requirements: 1.2, 1.5, 8.1, 8.2, 8.3, 8.4, 8.5, 9.1, 9.2, 9.3, 9.4, 9.5,
               10.1, 10.2, 10.3, 10.4, 10.5, 19.2, 19.4, 22.1, 22.3, 27.1, 27.2
 """
 
+from __future__ import annotations
+
 import asyncio
 from datetime import UTC, datetime
 from pathlib import Path
@@ -16,6 +18,7 @@ import nextcord
 from nextcord.ext import commands
 
 from tgraph_bot.api.tautulli import TautulliClient
+from tgraph_bot.bot import TGraphBot
 from tgraph_bot.graphs.factory import GraphFactory
 from tgraph_bot.graphs.renderer import GraphRenderer
 from tgraph_bot.graphs.styling import GraphStyling
@@ -30,7 +33,6 @@ from tgraph_bot.utils.logging import (
 )
 
 if TYPE_CHECKING:
-    from tgraph_bot.bot import TGraphBot
     from tgraph_bot.graphs.data import GraphMetadata
 
 logger = get_logger(__name__)

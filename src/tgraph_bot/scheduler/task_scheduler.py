@@ -6,6 +6,8 @@ generation and posting based on configured intervals and times.
 Requirements implemented: 7.1, 7.2, 7.3, 7.4, 7.5, 22.1, 22.2, 22.4
 """
 
+from __future__ import annotations
+
 import asyncio
 import logging
 import random

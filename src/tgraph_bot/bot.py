@@ -82,12 +82,12 @@ class TGraphBot(commands.Bot):
         self.config_path: str | None = config_path
 
         # Initialize rate limiter
-        self.rate_limiter: RateLimiter = RateLimiter(config.rate_limiting)
+        self.rate_limiter: RateLimiter = RateLimiter(config=config.rate_limiting)
 
         # Initialize task scheduler
         # Note: update_executor will be set later when commands are loaded
         self.scheduler: TaskScheduler = TaskScheduler(
-            config.automation, update_executor=None
+            config=config.automation, update_executor=None
         )
 
         # Connection management
@@ -337,7 +337,7 @@ class TGraphBot(commands.Bot):
                 # Preserve the update_executor when reconfiguring
                 old_executor = self.scheduler.update_executor
                 self.scheduler = TaskScheduler(
-                    config_to_apply.automation, update_executor=old_executor
+                    config=config_to_apply.automation, update_executor=old_executor
                 )
                 if config_to_apply.automation.enabled:
                     await self.scheduler.start()
@@ -356,7 +356,7 @@ class TGraphBot(commands.Bot):
                 user_cooldowns, global_cooldowns = old_rate_limiter.get_cooldown_state()
 
                 # Create new rate limiter with new config
-                new_rate_limiter = RateLimiter(config_to_apply.rate_limiting)
+                new_rate_limiter = RateLimiter(config=config_to_apply.rate_limiting)
 
                 # Restore cooldown state to preserve existing cooldowns
                 new_rate_limiter.restore_cooldown_state(

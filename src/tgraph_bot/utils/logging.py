@@ -136,9 +136,10 @@ class ContextFilter(logging.Filter):
             True to allow the record to be logged
         """
         # Add context variables as dynamic attributes to log record
-        record.operation_id = operation_id.get()
-        record.user_id = user_id.get()
-        record.command_name = command_name.get()
+        # Use "-" as default value when context variables are not set
+        record.operation_id = operation_id.get() or "-"
+        record.user_id = user_id.get() or "-"
+        record.command_name = command_name.get() or "-"
         return True
 
 
@@ -170,11 +171,16 @@ def setup_logging(*, level: str = "INFO", format_style: str = "detailed") -> Non
         level=log_level,
         format=log_format,
         datefmt="%Y-%m-%d %H:%M:%S",
+        force=True,  # Force reconfiguration to ensure our settings are applied
     )
 
-    # Add context filter to root logger
+    # Add context filter to root logger and all handlers
     context_filter = ContextFilter()
     logging.root.addFilter(context_filter)
+
+    # Also add the filter to all existing handlers to ensure it's applied
+    for handler in logging.root.handlers:
+        handler.addFilter(context_filter)
 
 
 def log_api_request(
