@@ -14,22 +14,360 @@
         </header>
 
         <main>
+            <!-- Status Messages -->
+            <div id="status-message" class="status-message hidden"></div>
+
+            <!-- Configuration File Info -->
             <section class="info-panel">
                 <h2>Configuration File</h2>
-                <p><strong>Path:</strong> <code>{{ config_path }}</code></p>
+                <p><strong>Path:</strong> <code id="config-path">{{ config_path }}</code></p>
                 <p><strong>Last Modified:</strong> <span id="last-modified">{{ last_modified }}</span></p>
+                <p id="external-modification-warning" class="warning hidden">
+                    ⚠️ Configuration file was modified externally. Click "Reload from File" to refresh.
+                </p>
             </section>
 
-            <section class="placeholder">
-                <h2>Configuration Editor</h2>
-                <p>The configuration editor interface will be implemented in Task 27.</p>
-                <p>For now, please edit the configuration file manually using a text editor.</p>
-            </section>
+            <!-- Configuration Form -->
+            <form id="config-form">
+                <!-- Services Section -->
+                <section class="config-section">
+                    <h2>Services</h2>
 
-            <section class="actions">
-                <button id="reload-btn" class="btn btn-secondary">Reload from File</button>
-                <button id="save-btn" class="btn btn-primary" disabled>Save Configuration</button>
-            </section>
+                    <div class="subsection">
+                        <h3>Tautulli</h3>
+                        <div class="form-group">
+                            <label for="tautulli-url">URL</label>
+                            <input type="text" id="tautulli-url" name="services.tautulli.url"
+                                   placeholder="http://localhost:8181" required>
+                            <span class="help-text">Tautulli server URL (must start with http:// or https://)</span>
+                        </div>
+                        <div class="form-group">
+                            <label for="tautulli-api-key">API Key</label>
+                            <div class="sensitive-input">
+                                <input type="password" id="tautulli-api-key" name="services.tautulli.api_key"
+                                       placeholder="Enter API key" required minlength="32">
+                                <button type="button" class="toggle-visibility" data-target="tautulli-api-key">
+                                    👁️ Show
+                                </button>
+                            </div>
+                            <span class="help-text">Tautulli API key (minimum 32 characters)</span>
+                        </div>
+                    </div>
+
+                    <div class="subsection">
+                        <h3>Discord</h3>
+                        <div class="form-group">
+                            <label for="discord-token">Bot Token</label>
+                            <div class="sensitive-input">
+                                <input type="password" id="discord-token" name="services.discord.token"
+                                       placeholder="Enter bot token" required minlength="50">
+                                <button type="button" class="toggle-visibility" data-target="discord-token">
+                                    👁️ Show
+                                </button>
+                            </div>
+                            <span class="help-text">Discord bot token (minimum 50 characters)</span>
+                        </div>
+                        <div class="form-group">
+                            <label for="discord-channel-id">Channel ID</label>
+                            <input type="number" id="discord-channel-id" name="services.discord.channel_id"
+                                   placeholder="123456789012345678" required min="1">
+                            <span class="help-text">Discord channel ID for posting graphs</span>
+                        </div>
+                        <div class="form-group">
+                            <label for="discord-timestamp-format">Timestamp Format</label>
+                            <select id="discord-timestamp-format" name="services.discord.timestamp_format" required>
+                                <option value="t">Short Time (t)</option>
+                                <option value="T">Long Time (T)</option>
+                                <option value="d">Short Date (d)</option>
+                                <option value="D">Long Date (D)</option>
+                                <option value="f">Short Date/Time (f)</option>
+                                <option value="F">Long Date/Time (F)</option>
+                                <option value="R">Relative Time (R)</option>
+                            </select>
+                            <span class="help-text">Discord timestamp format for graph posts</span>
+                        </div>
+                        <div class="form-group">
+                            <label for="discord-ephemeral-delete">Ephemeral Message Delete After (seconds)</label>
+                            <input type="number" id="discord-ephemeral-delete"
+                                   name="services.discord.ephemeral_message_delete_after"
+                                   placeholder="60" required min="1" max="3600" step="0.1">
+                            <span class="help-text">Time before ephemeral messages auto-delete (1-3600 seconds)</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Automation Section -->
+                <section class="config-section">
+                    <h2>Automation</h2>
+                    <div class="form-group">
+                        <label for="automation-enabled">
+                            <input type="checkbox" id="automation-enabled" name="automation.enabled">
+                            Enable Automated Updates
+                        </label>
+                        <span class="help-text">Automatically generate and post graphs on schedule</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="automation-interval">Update Interval (days)</label>
+                        <input type="number" id="automation-interval" name="automation.update_interval_days"
+                               placeholder="1" required min="1" max="365">
+                        <span class="help-text">Days between automated updates (1-365)</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="automation-fixed-time">Fixed Update Time</label>
+                        <input type="text" id="automation-fixed-time" name="automation.fixed_update_time"
+                               placeholder="XX:XX or HH:MM" required pattern="^([01]\d|2[0-3]):[0-5]\d$|^XX:XX$">
+                        <span class="help-text">Fixed time (HH:MM) or XX:XX for random time</span>
+                    </div>
+                </section>
+
+                <!-- Data Collection Section -->
+                <section class="config-section">
+                    <h2>Data Collection</h2>
+                    <div class="form-group">
+                        <label for="data-history-days">History Days</label>
+                        <input type="number" id="data-history-days" name="data_collection.history_days"
+                               placeholder="30" required min="1" max="365">
+                        <span class="help-text">Number of days of history to collect (1-365)</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="data-max-records">Max Records Per Request</label>
+                        <input type="number" id="data-max-records" name="data_collection.max_records_per_request"
+                               placeholder="1000" required min="100" max="10000">
+                        <span class="help-text">Maximum records per API request (100-10000)</span>
+                    </div>
+                </section>
+
+                <!-- System Section -->
+                <section class="config-section">
+                    <h2>System</h2>
+                    <div class="form-group">
+                        <label for="system-language">Language</label>
+                        <select id="system-language" name="system.language" required>
+                            <option value="en">English</option>
+                            <option value="da">Danish</option>
+                        </select>
+                        <span class="help-text">Bot interface language</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="system-log-level">Log Level</label>
+                        <select id="system-log-level" name="system.log_level" required>
+                            <option value="DEBUG">DEBUG</option>
+                            <option value="INFO">INFO</option>
+                            <option value="WARNING">WARNING</option>
+                            <option value="ERROR">ERROR</option>
+                            <option value="CRITICAL">CRITICAL</option>
+                        </select>
+                        <span class="help-text">Logging verbosity level</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="system-output-dir">Output Directory</label>
+                        <input type="text" id="system-output-dir" name="system.output_directory"
+                               placeholder="./graphs" required>
+                        <span class="help-text">Directory for saving generated graphs</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="system-keep-days">Keep Graphs (days)</label>
+                        <input type="number" id="system-keep-days" name="system.keep_graphs_days"
+                               placeholder="30" required min="1" max="365">
+                        <span class="help-text">Days to keep old graph files (1-365)</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="system-censor-usernames">
+                            <input type="checkbox" id="system-censor-usernames" name="system.privacy.censor_usernames">
+                            Censor Usernames
+                        </label>
+                        <span class="help-text">Anonymize usernames in graphs (User 1, User 2, etc.)</span>
+                    </div>
+                </section>
+
+                <!-- Graph Appearance Section -->
+                <section class="config-section">
+                    <h2>Graph Appearance</h2>
+
+                    <div class="subsection">
+                        <h3>Dimensions</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="graph-width">Width (inches)</label>
+                                <input type="number" id="graph-width" name="graphs.appearance.dimensions.width"
+                                       placeholder="12" required min="6" max="20">
+                            </div>
+                            <div class="form-group">
+                                <label for="graph-height">Height (inches)</label>
+                                <input type="number" id="graph-height" name="graphs.appearance.dimensions.height"
+                                       placeholder="8" required min="4" max="16">
+                            </div>
+                            <div class="form-group">
+                                <label for="graph-dpi">DPI</label>
+                                <input type="number" id="graph-dpi" name="graphs.appearance.dimensions.dpi"
+                                       placeholder="100" required min="72" max="300">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="subsection">
+                        <h3>Colors</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="graph-color-tv">TV Shows</label>
+                                <input type="color" id="graph-color-tv" name="graphs.appearance.colors.tv" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="graph-color-movie">Movies</label>
+                                <input type="color" id="graph-color-movie" name="graphs.appearance.colors.movie" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="graph-color-bg">Background</label>
+                                <input type="color" id="graph-color-bg" name="graphs.appearance.colors.background" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="subsection">
+                        <h3>Grid</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="graph-grid-enabled">
+                                    <input type="checkbox" id="graph-grid-enabled" name="graphs.appearance.grid.enabled">
+                                    Enable Grid Lines
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label for="graph-grid-alpha">Grid Alpha</label>
+                                <input type="number" id="graph-grid-alpha" name="graphs.appearance.grid.alpha"
+                                       placeholder="0.3" required min="0" max="1" step="0.1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="subsection">
+                        <h3>Annotations</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="graph-annotation-color">Color</label>
+                                <input type="color" id="graph-annotation-color" name="graphs.appearance.annotations.color" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="graph-annotation-outline">Outline Color</label>
+                                <input type="color" id="graph-annotation-outline" name="graphs.appearance.annotations.outline_color" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="graph-annotation-outline-enabled">
+                                    <input type="checkbox" id="graph-annotation-outline-enabled"
+                                           name="graphs.appearance.annotations.enable_outline">
+                                    Enable Outline
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label for="graph-annotation-font-size">Font Size</label>
+                                <input type="number" id="graph-annotation-font-size"
+                                       name="graphs.appearance.annotations.font_size"
+                                       placeholder="10" required min="6" max="24">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="subsection">
+                        <h3>Seaborn Styling</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="graph-seaborn-style">Style</label>
+                                <select id="graph-seaborn-style" name="graphs.appearance.seaborn.style" required>
+                                    <option value="whitegrid">White Grid</option>
+                                    <option value="darkgrid">Dark Grid</option>
+                                    <option value="white">White</option>
+                                    <option value="dark">Dark</option>
+                                    <option value="ticks">Ticks</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="graph-seaborn-context">Context</label>
+                                <select id="graph-seaborn-context" name="graphs.appearance.seaborn.context" required>
+                                    <option value="paper">Paper</option>
+                                    <option value="notebook">Notebook</option>
+                                    <option value="talk">Talk</option>
+                                    <option value="poster">Poster</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="graph-seaborn-palette">Palette</label>
+                                <input type="text" id="graph-seaborn-palette" name="graphs.appearance.seaborn.palette"
+                                       placeholder="muted" required>
+                                <span class="help-text">Seaborn color palette name</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Rate Limiting Section -->
+                <section class="config-section">
+                    <h2>Rate Limiting</h2>
+
+                    <div class="subsection">
+                        <h3>Config Command</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="rate-config-user">User Cooldown (minutes)</label>
+                                <input type="number" id="rate-config-user"
+                                       name="rate_limiting.config.user_cooldown_minutes"
+                                       placeholder="5" required min="0" max="1440">
+                            </div>
+                            <div class="form-group">
+                                <label for="rate-config-global">Global Cooldown (seconds)</label>
+                                <input type="number" id="rate-config-global"
+                                       name="rate_limiting.config.global_cooldown_seconds"
+                                       placeholder="30" required min="0" max="86400">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="subsection">
+                        <h3>Update Graphs Command</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="rate-update-user">User Cooldown (minutes)</label>
+                                <input type="number" id="rate-update-user"
+                                       name="rate_limiting.update_graphs.user_cooldown_minutes"
+                                       placeholder="10" required min="0" max="1440">
+                            </div>
+                            <div class="form-group">
+                                <label for="rate-update-global">Global Cooldown (seconds)</label>
+                                <input type="number" id="rate-update-global"
+                                       name="rate_limiting.update_graphs.global_cooldown_seconds"
+                                       placeholder="60" required min="0" max="86400">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="subsection">
+                        <h3>My Stats Command</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="rate-stats-user">User Cooldown (minutes)</label>
+                                <input type="number" id="rate-stats-user"
+                                       name="rate_limiting.my_stats.user_cooldown_minutes"
+                                       placeholder="5" required min="0" max="1440">
+                            </div>
+                            <div class="form-group">
+                                <label for="rate-stats-global">Global Cooldown (seconds)</label>
+                                <input type="number" id="rate-stats-global"
+                                       name="rate_limiting.my_stats.global_cooldown_seconds"
+                                       placeholder="30" required min="0" max="86400">
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Action Buttons -->
+                <section class="actions">
+                    <button type="button" id="reload-btn" class="btn btn-secondary">
+                        🔄 Reload from File
+                    </button>
+                    <button type="submit" id="save-btn" class="btn btn-primary">
+                        💾 Save Configuration
+                    </button>
+                </section>
+            </form>
         </main>
 
         <footer>
