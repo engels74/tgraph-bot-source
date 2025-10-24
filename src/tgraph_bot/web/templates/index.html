@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TGraph Bot - Configuration</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>TGraph Bot Configuration</h1>
+            <p class="subtitle">Web-based configuration management</p>
+        </header>
+
+        <main>
+            <section class="info-panel">
+                <h2>Configuration File</h2>
+                <p><strong>Path:</strong> <code>{{ config_path }}</code></p>
+                <p><strong>Last Modified:</strong> <span id="last-modified">{{ last_modified }}</span></p>
+            </section>
+
+            <section class="placeholder">
+                <h2>Configuration Editor</h2>
+                <p>The configuration editor interface will be implemented in Task 27.</p>
+                <p>For now, please edit the configuration file manually using a text editor.</p>
+            </section>
+
+            <section class="actions">
+                <button id="reload-btn" class="btn btn-secondary">Reload from File</button>
+                <button id="save-btn" class="btn btn-primary" disabled>Save Configuration</button>
+            </section>
+        </main>
+
+        <footer>
+            <p>TGraph Bot &copy; 2024 | <a href="/health">Health Check</a></p>
+        </footer>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
+
