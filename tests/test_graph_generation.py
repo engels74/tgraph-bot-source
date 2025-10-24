@@ -12,7 +12,6 @@ Requirements tested: 5.1, 5.2, 5.3, 5.5, 6.1, 6.2, 6.6, 6.7
 """
 
 from datetime import datetime, timezone
-from typing import Protocol
 from unittest.mock import MagicMock, Mock, patch
 
 import matplotlib.pyplot as plt
@@ -31,87 +30,9 @@ from tgraph_bot.config.models import (
 )
 from tgraph_bot.graphs.data import StreamRecord
 
-# Since the actual graph generation classes don't exist yet (task 16),
-# we'll define protocols for what we expect them to look like
-
-
-class GraphGenerator(Protocol):
-    """Protocol for graph generation implementations."""
-
-    def generate(
-        self,
-        data: list[StreamRecord],
-        *,
-        config: GraphConfig,
-        appearance: GraphAppearanceConfig,
-    ) -> Figure:
-        """Generate matplotlib figure from data."""
-        ...
-
-
-class GraphStyling:
-    """Graph styling manager with seaborn integration.
-
-    This is a stub that will be replaced with the actual implementation in task 16.
-    """
-
-    def apply_theme(
-        self,
-        *,
-        style: str = "darkgrid",
-        palette: str = "muted",
-        context: str = "notebook",
-    ) -> None:
-        """Apply seaborn theme for consistent styling."""
-        _ = (style, palette, context)  # Mark as intentionally unused in stub
-
-    def get_palette(self, palette_name: str, n_colors: int) -> list[str]:
-        """Get seaborn color palette."""
-        _ = (palette_name, n_colors)  # Mark as intentionally unused in stub
-        return []
-
-    def apply_styling(
-        self,
-        fig: Figure,
-        *,
-        dimensions: GraphDimensions,
-        colors: GraphColors,
-        grid: GridConfig,
-    ) -> None:
-        """Apply styling to figure."""
-        _ = (fig, dimensions, colors, grid)  # Mark as intentionally unused in stub
-
-    def add_annotations(
-        self,
-        ax: Axes,
-        *,
-        values: list[float],
-        annotation_config: AnnotationConfig,
-    ) -> None:
-        """Add annotations to axes."""
-        _ = (ax, values, annotation_config)  # Mark as intentionally unused in stub
-
-    def highlight_peak(
-        self,
-        ax: Axes,
-        *,
-        values: list[float],
-        peak_color: str,
-    ) -> None:
-        """Highlight peak value."""
-        _ = (ax, values, peak_color)  # Mark as intentionally unused in stub
-
-
-class GraphFactory:
-    """Factory for creating graph generators.
-
-    This is a stub that will be replaced with the actual implementation in task 16.
-    """
-
-    def create_generator(self, graph_type: str) -> GraphGenerator:
-        """Create appropriate graph generator for type."""
-        _ = graph_type  # Mark as intentionally unused in stub
-        raise NotImplementedError
+# Import actual implementations (task 16 completed)
+from tgraph_bot.graphs.factory import GraphFactory
+from tgraph_bot.graphs.styling import GraphStyling
 
 
 # Fixtures
@@ -207,7 +128,7 @@ class TestSeabornThemeApplication:
     Requirements: 5.5, 6.6, 6.7
     """
 
-    @patch("seaborn.set_theme")
+    @patch("tgraph_bot.graphs.styling.sns.set_theme")
     def test_apply_theme_with_default_values(self, mock_set_theme: Mock) -> None:
         """Test applying seaborn theme with default values."""
         styling = GraphStyling()
@@ -220,7 +141,7 @@ class TestSeabornThemeApplication:
             context="notebook",
         )
 
-    @patch("seaborn.set_theme")
+    @patch("tgraph_bot.graphs.styling.sns.set_theme")
     @pytest.mark.parametrize(
         "style",
         ["whitegrid", "darkgrid", "white", "dark", "ticks"],
@@ -237,7 +158,7 @@ class TestSeabornThemeApplication:
         assert call_args is not None
         assert call_args.kwargs["style"] == style
 
-    @patch("seaborn.set_theme")
+    @patch("tgraph_bot.graphs.styling.sns.set_theme")
     @pytest.mark.parametrize(
         "palette",
         ["muted", "deep", "pastel", "viridis", "plasma", "inferno", "magma"],
@@ -254,7 +175,7 @@ class TestSeabornThemeApplication:
         assert call_args is not None
         assert call_args.kwargs["palette"] == palette
 
-    @patch("seaborn.set_theme")
+    @patch("tgraph_bot.graphs.styling.sns.set_theme")
     @pytest.mark.parametrize(
         "context",
         ["paper", "notebook", "talk", "poster"],
@@ -271,7 +192,7 @@ class TestSeabornThemeApplication:
         assert call_args is not None
         assert call_args.kwargs["context"] == context
 
-    @patch("seaborn.set_theme")
+    @patch("tgraph_bot.graphs.styling.sns.set_theme")
     def test_apply_theme_from_config(
         self, mock_set_theme: Mock, sample_appearance_config: GraphAppearanceConfig
     ) -> None:
@@ -417,7 +338,7 @@ class TestSeabornPaletteRetrieval:
     Requirements: 6.7
     """
 
-    @patch("seaborn.color_palette")
+    @patch("tgraph_bot.graphs.styling.sns.color_palette")
     @pytest.mark.parametrize(
         "palette_name,n_colors",
         [
@@ -479,7 +400,7 @@ class TestSeabornPaletteRetrieval:
         # Should handle gracefully
         assert isinstance(result, list)
 
-    @patch("seaborn.color_palette")
+    @patch("tgraph_bot.graphs.styling.sns.color_palette")
     def test_palette_override_in_config(
         self, mock_color_palette: Mock, sample_appearance_config: GraphAppearanceConfig
     ) -> None:
@@ -934,8 +855,8 @@ class TestGraphGenerationIntegration:
         assert config.palette == "plasma"
         assert config.annotations_enabled is True
 
-    @patch("seaborn.set_theme")
-    @patch("seaborn.color_palette")
+    @patch("tgraph_bot.graphs.styling.sns.set_theme")
+    @patch("tgraph_bot.graphs.styling.sns.color_palette")
     def test_full_styling_pipeline(
         self,
         mock_color_palette: Mock,
