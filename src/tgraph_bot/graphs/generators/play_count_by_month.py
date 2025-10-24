@@ -55,13 +55,13 @@ class PlayCountByMonthGraph:
             - 5.6: Generate play count by month graph
         """
         # Create figure with configured dimensions
-        fig, ax = plt.subplots(  # matplotlib incomplete stubs
+        fig, ax = plt.subplots(  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
             figsize=(appearance.dimensions.width, appearance.dimensions.height)
         )
 
         # Handle empty data
         if not data:
-            _ = ax.text(
+            _ = ax.text(  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
                 0.5,
                 0.5,
                 "No data available",
@@ -124,7 +124,7 @@ class PlayCountByMonthGraph:
                 )
 
             # Add legend
-            _ = ax.legend()
+            _ = ax.legend()  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
 
         else:
             # Aggregate all data together
@@ -154,20 +154,20 @@ class PlayCountByMonthGraph:
                 )
 
         # Set labels and title
-        _ = ax.set_xlabel("Month", fontsize=12)
-        _ = ax.set_ylabel("Play Count", fontsize=12)
-        _ = ax.set_title(
+        _ = ax.set_xlabel("Month", fontsize=12)  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
+        _ = ax.set_ylabel("Play Count", fontsize=12)  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
+        _ = ax.set_title(  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
             "Play Count by Month", fontsize=14, fontweight="bold"
         )
 
         # Apply grid settings
         if appearance.grid.enabled:
-            _ = ax.grid(True, alpha=appearance.grid.alpha)
+            _ = ax.grid(True, alpha=appearance.grid.alpha)  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
         else:
-            _ = ax.grid(False)
+            _ = ax.grid(False)  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
 
         # Rotate x-axis labels for better readability
-        _ = plt.setp(
+        _ = plt.setp(  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
             ax.get_xticklabels(), rotation=45, ha="right"
         )
 

@@ -58,7 +58,7 @@ class PlayCountByDayOfWeekGraph:
             - 18.2: Use sns.barplot() with stacked option
         """
         # Create figure with configured dimensions
-        fig, ax = plt.subplots(  # matplotlib incomplete stubs
+        fig, ax = plt.subplots(  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
             figsize=(appearance.dimensions.width, appearance.dimensions.height)
         )
 
@@ -101,10 +101,10 @@ class PlayCountByDayOfWeekGraph:
             width = 0.6
 
             # Create stacked bars
-            _ = ax.bar(
+            _ = ax.bar(  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
                 x, movie_counts, width, label="Movies", color=movie_color
             )
-            _ = ax.bar(
+            _ = ax.bar(  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
                 x,
                 tv_counts,
                 width,
@@ -113,9 +113,9 @@ class PlayCountByDayOfWeekGraph:
                 color=tv_color,
             )
 
-            _ = ax.set_xticks(x)
-            _ = ax.set_xticklabels(day_names)
-            _ = ax.legend()
+            _ = ax.set_xticks(x)  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
+            _ = ax.set_xticklabels(day_names)  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
+            _ = ax.legend()  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
 
         else:
             # Aggregate all data together
@@ -141,20 +141,20 @@ class PlayCountByDayOfWeekGraph:
             )
 
         # Set labels and title
-        _ = ax.set_xlabel("Day of Week", fontsize=12)
-        _ = ax.set_ylabel("Play Count", fontsize=12)
-        _ = ax.set_title(
+        _ = ax.set_xlabel("Day of Week", fontsize=12)  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
+        _ = ax.set_ylabel("Play Count", fontsize=12)  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
+        _ = ax.set_title(  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
             "Play Count by Day of Week", fontsize=14, fontweight="bold"
         )
 
         # Apply grid settings
         if appearance.grid.enabled:
-            _ = ax.grid(True, alpha=appearance.grid.alpha, axis="y")
+            _ = ax.grid(True, alpha=appearance.grid.alpha, axis="y")  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
         else:
-            _ = ax.grid(False)
+            _ = ax.grid(False)  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
 
         # Rotate x-axis labels for better readability
-        _ = plt.setp(
+        _ = plt.setp(  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
             ax.get_xticklabels(), rotation=45, ha="right"
         )
 

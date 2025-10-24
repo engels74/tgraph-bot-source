@@ -128,9 +128,9 @@ class GraphStyling:
         # Apply grid configuration to all axes (Requirement 6.5)
         for ax in fig.get_axes():
             if grid.enabled:
-                ax.grid(True, alpha=grid.alpha)
+                ax.grid(True, alpha=grid.alpha)  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
             else:
-                ax.grid(False)
+                ax.grid(False)  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
 
     def add_annotations(
         self,
@@ -169,11 +169,11 @@ class GraphStyling:
                 continue
 
             # Get bar position
-            height = bar.get_height()  # pyright: ignore[reportUnknownVariableType]  # matplotlib incomplete stubs
-            x = bar.get_x() + bar.get_width() / 2  # pyright: ignore[reportUnknownVariableType]  # matplotlib incomplete stubs
+            height = bar.get_height()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]  # matplotlib incomplete stubs
+            x = bar.get_x() + bar.get_width() / 2  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]  # matplotlib incomplete stubs
 
             # Create annotation text
-            text = ax.text(
+            text = ax.text(  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
                 x,  # pyright: ignore[reportUnknownArgumentType]  # matplotlib incomplete stubs
                 height,  # pyright: ignore[reportUnknownArgumentType]  # matplotlib incomplete stubs
                 f"{value:.0f}",
@@ -233,4 +233,4 @@ class GraphStyling:
 
         if peak_index < len(container):
             bar = container[peak_index]  # pyright: ignore[reportUnknownVariableType]  # matplotlib incomplete stubs
-            bar.set_color(peak_color)
+            bar.set_color(peak_color)  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs

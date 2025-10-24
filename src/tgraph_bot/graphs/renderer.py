@@ -110,7 +110,7 @@ class GraphRenderer:
 
                 # Save figure to disk
                 file_path = output_path / f"{graph_type}.png"
-                fig.savefig(
+                fig.savefig(  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
                     file_path,
                     dpi=config.appearance.dimensions.dpi,
                     bbox_inches="tight",
@@ -178,10 +178,10 @@ class GraphRenderer:
 
         # Handle top graphs separately (they use TopGraphConfig)
         # For now, check if they're dict or TopGraphConfig and have enabled=True
-        if hasattr(config.top_platforms, "enabled"):
-            if config.top_platforms.enabled:  # pyright: ignore[reportAttributeAccessIssue]  # union type
-                enabled.append(("top_platforms", config.top_platforms))  # pyright: ignore[reportArgumentType]  # union type
-        elif isinstance(config.top_platforms, dict):
+        if not isinstance(config.top_platforms, dict):
+            if config.top_platforms.enabled:
+                enabled.append(("top_platforms", config.top_platforms))
+        else:
             if config.top_platforms.get("enabled"):
                 # Create a basic GraphConfig-like object
                 from tgraph_bot.config.models import GraphConfig as GC
@@ -202,10 +202,10 @@ class GraphRenderer:
                 )
                 enabled.append(("top_platforms", gc))
 
-        if hasattr(config.top_users, "enabled"):
-            if config.top_users.enabled:  # pyright: ignore[reportAttributeAccessIssue]  # union type
-                enabled.append(("top_users", config.top_users))  # pyright: ignore[reportArgumentType]  # union type
-        elif isinstance(config.top_users, dict):
+        if not isinstance(config.top_users, dict):
+            if config.top_users.enabled:
+                enabled.append(("top_users", config.top_users))
+        else:
             if config.top_users.get("enabled"):
                 from tgraph_bot.config.models import GraphConfig as GC
 

@@ -344,9 +344,9 @@ class TautulliClient:
                         )
 
                     # Check for Tautulli-specific error in response
-                    result_raw: object = response_section_raw.get("result")  # pyright: ignore[reportUnknownVariableType]  # dict access
+                    result_raw: object = response_section_raw.get("result")  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]  # dict.get incomplete stubs
                     if result_raw == "error":
-                        message_raw: object = response_section_raw.get("message")  # pyright: ignore[reportUnknownVariableType]  # dict access
+                        message_raw: object = response_section_raw.get("message")  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]  # dict.get incomplete stubs
                         error_msg = message_raw if isinstance(message_raw, str) else "Unknown error"
                         raise TautulliAPIError(
                             f"Tautulli API error: {error_msg}",

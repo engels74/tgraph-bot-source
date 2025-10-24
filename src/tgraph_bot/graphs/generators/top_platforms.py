@@ -63,13 +63,13 @@ class TopPlatformsGraph:
             raise TypeError(msg)
         top_config = config
         # Create figure with configured dimensions
-        fig, ax = plt.subplots(  # matplotlib incomplete stubs
+        fig, ax = plt.subplots(  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
             figsize=(appearance.dimensions.width, appearance.dimensions.height)
         )
 
         # Handle empty data
         if not data:
-            _ = ax.text(
+            _ = ax.text(  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
                 0.5,
                 0.5,
                 "No data available",
@@ -92,7 +92,7 @@ class TopPlatformsGraph:
         limited = dict(list(grouped.items())[: top_config.limit])
 
         if not limited:
-            _ = ax.text(
+            _ = ax.text(  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
                 0.5,
                 0.5,
                 "No data available",
@@ -129,17 +129,17 @@ class TopPlatformsGraph:
         )
 
         # Set labels and title
-        _ = ax.set_xlabel("Play Count", fontsize=12)
-        _ = ax.set_ylabel("Platform", fontsize=12)
-        _ = ax.set_title(
+        _ = ax.set_xlabel("Play Count", fontsize=12)  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
+        _ = ax.set_ylabel("Platform", fontsize=12)  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
+        _ = ax.set_title(  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
             f"Top {len(limited)} Platforms", fontsize=14, fontweight="bold"
         )
 
         # Apply grid settings
         if appearance.grid.enabled:
-            _ = ax.grid(True, alpha=appearance.grid.alpha, axis="x")
+            _ = ax.grid(True, alpha=appearance.grid.alpha, axis="x")  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
         else:
-            _ = ax.grid(False)
+            _ = ax.grid(False)  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
 
         # Apply background color
         _ = fig.patch.set_facecolor(appearance.colors.background)
