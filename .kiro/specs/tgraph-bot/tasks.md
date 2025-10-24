@@ -144,7 +144,7 @@
   - Verify all tests pass
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 19.1, 19.5_
 
-- [ ] 17. Write tests for individual graph types (basic set)
+- [x] 17. Write tests for individual graph types (basic set)
   - Write tests for DailyPlayCountGraph data preparation
   - Write tests for PlayCountByDayOfWeekGraph aggregation
   - Write tests for PlayCountByHourOfDayGraph aggregation
