@@ -8,6 +8,14 @@ Requirements: 5.1, 5.6
 
 from dataclasses import dataclass
 
+from tgraph_bot.graphs.generators import (
+    DailyPlayCountGraph,
+    PlayCountByDayOfWeekGraph,
+    PlayCountByHourOfDayGraph,
+    PlayCountByMonthGraph,
+    TopPlatformsGraph,
+    TopUsersGraph,
+)
 from tgraph_bot.graphs.protocol import GraphGenerator
 
 
@@ -46,8 +54,35 @@ class GraphFactory:
                 concurrent streams, source resolution, stream resolution,
                 platform and stream type, user and stream type)
         """
-        # Map of valid graph types (for now, raise NotImplementedError)
-        # Individual graph implementations will be added in tasks 17-20
+        # Map graph types to generator classes
+        # Basic set (task 18) - implemented
+        if graph_type == "daily_play_count":
+            return DailyPlayCountGraph()
+        if graph_type == "play_count_by_day_of_week":
+            return PlayCountByDayOfWeekGraph()
+        if graph_type == "play_count_by_hour_of_day":
+            return PlayCountByHourOfDayGraph()
+        if graph_type == "top_platforms":
+            return TopPlatformsGraph()
+        if graph_type == "top_users":
+            return TopUsersGraph()
+        if graph_type == "play_count_by_month":
+            return PlayCountByMonthGraph()
+
+        # Advanced set (tasks 19-20) - not yet implemented
+        if graph_type in {
+            "daily_play_count_by_stream_type",
+            "daily_concurrent_stream_count_by_stream_type",
+            "play_count_by_source_resolution",
+            "play_count_by_stream_resolution",
+            "play_count_by_platform_and_stream_type",
+            "play_count_by_user_and_stream_type",
+        }:
+            raise NotImplementedError(
+                f"Graph generator for '{graph_type}' will be implemented in tasks 19-20"
+            )
+
+        # Unknown graph type
         valid_types = {
             "daily_play_count",
             "play_count_by_day_of_week",
@@ -62,13 +97,6 @@ class GraphFactory:
             "play_count_by_platform_and_stream_type",
             "play_count_by_user_and_stream_type",
         }
-
-        if graph_type not in valid_types:
-            valid_types_str = ", ".join(sorted(valid_types))
-            msg = f"Unknown graph type: {graph_type}. Valid types are: {valid_types_str}"
-            raise ValueError(msg)
-
-        # Individual graph generators will be implemented in tasks 17-20
-        raise NotImplementedError(
-            f"Graph generator for '{graph_type}' will be implemented in tasks 17-20"
-        )
+        valid_types_str = ", ".join(sorted(valid_types))
+        msg = f"Unknown graph type: {graph_type}. Valid types are: {valid_types_str}"
+        raise ValueError(msg)

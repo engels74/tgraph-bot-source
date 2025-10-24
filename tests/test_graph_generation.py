@@ -32,6 +32,14 @@ from tgraph_bot.graphs.data import StreamRecord
 
 # Import actual implementations (task 16 completed)
 from tgraph_bot.graphs.factory import GraphFactory
+from tgraph_bot.graphs.generators import (
+    DailyPlayCountGraph,
+    PlayCountByDayOfWeekGraph,
+    PlayCountByHourOfDayGraph,
+    PlayCountByMonthGraph,
+    TopPlatformsGraph,
+    TopUsersGraph,
+)
 from tgraph_bot.graphs.styling import GraphStyling
 
 
@@ -698,45 +706,44 @@ class TestGraphFactory:
         """Test creating generator for daily play count graph."""
         factory = GraphFactory()
 
-        # Should be able to create generator for this type
-        with pytest.raises(NotImplementedError):
-            # Since implementation doesn't exist yet, should raise NotImplementedError
-            _ = factory.create_generator("daily_play_count")
+        # Should create DailyPlayCountGraph instance
+        generator = factory.create_generator("daily_play_count")
+        assert isinstance(generator, DailyPlayCountGraph)
 
     def test_create_generator_for_play_by_day_of_week(self) -> None:
         """Test creating generator for play count by day of week graph."""
         factory = GraphFactory()
 
-        with pytest.raises(NotImplementedError):
-            _ = factory.create_generator("play_count_by_day_of_week")
+        generator = factory.create_generator("play_count_by_day_of_week")
+        assert isinstance(generator, PlayCountByDayOfWeekGraph)
 
     def test_create_generator_for_play_by_hour(self) -> None:
         """Test creating generator for play count by hour graph."""
         factory = GraphFactory()
 
-        with pytest.raises(NotImplementedError):
-            _ = factory.create_generator("play_count_by_hour_of_day")
+        generator = factory.create_generator("play_count_by_hour_of_day")
+        assert isinstance(generator, PlayCountByHourOfDayGraph)
 
     def test_create_generator_for_top_platforms(self) -> None:
         """Test creating generator for top platforms graph."""
         factory = GraphFactory()
 
-        with pytest.raises(NotImplementedError):
-            _ = factory.create_generator("top_platforms")
+        generator = factory.create_generator("top_platforms")
+        assert isinstance(generator, TopPlatformsGraph)
 
     def test_create_generator_for_top_users(self) -> None:
         """Test creating generator for top users graph."""
         factory = GraphFactory()
 
-        with pytest.raises(NotImplementedError):
-            _ = factory.create_generator("top_users")
+        generator = factory.create_generator("top_users")
+        assert isinstance(generator, TopUsersGraph)
 
     def test_create_generator_for_play_by_month(self) -> None:
         """Test creating generator for play count by month graph."""
         factory = GraphFactory()
 
-        with pytest.raises(NotImplementedError):
-            _ = factory.create_generator("play_count_by_month")
+        generator = factory.create_generator("play_count_by_month")
+        assert isinstance(generator, PlayCountByMonthGraph)
 
     @pytest.mark.parametrize(
         "graph_type",
@@ -759,9 +766,24 @@ class TestGraphFactory:
         """Test that factory can create generators for all graph types (Requirement 5.1)."""
         factory = GraphFactory()
 
-        # Should be able to create generator for each type
-        with pytest.raises(NotImplementedError):
-            _ = factory.create_generator(graph_type)
+        # Task 18 graph types are implemented, others should raise NotImplementedError
+        implemented_types = {
+            "daily_play_count",
+            "play_count_by_day_of_week",
+            "play_count_by_hour_of_day",
+            "top_platforms",
+            "top_users",
+            "play_count_by_month",
+        }
+
+        if graph_type in implemented_types:
+            # Should successfully create generator
+            generator = factory.create_generator(graph_type)
+            assert generator is not None
+        else:
+            # Should raise NotImplementedError for not-yet-implemented types
+            with pytest.raises(NotImplementedError):
+                _ = factory.create_generator(graph_type)
 
     def test_create_generator_with_invalid_type(self) -> None:
         """Test creating generator with invalid graph type."""

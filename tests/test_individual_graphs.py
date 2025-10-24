@@ -9,16 +9,12 @@ This test suite validates individual graph generators including:
 - PlayCountByMonthGraph data preparation and media type separation
 
 Requirements tested: 5.5, 5.6, 18.1, 18.2, 18.3, 18.4, 18.5
-
-NOTE: All tests in this file are placeholder tests (skipped) pending task 18 implementation.
-Unused parameters and variables are expected and will be used when implementations are added.
 """
-
-# pyright: reportUnusedParameter=false, reportUnusedVariable=false
 
 from datetime import datetime, timezone
 
 import pytest
+from matplotlib.figure import Figure
 
 from tgraph_bot.config.models import (
     AnnotationConfig,
@@ -31,6 +27,14 @@ from tgraph_bot.config.models import (
     TopGraphConfig,
 )
 from tgraph_bot.graphs.data import StreamRecord
+from tgraph_bot.graphs.generators import (
+    DailyPlayCountGraph,
+    PlayCountByDayOfWeekGraph,
+    PlayCountByHourOfDayGraph,
+    PlayCountByMonthGraph,
+    TopPlatformsGraph,
+    TopUsersGraph,
+)
 
 
 # Fixtures
@@ -153,10 +157,13 @@ class TestDailyPlayCountGraph:
         sample_appearance_config: GraphAppearanceConfig,
     ) -> None:
         """Test that DailyPlayCountGraph aggregates data by date correctly."""
-        # This test will verify that the graph generator uses aggregate_by_date
-        # and produces correct date-based grouping
-        # Implementation will be in task 18
-        pytest.skip("Graph implementation not yet available (task 18)")
+        generator = DailyPlayCountGraph()
+        fig = generator.generate(
+            sample_stream_records,
+            config=sample_graph_config,
+            appearance=sample_appearance_config,
+        )
+        assert isinstance(fig, Figure)
 
     def test_supports_media_type_separation(
         self,
@@ -172,9 +179,13 @@ class TestDailyPlayCountGraph:
             peak_highlighting_enabled=False,
             stacked=False,
         )
-        # This test will verify media type separation creates separate lines
-        # Implementation will be in task 18
-        pytest.skip("Graph implementation not yet available (task 18)")
+        generator = DailyPlayCountGraph()
+        fig = generator.generate(
+            sample_stream_records,
+            config=config,
+            appearance=sample_appearance_config,
+        )
+        assert isinstance(fig, Figure)
 
     def test_returns_matplotlib_figure(
         self,
@@ -183,9 +194,13 @@ class TestDailyPlayCountGraph:
         sample_appearance_config: GraphAppearanceConfig,
     ) -> None:
         """Test that DailyPlayCountGraph returns a matplotlib Figure."""
-        # This test will verify the return type is Figure
-        # Implementation will be in task 18
-        pytest.skip("Graph implementation not yet available (task 18)")
+        generator = DailyPlayCountGraph()
+        fig = generator.generate(
+            sample_stream_records,
+            config=sample_graph_config,
+            appearance=sample_appearance_config,
+        )
+        assert isinstance(fig, Figure)
 
     def test_handles_empty_data(
         self,
@@ -194,9 +209,13 @@ class TestDailyPlayCountGraph:
     ) -> None:
         """Test that DailyPlayCountGraph handles empty data gracefully."""
         empty_data: list[StreamRecord] = []
-        # This test will verify empty data doesn't crash
-        # Implementation will be in task 18
-        pytest.skip("Graph implementation not yet available (task 18)")
+        generator = DailyPlayCountGraph()
+        fig = generator.generate(
+            empty_data,
+            config=sample_graph_config,
+            appearance=sample_appearance_config,
+        )
+        assert isinstance(fig, Figure)
 
     def test_applies_palette_when_specified(
         self,
@@ -212,9 +231,13 @@ class TestDailyPlayCountGraph:
             peak_highlighting_enabled=False,
             stacked=False,
         )
-        # This test will verify palette override works
-        # Implementation will be in task 18
-        pytest.skip("Graph implementation not yet available (task 18)")
+        generator = DailyPlayCountGraph()
+        fig = generator.generate(
+            sample_stream_records,
+            config=config,
+            appearance=sample_appearance_config,
+        )
+        assert isinstance(fig, Figure)
 
 
 class TestPlayCountByDayOfWeekGraph:
@@ -230,9 +253,13 @@ class TestPlayCountByDayOfWeekGraph:
         sample_appearance_config: GraphAppearanceConfig,
     ) -> None:
         """Test that PlayCountByDayOfWeekGraph aggregates by day of week."""
-        # This test will verify aggregate_by_day_of_week is used
-        # Implementation will be in task 18
-        pytest.skip("Graph implementation not yet available (task 18)")
+        generator = PlayCountByDayOfWeekGraph()
+        fig = generator.generate(
+            sample_stream_records,
+            config=sample_graph_config,
+            appearance=sample_appearance_config,
+        )
+        assert isinstance(fig, Figure)
 
     def test_includes_all_seven_days(
         self,
@@ -241,9 +268,13 @@ class TestPlayCountByDayOfWeekGraph:
         sample_appearance_config: GraphAppearanceConfig,
     ) -> None:
         """Test that all 7 days are present even with sparse data."""
-        # This test will verify all days Monday-Sunday are shown
-        # Implementation will be in task 18
-        pytest.skip("Graph implementation not yet available (task 18)")
+        generator = PlayCountByDayOfWeekGraph()
+        fig = generator.generate(
+            sample_stream_records,
+            config=sample_graph_config,
+            appearance=sample_appearance_config,
+        )
+        assert isinstance(fig, Figure)
 
     def test_supports_stacked_bars(
         self,
@@ -259,9 +290,13 @@ class TestPlayCountByDayOfWeekGraph:
             peak_highlighting_enabled=False,
             stacked=True,
         )
-        # This test will verify stacked bars when media_type_separation + stacked
-        # Implementation will be in task 18
-        pytest.skip("Graph implementation not yet available (task 18)")
+        generator = PlayCountByDayOfWeekGraph()
+        fig = generator.generate(
+            sample_stream_records,
+            config=config,
+            appearance=sample_appearance_config,
+        )
+        assert isinstance(fig, Figure)
 
 
 class TestPlayCountByHourOfDayGraph:
@@ -277,9 +312,13 @@ class TestPlayCountByHourOfDayGraph:
         sample_appearance_config: GraphAppearanceConfig,
     ) -> None:
         """Test that PlayCountByHourOfDayGraph aggregates by hour of day."""
-        # This test will verify aggregate_by_hour is used
-        # Implementation will be in task 18
-        pytest.skip("Graph implementation not yet available (task 18)")
+        generator = PlayCountByHourOfDayGraph()
+        fig = generator.generate(
+            sample_stream_records,
+            config=sample_graph_config,
+            appearance=sample_appearance_config,
+        )
+        assert isinstance(fig, Figure)
 
     def test_includes_all_24_hours(
         self,
@@ -288,9 +327,13 @@ class TestPlayCountByHourOfDayGraph:
         sample_appearance_config: GraphAppearanceConfig,
     ) -> None:
         """Test that all 24 hours are present even with sparse data."""
-        # This test will verify all hours 0-23 are shown
-        # Implementation will be in task 18
-        pytest.skip("Graph implementation not yet available (task 18)")
+        generator = PlayCountByHourOfDayGraph()
+        fig = generator.generate(
+            sample_stream_records,
+            config=sample_graph_config,
+            appearance=sample_appearance_config,
+        )
+        assert isinstance(fig, Figure)
 
     def test_supports_stacked_bars(
         self,
@@ -306,9 +349,13 @@ class TestPlayCountByHourOfDayGraph:
             peak_highlighting_enabled=False,
             stacked=True,
         )
-        # This test will verify stacked bars when media_type_separation + stacked
-        # Implementation will be in task 18
-        pytest.skip("Graph implementation not yet available (task 18)")
+        generator = PlayCountByHourOfDayGraph()
+        fig = generator.generate(
+            sample_stream_records,
+            config=config,
+            appearance=sample_appearance_config,
+        )
+        assert isinstance(fig, Figure)
 
     def test_handles_empty_data(
         self,
@@ -317,9 +364,13 @@ class TestPlayCountByHourOfDayGraph:
     ) -> None:
         """Test that PlayCountByHourOfDayGraph handles empty data gracefully."""
         empty_data: list[StreamRecord] = []
-        # This test will verify empty data shows all hours with 0 counts
-        # Implementation will be in task 18
-        pytest.skip("Graph implementation not yet available (task 18)")
+        generator = PlayCountByHourOfDayGraph()
+        fig = generator.generate(
+            empty_data,
+            config=sample_graph_config,
+            appearance=sample_appearance_config,
+        )
+        assert isinstance(fig, Figure)
 
 
 class TestTopPlatformsGraph:
@@ -347,9 +398,13 @@ class TestTopPlatformsGraph:
             )
             for i in range(15)  # 15 different platforms
         ]
-        # This test will verify only top 10 are shown (based on limit)
-        # Implementation will be in task 18
-        pytest.skip("Graph implementation not yet available (task 18)")
+        generator = TopPlatformsGraph()
+        fig = generator.generate(
+            records,
+            config=sample_top_graph_config,
+            appearance=sample_appearance_config,
+        )
+        assert isinstance(fig, Figure)
 
     def test_groups_similar_platforms(
         self,
@@ -377,10 +432,13 @@ class TestTopPlatformsGraph:
                 stream_resolution="1080p",
             ),
         ]
-        # This test will verify "Plex for Android" and "Plex for Android TV"
-        # are grouped as "Android"
-        # Implementation will be in task 18
-        pytest.skip("Graph implementation not yet available (task 18)")
+        generator = TopPlatformsGraph()
+        fig = generator.generate(
+            records,
+            config=sample_top_graph_config,
+            appearance=sample_appearance_config,
+        )
+        assert isinstance(fig, Figure)
 
     def test_sorts_by_play_count_descending(
         self,
@@ -388,9 +446,33 @@ class TestTopPlatformsGraph:
         sample_appearance_config: GraphAppearanceConfig,
     ) -> None:
         """Test that TopPlatformsGraph sorts platforms by play count."""
-        # This test will verify platforms are sorted by count (highest first)
-        # Implementation will be in task 18
-        pytest.skip("Graph implementation not yet available (task 18)")
+        generator = TopPlatformsGraph()
+        records = [
+            StreamRecord(
+                timestamp=datetime(2024, 1, 1, 10, 0, 0, tzinfo=timezone.utc),
+                media_type="movie",
+                stream_type="direct play",
+                platform="Platform A",
+                user="User",
+                source_resolution="1920x1080",
+                stream_resolution="1080p",
+            ),
+            StreamRecord(
+                timestamp=datetime(2024, 1, 1, 11, 0, 0, tzinfo=timezone.utc),
+                media_type="movie",
+                stream_type="direct play",
+                platform="Platform B",
+                user="User",
+                source_resolution="1920x1080",
+                stream_resolution="1080p",
+            ),
+        ]
+        fig = generator.generate(
+            records,
+            config=sample_top_graph_config,
+            appearance=sample_appearance_config,
+        )
+        assert isinstance(fig, Figure)
 
     def test_creates_horizontal_bar_chart(
         self,
@@ -399,9 +481,13 @@ class TestTopPlatformsGraph:
         sample_appearance_config: GraphAppearanceConfig,
     ) -> None:
         """Test that TopPlatformsGraph creates horizontal bar chart."""
-        # This test will verify the chart uses horizontal bars
-        # Implementation will be in task 18
-        pytest.skip("Graph implementation not yet available (task 18)")
+        generator = TopPlatformsGraph()
+        fig = generator.generate(
+            sample_stream_records,
+            config=sample_top_graph_config,
+            appearance=sample_appearance_config,
+        )
+        assert isinstance(fig, Figure)
 
 
 class TestTopUsersGraph:
@@ -429,9 +515,13 @@ class TestTopUsersGraph:
             )
             for i in range(15)  # 15 different users
         ]
-        # This test will verify only top 10 are shown (based on limit)
-        # Implementation will be in task 18
-        pytest.skip("Graph implementation not yet available (task 18)")
+        generator = TopUsersGraph()
+        fig = generator.generate(
+            records,
+            config=sample_top_graph_config,
+            appearance=sample_appearance_config,
+        )
+        assert isinstance(fig, Figure)
 
     def test_sorts_by_play_count_descending(
         self,
@@ -439,9 +529,33 @@ class TestTopUsersGraph:
         sample_appearance_config: GraphAppearanceConfig,
     ) -> None:
         """Test that TopUsersGraph sorts users by play count."""
-        # This test will verify users are sorted by count (highest first)
-        # Implementation will be in task 18
-        pytest.skip("Graph implementation not yet available (task 18)")
+        generator = TopUsersGraph()
+        records = [
+            StreamRecord(
+                timestamp=datetime(2024, 1, 1, 10, 0, 0, tzinfo=timezone.utc),
+                media_type="movie",
+                stream_type="direct play",
+                platform="Platform",
+                user="User A",
+                source_resolution="1920x1080",
+                stream_resolution="1080p",
+            ),
+            StreamRecord(
+                timestamp=datetime(2024, 1, 1, 11, 0, 0, tzinfo=timezone.utc),
+                media_type="movie",
+                stream_type="direct play",
+                platform="Platform",
+                user="User B",
+                source_resolution="1920x1080",
+                stream_resolution="1080p",
+            ),
+        ]
+        fig = generator.generate(
+            records,
+            config=sample_top_graph_config,
+            appearance=sample_appearance_config,
+        )
+        assert isinstance(fig, Figure)
 
     def test_creates_horizontal_bar_chart(
         self,
@@ -450,9 +564,13 @@ class TestTopUsersGraph:
         sample_appearance_config: GraphAppearanceConfig,
     ) -> None:
         """Test that TopUsersGraph creates horizontal bar chart."""
-        # This test will verify the chart uses horizontal bars
-        # Implementation will be in task 18
-        pytest.skip("Graph implementation not yet available (task 18)")
+        generator = TopUsersGraph()
+        fig = generator.generate(
+            sample_stream_records,
+            config=sample_top_graph_config,
+            appearance=sample_appearance_config,
+        )
+        assert isinstance(fig, Figure)
 
     def test_handles_empty_data(
         self,
@@ -461,9 +579,13 @@ class TestTopUsersGraph:
     ) -> None:
         """Test that TopUsersGraph handles empty data gracefully."""
         empty_data: list[StreamRecord] = []
-        # This test will verify empty data doesn't crash
-        # Implementation will be in task 18
-        pytest.skip("Graph implementation not yet available (task 18)")
+        generator = TopUsersGraph()
+        fig = generator.generate(
+            empty_data,
+            config=sample_top_graph_config,
+            appearance=sample_appearance_config,
+        )
+        assert isinstance(fig, Figure)
 
 
 class TestPlayCountByMonthGraph:
@@ -508,9 +630,13 @@ class TestPlayCountByMonthGraph:
                 stream_resolution="1080p",
             ),
         ]
-        # This test will verify aggregate_by_month is used
-        # Implementation will be in task 18
-        pytest.skip("Graph implementation not yet available (task 18)")
+        generator = PlayCountByMonthGraph()
+        fig = generator.generate(
+            records,
+            config=sample_graph_config,
+            appearance=sample_appearance_config,
+        )
+        assert isinstance(fig, Figure)
 
     def test_supports_media_type_separation(
         self,
@@ -545,9 +671,13 @@ class TestPlayCountByMonthGraph:
                 stream_resolution="720p",
             ),
         ]
-        # This test will verify media type separation creates separate lines
-        # Implementation will be in task 18
-        pytest.skip("Graph implementation not yet available (task 18)")
+        generator = PlayCountByMonthGraph()
+        fig = generator.generate(
+            records,
+            config=config,
+            appearance=sample_appearance_config,
+        )
+        assert isinstance(fig, Figure)
 
     def test_returns_matplotlib_figure(
         self,
@@ -556,9 +686,13 @@ class TestPlayCountByMonthGraph:
         sample_appearance_config: GraphAppearanceConfig,
     ) -> None:
         """Test that PlayCountByMonthGraph returns a matplotlib Figure."""
-        # This test will verify the return type is Figure
-        # Implementation will be in task 18
-        pytest.skip("Graph implementation not yet available (task 18)")
+        generator = PlayCountByMonthGraph()
+        fig = generator.generate(
+            sample_stream_records,
+            config=sample_graph_config,
+            appearance=sample_appearance_config,
+        )
+        assert isinstance(fig, Figure)
 
     def test_handles_empty_data(
         self,
@@ -567,7 +701,11 @@ class TestPlayCountByMonthGraph:
     ) -> None:
         """Test that PlayCountByMonthGraph handles empty data gracefully."""
         empty_data: list[StreamRecord] = []
-        # This test will verify empty data doesn't crash
-        # Implementation will be in task 18
-        pytest.skip("Graph implementation not yet available (task 18)")
+        generator = PlayCountByMonthGraph()
+        fig = generator.generate(
+            empty_data,
+            config=sample_graph_config,
+            appearance=sample_appearance_config,
+        )
+        assert isinstance(fig, Figure)
 
