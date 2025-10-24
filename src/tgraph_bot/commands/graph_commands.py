@@ -18,6 +18,7 @@ import nextcord
 from nextcord.ext import commands
 
 from tgraph_bot.api.tautulli import TautulliClient
+from tgraph_bot.bot import TGraphBot
 from tgraph_bot.graphs.factory import GraphFactory
 from tgraph_bot.graphs.renderer import GraphRenderer
 from tgraph_bot.graphs.styling import GraphStyling
@@ -32,7 +33,6 @@ from tgraph_bot.utils.logging import (
 )
 
 if TYPE_CHECKING:
-    from tgraph_bot.bot import TGraphBot
     from tgraph_bot.graphs.data import GraphMetadata
 
 logger = get_logger(__name__)
@@ -66,7 +66,7 @@ class GraphCommands(commands.Cog):
         - 27.1, 27.2: Error handling with ExceptionGroup
     """
 
-    def __init__(self, bot: "TGraphBot") -> None:
+    def __init__(self, bot: TGraphBot) -> None:
         """Initialize the GraphCommands cog.
 
         Args:
@@ -795,7 +795,7 @@ class GraphCommands(commands.Cog):
         return chunks
 
 
-def setup(bot: "TGraphBot") -> None:
+def setup(bot: TGraphBot) -> None:
     """Set up the GraphCommands cog.
 
     This function is called by nextcord when loading the cog.
