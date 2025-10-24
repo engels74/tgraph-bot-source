@@ -95,7 +95,9 @@ class WebUIServer:
         _ = self._app.router.add_get("/api/config", self.get_config)
         _ = self._app.router.add_post("/api/config", self.update_config)
         _ = self._app.router.add_post("/api/config/reload", self.reload_config)
-        _ = self._app.router.add_get("/api/config/file-modified", self.check_file_modified)
+        _ = self._app.router.add_get(
+            "/api/config/file-modified", self.check_file_modified
+        )
 
         # Add static file serving
         static_dir = Path(__file__).parent / "static"
@@ -264,7 +266,8 @@ class WebUIServer:
             # Type narrow to dict
             if not isinstance(data_raw, dict):
                 return web.json_response(
-                    {"error": "Invalid request format: expected JSON object"}, status=400
+                    {"error": "Invalid request format: expected JSON object"},
+                    status=400,
                 )
 
             # Now we know it's a dict, cast to dict[str, object]
@@ -470,4 +473,3 @@ class WebUIServer:
         if len(value) <= 4:
             return "****"
         return "*" * (len(value) - 4) + value[-4:]
-

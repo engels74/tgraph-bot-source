@@ -27,7 +27,6 @@ import pytest
 
 from tgraph_bot.config.loader import ConfigLoader
 
-
 # Fixtures
 
 
@@ -134,7 +133,7 @@ def valid_config_dict() -> dict[str, Any]:
 
 
 @pytest.fixture
-def temp_config_file(valid_config_dict: dict[str, Any]) -> Generator[str, None, None]:
+def temp_config_file(valid_config_dict: dict[str, Any]) -> Generator[str]:
     """Fixture providing a temporary YAML configuration file."""
     from ruamel.yaml import YAML
 
@@ -984,4 +983,3 @@ class TestSensitiveValueMasking:
             assert data["config"]["services"]["discord"]["channel_id"] == 123456789
             assert data["config"]["system"]["language"] == "en"
             assert data["config"]["automation"]["enabled"] is True
-

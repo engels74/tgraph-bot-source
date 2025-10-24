@@ -8,6 +8,7 @@ Requirements: 5.1, 5.2, 5.5, 6.6, 6.7
 
 from collections.abc import Sequence
 from dataclasses import dataclass
+from datetime import UTC
 from pathlib import Path
 
 from tgraph_bot.config.models import GraphConfig, GraphsConfig
@@ -118,12 +119,12 @@ class GraphRenderer:
                 )
 
                 # Create metadata
-                from datetime import datetime, timezone
+                from datetime import datetime
 
                 metadata = GraphMetadata(
                     graph_type=graph_type,
                     file_path=str(file_path),
-                    generated_at=datetime.now(tz=timezone.utc),
+                    generated_at=datetime.now(tz=UTC),
                     data_range_days=self._calculate_data_range_days(data_list),
                 )
                 metadata_list.append(metadata)
@@ -184,9 +185,9 @@ class GraphRenderer:
         else:
             if config.top_platforms.get("enabled"):
                 # Create a basic GraphConfig-like object
-                from tgraph_bot.config.models import GraphConfig as GC
+                from tgraph_bot.config.models import GraphConfig
 
-                gc = GC(
+                graph_config = GraphConfig(
                     enabled=True,
                     media_type_separation=config.top_platforms.get(
                         "media_type_separation", False
@@ -200,16 +201,16 @@ class GraphRenderer:
                     ),  # pyright: ignore[reportArgumentType]  # dict access
                     stacked=config.top_platforms.get("stacked", False),  # pyright: ignore[reportArgumentType]  # dict access
                 )
-                enabled.append(("top_platforms", gc))
+                enabled.append(("top_platforms", graph_config))
 
         if not isinstance(config.top_users, dict):
             if config.top_users.enabled:
                 enabled.append(("top_users", config.top_users))
         else:
             if config.top_users.get("enabled"):
-                from tgraph_bot.config.models import GraphConfig as GC
+                from tgraph_bot.config.models import GraphConfig
 
-                gc = GC(
+                graph_config = GraphConfig(
                     enabled=True,
                     media_type_separation=config.top_users.get(
                         "media_type_separation", False
@@ -223,7 +224,7 @@ class GraphRenderer:
                     ),  # pyright: ignore[reportArgumentType]  # dict access
                     stacked=config.top_users.get("stacked", False),  # pyright: ignore[reportArgumentType]  # dict access
                 )
-                enabled.append(("top_users", gc))
+                enabled.append(("top_users", graph_config))
 
         return enabled
 

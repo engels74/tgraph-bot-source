@@ -11,7 +11,7 @@ Requirements tested: 13.1, 13.2, 13.3, 13.4, 13.5
 
 # pyright: reportExplicitAny=false
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import pytest
@@ -121,7 +121,7 @@ class TestStreamRecordCreation:
         record = create_stream_record(sample_tautulli_record)
 
         assert isinstance(record, StreamRecord)
-        assert record.timestamp == datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+        assert record.timestamp == datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         assert record.media_type == "movie"
         assert record.stream_type == "direct play"
         assert record.platform == "Plex for Android"
@@ -136,7 +136,7 @@ class TestStreamRecordCreation:
         record = create_stream_record(sample_tautulli_tv_record)
 
         assert isinstance(record, StreamRecord)
-        assert record.timestamp == datetime(2024, 1, 1, 1, 0, 0, tzinfo=timezone.utc)
+        assert record.timestamp == datetime(2024, 1, 1, 1, 0, 0, tzinfo=UTC)
         assert record.media_type == "tv"  # "episode" should be normalized to "tv"
         assert record.stream_type == "transcode"
         assert record.platform == "Plex for iOS"
@@ -222,7 +222,7 @@ class TestDataAggregationByDate:
 
         assert len(result) == 1
         # Should have date as key
-        date_key = datetime(2024, 1, 1, tzinfo=timezone.utc).date()
+        date_key = datetime(2024, 1, 1, tzinfo=UTC).date()
         assert date_key in result
         assert result[date_key] == 1
 
@@ -233,7 +233,7 @@ class TestDataAggregationByDate:
         records = [create_stream_record(r) for r in multiple_tautulli_records[:2]]
         result = aggregate_by_date(records)
 
-        date_key = datetime(2024, 1, 1, tzinfo=timezone.utc).date()
+        date_key = datetime(2024, 1, 1, tzinfo=UTC).date()
         assert result[date_key] == 2
 
     def test_aggregate_by_date_multiple_days(
@@ -244,9 +244,9 @@ class TestDataAggregationByDate:
         result = aggregate_by_date(records)
 
         assert len(result) == 3  # 3 different days
-        assert result[datetime(2024, 1, 1, tzinfo=timezone.utc).date()] == 2
-        assert result[datetime(2024, 1, 2, tzinfo=timezone.utc).date()] == 2
-        assert result[datetime(2024, 1, 3, tzinfo=timezone.utc).date()] == 1
+        assert result[datetime(2024, 1, 1, tzinfo=UTC).date()] == 2
+        assert result[datetime(2024, 1, 2, tzinfo=UTC).date()] == 2
+        assert result[datetime(2024, 1, 3, tzinfo=UTC).date()] == 1
 
     def test_aggregate_by_date_preserves_chronological_order(
         self, multiple_tautulli_records: list[dict[str, Any]]
@@ -449,7 +449,7 @@ class TestDataAggregationByMonth:
         result = aggregate_by_month([record])
 
         # Should have January 2024
-        month_key = datetime(2024, 1, 1, tzinfo=timezone.utc).date().replace(day=1)
+        month_key = datetime(2024, 1, 1, tzinfo=UTC).date().replace(day=1)
         assert result[month_key] == 1
 
     def test_aggregate_by_month_multiple_records_same_month(
@@ -460,7 +460,7 @@ class TestDataAggregationByMonth:
         result = aggregate_by_month(records)
 
         # All test records are in January 2024
-        month_key = datetime(2024, 1, 1, tzinfo=timezone.utc).date().replace(day=1)
+        month_key = datetime(2024, 1, 1, tzinfo=UTC).date().replace(day=1)
         assert result[month_key] == 5
 
     def test_aggregate_by_month_multiple_months(self) -> None:
@@ -498,9 +498,9 @@ class TestDataAggregationByMonth:
         result = aggregate_by_month(records)
 
         assert len(result) == 3
-        jan_key = datetime(2024, 1, 1, tzinfo=timezone.utc).date().replace(day=1)
-        feb_key = datetime(2024, 2, 1, tzinfo=timezone.utc).date().replace(day=1)
-        mar_key = datetime(2024, 3, 1, tzinfo=timezone.utc).date().replace(day=1)
+        jan_key = datetime(2024, 1, 1, tzinfo=UTC).date().replace(day=1)
+        feb_key = datetime(2024, 2, 1, tzinfo=UTC).date().replace(day=1)
+        mar_key = datetime(2024, 3, 1, tzinfo=UTC).date().replace(day=1)
 
         assert result[jan_key] == 1
         assert result[feb_key] == 1
@@ -674,7 +674,7 @@ class TestEdgeCases:
 
         # Should count both records for the same date
         date_result = aggregate_by_date(records)
-        assert date_result[datetime(2024, 1, 1, tzinfo=timezone.utc).date()] == 2
+        assert date_result[datetime(2024, 1, 1, tzinfo=UTC).date()] == 2
 
         # Should count both records for the same hour
         hour_result = aggregate_by_hour(records)

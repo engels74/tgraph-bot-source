@@ -92,7 +92,9 @@ async def managed_bot(
             bot.scheduler.update_executor = cast(GraphCommands, graph_commands_cog)
             logger.info("Scheduler update executor configured")
         else:
-            logger.warning("GraphCommands cog not found, scheduler will not execute updates")
+            logger.warning(
+                "GraphCommands cog not found, scheduler will not execute updates"
+            )
 
     except Exception as e:
         logger.error(f"Failed to load command cogs: {e}", exc_info=True)
@@ -138,7 +140,9 @@ async def managed_web_server(
     web_port_str = os.getenv("WEB_UI_PORT")
 
     if web_host is None or web_port_str is None:
-        logger.info("Web UI not configured (WEB_UI_HOST or WEB_UI_PORT not set), skipping")
+        logger.info(
+            "Web UI not configured (WEB_UI_HOST or WEB_UI_PORT not set), skipping"
+        )
         yield None
         return
 
@@ -329,7 +333,9 @@ def main() -> None:
 
             # Wait for all tasks to complete cancellation
             if pending:
-                _ = loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+                _ = loop.run_until_complete(
+                    asyncio.gather(*pending, return_exceptions=True)
+                )
 
         except Exception as e:
             logger.error(f"Error during cleanup: {e}", exc_info=True)
@@ -343,4 +349,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

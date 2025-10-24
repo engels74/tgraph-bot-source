@@ -57,7 +57,9 @@ class RateLimiter:
     _global_cooldowns: dict[str, datetime] = field(default_factory=dict)
     _cleanup_task: asyncio.Task[None] | None = field(default=None, init=False)
 
-    def check_cooldown(self, command: str, user_id: int | None = None) -> CooldownInfo | None:
+    def check_cooldown(
+        self, command: str, user_id: int | None = None
+    ) -> CooldownInfo | None:
         """Check if a command is on cooldown for a user.
 
         Checks both user-specific and global cooldowns. If either is active,

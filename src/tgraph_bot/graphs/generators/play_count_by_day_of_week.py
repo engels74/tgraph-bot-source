@@ -166,4 +166,3 @@ class PlayCountByDayOfWeekGraph:
         _ = fig.tight_layout()
 
         return fig
-

@@ -42,9 +42,7 @@ def disabled_cooldowns_config() -> RateLimitingConfig:
     """Fixture with all cooldowns disabled (0 value)."""
     return RateLimitingConfig(
         config=CommandLimits(user_cooldown_minutes=0, global_cooldown_seconds=0),
-        update_graphs=CommandLimits(
-            user_cooldown_minutes=0, global_cooldown_seconds=0
-        ),
+        update_graphs=CommandLimits(user_cooldown_minutes=0, global_cooldown_seconds=0),
         my_stats=CommandLimits(user_cooldown_minutes=0, global_cooldown_seconds=0),
     )
 
@@ -54,10 +52,12 @@ def partially_disabled_config() -> RateLimitingConfig:
     """Fixture with some cooldowns disabled."""
     return RateLimitingConfig(
         config=CommandLimits(
-            user_cooldown_minutes=0, global_cooldown_seconds=60  # User disabled
+            user_cooldown_minutes=0,
+            global_cooldown_seconds=60,  # User disabled
         ),
         update_graphs=CommandLimits(
-            user_cooldown_minutes=10, global_cooldown_seconds=0  # Global disabled
+            user_cooldown_minutes=10,
+            global_cooldown_seconds=0,  # Global disabled
         ),
         my_stats=CommandLimits(user_cooldown_minutes=3, global_cooldown_seconds=30),
     )
@@ -227,9 +227,7 @@ class TestGlobalCooldownTracking:
     Requirements tested: 11.1, 11.3
     """
 
-    def test_global_cooldown_affects_all_users(
-        self, rate_limiter: RateLimiter
-    ) -> None:
+    def test_global_cooldown_affects_all_users(self, rate_limiter: RateLimiter) -> None:
         """Test that global cooldown affects all users."""
         command = "config"
         user1_id = 123
@@ -275,9 +273,7 @@ class TestGlobalCooldownTracking:
             result = rate_limiter.check_cooldown(command, user_id=999)
             assert result is None
 
-    def test_user_vs_global_cooldown_priority(
-        self, rate_limiter: RateLimiter
-    ) -> None:
+    def test_user_vs_global_cooldown_priority(self, rate_limiter: RateLimiter) -> None:
         """Test that user cooldown is checked before global cooldown."""
         command = "config"
         user_id = 123
@@ -564,9 +560,7 @@ class TestCleanupExpired:
             update_graphs=CommandLimits(
                 user_cooldown_minutes=10, global_cooldown_seconds=120
             ),
-            my_stats=CommandLimits(
-                user_cooldown_minutes=3, global_cooldown_seconds=30
-            ),
+            my_stats=CommandLimits(user_cooldown_minutes=3, global_cooldown_seconds=30),
         )
         limiter = RateLimiter(config=config)
 
@@ -591,7 +585,9 @@ class TestCleanupExpired:
             rate_limiter.record_usage("config", user_id=200)  # 5 min - expires at T=7
 
             mock_datetime.now.return_value = now + timedelta(minutes=4)
-            rate_limiter.record_usage("update_graphs", user_id=300)  # 10 min - expires at T=14
+            rate_limiter.record_usage(
+                "update_graphs", user_id=300
+            )  # 10 min - expires at T=14
 
             # At T=5: my_stats expired (T=3), config active (expires T=7), update_graphs active (expires T=14)
             mock_datetime.now.return_value = now + timedelta(minutes=5)
@@ -670,7 +666,6 @@ class TestDisabledCooldowns:
         limiter = RateLimiter(config=partially_disabled_config)
 
         command = "update_graphs"  # Global disabled, user enabled
-        user_id = 123
 
         now = datetime.now()
 

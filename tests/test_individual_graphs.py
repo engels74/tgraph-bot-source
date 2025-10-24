@@ -12,7 +12,7 @@ Requirements tested: 5.5, 5.6, 18.1, 18.2, 18.3, 18.4, 18.5
 """
 
 from collections.abc import Generator
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import matplotlib.pyplot as plt
 import pytest
@@ -38,12 +38,11 @@ from tgraph_bot.graphs.generators import (
     TopUsersGraph,
 )
 
-
 # Fixtures
 
 
 @pytest.fixture(autouse=True)
-def cleanup_matplotlib_figures() -> Generator[None, None, None]:
+def cleanup_matplotlib_figures() -> Generator[None]:
     """Fixture to automatically close all matplotlib figures after each test.
 
     This prevents memory warnings from matplotlib when multiple figures are created
@@ -59,7 +58,7 @@ def sample_stream_records() -> list[StreamRecord]:
     """Fixture providing sample stream records for testing."""
     return [
         StreamRecord(
-            timestamp=datetime(2024, 1, 1, 10, 0, 0, tzinfo=timezone.utc),
+            timestamp=datetime(2024, 1, 1, 10, 0, 0, tzinfo=UTC),
             media_type="movie",
             stream_type="direct play",
             platform="Plex for Android",
@@ -68,7 +67,7 @@ def sample_stream_records() -> list[StreamRecord]:
             stream_resolution="1080p",
         ),
         StreamRecord(
-            timestamp=datetime(2024, 1, 1, 14, 0, 0, tzinfo=timezone.utc),
+            timestamp=datetime(2024, 1, 1, 14, 0, 0, tzinfo=UTC),
             media_type="tv",
             stream_type="transcode",
             platform="Plex for iOS",
@@ -77,7 +76,7 @@ def sample_stream_records() -> list[StreamRecord]:
             stream_resolution="720p",
         ),
         StreamRecord(
-            timestamp=datetime(2024, 1, 2, 10, 0, 0, tzinfo=timezone.utc),
+            timestamp=datetime(2024, 1, 2, 10, 0, 0, tzinfo=UTC),
             media_type="movie",
             stream_type="direct play",
             platform="Plex for Android",
@@ -86,7 +85,7 @@ def sample_stream_records() -> list[StreamRecord]:
             stream_resolution="4K",
         ),
         StreamRecord(
-            timestamp=datetime(2024, 1, 2, 15, 0, 0, tzinfo=timezone.utc),
+            timestamp=datetime(2024, 1, 2, 15, 0, 0, tzinfo=UTC),
             media_type="tv",
             stream_type="copy",
             platform="Plex Web",
@@ -95,7 +94,7 @@ def sample_stream_records() -> list[StreamRecord]:
             stream_resolution="1080p",
         ),
         StreamRecord(
-            timestamp=datetime(2024, 1, 3, 9, 0, 0, tzinfo=timezone.utc),
+            timestamp=datetime(2024, 1, 3, 9, 0, 0, tzinfo=UTC),
             media_type="movie",
             stream_type="transcode",
             platform="Plex for Android TV",
@@ -402,7 +401,7 @@ class TestTopPlatformsGraph:
         # Create data with more platforms than limit
         records = [
             StreamRecord(
-                timestamp=datetime(2024, 1, 1, 10, 0, 0, tzinfo=timezone.utc),
+                timestamp=datetime(2024, 1, 1, 10, 0, 0, tzinfo=UTC),
                 media_type="movie",
                 stream_type="direct play",
                 platform=f"Platform {i}",
@@ -428,7 +427,7 @@ class TestTopPlatformsGraph:
         """Test that TopPlatformsGraph groups similar platform names."""
         records = [
             StreamRecord(
-                timestamp=datetime(2024, 1, 1, 10, 0, 0, tzinfo=timezone.utc),
+                timestamp=datetime(2024, 1, 1, 10, 0, 0, tzinfo=UTC),
                 media_type="movie",
                 stream_type="direct play",
                 platform="Plex for Android",
@@ -437,7 +436,7 @@ class TestTopPlatformsGraph:
                 stream_resolution="1080p",
             ),
             StreamRecord(
-                timestamp=datetime(2024, 1, 1, 11, 0, 0, tzinfo=timezone.utc),
+                timestamp=datetime(2024, 1, 1, 11, 0, 0, tzinfo=UTC),
                 media_type="movie",
                 stream_type="direct play",
                 platform="Plex for Android TV",
@@ -463,7 +462,7 @@ class TestTopPlatformsGraph:
         generator = TopPlatformsGraph()
         records = [
             StreamRecord(
-                timestamp=datetime(2024, 1, 1, 10, 0, 0, tzinfo=timezone.utc),
+                timestamp=datetime(2024, 1, 1, 10, 0, 0, tzinfo=UTC),
                 media_type="movie",
                 stream_type="direct play",
                 platform="Platform A",
@@ -472,7 +471,7 @@ class TestTopPlatformsGraph:
                 stream_resolution="1080p",
             ),
             StreamRecord(
-                timestamp=datetime(2024, 1, 1, 11, 0, 0, tzinfo=timezone.utc),
+                timestamp=datetime(2024, 1, 1, 11, 0, 0, tzinfo=UTC),
                 media_type="movie",
                 stream_type="direct play",
                 platform="Platform B",
@@ -519,7 +518,7 @@ class TestTopUsersGraph:
         # Create data with more users than limit
         records = [
             StreamRecord(
-                timestamp=datetime(2024, 1, 1, 10, 0, 0, tzinfo=timezone.utc),
+                timestamp=datetime(2024, 1, 1, 10, 0, 0, tzinfo=UTC),
                 media_type="movie",
                 stream_type="direct play",
                 platform="Platform",
@@ -546,7 +545,7 @@ class TestTopUsersGraph:
         generator = TopUsersGraph()
         records = [
             StreamRecord(
-                timestamp=datetime(2024, 1, 1, 10, 0, 0, tzinfo=timezone.utc),
+                timestamp=datetime(2024, 1, 1, 10, 0, 0, tzinfo=UTC),
                 media_type="movie",
                 stream_type="direct play",
                 platform="Platform",
@@ -555,7 +554,7 @@ class TestTopUsersGraph:
                 stream_resolution="1080p",
             ),
             StreamRecord(
-                timestamp=datetime(2024, 1, 1, 11, 0, 0, tzinfo=timezone.utc),
+                timestamp=datetime(2024, 1, 1, 11, 0, 0, tzinfo=UTC),
                 media_type="movie",
                 stream_type="direct play",
                 platform="Platform",
@@ -617,7 +616,7 @@ class TestPlayCountByMonthGraph:
         # Create data spanning multiple months
         records = [
             StreamRecord(
-                timestamp=datetime(2024, 1, 15, 10, 0, 0, tzinfo=timezone.utc),
+                timestamp=datetime(2024, 1, 15, 10, 0, 0, tzinfo=UTC),
                 media_type="movie",
                 stream_type="direct play",
                 platform="Platform",
@@ -626,7 +625,7 @@ class TestPlayCountByMonthGraph:
                 stream_resolution="1080p",
             ),
             StreamRecord(
-                timestamp=datetime(2024, 2, 10, 10, 0, 0, tzinfo=timezone.utc),
+                timestamp=datetime(2024, 2, 10, 10, 0, 0, tzinfo=UTC),
                 media_type="tv",
                 stream_type="transcode",
                 platform="Platform",
@@ -635,7 +634,7 @@ class TestPlayCountByMonthGraph:
                 stream_resolution="720p",
             ),
             StreamRecord(
-                timestamp=datetime(2024, 3, 5, 10, 0, 0, tzinfo=timezone.utc),
+                timestamp=datetime(2024, 3, 5, 10, 0, 0, tzinfo=UTC),
                 media_type="movie",
                 stream_type="direct play",
                 platform="Platform",
@@ -667,7 +666,7 @@ class TestPlayCountByMonthGraph:
         )
         records = [
             StreamRecord(
-                timestamp=datetime(2024, 1, 15, 10, 0, 0, tzinfo=timezone.utc),
+                timestamp=datetime(2024, 1, 15, 10, 0, 0, tzinfo=UTC),
                 media_type="movie",
                 stream_type="direct play",
                 platform="Platform",
@@ -676,7 +675,7 @@ class TestPlayCountByMonthGraph:
                 stream_resolution="1080p",
             ),
             StreamRecord(
-                timestamp=datetime(2024, 1, 20, 10, 0, 0, tzinfo=timezone.utc),
+                timestamp=datetime(2024, 1, 20, 10, 0, 0, tzinfo=UTC),
                 media_type="tv",
                 stream_type="transcode",
                 platform="Platform",
@@ -722,4 +721,3 @@ class TestPlayCountByMonthGraph:
             appearance=sample_appearance_config,
         )
         assert isinstance(fig, Figure)
-

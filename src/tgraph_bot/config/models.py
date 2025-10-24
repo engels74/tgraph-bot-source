@@ -38,9 +38,7 @@ class AutomationConfig(BaseModel):
 
     enabled: bool
     update_interval_days: int = Field(ge=1, le=365)
-    fixed_update_time: str = Field(
-        pattern=r"^([01]\d|2[0-3]):[0-5]\d$|^XX:XX$"
-    )
+    fixed_update_time: str = Field(pattern=r"^([01]\d|2[0-3]):[0-5]\d$|^XX:XX$")
 
 
 class DataCollectionConfig(BaseModel):
@@ -141,7 +139,9 @@ class GraphsConfig(BaseModel):
     daily_play_count: GraphConfig
     play_count_by_day_of_week: GraphConfig
     play_count_by_hour_of_day: GraphConfig
-    top_platforms: TopGraphConfig | dict[str, object]  # Allow dict for flexibility in tests
+    top_platforms: (
+        TopGraphConfig | dict[str, object]
+    )  # Allow dict for flexibility in tests
     top_users: TopGraphConfig | dict[str, object]  # Allow dict for flexibility in tests
     play_count_by_month: GraphConfig
     daily_play_count_by_stream_type: GraphConfig

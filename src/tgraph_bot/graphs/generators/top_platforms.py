@@ -150,9 +150,7 @@ class TopPlatformsGraph:
 
         return fig
 
-    def _group_platforms(
-        self, aggregated: dict[str, int]
-    ) -> dict[str, int]:
+    def _group_platforms(self, aggregated: dict[str, int]) -> dict[str, int]:
         """Group similar platform names.
 
         Simplifies platform names by grouping similar variants:
@@ -199,7 +197,11 @@ class TopPlatformsGraph:
             return "Android"
 
         # iOS variants
-        if "ios" in platform_lower or "iphone" in platform_lower or "ipad" in platform_lower:
+        if (
+            "ios" in platform_lower
+            or "iphone" in platform_lower
+            or "ipad" in platform_lower
+        ):
             return "iOS"
 
         # Web variants
@@ -223,7 +225,11 @@ class TopPlatformsGraph:
             return "Xbox"
 
         # PlayStation variants
-        if "playstation" in platform_lower or "ps4" in platform_lower or "ps5" in platform_lower:
+        if (
+            "playstation" in platform_lower
+            or "ps4" in platform_lower
+            or "ps5" in platform_lower
+        ):
             return "PlayStation"
 
         # Windows variants
@@ -240,4 +246,3 @@ class TopPlatformsGraph:
 
         # Default: return original
         return platform
-

@@ -126,7 +126,7 @@ class PlayCountByStreamResolutionGraph:
 
             # Create stacked bar chart
             x_pos = range(len(all_resolutions))
-            
+
             _ = ax.bar(  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
                 x_pos,
                 non_transcoded_counts,
@@ -237,4 +237,3 @@ class PlayCountByStreamResolutionGraph:
         _ = fig.tight_layout()
 
         return fig
-

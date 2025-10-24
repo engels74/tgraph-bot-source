@@ -10,7 +10,7 @@ Requirements: 1.2, 1.5, 8.1, 8.2, 8.3, 8.4, 8.5, 9.1, 9.2, 9.3, 9.4, 9.5,
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -142,7 +142,7 @@ class GraphCommands(commands.Cog):
                 "update_graphs_command",
                 details={"user_id": interaction.user.id if interaction.user else None},
             )
-            start_time = datetime.now(tz=timezone.utc)
+            start_time = datetime.now(tz=UTC)
 
             try:
                 # Requirement 8.1: Generate all enabled graphs with current data
@@ -152,9 +152,7 @@ class GraphCommands(commands.Cog):
                 )
 
                 # Calculate duration
-                duration_ms = (
-                    datetime.now(tz=timezone.utc) - start_time
-                ).total_seconds() * 1000
+                duration_ms = (datetime.now(tz=UTC) - start_time).total_seconds() * 1000
 
                 # Record command usage for rate limiting
                 if interaction.user:
@@ -166,7 +164,7 @@ class GraphCommands(commands.Cog):
                 # Requirement 8.3: Update ephemeral message after completion
                 if metadata_list:
                     _ = await interaction.edit_original_message(
-                        content=f"Successfully generated and posted {len(metadata_list)} graph(s) in {duration_ms/1000:.1f}s!"
+                        content=f"Successfully generated and posted {len(metadata_list)} graph(s) in {duration_ms / 1000:.1f}s!"
                     )
                 else:
                     _ = await interaction.edit_original_message(
@@ -309,7 +307,7 @@ class GraphCommands(commands.Cog):
                 "my_stats_command",
                 details={"user_id": interaction.user.id if interaction.user else None},
             )
-            start_time = datetime.now(tz=timezone.utc)
+            start_time = datetime.now(tz=UTC)
 
             try:
                 # Get username from Discord user
@@ -331,9 +329,7 @@ class GraphCommands(commands.Cog):
                     return
 
                 # Calculate duration
-                duration_ms = (
-                    datetime.now(tz=timezone.utc) - start_time
-                ).total_seconds() * 1000
+                duration_ms = (datetime.now(tz=UTC) - start_time).total_seconds() * 1000
 
                 # Record command usage for rate limiting
                 if interaction.user:
@@ -349,7 +345,9 @@ class GraphCommands(commands.Cog):
                 for metadata in metadata_list:
                     try:
                         with open(metadata.file_path, "rb") as f:
-                            file = nextcord.File(f, filename=Path(metadata.file_path).name)
+                            file = nextcord.File(
+                                f, filename=Path(metadata.file_path).name
+                            )
                             _ = await interaction.followup.send(
                                 file=file,
                                 ephemeral=True,
@@ -495,7 +493,9 @@ class GraphCommands(commands.Cog):
                 self.bot.rate_limiter.record_usage("config", interaction.user.id)
 
             # Requirement 10.3: Use ephemeral message that auto-deletes
-            delete_after = self.bot.config.services.discord.ephemeral_message_delete_after
+            delete_after = (
+                self.bot.config.services.discord.ephemeral_message_delete_after
+            )
 
             # Send first message as response
             _ = await interaction.response.send_message(
@@ -632,9 +632,7 @@ class GraphCommands(commands.Cog):
 
         return metadata_list
 
-    async def _generate_personal_stats(
-        self, *, username: str
-    ) -> list[GraphMetadata]:
+    async def _generate_personal_stats(self, *, username: str) -> list[GraphMetadata]:
         """Generate personal statistics graphs for a specific user.
 
         Args:
@@ -648,9 +646,7 @@ class GraphCommands(commands.Cog):
         # Generate graphs with username filter
         return await self._generate_and_post_graphs(username_filter=username)
 
-    async def _post_graphs_to_channel(
-        self, metadata_list: list[GraphMetadata]
-    ) -> None:
+    async def _post_graphs_to_channel(self, metadata_list: list[GraphMetadata]) -> None:
         """Post generated graphs to the configured Discord channel.
 
         Args:
@@ -673,7 +669,7 @@ class GraphCommands(commands.Cog):
 
         # Format timestamp according to configuration
         timestamp_format = self.bot.config.services.discord.timestamp_format
-        timestamp = datetime.now(tz=timezone.utc)
+        timestamp = datetime.now(tz=UTC)
         timestamp_unix = int(timestamp.timestamp())
         formatted_timestamp = f"<t:{timestamp_unix}:{timestamp_format}>"
 
@@ -722,9 +718,7 @@ class GraphCommands(commands.Cog):
                 f"Failed to send graph {metadata.graph_type}: {e}"
             ) from e
 
-    def _format_config_dict(
-        self, config: dict[str, object], *, indent: int = 0
-    ) -> str:
+    def _format_config_dict(self, config: dict[str, object], *, indent: int = 0) -> str:
         """Format configuration dictionary as readable text.
 
         Args:
@@ -754,7 +748,9 @@ class GraphCommands(commands.Cog):
 
         return "\n".join(lines)
 
-    def _split_message(self, text: str, *, limit: int = DISCORD_MESSAGE_LIMIT) -> list[str]:
+    def _split_message(
+        self, text: str, *, limit: int = DISCORD_MESSAGE_LIMIT
+    ) -> list[str]:
         """Split a long message into chunks that fit Discord's message limit.
 
         Args:

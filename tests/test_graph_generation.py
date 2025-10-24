@@ -12,7 +12,7 @@ Requirements tested: 5.1, 5.2, 5.3, 5.5, 6.1, 6.2, 6.6, 6.7
 """
 
 from collections.abc import Generator
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import MagicMock, Mock, patch
 
 import matplotlib.pyplot as plt
@@ -43,12 +43,11 @@ from tgraph_bot.graphs.generators import (
 )
 from tgraph_bot.graphs.styling import GraphStyling
 
-
 # Fixtures
 
 
 @pytest.fixture(autouse=True)
-def cleanup_matplotlib_figures() -> Generator[None, None, None]:
+def cleanup_matplotlib_figures() -> Generator[None]:
     """Fixture to automatically close all matplotlib figures after each test.
 
     This prevents memory warnings from matplotlib when multiple figures are created
@@ -64,7 +63,7 @@ def sample_stream_records() -> list[StreamRecord]:
     """Fixture providing sample stream records for testing."""
     return [
         StreamRecord(
-            timestamp=datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc),
+            timestamp=datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC),
             media_type="movie",
             stream_type="direct play",
             platform="Plex for Android",
@@ -73,7 +72,7 @@ def sample_stream_records() -> list[StreamRecord]:
             stream_resolution="1080p",
         ),
         StreamRecord(
-            timestamp=datetime(2024, 1, 1, 1, 0, 0, tzinfo=timezone.utc),
+            timestamp=datetime(2024, 1, 1, 1, 0, 0, tzinfo=UTC),
             media_type="tv",
             stream_type="transcode",
             platform="Plex for iOS",
@@ -82,7 +81,7 @@ def sample_stream_records() -> list[StreamRecord]:
             stream_resolution="720p",
         ),
         StreamRecord(
-            timestamp=datetime(2024, 1, 2, 0, 0, 0, tzinfo=timezone.utc),
+            timestamp=datetime(2024, 1, 2, 0, 0, 0, tzinfo=UTC),
             media_type="movie",
             stream_type="direct play",
             platform="Plex for Android",
@@ -91,7 +90,7 @@ def sample_stream_records() -> list[StreamRecord]:
             stream_resolution="4K",
         ),
         StreamRecord(
-            timestamp=datetime(2024, 1, 2, 1, 0, 0, tzinfo=timezone.utc),
+            timestamp=datetime(2024, 1, 2, 1, 0, 0, tzinfo=UTC),
             media_type="tv",
             stream_type="copy",
             platform="Plex Web",
@@ -957,7 +956,7 @@ class TestGraphGenerationEdgeCases:
         _ = (sample_graph_config, sample_appearance_config)  # Fixtures for future use
         single_record = [
             StreamRecord(
-                timestamp=datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc),
+                timestamp=datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC),
                 media_type="movie",
                 stream_type="direct play",
                 platform="Plex",
@@ -979,7 +978,7 @@ class TestGraphGenerationEdgeCases:
         _ = (sample_graph_config, sample_appearance_config)  # Fixtures for future use
         all_movies = [
             StreamRecord(
-                timestamp=datetime(2024, 1, 1, i, 0, 0, tzinfo=timezone.utc),
+                timestamp=datetime(2024, 1, 1, i, 0, 0, tzinfo=UTC),
                 media_type="movie",
                 stream_type="direct play",
                 platform="Plex",

@@ -316,7 +316,9 @@ class TestReloadConfigurationErrorHandling:
         new_config.automation.update_interval_days = 14
 
         # Mock scheduler.stop to raise an exception
-        with patch.object(bot.scheduler, "stop", side_effect=RuntimeError("Test error")):
+        with patch.object(
+            bot.scheduler, "stop", side_effect=RuntimeError("Test error")
+        ):
             # Attempt reload (should fail)
             with pytest.raises(RuntimeError, match="Test error"):
                 await bot.reload_configuration(new_config)
@@ -342,7 +344,9 @@ class TestReloadConfigurationErrorHandling:
         new_config.rate_limiting.update_graphs.user_cooldown_minutes = 20
 
         # Mock scheduler.stop to raise an exception
-        with patch.object(bot.scheduler, "stop", side_effect=RuntimeError("Test error")):
+        with patch.object(
+            bot.scheduler, "stop", side_effect=RuntimeError("Test error")
+        ):
             # Attempt reload (should fail)
             with pytest.raises(RuntimeError):
                 await bot.reload_configuration(new_config)
@@ -351,4 +355,3 @@ class TestReloadConfigurationErrorHandling:
         assert bot.rate_limiter is original_rate_limiter
         # Verify cooldown is still there
         assert bot.rate_limiter.check_cooldown("update_graphs", user_id=123) is not None
-

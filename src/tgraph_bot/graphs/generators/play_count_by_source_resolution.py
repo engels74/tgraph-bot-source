@@ -168,4 +168,3 @@ class PlayCountBySourceResolutionGraph:
         _ = fig.tight_layout()
 
         return fig
-

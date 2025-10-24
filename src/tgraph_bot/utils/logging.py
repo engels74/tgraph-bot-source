@@ -136,9 +136,9 @@ class ContextFilter(logging.Filter):
             True to allow the record to be logged
         """
         # Add context variables as dynamic attributes to log record
-        setattr(record, "operation_id", operation_id.get())
-        setattr(record, "user_id", user_id.get())
-        setattr(record, "command_name", command_name.get())
+        record.operation_id = operation_id.get()
+        record.user_id = user_id.get()
+        record.command_name = command_name.get()
         return True
 
 
@@ -159,13 +159,10 @@ def setup_logging(*, level: str = "INFO", format_style: str = "detailed") -> Non
         log_format = "[%(levelname)s] %(message)s"
     else:
         # Detailed format with timestamp, level, location, and context
-        log_format = (
-            "[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d]"
-        )
+        log_format = "[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d]"
         # Add context variables if available
         log_format += (
-            " [op=%(operation_id)s user=%(user_id)s cmd=%(command_name)s]"
-            " %(message)s"
+            " [op=%(operation_id)s user=%(user_id)s cmd=%(command_name)s] %(message)s"
         )
 
     # Configure root logger

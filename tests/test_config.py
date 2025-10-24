@@ -458,8 +458,7 @@ class TestTautulliConfig:
 
         errors = exc_info.value.errors()
         assert any(
-            error["loc"] == ("url",) and error["type"] == "missing"
-            for error in errors
+            error["loc"] == ("url",) and error["type"] == "missing" for error in errors
         )
 
     @pytest.mark.parametrize(
@@ -523,9 +522,7 @@ class TestDiscordConfig:
         "invalid_format",
         ["x", "T1", "ff", "abc", ""],
     )
-    def test_discord_config_invalid_timestamp_format(
-        self, invalid_format: str
-    ) -> None:
+    def test_discord_config_invalid_timestamp_format(self, invalid_format: str) -> None:
         """Test DiscordConfig rejects invalid timestamp format."""
         with pytest.raises(ValidationError) as exc_info:
             DiscordConfig(
@@ -581,7 +578,9 @@ class TestDiscordConfig:
             DiscordConfig()  # pyright: ignore[reportCallIssue]
 
         errors = exc_info.value.errors()
-        missing_fields = {error["loc"][0] for error in errors if error["type"] == "missing"}
+        missing_fields = {
+            error["loc"][0] for error in errors if error["type"] == "missing"
+        }
         assert "token" in missing_fields
         assert "channel_id" in missing_fields
 
@@ -675,9 +674,7 @@ class TestDataCollectionConfig:
         "invalid_max",
         [0, 99, 10001, 20000],
     )
-    def test_data_collection_config_invalid_max_records(
-        self, invalid_max: int
-    ) -> None:
+    def test_data_collection_config_invalid_max_records(self, invalid_max: int) -> None:
         """Test DataCollectionConfig rejects max_records_per_request outside 100-10000 range."""
         with pytest.raises(ValidationError) as exc_info:
             DataCollectionConfig(history_days=30, max_records_per_request=invalid_max)
@@ -816,9 +813,7 @@ class TestSeabornConfig:
     )
     def test_seaborn_config_accepts_valid_styles(self, valid_style: str) -> None:
         """Test SeabornConfig accepts all valid seaborn styles."""
-        config = SeabornConfig(
-            style=valid_style, context="notebook", palette="muted"
-        )
+        config = SeabornConfig(style=valid_style, context="notebook", palette="muted")
         assert config.style == valid_style
 
     @pytest.mark.parametrize(
@@ -839,9 +834,7 @@ class TestSeabornConfig:
     )
     def test_seaborn_config_accepts_valid_contexts(self, valid_context: str) -> None:
         """Test SeabornConfig accepts all valid seaborn contexts."""
-        config = SeabornConfig(
-            style="darkgrid", context=valid_context, palette="muted"
-        )
+        config = SeabornConfig(style="darkgrid", context=valid_context, palette="muted")
         assert config.context == valid_context
 
 
@@ -874,9 +867,7 @@ class TestCommandLimits:
         "invalid_seconds",
         [-1, 86401, 100000],
     )
-    def test_command_limits_invalid_global_cooldown(
-        self, invalid_seconds: int
-    ) -> None:
+    def test_command_limits_invalid_global_cooldown(self, invalid_seconds: int) -> None:
         """Test CommandLimits rejects global_cooldown_seconds outside 0-86400 range."""
         with pytest.raises(ValidationError) as exc_info:
             CommandLimits(
@@ -910,9 +901,7 @@ class TestSystemConfig:
         "valid_log_level",
         ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
     )
-    def test_system_config_accepts_valid_log_levels(
-        self, valid_log_level: str
-    ) -> None:
+    def test_system_config_accepts_valid_log_levels(self, valid_log_level: str) -> None:
         """Test SystemConfig accepts all valid log levels."""
         config = SystemConfig(
             language="en",
@@ -999,9 +988,7 @@ class TestBotConfigIntegration:
             BotConfig(**invalid_config)
 
         errors = exc_info.value.errors()
-        assert any(
-            "width" in str(error["loc"])  for error in errors
-        )
+        assert any("width" in str(error["loc"]) for error in errors)
 
 
 class TestYAMLConfigLoading:
@@ -1016,9 +1003,7 @@ class TestYAMLConfigLoading:
         from tgraph_bot.config.loader import ConfigLoader
 
         # Create temporary YAML file
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".yaml", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             f.write(valid_yaml_config_file)
             temp_path = f.name
 
@@ -1044,9 +1029,7 @@ services:
   discord: [this is invalid yaml
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".yaml", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             f.write(invalid_yaml)
             temp_path = f.name
 
@@ -1056,9 +1039,9 @@ services:
                 loader.load(temp_path)
 
             # Should mention YAML parsing error
-            assert "YAML" in str(exc_info.value) or "parse" in str(
-                exc_info.value
-            ).lower()
+            assert (
+                "YAML" in str(exc_info.value) or "parse" in str(exc_info.value).lower()
+            )
         finally:
             Path(temp_path).unlink()
 
@@ -1074,9 +1057,7 @@ services:
     url: "https://tautulli.example.com"
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".yaml", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             f.write(incomplete_yaml)
             temp_path = f.name
 
@@ -1124,9 +1105,7 @@ graphs: {}
 rate_limiting: {}
 """
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".yaml", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             f.write(invalid_yaml)
             temp_path = f.name
 
@@ -1145,9 +1124,10 @@ rate_limiting: {}
         with pytest.raises(ConfigurationError) as exc_info:
             loader.load("/nonexistent/path/to/config.yaml")
 
-        assert "not found" in str(exc_info.value).lower() or "does not exist" in str(
-            exc_info.value
-        ).lower()
+        assert (
+            "not found" in str(exc_info.value).lower()
+            or "does not exist" in str(exc_info.value).lower()
+        )
 
 
 class TestEnvironmentVariableOverrides:
@@ -1157,15 +1137,11 @@ class TestEnvironmentVariableOverrides:
     overridden via environment variables.
     """
 
-    def test_override_discord_token_from_env(
-        self, valid_yaml_config_file: str
-    ) -> None:
+    def test_override_discord_token_from_env(self, valid_yaml_config_file: str) -> None:
         """Test Discord token can be overridden via DISCORD_TOKEN env var."""
         from tgraph_bot.config.loader import ConfigLoader
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".yaml", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             f.write(valid_yaml_config_file)
             temp_path = f.name
 
@@ -1190,9 +1166,7 @@ class TestEnvironmentVariableOverrides:
         """Test Tautulli API key can be overridden via TAUTULLI_API_KEY env var."""
         from tgraph_bot.config.loader import ConfigLoader
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".yaml", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             f.write(valid_yaml_config_file)
             temp_path = f.name
 
@@ -1211,15 +1185,11 @@ class TestEnvironmentVariableOverrides:
             if "TAUTULLI_API_KEY" in os.environ:
                 del os.environ["TAUTULLI_API_KEY"]
 
-    def test_override_tautulli_url_from_env(
-        self, valid_yaml_config_file: str
-    ) -> None:
+    def test_override_tautulli_url_from_env(self, valid_yaml_config_file: str) -> None:
         """Test Tautulli URL can be overridden via TAUTULLI_URL env var."""
         from tgraph_bot.config.loader import ConfigLoader
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".yaml", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             f.write(valid_yaml_config_file)
             temp_path = f.name
 
@@ -1242,9 +1212,7 @@ class TestEnvironmentVariableOverrides:
         """Test multiple environment variables can override config simultaneously."""
         from tgraph_bot.config.loader import ConfigLoader
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".yaml", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             f.write(valid_yaml_config_file)
             temp_path = f.name
 
@@ -1320,9 +1288,7 @@ class TestConfigurationErrorMessages:
             TautulliConfig(url="https://example.com")  # pyright: ignore[reportCallIssue]
 
         errors = exc_info.value.errors()
-        missing_error = next(
-            error for error in errors if error["type"] == "missing"
-        )
+        missing_error = next(error for error in errors if error["type"] == "missing")
         assert missing_error["loc"] == ("api_key",)
         assert "required" in missing_error["msg"].lower()
 

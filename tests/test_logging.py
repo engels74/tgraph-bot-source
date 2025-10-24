@@ -113,7 +113,10 @@ class TestMaskSensitiveDict:
         data = {
             "services": {
                 "discord": {"token": "discord_token_12345", "channel_id": 123},
-                "tautulli": {"api_key": "tautulli_key_67890", "url": "http://example.com"},
+                "tautulli": {
+                    "api_key": "tautulli_key_67890",
+                    "url": "http://example.com",
+                },
             }
         }
         result = mask_sensitive_dict(data)
@@ -252,9 +255,10 @@ class TestContextFilter:
             assert hasattr(record, "user_id")
             assert hasattr(record, "command_name")
 
-            assert getattr(record, "operation_id") == "op_123"
-            assert getattr(record, "user_id") == 456
-            assert getattr(record, "command_name") == "test_command"
+            # These attributes are added dynamically by the filter
+            assert record.operation_id == "op_123"  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
+            assert record.user_id == 456  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
+            assert record.command_name == "test_command"  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
         finally:
             operation_id.reset(op_token)
             user_id.reset(user_token)
@@ -372,7 +376,9 @@ class TestLogOperationStartComplete:
 
         with caplog.at_level(logging.INFO):
             _ = log_operation_start(
-                logger, "api_call", details={"api_key": "secret123", "endpoint": "/data"}
+                logger,
+                "api_call",
+                details={"api_key": "secret123", "endpoint": "/data"},
             )
 
         # Verify the secret is not in the log

@@ -97,7 +97,7 @@ class DailyPlayCountByStreamTypeGraph:
         all_stream_types: set[str] = set()
         for stream_types in aggregated.values():
             all_stream_types.update(stream_types.keys())
-        
+
         stream_type_list = sorted(all_stream_types)
 
         # Get colors from palette or use defaults
@@ -110,8 +110,8 @@ class DailyPlayCountByStreamTypeGraph:
             # Use default colors for stream types
             default_colors = {
                 "direct play": "#2ecc71",  # Green
-                "transcode": "#e74c3c",    # Red
-                "copy": "#3498db",         # Blue
+                "transcode": "#e74c3c",  # Red
+                "copy": "#3498db",  # Blue
             }
             colors = [
                 default_colors.get(st, appearance.colors.movie)
@@ -120,15 +120,12 @@ class DailyPlayCountByStreamTypeGraph:
 
         # Prepare data for each stream type
         dates = list(aggregated.keys())
-        
+
         for idx, stream_type in enumerate(stream_type_list):
-            counts = [
-                aggregated[date].get(stream_type, 0)
-                for date in dates
-            ]
-            
+            counts = [aggregated[date].get(stream_type, 0) for date in dates]
+
             color = colors[idx] if idx < len(colors) else appearance.colors.movie
-            
+
             _ = sns.lineplot(
                 x=dates,
                 y=counts,
@@ -142,7 +139,9 @@ class DailyPlayCountByStreamTypeGraph:
         # Set labels and title
         _ = ax.set_xlabel("Date", fontsize=12)  # pyright: ignore[reportUnknownMemberType]  # matplotlib **kwargs
         _ = ax.set_ylabel("Play Count", fontsize=12)  # pyright: ignore[reportUnknownMemberType]  # matplotlib **kwargs
-        _ = ax.set_title("Daily Play Count by Stream Type", fontsize=14, fontweight="bold")  # pyright: ignore[reportUnknownMemberType]  # matplotlib **kwargs
+        _ = ax.set_title(  # pyright: ignore[reportUnknownMemberType]  # matplotlib **kwargs
+            "Daily Play Count by Stream Type", fontsize=14, fontweight="bold"
+        )
 
         # Add legend
         _ = ax.legend(title="Stream Type", loc="best")  # pyright: ignore[reportUnknownMemberType]  # matplotlib **kwargs
@@ -162,4 +161,3 @@ class DailyPlayCountByStreamTypeGraph:
         _ = fig.tight_layout()
 
         return fig
-

@@ -182,4 +182,3 @@ class DailyPlayCountGraph:
         _ = fig.tight_layout()
 
         return fig
-

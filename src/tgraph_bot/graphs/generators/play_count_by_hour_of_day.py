@@ -153,4 +153,3 @@ class PlayCountByHourOfDayGraph:
         _ = fig.tight_layout()
 
         return fig
-

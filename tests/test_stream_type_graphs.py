@@ -10,7 +10,7 @@ This test suite validates stream type analysis graph generators including:
 Requirements tested: 16.1, 16.2, 16.3, 17.1, 17.2, 17.3, 17.4
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -25,7 +25,6 @@ from tgraph_bot.config.models import (
 )
 from tgraph_bot.graphs.data import StreamRecord
 
-
 # Fixtures
 
 
@@ -35,7 +34,7 @@ def stream_type_records() -> list[StreamRecord]:
     return [
         # Direct play streams
         StreamRecord(
-            timestamp=datetime(2024, 1, 1, 10, 0, 0, tzinfo=timezone.utc),
+            timestamp=datetime(2024, 1, 1, 10, 0, 0, tzinfo=UTC),
             media_type="movie",
             stream_type="direct play",
             platform="Plex for Android",
@@ -44,7 +43,7 @@ def stream_type_records() -> list[StreamRecord]:
             stream_resolution="1080p",
         ),
         StreamRecord(
-            timestamp=datetime(2024, 1, 1, 11, 0, 0, tzinfo=timezone.utc),
+            timestamp=datetime(2024, 1, 1, 11, 0, 0, tzinfo=UTC),
             media_type="tv",
             stream_type="direct play",
             platform="Plex Web",
@@ -54,7 +53,7 @@ def stream_type_records() -> list[StreamRecord]:
         ),
         # Transcode streams
         StreamRecord(
-            timestamp=datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc),
+            timestamp=datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC),
             media_type="movie",
             stream_type="transcode",
             platform="Plex for iOS",
@@ -63,7 +62,7 @@ def stream_type_records() -> list[StreamRecord]:
             stream_resolution="720p",
         ),
         StreamRecord(
-            timestamp=datetime(2024, 1, 1, 13, 0, 0, tzinfo=timezone.utc),
+            timestamp=datetime(2024, 1, 1, 13, 0, 0, tzinfo=UTC),
             media_type="tv",
             stream_type="transcode",
             platform="Plex for Android",
@@ -73,7 +72,7 @@ def stream_type_records() -> list[StreamRecord]:
         ),
         # Copy streams
         StreamRecord(
-            timestamp=datetime(2024, 1, 1, 14, 0, 0, tzinfo=timezone.utc),
+            timestamp=datetime(2024, 1, 1, 14, 0, 0, tzinfo=UTC),
             media_type="movie",
             stream_type="copy",
             platform="Plex Web",
@@ -82,7 +81,7 @@ def stream_type_records() -> list[StreamRecord]:
             stream_resolution="1080p",
         ),
         StreamRecord(
-            timestamp=datetime(2024, 1, 1, 15, 0, 0, tzinfo=timezone.utc),
+            timestamp=datetime(2024, 1, 1, 15, 0, 0, tzinfo=UTC),
             media_type="tv",
             stream_type="copy",
             platform="Plex for iOS",
@@ -99,7 +98,7 @@ def resolution_records() -> list[StreamRecord]:
     return [
         # 4K / UHD
         StreamRecord(
-            timestamp=datetime(2024, 1, 1, 10, 0, 0, tzinfo=timezone.utc),
+            timestamp=datetime(2024, 1, 1, 10, 0, 0, tzinfo=UTC),
             media_type="movie",
             stream_type="direct play",
             platform="Plex",
@@ -109,7 +108,7 @@ def resolution_records() -> list[StreamRecord]:
         ),
         # 1440p
         StreamRecord(
-            timestamp=datetime(2024, 1, 1, 11, 0, 0, tzinfo=timezone.utc),
+            timestamp=datetime(2024, 1, 1, 11, 0, 0, tzinfo=UTC),
             media_type="movie",
             stream_type="direct play",
             platform="Plex",
@@ -119,7 +118,7 @@ def resolution_records() -> list[StreamRecord]:
         ),
         # 1080p / FHD
         StreamRecord(
-            timestamp=datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc),
+            timestamp=datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC),
             media_type="tv",
             stream_type="direct play",
             platform="Plex",
@@ -128,7 +127,7 @@ def resolution_records() -> list[StreamRecord]:
             stream_resolution="1080p",
         ),
         StreamRecord(
-            timestamp=datetime(2024, 1, 1, 13, 0, 0, tzinfo=timezone.utc),
+            timestamp=datetime(2024, 1, 1, 13, 0, 0, tzinfo=UTC),
             media_type="movie",
             stream_type="transcode",
             platform="Plex",
@@ -138,7 +137,7 @@ def resolution_records() -> list[StreamRecord]:
         ),
         # 720p / HD
         StreamRecord(
-            timestamp=datetime(2024, 1, 1, 14, 0, 0, tzinfo=timezone.utc),
+            timestamp=datetime(2024, 1, 1, 14, 0, 0, tzinfo=UTC),
             media_type="tv",
             stream_type="direct play",
             platform="Plex",
@@ -148,7 +147,7 @@ def resolution_records() -> list[StreamRecord]:
         ),
         # 480p / SD
         StreamRecord(
-            timestamp=datetime(2024, 1, 1, 15, 0, 0, tzinfo=timezone.utc),
+            timestamp=datetime(2024, 1, 1, 15, 0, 0, tzinfo=UTC),
             media_type="movie",
             stream_type="transcode",
             platform="Plex",
@@ -158,7 +157,7 @@ def resolution_records() -> list[StreamRecord]:
         ),
         # SD (lower resolution)
         StreamRecord(
-            timestamp=datetime(2024, 1, 1, 16, 0, 0, tzinfo=timezone.utc),
+            timestamp=datetime(2024, 1, 1, 16, 0, 0, tzinfo=UTC),
             media_type="tv",
             stream_type="direct play",
             platform="Plex",
@@ -175,7 +174,7 @@ def concurrent_stream_records() -> list[StreamRecord]:
     return [
         # Time slot 1: 3 concurrent streams (2 direct play, 1 transcode)
         StreamRecord(
-            timestamp=datetime(2024, 1, 1, 10, 0, 0, tzinfo=timezone.utc),
+            timestamp=datetime(2024, 1, 1, 10, 0, 0, tzinfo=UTC),
             media_type="movie",
             stream_type="direct play",
             platform="Plex",
@@ -184,7 +183,7 @@ def concurrent_stream_records() -> list[StreamRecord]:
             stream_resolution="1080p",
         ),
         StreamRecord(
-            timestamp=datetime(2024, 1, 1, 10, 5, 0, tzinfo=timezone.utc),
+            timestamp=datetime(2024, 1, 1, 10, 5, 0, tzinfo=UTC),
             media_type="tv",
             stream_type="direct play",
             platform="Plex",
@@ -193,7 +192,7 @@ def concurrent_stream_records() -> list[StreamRecord]:
             stream_resolution="1080p",
         ),
         StreamRecord(
-            timestamp=datetime(2024, 1, 1, 10, 10, 0, tzinfo=timezone.utc),
+            timestamp=datetime(2024, 1, 1, 10, 10, 0, tzinfo=UTC),
             media_type="movie",
             stream_type="transcode",
             platform="Plex",
@@ -203,7 +202,7 @@ def concurrent_stream_records() -> list[StreamRecord]:
         ),
         # Time slot 2: 5 concurrent streams (peak - 3 direct play, 2 transcode)
         StreamRecord(
-            timestamp=datetime(2024, 1, 1, 14, 0, 0, tzinfo=timezone.utc),
+            timestamp=datetime(2024, 1, 1, 14, 0, 0, tzinfo=UTC),
             media_type="movie",
             stream_type="direct play",
             platform="Plex",
@@ -212,7 +211,7 @@ def concurrent_stream_records() -> list[StreamRecord]:
             stream_resolution="1080p",
         ),
         StreamRecord(
-            timestamp=datetime(2024, 1, 1, 14, 5, 0, tzinfo=timezone.utc),
+            timestamp=datetime(2024, 1, 1, 14, 5, 0, tzinfo=UTC),
             media_type="tv",
             stream_type="direct play",
             platform="Plex",
@@ -221,7 +220,7 @@ def concurrent_stream_records() -> list[StreamRecord]:
             stream_resolution="1080p",
         ),
         StreamRecord(
-            timestamp=datetime(2024, 1, 1, 14, 10, 0, tzinfo=timezone.utc),
+            timestamp=datetime(2024, 1, 1, 14, 10, 0, tzinfo=UTC),
             media_type="movie",
             stream_type="direct play",
             platform="Plex",
@@ -230,7 +229,7 @@ def concurrent_stream_records() -> list[StreamRecord]:
             stream_resolution="1080p",
         ),
         StreamRecord(
-            timestamp=datetime(2024, 1, 1, 14, 15, 0, tzinfo=timezone.utc),
+            timestamp=datetime(2024, 1, 1, 14, 15, 0, tzinfo=UTC),
             media_type="tv",
             stream_type="transcode",
             platform="Plex",
@@ -239,7 +238,7 @@ def concurrent_stream_records() -> list[StreamRecord]:
             stream_resolution="720p",
         ),
         StreamRecord(
-            timestamp=datetime(2024, 1, 1, 14, 20, 0, tzinfo=timezone.utc),
+            timestamp=datetime(2024, 1, 1, 14, 20, 0, tzinfo=UTC),
             media_type="movie",
             stream_type="transcode",
             platform="Plex",
@@ -249,7 +248,7 @@ def concurrent_stream_records() -> list[StreamRecord]:
         ),
         # Time slot 3: 2 concurrent streams (1 direct play, 1 copy)
         StreamRecord(
-            timestamp=datetime(2024, 1, 1, 18, 0, 0, tzinfo=timezone.utc),
+            timestamp=datetime(2024, 1, 1, 18, 0, 0, tzinfo=UTC),
             media_type="tv",
             stream_type="direct play",
             platform="Plex",
@@ -258,7 +257,7 @@ def concurrent_stream_records() -> list[StreamRecord]:
             stream_resolution="1080p",
         ),
         StreamRecord(
-            timestamp=datetime(2024, 1, 1, 18, 5, 0, tzinfo=timezone.utc),
+            timestamp=datetime(2024, 1, 1, 18, 5, 0, tzinfo=UTC),
             media_type="movie",
             stream_type="copy",
             platform="Plex",
@@ -319,7 +318,9 @@ class TestStreamTypeSeparation:
         stream_type_records: list[StreamRecord],
     ) -> None:
         """Test that direct play streams are correctly categorized."""
-        direct_play_streams = [r for r in stream_type_records if r.stream_type == "direct play"]
+        direct_play_streams = [
+            r for r in stream_type_records if r.stream_type == "direct play"
+        ]
         assert len(direct_play_streams) == 2
         assert all(r.stream_type == "direct play" for r in direct_play_streams)
 
@@ -328,7 +329,9 @@ class TestStreamTypeSeparation:
         stream_type_records: list[StreamRecord],
     ) -> None:
         """Test that transcode streams are correctly categorized."""
-        transcode_streams = [r for r in stream_type_records if r.stream_type == "transcode"]
+        transcode_streams = [
+            r for r in stream_type_records if r.stream_type == "transcode"
+        ]
         assert len(transcode_streams) == 2
         assert all(r.stream_type == "transcode" for r in transcode_streams)
 
@@ -374,7 +377,8 @@ class TestResolutionGrouping:
     ) -> None:
         """Test standard grouping identifies 4K resolution."""
         four_k_records = [
-            r for r in resolution_records
+            r
+            for r in resolution_records
             if r.stream_resolution == "4K" or r.source_resolution == "3840x2160"
         ]
         assert len(four_k_records) >= 1
@@ -385,7 +389,8 @@ class TestResolutionGrouping:
     ) -> None:
         """Test standard grouping identifies 1440p resolution."""
         records_1440p = [
-            r for r in resolution_records
+            r
+            for r in resolution_records
             if r.stream_resolution == "1440p" or r.source_resolution == "2560x1440"
         ]
         assert len(records_1440p) >= 1
@@ -396,7 +401,8 @@ class TestResolutionGrouping:
     ) -> None:
         """Test standard grouping identifies 1080p resolution."""
         records_1080p = [
-            r for r in resolution_records
+            r
+            for r in resolution_records
             if r.stream_resolution == "1080p" or r.source_resolution == "1920x1080"
         ]
         assert len(records_1080p) >= 1
@@ -407,7 +413,8 @@ class TestResolutionGrouping:
     ) -> None:
         """Test standard grouping identifies 720p resolution."""
         records_720p = [
-            r for r in resolution_records
+            r
+            for r in resolution_records
             if r.stream_resolution == "720p" or r.source_resolution == "1280x720"
         ]
         assert len(records_720p) >= 1
@@ -417,10 +424,7 @@ class TestResolutionGrouping:
         resolution_records: list[StreamRecord],
     ) -> None:
         """Test standard grouping identifies 480p resolution."""
-        records_480p = [
-            r for r in resolution_records
-            if r.stream_resolution == "480p"
-        ]
+        records_480p = [r for r in resolution_records if r.stream_resolution == "480p"]
         assert len(records_480p) >= 1
 
     def test_standard_grouping_sd(
@@ -429,10 +433,12 @@ class TestResolutionGrouping:
     ) -> None:
         """Test standard grouping identifies SD resolution."""
         sd_records = [
-            r for r in resolution_records
-            if r.stream_resolution == "SD" or (
-                "x" in r.source_resolution and
-                int(r.source_resolution.split("x")[0]) < 1280
+            r
+            for r in resolution_records
+            if r.stream_resolution == "SD"
+            or (
+                "x" in r.source_resolution
+                and int(r.source_resolution.split("x")[0]) < 1280
             )
         ]
         assert len(sd_records) >= 1
@@ -455,10 +461,12 @@ class TestResolutionGrouping:
     ) -> None:
         """Test simplified grouping identifies UHD (4K and above)."""
         uhd_records = [
-            r for r in resolution_records
-            if r.stream_resolution == "4K" or (
-                "x" in r.source_resolution and
-                int(r.source_resolution.split("x")[0]) >= 3840
+            r
+            for r in resolution_records
+            if r.stream_resolution == "4K"
+            or (
+                "x" in r.source_resolution
+                and int(r.source_resolution.split("x")[0]) >= 3840
             )
         ]
         assert len(uhd_records) >= 1
@@ -469,7 +477,8 @@ class TestResolutionGrouping:
     ) -> None:
         """Test simplified grouping identifies FHD (1080p)."""
         fhd_records = [
-            r for r in resolution_records
+            r
+            for r in resolution_records
             if r.stream_resolution == "1080p" or r.source_resolution == "1920x1080"
         ]
         assert len(fhd_records) >= 1
@@ -480,7 +489,8 @@ class TestResolutionGrouping:
     ) -> None:
         """Test simplified grouping identifies HD (720p)."""
         hd_records = [
-            r for r in resolution_records
+            r
+            for r in resolution_records
             if r.stream_resolution == "720p" or r.source_resolution == "1280x720"
         ]
         assert len(hd_records) >= 1
@@ -491,10 +501,12 @@ class TestResolutionGrouping:
     ) -> None:
         """Test simplified grouping identifies SD (below 720p)."""
         sd_records = [
-            r for r in resolution_records
-            if r.stream_resolution in ("480p", "SD") or (
-                "x" in r.source_resolution and
-                int(r.source_resolution.split("x")[0]) < 1280
+            r
+            for r in resolution_records
+            if r.stream_resolution in ("480p", "SD")
+            or (
+                "x" in r.source_resolution
+                and int(r.source_resolution.split("x")[0]) < 1280
             )
         ]
         assert len(sd_records) >= 1
@@ -552,7 +564,9 @@ class TestConcurrentStreamCounting:
         """Test that concurrent streams are counted by stream type."""
         from collections import defaultdict
 
-        streams_by_hour: dict[int, dict[str, int]] = defaultdict(lambda: defaultdict(int))
+        streams_by_hour: dict[int, dict[str, int]] = defaultdict(
+            lambda: defaultdict(int)
+        )
         for record in concurrent_stream_records:
             hour = record.timestamp.hour
             streams_by_hour[hour][record.stream_type] += 1
@@ -568,22 +582,34 @@ class TestConcurrentStreamCounting:
         """Test that peak is identified for each stream type separately."""
         from collections import defaultdict
 
-        streams_by_hour: dict[int, dict[str, int]] = defaultdict(lambda: defaultdict(int))
+        streams_by_hour: dict[int, dict[str, int]] = defaultdict(
+            lambda: defaultdict(int)
+        )
         for record in concurrent_stream_records:
             hour = record.timestamp.hour
             streams_by_hour[hour][record.stream_type] += 1
 
         # Find peak for direct play
         direct_play_peak = max(
-            (count for hour_data in streams_by_hour.values() for stream_type, count in hour_data.items() if stream_type == "direct play"),
-            default=0
+            (
+                count
+                for hour_data in streams_by_hour.values()
+                for stream_type, count in hour_data.items()
+                if stream_type == "direct play"
+            ),
+            default=0,
         )
         assert direct_play_peak == 3
 
         # Find peak for transcode
         transcode_peak = max(
-            (count for hour_data in streams_by_hour.values() for stream_type, count in hour_data.items() if stream_type == "transcode"),
-            default=0
+            (
+                count
+                for hour_data in streams_by_hour.values()
+                for stream_type, count in hour_data.items()
+                if stream_type == "transcode"
+            ),
+            default=0,
         )
         assert transcode_peak == 2
 
@@ -663,7 +689,9 @@ class TestPeakHighlighting:
         """Test that peaks are identified for each stream type."""
         from collections import defaultdict
 
-        streams_by_hour_and_type: dict[int, dict[str, int]] = defaultdict(lambda: defaultdict(int))
+        streams_by_hour_and_type: dict[int, dict[str, int]] = defaultdict(
+            lambda: defaultdict(int)
+        )
         for record in concurrent_stream_records:
             hour = record.timestamp.hour
             streams_by_hour_and_type[hour][record.stream_type] += 1
@@ -673,8 +701,7 @@ class TestPeakHighlighting:
         for hour_data in streams_by_hour_and_type.values():
             for stream_type, count in hour_data.items():
                 stream_type_peaks[stream_type] = max(
-                    stream_type_peaks.get(stream_type, 0),
-                    count
+                    stream_type_peaks.get(stream_type, 0), count
                 )
 
         assert stream_type_peaks["direct play"] == 3
@@ -704,8 +731,10 @@ class TestTranscodingFocusEmphasis:
         """Test that resolution changes due to transcoding are identified."""
         # Find records where source and stream resolution differ
         transcoded_resolution_changes = [
-            r for r in resolution_records
-            if r.stream_type == "transcode" and r.source_resolution != r.stream_resolution
+            r
+            for r in resolution_records
+            if r.stream_type == "transcode"
+            and r.source_resolution != r.stream_resolution
         ]
         assert len(transcoded_resolution_changes) >= 1
 
@@ -715,10 +744,11 @@ class TestTranscodingFocusEmphasis:
     ) -> None:
         """Test identification of 4K to lower resolution transcoding."""
         four_k_transcodes = [
-            r for r in resolution_records
-            if r.stream_type == "transcode" and
-            r.source_resolution == "3840x2160" and
-            r.stream_resolution != "4K"
+            r
+            for r in resolution_records
+            if r.stream_type == "transcode"
+            and r.source_resolution == "3840x2160"
+            and r.stream_resolution != "4K"
         ]
         # May or may not have 4K transcodes in test data
         # This test validates the logic for identifying them
@@ -730,10 +760,11 @@ class TestTranscodingFocusEmphasis:
     ) -> None:
         """Test identification of 1080p to lower resolution transcoding."""
         hd_transcodes = [
-            r for r in resolution_records
-            if r.stream_type == "transcode" and
-            r.source_resolution == "1920x1080" and
-            r.stream_resolution in ("720p", "480p", "SD")
+            r
+            for r in resolution_records
+            if r.stream_type == "transcode"
+            and r.source_resolution == "1920x1080"
+            and r.stream_resolution in ("720p", "480p", "SD")
         ]
         assert len(hd_transcodes) >= 1
 
@@ -769,8 +800,7 @@ class TestTranscodingFocusEmphasis:
     ) -> None:
         """Test identification of users who require transcoding."""
         users_with_transcoding = {
-            r.user for r in stream_type_records
-            if r.stream_type == "transcode"
+            r.user for r in stream_type_records if r.stream_type == "transcode"
         }
 
         assert "Alice" in users_with_transcoding
@@ -782,8 +812,7 @@ class TestTranscodingFocusEmphasis:
     ) -> None:
         """Test identification of platforms that require transcoding."""
         platforms_with_transcoding = {
-            r.platform for r in stream_type_records
-            if r.stream_type == "transcode"
+            r.platform for r in stream_type_records if r.stream_type == "transcode"
         }
 
         assert "Plex for iOS" in platforms_with_transcoding
@@ -892,7 +921,9 @@ class TestStreamTypeGraphIntegration:
         assert sample_appearance_config is not None
 
         # Verify all records are properly structured
-        for record in stream_type_records + resolution_records + concurrent_stream_records:
+        for record in (
+            stream_type_records + resolution_records + concurrent_stream_records
+        ):
             assert isinstance(record, StreamRecord)
             assert record.timestamp is not None
             assert record.media_type in ("movie", "tv")
@@ -901,4 +932,3 @@ class TestStreamTypeGraphIntegration:
             assert record.user != ""
             assert record.source_resolution != ""
             assert record.stream_resolution != ""
-

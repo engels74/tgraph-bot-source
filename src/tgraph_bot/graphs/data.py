@@ -10,7 +10,7 @@ Requirements: 13.1, 13.2, 13.3, 13.4, 13.5
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from typing import TypedDict
 
 # Type alias for aggregation results
@@ -120,7 +120,7 @@ def create_stream_record(tautulli_record: Mapping[str, object]) -> StreamRecord:
     """
     # Extract and validate timestamp
     timestamp_unix = int(tautulli_record["date"])  # pyright: ignore[reportArgumentType]
-    timestamp = datetime.fromtimestamp(timestamp_unix, tz=timezone.utc)
+    timestamp = datetime.fromtimestamp(timestamp_unix, tz=UTC)
 
     # Normalize media type
     raw_media_type = str(tautulli_record["media_type"])
@@ -437,7 +437,11 @@ def group_resolution(resolution: str, *, grouping: str = "standard") -> str:
     resolution_lower = resolution.lower()
 
     # Check for common resolution names
-    if "4k" in resolution_lower or "2160" in resolution_lower or "3840" in resolution_lower:
+    if (
+        "4k" in resolution_lower
+        or "2160" in resolution_lower
+        or "3840" in resolution_lower
+    ):
         return "UHD" if grouping == "simplified" else "4K"
     elif "1440" in resolution_lower or "2560" in resolution_lower:
         return "FHD" if grouping == "simplified" else "1440p"
@@ -445,7 +449,11 @@ def group_resolution(resolution: str, *, grouping: str = "standard") -> str:
         return "FHD" if grouping == "simplified" else "1080p"
     elif "720" in resolution_lower or "1280" in resolution_lower:
         return "HD" if grouping == "simplified" else "720p"
-    elif "480" in resolution_lower or "640" in resolution_lower or "854" in resolution_lower:
+    elif (
+        "480" in resolution_lower
+        or "640" in resolution_lower
+        or "854" in resolution_lower
+    ):
         return "SD" if grouping == "simplified" else "480p"
     else:
         return "SD"
@@ -559,9 +567,7 @@ def aggregate_by_user_and_stream_type(
             aggregation[user] = {}
 
         stream_type = record.stream_type
-        aggregation[user][stream_type] = (
-            aggregation[user].get(stream_type, 0) + 1
-        )
+        aggregation[user][stream_type] = aggregation[user].get(stream_type, 0) + 1
 
     # Sort by total count descending
     return dict(

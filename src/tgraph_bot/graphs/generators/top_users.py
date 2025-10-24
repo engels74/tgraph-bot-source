@@ -146,4 +146,3 @@ class TopUsersGraph:
         _ = fig.tight_layout()
 
         return fig
-

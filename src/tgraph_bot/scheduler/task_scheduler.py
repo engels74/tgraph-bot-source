@@ -71,9 +71,7 @@ class TaskScheduler:
 
     Example:
         >>> config = AutomationConfig(
-        ...     enabled=True,
-        ...     update_interval_days=7,
-        ...     fixed_update_time="14:30"
+        ...     enabled=True, update_interval_days=7, fixed_update_time="14:30"
         ... )
         >>> executor = MyUpdateExecutor()  # Your implementation
         >>> scheduler = TaskScheduler(config=config, update_executor=executor)
@@ -264,7 +262,7 @@ class TaskScheduler:
 @asynccontextmanager
 async def managed_scheduler(
     scheduler: TaskScheduler,
-) -> AsyncGenerator[TaskScheduler, None]:
+) -> AsyncGenerator[TaskScheduler]:
     """Context manager for scheduler lifecycle.
 
     Automatically starts the scheduler on entry and stops it on exit,
@@ -289,4 +287,3 @@ async def managed_scheduler(
         yield scheduler
     finally:
         await scheduler.stop()
-

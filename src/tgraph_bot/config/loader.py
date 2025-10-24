@@ -171,7 +171,7 @@ class ConfigLoader:
             with open(file_path, "w") as f:
                 yaml_writer.dump(yaml_data, f)  # pyright: ignore[reportUnknownMemberType]  # ruamel.yaml incomplete stubs
 
-        except (OSError, IOError) as e:
+        except OSError as e:
             raise ConfigurationError(
                 f"Failed to save configuration file: {e}",
                 field_name="config_file",
@@ -197,7 +197,11 @@ class ConfigLoader:
             source: Source dictionary with new values
         """
         for key, value in source.items():
-            if isinstance(value, dict) and key in target and isinstance(target[key], dict):
+            if (
+                isinstance(value, dict)
+                and key in target
+                and isinstance(target[key], dict)
+            ):
                 # Recursively merge nested dictionaries
                 self._merge_preserving_structure(target[key], value)  # pyright: ignore[reportArgumentType, reportUnknownArgumentType]
             else:

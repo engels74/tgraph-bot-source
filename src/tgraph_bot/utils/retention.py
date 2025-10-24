@@ -46,8 +46,7 @@ class DataRetentionManager:
 
     Examples:
         >>> manager = DataRetentionManager(
-        ...     output_dir=Path("/data/graphs"),
-        ...     keep_days=30
+        ...     output_dir=Path("/data/graphs"), keep_days=30
         ... )
         >>> result = await manager.cleanup_old_files()
         >>> print(f"Deleted {result.files_deleted} files")
@@ -89,10 +88,7 @@ class DataRetentionManager:
         error_count = 0
 
         logger.info(
-            (
-                f"Starting cleanup: removing files older than {self.keep_days} days"
-                f" (cutoff: {cutoff_time.isoformat()})"
-            )
+            f"Starting cleanup: removing files older than {self.keep_days} days (cutoff: {cutoff_time.isoformat()})"
         )
 
         # Find all PNG files in the output directory
@@ -102,9 +98,7 @@ class DataRetentionManager:
             logger.error(
                 f"Failed to list files in {self.output_dir}: {e}", exc_info=True
             )
-            return CleanupResult(
-                files_deleted=0, bytes_reclaimed=0, errors=1
-            )
+            return CleanupResult(files_deleted=0, bytes_reclaimed=0, errors=1)
 
         for file_path in png_files:
             try:
@@ -124,11 +118,7 @@ class DataRetentionManager:
                     deleted_bytes += file_size
 
                     logger.debug(
-                        (
-                            f"Deleted old file: {file_path.name}"
-                            f" (age: {(datetime.now() - file_mtime).days} days,"
-                            f" size: {file_size} bytes)"
-                        )
+                        f"Deleted old file: {file_path.name} (age: {(datetime.now() - file_mtime).days} days, size: {file_size} bytes)"
                     )
 
             except OSError as e:
@@ -148,12 +138,7 @@ class DataRetentionManager:
 
         if deleted_count > 0 or error_count > 0:
             logger.info(
-                (
-                    f"Cleanup completed: deleted {deleted_count} files,"
-                    f" reclaimed {deleted_bytes:,} bytes"
-                    f" ({deleted_bytes / 1024 / 1024:.2f} MB),"
-                    f" {error_count} errors"
-                )
+                f"Cleanup completed: deleted {deleted_count} files, reclaimed {deleted_bytes:,} bytes ({deleted_bytes / 1024 / 1024:.2f} MB), {error_count} errors"
             )
         else:
             logger.debug("Cleanup completed: no files to delete")
@@ -183,10 +168,7 @@ class DataRetentionManager:
             sleep_seconds = (tomorrow_midnight - now).total_seconds()
 
             logger.debug(
-                (
-                    f"Next cleanup scheduled for {tomorrow_midnight.isoformat()}"
-                    f" (in {sleep_seconds / 3600:.2f} hours)"
-                )
+                f"Next cleanup scheduled for {tomorrow_midnight.isoformat()} (in {sleep_seconds / 3600:.2f} hours)"
             )
 
             # Sleep until midnight

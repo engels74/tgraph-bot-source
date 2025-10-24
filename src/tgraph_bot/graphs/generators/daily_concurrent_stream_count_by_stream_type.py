@@ -42,38 +42,35 @@ def calculate_peak_concurrent_streams_by_type(
 
     # Group by date, hour, and stream type
     hourly_counts: dict[date, dict[int, dict[str, int]]] = {}
-    
+
     for record in records:
         record_date = record.timestamp.date()
         hour = record.timestamp.hour
         stream_type = record.stream_type
-        
+
         if record_date not in hourly_counts:
             hourly_counts[record_date] = {}
         if hour not in hourly_counts[record_date]:
             hourly_counts[record_date][hour] = {}
-        
+
         hourly_counts[record_date][hour][stream_type] = (
             hourly_counts[record_date][hour].get(stream_type, 0) + 1
         )
 
     # Find peak for each date and stream type
     peak_counts: dict[date, dict[str, int]] = {}
-    
+
     for record_date, hours in hourly_counts.items():
         peak_counts[record_date] = {}
-        
+
         # Get all stream types for this date
         all_stream_types: set[str] = set()
         for hour_data in hours.values():
             all_stream_types.update(hour_data.keys())
-        
+
         # Find peak for each stream type
         for stream_type in all_stream_types:
-            peak = max(
-                hour_data.get(stream_type, 0)
-                for hour_data in hours.values()
-            )
+            peak = max(hour_data.get(stream_type, 0) for hour_data in hours.values())
             peak_counts[record_date][stream_type] = peak
 
     # Return sorted by date
@@ -162,7 +159,7 @@ class DailyConcurrentStreamCountByStreamTypeGraph:
         all_stream_types: set[str] = set()
         for stream_types in peak_data.values():
             all_stream_types.update(stream_types.keys())
-        
+
         stream_type_list = sorted(all_stream_types)
 
         # Get colors from palette or use defaults
@@ -175,8 +172,8 @@ class DailyConcurrentStreamCountByStreamTypeGraph:
             # Use default colors for stream types
             default_colors = {
                 "direct play": "#2ecc71",  # Green
-                "transcode": "#e74c3c",    # Red
-                "copy": "#3498db",         # Blue
+                "transcode": "#e74c3c",  # Red
+                "copy": "#3498db",  # Blue
             }
             colors = [
                 default_colors.get(st, appearance.colors.movie)
@@ -185,24 +182,21 @@ class DailyConcurrentStreamCountByStreamTypeGraph:
 
         # Prepare data for each stream type
         dates = list(peak_data.keys())
-        
+
         # Track peak values for highlighting
         peak_values: dict[str, tuple[date, int]] = {}
-        
+
         for idx, stream_type in enumerate(stream_type_list):
-            counts = [
-                peak_data[date].get(stream_type, 0)
-                for date in dates
-            ]
-            
+            counts = [peak_data[date].get(stream_type, 0) for date in dates]
+
             # Track peak for this stream type
             if counts:
                 max_count = max(counts)
                 max_idx = counts.index(max_count)
                 peak_values[stream_type] = (dates[max_idx], max_count)
-            
+
             color = colors[idx] if idx < len(colors) else appearance.colors.movie
-            
+
             _ = sns.lineplot(
                 x=dates,
                 y=counts,
@@ -215,7 +209,7 @@ class DailyConcurrentStreamCountByStreamTypeGraph:
 
         # Highlight peaks if enabled
         if config.peak_highlighting_enabled and peak_values:
-            for stream_type, (peak_date, peak_count) in peak_values.items():
+            for _stream_type, (peak_date, peak_count) in peak_values.items():
                 # Find the index of the peak date in the dates list
                 peak_idx = dates.index(peak_date)
                 _ = ax.plot(  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
@@ -256,4 +250,3 @@ class DailyConcurrentStreamCountByStreamTypeGraph:
         _ = fig.tight_layout()
 
         return fig
-

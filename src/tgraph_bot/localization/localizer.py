@@ -41,7 +41,7 @@ class Localizer:
         language: str,
         *,
         locales_dir: Path | None = None,
-    ) -> "Localizer":
+    ) -> Localizer:
         """Load localized strings for the specified language.
 
         This method loads the requested language file and the English fallback.
@@ -59,8 +59,8 @@ class Localizer:
             LocalizationError: If English locale file is missing or invalid JSON
 
         Examples:
-            >>> localizer = Localizer.load('en')
-            >>> localizer.get('command_update_graphs_description')
+            >>> localizer = Localizer.load("en")
+            >>> localizer.get("command_update_graphs_description")
             'Generate and post new graphs'
         """
         # Determine locales directory
@@ -134,10 +134,10 @@ class Localizer:
             Localized and formatted string
 
         Examples:
-            >>> localizer.get('error_rate_limited', minutes=5)
+            >>> localizer.get("error_rate_limited", minutes=5)
             'Rate limited. Try again in 5 minutes.'
 
-            >>> localizer.get('success_graphs_generated', count=12)
+            >>> localizer.get("success_graphs_generated", count=12)
             'Successfully generated 12 graphs'
         """
         # Try to get from current language
@@ -172,4 +172,3 @@ class Localizer:
                 return template
         else:
             return template
-

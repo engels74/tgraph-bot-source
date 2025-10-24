@@ -22,7 +22,7 @@ from tgraph_bot.utils.errors import LocalizationError
 
 
 @pytest.fixture
-def temp_locales_dir() -> Generator[Path, None, None]:
+def temp_locales_dir() -> Generator[Path]:
     """Create a temporary directory for locale files."""
     with tempfile.TemporaryDirectory() as tmpdir:
         yield Path(tmpdir)
@@ -116,9 +116,10 @@ class TestLocalizerLoading:
         localizer = Localizer.load("en", locales_dir=temp_locales_dir)
 
         assert localizer.language == "en"
-        assert localizer.get("command_update_graphs_description") == english_strings[
-            "command_update_graphs_description"
-        ]
+        assert (
+            localizer.get("command_update_graphs_description")
+            == english_strings["command_update_graphs_description"]
+        )
 
     def test_load_danish_locale(
         self,
@@ -138,9 +139,10 @@ class TestLocalizerLoading:
         localizer = Localizer.load("da", locales_dir=temp_locales_dir)
 
         assert localizer.language == "da"
-        assert localizer.get("command_update_graphs_description") == danish_strings[
-            "command_update_graphs_description"
-        ]
+        assert (
+            localizer.get("command_update_graphs_description")
+            == danish_strings["command_update_graphs_description"]
+        )
 
     def test_load_nonexistent_locale_falls_back_to_english(
         self,
@@ -160,9 +162,10 @@ class TestLocalizerLoading:
 
         # Should fall back to English
         assert localizer.language == "en"
-        assert localizer.get("command_update_graphs_description") == english_strings[
-            "command_update_graphs_description"
-        ]
+        assert (
+            localizer.get("command_update_graphs_description")
+            == english_strings["command_update_graphs_description"]
+        )
 
     def test_load_missing_english_locale_raises_error(
         self, temp_locales_dir: Path
@@ -177,9 +180,7 @@ class TestLocalizerLoading:
 
         assert "English locale file not found" in str(exc_info.value)
 
-    def test_load_invalid_json_raises_error(
-        self, temp_locales_dir: Path
-    ) -> None:
+    def test_load_invalid_json_raises_error(self, temp_locales_dir: Path) -> None:
         """Test that invalid JSON in locale file raises LocalizationError.
 
         Requirements: 14.1
@@ -331,4 +332,3 @@ class TestLocalizerStringFormatting:
         result = localizer.get("graph_title_daily_play_count")
 
         assert result == "Daily Play Count"
-

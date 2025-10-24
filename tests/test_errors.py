@@ -108,9 +108,7 @@ class TestGraphGenerationError:
 
     def test_graph_generation_error_with_graph_type(self) -> None:
         """Test GraphGenerationError with graph type."""
-        error = GraphGenerationError(
-            "Insufficient data", graph_type="daily_play_count"
-        )
+        error = GraphGenerationError("Insufficient data", graph_type="daily_play_count")
         assert str(error) == "Insufficient data"
         assert error.graph_type == "daily_play_count"
         assert error.data_range_days is None

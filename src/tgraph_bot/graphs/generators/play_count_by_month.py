@@ -179,4 +179,3 @@ class PlayCountByMonthGraph:
         _ = fig.tight_layout()
 
         return fig
-

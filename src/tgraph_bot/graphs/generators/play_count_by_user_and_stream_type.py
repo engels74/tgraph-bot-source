@@ -114,7 +114,7 @@ class PlayCountByUserAndStreamTypeGraph:
         all_stream_types: set[str] = set()
         for stream_types in limited.values():
             all_stream_types.update(stream_types.keys())
-        
+
         stream_type_list = sorted(all_stream_types)
 
         # Get colors from palette or use defaults
@@ -127,8 +127,8 @@ class PlayCountByUserAndStreamTypeGraph:
             # Use default colors for stream types
             default_colors = {
                 "direct play": "#2ecc71",  # Green
-                "transcode": "#e74c3c",    # Red
-                "copy": "#3498db",         # Blue
+                "transcode": "#e74c3c",  # Red
+                "copy": "#3498db",  # Blue
             }
             colors = [
                 default_colors.get(st, appearance.colors.movie)
@@ -141,15 +141,12 @@ class PlayCountByUserAndStreamTypeGraph:
         if config.stacked:
             # Create stacked bar chart
             bottom = np.zeros(len(users))
-            
+
             for idx, stream_type in enumerate(stream_type_list):
-                counts = [
-                    limited[user].get(stream_type, 0)
-                    for user in users
-                ]
-                
+                counts = [limited[user].get(stream_type, 0) for user in users]
+
                 color = colors[idx] if idx < len(colors) else appearance.colors.movie
-                
+
                 _ = ax.bar(  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
                     x_pos,
                     counts,
@@ -157,22 +154,19 @@ class PlayCountByUserAndStreamTypeGraph:
                     label=stream_type.title(),
                     color=color,
                 )
-                
+
                 bottom += np.array(counts)
 
         else:
             # Create grouped bar chart
             bar_width = 0.8 / len(stream_type_list)
-            
+
             for idx, stream_type in enumerate(stream_type_list):
-                counts = [
-                    limited[user].get(stream_type, 0)
-                    for user in users
-                ]
-                
+                counts = [limited[user].get(stream_type, 0) for user in users]
+
                 color = colors[idx] if idx < len(colors) else appearance.colors.movie
                 offset = (idx - len(stream_type_list) / 2) * bar_width + bar_width / 2
-                
+
                 _ = ax.bar(  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
                     x_pos + offset,
                     counts,
@@ -212,4 +206,3 @@ class PlayCountByUserAndStreamTypeGraph:
         _ = fig.tight_layout()
 
         return fig
-

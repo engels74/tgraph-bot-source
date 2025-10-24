@@ -17,7 +17,11 @@ from tgraph_bot.config.models import BotConfig
 from tgraph_bot.rate_limiting.rate_limiter import RateLimiter
 from tgraph_bot.scheduler.task_scheduler import TaskScheduler
 from tgraph_bot.utils.errors import ConfigurationError
-from tgraph_bot.utils.logging import get_logger, log_operation_complete, log_operation_start
+from tgraph_bot.utils.logging import (
+    get_logger,
+    log_operation_complete,
+    log_operation_start,
+)
 
 logger = get_logger(__name__)
 
@@ -79,7 +83,9 @@ class TGraphBot(commands.Bot):
 
         # Initialize task scheduler
         # Note: update_executor will be set later when commands are loaded
-        self.scheduler: TaskScheduler = TaskScheduler(config.automation, update_executor=None)
+        self.scheduler: TaskScheduler = TaskScheduler(
+            config.automation, update_executor=None
+        )
 
         # Connection management
         self._reconnect_attempts: int = 0
@@ -348,7 +354,9 @@ class TGraphBot(commands.Bot):
                 new_rate_limiter = RateLimiter(config_to_apply.rate_limiting)
 
                 # Restore cooldown state to preserve existing cooldowns
-                new_rate_limiter.restore_cooldown_state(user_cooldowns, global_cooldowns)
+                new_rate_limiter.restore_cooldown_state(
+                    user_cooldowns, global_cooldowns
+                )
 
                 self.rate_limiter = new_rate_limiter
 

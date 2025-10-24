@@ -347,7 +347,11 @@ class TautulliClient:
                     result_raw: object = response_section_raw.get("result")  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]  # dict.get incomplete stubs
                     if result_raw == "error":
                         message_raw: object = response_section_raw.get("message")  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]  # dict.get incomplete stubs
-                        error_msg = message_raw if isinstance(message_raw, str) else "Unknown error"
+                        error_msg = (
+                            message_raw
+                            if isinstance(message_raw, str)
+                            else "Unknown error"
+                        )
                         raise TautulliAPIError(
                             f"Tautulli API error: {error_msg}",
                             status_code=response.status_code,
@@ -433,9 +437,7 @@ class TautulliClient:
 
             # Check for required 'data' key
             if "data" not in response_section:
-                raise TautulliAPIError(
-                    "Invalid response structure: missing 'data' key"
-                )
+                raise TautulliAPIError("Invalid response structure: missing 'data' key")
 
             data_section_raw: object = response_section["data"]
             if not isinstance(data_section_raw, dict):  # pyright: ignore[reportUnnecessaryIsInstance]  # runtime validation
@@ -444,7 +446,9 @@ class TautulliClient:
                 )
 
             # Cast after validation
-            data_section: TautulliDataSection = cast(TautulliDataSection, cast(object, data_section_raw))
+            data_section: TautulliDataSection = cast(
+                TautulliDataSection, cast(object, data_section_raw)
+            )
 
             raw_records = data_section["data"]
             if not isinstance(raw_records, list):  # pyright: ignore[reportUnnecessaryIsInstance]  # runtime validation
@@ -499,6 +503,4 @@ class TautulliClient:
                 f"Missing expected field in API response: {e}"
             ) from e
         except Exception as e:
-            raise TautulliAPIError(
-                f"Failed to extract history records: {e}"
-            ) from e
+            raise TautulliAPIError(f"Failed to extract history records: {e}") from e

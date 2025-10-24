@@ -67,7 +67,7 @@ def max_interval_config() -> AutomationConfig:
 
 class TestScheduleCalculationFixedTime:
     """Tests for schedule calculation with fixed time (HH:MM format).
-    
+
     Requirements tested: 7.2
     """
 
@@ -80,12 +80,12 @@ class TestScheduleCalculationFixedTime:
             mock_now = datetime(2024, 1, 15, 10, 0, 0)  # 10:00 AM
             mock_datetime.now.return_value = mock_now
             mock_datetime.combine = datetime.combine
-            
+
             from tgraph_bot.scheduler.task_scheduler import TaskScheduler
-            
+
             scheduler = TaskScheduler(config=fixed_time_config)
             next_run = scheduler._calculate_next_run()
-            
+
             # Should be today at 2:30 PM
             expected = datetime(2024, 1, 15, 14, 30, 0)
             assert next_run == expected
@@ -99,12 +99,12 @@ class TestScheduleCalculationFixedTime:
             mock_now = datetime(2024, 1, 15, 17, 0, 0)  # 5:00 PM
             mock_datetime.now.return_value = mock_now
             mock_datetime.combine = datetime.combine
-            
+
             from tgraph_bot.scheduler.task_scheduler import TaskScheduler
-            
+
             scheduler = TaskScheduler(config=fixed_time_config)
             next_run = scheduler._calculate_next_run()
-            
+
             # Should be tomorrow at 2:30 PM
             expected = datetime(2024, 1, 16, 14, 30, 0)
             assert next_run == expected
@@ -116,17 +116,17 @@ class TestScheduleCalculationFixedTime:
             update_interval_days=1,
             fixed_update_time="00:00",
         )
-        
+
         with patch("tgraph_bot.scheduler.task_scheduler.datetime") as mock_datetime:
             mock_now = datetime(2024, 1, 15, 23, 30, 0)  # 11:30 PM
             mock_datetime.now.return_value = mock_now
             mock_datetime.combine = datetime.combine
-            
+
             from tgraph_bot.scheduler.task_scheduler import TaskScheduler
-            
+
             scheduler = TaskScheduler(config=config)
             next_run = scheduler._calculate_next_run()
-            
+
             # Should be tomorrow at midnight
             expected = datetime(2024, 1, 16, 0, 0, 0)
             assert next_run == expected
@@ -138,17 +138,17 @@ class TestScheduleCalculationFixedTime:
             update_interval_days=1,
             fixed_update_time="23:59",
         )
-        
+
         with patch("tgraph_bot.scheduler.task_scheduler.datetime") as mock_datetime:
             mock_now = datetime(2024, 1, 15, 12, 0, 0)  # Noon
             mock_datetime.now.return_value = mock_now
             mock_datetime.combine = datetime.combine
-            
+
             from tgraph_bot.scheduler.task_scheduler import TaskScheduler
-            
+
             scheduler = TaskScheduler(config=config)
             next_run = scheduler._calculate_next_run()
-            
+
             # Should be today at 23:59
             expected = datetime(2024, 1, 15, 23, 59, 0)
             assert next_run == expected
@@ -156,7 +156,7 @@ class TestScheduleCalculationFixedTime:
 
 class TestScheduleCalculationRandomTime:
     """Tests for schedule calculation with random time (XX:XX format).
-    
+
     Requirements tested: 7.3
     """
 
@@ -168,16 +168,16 @@ class TestScheduleCalculationRandomTime:
             mock_now = datetime(2024, 1, 15, 10, 0, 0)
             mock_datetime.now.return_value = mock_now
             mock_datetime.combine = datetime.combine
-            
+
             from tgraph_bot.scheduler.task_scheduler import TaskScheduler
-            
+
             scheduler = TaskScheduler(config=random_time_config)
             next_run = scheduler._calculate_next_run()
-            
+
             # Should be between now and now + 3 days
             min_time = mock_now
             max_time = mock_now + timedelta(days=3)
-            
+
             assert min_time < next_run <= max_time
 
     def test_calculate_next_run_random_time_different_each_call(
@@ -188,14 +188,14 @@ class TestScheduleCalculationRandomTime:
             mock_now = datetime(2024, 1, 15, 10, 0, 0)
             mock_datetime.now.return_value = mock_now
             mock_datetime.combine = datetime.combine
-            
+
             from tgraph_bot.scheduler.task_scheduler import TaskScheduler
-            
+
             scheduler = TaskScheduler(config=random_time_config)
-            
+
             # Generate multiple random times
             times = [scheduler._calculate_next_run() for _ in range(10)]
-            
+
             # At least some should be different (very high probability)
             unique_times = set(times)
             assert len(unique_times) > 1
@@ -208,22 +208,22 @@ class TestScheduleCalculationRandomTime:
             mock_now = datetime(2024, 1, 15, 10, 0, 0)
             mock_datetime.now.return_value = mock_now
             mock_datetime.combine = datetime.combine
-            
+
             from tgraph_bot.scheduler.task_scheduler import TaskScheduler
-            
+
             scheduler = TaskScheduler(config=max_interval_config)
             next_run = scheduler._calculate_next_run()
-            
+
             # Should be between now and now + 365 days
             min_time = mock_now
             max_time = mock_now + timedelta(days=365)
-            
+
             assert min_time < next_run <= max_time
 
 
 class TestNextRunTimeCalculation:
     """Tests for next run time calculation logic.
-    
+
     Requirements tested: 7.1, 7.2
     """
 
@@ -251,17 +251,17 @@ class TestNextRunTimeCalculation:
             update_interval_days=1,
             fixed_update_time=f"{fixed_hour:02d}:{fixed_minute:02d}",
         )
-        
+
         with patch("tgraph_bot.scheduler.task_scheduler.datetime") as mock_datetime:
             mock_now = datetime(2024, 1, 15, current_hour, current_minute, 0)
             mock_datetime.now.return_value = mock_now
             mock_datetime.combine = datetime.combine
-            
+
             from tgraph_bot.scheduler.task_scheduler import TaskScheduler
-            
+
             scheduler = TaskScheduler(config=config)
             next_run = scheduler._calculate_next_run()
-            
+
             expected = datetime(
                 2024, 1, 15 + expected_days_offset, fixed_hour, fixed_minute, 0
             )
@@ -371,7 +371,7 @@ class TestGracefulShutdown:
         self, fixed_time_config: AutomationConfig
     ) -> None:
         """Test scheduler lifecycle using async context manager."""
-        from tgraph_bot.scheduler.task_scheduler import managed_scheduler, TaskScheduler
+        from tgraph_bot.scheduler.task_scheduler import TaskScheduler, managed_scheduler
 
         scheduler = TaskScheduler(config=fixed_time_config)
 
@@ -422,7 +422,9 @@ class TestSchedulerWithMockedSleep:
         scheduler = TaskScheduler(config=fixed_time_config)
 
         # Patch asyncio.sleep to make the loop run faster
-        with patch("tgraph_bot.scheduler.task_scheduler.asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
+        with patch(
+            "tgraph_bot.scheduler.task_scheduler.asyncio.sleep", new_callable=AsyncMock
+        ) as mock_sleep:
             mock_sleep.return_value = None
 
             # Start scheduler and let it run briefly
@@ -555,4 +557,3 @@ class TestUpdateExecutorIntegration:
 
         # Verify it stopped cleanly
         assert scheduler._task.done()
-

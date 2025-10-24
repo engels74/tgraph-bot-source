@@ -94,7 +94,7 @@ class TestDataRetentionManagerInitialization:
     def test_initialization_creates_output_directory(self, tmp_path: Path) -> None:
         """Test that initialization creates output directory if it doesn't exist."""
         non_existent_dir = tmp_path / "graphs" / "nested"
-        manager = DataRetentionManager(
+        _manager = DataRetentionManager(
             output_dir=non_existent_dir,
             keep_days=7,
         )
@@ -137,7 +137,9 @@ class TestCleanupOldFiles:
     """
 
     @pytest.mark.asyncio
-    async def test_cleanup_no_files(self, retention_manager: DataRetentionManager) -> None:
+    async def test_cleanup_no_files(
+        self, retention_manager: DataRetentionManager
+    ) -> None:
         """Test cleanup when output directory is empty."""
         result = await retention_manager.cleanup_old_files()
 
@@ -431,7 +433,9 @@ class TestScheduledCleanup:
             # Should sleep until midnight tomorrow (14 hours from 10 AM)
             expected_seconds = 14 * 3600  # 14 hours in seconds
             assert sleep_duration is not None
-            assert abs(sleep_duration - expected_seconds) < 1  # Allow 1 second tolerance
+            assert (
+                abs(sleep_duration - expected_seconds) < 1
+            )  # Allow 1 second tolerance
 
     @pytest.mark.asyncio
     async def test_schedule_daily_cleanup_runs_cleanup(
@@ -447,7 +451,10 @@ class TestScheduledCleanup:
             raise asyncio.CancelledError
 
         # Mock sleep to return immediately
-        with patch("tgraph_bot.utils.retention.DataRetentionManager.cleanup_old_files", new=mock_cleanup):
+        with patch(
+            "tgraph_bot.utils.retention.DataRetentionManager.cleanup_old_files",
+            new=mock_cleanup,
+        ):
             with patch("asyncio.sleep", side_effect=AsyncMock()):
                 try:
                     await retention_manager.schedule_daily_cleanup()
@@ -473,7 +480,10 @@ class TestScheduledCleanup:
             raise asyncio.CancelledError
 
         # Mock sleep to return immediately
-        with patch("tgraph_bot.utils.retention.DataRetentionManager.cleanup_old_files", new=mock_cleanup_with_error):
+        with patch(
+            "tgraph_bot.utils.retention.DataRetentionManager.cleanup_old_files",
+            new=mock_cleanup_with_error,
+        ):
             with patch("asyncio.sleep", side_effect=AsyncMock()):
                 try:
                     await retention_manager.schedule_daily_cleanup()
@@ -494,7 +504,10 @@ class TestScheduledCleanup:
         async def mock_schedule(_self: DataRetentionManager) -> None:
             await asyncio.sleep(0.1)
 
-        with patch("tgraph_bot.utils.retention.DataRetentionManager.schedule_daily_cleanup", new=mock_schedule):
+        with patch(
+            "tgraph_bot.utils.retention.DataRetentionManager.schedule_daily_cleanup",
+            new=mock_schedule,
+        ):
             await retention_manager.start()
 
             assert retention_manager._task is not None
@@ -508,11 +521,15 @@ class TestScheduledCleanup:
         self, retention_manager: DataRetentionManager
     ) -> None:
         """Test that calling start() multiple times doesn't create duplicate tasks."""
+
         # Mock schedule_daily_cleanup to avoid infinite loop
         async def mock_schedule(_self: DataRetentionManager) -> None:
             await asyncio.sleep(0.1)
 
-        with patch("tgraph_bot.utils.retention.DataRetentionManager.schedule_daily_cleanup", new=mock_schedule):
+        with patch(
+            "tgraph_bot.utils.retention.DataRetentionManager.schedule_daily_cleanup",
+            new=mock_schedule,
+        ):
             await retention_manager.start()
             first_task = retention_manager._task
 
@@ -530,11 +547,15 @@ class TestScheduledCleanup:
         self, retention_manager: DataRetentionManager
     ) -> None:
         """Test that stop() cancels the background task."""
+
         # Mock schedule_daily_cleanup to avoid infinite loop
         async def mock_schedule(_self: DataRetentionManager) -> None:
             await asyncio.sleep(10)  # Long sleep
 
-        with patch("tgraph_bot.utils.retention.DataRetentionManager.schedule_daily_cleanup", new=mock_schedule):
+        with patch(
+            "tgraph_bot.utils.retention.DataRetentionManager.schedule_daily_cleanup",
+            new=mock_schedule,
+        ):
             await retention_manager.start()
             assert retention_manager._task is not None
 
