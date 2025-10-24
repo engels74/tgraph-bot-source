@@ -64,10 +64,9 @@ class GraphFactory:
         }
 
         if graph_type not in valid_types:
-            raise ValueError(
-                f"Unknown graph type: {graph_type}. "
-                f"Valid types are: {', '.join(sorted(valid_types))}"
-            )
+            valid_types_str = ", ".join(sorted(valid_types))
+            msg = f"Unknown graph type: {graph_type}. Valid types are: {valid_types_str}"
+            raise ValueError(msg)
 
         # Individual graph generators will be implemented in tasks 17-20
         raise NotImplementedError(

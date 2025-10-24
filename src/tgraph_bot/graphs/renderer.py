@@ -173,7 +173,7 @@ class GraphRenderer:
 
         # Add enabled graphs
         for graph_type, graph_config in graph_configs.items():
-            if graph_config.enabled:  # pyright: ignore[reportUnknownMemberType]  # always GraphConfig
+            if graph_config.enabled:
                 enabled.append((graph_type, graph_config))
 
         # Handle top graphs separately (they use TopGraphConfig)
