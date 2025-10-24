@@ -581,8 +581,18 @@ class GraphCommands(commands.Cog):
 
         Requirements: 8.3, 22.1, 22.3
         """
+        _ = log_operation_start(
+            logger,
+            "generate_and_post_graphs",
+            details={"username_filter": username_filter},
+        )
+
         # Create Tautulli client
         tautulli_config = self.bot.config.services.tautulli
+        logger.info(
+            f"Creating Tautulli client for {tautulli_config.url}",
+            extra={"tautulli_url": tautulli_config.url},
+        )
         tautulli_client = TautulliClient(
             api_key=tautulli_config.api_key,
             base_url=tautulli_config.url,
@@ -590,6 +600,14 @@ class GraphCommands(commands.Cog):
 
         # Fetch stream history
         data_config = self.bot.config.data_collection
+        logger.info(
+            f"Fetching stream history (days: {data_config.history_days}, username_filter: {username_filter})",
+            extra={
+                "history_days": data_config.history_days,
+                "username_filter": username_filter,
+            },
+        )
+
         if username_filter:
             # Fetch user-specific data
             history = await tautulli_client.get_user_history(
@@ -603,33 +621,66 @@ class GraphCommands(commands.Cog):
                 length=data_config.max_records_per_request,
             )
 
+        logger.info(
+            f"Fetched {len(history)} history record(s) from Tautulli",
+            extra={"history_record_count": len(history)},
+        )
+
         # Convert to StreamRecord objects
         from tgraph_bot.graphs.data import transform_tautulli_records
 
         stream_records = transform_tautulli_records(history)
 
+        logger.info(
+            f"Converted to {len(stream_records)} stream record(s)",
+            extra={"stream_record_count": len(stream_records)},
+        )
+
         if not stream_records:
             logger.warning(
-                "No stream records found",
+                "No stream records found after transformation",
                 extra={"username_filter": username_filter},
             )
             return []
 
         # Generate graphs using renderer
+        logger.info("Initializing graph generation components")
         styling = GraphStyling()
         factory = GraphFactory()
         renderer = GraphRenderer(styling=styling, factory=factory)
 
         output_dir = Path(self.bot.config.system.output_directory)
+        logger.info(
+            f"Rendering graphs to output directory: {output_dir}",
+            extra={"output_dir": str(output_dir)},
+        )
+
         metadata_list = await renderer.render_all_graphs(
             data=stream_records,
             config=self.bot.config.graphs,
             output_dir=output_dir,
         )
 
+        logger.info(
+            f"Generated {len(metadata_list)} graph(s)",
+            extra={"graph_count": len(metadata_list)},
+        )
+
         # Post graphs to Discord channel (if not filtered for personal stats)
         if not username_filter:
+            logger.info("Posting graphs to Discord channel (non-personal stats mode)")
             await self._post_graphs_to_channel(metadata_list)
+        else:
+            logger.info(
+                "Skipping Discord posting (personal stats mode - graphs will be sent as ephemeral messages)"
+            )
+
+        _ = log_operation_complete(
+            logger,
+            "generate_and_post_graphs",
+            success=True,
+            details={"graph_count": len(metadata_list)},
+        )
 
         return metadata_list
 
@@ -655,18 +706,42 @@ class GraphCommands(commands.Cog):
 
         Requirement 8.3: Post graphs to configured channel with timestamp
         """
+        _ = log_operation_start(
+            logger,
+            "post_graphs_to_channel",
+            details={"graph_count": len(metadata_list)},
+        )
+
         if not metadata_list:
+            logger.warning("No graphs to post (metadata_list is empty)")
             return
 
         channel_id = self.bot.config.services.discord.channel_id
+        logger.info(
+            f"Attempting to post {len(metadata_list)} graph(s) to channel {channel_id}",
+            extra={"channel_id": channel_id, "graph_count": len(metadata_list)},
+        )
+
         channel = self.bot.get_channel(channel_id)
 
-        if channel is None or not isinstance(channel, nextcord.TextChannel):
+        if channel is None:
             logger.error(
-                f"Channel {channel_id} not found or is not a text channel",
+                f"Channel {channel_id} not found. Bot may not have access to this channel.",
                 extra={"channel_id": channel_id},
             )
             return
+
+        if not isinstance(channel, nextcord.TextChannel):
+            logger.error(
+                f"Channel {channel_id} is not a text channel (type: {type(channel).__name__})",
+                extra={"channel_id": channel_id, "channel_type": type(channel).__name__},
+            )
+            return
+
+        logger.info(
+            f"Channel {channel_id} found successfully, posting graphs",
+            extra={"channel_id": channel_id, "channel_name": channel.name},
+        )
 
         # Format timestamp according to configuration
         timestamp_format = self.bot.config.services.discord.timestamp_format
@@ -675,20 +750,32 @@ class GraphCommands(commands.Cog):
         formatted_timestamp = f"<t:{timestamp_unix}:{timestamp_format}>"
 
         # Post message with timestamp
-        _ = await channel.send(
-            f"Generated {len(metadata_list)} graph(s) at {formatted_timestamp}"
-        )
+        logger.info("Posting header message with timestamp")
+        try:
+            _ = await channel.send(
+                f"Generated {len(metadata_list)} graph(s) at {formatted_timestamp}"
+            )
+            logger.info("Header message posted successfully")
+        except Exception as e:
+            logger.error(f"Failed to post header message: {e}", exc_info=True)
+            raise
 
         # Post each graph
         # Requirement 22.1: Use TaskGroup for concurrent posting
+        logger.info(f"Posting {len(metadata_list)} graph file(s)")
         try:
             async with asyncio.TaskGroup() as tg:
                 for metadata in metadata_list:
                     _ = tg.create_task(self._send_graph_file(channel, metadata))
+            logger.info(f"All {len(metadata_list)} graph file(s) posted successfully")
         except* Exception as eg:
             # Log errors but don't fail the entire operation
             for exc in eg.exceptions:
                 logger.error(f"Error posting graph: {exc}", exc_info=True)
+
+        _ = log_operation_complete(
+            logger, "post_graphs_to_channel", success=True, details={"graph_count": len(metadata_list)}
+        )
 
     async def _send_graph_file(
         self, channel: nextcord.TextChannel, metadata: GraphMetadata

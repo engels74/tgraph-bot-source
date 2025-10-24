@@ -259,6 +259,7 @@ class TGraphBot(commands.Bot):
         try:
             # Get the GraphCommands cog without importing to avoid circular dependency
             # Use duck typing to check for the required method
+            logger.info("Attempting to get GraphCommands cog for initial graph posting")
             graph_commands_cog = self.get_cog("GraphCommands")
 
             if graph_commands_cog is None:
@@ -274,6 +275,8 @@ class TGraphBot(commands.Bot):
                 )
                 return
 
+            logger.info("GraphCommands cog found, generating and posting initial graphs")
+
             # Generate and post graphs (no username filter = all graphs)
             # Intentional access to protected method for code reuse within same package
             # Type is unknown due to duck typing to avoid circular import
@@ -284,13 +287,14 @@ class TGraphBot(commands.Bot):
                 extra={"graph_count": len(metadata_list)},  # pyright: ignore[reportUnknownArgumentType]
             )
 
-            _ = log_operation_complete(logger, "post_initial_graphs")
+            _ = log_operation_complete(logger, "post_initial_graphs", success=True)
 
-        except Exception:
+        except Exception as e:
             logger.error(
-                "Error posting initial graphs. Bot will continue running.",
+                f"Error posting initial graphs: {e}. Bot will continue running.",
                 exc_info=True,
             )
+            _ = log_operation_complete(logger, "post_initial_graphs", success=False, error=str(e))
 
     async def on_disconnect(self) -> None:
         """Event handler called when bot loses connection to Discord.

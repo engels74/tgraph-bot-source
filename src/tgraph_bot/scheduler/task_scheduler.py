@@ -125,22 +125,46 @@ class TaskScheduler:
 
         Requirements: 7.1, 7.2, 7.3
         """
+        logger.info(
+            "Scheduler loop started",
+            extra={
+                "update_interval_days": self.config.update_interval_days,
+                "fixed_update_time": self.config.fixed_update_time,
+            },
+        )
+
         while True:
             try:
                 next_run = self._calculate_next_run()
                 now = datetime.now()
                 sleep_seconds = (next_run - now).total_seconds()
+                sleep_hours = sleep_seconds / 3600
+                sleep_days = sleep_seconds / 86400
 
                 if sleep_seconds > 0:
                     logger.info(
-                        "Next scheduled update at %s (in %.0f seconds)",
+                        "Next scheduled update at %s (in %.0f seconds / %.1f hours / %.1f days)",
                         next_run.isoformat(),
                         sleep_seconds,
+                        sleep_hours,
+                        sleep_days,
+                        extra={
+                            "next_run_timestamp": next_run.isoformat(),
+                            "sleep_seconds": sleep_seconds,
+                            "sleep_hours": sleep_hours,
+                            "sleep_days": sleep_days,
+                        },
                     )
                     await asyncio.sleep(sleep_seconds)
+                else:
+                    logger.info(
+                        "Executing scheduled update immediately (next_run time has passed)"
+                    )
 
                 # Execute the scheduled update
+                logger.info("Triggering scheduled update execution")
                 await self._execute_update()
+                logger.info("Scheduled update execution completed, calculating next run time")
 
             except asyncio.CancelledError:
                 # Graceful shutdown requested
