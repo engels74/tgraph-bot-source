@@ -11,14 +11,13 @@ This test suite validates the graph generation system including:
 Requirements tested: 5.1, 5.2, 5.3, 5.5, 6.1, 6.2, 6.6, 6.7
 """
 
-# pyright: reportExplicitAny=false
-
 from datetime import datetime, timezone
-from typing import Any, Protocol
+from typing import Protocol
 from unittest.mock import MagicMock, Mock, patch
 
 import matplotlib.pyplot as plt
 import pytest
+from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
 from tgraph_bot.config.models import (
@@ -64,10 +63,11 @@ class GraphStyling:
         context: str = "notebook",
     ) -> None:
         """Apply seaborn theme for consistent styling."""
-        pass
+        _ = (style, palette, context)  # Mark as intentionally unused in stub
 
     def get_palette(self, palette_name: str, n_colors: int) -> list[str]:
         """Get seaborn color palette."""
+        _ = (palette_name, n_colors)  # Mark as intentionally unused in stub
         return []
 
     def apply_styling(
@@ -79,27 +79,27 @@ class GraphStyling:
         grid: GridConfig,
     ) -> None:
         """Apply styling to figure."""
-        pass
+        _ = (fig, dimensions, colors, grid)  # Mark as intentionally unused in stub
 
     def add_annotations(
         self,
-        ax: Any,
+        ax: Axes,
         *,
         values: list[float],
         annotation_config: AnnotationConfig,
     ) -> None:
         """Add annotations to axes."""
-        pass
+        _ = (ax, values, annotation_config)  # Mark as intentionally unused in stub
 
     def highlight_peak(
         self,
-        ax: Any,
+        ax: Axes,
         *,
         values: list[float],
         peak_color: str,
     ) -> None:
         """Highlight peak value."""
-        pass
+        _ = (ax, values, peak_color)  # Mark as intentionally unused in stub
 
 
 class GraphFactory:
@@ -110,6 +110,7 @@ class GraphFactory:
 
     def create_generator(self, graph_type: str) -> GraphGenerator:
         """Create appropriate graph generator for type."""
+        _ = graph_type  # Mark as intentionally unused in stub
         raise NotImplementedError
 
 
@@ -304,7 +305,7 @@ class TestGraphStylingApplication:
         self, sample_appearance_config: GraphAppearanceConfig
     ) -> None:
         """Test applying graph dimensions (Requirement 5.2)."""
-        fig = plt.figure()
+        fig = plt.figure()  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
         styling = GraphStyling()
 
         dimensions = sample_appearance_config.dimensions
@@ -338,7 +339,7 @@ class TestGraphStylingApplication:
         colors = GraphColors(tv="#3498db", movie="#e74c3c", background="#ffffff")
         grid = GridConfig(enabled=True, alpha=0.3)
 
-        fig = plt.figure()
+        fig = plt.figure()  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
         styling = GraphStyling()
         styling.apply_styling(fig, dimensions=dimensions, colors=colors, grid=grid)
 
@@ -349,7 +350,7 @@ class TestGraphStylingApplication:
         self, sample_appearance_config: GraphAppearanceConfig
     ) -> None:
         """Test applying color configuration."""
-        fig = plt.figure()
+        fig = plt.figure()  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
         styling = GraphStyling()
 
         dimensions = sample_appearance_config.dimensions
@@ -370,7 +371,7 @@ class TestGraphStylingApplication:
         self, sample_appearance_config: GraphAppearanceConfig
     ) -> None:
         """Test applying grid configuration when enabled."""
-        fig = plt.figure()
+        fig = plt.figure()  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
         styling = GraphStyling()
 
         dimensions = sample_appearance_config.dimensions
@@ -390,7 +391,7 @@ class TestGraphStylingApplication:
         self, sample_appearance_config: GraphAppearanceConfig
     ) -> None:
         """Test applying grid configuration when disabled."""
-        fig = plt.figure()
+        fig = plt.figure()  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
         styling = GraphStyling()
 
         dimensions = sample_appearance_config.dimensions
@@ -434,7 +435,7 @@ class TestSeabornPaletteRetrieval:
         """Test retrieving various seaborn palettes (Requirement 6.7)."""
         # Mock the seaborn color_palette to return a list-like object
         mock_palette = MagicMock()
-        mock_palette.as_hex.return_value = [
+        mock_palette.as_hex.return_value = [  # pyright: ignore[reportAny]  # MagicMock dynamic attrs
             f"#{i:02x}{i:02x}{i:02x}" for i in range(n_colors)
         ]
         mock_color_palette.return_value = mock_palette
@@ -450,7 +451,7 @@ class TestSeabornPaletteRetrieval:
     def test_get_palette_returns_hex_colors(self, mock_color_palette: Mock) -> None:
         """Test that palette returns hex color codes."""
         mock_palette = MagicMock()
-        mock_palette.as_hex.return_value = ["#ff0000", "#00ff00", "#0000ff"]
+        mock_palette.as_hex.return_value = ["#ff0000", "#00ff00", "#0000ff"]  # pyright: ignore[reportAny]  # MagicMock dynamic attrs
         mock_color_palette.return_value = mock_palette
 
         styling = GraphStyling()
@@ -471,6 +472,7 @@ class TestSeabornPaletteRetrieval:
     @patch("seaborn.color_palette")
     def test_get_palette_with_zero_colors(self, mock_color_palette: Mock) -> None:
         """Test behavior when requesting zero colors."""
+        _ = mock_color_palette  # Mock for decorator
         styling = GraphStyling()
         result = styling.get_palette("viridis", 0)
 
@@ -483,7 +485,7 @@ class TestSeabornPaletteRetrieval:
     ) -> None:
         """Test using palette from configuration."""
         mock_palette = MagicMock()
-        mock_palette.as_hex.return_value = ["#color1", "#color2", "#color3"]
+        mock_palette.as_hex.return_value = ["#color1", "#color2", "#color3"]  # pyright: ignore[reportAny]  # MagicMock dynamic attrs
         mock_color_palette.return_value = mock_palette
 
         styling = GraphStyling()
@@ -509,7 +511,7 @@ class TestAnnotationSystem:
         self, sample_appearance_config: GraphAppearanceConfig
     ) -> None:
         """Test adding basic annotations to graph (Requirement 6.1)."""
-        fig, ax = plt.subplots()
+        _, ax = plt.subplots()  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
         styling = GraphStyling()
 
         values = [10.0, 20.0, 15.0, 25.0]
@@ -522,7 +524,7 @@ class TestAnnotationSystem:
             annotation_config=annotation_config,
         )
 
-        assert isinstance(ax, plt.Axes)
+        assert isinstance(ax, Axes)
 
     @pytest.mark.parametrize(
         "font_size",
@@ -530,7 +532,7 @@ class TestAnnotationSystem:
     )
     def test_add_annotations_with_various_font_sizes(self, font_size: int) -> None:
         """Test annotations with different font sizes (Requirement 6.1)."""
-        fig, ax = plt.subplots()
+        _, ax = plt.subplots()  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
         styling = GraphStyling()
 
         values = [10.0, 20.0, 15.0]
@@ -547,11 +549,11 @@ class TestAnnotationSystem:
             annotation_config=annotation_config,
         )
 
-        assert isinstance(ax, plt.Axes)
+        assert isinstance(ax, Axes)
 
     def test_add_annotations_with_outline_enabled(self) -> None:
         """Test annotations with outline enabled."""
-        fig, ax = plt.subplots()
+        _, ax = plt.subplots()  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
         styling = GraphStyling()
 
         values = [10.0, 20.0, 15.0]
@@ -568,11 +570,11 @@ class TestAnnotationSystem:
             annotation_config=annotation_config,
         )
 
-        assert isinstance(ax, plt.Axes)
+        assert isinstance(ax, Axes)
 
     def test_add_annotations_with_outline_disabled(self) -> None:
         """Test annotations with outline disabled."""
-        fig, ax = plt.subplots()
+        _, ax = plt.subplots()  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
         styling = GraphStyling()
 
         values = [10.0, 20.0, 15.0]
@@ -589,11 +591,11 @@ class TestAnnotationSystem:
             annotation_config=annotation_config,
         )
 
-        assert isinstance(ax, plt.Axes)
+        assert isinstance(ax, Axes)
 
     def test_highlight_peak_value(self) -> None:
         """Test highlighting peak value in graph (Requirement 6.2)."""
-        fig, ax = plt.subplots()
+        _, ax = plt.subplots()  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
         styling = GraphStyling()
 
         values = [10.0, 25.0, 15.0, 20.0]  # Peak is 25.0 at index 1
@@ -605,11 +607,11 @@ class TestAnnotationSystem:
             peak_color=peak_color,
         )
 
-        assert isinstance(ax, plt.Axes)
+        assert isinstance(ax, Axes)
 
     def test_highlight_peak_with_single_value(self) -> None:
         """Test peak highlighting with single value."""
-        fig, ax = plt.subplots()
+        _, ax = plt.subplots()  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
         styling = GraphStyling()
 
         values = [42.0]
@@ -621,11 +623,11 @@ class TestAnnotationSystem:
             peak_color=peak_color,
         )
 
-        assert isinstance(ax, plt.Axes)
+        assert isinstance(ax, Axes)
 
     def test_highlight_peak_with_multiple_peaks(self) -> None:
         """Test peak highlighting with multiple equal peak values."""
-        fig, ax = plt.subplots()
+        _, ax = plt.subplots()  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
         styling = GraphStyling()
 
         values = [25.0, 25.0, 15.0, 25.0]  # Multiple peaks at 25.0
@@ -637,11 +639,11 @@ class TestAnnotationSystem:
             peak_color=peak_color,
         )
 
-        assert isinstance(ax, plt.Axes)
+        assert isinstance(ax, Axes)
 
     def test_highlight_peak_with_empty_values(self) -> None:
         """Test peak highlighting with empty values list."""
-        fig, ax = plt.subplots()
+        _, ax = plt.subplots()  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
         styling = GraphStyling()
 
         values: list[float] = []
@@ -654,7 +656,7 @@ class TestAnnotationSystem:
             peak_color=peak_color,
         )
 
-        assert isinstance(ax, plt.Axes)
+        assert isinstance(ax, Axes)
 
 
 # Tests for Media Type Separation
@@ -672,8 +674,9 @@ class TestMediaTypeSeparation:
         sample_appearance_config: GraphAppearanceConfig,
     ) -> None:
         """Test graph with media type separation enabled (Requirement 5.3)."""
+        _ = sample_appearance_config  # Fixture for future use
         # Create config with media type separation enabled
-        config = GraphConfig(
+        _ = GraphConfig(
             enabled=True,
             media_type_separation=True,
             palette="",
@@ -696,8 +699,9 @@ class TestMediaTypeSeparation:
         sample_appearance_config: GraphAppearanceConfig,
     ) -> None:
         """Test graph with media type separation disabled."""
+        _ = sample_appearance_config  # Fixture for future use
         # Create config with media type separation disabled
-        config = GraphConfig(
+        _ = GraphConfig(
             enabled=True,
             media_type_separation=False,
             palette="",
@@ -744,6 +748,7 @@ class TestMediaTypeSeparation:
         self, sample_stream_records: list[StreamRecord]
     ) -> None:
         """Test that palette overrides base media type colors (Requirement 5.3)."""
+        _ = sample_stream_records  # Fixture for future use
         # When palette is specified, it should override base colors
         config = GraphConfig(
             enabled=True,
@@ -775,42 +780,42 @@ class TestGraphFactory:
         # Should be able to create generator for this type
         with pytest.raises(NotImplementedError):
             # Since implementation doesn't exist yet, should raise NotImplementedError
-            generator = factory.create_generator("daily_play_count")
+            _ = factory.create_generator("daily_play_count")
 
     def test_create_generator_for_play_by_day_of_week(self) -> None:
         """Test creating generator for play count by day of week graph."""
         factory = GraphFactory()
 
         with pytest.raises(NotImplementedError):
-            generator = factory.create_generator("play_count_by_day_of_week")
+            _ = factory.create_generator("play_count_by_day_of_week")
 
     def test_create_generator_for_play_by_hour(self) -> None:
         """Test creating generator for play count by hour graph."""
         factory = GraphFactory()
 
         with pytest.raises(NotImplementedError):
-            generator = factory.create_generator("play_count_by_hour_of_day")
+            _ = factory.create_generator("play_count_by_hour_of_day")
 
     def test_create_generator_for_top_platforms(self) -> None:
         """Test creating generator for top platforms graph."""
         factory = GraphFactory()
 
         with pytest.raises(NotImplementedError):
-            generator = factory.create_generator("top_platforms")
+            _ = factory.create_generator("top_platforms")
 
     def test_create_generator_for_top_users(self) -> None:
         """Test creating generator for top users graph."""
         factory = GraphFactory()
 
         with pytest.raises(NotImplementedError):
-            generator = factory.create_generator("top_users")
+            _ = factory.create_generator("top_users")
 
     def test_create_generator_for_play_by_month(self) -> None:
         """Test creating generator for play count by month graph."""
         factory = GraphFactory()
 
         with pytest.raises(NotImplementedError):
-            generator = factory.create_generator("play_count_by_month")
+            _ = factory.create_generator("play_count_by_month")
 
     @pytest.mark.parametrize(
         "graph_type",
@@ -835,7 +840,7 @@ class TestGraphFactory:
 
         # Should be able to create generator for each type
         with pytest.raises(NotImplementedError):
-            generator = factory.create_generator(graph_type)
+            _ = factory.create_generator(graph_type)
 
     def test_create_generator_with_invalid_type(self) -> None:
         """Test creating generator with invalid graph type."""
@@ -843,7 +848,7 @@ class TestGraphFactory:
 
         # Should raise error for invalid type
         with pytest.raises((ValueError, KeyError, NotImplementedError)):
-            generator = factory.create_generator("invalid_graph_type")
+            _ = factory.create_generator("invalid_graph_type")
 
 
 # Integration Tests
@@ -863,6 +868,7 @@ class TestGraphGenerationIntegration:
     ) -> None:
         """Test complete workflow from data to styled graph."""
         # This test defines the expected integration workflow
+        _ = (sample_stream_records, sample_graph_config)  # Fixtures for future use
 
         # 1. Apply seaborn theme
         styling = GraphStyling()
@@ -873,7 +879,7 @@ class TestGraphGenerationIntegration:
         )
 
         # 2. Create figure
-        fig = plt.figure()
+        fig = plt.figure()  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
 
         # 3. Apply styling
         styling.apply_styling(
@@ -892,6 +898,7 @@ class TestGraphGenerationIntegration:
         sample_appearance_config: GraphAppearanceConfig,
     ) -> None:
         """Test graph generation with all features enabled."""
+        _ = (sample_stream_records, sample_appearance_config)  # Fixtures for future use
         # Create config with all features enabled
         config = GraphConfig(
             enabled=True,
@@ -913,6 +920,7 @@ class TestGraphGenerationIntegration:
         self, sample_stream_records: list[StreamRecord]
     ) -> None:
         """Test graph with custom palette and annotations."""
+        _ = sample_stream_records  # Fixture for future use
         config = GraphConfig(
             enabled=True,
             media_type_separation=True,
@@ -937,7 +945,7 @@ class TestGraphGenerationIntegration:
         """Test complete styling pipeline with seaborn integration."""
         # Mock color palette
         mock_palette = MagicMock()
-        mock_palette.as_hex.return_value = ["#color1", "#color2", "#color3"]
+        mock_palette.as_hex.return_value = ["#color1", "#color2", "#color3"]  # pyright: ignore[reportAny]  # MagicMock dynamic attrs
         mock_color_palette.return_value = mock_palette
 
         styling = GraphStyling()
@@ -950,10 +958,10 @@ class TestGraphGenerationIntegration:
         )
 
         # 2. Get palette for graph
-        colors = styling.get_palette("viridis", 5)
+        _ = styling.get_palette("viridis", 5)
 
         # 3. Create and style figure
-        fig = plt.figure()
+        fig = plt.figure()  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
         styling.apply_styling(
             fig,
             dimensions=sample_appearance_config.dimensions,
@@ -978,6 +986,7 @@ class TestGraphGenerationEdgeCases:
         sample_appearance_config: GraphAppearanceConfig,
     ) -> None:
         """Test graph generation with empty data."""
+        _ = (sample_graph_config, sample_appearance_config)  # Fixtures for future use
         empty_data: list[StreamRecord] = []
 
         # Should handle empty data gracefully
@@ -989,6 +998,7 @@ class TestGraphGenerationEdgeCases:
         sample_appearance_config: GraphAppearanceConfig,
     ) -> None:
         """Test graph generation with single record."""
+        _ = (sample_graph_config, sample_appearance_config)  # Fixtures for future use
         single_record = [
             StreamRecord(
                 timestamp=datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc),
@@ -1010,6 +1020,7 @@ class TestGraphGenerationEdgeCases:
         sample_appearance_config: GraphAppearanceConfig,
     ) -> None:
         """Test media type separation when all records are same type."""
+        _ = (sample_graph_config, sample_appearance_config)  # Fixtures for future use
         all_movies = [
             StreamRecord(
                 timestamp=datetime(2024, 1, 1, i, 0, 0, tzinfo=timezone.utc),
