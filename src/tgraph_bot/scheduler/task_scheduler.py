@@ -14,7 +14,7 @@ import random
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from datetime import datetime, time, timedelta
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
@@ -22,6 +22,28 @@ if TYPE_CHECKING:
     from tgraph_bot.config.models import AutomationConfig
 
 logger = logging.getLogger(__name__)
+
+
+class UpdateExecutor(Protocol):
+    """Protocol for executing scheduled graph updates.
+
+    This protocol defines the interface for update execution, allowing
+    the TaskScheduler to remain decoupled from specific implementations
+    of graph generation and Discord posting.
+
+    Requirements: 7.4 (posting generated graphs to Discord channel)
+    """
+
+    async def execute_scheduled_update(self) -> None:
+        """Execute a scheduled graph update.
+
+        This method should:
+        - Generate all enabled graphs using TaskGroup for concurrency (Req 22.1)
+        - Post graphs to the configured Discord channel (Req 7.4)
+        - Include timestamp in configured format when posting (Req 7.5)
+        - Handle errors gracefully and log any failures
+        """
+        ...
 
 
 @dataclass(slots=True)
@@ -33,19 +55,33 @@ class TaskScheduler:
 
     Attributes:
         config: Automation configuration containing scheduling parameters
+        update_executor: Optional executor for performing actual graph updates.
+            If None, updates are logged but not executed (useful for testing).
         _task: The asyncio task running the schedule loop (None when not started)
 
     Requirements:
         - 7.1: Schedule automatic graph updates based on configured interval
         - 7.2: Generate and post graphs at specific time daily (HH:MM format)
         - 7.3: Generate and post graphs at random time (XX:XX format)
+        - 7.4: Execute updates and post graphs to Discord channel
         - 7.5: Support graceful shutdown with task cancellation
-        - 22.1: Use asyncio.TaskGroup for structured concurrency (in _execute_update)
+        - 22.1: Use asyncio.TaskGroup for structured concurrency (in executor)
         - 22.2: Automatic task cancellation on failure
         - 22.4: Use asynccontextmanager for resource lifecycle
+
+    Example:
+        >>> config = AutomationConfig(
+        ...     enabled=True,
+        ...     update_interval_days=7,
+        ...     fixed_update_time="14:30"
+        ... )
+        >>> executor = MyUpdateExecutor()  # Your implementation
+        >>> scheduler = TaskScheduler(config=config, update_executor=executor)
+        >>> await scheduler.start()
     """
 
     config: AutomationConfig
+    update_executor: UpdateExecutor | None = None
     _task: asyncio.Task[None] | None = field(default=None, init=False)
 
     async def start(self) -> None:
@@ -191,15 +227,38 @@ class TaskScheduler:
     async def _execute_update(self) -> None:
         """Execute the scheduled graph update.
 
-        This method will be implemented to trigger graph generation and posting.
-        For now, it's a placeholder that logs the execution.
+        Triggers the update executor if one is configured. The executor is
+        responsible for graph generation, posting to Discord, and error handling.
 
-        Requirements: 7.4
+        If no executor is configured, logs a message instead. This allows the
+        scheduler to be tested independently of graph generation.
+
+        Requirements:
+            - 7.4: Post all generated graphs to configured Discord channel
+            - 22.1: Use TaskGroup for concurrent operations (delegated to executor)
+
+        Raises:
+            Any exception raised by the executor will be caught and logged
+            by the _schedule_loop, ensuring the scheduler continues running.
         """
-        logger.info("Executing scheduled graph update")
-        # TODO: Implement graph generation and posting
-        # This will be implemented in task 14 when integrating with graph generation
-        # Will use TaskGroup for concurrent graph generation (Requirement 22.1)
+        if self.update_executor is None:
+            logger.info(
+                "Scheduled update triggered, but no executor configured. This is normal during testing or initial setup."
+            )
+            return
+
+        logger.info("Executing scheduled graph update via configured executor")
+
+        try:
+            await self.update_executor.execute_scheduled_update()
+            logger.info("Scheduled graph update completed successfully")
+        except Exception as e:
+            # Log the error and re-raise so _schedule_loop can handle it
+            logger.error(
+                f"Error during scheduled graph update: {e}",
+                exc_info=True,
+            )
+            raise
 
 
 @asynccontextmanager

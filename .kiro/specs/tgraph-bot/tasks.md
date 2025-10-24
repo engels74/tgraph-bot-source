@@ -112,7 +112,7 @@
   - Mock asyncio.sleep for faster test execution
   - _Requirements: 7.1, 7.2, 7.5_
 
-- [ ] 14. Implement task scheduler for automated updates
+- [x] 14. Implement task scheduler for automated updates
   - Create TaskScheduler class with start/stop methods
   - Implement schedule calculation logic (fixed time vs random time)
   - Create main scheduling loop with asyncio.sleep

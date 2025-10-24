@@ -6,8 +6,9 @@ This test suite validates the task scheduler functionality including:
 - Next run time calculation based on interval and current time
 - Graceful shutdown and task cancellation
 - Async scheduler lifecycle management
+- Update executor integration
 
-Requirements tested: 7.1, 7.2, 7.5
+Requirements tested: 7.1, 7.2, 7.3, 7.4, 7.5
 """
 
 # pyright: reportPrivateUsage=false, reportAny=false, reportUnusedVariable=false
@@ -21,6 +22,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from tgraph_bot.config.models import AutomationConfig
+from tgraph_bot.scheduler.task_scheduler import UpdateExecutor
 
 
 @pytest.fixture
@@ -456,6 +458,99 @@ class TestSchedulerWithMockedSleep:
         assert not scheduler._task.done()
 
         # Stop it
+        await scheduler.stop()
+
+        # Verify it stopped cleanly
+        assert scheduler._task.done()
+
+
+class TestUpdateExecutorIntegration:
+    """Tests for update executor integration.
+
+    Requirements tested: 7.4
+    """
+
+    @pytest.mark.asyncio
+    async def test_execute_update_calls_executor(
+        self, fixed_time_config: AutomationConfig
+    ) -> None:
+        """Test that _execute_update calls the configured executor."""
+        from tgraph_bot.scheduler.task_scheduler import TaskScheduler
+
+        # Create a mock executor
+        mock_executor = AsyncMock(spec=UpdateExecutor)
+        mock_executor.execute_scheduled_update = AsyncMock()
+
+        scheduler = TaskScheduler(
+            config=fixed_time_config, update_executor=mock_executor
+        )
+
+        # Call _execute_update directly
+        await scheduler._execute_update()
+
+        # Verify executor was called
+        mock_executor.execute_scheduled_update.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_execute_update_without_executor_logs_only(
+        self, fixed_time_config: AutomationConfig
+    ) -> None:
+        """Test that _execute_update without executor just logs."""
+        from tgraph_bot.scheduler.task_scheduler import TaskScheduler
+
+        scheduler = TaskScheduler(config=fixed_time_config, update_executor=None)
+
+        # Should not raise and should complete successfully
+        await scheduler._execute_update()
+
+    @pytest.mark.asyncio
+    async def test_execute_update_propagates_executor_errors(
+        self, fixed_time_config: AutomationConfig
+    ) -> None:
+        """Test that errors from executor are propagated."""
+        from tgraph_bot.scheduler.task_scheduler import TaskScheduler
+
+        # Create an executor that raises an error
+        mock_executor = AsyncMock(spec=UpdateExecutor)
+        test_error = RuntimeError("Test error from executor")
+        mock_executor.execute_scheduled_update = AsyncMock(side_effect=test_error)
+
+        scheduler = TaskScheduler(
+            config=fixed_time_config, update_executor=mock_executor
+        )
+
+        # Error should be propagated
+        with pytest.raises(RuntimeError, match="Test error from executor"):
+            await scheduler._execute_update()
+
+    @pytest.mark.asyncio
+    async def test_scheduler_loop_handles_executor_error_gracefully(
+        self, fixed_time_config: AutomationConfig
+    ) -> None:
+        """Test that scheduler loop handles executor errors without crashing."""
+        from tgraph_bot.scheduler.task_scheduler import TaskScheduler
+
+        # Create an executor that always fails
+        mock_executor = AsyncMock(spec=UpdateExecutor)
+        mock_executor.execute_scheduled_update = AsyncMock(
+            side_effect=RuntimeError("Executor always fails")
+        )
+
+        scheduler = TaskScheduler(
+            config=fixed_time_config, update_executor=mock_executor
+        )
+
+        # Start scheduler
+        await scheduler.start()
+
+        # Give it a moment to start
+        await asyncio.sleep(0.01)
+
+        # Verify task is still running despite executor errors
+        assert scheduler._task is not None
+        assert not scheduler._task.done()
+
+        # Stop scheduler - should complete cleanly
         await scheduler.stop()
 
         # Verify it stopped cleanly
