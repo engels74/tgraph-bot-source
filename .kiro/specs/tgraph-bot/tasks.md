@@ -250,7 +250,7 @@
   - Display current config file path
   - _Requirements: 4.2, 4.3, 4.4, 4.5_
 
-- [ ] 28. Implement configuration reload system
+- [x] 28. Implement configuration reload system
   - Add reload_configuration method to TGraphBot
   - Implement configuration validation before applying
   - Add component reconfiguration (scheduler, rate limiter)
@@ -259,7 +259,7 @@
   - Handle reload failures gracefully (keep old config)
   - _Requirements: 3.4, 15.1, 15.5_
 
-- [ ] 29. Create main application entry point
+- [x] 29. Create main application entry point
   - Implement __main__.py with startup sequence
   - Add configuration loading with environment variable overrides
   - Initialize all components (bot, scheduler, web UI, retention manager)

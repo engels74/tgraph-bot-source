@@ -224,6 +224,41 @@ class RateLimiter:
             await asyncio.sleep(interval_seconds)
             self.cleanup_expired()
 
+    def get_cooldown_state(
+        self,
+    ) -> tuple[dict[tuple[str, int], datetime], dict[str, datetime]]:
+        """Get the current cooldown state for preservation during reconfiguration.
+
+        Returns a copy of the internal cooldown dictionaries to allow preserving
+        cooldown state when creating a new RateLimiter instance with updated
+        configuration.
+
+        Returns:
+            Tuple of (user_cooldowns, global_cooldowns) dictionaries
+
+        Requirements: 15.1, 15.5
+        """
+        return (self._user_cooldowns.copy(), self._global_cooldowns.copy())
+
+    def restore_cooldown_state(
+        self,
+        user_cooldowns: dict[tuple[str, int], datetime],
+        global_cooldowns: dict[str, datetime],
+    ) -> None:
+        """Restore cooldown state from a previous RateLimiter instance.
+
+        This method is used during configuration reload to preserve existing
+        cooldowns when creating a new RateLimiter with updated configuration.
+
+        Args:
+            user_cooldowns: User cooldown state to restore
+            global_cooldowns: Global cooldown state to restore
+
+        Requirements: 15.1, 15.5
+        """
+        self._user_cooldowns = user_cooldowns.copy()
+        self._global_cooldowns = global_cooldowns.copy()
+
     def _get_command_config(self, command: str):
         """Get the CommandLimits config for a given command.
 

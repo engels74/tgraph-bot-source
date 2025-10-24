@@ -12,9 +12,11 @@ from typing import override
 import nextcord
 from nextcord.ext import commands
 
+from tgraph_bot.config.loader import ConfigLoader
 from tgraph_bot.config.models import BotConfig
 from tgraph_bot.rate_limiting.rate_limiter import RateLimiter
 from tgraph_bot.scheduler.task_scheduler import TaskScheduler
+from tgraph_bot.utils.errors import ConfigurationError
 from tgraph_bot.utils.logging import get_logger, log_operation_complete, log_operation_start
 
 logger = get_logger(__name__)
@@ -34,13 +36,23 @@ class TGraphBot(commands.Bot):
         config: Bot configuration loaded from YAML
         rate_limiter: Rate limiter for command cooldowns
         scheduler: Task scheduler for automated graph updates
+        config_loader: Configuration loader for reloading from file
+        config_path: Path to the configuration file
     """
 
-    def __init__(self, config: BotConfig) -> None:
+    def __init__(
+        self,
+        config: BotConfig,
+        *,
+        config_loader: ConfigLoader | None = None,
+        config_path: str | None = None,
+    ) -> None:
         """Initialize the TGraph Bot with configuration.
 
         Args:
             config: Bot configuration from YAML
+            config_loader: Optional ConfigLoader for reloading configuration
+            config_path: Optional path to configuration file for reloading
 
         Requirements: 1.1, 1.5
         """
@@ -59,6 +71,8 @@ class TGraphBot(commands.Bot):
 
         # Store configuration
         self.config: BotConfig = config
+        self.config_loader: ConfigLoader | None = config_loader
+        self.config_path: str | None = config_path
 
         # Initialize rate limiter
         self.rate_limiter: RateLimiter = RateLimiter(config.rate_limiting)
@@ -220,46 +234,142 @@ class TGraphBot(commands.Bot):
 
         logger.info("TGraph Bot shutdown complete")
 
-    async def reload_configuration(self, new_config: BotConfig) -> None:
+    async def reload_configuration(
+        self, new_config: BotConfig | None = None, *, config_path: str | None = None
+    ) -> None:
         """Reload bot configuration without restarting.
 
         Updates the bot's configuration and reconfigures components that support
         hot reloading (scheduler, rate limiter). Some changes may require a full
         restart to take effect (e.g., Discord token changes).
 
+        This method supports two modes:
+        1. Direct config: Pass a BotConfig object as new_config
+        2. Load from file: Pass config_path or use the stored config_path
+
         Args:
-            new_config: New configuration to apply
+            new_config: New configuration to apply (optional if loading from file)
+            config_path: Path to configuration file to load (optional, uses stored path if not provided)
 
         Raises:
-            ConfigurationError: If the new configuration is invalid
+            ConfigurationError: If the new configuration is invalid or cannot be loaded
+            ValueError: If neither new_config nor config_path is available
+
+        Requirements: 3.4, 15.1, 15.5
         """
         _ = log_operation_start(logger, "reload_configuration")
 
         old_config = self.config
-        self.config = new_config
+        old_rate_limiter = self.rate_limiter
 
         try:
+            # Determine the configuration to apply
+            config_to_apply: BotConfig
+
+            if new_config is not None:
+                # Mode 1: Direct config provided
+                logger.info("Reloading configuration from provided config object")
+                config_to_apply = new_config
+            else:
+                # Mode 2: Load from file
+                path_to_use = config_path or self.config_path
+                if path_to_use is None:
+                    raise ValueError(
+                        "Cannot reload configuration: no config_path provided and no stored config_path"
+                    )
+
+                if self.config_loader is None:
+                    raise ValueError(
+                        "Cannot reload configuration from file: no config_loader available"
+                    )
+
+                logger.info(
+                    f"Reloading configuration from file: {path_to_use}",
+                    extra={"config_path": path_to_use},
+                )
+
+                # Load configuration from file
+                config_to_apply = self.config_loader.load(path_to_use)
+
+            # Validate configuration before applying
+            if self.config_loader is not None:
+                validation_errors = self.config_loader.validate(config_to_apply)
+                if validation_errors:
+                    error_msg = f"Configuration validation failed: {'; '.join(validation_errors)}"
+                    logger.error(
+                        error_msg,
+                        extra={"validation_errors": validation_errors},
+                    )
+                    raise ConfigurationError(
+                        error_msg,
+                        field_name="configuration",
+                        expected_value="valid configuration values",
+                    )
+
+            logger.info("Configuration validation passed, applying changes")
+
+            # Apply new configuration
+            self.config = config_to_apply
+
             # Reconfigure scheduler if automation settings changed
-            if new_config.automation != old_config.automation:
-                logger.info("Reconfiguring task scheduler")
+            if config_to_apply.automation != old_config.automation:
+                logger.info(
+                    "Reconfiguring task scheduler",
+                    extra={
+                        "old_enabled": old_config.automation.enabled,
+                        "new_enabled": config_to_apply.automation.enabled,
+                        "old_interval": old_config.automation.update_interval_days,
+                        "new_interval": config_to_apply.automation.update_interval_days,
+                    },
+                )
                 await self.scheduler.stop()
                 # Preserve the update_executor when reconfiguring
                 old_executor = self.scheduler.update_executor
-                self.scheduler = TaskScheduler(new_config.automation, update_executor=old_executor)
-                if new_config.automation.enabled:
+                self.scheduler = TaskScheduler(
+                    config_to_apply.automation, update_executor=old_executor
+                )
+                if config_to_apply.automation.enabled:
                     await self.scheduler.start()
 
             # Reconfigure rate limiter if rate limiting settings changed
-            if new_config.rate_limiting != old_config.rate_limiting:
-                logger.info("Reconfiguring rate limiter")
-                # Rate limiter preserves existing cooldowns
-                self.rate_limiter = RateLimiter(new_config.rate_limiting)
+            # Preserve existing cooldowns by copying them to the new rate limiter
+            if config_to_apply.rate_limiting != old_config.rate_limiting:
+                logger.info(
+                    "Reconfiguring rate limiter (preserving existing cooldowns)",
+                    extra={
+                        "old_config_cooldown": old_config.rate_limiting.config.user_cooldown_minutes,
+                        "new_config_cooldown": config_to_apply.rate_limiting.config.user_cooldown_minutes,
+                    },
+                )
+                # Get current cooldown state before creating new rate limiter
+                user_cooldowns, global_cooldowns = old_rate_limiter.get_cooldown_state()
 
+                # Create new rate limiter with new config
+                new_rate_limiter = RateLimiter(config_to_apply.rate_limiting)
+
+                # Restore cooldown state to preserve existing cooldowns
+                new_rate_limiter.restore_cooldown_state(user_cooldowns, global_cooldowns)
+
+                self.rate_limiter = new_rate_limiter
+
+            logger.info(
+                "Configuration reloaded successfully",
+                extra={
+                    "automation_enabled": config_to_apply.automation.enabled,
+                    "language": config_to_apply.system.language,
+                },
+            )
             log_operation_complete(logger, "reload_configuration", success=True)
 
         except Exception as e:
             # Restore old configuration on failure
+            logger.error(
+                f"Configuration reload failed, restoring previous configuration: {e}",
+                exc_info=True,
+                extra={"error_type": type(e).__name__},
+            )
             self.config = old_config
+            self.rate_limiter = old_rate_limiter
             log_operation_complete(
                 logger, "reload_configuration", success=False, error=str(e)
             )

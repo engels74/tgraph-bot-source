@@ -538,6 +538,25 @@ class GraphCommands(commands.Cog):
                     exc_info=True,
                 )
 
+    async def execute_scheduled_update(self) -> None:
+        """Execute a scheduled graph update.
+
+        This method implements the UpdateExecutor protocol and is called by
+        the TaskScheduler to perform automated graph generation and posting.
+
+        It generates all enabled graphs using TaskGroup for concurrency and
+        posts them to the configured Discord channel with a timestamp.
+
+        Requirements: 7.4, 7.5, 22.1
+        """
+        logger.info("Executing scheduled graph update")
+        try:
+            _ = await self._generate_and_post_graphs(username_filter=None)
+            logger.info("Scheduled graph update completed successfully")
+        except Exception as e:
+            logger.error(f"Error during scheduled graph update: {e}", exc_info=True)
+            raise
+
     async def _generate_and_post_graphs(
         self, *, username_filter: str | None = None
     ) -> list[GraphMetadata]:
