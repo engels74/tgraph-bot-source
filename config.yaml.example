@@ -1,0 +1,461 @@
+# TGraph Bot Configuration File
+# =============================
+# This file contains all configuration options for TGraph Bot.
+# You can edit this file manually or use the Web UI for configuration management.
+#
+# For security, you can override sensitive values using environment variables:
+#   - DISCORD_TOKEN: Override Discord bot token
+#   - TAUTULLI_API_KEY: Override Tautulli API key
+#   - TAUTULLI_URL: Override Tautulli URL
+#   - WEB_UI_HOST: Override Web UI bind address
+#   - WEB_UI_PORT: Override Web UI port
+
+# ============================================================================
+# SERVICES CONFIGURATION
+# ============================================================================
+# External service connections (Discord, Tautulli)
+
+services:
+  # Tautulli Configuration
+  # ----------------------
+  # Connection settings for your Tautulli instance
+  tautulli:
+    # Tautulli API key (minimum 32 characters)
+    # Get this from Tautulli: Settings > Web Interface > API Key
+    # Can be overridden with TAUTULLI_API_KEY environment variable
+    api_key: "your_tautulli_api_key_here_minimum_32_characters"
+    
+    # Tautulli URL (must start with http:// or https://)
+    # Example: "http://localhost:8181" or "https://tautulli.example.com"
+    # Can be overridden with TAUTULLI_URL environment variable
+    url: "http://localhost:8181"
+
+  # Discord Configuration
+  # ---------------------
+  # Discord bot settings and channel configuration
+  discord:
+    # Discord bot token (minimum 50 characters)
+    # Get this from Discord Developer Portal: https://discord.com/developers/applications
+    # Can be overridden with DISCORD_TOKEN environment variable
+    token: "your_discord_bot_token_here_minimum_50_characters_long"
+    
+    # Discord channel ID where graphs will be posted
+    # Right-click channel in Discord (with Developer Mode enabled) and select "Copy ID"
+    channel_id: 1234567890123456789
+    
+    # Timestamp format for graph posts
+    # Options: t (short time), T (long time), d (short date), D (long date),
+    #          f (short date/time), F (long date/time), R (relative time)
+    timestamp_format: "F"
+    
+    # Ephemeral message auto-delete timeout (seconds)
+    # How long ephemeral messages (visible only to command user) remain visible
+    # Range: 1.0 to 3600.0 seconds (1 second to 1 hour)
+    ephemeral_message_delete_after: 60.0
+
+# ============================================================================
+# AUTOMATION CONFIGURATION
+# ============================================================================
+# Scheduled graph generation and posting settings
+
+automation:
+  # Enable automatic graph updates
+  # Set to false to disable scheduled updates (manual updates only)
+  enabled: true
+  
+  # Update interval in days
+  # How often to generate and post graphs automatically
+  # Range: 1 to 365 days
+  update_interval_days: 7
+  
+  # Fixed update time (HH:MM format or XX:XX for random time)
+  # Examples:
+  #   "14:30" - Generate graphs daily at 2:30 PM
+  #   "XX:XX" - Generate graphs at a random time within the update interval
+  # Format: HH:MM (00:00 to 23:59) or XX:XX
+  fixed_update_time: "XX:XX"
+
+# ============================================================================
+# DATA COLLECTION CONFIGURATION
+# ============================================================================
+# Settings for retrieving data from Tautulli
+
+data_collection:
+  # Number of days of history to retrieve
+  # How far back to look when collecting streaming data
+  # Range: 1 to 365 days
+  history_days: 30
+  
+  # Maximum records per API request
+  # Higher values reduce API calls but may timeout on slow connections
+  # Range: 100 to 10000 records
+  max_records_per_request: 1000
+
+# ============================================================================
+# SYSTEM CONFIGURATION
+# ============================================================================
+# General system settings (language, logging, storage, privacy)
+
+system:
+  # Language code for bot messages and graph labels
+  # Supported: "en" (English), "da" (Danish)
+  # Falls back to English if translation missing
+  language: "en"
+  
+  # Logging level
+  # Options: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  # DEBUG: Detailed information for debugging
+  # INFO: General operational messages (recommended)
+  # WARNING: Unexpected but handled situations
+  # ERROR: Errors preventing specific operations
+  # CRITICAL: Errors preventing bot operation
+  log_level: "INFO"
+  
+  # Output directory for generated graphs
+  # Relative or absolute path where PNG files will be saved
+  output_directory: "./graphs"
+  
+  # Graph retention period in days
+  # Old graph files will be automatically deleted after this many days
+  # Range: 1 to 365 days
+  keep_graphs_days: 30
+  
+  # Privacy settings
+  privacy:
+    # Censor usernames in graphs
+    # When enabled, replaces usernames with "User 1", "User 2", etc.
+    # Personal stats (/my-stats) always show actual username to requesting user
+    censor_usernames: false
+
+# ============================================================================
+# GRAPHS CONFIGURATION
+# ============================================================================
+# Visual styling and individual graph type settings
+
+graphs:
+  # Global appearance settings
+  # ---------------------------
+  # These settings apply to all graphs unless overridden
+  appearance:
+    # Graph dimensions
+    dimensions:
+      # Width in inches (affects resolution and aspect ratio)
+      # Range: 6 to 20 inches
+      width: 12
+      
+      # Height in inches (affects resolution and aspect ratio)
+      # Range: 4 to 16 inches
+      height: 6
+      
+      # DPI (dots per inch) - affects image quality and file size
+      # Range: 72 to 300 DPI
+      # 100 = good quality, smaller files (recommended)
+      # 150 = high quality, medium files
+      # 300 = print quality, large files
+      dpi: 100
+    
+    # Base colors for media types
+    # Used when media_type_separation is enabled and no palette specified
+    colors:
+      # Color for TV shows/episodes (hex format)
+      tv: "#1f77b4"
+      
+      # Color for movies (hex format)
+      movie: "#ff7f0e"
+      
+      # Background color for graphs (hex format)
+      # "#2b2b2b" = dark gray (good for Discord dark mode)
+      # "#ffffff" = white (good for Discord light mode)
+      background: "#2b2b2b"
+    
+    # Grid line settings
+    grid:
+      # Enable grid lines on graphs
+      enabled: true
+      
+      # Grid line transparency (0.0 = invisible, 1.0 = opaque)
+      alpha: 0.3
+    
+    # Annotation settings
+    # Annotations display numeric values on data points or bars
+    annotations:
+      # Annotation text color (hex format)
+      color: "#ffffff"
+      
+      # Annotation outline color (hex format)
+      outline_color: "#000000"
+      
+      # Enable outline around annotation text (improves readability)
+      enable_outline: true
+      
+      # Annotation font size in points
+      # Range: 6 to 24 points
+      font_size: 10
+    
+    # Seaborn styling configuration
+    # Seaborn provides professional statistical visualizations
+    seaborn:
+      # Seaborn style preset
+      # Options:
+      #   "darkgrid" - Dark background with white grid (recommended for Discord)
+      #   "whitegrid" - White background with gray grid
+      #   "dark" - Dark background, no grid
+      #   "white" - White background, no grid
+      #   "ticks" - White background with axis ticks
+      style: "darkgrid"
+      
+      # Seaborn context (affects scaling of elements)
+      # Options:
+      #   "paper" - Smallest, for publications
+      #   "notebook" - Default, good for most uses
+      #   "talk" - Larger, for presentations
+      #   "poster" - Largest, for posters
+      context: "notebook"
+      
+      # Default seaborn color palette
+      # Common palettes:
+      #   "muted" - Muted colors (recommended)
+      #   "deep" - Deep saturated colors
+      #   "pastel" - Pastel colors
+      #   "bright" - Bright colors
+      #   "dark" - Dark colors
+      #   "colorblind" - Colorblind-safe palette
+      #   "viridis", "plasma", "inferno", "magma" - Perceptually uniform
+      palette: "muted"
+    
+    # Custom palettes for specific graph types
+    # Override the default palette for individual graphs
+    # Leave empty string "" to use base colors or default palette
+    palettes:
+      daily_play_count: ""
+      play_count_by_day_of_week: ""
+      play_count_by_hour_of_day: ""
+      top_platforms: "Set2"
+      top_users: "Set2"
+      play_count_by_month: ""
+      daily_play_count_by_stream_type: "Set1"
+      daily_concurrent_stream_count_by_stream_type: "Set1"
+      play_count_by_source_resolution: "viridis"
+      play_count_by_stream_resolution: "viridis"
+      play_count_by_platform_and_stream_type: ""
+      play_count_by_user_and_stream_type: ""
+
+  # Individual Graph Type Settings
+  # -------------------------------
+  # Each graph type can be enabled/disabled and customized
+  
+  # Daily Play Count
+  # Line chart showing play count over time
+  daily_play_count:
+    enabled: true
+    media_type_separation: true  # Separate lines for TV and movies
+    palette: ""  # Use default palette or base colors
+    annotations_enabled: false  # Show values on data points
+    peak_highlighting_enabled: false  # Highlight peak values
+    stacked: false  # Not applicable for line charts
+  
+  # Play Count by Day of Week
+  # Bar chart showing which days have most activity
+  play_count_by_day_of_week:
+    enabled: true
+    media_type_separation: true  # Separate bars for TV and movies
+    palette: ""
+    annotations_enabled: true  # Show counts on bars
+    peak_highlighting_enabled: false
+    stacked: false  # Set to true for stacked bars
+  
+  # Play Count by Hour of Day
+  # Bar chart showing which hours have most activity
+  play_count_by_hour_of_day:
+    enabled: true
+    media_type_separation: true
+    palette: ""
+    annotations_enabled: true
+    peak_highlighting_enabled: false
+    stacked: false
+  
+  # Top Platforms
+  # Horizontal bar chart of most-used platforms
+  top_platforms:
+    enabled: true
+    media_type_separation: false  # Usually not needed for platform stats
+    palette: "Set2"  # Use Set2 palette for variety
+    annotations_enabled: true
+    peak_highlighting_enabled: false
+    stacked: false
+    limit: 10  # Show top 10 platforms (range: 3 to 20)
+  
+  # Top Users
+  # Horizontal bar chart of most active users
+  top_users:
+    enabled: true
+    media_type_separation: false
+    palette: "Set2"
+    annotations_enabled: true
+    peak_highlighting_enabled: false
+    stacked: false
+    limit: 10  # Show top 10 users (range: 3 to 20)
+  
+  # Play Count by Month
+  # Line chart showing monthly trends
+  play_count_by_month:
+    enabled: true
+    media_type_separation: true
+    palette: ""
+    annotations_enabled: false
+    peak_highlighting_enabled: false
+    stacked: false
+
+  # Daily Play Count by Stream Type
+  # Line chart showing direct play vs transcode vs copy over time
+  daily_play_count_by_stream_type:
+    enabled: true
+    media_type_separation: false  # Already separated by stream type
+    palette: "Set1"  # Use Set1 for distinct stream type colors
+    annotations_enabled: false
+    peak_highlighting_enabled: false
+    stacked: false
+
+  # Daily Concurrent Stream Count by Stream Type
+  # Line chart showing peak concurrent streams by type
+  daily_concurrent_stream_count_by_stream_type:
+    enabled: true
+    media_type_separation: false
+    palette: "Set1"
+    annotations_enabled: false
+    peak_highlighting_enabled: true  # Highlight peak concurrent streams
+    stacked: false
+
+  # Play Count by Source Resolution
+  # Bar chart showing original media resolution distribution
+  play_count_by_source_resolution:
+    enabled: true
+    media_type_separation: false
+    palette: "viridis"  # Perceptually uniform palette for resolution data
+    annotations_enabled: true
+    peak_highlighting_enabled: false
+    stacked: false
+
+  # Play Count by Stream Resolution
+  # Bar chart showing streamed resolution distribution (after transcoding)
+  play_count_by_stream_resolution:
+    enabled: true
+    media_type_separation: false
+    palette: "viridis"
+    annotations_enabled: true
+    peak_highlighting_enabled: false
+    stacked: false
+
+  # Play Count by Platform and Stream Type
+  # Stacked bar chart showing stream types per platform
+  play_count_by_platform_and_stream_type:
+    enabled: true
+    media_type_separation: false
+    palette: ""
+    annotations_enabled: true
+    peak_highlighting_enabled: false
+    stacked: true  # Stack stream types within each platform
+
+  # Play Count by User and Stream Type
+  # Stacked bar chart showing stream types per user
+  play_count_by_user_and_stream_type:
+    enabled: true
+    media_type_separation: false
+    palette: ""
+    annotations_enabled: true
+    peak_highlighting_enabled: false
+    stacked: true  # Stack stream types within each user
+
+# ============================================================================
+# RATE LIMITING CONFIGURATION
+# ============================================================================
+# Command cooldown settings to prevent spam
+
+rate_limiting:
+  # Config Command Limits
+  # ---------------------
+  # Limits for /config command (view configuration)
+  config:
+    # Per-user cooldown in minutes
+    # How long a user must wait between /config commands
+    # Range: 0 to 1440 minutes (0 = disabled, 1440 = 24 hours)
+    user_cooldown_minutes: 5
+
+    # Global cooldown in seconds
+    # How long all users must wait between any /config commands
+    # Range: 0 to 86400 seconds (0 = disabled, 86400 = 24 hours)
+    global_cooldown_seconds: 30
+
+  # Update Graphs Command Limits
+  # ----------------------------
+  # Limits for /update-graphs command (manual graph generation)
+  update_graphs:
+    # Per-user cooldown in minutes
+    # Prevents individual users from spamming graph generation
+    # Range: 0 to 1440 minutes
+    user_cooldown_minutes: 15
+
+    # Global cooldown in seconds
+    # Prevents server-wide graph generation spam
+    # Range: 0 to 86400 seconds
+    global_cooldown_seconds: 300
+
+  # My Stats Command Limits
+  # -----------------------
+  # Limits for /my-stats command (personal statistics)
+  my_stats:
+    # Per-user cooldown in minutes
+    # How long a user must wait between viewing their own stats
+    # Range: 0 to 1440 minutes
+    user_cooldown_minutes: 10
+
+    # Global cooldown in seconds
+    # How long all users must wait between any /my-stats commands
+    # Range: 0 to 86400 seconds
+    global_cooldown_seconds: 60
+
+# ============================================================================
+# CONFIGURATION NOTES
+# ============================================================================
+#
+# 1. SECURITY BEST PRACTICES:
+#    - Never commit this file with real API keys/tokens to version control
+#    - Use environment variables for sensitive values in production
+#    - Keep file permissions restrictive (chmod 600 config.yaml)
+#
+# 2. EDITING THIS FILE:
+#    - You can edit manually with any text editor
+#    - Or use the Web UI at http://localhost:8080 (default)
+#    - Changes take effect after reload (via Web UI or bot restart)
+#    - YAML syntax is sensitive to indentation (use spaces, not tabs)
+#
+# 3. GRAPH CUSTOMIZATION:
+#    - Disable graphs you don't need by setting enabled: false
+#    - Adjust dimensions for your Discord server's preferences
+#    - Use media_type_separation to distinguish TV shows from movies
+#    - Enable annotations to show exact values on graphs
+#    - Use palettes to customize colors (see seaborn documentation)
+#
+# 4. PERFORMANCE TUNING:
+#    - Reduce history_days if Tautulli API is slow
+#    - Increase max_records_per_request for faster data collection
+#    - Disable unused graphs to speed up generation
+#    - Lower DPI to reduce file sizes and upload times
+#
+# 5. RATE LIMITING:
+#    - Set cooldowns to 0 to disable rate limiting
+#    - Adjust based on your server size and usage patterns
+#    - User cooldowns prevent individual spam
+#    - Global cooldowns prevent server-wide spam
+#
+# 6. TROUBLESHOOTING:
+#    - Check log_level: "DEBUG" for detailed troubleshooting
+#    - Verify API keys and URLs are correct
+#    - Ensure Discord bot has proper permissions in channel
+#    - Check output_directory exists and is writable
+#
+# For more information, see the documentation at:
+# https://github.com/engels74/tgraph-bot-source
+#
+# ============================================================================
+
