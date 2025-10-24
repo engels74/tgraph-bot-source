@@ -542,13 +542,17 @@ wheels = [
 
 [[package]]
 name = "nextcord"
-version = "2.6.0"
+version = "3.1.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
+    { name = "audioop-lts", marker = "python_full_version < '4'" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f2/0e/347795cec6bc841ed426bc5e112380335869e9ba0922c5ed7ec7bb8ab1a5/nextcord-2.6.0.tar.gz", hash = "sha256:ccf461157be682cbceaa474e8df4afa302351b8d6ced632f9ccb7aa647b092e7", size = 932913, upload-time = "2023-09-23T16:29:52.347Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/cf/53/fa21411f96988e1a4568614e3869538b3dba84d38f27cc2a094db8a88a35/nextcord-3.1.1.tar.gz", hash = "sha256:ed0d1c2ccae6c5acceea13f3c388ded875f21d7378d5ea1330a3d9c6b37e9d93", size = 930931, upload-time = "2025-08-16T10:38:29.818Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ef/06/e598f610d046cb4ecb69d831d1630a84eda6ef12f3f0ae3f2fa05f753f29/nextcord-3.1.1-py3-none-any.whl", hash = "sha256:9432d3ad2d2a5d65624b512e2408e5fca4aee059e40d1c3a70a7b0040536d767", size = 999430, upload-time = "2025-08-16T10:38:28.333Z" },
+]
 
 [[package]]
 name = "nodejs-wheel-binaries"
@@ -806,15 +810,16 @@ wheels = [
 
 [[package]]
 name = "pytest-cov"
-version = "4.1.0"
+version = "7.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "coverage" },
+    { name = "pluggy" },
     { name = "pytest" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/7a/15/da3df99fd551507694a9b01f512a2f6cf1254f33601605843c3775f39460/pytest-cov-4.1.0.tar.gz", hash = "sha256:3904b13dfbfec47f003b8e77fd5b589cd11904a21ddf1ab38a64f204d6a10ef6", size = 63245, upload-time = "2023-05-24T18:44:56.845Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/5e/f7/c933acc76f5208b3b00089573cf6a2bc26dc80a8aece8f52bb7d6b1855ca/pytest_cov-7.0.0.tar.gz", hash = "sha256:33c97eda2e049a0c5298e91f519302a1334c26ac65c1a483d6206fd458361af1", size = 54328, upload-time = "2025-09-09T10:57:02.113Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a7/4b/8b78d126e275efa2379b1c2e09dc52cf70df16fc3b90613ef82531499d73/pytest_cov-4.1.0-py3-none-any.whl", hash = "sha256:6ba70b9e97e69fcc3fb45bfeab2d0a138fb65c4d0d6a41ef33983ad114be8c3a", size = 21949, upload-time = "2023-05-24T18:44:54.079Z" },
+    { url = "https://files.pythonhosted.org/packages/ee/49/1377b49de7d0c1ce41292161ea0f721913fa8722c19fb9c1e3aa0367eecb/pytest_cov-7.0.0-py3-none-any.whl", hash = "sha256:3b8e9558b16cc1479da72058bdecf8073661c7f57f7d3c5f22a1c23507f2d861", size = 22424, upload-time = "2025-09-09T10:57:00.695Z" },
 ]
 
 [[package]]
@@ -952,25 +957,25 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aiohttp", specifier = ">=3.9.0,<4.0.0" },
-    { name = "aiohttp-jinja2", specifier = ">=1.6.0,<2.0.0" },
+    { name = "aiohttp", specifier = ">=3.9.0" },
+    { name = "aiohttp-jinja2", specifier = ">=1.6.0" },
     { name = "audioop-lts", specifier = ">=0.2.2" },
-    { name = "httpx", specifier = ">=0.27.0,<1.0.0" },
-    { name = "matplotlib", specifier = ">=3.8.0,<4.0.0" },
-    { name = "nextcord", specifier = ">=2.6.0,<3.0.0" },
-    { name = "pydantic", specifier = ">=2.0.0,<3.0.0" },
-    { name = "python-dotenv", specifier = ">=1.0.0,<2.0.0" },
-    { name = "ruamel-yaml", specifier = ">=0.18.0,<1.0.0" },
-    { name = "seaborn", specifier = ">=0.13.0,<1.0.0" },
+    { name = "httpx", specifier = ">=0.27.0" },
+    { name = "matplotlib", specifier = ">=3.8.0" },
+    { name = "nextcord", specifier = ">=3.1.1" },
+    { name = "pydantic", specifier = ">=2.0.0" },
+    { name = "python-dotenv", specifier = ">=1.0.0" },
+    { name = "ruamel-yaml", specifier = ">=0.18.0" },
+    { name = "seaborn", specifier = ">=0.13.0" },
     { name = "setuptools", specifier = ">=80.9.0" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "basedpyright", specifier = ">=1.0.0" },
-    { name = "pytest", specifier = ">=8.0.0,<9.0.0" },
-    { name = "pytest-asyncio", specifier = ">=1.2.0,<2.0.0" },
-    { name = "pytest-cov", specifier = ">=4.1.0,<5.0.0" },
+    { name = "pytest", specifier = ">=8.0.0" },
+    { name = "pytest-asyncio", specifier = ">=1.2.0" },
+    { name = "pytest-cov", specifier = ">=4.1.0" },
     { name = "ruff", specifier = ">=0.1.0" },
 ]
 
