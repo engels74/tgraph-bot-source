@@ -1,119 +1,103 @@
+---
+inclusion: always
+---
+
 # Project Structure
 
 ## Directory Layout
 
 ```
-tgraph-bot/
-├── .kiro/
-│   ├── specs/tgraph-bot/     # Spec files (requirements, design, tasks)
-│   └── steering/             # AI assistant steering rules
-├── .claude/
-│   └── rules/                # Python development guidelines
-├── assets/
-│   └── svg/                  # SVG graphics (logo)
-├── src/tgraph_bot/           # Main source (src layout)
-│   ├── __init__.py           # Package entry with main()
-│   ├── __main__.py           # Application entry point
-│   ├── config/               # Configuration system
-│   │   ├── models.py         # Pydantic config models
-│   │   └── loader.py         # YAML loading/saving
-│   ├── api/                  # External API clients
-│   │   └── tautulli.py       # Tautulli API client
-│   ├── commands/             # Discord command handlers
-│   │   └── graph_commands.py # Slash command implementations
-│   ├── graphs/               # Graph generation engine
-│   │   ├── generators/       # Individual graph type implementations
-│   │   ├── styling.py        # Seaborn styling and themes
-│   │   └── renderer.py       # Graph orchestration
-│   ├── scheduler/            # Automated task scheduling
-│   │   └── task_scheduler.py
-│   ├── rate_limiting/        # Command rate limiting
-│   │   └── rate_limiter.py
-│   ├── web/                  # Web UI server
-│   │   ├── server.py         # aiohttp server
-│   │   ├── templates/        # Jinja2 HTML templates
-│   │   └── static/           # CSS/JS assets
-│   ├── localization/         # Multi-language support
-│   │   └── locales/          # JSON language files (en, da)
-│   └── utils/                # Shared utilities
-│       ├── errors.py         # Exception hierarchy
-│       └── logging.py        # Structured logging
-├── tests/                    # Test suite (mirrors src/)
-│   ├── test_config.py
-│   ├── test_tautulli.py
-│   ├── test_graphs.py
-│   └── ...
-├── templates/                # Web UI templates (if not in src/)
-├── static/                   # Web UI static files (if not in src/)
-├── locales/                  # Localization files (if not in src/)
-├── config.yaml               # Default configuration file
-├── pyproject.toml            # Project metadata (PEP 621)
-├── .python-version           # Python 3.14
-├── README.md
-└── LICENSE                   # AGPLv3
+src/tgraph_bot/          # Main application package
+├── api/                 # External API clients (Tautulli)
+├── commands/            # Discord slash commands
+├── config/              # Configuration loading and models
+├── graphs/              # Graph generation system
+│   └── generators/      # Individual graph type implementations
+├── localization/        # i18n support
+│   └── locales/         # Translation files (JSON)
+├── rate_limiting/       # Command cooldown management
+├── scheduler/           # Automated task scheduling
+├── utils/               # Shared utilities (logging, errors, retention)
+└── web/                 # Web UI for configuration
+    ├── static/          # CSS and JavaScript
+    └── templates/       # HTML templates
+
+tests/                   # Test suite (pytest)
+assets/                  # Static assets (SVG logo)
 ```
 
-## Architecture Layers
+## Architecture Patterns
 
-### Presentation Layer
-- `commands/` - Discord slash command handlers
-- `web/` - Web UI HTTP handlers and templates
-- Response formatting, ephemeral messages
+### Protocol-Based Design
 
-### Application Layer
-- `scheduler/` - Automated task orchestration
-- `rate_limiting/` - Command cooldown management
-- Graph generation coordination
-- Configuration validation
+- Use `typing.Protocol` for structural subtyping (duck typing)
+- Example: `GraphGenerator` protocol defines interface for all graph generators
+- Protocols should be small (1-3 methods) and composable
 
-### Domain Layer
-- `graphs/` - Graph generation logic and styling
-- Data transformation and aggregation
-- Privacy/anonymization logic
-- `localization/` - Multi-language string management
+### Configuration Management
 
-### Infrastructure Layer
-- `api/` - Tautulli API client (httpx)
-- `config/` - YAML persistence (ruamel.yaml)
-- Discord API (nextcord)
-- File system operations
-
-## Key Design Patterns
-
-### Configuration
-- Pydantic models at API boundaries (validation)
-- dataclasses with slots for internal data (performance)
-- YAML as single source of truth
-- Environment variable overrides for secrets
-
-### Async Concurrency
-- TaskGroup for structured concurrency
-- Context variables for task-local state
-- asynccontextmanager for resource lifecycle
-- Exception groups for multi-error handling
+- Pydantic models in `config/models.py` for validation
+- Nested configuration structure (services, automation, graphs, etc.)
+- Field validation with constraints (ranges, patterns, min/max)
+- ConfigLoader handles YAML parsing and validation
 
 ### Graph Generation
-- Protocol-based graph generators
-- Factory pattern for graph type creation
-- Seaborn integration for professional aesthetics
-- Configurable styling system (palettes, themes, dimensions)
+
+- Factory pattern in `graphs/factory.py` for graph type selection
+- Individual generators in `graphs/generators/` implement GraphGenerator protocol
+- Shared styling in `graphs/styling.py`
+- Data transformation in `graphs/data.py`
+- Rendering utilities in `graphs/renderer.py`
+
+### Async/Await
+
+- Bot uses async/await throughout (nextcord, httpx, aiohttp)
+- Event handlers are async methods
+- Scheduler runs tasks asynchronously
 
 ### Error Handling
-- Custom exception hierarchy (TGraphBotError base)
-- Specific exceptions: ConfigurationError, TautulliAPIError, GraphGenerationError, RateLimitError
-- Comprehensive logging with sensitive value masking
 
-## Naming Conventions
-- Modules: `snake_case.py`
-- Classes: `PascalCase`
-- Functions/variables: `snake_case`
-- Constants: `UPPER_SNAKE_CASE`
-- Type parameters: `T`, `K`, `V` or `PascalCase` (PEP 695)
-- Private: `_leading_underscore`
+- Custom exceptions in `utils/errors.py`
+- Structured logging with context (extra fields)
+- Operation logging with start/complete tracking
 
-## Module Organization Principles
-- One primary class per file (exceptions for small related classes)
-- Group related functionality in subdirectories
-- Keep `__init__.py` minimal (re-exports only)
-- Protocol definitions in separate files or with implementations
-- Test files mirror source structure: `test_<module>.py`
+## Code Conventions
+
+### Type Hints
+
+- All functions must have type hints for parameters and return values
+- Use PEP 695 type aliases for complex types
+- Use `| None` instead of `Optional[T]`
+- Use `list[T]`, `dict[K, V]` instead of `List[T]`, `Dict[K, V]`
+
+### Docstrings
+
+- All modules, classes, and public functions require docstrings
+- Format: Google-style docstrings
+- Include Requirements references when applicable
+
+### Imports
+
+- Absolute imports from package root
+- Group imports: stdlib, third-party, local
+- Use `from typing import Protocol` for protocols
+
+### Naming
+
+- Classes: PascalCase
+- Functions/methods: snake_case
+- Constants: UPPER_SNAKE_CASE
+- Private members: prefix with underscore
+
+### Method Overrides
+
+- Use `@override` decorator when overriding parent methods
+- Explicitly import from `typing` module
+
+## Testing
+
+- Tests mirror source structure in `tests/` directory
+- Test files named `test_*.py`
+- Use pytest fixtures for common setup
+- Async tests use `pytest-asyncio`
+- Coverage tracking enabled by default
