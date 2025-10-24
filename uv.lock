@@ -890,7 +890,7 @@ dependencies = [
     { name = "seaborn" },
 ]
 
-[package.optional-dependencies]
+[package.dev-dependencies]
 dev = [
     { name = "basedpyright" },
     { name = "pytest" },
@@ -903,20 +903,23 @@ dev = [
 requires-dist = [
     { name = "aiohttp", specifier = ">=3.9.0,<4.0.0" },
     { name = "aiohttp-jinja2", specifier = ">=1.6.0,<2.0.0" },
-    { name = "basedpyright", marker = "extra == 'dev'", specifier = ">=1.0.0" },
     { name = "httpx", specifier = ">=0.27.0,<1.0.0" },
     { name = "matplotlib", specifier = ">=3.8.0,<4.0.0" },
     { name = "nextcord", specifier = ">=2.6.0,<3.0.0" },
     { name = "pydantic", specifier = ">=2.0.0,<3.0.0" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0.0,<9.0.0" },
-    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=1.2.0,<2.0.0" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.1.0,<5.0.0" },
     { name = "python-dotenv", specifier = ">=1.0.0,<2.0.0" },
     { name = "ruamel-yaml", specifier = ">=0.18.0,<1.0.0" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.1.0" },
     { name = "seaborn", specifier = ">=0.13.0,<1.0.0" },
 ]
-provides-extras = ["dev"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "basedpyright", specifier = ">=1.0.0" },
+    { name = "pytest", specifier = ">=8.0.0,<9.0.0" },
+    { name = "pytest-asyncio", specifier = ">=1.2.0,<2.0.0" },
+    { name = "pytest-cov", specifier = ">=4.1.0,<5.0.0" },
+    { name = "ruff", specifier = ">=0.1.0" },
+]
 
 [[package]]
 name = "typing-extensions"

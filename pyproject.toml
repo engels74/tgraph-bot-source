@@ -19,15 +19,6 @@ dependencies = [
     "python-dotenv>=1.0.0,<2.0.0",
 ]
 
-[project.optional-dependencies]
-dev = [
-    "pytest>=8.0.0,<9.0.0",
-    "pytest-asyncio>=1.2.0,<2.0.0",
-    "pytest-cov>=4.1.0,<5.0.0",
-    "ruff>=0.1.0",
-    "basedpyright>=1.0.0",
-]
-
 [project.scripts]
 tgraph-bot = "tgraph_bot:main"
 
@@ -54,6 +45,15 @@ failOnWarnings = true
 pythonPlatform = "All"
 exclude = ["htmlcov", ".venv"]
 enableTypeIgnoreComments = false
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0,<9.0.0",
+    "pytest-asyncio>=1.2.0,<2.0.0",
+    "pytest-cov>=4.1.0,<5.0.0",
+    "ruff>=0.1.0",
+    "basedpyright>=1.0.0",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
