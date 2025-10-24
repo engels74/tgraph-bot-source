@@ -92,6 +92,10 @@ class WebUIServer:
         # Register routes
         _ = self._app.router.add_get("/", self.index)
         _ = self._app.router.add_get("/health", self.health_check)
+        _ = self._app.router.add_get("/api/config", self.get_config)
+        _ = self._app.router.add_post("/api/config", self.update_config)
+        _ = self._app.router.add_post("/api/config/reload", self.reload_config)
+        _ = self._app.router.add_get("/api/config/file-modified", self.check_file_modified)
 
         # Add static file serving
         static_dir = Path(__file__).parent / "static"
@@ -185,6 +189,232 @@ class WebUIServer:
         status_code = 200 if status == "healthy" else 503
 
         return web.json_response(health_data, status=status_code)
+
+    async def get_config(self, _request: web.Request) -> web.Response:
+        """API endpoint to get current configuration from file.
+
+        Always reads from the YAML file to get the latest state,
+        supporting manual edits alongside Web UI changes.
+
+        Returns JSON with:
+        - config: Configuration dictionary with sensitive values masked
+        - file_modified: File modification timestamp for conflict detection
+
+        Args:
+            _request: aiohttp request object (unused)
+
+        Returns:
+            JSON response with configuration and timestamp
+
+        Requirements: 4.2, 4.5
+        """
+        try:
+            # Always read from file to get latest state
+            config = self.config_loader.load(str(self.config_path))
+
+            # Convert to dictionary
+            config_dict = config.model_dump()
+
+            # Mask sensitive values
+            masked_config = self._mask_sensitive_values(config_dict)
+
+            # Get file modification timestamp
+            file_modified = self.config_path.stat().st_mtime
+
+            return web.json_response(
+                {"config": masked_config, "file_modified": file_modified}
+            )
+
+        except Exception as e:
+            logger.error(f"Failed to load configuration: {e}", exc_info=True)
+            return web.json_response(
+                {"error": f"Failed to load configuration: {e}"}, status=500
+            )
+
+    async def update_config(self, request: web.Request) -> web.Response:
+        """API endpoint to update configuration.
+
+        Validates new configuration, checks for file conflicts,
+        saves to YAML file, and triggers bot reload.
+
+        Expected request JSON:
+        - config: New configuration dictionary
+        - file_modified: Client's last known file timestamp (optional)
+
+        Returns JSON with:
+        - success: True if update succeeded
+        - message: Success message
+        - error: Error message if failed
+        - conflict: True if file was modified externally
+
+        Args:
+            request: aiohttp request object with JSON body
+
+        Returns:
+            JSON response with update status
+
+        Requirements: 4.3, 4.4, 4.5
+        """
+        try:
+            # Parse request body - aiohttp returns object which could be anything
+            from typing import cast
+
+            data_raw: object = await request.json()  # pyright: ignore[reportAny]  # aiohttp returns Any
+
+            # Type narrow to dict
+            if not isinstance(data_raw, dict):
+                return web.json_response(
+                    {"error": "Invalid request format: expected JSON object"}, status=400
+                )
+
+            # Now we know it's a dict, cast to dict[str, object]
+            data = cast(dict[str, object], data_raw)
+
+            # Check if file was modified since user loaded it
+            client_timestamp: float | None = None
+            if "file_modified" in data:
+                file_modified_value: object = data["file_modified"]
+                if file_modified_value is not None:
+                    if isinstance(file_modified_value, (int, float)):
+                        client_timestamp = float(file_modified_value)
+                    else:
+                        return web.json_response(
+                            {"error": "Invalid file_modified: expected number"},
+                            status=400,
+                        )
+
+            current_timestamp = self.config_path.stat().st_mtime
+
+            if client_timestamp and client_timestamp < current_timestamp:
+                return web.json_response(
+                    {
+                        "error": "Configuration file was modified externally. Please reload.",
+                        "conflict": True,
+                    },
+                    status=409,
+                )
+
+            # Validate new configuration
+            from tgraph_bot.config.models import BotConfig
+
+            if "config" not in data:
+                return web.json_response(
+                    {"error": "Missing required field: config"}, status=400
+                )
+
+            config_data_raw: object = data["config"]
+            if not isinstance(config_data_raw, dict):
+                return web.json_response(
+                    {"error": "Invalid config format: expected dictionary"}, status=400
+                )
+
+            # Use model_validate for runtime validation from dict
+            new_config = BotConfig.model_validate(config_data_raw)
+
+            # Save to YAML file (preserving format)
+            self.config_loader.save(new_config, str(self.config_path))
+
+            # Trigger bot reload if bot instance is available
+            if self.bot_instance:
+                await self.bot_instance.reload_configuration(new_config)
+
+            logger.info(
+                "Configuration updated successfully via Web UI",
+                extra={"config_path": str(self.config_path)},
+            )
+
+            return web.json_response(
+                {"success": True, "message": "Configuration saved and reloaded"}
+            )
+
+        except KeyError as e:
+            return web.json_response(
+                {"error": f"Missing required field: {e}"}, status=400
+            )
+        except Exception as e:
+            logger.error(f"Failed to update configuration: {e}", exc_info=True)
+            return web.json_response({"error": str(e)}, status=400)
+
+    async def reload_config(self, _request: web.Request) -> web.Response:
+        """API endpoint to reload configuration from file.
+
+        Triggers bot to reload configuration from the YAML file,
+        useful after manual edits.
+
+        Args:
+            _request: aiohttp request object (unused)
+
+        Returns:
+            JSON response with reload status
+
+        Requirements: 4.4
+        """
+        try:
+            # Load configuration from file
+            config = self.config_loader.load(str(self.config_path))
+
+            # Trigger bot reload if bot instance is available
+            if self.bot_instance:
+                await self.bot_instance.reload_configuration(config)
+                logger.info(
+                    "Configuration reloaded from file via Web UI",
+                    extra={"config_path": str(self.config_path)},
+                )
+                return web.json_response(
+                    {"success": True, "message": "Configuration reloaded from file"}
+                )
+            else:
+                return web.json_response(
+                    {"error": "Bot instance not available for reload"}, status=503
+                )
+
+        except Exception as e:
+            logger.error(f"Failed to reload configuration: {e}", exc_info=True)
+            return web.json_response({"error": str(e)}, status=500)
+
+    async def check_file_modified(self, request: web.Request) -> web.Response:
+        """Check if config file was modified externally.
+
+        Compares client's timestamp with current file timestamp
+        to detect external modifications.
+
+        Query parameters:
+        - timestamp: Client's last known file timestamp
+
+        Returns JSON with:
+        - modified: True if file was modified since client timestamp
+        - current_timestamp: Current file modification timestamp
+
+        Args:
+            request: aiohttp request object with query parameters
+
+        Returns:
+            JSON response with modification status
+
+        Requirements: 4.4
+        """
+        try:
+            # Get client timestamp from query parameters
+            client_timestamp_str = request.query.get("timestamp", "0")
+            client_timestamp = float(client_timestamp_str)
+
+            # Get current file timestamp
+            current_timestamp = self.config_path.stat().st_mtime
+
+            return web.json_response(
+                {
+                    "modified": current_timestamp > client_timestamp,
+                    "current_timestamp": current_timestamp,
+                }
+            )
+
+        except ValueError as e:
+            return web.json_response(
+                {"error": f"Invalid timestamp parameter: {e}"}, status=400
+            )
+        except Exception as e:
+            logger.error(f"Failed to check file modification: {e}", exc_info=True)
+            return web.json_response({"error": str(e)}, status=500)
 
     def _mask_sensitive_values(
         self, config_dict: dict[str, object]
