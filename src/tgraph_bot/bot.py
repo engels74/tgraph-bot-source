@@ -64,10 +64,11 @@ class TGraphBot(commands.Bot):
         Requirements: 1.1, 1.5
         """
         # Configure intents for the bot
+        # Using default intents which excludes privileged intents (members, presences, message_content)
+        # This bot only uses slash commands and posts messages, so message_content is not needed
         intents = nextcord.Intents.default()
-        intents.message_content = True  # Required for message commands if any
-        intents.guilds = True  # Required for guild information
-        intents.members = False  # Not needed for this bot
+        intents.guilds = True  # Required for guild information and slash commands
+        intents.members = False  # Not needed - bot doesn't track member joins/leaves
 
         # Initialize parent Bot class
         super().__init__(
