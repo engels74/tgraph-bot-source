@@ -140,9 +140,10 @@ class TGraphBot(commands.Bot):
             await self.scheduler.start()
 
         # Perform startup tasks only on first connection (not on reconnects)
+        # Set flag BEFORE async operation to prevent race condition if on_ready fires twice
         if not self._startup_complete:
-            await self._perform_startup_tasks()
             self._startup_complete = True
+            await self._perform_startup_tasks()
 
     async def _perform_startup_tasks(self) -> None:
         """Perform startup tasks after bot connects to Discord.

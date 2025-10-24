@@ -10,6 +10,7 @@ import asyncio
 import logging
 from collections.abc import Mapping
 from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 from typing import Final, NotRequired, ReadOnly, TypedDict, cast
 
 import httpx
@@ -212,13 +213,29 @@ class TautulliClient:
         if not 1 <= days <= 365:
             raise ValueError(f"days must be between 1 and 365, got {days}")
 
+        # Calculate date range for filtering
+        # Tautulli API accepts "after" parameter in "YYYY-MM-DD" format
+        end_date = datetime.now(tz=UTC)
+        start_date = end_date - timedelta(days=days)
+        after_date_str = start_date.strftime("%Y-%m-%d")
+
         params = {
             "cmd": "get_history",
             "apikey": self.api_key,
             "length": length,
             "order_column": "date",
             "order_dir": "desc",
+            "after": after_date_str,  # Filter history to last N days
         }
+
+        logger.info(
+            f"Fetching history for last {days} days (after {after_date_str})",
+            extra={
+                "days": days,
+                "after_date": after_date_str,
+                "length": length,
+            },
+        )
 
         try:
             response_data = await self._make_request(params)
@@ -272,6 +289,12 @@ class TautulliClient:
         if not username or not username.strip():
             raise ValueError("username cannot be empty")
 
+        # Calculate date range for filtering
+        # Tautulli API accepts "after" parameter in "YYYY-MM-DD" format
+        end_date = datetime.now(tz=UTC)
+        start_date = end_date - timedelta(days=days)
+        after_date_str = start_date.strftime("%Y-%m-%d")
+
         params = {
             "cmd": "get_history",
             "apikey": self.api_key,
@@ -279,7 +302,18 @@ class TautulliClient:
             "length": length,
             "order_column": "date",
             "order_dir": "desc",
+            "after": after_date_str,  # Filter history to last N days
         }
+
+        logger.info(
+            f"Fetching user history for '{username}' for last {days} days (after {after_date_str})",
+            extra={
+                "username": username,
+                "days": days,
+                "after_date": after_date_str,
+                "length": length,
+            },
+        )
 
         try:
             response_data = await self._make_request(params)
@@ -421,10 +455,43 @@ class TautulliClient:
                             url=url_for_logging,
                         )
 
+                    # Cast to dict[str, object] after isinstance validation
+                    # We've validated this is a dict, and API responses use string keys
+                    validated_data = cast(dict[str, object], raw_data)
+
                     logger.debug(
                         "Tautulli API request successful",
-                        extra={"url": url_for_logging, "status_code": response.status_code},
+                        extra={
+                            "url": url_for_logging,
+                            "status_code": response.status_code,
+                            "response_keys": list(validated_data.keys()),
+                        },
                     )
+
+                    # Log response data summary for debugging
+                    if "response" in validated_data and isinstance(
+                        validated_data["response"], dict
+                    ):
+                        # Cast after isinstance check - we've validated structure
+                        resp_section = cast(dict[str, object], validated_data["response"])
+                        if "data" in resp_section and isinstance(
+                            resp_section["data"], dict
+                        ):
+                            # Cast after isinstance check - we've validated structure
+                            data_section = cast(dict[str, object], resp_section["data"])
+                            if "data" in data_section and isinstance(
+                                data_section["data"], list
+                            ):
+                                # Cast after isinstance check - we've validated structure
+                                data_list = cast(list[object], data_section["data"])
+                                record_count = len(data_list)
+                                logger.info(
+                                    f"Tautulli API returned {record_count} record(s)",
+                                    extra={
+                                        "record_count": record_count,
+                                        "url": url_for_logging,
+                                    },
+                                )
 
                     # Cast to TautulliAPIResponse after validation
                     # We've validated the structure, so this cast is safe
@@ -434,7 +501,11 @@ class TautulliClient:
                 error_msg = f"Request timeout after {self.timeout}s"
                 logger.warning(
                     error_msg,
-                    extra={"url": url_for_logging, "attempt": attempt + 1, "timeout": self.timeout},
+                    extra={
+                        "url": url_for_logging,
+                        "attempt": attempt + 1,
+                        "timeout": self.timeout,
+                    },
                 )
 
                 # Retry timeouts if we have attempts left
@@ -473,7 +544,9 @@ class TautulliClient:
                 raise
 
         # Should never reach here, but just in case
-        raise TautulliAPIError("Unexpected error: max retries reached", url=url_for_logging)
+        raise TautulliAPIError(
+            "Unexpected error: max retries reached", url=url_for_logging
+        )
 
     def _extract_history_records(
         self,
@@ -521,14 +594,20 @@ class TautulliClient:
 
             # Validate required fields in each record
             validated_records: list[dict[str, object]] = []
-            required_fields = {
+
+            # Core fields required for all media types
+            core_required_fields = {
                 "date",
                 "media_type",
-                "stream_type",
                 "transcode_decision",
                 "platform",
                 "player",
                 "user",
+            }
+
+            # Video-specific fields (will use defaults for audio/other media)
+            video_fields = {
+                "stream_type",
                 "stream_video_resolution",
                 "stream_video_full_resolution",
             }
@@ -543,15 +622,26 @@ class TautulliClient:
                     )
                     continue
 
-                missing_fields = required_fields - raw_record.keys()
-                if missing_fields:
+                # Check core required fields
+                missing_core_fields = core_required_fields - raw_record.keys()
+                if missing_core_fields:
                     logger.warning(
-                        f"Skipping record at index {i}: missing fields {missing_fields}",
+                        f"Skipping record at index {i}: missing core fields {missing_core_fields}",
                         extra={"record_keys": list(raw_record.keys())},
                     )
                     continue
 
-                validated_records.append(raw_record)
+                # Add default values for missing video fields (for audio/other media types)
+                record = dict(raw_record)
+                for field in video_fields:
+                    if field not in record:
+                        # Provide sensible defaults for audio streams
+                        if field == "stream_type":
+                            record[field] = "unknown"
+                        else:  # resolution fields
+                            record[field] = "N/A"
+
+                validated_records.append(record)
 
             logger.info(
                 f"Extracted {len(validated_records)} valid records from Tautulli API",
