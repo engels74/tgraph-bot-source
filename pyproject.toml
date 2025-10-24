@@ -55,6 +55,8 @@ dev = [
     "pytest-cov>=4.1.0",
     "ruff>=0.1.0",
     "basedpyright>=1.0.0",
+    "types-pyyaml>=6.0.12.20250915",
+    "pyyaml>=6.0.3",
 ]
 
 [tool.pytest.ini_options]
