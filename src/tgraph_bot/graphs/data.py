@@ -145,6 +145,28 @@ def create_stream_record(tautulli_record: Mapping[str, object]) -> StreamRecord:
     )
 
 
+def transform_tautulli_records(
+    tautulli_records: Sequence[Mapping[str, object]],
+) -> list[StreamRecord]:
+    """Transform a sequence of Tautulli API records into StreamRecord objects.
+
+    This function batch-processes raw Tautulli API responses into normalized,
+    type-safe StreamRecord objects. It applies all transformations from
+    create_stream_record to each record in the sequence.
+
+    Args:
+        tautulli_records: Sequence of raw Tautulli API response dictionaries
+
+    Returns:
+        List of immutable StreamRecord instances with normalized data
+
+    Requirements:
+        - 13.1: Transform Tautulli responses to typed records
+        - 13.2: Normalize data for consistent processing
+    """
+    return [create_stream_record(record) for record in tautulli_records]
+
+
 def aggregate_by_date(
     records: Sequence[StreamRecord],
 ) -> AggregationResult[date]:

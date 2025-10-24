@@ -198,7 +198,7 @@
   - Implement command registration and error handling
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 19.2, 19.4_
 
-- [ ] 23. Implement Discord slash commands
+- [x] 23. Implement Discord slash commands
   - Implement /update-graphs command with rate limiting check
   - Add ephemeral message for processing status
   - Implement graph generation orchestration using TaskGroup
