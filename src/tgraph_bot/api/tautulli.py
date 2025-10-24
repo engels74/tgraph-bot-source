@@ -140,7 +140,26 @@ class TautulliClient:
         # Build query string
         query_parts: list[str] = []
         for key, value in params.items():
-            # Don't log the API key
+            query_parts.append(f"{key}={value}")
+
+        query_string = "&".join(query_parts)
+        return f"{base}/api/v2?{query_string}"
+
+    def _build_url_for_logging(self, params: QueryParams) -> str:
+        """Build API URL with masked API key for logging purposes.
+
+        Args:
+            params: Query parameters to include in the URL
+
+        Returns:
+            Full URL with API key masked as ****
+        """
+        # Remove trailing slash from base_url if present
+        base = self.base_url.rstrip("/")
+
+        # Build query string with masked API key
+        query_parts: list[str] = []
+        for key, value in params.items():
             if key == "apikey":
                 query_parts.append(f"{key}=****")
             else:
@@ -215,7 +234,7 @@ class TautulliClient:
             )
             raise TautulliAPIError(
                 f"Failed to retrieve history: {e}",
-                url=self.build_url(params),
+                url=self._build_url_for_logging(params),
             ) from e
 
     async def get_user_history(
@@ -276,7 +295,7 @@ class TautulliClient:
             )
             raise TautulliAPIError(
                 f"Failed to retrieve user history: {e}",
-                url=self.build_url(params),
+                url=self._build_url_for_logging(params),
             ) from e
 
     async def _make_request(
@@ -303,6 +322,7 @@ class TautulliClient:
             - 2.5: Validate responses
         """
         url = self.build_url(params)
+        url_for_logging = self._build_url_for_logging(params)
         retry_delay = INITIAL_RETRY_DELAY
 
         for attempt in range(MAX_RETRIES):
@@ -310,7 +330,7 @@ class TautulliClient:
                 async with httpx.AsyncClient(timeout=self.timeout) as client:
                     logger.debug(
                         f"Tautulli API request (attempt {attempt + 1}/{MAX_RETRIES})",
-                        extra={"url": url, "cmd": params.get("cmd")},
+                        extra={"url": url_for_logging, "cmd": params.get("cmd")},
                     )
 
                     response = await client.get(url)
@@ -325,7 +345,7 @@ class TautulliClient:
                             error_msg,
                             extra={
                                 "status_code": response.status_code,
-                                "url": url,
+                                "url": url_for_logging,
                                 "attempt": attempt + 1,
                             },
                         )
@@ -335,7 +355,7 @@ class TautulliClient:
                             raise TautulliAPIError(
                                 error_msg,
                                 status_code=response.status_code,
-                                url=url,
+                                url=url_for_logging,
                             )
 
                         # Retry server errors (5xx) if we have attempts left
@@ -348,7 +368,7 @@ class TautulliClient:
                         raise TautulliAPIError(
                             f"Max retries reached: {error_msg}",
                             status_code=response.status_code,
-                            url=url,
+                            url=url_for_logging,
                         )
 
                     # Parse JSON response
@@ -358,7 +378,7 @@ class TautulliClient:
                         raise TautulliAPIError(
                             f"Failed to parse JSON response: {e}",
                             status_code=response.status_code,
-                            url=url,
+                            url=url_for_logging,
                         ) from e
 
                     # Validate response structure with type narrowing
@@ -366,7 +386,7 @@ class TautulliClient:
                         raise TautulliAPIError(
                             f"Invalid response structure: expected dict, got {type(raw_data).__name__}",
                             status_code=response.status_code,
-                            url=url,
+                            url=url_for_logging,
                         )
 
                     # Check for required 'response' key
@@ -374,7 +394,7 @@ class TautulliClient:
                         raise TautulliAPIError(
                             "Invalid response structure: missing 'response' key",
                             status_code=response.status_code,
-                            url=url,
+                            url=url_for_logging,
                         )
 
                     # Validate response section is a dict
@@ -383,7 +403,7 @@ class TautulliClient:
                         raise TautulliAPIError(
                             "Invalid response structure: 'response' is not a dict",
                             status_code=response.status_code,
-                            url=url,
+                            url=url_for_logging,
                         )
 
                     # Check for Tautulli-specific error in response
@@ -398,12 +418,12 @@ class TautulliClient:
                         raise TautulliAPIError(
                             f"Tautulli API error: {error_msg}",
                             status_code=response.status_code,
-                            url=url,
+                            url=url_for_logging,
                         )
 
                     logger.debug(
                         "Tautulli API request successful",
-                        extra={"url": url, "status_code": response.status_code},
+                        extra={"url": url_for_logging, "status_code": response.status_code},
                     )
 
                     # Cast to TautulliAPIResponse after validation
@@ -414,7 +434,7 @@ class TautulliClient:
                 error_msg = f"Request timeout after {self.timeout}s"
                 logger.warning(
                     error_msg,
-                    extra={"url": url, "attempt": attempt + 1, "timeout": self.timeout},
+                    extra={"url": url_for_logging, "attempt": attempt + 1, "timeout": self.timeout},
                 )
 
                 # Retry timeouts if we have attempts left
@@ -426,14 +446,14 @@ class TautulliClient:
                 # Max retries reached
                 raise TautulliAPIError(
                     f"Max retries reached: {error_msg}",
-                    url=url,
+                    url=url_for_logging,
                 ) from e
 
             except httpx.HTTPError as e:
                 error_msg = f"HTTP error: {e}"
                 logger.warning(
                     error_msg,
-                    extra={"url": url, "attempt": attempt + 1},
+                    extra={"url": url_for_logging, "attempt": attempt + 1},
                 )
 
                 # Retry network errors if we have attempts left
@@ -445,7 +465,7 @@ class TautulliClient:
                 # Max retries reached
                 raise TautulliAPIError(
                     f"Max retries reached: {error_msg}",
-                    url=url,
+                    url=url_for_logging,
                 ) from e
 
             except TautulliAPIError:
@@ -453,7 +473,7 @@ class TautulliClient:
                 raise
 
         # Should never reach here, but just in case
-        raise TautulliAPIError("Unexpected error: max retries reached", url=url)
+        raise TautulliAPIError("Unexpected error: max retries reached", url=url_for_logging)
 
     def _extract_history_records(
         self,
