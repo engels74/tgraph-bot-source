@@ -96,6 +96,9 @@ class TGraphBot(commands.Bot):
         self._max_reconnect_attempts: int = 5
         self._reconnect_delay_base: float = 2.0  # Base delay in seconds
 
+        # Startup task tracking
+        self._startup_complete: bool = False
+
         logger.info(
             "TGraph Bot initialized",
             extra={
@@ -109,6 +112,9 @@ class TGraphBot(commands.Bot):
         """Event handler called when bot successfully connects to Discord.
 
         Logs connection status with timestamp and starts scheduled tasks if enabled.
+        On first connection, performs startup tasks:
+        - Cleans up old bot messages in the configured channel
+        - Generates and posts initial graphs
 
         Requirements: 1.4, 1.5
         """
@@ -132,6 +138,159 @@ class TGraphBot(commands.Bot):
         if self.config.automation.enabled:
             logger.info("Starting automated graph update scheduler")
             await self.scheduler.start()
+
+        # Perform startup tasks only on first connection (not on reconnects)
+        if not self._startup_complete:
+            await self._perform_startup_tasks()
+            self._startup_complete = True
+
+    async def _perform_startup_tasks(self) -> None:
+        """Perform startup tasks after bot connects to Discord.
+
+        This method:
+        1. Cleans up old bot messages in the configured channel
+        2. Generates and posts initial graphs
+
+        Errors are logged but do not prevent bot startup.
+        """
+        _ = log_operation_start(logger, "startup_tasks")
+
+        try:
+            # Get the configured channel
+            channel_id = self.config.services.discord.channel_id
+            channel = self.get_channel(channel_id)
+
+            if channel is None:
+                logger.error(
+                    f"Configured channel {channel_id} not found. Skipping startup tasks.",
+                    extra={"channel_id": channel_id},
+                )
+                return
+
+            # Verify channel is a text channel
+            if not isinstance(channel, nextcord.TextChannel):
+                logger.error(
+                    f"Configured channel {channel_id} is not a text channel. Skipping startup tasks.",
+                    extra={
+                        "channel_id": channel_id,
+                        "channel_type": type(channel).__name__,
+                    },
+                )
+                return
+
+            # Task 1: Clean up old bot messages
+            await self._cleanup_bot_messages(channel)
+
+            # Task 2: Generate and post initial graphs
+            await self._post_initial_graphs()
+
+            _ = log_operation_complete(logger, "startup_tasks")
+
+        except Exception:
+            logger.error(
+                "Error during startup tasks. Bot will continue running.",
+                exc_info=True,
+            )
+
+    async def _cleanup_bot_messages(self, channel: nextcord.TextChannel) -> None:
+        """Delete all messages posted by this bot in the specified channel.
+
+        Args:
+            channel: The Discord text channel to clean up
+
+        Uses nextcord's purge() method with a check function to filter
+        only messages authored by the bot.
+        """
+        _ = log_operation_start(logger, "cleanup_bot_messages")
+
+        try:
+            if self.user is None:
+                logger.error("Cannot cleanup messages: bot user is None")
+                return
+
+            # Define check function to filter bot's own messages
+            def is_bot_message(message: nextcord.Message) -> bool:
+                return message.author == self.user
+
+            # Purge bot messages (limit=None means check all messages)
+            # bulk=False allows deletion without manage_messages permission
+            deleted = await channel.purge(
+                limit=None,
+                check=is_bot_message,
+                bulk=False,
+            )
+
+            logger.info(
+                f"Cleaned up {len(deleted)} bot message(s) from channel",
+                extra={
+                    "channel_id": channel.id,
+                    "deleted_count": len(deleted),
+                },
+            )
+
+            _ = log_operation_complete(logger, "cleanup_bot_messages")
+
+        except nextcord.Forbidden:
+            logger.error(
+                "Missing permissions to delete messages in channel",
+                extra={"channel_id": channel.id},
+            )
+        except nextcord.HTTPException as e:
+            logger.error(
+                f"HTTP error while cleaning up messages: {e}",
+                extra={"channel_id": channel.id},
+                exc_info=True,
+            )
+        except Exception:
+            logger.error(
+                "Unexpected error during message cleanup",
+                extra={"channel_id": channel.id},
+                exc_info=True,
+            )
+
+    async def _post_initial_graphs(self) -> None:
+        """Generate and post initial graphs to the configured channel.
+
+        Calls the GraphCommands cog's _generate_and_post_graphs method
+        to reuse existing graph generation and posting logic.
+        """
+        _ = log_operation_start(logger, "post_initial_graphs")
+
+        try:
+            # Get the GraphCommands cog without importing to avoid circular dependency
+            # Use duck typing to check for the required method
+            graph_commands_cog = self.get_cog("GraphCommands")
+
+            if graph_commands_cog is None:
+                logger.error(
+                    "GraphCommands cog not loaded. Skipping initial graph posting."
+                )
+                return
+
+            # Check if the cog has the required method using duck typing
+            if not hasattr(graph_commands_cog, "_generate_and_post_graphs"):
+                logger.error(
+                    "GraphCommands cog does not have _generate_and_post_graphs method. Skipping initial graph posting."
+                )
+                return
+
+            # Generate and post graphs (no username filter = all graphs)
+            # Intentional access to protected method for code reuse within same package
+            # Type is unknown due to duck typing to avoid circular import
+            metadata_list = await graph_commands_cog._generate_and_post_graphs()  # pyright: ignore[reportAttributeAccessIssue, reportUnknownVariableType, reportUnknownMemberType]
+
+            logger.info(
+                f"Posted {len(metadata_list)} initial graph(s)",  # pyright: ignore[reportUnknownArgumentType]
+                extra={"graph_count": len(metadata_list)},  # pyright: ignore[reportUnknownArgumentType]
+            )
+
+            _ = log_operation_complete(logger, "post_initial_graphs")
+
+        except Exception:
+            logger.error(
+                "Error posting initial graphs. Bot will continue running.",
+                exc_info=True,
+            )
 
     async def on_disconnect(self) -> None:
         """Event handler called when bot loses connection to Discord.

@@ -1,6 +1,8 @@
-"""Tests for TGraphBot configuration reload system.
+"""Tests for TGraphBot configuration reload system and startup behavior.
 
-This test suite validates the configuration reload functionality including:
+This test suite validates:
+
+**Configuration Reload:**
 - Reloading configuration from file
 - Reloading configuration from BotConfig object
 - Configuration validation before applying
@@ -9,7 +11,16 @@ This test suite validates the configuration reload functionality including:
 - Comprehensive logging for reload events
 - Graceful handling of reload failures
 
-Requirements tested: 3.4, 15.1, 15.5
+**Bot Startup Behavior:**
+- Startup task orchestration (_perform_startup_tasks)
+- Message cleanup in configured channel (_cleanup_bot_messages)
+- Initial graph generation and posting (_post_initial_graphs)
+- on_ready event handler integration
+- Startup tasks run only once (not on reconnects)
+- Scheduler startup when automation is enabled
+- Error handling and graceful degradation
+
+Requirements tested: 1.4, 1.5, 3.4, 15.1, 15.5
 
 NOTE: These tests are currently skipped due to Python 3.14 compatibility issues
 with nextcord (missing audioop module). The implementation has been completed
@@ -21,8 +32,9 @@ and will be tested once nextcord is updated for Python 3.14 compatibility.
 from __future__ import annotations
 
 import tempfile
-from unittest.mock import patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
+import nextcord
 import pytest
 
 from tgraph_bot.bot import TGraphBot
@@ -355,3 +367,521 @@ class TestReloadConfigurationErrorHandling:
         assert bot.rate_limiter is original_rate_limiter
         # Verify cooldown is still there
         assert bot.rate_limiter.check_cooldown("update_graphs", user_id=123) is not None
+
+
+# ============================================================================
+# Bot Startup Behavior Tests
+# ============================================================================
+
+
+@pytest.fixture
+def mock_text_channel() -> MagicMock:
+    """Fixture providing a mocked Discord TextChannel."""
+    channel = MagicMock(spec=nextcord.TextChannel)
+    channel.id = 1142458469027434597
+    channel.purge = AsyncMock(return_value=[])
+    return channel
+
+
+@pytest.fixture
+def mock_bot_user() -> MagicMock:
+    """Fixture providing a mocked Discord bot user."""
+    user = MagicMock(spec=nextcord.User)
+    user.id = 987654321
+    user.name = "TGraphBot"
+    return user
+
+
+@pytest.fixture
+def mock_graph_commands_cog() -> MagicMock:
+    """Fixture providing a mocked GraphCommands cog."""
+    from tgraph_bot.commands.graph_commands import GraphCommands
+
+    cog = MagicMock(spec=GraphCommands)
+    cog._generate_and_post_graphs = AsyncMock(return_value=[])
+    return cog
+
+
+class TestPerformStartupTasks:
+    """Tests for _perform_startup_tasks() method.
+
+    Requirements tested: Startup task orchestration, error handling
+    """
+
+    @pytest.mark.asyncio
+    async def test_successful_startup_tasks_execution(
+        self,
+        minimal_config: BotConfig,
+        mock_text_channel: MagicMock,
+        mock_bot_user: MagicMock,
+    ) -> None:
+        """Test successful execution of both cleanup and graph posting."""
+        bot = TGraphBot(minimal_config)
+
+        # Mock bot.user property and get_channel method
+        with patch.object(type(bot), "user", new=mock_bot_user):
+            bot.get_channel = MagicMock(return_value=mock_text_channel)
+
+            # Mock the cleanup and posting methods
+            bot._cleanup_bot_messages = AsyncMock()
+            bot._post_initial_graphs = AsyncMock()
+
+            # Execute startup tasks
+            await bot._perform_startup_tasks()
+
+            # Verify both methods were called
+            bot._cleanup_bot_messages.assert_called_once_with(mock_text_channel)
+            bot._post_initial_graphs.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_startup_tasks_when_channel_not_found(
+        self, minimal_config: BotConfig, mock_bot_user: MagicMock
+    ) -> None:
+        """Test handling when configured channel is not found."""
+        bot = TGraphBot(minimal_config)
+
+        # Mock bot.user property and get_channel to return None
+        with patch.object(type(bot), "user", new=mock_bot_user):
+            bot.get_channel = MagicMock(return_value=None)
+
+            # Mock the cleanup and posting methods
+            bot._cleanup_bot_messages = AsyncMock()
+            bot._post_initial_graphs = AsyncMock()
+
+            # Execute startup tasks (should return early)
+            await bot._perform_startup_tasks()
+
+            # Verify cleanup and posting were NOT called
+            bot._cleanup_bot_messages.assert_not_called()
+            bot._post_initial_graphs.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_startup_tasks_when_channel_not_text_channel(
+        self, minimal_config: BotConfig, mock_bot_user: MagicMock
+    ) -> None:
+        """Test handling when configured channel is not a TextChannel."""
+        bot = TGraphBot(minimal_config)
+
+        # Mock bot.user property
+        with patch.object(type(bot), "user", new=mock_bot_user):
+            # Mock get_channel to return a VoiceChannel instead
+            voice_channel = MagicMock(spec=nextcord.VoiceChannel)
+            bot.get_channel = MagicMock(return_value=voice_channel)
+
+            # Mock the cleanup and posting methods
+            bot._cleanup_bot_messages = AsyncMock()
+            bot._post_initial_graphs = AsyncMock()
+
+            # Execute startup tasks (should return early)
+            await bot._perform_startup_tasks()
+
+            # Verify cleanup and posting were NOT called
+            bot._cleanup_bot_messages.assert_not_called()
+            bot._post_initial_graphs.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_startup_tasks_error_handling_continues_bot_operation(
+        self,
+        minimal_config: BotConfig,
+        mock_text_channel: MagicMock,
+        mock_bot_user: MagicMock,
+    ) -> None:
+        """Test that errors during startup tasks don't prevent bot startup."""
+        bot = TGraphBot(minimal_config)
+
+        # Mock bot.user property
+        with patch.object(type(bot), "user", new=mock_bot_user):
+            bot.get_channel = MagicMock(return_value=mock_text_channel)
+
+            # Mock cleanup to raise an exception
+            bot._cleanup_bot_messages = AsyncMock(
+                side_effect=RuntimeError("Cleanup failed")
+            )
+            bot._post_initial_graphs = AsyncMock()
+
+            # Execute startup tasks (should not raise exception)
+            await bot._perform_startup_tasks()
+
+            # Verify cleanup was called (and failed)
+            bot._cleanup_bot_messages.assert_called_once()
+            # Verify posting was NOT called (because cleanup raised exception)
+            bot._post_initial_graphs.assert_not_called()
+
+
+class TestCleanupBotMessages:
+    """Tests for _cleanup_bot_messages() method.
+
+    Requirements tested: Message cleanup, permission handling, error handling
+    """
+
+    @pytest.mark.asyncio
+    async def test_successful_message_cleanup(
+        self,
+        minimal_config: BotConfig,
+        mock_text_channel: MagicMock,
+        mock_bot_user: MagicMock,
+    ) -> None:
+        """Test successful deletion of bot messages with correct count."""
+        bot = TGraphBot(minimal_config)
+
+        # Create mock messages (3 bot messages, 2 user messages)
+        mock_messages = [
+            MagicMock(author=mock_bot_user),
+            MagicMock(author=mock_bot_user),
+            MagicMock(author=mock_bot_user),
+        ]
+
+        # Mock purge to return the deleted messages
+        mock_text_channel.purge = AsyncMock(return_value=mock_messages)
+
+        # Mock bot.user property
+        with patch.object(type(bot), "user", new=mock_bot_user):
+            # Execute cleanup
+            await bot._cleanup_bot_messages(mock_text_channel)
+
+            # Verify purge was called with correct parameters
+            mock_text_channel.purge.assert_called_once()
+            call_kwargs = mock_text_channel.purge.call_args.kwargs
+
+            assert call_kwargs["limit"] is None
+            assert call_kwargs["bulk"] is False
+            assert "check" in call_kwargs
+
+            # Verify the check function filters correctly
+            check_func = call_kwargs["check"]
+            bot_message = MagicMock(author=mock_bot_user)
+            user_message = MagicMock(author=MagicMock(id=999))
+
+            assert check_func(bot_message) is True
+            assert check_func(user_message) is False
+
+    @pytest.mark.asyncio
+    async def test_cleanup_handles_forbidden_exception(
+        self,
+        minimal_config: BotConfig,
+        mock_text_channel: MagicMock,
+        mock_bot_user: MagicMock,
+    ) -> None:
+        """Test handling of Forbidden exception (missing permissions)."""
+        bot = TGraphBot(minimal_config)
+
+        # Mock purge to raise Forbidden exception
+        mock_text_channel.purge = AsyncMock(
+            side_effect=nextcord.Forbidden(
+                response=MagicMock(), message="Missing Permissions"
+            )
+        )
+
+        # Mock bot.user property
+        with patch.object(type(bot), "user", new=mock_bot_user):
+            # Execute cleanup (should not raise exception)
+            await bot._cleanup_bot_messages(mock_text_channel)
+
+            # Verify purge was called
+            mock_text_channel.purge.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_cleanup_handles_http_exception(
+        self,
+        minimal_config: BotConfig,
+        mock_text_channel: MagicMock,
+        mock_bot_user: MagicMock,
+    ) -> None:
+        """Test handling of HTTPException."""
+        bot = TGraphBot(minimal_config)
+
+        # Mock purge to raise HTTPException
+        mock_text_channel.purge = AsyncMock(
+            side_effect=nextcord.HTTPException(
+                response=MagicMock(), message="Rate limited"
+            )
+        )
+
+        # Mock bot.user property
+        with patch.object(type(bot), "user", new=mock_bot_user):
+            # Execute cleanup (should not raise exception)
+            await bot._cleanup_bot_messages(mock_text_channel)
+
+            # Verify purge was called
+            mock_text_channel.purge.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_cleanup_handles_generic_exception(
+        self,
+        minimal_config: BotConfig,
+        mock_text_channel: MagicMock,
+        mock_bot_user: MagicMock,
+    ) -> None:
+        """Test handling of generic exceptions."""
+        bot = TGraphBot(minimal_config)
+
+        # Mock purge to raise generic exception
+        mock_text_channel.purge = AsyncMock(
+            side_effect=RuntimeError("Unexpected error")
+        )
+
+        # Mock bot.user property
+        with patch.object(type(bot), "user", new=mock_bot_user):
+            # Execute cleanup (should not raise exception)
+            await bot._cleanup_bot_messages(mock_text_channel)
+
+            # Verify purge was called
+            mock_text_channel.purge.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_cleanup_when_bot_user_is_none(
+        self, minimal_config: BotConfig, mock_text_channel: MagicMock
+    ) -> None:
+        """Test cleanup returns early when bot.user is None."""
+        bot = TGraphBot(minimal_config)
+
+        # Mock bot.user to be None
+        with patch.object(type(bot), "user", new=None):
+            # Execute cleanup
+            await bot._cleanup_bot_messages(mock_text_channel)
+
+            # Verify purge was NOT called
+            mock_text_channel.purge.assert_not_called()
+
+
+class TestPostInitialGraphs:
+    """Tests for _post_initial_graphs() method.
+
+    Requirements tested: Graph generation, cog integration, error handling
+    """
+
+    @pytest.mark.asyncio
+    async def test_successful_graph_posting(
+        self, minimal_config: BotConfig, mock_graph_commands_cog: MagicMock
+    ) -> None:
+        """Test successful graph generation and posting."""
+        bot = TGraphBot(minimal_config)
+
+        # Create mock metadata list
+        mock_metadata = [
+            MagicMock(graph_type="daily_play_count"),
+            MagicMock(graph_type="top_users"),
+        ]
+        mock_graph_commands_cog._generate_and_post_graphs.return_value = mock_metadata
+
+        # Mock get_cog to return our mock cog
+        bot.get_cog = MagicMock(return_value=mock_graph_commands_cog)
+
+        # Execute graph posting
+        await bot._post_initial_graphs()
+
+        # Verify get_cog was called
+        bot.get_cog.assert_called_once_with("GraphCommands")
+
+        # Verify _generate_and_post_graphs was called
+        mock_graph_commands_cog._generate_and_post_graphs.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_graph_posting_when_cog_not_loaded(
+        self, minimal_config: BotConfig
+    ) -> None:
+        """Test handling when GraphCommands cog is not loaded."""
+        bot = TGraphBot(minimal_config)
+
+        # Mock get_cog to return None (cog not loaded)
+        bot.get_cog = MagicMock(return_value=None)
+
+        # Execute graph posting (should return early)
+        await bot._post_initial_graphs()
+
+        # Verify get_cog was called
+        bot.get_cog.assert_called_once_with("GraphCommands")
+
+    @pytest.mark.asyncio
+    async def test_graph_posting_when_cog_wrong_type(
+        self, minimal_config: BotConfig
+    ) -> None:
+        """Test handling when get_cog returns wrong type."""
+        bot = TGraphBot(minimal_config)
+
+        # Mock get_cog to return a different cog type
+        wrong_cog = MagicMock()
+        bot.get_cog = MagicMock(return_value=wrong_cog)
+
+        # Execute graph posting (should return early)
+        await bot._post_initial_graphs()
+
+        # Verify get_cog was called
+        bot.get_cog.assert_called_once_with("GraphCommands")
+
+    @pytest.mark.asyncio
+    async def test_graph_posting_handles_exceptions(
+        self, minimal_config: BotConfig, mock_graph_commands_cog: MagicMock
+    ) -> None:
+        """Test error handling when graph generation fails."""
+        bot = TGraphBot(minimal_config)
+
+        # Mock _generate_and_post_graphs to raise exception
+        mock_graph_commands_cog._generate_and_post_graphs.side_effect = RuntimeError(
+            "Graph generation failed"
+        )
+
+        # Mock get_cog to return our mock cog
+        bot.get_cog = MagicMock(return_value=mock_graph_commands_cog)
+
+        # Execute graph posting (should not raise exception)
+        await bot._post_initial_graphs()
+
+        # Verify _generate_and_post_graphs was called
+        mock_graph_commands_cog._generate_and_post_graphs.assert_called_once()
+
+
+class TestOnReadyEventHandler:
+    """Tests for on_ready() event handler.
+
+    Requirements tested: Startup task integration, reconnection handling, scheduler startup
+    """
+
+    @pytest.mark.asyncio
+    async def test_on_ready_runs_startup_tasks_on_first_connection(
+        self, minimal_config: BotConfig, mock_bot_user: MagicMock
+    ) -> None:
+        """Test that startup tasks run only on first connection."""
+        bot = TGraphBot(minimal_config)
+
+        # Mock bot.user property
+        with patch.object(type(bot), "user", new=mock_bot_user):
+            # Mock _perform_startup_tasks
+            bot._perform_startup_tasks = AsyncMock()
+
+            # Mock scheduler.start
+            bot.scheduler.start = AsyncMock()
+
+            # Verify _startup_complete is False initially
+            assert bot._startup_complete is False
+
+            # Call on_ready (first connection)
+            await bot.on_ready()
+
+            # Verify startup tasks were called
+            bot._perform_startup_tasks.assert_called_once()
+
+            # Verify _startup_complete is now True
+            assert bot._startup_complete is True
+
+    @pytest.mark.asyncio
+    async def test_on_ready_does_not_run_startup_tasks_on_reconnect(
+        self, minimal_config: BotConfig, mock_bot_user: MagicMock
+    ) -> None:
+        """Test that startup tasks do NOT run on reconnects."""
+        bot = TGraphBot(minimal_config)
+
+        # Mock bot.user property
+        with patch.object(type(bot), "user", new=mock_bot_user):
+            # Mock _perform_startup_tasks
+            bot._perform_startup_tasks = AsyncMock()
+
+            # Mock scheduler.start
+            bot.scheduler.start = AsyncMock()
+
+            # Simulate first connection
+            await bot.on_ready()
+            bot._perform_startup_tasks.assert_called_once()
+
+            # Reset mock
+            bot._perform_startup_tasks.reset_mock()
+
+            # Simulate reconnection
+            await bot.on_ready()
+
+            # Verify startup tasks were NOT called again
+            bot._perform_startup_tasks.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_on_ready_starts_scheduler_when_automation_enabled(
+        self, minimal_config: BotConfig, mock_bot_user: MagicMock
+    ) -> None:
+        """Test that scheduler starts when automation is enabled."""
+        # Ensure automation is enabled
+        minimal_config.automation.enabled = True
+        bot = TGraphBot(minimal_config)
+
+        # Mock bot.user property
+        with patch.object(type(bot), "user", new=mock_bot_user):
+            # Mock _perform_startup_tasks
+            bot._perform_startup_tasks = AsyncMock()
+
+            # Mock scheduler.start
+            bot.scheduler.start = AsyncMock()
+
+            # Call on_ready
+            await bot.on_ready()
+
+            # Verify scheduler.start was called
+            bot.scheduler.start.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_on_ready_does_not_start_scheduler_when_automation_disabled(
+        self, minimal_config: BotConfig, mock_bot_user: MagicMock
+    ) -> None:
+        """Test that scheduler does not start when automation is disabled."""
+        # Disable automation
+        minimal_config.automation.enabled = False
+        bot = TGraphBot(minimal_config)
+
+        # Mock bot.user property
+        with patch.object(type(bot), "user", new=mock_bot_user):
+            # Mock _perform_startup_tasks
+            bot._perform_startup_tasks = AsyncMock()
+
+            # Mock scheduler.start
+            bot.scheduler.start = AsyncMock()
+
+            # Call on_ready
+            await bot.on_ready()
+
+            # Verify scheduler.start was NOT called
+            bot.scheduler.start.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_on_ready_resets_reconnect_attempts_counter(
+        self, minimal_config: BotConfig, mock_bot_user: MagicMock
+    ) -> None:
+        """Test that reconnection attempts counter is reset on successful connection."""
+        bot = TGraphBot(minimal_config)
+
+        # Mock bot.user property
+        with patch.object(type(bot), "user", new=mock_bot_user):
+            # Mock _perform_startup_tasks
+            bot._perform_startup_tasks = AsyncMock()
+
+            # Mock scheduler.start
+            bot.scheduler.start = AsyncMock()
+
+            # Simulate some failed reconnection attempts
+            bot._reconnect_attempts = 3
+
+            # Call on_ready
+            await bot.on_ready()
+
+            # Verify reconnect attempts counter was reset
+            assert bot._reconnect_attempts == 0
+
+    @pytest.mark.asyncio
+    async def test_on_ready_returns_early_when_user_is_none(
+        self, minimal_config: BotConfig
+    ) -> None:
+        """Test that on_ready returns early when bot.user is None."""
+        bot = TGraphBot(minimal_config)
+
+        # Mock bot.user to be None
+        with patch.object(type(bot), "user", new=None):
+            # Mock _perform_startup_tasks
+            bot._perform_startup_tasks = AsyncMock()
+
+            # Mock scheduler.start
+            bot.scheduler.start = AsyncMock()
+
+            # Call on_ready
+            await bot.on_ready()
+
+            # Verify startup tasks were NOT called
+            bot._perform_startup_tasks.assert_not_called()
+
+            # Verify scheduler.start was NOT called
+            bot.scheduler.start.assert_not_called()
