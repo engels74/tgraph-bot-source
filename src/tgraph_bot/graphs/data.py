@@ -327,6 +327,230 @@ def aggregate_by_month(
     return dict(sorted(aggregation.items()))
 
 
+def aggregate_by_stream_type(
+    records: Sequence[StreamRecord],
+) -> AggregationResult[str]:
+    """Aggregate stream records by stream type.
+
+    Groups records by stream type (direct play, transcode, copy) and counts occurrences.
+    Results are sorted by count (descending).
+
+    Args:
+        records: Sequence of stream records to aggregate
+
+    Returns:
+        Dictionary mapping stream types to stream counts, sorted by count descending
+
+    Requirements:
+        - 16.1: Categorize streams by type (direct play, transcode, copy)
+    """
+    if not records:
+        return {}
+
+    aggregation: dict[str, int] = {}
+    for record in records:
+        stream_type = record.stream_type
+        aggregation[stream_type] = aggregation.get(stream_type, 0) + 1
+
+    # Sort by count descending
+    return dict(sorted(aggregation.items(), key=lambda x: x[1], reverse=True))
+
+
+def aggregate_by_date_and_stream_type(
+    records: Sequence[StreamRecord],
+) -> dict[date, dict[str, int]]:
+    """Aggregate stream records by date and stream type.
+
+    Groups records by calendar date and stream type, counting occurrences.
+    Results are sorted chronologically.
+
+    Args:
+        records: Sequence of stream records to aggregate
+
+    Returns:
+        Dictionary mapping dates to dictionaries of stream type counts
+
+    Requirements:
+        - 16.1: Categorize streams by type
+        - 16.2: Render separate visual elements for each stream type
+    """
+    if not records:
+        return {}
+
+    aggregation: dict[date, dict[str, int]] = {}
+    for record in records:
+        record_date = record.timestamp.date()
+        if record_date not in aggregation:
+            aggregation[record_date] = {}
+
+        stream_type = record.stream_type
+        aggregation[record_date][stream_type] = (
+            aggregation[record_date].get(stream_type, 0) + 1
+        )
+
+    # Return sorted by date
+    return dict(sorted(aggregation.items()))
+
+
+def group_resolution(resolution: str, *, grouping: str = "standard") -> str:
+    """Group resolution into categories.
+
+    Args:
+        resolution: Resolution string (e.g., "1920x1080", "1080p", "4K")
+        grouping: Grouping mode - "standard", "detailed", or "simplified"
+
+    Returns:
+        Grouped resolution category
+
+    Requirements:
+        - 17.2: Group resolutions into standard categories (4K, 1440p, 1080p, 720p, 480p, SD)
+        - 17.3: Display exact resolution values in detailed mode
+        - 17.4: Group into broad categories in simplified mode (SD, HD, FHD, UHD)
+    """
+    if grouping == "detailed":
+        # Return exact resolution
+        return resolution
+
+    # Parse resolution to determine category
+    resolution_lower = resolution.lower()
+
+    # Check for common resolution names
+    if "4k" in resolution_lower or "2160" in resolution_lower or "3840" in resolution_lower:
+        return "UHD" if grouping == "simplified" else "4K"
+    elif "1440" in resolution_lower or "2560" in resolution_lower:
+        return "FHD" if grouping == "simplified" else "1440p"
+    elif "1080" in resolution_lower or "1920" in resolution_lower:
+        return "FHD" if grouping == "simplified" else "1080p"
+    elif "720" in resolution_lower or "1280" in resolution_lower:
+        return "HD" if grouping == "simplified" else "720p"
+    elif "480" in resolution_lower or "640" in resolution_lower or "854" in resolution_lower:
+        return "SD" if grouping == "simplified" else "480p"
+    else:
+        return "SD"
+
+
+def aggregate_by_resolution(
+    records: Sequence[StreamRecord],
+    *,
+    resolution_field: str = "stream_resolution",
+    grouping: str = "standard",
+) -> AggregationResult[str]:
+    """Aggregate stream records by resolution.
+
+    Groups records by resolution and counts occurrences.
+    Results are sorted by count (descending).
+
+    Args:
+        records: Sequence of stream records to aggregate
+        resolution_field: Which resolution field to use ("stream_resolution" or "source_resolution")
+        grouping: Grouping mode - "standard", "detailed", or "simplified"
+
+    Returns:
+        Dictionary mapping resolutions to stream counts, sorted by count descending
+
+    Requirements:
+        - 17.1: Extract resolution data from stream records
+        - 17.2: Group resolutions based on grouping mode
+    """
+    if not records:
+        return {}
+
+    aggregation: dict[str, int] = {}
+    for record in records:
+        if resolution_field == "source_resolution":
+            resolution = record.source_resolution
+        else:
+            resolution = record.stream_resolution
+
+        grouped_resolution = group_resolution(resolution, grouping=grouping)
+        aggregation[grouped_resolution] = aggregation.get(grouped_resolution, 0) + 1
+
+    # Sort by count descending
+    return dict(sorted(aggregation.items(), key=lambda x: x[1], reverse=True))
+
+
+def aggregate_by_platform_and_stream_type(
+    records: Sequence[StreamRecord],
+) -> dict[str, dict[str, int]]:
+    """Aggregate stream records by platform and stream type.
+
+    Groups records by platform and stream type, counting occurrences.
+    Results are sorted by total count (descending).
+
+    Args:
+        records: Sequence of stream records to aggregate
+
+    Returns:
+        Dictionary mapping platforms to dictionaries of stream type counts
+
+    Requirements:
+        - 16.5: Support platform breakdown by stream type
+    """
+    if not records:
+        return {}
+
+    aggregation: dict[str, dict[str, int]] = {}
+    for record in records:
+        platform = record.platform
+        if platform not in aggregation:
+            aggregation[platform] = {}
+
+        stream_type = record.stream_type
+        aggregation[platform][stream_type] = (
+            aggregation[platform].get(stream_type, 0) + 1
+        )
+
+    # Sort by total count descending
+    return dict(
+        sorted(
+            aggregation.items(),
+            key=lambda x: sum(x[1].values()),
+            reverse=True,
+        )
+    )
+
+
+def aggregate_by_user_and_stream_type(
+    records: Sequence[StreamRecord],
+) -> dict[str, dict[str, int]]:
+    """Aggregate stream records by user and stream type.
+
+    Groups records by user and stream type, counting occurrences.
+    Results are sorted by total count (descending).
+
+    Args:
+        records: Sequence of stream records to aggregate
+
+    Returns:
+        Dictionary mapping users to dictionaries of stream type counts
+
+    Requirements:
+        - 16.5: Support user breakdown by stream type
+    """
+    if not records:
+        return {}
+
+    aggregation: dict[str, dict[str, int]] = {}
+    for record in records:
+        user = record.user
+        if user not in aggregation:
+            aggregation[user] = {}
+
+        stream_type = record.stream_type
+        aggregation[user][stream_type] = (
+            aggregation[user].get(stream_type, 0) + 1
+        )
+
+    # Sort by total count descending
+    return dict(
+        sorted(
+            aggregation.items(),
+            key=lambda x: sum(x[1].values()),
+            reverse=True,
+        )
+    )
+
+
 def anonymize_usernames(
     records: Sequence[StreamRecord],
 ) -> list[StreamRecord]:
