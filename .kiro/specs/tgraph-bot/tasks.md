@@ -286,7 +286,7 @@
   - Ensure PEP 695 syntax used throughout
   - _Requirements: 19.1, 19.2, 20.1, 20.2, 25.1, 25.2, 25.5, 28.1, 28.2, 28.3_
 
-- [ ] 32. Integration and end-to-end testing
+- [x] 32. Integration and end-to-end testing
   - Test complete startup sequence with valid configuration
   - Test Discord bot connection and command handling
   - Test scheduled graph generation and posting
