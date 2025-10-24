@@ -210,7 +210,7 @@
   - Handle message size limits by splitting large responses
   - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 9.1, 9.2, 9.3, 9.4, 9.5, 10.1, 10.2, 10.3, 10.4, 10.5, 22.1, 22.3, 27.1, 27.2_
 
-- [ ] 24. Write tests for Web UI API endpoints
+- [x] 24. Write tests for Web UI API endpoints
   - Write tests for GET /api/config endpoint
   - Write tests for POST /api/config with validation
   - Write tests for conflict detection (file modified externally)
