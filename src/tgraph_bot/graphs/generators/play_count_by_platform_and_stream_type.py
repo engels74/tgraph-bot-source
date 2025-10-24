@@ -166,23 +166,23 @@ class PlayCountByPlatformAndStreamTypeGraph:
                 )
 
         # Set labels and title
-        _ = ax.set_xlabel("Platform", fontsize=12)
-        _ = ax.set_ylabel("Play Count", fontsize=12)
-        
+        _ = ax.set_xlabel("Platform", fontsize=12)  # pyright: ignore[reportUnknownMemberType]  # matplotlib **kwargs
+        _ = ax.set_ylabel("Play Count", fontsize=12)  # pyright: ignore[reportUnknownMemberType]  # matplotlib **kwargs
+
         layout_type = "Stacked" if config.stacked else "Grouped"
-        _ = ax.set_title(
+        _ = ax.set_title(  # pyright: ignore[reportUnknownMemberType]  # matplotlib **kwargs
             f"Play Count by Platform and Stream Type ({layout_type})",
             fontsize=14,
             fontweight="bold",
         )
-        
-        _ = ax.set_xticks(x_pos)
-        _ = ax.set_xticklabels(platforms)
-        _ = ax.legend(title="Stream Type", loc="best")
+
+        _ = ax.set_xticks(x_pos)  # pyright: ignore[reportUnknownMemberType]  # matplotlib **kwargs
+        _ = ax.set_xticklabels(platforms)  # pyright: ignore[reportUnknownMemberType]  # matplotlib **kwargs
+        _ = ax.legend(title="Stream Type", loc="best")  # pyright: ignore[reportUnknownMemberType]  # matplotlib **kwargs
 
         # Apply grid if enabled
         if appearance.grid.enabled:
-            _ = ax.grid(True, alpha=appearance.grid.alpha, axis="y")
+            _ = ax.grid(True, alpha=appearance.grid.alpha, axis="y")  # pyright: ignore[reportUnknownMemberType]  # matplotlib **kwargs
 
         # Rotate x-axis labels for better readability
         _ = plt.setp(  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
@@ -192,7 +192,7 @@ class PlayCountByPlatformAndStreamTypeGraph:
         )
 
         # Tight layout to prevent label cutoff
-        _ = fig.tight_layout()  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
+        _ = fig.tight_layout()
 
         return fig
 

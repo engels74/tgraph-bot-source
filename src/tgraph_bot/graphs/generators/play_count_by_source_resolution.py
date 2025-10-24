@@ -138,16 +138,16 @@ class PlayCountBySourceResolutionGraph:
                 )
 
         # Set labels and title
-        _ = ax.set_xlabel("Source Resolution", fontsize=12)
-        _ = ax.set_ylabel("Play Count", fontsize=12)
-        
+        _ = ax.set_xlabel("Source Resolution", fontsize=12)  # pyright: ignore[reportUnknownMemberType]  # matplotlib **kwargs
+        _ = ax.set_ylabel("Play Count", fontsize=12)  # pyright: ignore[reportUnknownMemberType]  # matplotlib **kwargs
+
         title_suffix = {
             "standard": "(Standard Grouping)",
             "detailed": "(Detailed)",
             "simplified": "(Simplified)",
         }.get(resolution_grouping, "")
-        
-        _ = ax.set_title(
+
+        _ = ax.set_title(  # pyright: ignore[reportUnknownMemberType]  # matplotlib **kwargs
             f"Play Count by Source Resolution {title_suffix}",
             fontsize=14,
             fontweight="bold",
@@ -155,7 +155,7 @@ class PlayCountBySourceResolutionGraph:
 
         # Apply grid if enabled
         if appearance.grid.enabled:
-            _ = ax.grid(True, alpha=appearance.grid.alpha, axis="y")
+            _ = ax.grid(True, alpha=appearance.grid.alpha, axis="y")  # pyright: ignore[reportUnknownMemberType]  # matplotlib **kwargs
 
         # Rotate x-axis labels for better readability
         _ = plt.setp(  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
@@ -165,7 +165,7 @@ class PlayCountBySourceResolutionGraph:
         )
 
         # Tight layout to prevent label cutoff
-        _ = fig.tight_layout()  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
+        _ = fig.tight_layout()
 
         return fig
 

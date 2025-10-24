@@ -11,6 +11,7 @@ This test suite validates the graph generation system including:
 Requirements tested: 5.1, 5.2, 5.3, 5.5, 6.1, 6.2, 6.6, 6.7
 """
 
+from collections.abc import Generator
 from datetime import datetime, timezone
 from unittest.mock import MagicMock, Mock, patch
 
@@ -47,7 +48,7 @@ from tgraph_bot.graphs.styling import GraphStyling
 
 
 @pytest.fixture(autouse=True)
-def cleanup_matplotlib_figures() -> None:
+def cleanup_matplotlib_figures() -> Generator[None, None, None]:
     """Fixture to automatically close all matplotlib figures after each test.
 
     This prevents memory warnings from matplotlib when multiple figures are created

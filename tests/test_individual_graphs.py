@@ -11,6 +11,7 @@ This test suite validates individual graph generators including:
 Requirements tested: 5.5, 5.6, 18.1, 18.2, 18.3, 18.4, 18.5
 """
 
+from collections.abc import Generator
 from datetime import datetime, timezone
 
 import matplotlib.pyplot as plt
@@ -42,7 +43,7 @@ from tgraph_bot.graphs.generators import (
 
 
 @pytest.fixture(autouse=True)
-def cleanup_matplotlib_figures() -> None:
+def cleanup_matplotlib_figures() -> Generator[None, None, None]:
     """Fixture to automatically close all matplotlib figures after each test.
 
     This prevents memory warnings from matplotlib when multiple figures are created

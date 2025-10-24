@@ -141,9 +141,9 @@ class PlayCountByStreamResolutionGraph:
                 color="#e74c3c",  # Red (emphasis)
             )
 
-            _ = ax.set_xticks(x_pos)
-            _ = ax.set_xticklabels(all_resolutions)
-            _ = ax.legend(title="Stream Type", loc="best")
+            _ = ax.set_xticks(x_pos)  # pyright: ignore[reportUnknownMemberType]  # matplotlib **kwargs
+            _ = ax.set_xticklabels(all_resolutions)  # pyright: ignore[reportUnknownMemberType]  # matplotlib **kwargs
+            _ = ax.legend(title="Stream Type", loc="best")  # pyright: ignore[reportUnknownMemberType]  # matplotlib **kwargs
 
         else:
             # Standard aggregation without transcoding focus
@@ -205,18 +205,18 @@ class PlayCountByStreamResolutionGraph:
                     )
 
         # Set labels and title
-        _ = ax.set_xlabel("Stream Resolution", fontsize=12)
-        _ = ax.set_ylabel("Play Count", fontsize=12)
-        
+        _ = ax.set_xlabel("Stream Resolution", fontsize=12)  # pyright: ignore[reportUnknownMemberType]  # matplotlib **kwargs
+        _ = ax.set_ylabel("Play Count", fontsize=12)  # pyright: ignore[reportUnknownMemberType]  # matplotlib **kwargs
+
         title_suffix = {
             "standard": "(Standard Grouping)",
             "detailed": "(Detailed)",
             "simplified": "(Simplified)",
         }.get(resolution_grouping, "")
-        
+
         focus_suffix = " - Transcoding Focus" if transcoding_focus else ""
-        
-        _ = ax.set_title(
+
+        _ = ax.set_title(  # pyright: ignore[reportUnknownMemberType]  # matplotlib **kwargs
             f"Play Count by Stream Resolution {title_suffix}{focus_suffix}",
             fontsize=14,
             fontweight="bold",
@@ -224,7 +224,7 @@ class PlayCountByStreamResolutionGraph:
 
         # Apply grid if enabled
         if appearance.grid.enabled:
-            _ = ax.grid(True, alpha=appearance.grid.alpha, axis="y")
+            _ = ax.grid(True, alpha=appearance.grid.alpha, axis="y")  # pyright: ignore[reportUnknownMemberType]  # matplotlib **kwargs
 
         # Rotate x-axis labels for better readability
         _ = plt.setp(  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
@@ -234,7 +234,7 @@ class PlayCountByStreamResolutionGraph:
         )
 
         # Tight layout to prevent label cutoff
-        _ = fig.tight_layout()  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
+        _ = fig.tight_layout()
 
         return fig
 

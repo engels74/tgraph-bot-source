@@ -140,16 +140,16 @@ class DailyPlayCountByStreamTypeGraph:
             )
 
         # Set labels and title
-        _ = ax.set_xlabel("Date", fontsize=12)
-        _ = ax.set_ylabel("Play Count", fontsize=12)
-        _ = ax.set_title("Daily Play Count by Stream Type", fontsize=14, fontweight="bold")
-        
+        _ = ax.set_xlabel("Date", fontsize=12)  # pyright: ignore[reportUnknownMemberType]  # matplotlib **kwargs
+        _ = ax.set_ylabel("Play Count", fontsize=12)  # pyright: ignore[reportUnknownMemberType]  # matplotlib **kwargs
+        _ = ax.set_title("Daily Play Count by Stream Type", fontsize=14, fontweight="bold")  # pyright: ignore[reportUnknownMemberType]  # matplotlib **kwargs
+
         # Add legend
-        _ = ax.legend(title="Stream Type", loc="best")
+        _ = ax.legend(title="Stream Type", loc="best")  # pyright: ignore[reportUnknownMemberType]  # matplotlib **kwargs
 
         # Apply grid if enabled
         if appearance.grid.enabled:
-            _ = ax.grid(True, alpha=appearance.grid.alpha)
+            _ = ax.grid(True, alpha=appearance.grid.alpha)  # pyright: ignore[reportUnknownMemberType]  # matplotlib **kwargs
 
         # Rotate x-axis labels for better readability
         _ = plt.setp(  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
@@ -159,7 +159,7 @@ class DailyPlayCountByStreamTypeGraph:
         )
 
         # Tight layout to prevent label cutoff
-        _ = fig.tight_layout()  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
+        _ = fig.tight_layout()
 
         return fig
 
