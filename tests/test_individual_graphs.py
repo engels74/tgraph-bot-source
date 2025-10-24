@@ -13,6 +13,7 @@ Requirements tested: 5.5, 5.6, 18.1, 18.2, 18.3, 18.4, 18.5
 
 from datetime import datetime, timezone
 
+import matplotlib.pyplot as plt
 import pytest
 from matplotlib.figure import Figure
 
@@ -38,6 +39,18 @@ from tgraph_bot.graphs.generators import (
 
 
 # Fixtures
+
+
+@pytest.fixture(autouse=True)
+def cleanup_matplotlib_figures() -> None:
+    """Fixture to automatically close all matplotlib figures after each test.
+
+    This prevents memory warnings from matplotlib when multiple figures are created
+    during test execution. The autouse=True parameter ensures this runs for all tests
+    in this module without explicit declaration.
+    """
+    yield
+    plt.close("all")
 
 
 @pytest.fixture

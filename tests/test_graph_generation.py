@@ -46,6 +46,18 @@ from tgraph_bot.graphs.styling import GraphStyling
 # Fixtures
 
 
+@pytest.fixture(autouse=True)
+def cleanup_matplotlib_figures() -> None:
+    """Fixture to automatically close all matplotlib figures after each test.
+
+    This prevents memory warnings from matplotlib when multiple figures are created
+    during test execution. The autouse=True parameter ensures this runs for all tests
+    in this module without explicit declaration.
+    """
+    yield
+    plt.close("all")
+
+
 @pytest.fixture
 def sample_stream_records() -> list[StreamRecord]:
     """Fixture providing sample stream records for testing."""
