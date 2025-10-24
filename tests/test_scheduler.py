@@ -410,7 +410,7 @@ class TestSchedulerWithMockedSleep:
             sleep_duration = (next_run - mock_now).total_seconds()
 
             # From 10:00 to 14:30 = 4.5 hours = 16200 seconds
-            assert sleep_duration == pytest.approx(16200.0, abs=1.0)  # pyright: ignore[reportUnknownMemberType]
+            assert sleep_duration == pytest.approx(16200.0, abs=1.0)
 
     @pytest.mark.asyncio
     async def test_scheduler_loop_runs_continuously(

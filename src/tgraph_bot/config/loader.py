@@ -44,7 +44,7 @@ class ConfigLoader:
             # Load YAML file
             yaml_parser = YAML()
             with open(file_path) as f:
-                config_data: object = yaml_parser.load(f)  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
+                config_data: object = yaml_parser.load(f)  # pyright: ignore[reportUnknownVariableType]
 
             if not isinstance(config_data, dict):
                 raise ConfigurationError(
@@ -147,13 +147,13 @@ class ConfigLoader:
             yaml_writer.preserve_quotes = True
             yaml_writer.default_flow_style = False
             # Set indentation for clean formatting
-            yaml_writer.indent(mapping=2, sequence=2, offset=0)  # pyright: ignore[reportUnknownMemberType]
+            yaml_writer.indent(mapping=2, sequence=2, offset=0)
 
             # Load existing YAML to preserve comments and structure
             yaml_data: dict[str, object]
             if file_path.exists():
                 with open(file_path) as f:
-                    loaded_data: object = yaml_writer.load(f)  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
+                    loaded_data: object = yaml_writer.load(f)  # pyright: ignore[reportUnknownVariableType]
                 if isinstance(loaded_data, dict):
                     yaml_data = loaded_data  # pyright: ignore[reportUnknownVariableType]
                 else:
@@ -169,7 +169,7 @@ class ConfigLoader:
 
             # Write back to file
             with open(file_path, "w") as f:
-                yaml_writer.dump(yaml_data, f)  # pyright: ignore[reportUnknownMemberType]
+                yaml_writer.dump(yaml_data, f)
 
         except (OSError, IOError) as e:
             raise ConfigurationError(

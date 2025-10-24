@@ -110,7 +110,7 @@ class GraphRenderer:
 
                 # Save figure to disk
                 file_path = output_path / f"{graph_type}.png"
-                fig.savefig(  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
+                fig.savefig(
                     file_path,
                     dpi=config.appearance.dimensions.dpi,
                     bbox_inches="tight",
@@ -179,7 +179,7 @@ class GraphRenderer:
         # Handle top graphs separately (they use TopGraphConfig)
         # For now, check if they're dict or TopGraphConfig and have enabled=True
         if hasattr(config.top_platforms, "enabled"):
-            if config.top_platforms.enabled:  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]  # union type
+            if config.top_platforms.enabled:  # pyright: ignore[reportAttributeAccessIssue]  # union type
                 enabled.append(("top_platforms", config.top_platforms))  # pyright: ignore[reportArgumentType]  # union type
         elif isinstance(config.top_platforms, dict):
             if config.top_platforms.get("enabled"):
@@ -203,7 +203,7 @@ class GraphRenderer:
                 enabled.append(("top_platforms", gc))
 
         if hasattr(config.top_users, "enabled"):
-            if config.top_users.enabled:  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]  # union type
+            if config.top_users.enabled:  # pyright: ignore[reportAttributeAccessIssue]  # union type
                 enabled.append(("top_users", config.top_users))  # pyright: ignore[reportArgumentType]  # union type
         elif isinstance(config.top_users, dict):
             if config.top_users.get("enabled"):

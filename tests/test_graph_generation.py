@@ -234,7 +234,7 @@ class TestGraphStylingApplication:
         self, sample_appearance_config: GraphAppearanceConfig
     ) -> None:
         """Test applying graph dimensions (Requirement 5.2)."""
-        fig = plt.figure()  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
+        fig = plt.figure()
         styling = GraphStyling()
 
         dimensions = sample_appearance_config.dimensions
@@ -268,7 +268,7 @@ class TestGraphStylingApplication:
         colors = GraphColors(tv="#3498db", movie="#e74c3c", background="#ffffff")
         grid = GridConfig(enabled=True, alpha=0.3)
 
-        fig = plt.figure()  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
+        fig = plt.figure()
         styling = GraphStyling()
         styling.apply_styling(fig, dimensions=dimensions, colors=colors, grid=grid)
 
@@ -279,7 +279,7 @@ class TestGraphStylingApplication:
         self, sample_appearance_config: GraphAppearanceConfig
     ) -> None:
         """Test applying color configuration."""
-        fig = plt.figure()  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
+        fig = plt.figure()
         styling = GraphStyling()
 
         dimensions = sample_appearance_config.dimensions
@@ -300,7 +300,7 @@ class TestGraphStylingApplication:
         self, sample_appearance_config: GraphAppearanceConfig
     ) -> None:
         """Test applying grid configuration when enabled."""
-        fig = plt.figure()  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
+        fig = plt.figure()
         styling = GraphStyling()
 
         dimensions = sample_appearance_config.dimensions
@@ -320,7 +320,7 @@ class TestGraphStylingApplication:
         self, sample_appearance_config: GraphAppearanceConfig
     ) -> None:
         """Test applying grid configuration when disabled."""
-        fig = plt.figure()  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
+        fig = plt.figure()
         styling = GraphStyling()
 
         dimensions = sample_appearance_config.dimensions
@@ -440,7 +440,7 @@ class TestAnnotationSystem:
         self, sample_appearance_config: GraphAppearanceConfig
     ) -> None:
         """Test adding basic annotations to graph (Requirement 6.1)."""
-        _, ax = plt.subplots()  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
+        _, ax = plt.subplots()
         styling = GraphStyling()
 
         values = [10.0, 20.0, 15.0, 25.0]
@@ -461,7 +461,7 @@ class TestAnnotationSystem:
     )
     def test_add_annotations_with_various_font_sizes(self, font_size: int) -> None:
         """Test annotations with different font sizes (Requirement 6.1)."""
-        _, ax = plt.subplots()  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
+        _, ax = plt.subplots()
         styling = GraphStyling()
 
         values = [10.0, 20.0, 15.0]
@@ -482,7 +482,7 @@ class TestAnnotationSystem:
 
     def test_add_annotations_with_outline_enabled(self) -> None:
         """Test annotations with outline enabled."""
-        _, ax = plt.subplots()  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
+        _, ax = plt.subplots()
         styling = GraphStyling()
 
         values = [10.0, 20.0, 15.0]
@@ -503,7 +503,7 @@ class TestAnnotationSystem:
 
     def test_add_annotations_with_outline_disabled(self) -> None:
         """Test annotations with outline disabled."""
-        _, ax = plt.subplots()  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
+        _, ax = plt.subplots()
         styling = GraphStyling()
 
         values = [10.0, 20.0, 15.0]
@@ -524,7 +524,7 @@ class TestAnnotationSystem:
 
     def test_highlight_peak_value(self) -> None:
         """Test highlighting peak value in graph (Requirement 6.2)."""
-        _, ax = plt.subplots()  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
+        _, ax = plt.subplots()
         styling = GraphStyling()
 
         values = [10.0, 25.0, 15.0, 20.0]  # Peak is 25.0 at index 1
@@ -540,7 +540,7 @@ class TestAnnotationSystem:
 
     def test_highlight_peak_with_single_value(self) -> None:
         """Test peak highlighting with single value."""
-        _, ax = plt.subplots()  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
+        _, ax = plt.subplots()
         styling = GraphStyling()
 
         values = [42.0]
@@ -556,7 +556,7 @@ class TestAnnotationSystem:
 
     def test_highlight_peak_with_multiple_peaks(self) -> None:
         """Test peak highlighting with multiple equal peak values."""
-        _, ax = plt.subplots()  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
+        _, ax = plt.subplots()
         styling = GraphStyling()
 
         values = [25.0, 25.0, 15.0, 25.0]  # Multiple peaks at 25.0
@@ -572,7 +572,7 @@ class TestAnnotationSystem:
 
     def test_highlight_peak_with_empty_values(self) -> None:
         """Test peak highlighting with empty values list."""
-        _, ax = plt.subplots()  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
+        _, ax = plt.subplots()
         styling = GraphStyling()
 
         values: list[float] = []
@@ -822,7 +822,7 @@ class TestGraphGenerationIntegration:
         )
 
         # 2. Create figure
-        fig = plt.figure()  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
+        fig = plt.figure()
 
         # 3. Apply styling
         styling.apply_styling(
@@ -904,7 +904,7 @@ class TestGraphGenerationIntegration:
         _ = styling.get_palette("viridis", 5)
 
         # 3. Create and style figure
-        fig = plt.figure()  # pyright: ignore[reportUnknownMemberType]  # matplotlib incomplete stubs
+        fig = plt.figure()
         styling.apply_styling(
             fig,
             dimensions=sample_appearance_config.dimensions,

@@ -153,7 +153,7 @@
   - Write tests for PlayCountByMonthGraph data preparation
   - _Requirements: 5.5, 5.6, 18.1, 18.2, 18.3, 18.4, 18.5_
 
-- [ ] 18. Implement individual graph types (basic set)
+- [x] 18. Implement individual graph types (basic set)
   - Implement DailyPlayCountGraph using sns.lineplot() for cleaner multi-line charts
   - Implement PlayCountByDayOfWeekGraph using sns.barplot() with stacked option
   - Implement PlayCountByHourOfDayGraph using sns.barplot() with stacked option
