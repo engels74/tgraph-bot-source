@@ -189,7 +189,7 @@
   - Handle file deletion errors gracefully
   - _Requirements: 12.1, 12.2, 12.3, 12.4, 12.5_
 
-- [ ] 22. Create Discord bot core and command infrastructure
+- [x] 22. Create Discord bot core and command infrastructure
   - Implement TGraphBot class extending nextcord.Bot
   - Set up bot initialization with configuration and intents
   - Implement on_ready event handler with connection logging
