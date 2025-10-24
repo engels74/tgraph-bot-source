@@ -30,15 +30,48 @@ type QueryParams = Mapping[str, object]
 
 # TypedDict models for Tautulli API responses
 class TautulliStreamRecord(TypedDict):
-    """Structure of a stream record returned from Tautulli API."""
+    """Structure of a stream record returned from Tautulli API.
 
+    Fields:
+        date: Unix timestamp of stream start
+        media_type: Type of media (movie, episode, track, live, collection, playlist)
+        stream_type: Legacy stream type field (direct play, transcode, copy)
+        transcode_decision: More accurate stream classification (direct play, direct stream, transcode)
+        platform: Client platform name (e.g., "Plex for Android")
+        player: Specific player name (e.g., "Plex Web (Chrome)")
+        user: Username of the viewer
+        stream_video_resolution: Resolution label (e.g., "1080p", "720p")
+        stream_video_full_resolution: Full resolution string (e.g., "1920x1080")
+        duration: Total media duration in seconds
+        play_duration: Actual watch time in seconds
+        percent_complete: Percentage of media watched (0-100)
+        location: Network location ("wan" or "lan")
+    """
+
+    # Core identification fields
     date: ReadOnly[int]
     media_type: ReadOnly[str]
-    stream_type: ReadOnly[str]
-    platform: ReadOnly[str]
     user: ReadOnly[str]
+
+    # Stream type fields (transcode_decision is more accurate than stream_type)
+    stream_type: ReadOnly[str]
+    transcode_decision: ReadOnly[str]
+
+    # Platform and player information
+    platform: ReadOnly[str]
+    player: ReadOnly[str]
+
+    # Video resolution information
     stream_video_resolution: ReadOnly[str]
     stream_video_full_resolution: ReadOnly[str]
+
+    # Duration and completion tracking (optional fields)
+    duration: NotRequired[int]
+    play_duration: NotRequired[int]
+    percent_complete: NotRequired[int]
+
+    # Network location (optional)
+    location: NotRequired[str]
 
 
 class TautulliDataSection(TypedDict):
@@ -134,12 +167,18 @@ class TautulliClient:
         Returns:
             List of stream record dictionaries containing:
             - date: Unix timestamp of stream start
-            - media_type: "movie" or "episode"
-            - stream_type: "direct play", "transcode", or "copy"
-            - platform: Client platform name
+            - media_type: Type of media (movie, episode, track, live, etc.)
+            - stream_type: Legacy stream type (direct play, transcode, copy)
+            - transcode_decision: Accurate stream type (direct play, direct stream, transcode)
+            - platform: Client platform name (e.g., "Plex for Android")
+            - player: Specific player name (e.g., "Plex Web (Chrome)")
             - user: Username
-            - stream_video_resolution: e.g., "1080p", "720p"
-            - stream_video_full_resolution: e.g., "1920x1080"
+            - stream_video_resolution: Resolution label (e.g., "1080p", "720p")
+            - stream_video_full_resolution: Full resolution (e.g., "1920x1080")
+            - duration: Total media duration in seconds (optional)
+            - play_duration: Actual watch time in seconds (optional)
+            - percent_complete: Percentage watched 0-100 (optional)
+            - location: Network location "wan" or "lan" (optional)
 
         Raises:
             TautulliAPIError: If API request fails or response is invalid
@@ -466,7 +505,9 @@ class TautulliClient:
                 "date",
                 "media_type",
                 "stream_type",
+                "transcode_decision",
                 "platform",
+                "player",
                 "user",
                 "stream_video_resolution",
                 "stream_video_full_resolution",

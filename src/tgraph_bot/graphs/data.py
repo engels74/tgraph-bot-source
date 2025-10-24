@@ -24,13 +24,21 @@ class TautulliStreamRecord(TypedDict):
     """Tautulli API stream record structure.
 
     This TypedDict defines the structure of stream records returned
-    from the Tautulli API.
+    from the Tautulli API. This is a simplified version for backward
+    compatibility - the full structure is defined in api.tautulli module.
+
+    Note: This TypedDict is kept for documentation purposes but the actual
+    transformation uses TautulliRecordMapping (generic Mapping) for flexibility.
     """
 
     date: int  # Unix timestamp
-    media_type: str  # "movie" or "episode"
-    stream_type: str  # "direct play", "transcode", or "copy"
+    media_type: str  # Type of media (movie, episode, track, live, etc.)
+    stream_type: str  # Legacy stream type (direct play, transcode, copy)
+    transcode_decision: (
+        str  # Accurate stream type (direct play, direct stream, transcode)
+    )
     platform: str  # Client platform name
+    player: str  # Specific player name
     user: str  # Username
     stream_video_resolution: str  # e.g., "1080p", "720p"
     stream_video_full_resolution: str  # e.g., "1920x1080"
@@ -46,21 +54,44 @@ class StreamRecord:
 
     Attributes:
         timestamp: When the stream occurred (UTC)
-        media_type: Normalized media type ("movie", "tv", "music")
-        stream_type: Normalized stream type (lowercase)
-        platform: Client platform name
+        media_type: Normalized media type ("movie", "tv", "music", "live", "collection", "playlist")
+        stream_type: Legacy normalized stream type (lowercase) - kept for backward compatibility
+        transcode_decision: Accurate stream classification ("direct play", "direct stream", "transcode")
+        platform: Client platform name (e.g., "Plex for Android")
+        player: Specific player name (e.g., "Plex Web (Chrome)")
         user: Username
-        source_resolution: Original media resolution
-        stream_resolution: Stream delivery resolution
+        source_resolution: Original media resolution (e.g., "1920x1080")
+        stream_resolution: Stream delivery resolution (e.g., "1080p")
+        duration: Total media duration in seconds (None if not available)
+        play_duration: Actual watch time in seconds (None if not available)
+        percent_complete: Percentage of media watched 0-100 (None if not available)
+        location: Network location "wan" or "lan" (None if not available)
     """
 
+    # Core identification fields
     timestamp: datetime
     media_type: str
-    stream_type: str
-    platform: str
     user: str
+
+    # Stream type fields (transcode_decision is more accurate than stream_type)
+    stream_type: str
+    transcode_decision: str
+
+    # Platform and player information
+    platform: str
+    player: str
+
+    # Video resolution information
     source_resolution: str
     stream_resolution: str
+
+    # Duration and completion tracking (optional fields)
+    duration: int | None = None
+    play_duration: int | None = None
+    percent_complete: int | None = None
+
+    # Network location (optional)
+    location: str | None = None
 
 
 @dataclass(slots=True)
@@ -107,9 +138,10 @@ def create_stream_record(tautulli_record: TautulliRecordMapping) -> StreamRecord
     This function transforms raw Tautulli API data into a normalized,
     type-safe StreamRecord. It performs the following transformations:
     - Converts Unix timestamp to datetime (UTC)
-    - Normalizes media types ("episode" -> "tv", "track" -> "music")
-    - Normalizes stream types to lowercase
-    - Extracts resolution information
+    - Normalizes media types ("episode" -> "tv", "track" -> "music", etc.)
+    - Normalizes stream types and transcode decisions to lowercase
+    - Extracts resolution, duration, and location information
+    - Handles optional fields gracefully
 
     Args:
         tautulli_record: Raw Tautulli API response dictionary
@@ -125,26 +157,64 @@ def create_stream_record(tautulli_record: TautulliRecordMapping) -> StreamRecord
     timestamp_unix = int(tautulli_record["date"])  # pyright: ignore[reportArgumentType]
     timestamp = datetime.fromtimestamp(timestamp_unix, tz=UTC)
 
-    # Normalize media type
+    # Normalize media type - handle all Tautulli media types
     raw_media_type = str(tautulli_record["media_type"])
     if raw_media_type == "episode":
         media_type = "tv"
     elif raw_media_type == "track":
         media_type = "music"
+    elif raw_media_type in ("live", "collection", "playlist"):
+        # Keep these as-is for specialized handling
+        media_type = raw_media_type
     else:
+        # Default: movie, or any future types
         media_type = raw_media_type
 
-    # Normalize stream type to lowercase
+    # Normalize stream type to lowercase (legacy field)
     stream_type = str(tautulli_record["stream_type"]).lower()
+
+    # Normalize transcode_decision to lowercase (more accurate field)
+    transcode_decision = str(tautulli_record["transcode_decision"]).lower()
+
+    # Extract optional duration fields
+    duration: int | None = None
+    play_duration: int | None = None
+    percent_complete: int | None = None
+
+    if "duration" in tautulli_record and tautulli_record["duration"] is not None:
+        duration = int(tautulli_record["duration"])  # pyright: ignore[reportArgumentType]
+
+    if (
+        "play_duration" in tautulli_record
+        and tautulli_record["play_duration"] is not None
+    ):
+        play_duration = int(tautulli_record["play_duration"])  # pyright: ignore[reportArgumentType]
+
+    if (
+        "percent_complete" in tautulli_record
+        and tautulli_record["percent_complete"] is not None
+    ):
+        percent_complete = int(tautulli_record["percent_complete"])  # pyright: ignore[reportArgumentType]
+
+    # Extract optional location field
+    location: str | None = None
+    if "location" in tautulli_record and tautulli_record["location"] is not None:
+        location = str(tautulli_record["location"]).lower()
 
     return StreamRecord(
         timestamp=timestamp,
         media_type=media_type,
         stream_type=stream_type,
+        transcode_decision=transcode_decision,
         platform=str(tautulli_record["platform"]),
+        player=str(tautulli_record["player"]),
         user=str(tautulli_record["user"]),
         source_resolution=str(tautulli_record["stream_video_full_resolution"]),
         stream_resolution=str(tautulli_record["stream_video_resolution"]),
+        duration=duration,
+        play_duration=play_duration,
+        percent_complete=percent_complete,
+        location=location,
     )
 
 
@@ -619,16 +689,23 @@ def anonymize_usernames(
             user_counter += 1
 
     # Create new records with anonymized usernames
+    # Since StreamRecord is frozen, we must create new instances
     anonymized_records: list[StreamRecord] = []
     for record in records:
         anonymized_record = StreamRecord(
             timestamp=record.timestamp,
             media_type=record.media_type,
             stream_type=record.stream_type,
+            transcode_decision=record.transcode_decision,
             platform=record.platform,
+            player=record.player,
             user=username_mapping[record.user],
             source_resolution=record.source_resolution,
             stream_resolution=record.stream_resolution,
+            duration=record.duration,
+            play_duration=record.play_duration,
+            percent_complete=record.percent_complete,
+            location=record.location,
         )
         anonymized_records.append(anonymized_record)
 

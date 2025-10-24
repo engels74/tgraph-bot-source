@@ -38,10 +38,16 @@ def sample_tautulli_record() -> dict[str, Any]:
         "date": 1704067200,  # 2024-01-01 00:00:00 UTC
         "media_type": "movie",
         "stream_type": "direct play",
+        "transcode_decision": "direct play",
         "platform": "Plex for Android",
+        "player": "Plex for Android (Mobile)",
         "user": "JohnDoe",
         "stream_video_resolution": "1080p",
         "stream_video_full_resolution": "1920x1080",
+        "duration": 7200,
+        "play_duration": 7200,
+        "percent_complete": 100,
+        "location": "lan",
     }
 
 
@@ -52,10 +58,16 @@ def sample_tautulli_tv_record() -> dict[str, Any]:
         "date": 1704070800,  # 2024-01-01 01:00:00 UTC
         "media_type": "episode",
         "stream_type": "transcode",
+        "transcode_decision": "transcode",
         "platform": "Plex for iOS",
+        "player": "Plex for iOS (iPhone)",
         "user": "JaneDoe",
         "stream_video_resolution": "720p",
         "stream_video_full_resolution": "1280x720",
+        "duration": 2700,
+        "play_duration": 2400,
+        "percent_complete": 89,
+        "location": "wan",
     }
 
 
@@ -67,7 +79,9 @@ def multiple_tautulli_records() -> list[dict[str, Any]]:
             "date": 1704067200,  # 2024-01-01 00:00:00 UTC (Monday)
             "media_type": "movie",
             "stream_type": "direct play",
+            "transcode_decision": "direct play",
             "platform": "Plex for Android",
+            "player": "Plex for Android (Mobile)",
             "user": "Alice",
             "stream_video_resolution": "1080p",
             "stream_video_full_resolution": "1920x1080",
@@ -76,7 +90,9 @@ def multiple_tautulli_records() -> list[dict[str, Any]]:
             "date": 1704070800,  # 2024-01-01 01:00:00 UTC (Monday)
             "media_type": "episode",
             "stream_type": "transcode",
+            "transcode_decision": "transcode",
             "platform": "Plex for iOS",
+            "player": "Plex for iOS (iPhone)",
             "user": "Bob",
             "stream_video_resolution": "720p",
             "stream_video_full_resolution": "1280x720",
@@ -85,7 +101,9 @@ def multiple_tautulli_records() -> list[dict[str, Any]]:
             "date": 1704153600,  # 2024-01-02 00:00:00 UTC (Tuesday)
             "media_type": "movie",
             "stream_type": "direct play",
+            "transcode_decision": "direct play",
             "platform": "Plex for Android",
+            "player": "Plex for Android (Mobile)",
             "user": "Alice",
             "stream_video_resolution": "4K",
             "stream_video_full_resolution": "3840x2160",
@@ -94,7 +112,9 @@ def multiple_tautulli_records() -> list[dict[str, Any]]:
             "date": 1704157200,  # 2024-01-02 01:00:00 UTC (Tuesday)
             "media_type": "movie",
             "stream_type": "copy",
+            "transcode_decision": "direct stream",
             "platform": "Plex Web",
+            "player": "Plex Web (Chrome)",
             "user": "Charlie",
             "stream_video_resolution": "1080p",
             "stream_video_full_resolution": "1920x1080",
@@ -103,7 +123,9 @@ def multiple_tautulli_records() -> list[dict[str, Any]]:
             "date": 1704240000,  # 2024-01-03 00:00:00 UTC (Wednesday)
             "media_type": "episode",
             "stream_type": "transcode",
+            "transcode_decision": "transcode",
             "platform": "Plex for Android",
+            "player": "Plex for Android (Mobile)",
             "user": "Bob",
             "stream_video_resolution": "480p",
             "stream_video_full_resolution": "720x480",
@@ -189,15 +211,18 @@ class TestStreamRecordCreation:
             record.user = "Modified"  # pyright: ignore[reportAttributeAccessIssue]
 
     def test_create_stream_record_with_missing_fields(self) -> None:
-        """Test creating StreamRecord with missing optional fields."""
+        """Test creating StreamRecord with missing optional fields (duration, location)."""
         minimal_record = {
             "date": 1704067200,
             "media_type": "movie",
             "stream_type": "direct play",
+            "transcode_decision": "direct play",
             "platform": "Unknown",
+            "player": "Unknown Player",
             "user": "Guest",
             "stream_video_resolution": "",
             "stream_video_full_resolution": "",
+            # Optional fields not included: duration, play_duration, percent_complete, location
         }
 
         record = create_stream_record(minimal_record)
@@ -470,7 +495,9 @@ class TestDataAggregationByMonth:
                 "date": 1704067200,  # January 2024
                 "media_type": "movie",
                 "stream_type": "direct play",
+                "transcode_decision": "direct play",
                 "platform": "Plex",
+                "player": "Plex Web",
                 "user": "User1",
                 "stream_video_resolution": "1080p",
                 "stream_video_full_resolution": "1920x1080",
@@ -479,7 +506,9 @@ class TestDataAggregationByMonth:
                 "date": 1706745600,  # February 2024
                 "media_type": "movie",
                 "stream_type": "direct play",
+                "transcode_decision": "direct play",
                 "platform": "Plex",
+                "player": "Plex Web",
                 "user": "User1",
                 "stream_video_resolution": "1080p",
                 "stream_video_full_resolution": "1920x1080",
@@ -488,7 +517,9 @@ class TestDataAggregationByMonth:
                 "date": 1709251200,  # March 2024
                 "media_type": "movie",
                 "stream_type": "direct play",
+                "transcode_decision": "direct play",
                 "platform": "Plex",
+                "player": "Plex Web",
                 "user": "User1",
                 "stream_video_resolution": "1080p",
                 "stream_video_full_resolution": "1920x1080",
@@ -655,7 +686,9 @@ class TestEdgeCases:
                 "date": 1704067200,  # Same timestamp
                 "media_type": "movie",
                 "stream_type": "direct play",
+                "transcode_decision": "direct play",
                 "platform": "Platform1",
+                "player": "Player1",
                 "user": "User1",
                 "stream_video_resolution": "1080p",
                 "stream_video_full_resolution": "1920x1080",
@@ -664,7 +697,9 @@ class TestEdgeCases:
                 "date": 1704067200,  # Same timestamp
                 "media_type": "episode",
                 "stream_type": "transcode",
+                "transcode_decision": "transcode",
                 "platform": "Platform2",
+                "player": "Player2",
                 "user": "User2",
                 "stream_video_resolution": "720p",
                 "stream_video_full_resolution": "1280x720",
@@ -687,7 +722,9 @@ class TestEdgeCases:
                 "date": 1704067200,
                 "media_type": "movie",
                 "stream_type": "direct play",
+                "transcode_decision": "direct play",
                 "platform": "Plex",
+                "player": "Plex Web",
                 "user": "User-with-dash",
                 "stream_video_resolution": "1080p",
                 "stream_video_full_resolution": "1920x1080",
@@ -696,7 +733,9 @@ class TestEdgeCases:
                 "date": 1704070800,
                 "media_type": "movie",
                 "stream_type": "direct play",
+                "transcode_decision": "direct play",
                 "platform": "Plex",
+                "player": "Plex Web",
                 "user": "User_with_underscore",
                 "stream_video_resolution": "1080p",
                 "stream_video_full_resolution": "1920x1080",
@@ -705,7 +744,9 @@ class TestEdgeCases:
                 "date": 1704074400,
                 "media_type": "movie",
                 "stream_type": "direct play",
+                "transcode_decision": "direct play",
                 "platform": "Plex",
+                "player": "Plex Web",
                 "user": "User.with.dots",
                 "stream_video_resolution": "1080p",
                 "stream_video_full_resolution": "1920x1080",
@@ -728,7 +769,9 @@ class TestEdgeCases:
             "date": 1704067200,
             "media_type": "movie",
             "stream_type": "direct play",
+            "transcode_decision": "direct play",
             "platform": "Plex",
+            "player": "Plex Web",
             "user": "",
             "stream_video_resolution": "1080p",
             "stream_video_full_resolution": "1920x1080",
@@ -752,7 +795,9 @@ class TestEdgeCases:
                 "date": 1704067200 + (i * 3600),  # Increment by 1 hour
                 "media_type": "movie" if i % 2 == 0 else "episode",
                 "stream_type": "direct play",
+                "transcode_decision": "direct play" if i % 3 == 0 else "transcode",
                 "platform": f"Platform{i % 10}",
+                "player": f"Player{i % 10}",
                 "user": f"User{i % 50}",
                 "stream_video_resolution": "1080p",
                 "stream_video_full_resolution": "1920x1080",
