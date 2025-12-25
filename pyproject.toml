@@ -21,3 +21,22 @@ dev = [
     "basedpyright>=1.36.2",
     "ruff>=0.14.10",
 ]
+
+[tool.ruff]
+line-length = 88
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["E", "F", "B", "I", "N", "UP", "C90"]
+ignore = ["E501"]
+fixable = ["ALL"]
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.basedpyright]
+pythonVersion = "3.14"
+typeCheckingMode = "recommended"
+failOnWarnings = true
+pythonPlatform = "All"
+exclude = ["htmlcov", ".venv"]
