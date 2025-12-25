@@ -189,3 +189,7 @@ docs/
 # Task files
 # tasks.json
 # tasks/ 
+
+# claude
+.claude
+.specify
