@@ -22,7 +22,7 @@ jobs:
           fetch-depth: 0  # Need history to compare with base branch
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v9.0.0
         with:
           version: "latest"
           enable-cache: true
