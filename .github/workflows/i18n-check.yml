@@ -111,7 +111,7 @@ jobs:
           echo "- **Translation validation**: ${{ steps.validate-translations.outcome }}" >> $GITHUB_STEP_SUMMARY
 
       - name: Comment on PR
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         if: steps.pot-comparison.outputs.changed == 'true'
         with:
           script: |
